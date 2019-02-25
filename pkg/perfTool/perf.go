@@ -1,7 +1,7 @@
 package perfTool
 
 import (
-	ClientSet "business-application-operator/pkg/openshift"
+	ClientSet "business-app-handler-controller/pkg/openshift"
 	"bytes"
 	"fmt"
 	"io/ioutil"

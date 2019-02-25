@@ -1,8 +1,8 @@
 package settings
 
 import (
-	"business-application-operator/models"
-	ClientSet "business-application-operator/pkg/openshift"
+	"business-app-handler-controller/models"
+	ClientSet "business-app-handler-controller/pkg/openshift"
 	"html/template"
 	"io/ioutil"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

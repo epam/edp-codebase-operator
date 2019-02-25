@@ -1,8 +1,8 @@
 package main
 
 import (
-	"business-application-operator/pkg/apis"
-	"business-application-operator/pkg/controller"
+	"business-app-handler-controller/pkg/apis"
+	"business-app-handler-controller/pkg/controller"
 	"flag"
 	"fmt"
 	"log"

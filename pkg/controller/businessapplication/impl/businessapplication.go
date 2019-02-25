@@ -1,11 +1,11 @@
 package impl
 
 import (
-	"business-application-operator/models"
-	edpv1alpha1 "business-application-operator/pkg/apis/edp/v1alpha1"
-	ClientSet "business-application-operator/pkg/openshift"
-	"business-application-operator/pkg/perfTool"
-	"business-application-operator/pkg/settings"
+	"business-app-handler-controller/models"
+	edpv1alpha1 "business-app-handler-controller/pkg/apis/edp/v1alpha1"
+	ClientSet "business-app-handler-controller/pkg/openshift"
+	"business-app-handler-controller/pkg/perfTool"
+	"business-app-handler-controller/pkg/settings"
 	"fmt"
 	"k8s.io/apimachinery/pkg/runtime"
 	"log"

@@ -1,7 +1,7 @@
 package controller
 
 import (
-	"business-application-operator/pkg/controller/businessapplication"
+	"business-app-handler-controller/pkg/controller/businessapplication"
 )
 
 func init() {

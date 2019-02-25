@@ -6,8 +6,8 @@ import (
 	"log"
 	"strings"
 
-	edpv1alpha1 "business-application-operator/pkg/apis/edp/v1alpha1"
-	"business-application-operator/pkg/controller/businessapplication/impl"
+	edpv1alpha1 "business-app-handler-controller/pkg/apis/edp/v1alpha1"
+	"business-app-handler-controller/pkg/controller/businessapplication/impl"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"

@@ -13,9 +13,9 @@ import (
 
 func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenAPIDefinition {
 	return map[string]common.OpenAPIDefinition{
-		"business-application-operator/pkg/apis/edp/v1alpha1.BusinessApplication":       schema_pkg_apis_edp_v1alpha1_BusinessApplication(ref),
-		"business-application-operator/pkg/apis/edp/v1alpha1.BusinessApplicationSpec":   schema_pkg_apis_edp_v1alpha1_BusinessApplicationSpec(ref),
-		"business-application-operator/pkg/apis/edp/v1alpha1.BusinessApplicationStatus": schema_pkg_apis_edp_v1alpha1_BusinessApplicationStatus(ref),
+		"business-app-handler-controller/pkg/apis/edp/v1alpha1.BusinessApplication":       schema_pkg_apis_edp_v1alpha1_BusinessApplication(ref),
+		"business-app-handler-controller/pkg/apis/edp/v1alpha1.BusinessApplicationSpec":   schema_pkg_apis_edp_v1alpha1_BusinessApplicationSpec(ref),
+		"business-app-handler-controller/pkg/apis/edp/v1alpha1.BusinessApplicationStatus": schema_pkg_apis_edp_v1alpha1_BusinessApplicationStatus(ref),
 	}
 }
 
@@ -46,19 +46,19 @@ func schema_pkg_apis_edp_v1alpha1_BusinessApplication(ref common.ReferenceCallba
 					},
 					"spec": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("business-application-operator/pkg/apis/edp/v1alpha1.BusinessApplicationSpec"),
+							Ref: ref("business-app-handler-controller/pkg/apis/edp/v1alpha1.BusinessApplicationSpec"),
 						},
 					},
 					"status": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("business-application-operator/pkg/apis/edp/v1alpha1.BusinessApplicationStatus"),
+							Ref: ref("business-app-handler-controller/pkg/apis/edp/v1alpha1.BusinessApplicationStatus"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"business-application-operator/pkg/apis/edp/v1alpha1.BusinessApplicationSpec", "business-application-operator/pkg/apis/edp/v1alpha1.BusinessApplicationStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"business-app-handler-controller/pkg/apis/edp/v1alpha1.BusinessApplicationSpec", "business-app-handler-controller/pkg/apis/edp/v1alpha1.BusinessApplicationStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
