@@ -1,0 +1,19 @@
+apiVersion: edp.epam.com/v1alpha1
+kind: BusinessApplication
+metadata:
+  name: test-npm
+spec:
+  lang: "Javascript"
+  framework: "React"
+  buildTool: "NPM"
+  strategy: "Create"
+  git:
+    url: "https://git.epam.com/epmd-edp/examples/basic/edp-react-helloworld.git"
+  route:
+    site: "helloworld"
+    path: "/api"
+  database:
+    kind: "postgresql"
+    version: "9.6"
+    capacity: "1000Gi"
+    storage: "ebs"
