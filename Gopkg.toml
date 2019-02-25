@@ -29,6 +29,10 @@ required = [
   version = "=v0.1.8"
 
 [[override]]
+  name = "gopkg.in/src-d/go-git.v4"
+  version = "=v4.10.0"
+
+[[override]]
   name = "k8s.io/api"
   # revision for tag "kubernetes-1.13.1"
   revision = "05914d821849570fba9eacfb29466f2d8d3cd229"

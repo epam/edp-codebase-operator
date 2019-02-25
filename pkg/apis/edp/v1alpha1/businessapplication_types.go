@@ -12,8 +12,6 @@ import (
 // +k8s:openapi-gen=true
 type Git struct {
 	Url      string `json:"url"`
-	Login    string `json:"login"`
-	Password string `json:"password"`
 }
 
 type Route struct {

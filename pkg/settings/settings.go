@@ -5,10 +5,12 @@ import (
 	ClientSet "business-app-handler-controller/pkg/openshift"
 	"html/template"
 	"io/ioutil"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"log"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -31,15 +33,23 @@ func RetryFunc(attempts int, sleep time.Duration, f func() error) (err error) {
 func GetUserSettingsConfigMap(clientSet ClientSet.OpenshiftClientSet, namespace string) models.UserSettings {
 	userSettings, err := clientSet.CoreClient.ConfigMaps(namespace).Get("user-settings", metav1.GetOptions{})
 	if err != nil {
-		log.Fatal(err)
+		log.Print(err)
+	}
+	vcsIntegrationEnabled, err := strconv.ParseBool(userSettings.Data["vcs_integration_enabled"])
+	if err != nil {
+		log.Print(err)
+	}
+	perfIntegrationEnabled, err := strconv.ParseBool(userSettings.Data["perf_integration_enabled"])
+	if err != nil {
+		log.Print(err)
 	}
 	return models.UserSettings{
 		DnsWildcard:            userSettings.Data["dns_wildcard"],
 		EdpName:                userSettings.Data["edp_name"],
 		EdpVersion:             userSettings.Data["edp_version"],
-		PerfIntegrationEnabled: userSettings.Data["perf_integration_enabled"],
+		PerfIntegrationEnabled: perfIntegrationEnabled,
 		VcsGroupNameUrl:        userSettings.Data["vcs_group_name_url"],
-		VcsIntegrationEnabled:  userSettings.Data["vcs_integration_enabled"],
+		VcsIntegrationEnabled:  vcsIntegrationEnabled,
 		VcsSshPort:             userSettings.Data["vcs_ssh_port"],
 		VcsToolName:            userSettings.Data["vcs_tool_name"],
 	}
@@ -84,7 +94,7 @@ func GetGerritCredentials(clientSet ClientSet.OpenshiftClientSet, namespace stri
 func CreateGerritPrivateKey(privateKey string, path string) () {
 	err := ioutil.WriteFile(path, []byte(privateKey), 0400)
 	if err != nil {
-		log.Fatalf("Unable to write the key: %v", err)
+		log.Printf("Unable to write the key: %v", err)
 	}
 }
 
@@ -100,7 +110,7 @@ func CreateSshConfig(appSettings models.AppSettings) {
 	tmpl := template.Must(template.New("config.tmpl").ParseFiles(workDir + "/templates/ssh/config.tmpl"))
 	f, err := os.Create("~/.ssh/config")
 	if err != nil {
-		log.Fatalf("Cannot write SSH config to the file: %v", err)
+		log.Printf("Cannot write SSH config to the file: %v", err)
 	}
 	err = tmpl.Execute(f, appSettings)
 	if err != nil {
@@ -123,4 +133,20 @@ func IsFrameworkMultiModule(name string) bool {
 func AddFrameworkMultiModulePostfix(name string) string {
 	regexpMultiModuleFramework := regexp.MustCompile(`\(([^)]+)\)`)
 	return regexpMultiModuleFramework.ReplaceAllString(strings.ToLower(name), "-multimodule")
+}
+
+func GetVcsBasicAuthConfig(clientSet ClientSet.OpenshiftClientSet, namespace string, secretName string) (string, string) {
+	vcsCredentialsSecret, err := clientSet.CoreClient.Secrets(namespace).Get(secretName, metav1.GetOptions{})
+	if errors.IsNotFound(err) {
+		return "", ""
+	}
+	DeleteTempVcsSecret(clientSet, namespace, secretName)
+	return string(vcsCredentialsSecret.Data["username"]), string(vcsCredentialsSecret.Data["password"])
+}
+
+func DeleteTempVcsSecret(clientSet ClientSet.OpenshiftClientSet, namespace string, secretName string) {
+	err := clientSet.CoreClient.Secrets(namespace).Delete(secretName, &metav1.DeleteOptions{})
+	if err != nil {
+		log.Fatal(err)
+	}
 }

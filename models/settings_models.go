@@ -26,9 +26,9 @@ type UserSettings struct {
 	DnsWildcard            string `json:"dns_wildcard"`
 	EdpName                string `json:"edp_name"`
 	EdpVersion             string `json:"edp_version"`
-	PerfIntegrationEnabled string `json:"perf_integration_enabled"`
+	PerfIntegrationEnabled bool   `json:"perf_integration_enabled"`
 	VcsGroupNameUrl        string `json:"vcs_group_name_url"`
-	VcsIntegrationEnabled  string `json:"vcs_integration_enabled"`
+	VcsIntegrationEnabled  bool   `json:"vcs_integration_enabled"`
 	VcsSshPort             string `json:"vcs_ssh_port"`
 	VcsToolName            string `json:"vcs_tool_name"`
 }

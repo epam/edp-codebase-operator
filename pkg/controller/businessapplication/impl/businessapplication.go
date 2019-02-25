@@ -3,6 +3,7 @@ package impl
 import (
 	"business-app-handler-controller/models"
 	edpv1alpha1 "business-app-handler-controller/pkg/apis/edp/v1alpha1"
+	"business-app-handler-controller/pkg/git"
 	ClientSet "business-app-handler-controller/pkg/openshift"
 	"business-app-handler-controller/pkg/perfTool"
 	"business-app-handler-controller/pkg/settings"
@@ -34,7 +35,7 @@ func (businessApplication BusinessApplication) Create(allowedAppSettings map[str
 	appSettings.GerritSettings = settings.GetGerritSettingsConfigMap(*clientSet, businessApplication.CustomResource.Namespace)
 	appSettings.JenkinsToken, appSettings.JenkinsUsername = settings.GetJenkinsCreds(*clientSet, businessApplication.CustomResource.Namespace)
 
-	if appSettings.UserSettings.VcsIntegrationEnabled == "true" {
+	if appSettings.UserSettings.VcsIntegrationEnabled {
 		VcsGroupNameUrl, err := url.Parse(appSettings.UserSettings.VcsGroupNameUrl)
 		if err != nil {
 			log.Fatal(err)
@@ -50,7 +51,7 @@ func (businessApplication BusinessApplication) Create(allowedAppSettings map[str
 		log.Printf("VCS integration isn't enabled")
 	}
 
-	if appSettings.UserSettings.PerfIntegrationEnabled == "true" {
+	if appSettings.UserSettings.PerfIntegrationEnabled {
 		perfSecret := perfTool.GetPerfCredentials(*clientSet, businessApplication.CustomResource.Namespace)
 		perfSettings := perfTool.GetPerfSettings(*clientSet, businessApplication.CustomResource.Namespace)
 		perfToken := perfTool.GetPerfToken(perfSettings["perf_web_url"], string(perfSecret["username"]), string(perfSecret["password"]))
@@ -68,7 +69,6 @@ func (businessApplication BusinessApplication) Create(allowedAppSettings map[str
 
 	switch strings.ToLower(businessApplication.CustomResource.Spec.Strategy) {
 	case strings.ToLower(allowedAppSettings["add_repo_strategy"][0]):
-		fmt.Println("Strategy create")
 		switch settings.IsFrameworkMultiModule(businessApplication.CustomResource.Spec.Framework) {
 		case false:
 			//springboot
@@ -108,6 +108,18 @@ func (businessApplication BusinessApplication) Create(allowedAppSettings map[str
 		appSettings.RepositoryUrl = businessApplication.CustomResource.Spec.Git.Url
 	default:
 		log.Fatalf("Provided unsupported add repository strategy - " + businessApplication.CustomResource.Spec.Strategy)
+	}
+
+	VcsCredentialsSecretName := "repository-application-" + businessApplication.CustomResource.Name + "-temp"
+	repositoryUsername, repositoryPassword := settings.GetVcsBasicAuthConfig(*clientSet, businessApplication.CustomResource.Namespace, VcsCredentialsSecretName)
+
+	repositoryAccess := git.CheckPermissions(appSettings.RepositoryUrl, repositoryUsername, repositoryPassword)
+
+	if !repositoryAccess {
+		log.Fatalf("Cannot access provided git repository: %s", businessApplication.CustomResource.Spec.Git)
+	}
+	if appSettings.UserSettings.VcsIntegrationEnabled {
+		//Implementation for VCS project creation
 	}
 }
 
