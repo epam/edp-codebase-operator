@@ -51,7 +51,7 @@ func GetUserSettingsConfigMap(clientSet ClientSet.OpenshiftClientSet, namespace 
 		VcsGroupNameUrl:        userSettings.Data["vcs_group_name_url"],
 		VcsIntegrationEnabled:  vcsIntegrationEnabled,
 		VcsSshPort:             userSettings.Data["vcs_ssh_port"],
-		VcsToolName:            userSettings.Data["vcs_tool_name"],
+		VcsToolName:            models.VCSTool(userSettings.Data["vcs_tool_name"]),
 	}
 }
 
@@ -91,7 +91,7 @@ func GetGerritCredentials(clientSet ClientSet.OpenshiftClientSet, namespace stri
 	return string(vcsAutouserSecret.Data["id_rsa"]), string(vcsAutouserSecret.Data["id_rsa.pub"])
 }
 
-func CreateGerritPrivateKey(privateKey string, path string) () {
+func CreateGerritPrivateKey(privateKey string, path string) {
 	err := ioutil.WriteFile(path, []byte(privateKey), 0400)
 	if err != nil {
 		log.Printf("Unable to write the key: %v", err)
