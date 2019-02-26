@@ -120,7 +120,7 @@ func (perf Client) getDatasource(id int) (*DataSource, error) {
 }
 
 func (perf Client) updateDatasource(ds DataSource) error {
-	log.Printf("Start udpating perf datasource with id %v by url %s", ds.Id, perf.client.HostURL)
+	log.Printf("Start updating perf datasource with id %v by url %s", ds.Id, perf.client.HostURL)
 	resp, err := perf.client.R().
 		SetHeader("Content-Type", "application/json").
 		SetPathParams(map[string]string{

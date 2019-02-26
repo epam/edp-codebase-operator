@@ -40,14 +40,14 @@ func containSettings(slice []string, value string) bool {
 }
 
  type BusinessApplication interface {
- 	Create(allowedAppSettings map[string][]string)
+ 	Create()
  	Update()
  	Delete()
  }
 
  func getBusinessApplication(cr *edpv1alpha1.BusinessApplication, r *ReconcileBusinessApplication) (BusinessApplication, error) {
- 	if !(containSettings(allowedAppSettings["add_repo_strategy"], cr.Spec.Strategy)) {
- 		return nil, errors.New("Provided unsupported add repository strategy - " + cr.Spec.Strategy)
+ 	if !(containSettings(allowedAppSettings["add_repo_strategy"], string(cr.Spec.Strategy))) {
+ 		return nil, errors.New("Provided unsupported add repository strategy - " + string(cr.Spec.Strategy))
 	} else if !(containSettings(allowedAppSettings["language"], cr.Spec.Lang)) {
 		return nil, errors.New("Provided unsupported language - " + cr.Spec.Lang)
 	} else if !(containSettings(allowedAppSettings["build_tool"], cr.Spec.BuildTool)) {
@@ -128,7 +128,7 @@ func (r *ReconcileBusinessApplication) Reconcile(request reconcile.Request) (rec
 	if err != nil {
 		log.Fatalf("[ERROR] Cannot get Business Application %s. Reason: %s", request.Name, err)
 	}
-	businessApplication.Create(allowedAppSettings)
+	businessApplication.Create()
 
 	log.Printf("Reconciling BusinessApplication %s/%s has been finished", request.Namespace, request.Name)
 

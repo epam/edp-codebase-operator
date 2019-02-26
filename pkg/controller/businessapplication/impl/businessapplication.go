@@ -7,7 +7,9 @@ import (
 	ClientSet "business-app-handler-controller/pkg/openshift"
 	"business-app-handler-controller/pkg/perf"
 	"business-app-handler-controller/pkg/settings"
+	"business-app-handler-controller/pkg/vcs"
 	"fmt"
+	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"log"
 	"net/url"
@@ -22,7 +24,7 @@ type BusinessApplication struct {
 	Scheme         *runtime.Scheme
 }
 
-func (businessApplication BusinessApplication) Create(allowedAppSettings map[string][]string) {
+func (businessApplication BusinessApplication) Create() {
 	appSettings := models.AppSettings{}
 	appSettings.BasicPatternUrl = "https://github.com/epmd-edp"
 	clientSet := ClientSet.CreateOpenshiftClients()
@@ -32,14 +34,18 @@ func (businessApplication BusinessApplication) Create(allowedAppSettings map[str
 	appSettings.WorkDir = "/home/edp"
 	appSettings.GerritKeyPath = appSettings.WorkDir + "/gerrit-private.key"
 
-	appSettings.UserSettings = settings.GetUserSettingsConfigMap(*clientSet, businessApplication.CustomResource.Namespace)
-	appSettings.GerritSettings = settings.GetGerritSettingsConfigMap(*clientSet, businessApplication.CustomResource.Namespace)
-	appSettings.JenkinsToken, appSettings.JenkinsUsername = settings.GetJenkinsCreds(*clientSet, businessApplication.CustomResource.Namespace)
+	userSettings, err := settings.GetUserSettingsConfigMap(*clientSet, businessApplication.CustomResource.Namespace)
+	gerritSettings, err := settings.GetGerritSettingsConfigMap(*clientSet, businessApplication.CustomResource.Namespace)
+
+	appSettings.UserSettings = *userSettings
+	appSettings.GerritSettings = *gerritSettings
+	appSettings.JenkinsToken, appSettings.JenkinsUsername, err = settings.GetJenkinsCreds(*clientSet,
+		businessApplication.CustomResource.Namespace)
 
 	if appSettings.UserSettings.VcsIntegrationEnabled {
 		VcsGroupNameUrl, err := url.Parse(appSettings.UserSettings.VcsGroupNameUrl)
 		if err != nil {
-			log.Fatal(err)
+			log.Print(err)
 		}
 		appSettings.ProjectVcsHostname = VcsGroupNameUrl.Host
 		appSettings.ProjectVcsGroupPath = VcsGroupNameUrl.Path[1:len(VcsGroupNameUrl.Path)]
@@ -47,74 +53,34 @@ func (businessApplication BusinessApplication) Create(allowedAppSettings map[str
 		appSettings.VcsProjectPath = appSettings.ProjectVcsGroupPath + "/" + businessApplication.CustomResource.Name
 		appSettings.VcsKeyPath = appSettings.WorkDir + "/vcs-private.key"
 
-		appSettings.VcsAutouserSshKey, appSettings.VcsAutouserEmail = settings.GetVcsCredentials(*clientSet, businessApplication.CustomResource.Namespace)
+		appSettings.VcsAutouserSshKey, appSettings.VcsAutouserEmail, err = settings.GetVcsCredentials(*clientSet,
+			businessApplication.CustomResource.Namespace)
 	} else {
 		log.Printf("VCS integration isn't enabled")
 	}
 
-	appSettings.GerritPrivateKey, appSettings.GerritPublicKey = settings.GetGerritCredentials(*clientSet, businessApplication.CustomResource.Namespace)
+	appSettings.GerritPrivateKey, appSettings.GerritPublicKey, err = settings.GetGerritCredentials(*clientSet,
+		businessApplication.CustomResource.Namespace)
 
 	log.Printf("Retrieving settings has been finished.")
 
 	settings.CreateGerritPrivateKey(appSettings.GerritPrivateKey, appSettings.GerritKeyPath)
-	settings.CreateSshConfig(appSettings)
+	err = settings.CreateSshConfig(appSettings)
 
-	switch strings.ToLower(businessApplication.CustomResource.Spec.Strategy) {
-	case strings.ToLower(allowedAppSettings["add_repo_strategy"][0]):
-		switch settings.IsFrameworkMultiModule(businessApplication.CustomResource.Spec.Framework) {
-		case false:
-			//springboot
-			if businessApplication.CustomResource.Spec.Database != nil {
-				//with database
-				appSettings.RepositoryUrl = appSettings.BasicPatternUrl + "/" +
-					strings.ToLower(businessApplication.CustomResource.Spec.Lang) +
-					"-" + strings.ToLower(businessApplication.CustomResource.Spec.BuildTool) + "-" +
-					strings.ToLower(businessApplication.CustomResource.Spec.Framework) + "-" +
-					strings.ToLower(businessApplication.CustomResource.Spec.Database.Kind) + ".git"
-			} else {
-				//without database
-				appSettings.RepositoryUrl = appSettings.BasicPatternUrl + "/" +
-					strings.ToLower(businessApplication.CustomResource.Spec.Lang) +
-					"-" + strings.ToLower(businessApplication.CustomResource.Spec.BuildTool) + "-" +
-					strings.ToLower(businessApplication.CustomResource.Spec.Framework) + ".git"
-			}
-		case true:
-			//multi springboot
-			if businessApplication.CustomResource.Spec.Database != nil {
-				//with database
-				appSettings.RepositoryUrl = appSettings.BasicPatternUrl + "/" +
-					strings.ToLower(businessApplication.CustomResource.Spec.Lang) +
-					"-" + strings.ToLower(businessApplication.CustomResource.Spec.BuildTool) + "-" +
-					settings.AddFrameworkMultiModulePostfix(businessApplication.CustomResource.Spec.Framework) + "-" +
-					strings.ToLower(businessApplication.CustomResource.Spec.Database.Kind) + ".git"
-			} else {
-				//without database
-				appSettings.RepositoryUrl = appSettings.BasicPatternUrl + "/" + strings.ToLower(businessApplication.CustomResource.Spec.Lang) +
-					"-" + strings.ToLower(businessApplication.CustomResource.Spec.BuildTool) + "-" +
-					settings.AddFrameworkMultiModulePostfix(businessApplication.CustomResource.Spec.Framework) + ".git"
-			}
-		default:
-			log.Fatalf("Provided unsupported framework - " + businessApplication.CustomResource.Spec.Framework)
-		}
-	case allowedAppSettings["add_repo_strategy"][1]:
-		appSettings.RepositoryUrl = businessApplication.CustomResource.Spec.Git.Url
-	default:
-		log.Fatalf("Provided unsupported add repository strategy - " + businessApplication.CustomResource.Spec.Strategy)
+	err = setRepositoryUrl(&appSettings, &businessApplication)
+
+	repositoryCredentialsSecretName := "repository-application-" + businessApplication.CustomResource.Name + "-temp"
+	repositoryUsername, repositoryPassword, err := settings.GetVcsBasicAuthConfig(*clientSet,
+		businessApplication.CustomResource.Namespace, repositoryCredentialsSecretName)
+
+	isRepositoryAccessible := git.CheckPermissions(appSettings.RepositoryUrl, repositoryUsername, repositoryPassword)
+	if isRepositoryAccessible {
+		err = tryCreateProjectInVcs(&appSettings, &businessApplication, *clientSet)
+	} else {
+		log.Printf("Cannot access provided git repository: %s", businessApplication.CustomResource.Spec.Repository.Url)
 	}
 
-	VcsCredentialsSecretName := "repository-application-" + businessApplication.CustomResource.Name + "-temp"
-	repositoryUsername, repositoryPassword := settings.GetVcsBasicAuthConfig(*clientSet, businessApplication.CustomResource.Namespace, VcsCredentialsSecretName)
-
-	repositoryAccess := git.CheckPermissions(appSettings.RepositoryUrl, repositoryUsername, repositoryPassword)
-
-	if !repositoryAccess {
-		log.Fatalf("Cannot access provided git repository: %s", businessApplication.CustomResource.Spec.Git)
-	}
-	if appSettings.UserSettings.VcsIntegrationEnabled {
-		//Implementation for VCS project creation
-	}
-
-	err := trySetupPerf(businessApplication, clientSet, appSettings)
+	err = trySetupPerf(businessApplication, clientSet, appSettings)
 
 	if err != nil {
 		rollback()
@@ -226,6 +192,74 @@ func setupGitlabPerf(client *perf.Client, appName string, dsId string) error {
 func isGitLab(appSettings models.AppSettings) bool {
 	return appSettings.UserSettings.VcsIntegrationEnabled &&
 		appSettings.UserSettings.VcsToolName == models.GitLab
+}
+
+func tryCreateProjectInVcs(appSettings *models.AppSettings, application *BusinessApplication, clientSet ClientSet.OpenshiftClientSet) error {
+	if appSettings.UserSettings.VcsIntegrationEnabled {
+		err := createProjectInVcs(appSettings, application, clientSet)
+		if err != nil {
+			return err
+		}
+	} else {
+		log.Println("VCS integration isn't enabled")
+		return nil
+	}
+	return nil
+}
+
+func createProjectInVcs(appSettings *models.AppSettings, application *BusinessApplication,
+	clientSet ClientSet.OpenshiftClientSet) error {
+	VcsCredentialsSecretName := "vcs-autouser-application-" + application.CustomResource.Name + "-temp"
+	vcsAutoUserLogin, vcsAutoUserPassword, err := settings.GetVcsBasicAuthConfig(clientSet,
+		application.CustomResource.Namespace, VcsCredentialsSecretName)
+
+	vcsTool, err := vcs.CreateVCSClient(models.VCSTool(appSettings.UserSettings.VcsToolName),
+		appSettings.ProjectVcsHostnameUrl, vcsAutoUserLogin, vcsAutoUserPassword)
+	if err != nil {
+		log.Printf("Unable to create VCS client: %v", err)
+		return err
+	}
+
+	projectExist, err := vcsTool.CheckProjectExist(appSettings.VcsProjectPath)
+	if err != nil {
+		return err
+	}
+	if projectExist {
+		return errors.New("Couldn't copy project to your VCS group. Repository %s is already exists in " +
+			application.CustomResource.Name + appSettings.ProjectVcsGroupPath)
+	} else {
+		groupId, err := vcsTool.GetGroupIdByName(appSettings.ProjectVcsGroupPath)
+		if err != nil {
+			return err
+		}
+		err = vcsTool.CreateProject(application.CustomResource.Name, groupId)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func setRepositoryUrl(appSettings *models.AppSettings, application *BusinessApplication) error {
+	switch application.CustomResource.Spec.Strategy {
+	case models.Create:
+		concatCreateRepoUrl(appSettings, application)
+	case models.Clone:
+		appSettings.RepositoryUrl = application.CustomResource.Spec.Repository.Url
+	}
+	return nil
+}
+
+func concatCreateRepoUrl(appSettings *models.AppSettings, application *BusinessApplication) {
+	repoUrl := appSettings.BasicPatternUrl + "/" +
+		strings.ToLower(application.CustomResource.Spec.Lang) + "-" +
+		strings.ToLower(application.CustomResource.Spec.BuildTool) + "-" +
+		strings.ToLower(application.CustomResource.Spec.Framework)
+	if application.CustomResource.Spec.Database != nil {
+		appSettings.RepositoryUrl += repoUrl + "-" + strings.ToLower(application.CustomResource.Spec.Database.Kind) + ".git"
+	} else {
+		appSettings.RepositoryUrl += repoUrl + ".git"
+	}
 }
 
 func (businessApplication BusinessApplication) Update() {

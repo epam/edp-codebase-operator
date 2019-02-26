@@ -3,47 +3,37 @@ package settings
 import (
 	"business-app-handler-controller/models"
 	ClientSet "business-app-handler-controller/pkg/openshift"
+	"errors"
+	"fmt"
 	"html/template"
 	"io/ioutil"
-	"k8s.io/apimachinery/pkg/api/errors"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"log"
 	"os"
-	"regexp"
 	"strconv"
-	"strings"
-	"time"
 )
 
-func RetryFunc(attempts int, sleep time.Duration, f func() error) (err error) {
-	for i := 0; ; i++ {
-		err = f()
-		if err == nil {
-			return
-		}
-		if i >= (attempts - 1) {
-			break
-		}
-		time.Sleep(sleep)
-		log.Printf("Retrying after error: %s", err)
-	}
-	return err
-}
-
-func GetUserSettingsConfigMap(clientSet ClientSet.OpenshiftClientSet, namespace string) models.UserSettings {
+func GetUserSettingsConfigMap(clientSet ClientSet.OpenshiftClientSet, namespace string) (*models.UserSettings, error) {
 	userSettings, err := clientSet.CoreClient.ConfigMaps(namespace).Get("user-settings", metav1.GetOptions{})
 	if err != nil {
-		log.Print(err)
+		errorMsg := fmt.Sprintf("Unable to get user settings configmap: %v", err)
+		log.Println(errorMsg)
+		return nil, errors.New(errorMsg)
 	}
 	vcsIntegrationEnabled, err := strconv.ParseBool(userSettings.Data["vcs_integration_enabled"])
 	if err != nil {
-		log.Print(err)
+		errorMsg := fmt.Sprint(err)
+		log.Println(errorMsg)
+		return nil, errors.New(errorMsg)
 	}
 	perfIntegrationEnabled, err := strconv.ParseBool(userSettings.Data["perf_integration_enabled"])
 	if err != nil {
-		log.Print(err)
+		errorMsg := fmt.Sprint(err)
+		log.Println(errorMsg)
+		return nil, errors.New(errorMsg)
 	}
-	return models.UserSettings{
+	return &models.UserSettings{
 		DnsWildcard:            userSettings.Data["dns_wildcard"],
 		EdpName:                userSettings.Data["edp_name"],
 		EdpVersion:             userSettings.Data["edp_version"],
@@ -52,101 +42,108 @@ func GetUserSettingsConfigMap(clientSet ClientSet.OpenshiftClientSet, namespace 
 		VcsIntegrationEnabled:  vcsIntegrationEnabled,
 		VcsSshPort:             userSettings.Data["vcs_ssh_port"],
 		VcsToolName:            models.VCSTool(userSettings.Data["vcs_tool_name"]),
-	}
+	}, nil
 }
 
-func GetGerritSettingsConfigMap(clientSet ClientSet.OpenshiftClientSet, namespace string) models.GerritSettings {
+func GetGerritSettingsConfigMap(clientSet ClientSet.OpenshiftClientSet, namespace string) (*models.GerritSettings, error) {
 	gerritSettings, err := clientSet.CoreClient.ConfigMaps(namespace).Get("gerrit", metav1.GetOptions{})
 	if err != nil {
-		log.Fatal(err)
+		errorMsg := fmt.Sprintf("Unable to get Gerrit settings configmap: %v", err)
+		log.Println(errorMsg)
+		return nil, errors.New(errorMsg)
 	}
-	return models.GerritSettings{
+	return &models.GerritSettings{
 		Config:            gerritSettings.Data["config"],
 		ReplicationConfig: gerritSettings.Data["replication.config"],
 		SshPort:           gerritSettings.Data["sshPort"],
-	}
+	}, nil
 }
 
-func GetJenkinsCreds(clientSet ClientSet.OpenshiftClientSet, namespace string) (string, string) {
+func GetJenkinsCreds(clientSet ClientSet.OpenshiftClientSet, namespace string) (string, string, error) {
 	jenkinsTokenSecret, err := clientSet.CoreClient.Secrets(namespace).Get("jenkins-token", metav1.GetOptions{})
 	if err != nil {
-		log.Fatal(err)
+		errorMsg := fmt.Sprint(err)
+		log.Println(errorMsg)
+		return "", "", errors.New(errorMsg)
 	}
-	return string(jenkinsTokenSecret.Data["token"]), string(jenkinsTokenSecret.Data["username"])
+	return string(jenkinsTokenSecret.Data["token"]), string(jenkinsTokenSecret.Data["username"]), nil
 }
 
-func GetVcsCredentials(clientSet ClientSet.OpenshiftClientSet, namespace string) (string, string) {
+func GetVcsCredentials(clientSet ClientSet.OpenshiftClientSet, namespace string) (string, string, error) {
 	vcsAutouserSecret, err := clientSet.CoreClient.Secrets(namespace).Get("vcs-autouser", metav1.GetOptions{})
 	if err != nil {
-		log.Fatal(err)
+		errorMsg := fmt.Sprintf("Unable to get VCS credentials: %v", err)
+		log.Println(errorMsg)
+		return "", "", errors.New(errorMsg)
 	}
-	return string(vcsAutouserSecret.Data["ssh-privatekey"]), string(vcsAutouserSecret.Data["username"])
+	return string(vcsAutouserSecret.Data["ssh-privatekey"]), string(vcsAutouserSecret.Data["username"]), nil
 }
 
-func GetGerritCredentials(clientSet ClientSet.OpenshiftClientSet, namespace string) (string, string) {
+func GetGerritCredentials(clientSet ClientSet.OpenshiftClientSet, namespace string) (string, string, error) {
 	vcsAutouserSecret, err := clientSet.CoreClient.Secrets(namespace).Get("gerrit-project-creator", metav1.GetOptions{})
 	if err != nil {
-		log.Fatal(err)
+		errorMsg := fmt.Sprintf("Unable to get gerrit credentials: %v", err)
+		log.Println(errorMsg)
+		return "", "", errors.New(errorMsg)
 	}
-	return string(vcsAutouserSecret.Data["id_rsa"]), string(vcsAutouserSecret.Data["id_rsa.pub"])
+	return string(vcsAutouserSecret.Data["id_rsa"]), string(vcsAutouserSecret.Data["id_rsa.pub"]), nil
 }
 
-func CreateGerritPrivateKey(privateKey string, path string) {
+func CreateGerritPrivateKey(privateKey string, path string) error {
 	err := ioutil.WriteFile(path, []byte(privateKey), 0400)
 	if err != nil {
-		log.Printf("Unable to write the key: %v", err)
+		errorMsg := fmt.Sprintf("Unable to write the Gerrit ssh key: %v", err)
+		log.Println(errorMsg)
+		return errors.New(errorMsg)
 	}
+	return nil
 }
 
-func CreateSshConfig(appSettings models.AppSettings) {
+func CreateSshConfig(appSettings models.AppSettings) error {
 	if _, err := os.Stat("~/.ssh"); os.IsNotExist(err) {
-		os.Mkdir("~/.ssh", 0644)
+		err := os.Mkdir("~/.ssh", 0644)
+		if err != nil {
+			return err
+		}
 	}
 
 	workDir, err := os.Getwd()
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	tmpl := template.Must(template.New("config.tmpl").ParseFiles(workDir + "/templates/ssh/config.tmpl"))
 	f, err := os.Create("~/.ssh/config")
 	if err != nil {
 		log.Printf("Cannot write SSH config to the file: %v", err)
+		return err
 	}
 	err = tmpl.Execute(f, appSettings)
 	if err != nil {
-		log.Print("execute: ", err)
-		return
+		log.Printf("execute: %v", err)
+		return err
 	}
 	defer f.Close()
+	return nil
 }
 
-func IsFrameworkMultiModule(name string) bool {
-	regexpMultiModuleFramework := regexp.MustCompile(`\(([^)]+)\)`)
-	match := regexpMultiModuleFramework.FindAllStringSubmatch(name, -1)
-	if match == nil {
-		return false
-	} else {
-		return true
-	}
-}
-
-func AddFrameworkMultiModulePostfix(name string) string {
-	regexpMultiModuleFramework := regexp.MustCompile(`\(([^)]+)\)`)
-	return regexpMultiModuleFramework.ReplaceAllString(strings.ToLower(name), "-multimodule")
-}
-
-func GetVcsBasicAuthConfig(clientSet ClientSet.OpenshiftClientSet, namespace string, secretName string) (string, string) {
+func GetVcsBasicAuthConfig(clientSet ClientSet.OpenshiftClientSet, namespace string, secretName string) (string, string, error) {
 	vcsCredentialsSecret, err := clientSet.CoreClient.Secrets(namespace).Get(secretName, metav1.GetOptions{})
-	if errors.IsNotFound(err) {
-		return "", ""
+	if k8serrors.IsNotFound(err) {
+		return "", "", nil
 	}
-	DeleteTempVcsSecret(clientSet, namespace, secretName)
-	return string(vcsCredentialsSecret.Data["username"]), string(vcsCredentialsSecret.Data["password"])
+	err = DeleteTempVcsSecret(clientSet, namespace, secretName)
+	if err != nil {
+		return "", "", err
+	}
+	return string(vcsCredentialsSecret.Data["username"]), string(vcsCredentialsSecret.Data["password"]), nil
 }
 
-func DeleteTempVcsSecret(clientSet ClientSet.OpenshiftClientSet, namespace string, secretName string) {
+func DeleteTempVcsSecret(clientSet ClientSet.OpenshiftClientSet, namespace string, secretName string) error {
 	err := clientSet.CoreClient.Secrets(namespace).Delete(secretName, &metav1.DeleteOptions{})
-	if err != nil {
-		log.Fatal(err)
+	if err != nil && k8serrors.IsNotFound(err) {
+		errorMsg := fmt.Sprintf("Unable to delete temp secret: %v", err)
+		log.Println(errorMsg)
+		return errors.New(errorMsg)
 	}
+	return nil
 }

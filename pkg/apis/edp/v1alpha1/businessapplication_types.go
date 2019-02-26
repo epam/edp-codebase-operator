@@ -1,6 +1,7 @@
 package v1alpha1
 
 import (
+	"business-app-handler-controller/models"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"time"
 )
@@ -10,8 +11,8 @@ import (
 
 // BusinessApplicationSpec defines the desired state of BusinessApplication
 // +k8s:openapi-gen=true
-type Git struct {
-	Url      string `json:"url"`
+type Repository struct {
+	Url string `json:"url"`
 }
 
 type Route struct {
@@ -30,13 +31,13 @@ type BusinessApplicationSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html
-	Lang      string    `json:"lang"`
-	Framework string    `json:"framework"`
-	BuildTool string    `json:"buildTool"`
-	Strategy  string    `json:"strategy"`
-	Git       Git       `json:"git"`
-	Route     *Route    `json:"route"`
-	Database  *Database `json:"database"`
+	Lang       string          `json:"lang"`
+	Framework  string          `json:"framework"`
+	BuildTool  string          `json:"buildTool"`
+	Strategy   models.Strategy `json:"strategy"`
+	Repository *Repository     `json:"git"`
+	Route      *Route          `json:"route"`
+	Database   *Database       `json:"database"`
 }
 
 // BusinessApplicationStatus defines the observed state of BusinessApplication

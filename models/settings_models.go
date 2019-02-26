@@ -34,12 +34,17 @@ type UserSettings struct {
 
 type VCSTool string
 
-const (
-	GitLab VCSTool = "gitlab"
-)
-
 type GerritSettings struct {
 	Config            string `json:"config"`
 	ReplicationConfig string `json:"replication_config"`
 	SshPort           string `json:"ssh_port"`
 }
+
+type Strategy string
+
+const (
+	Create    Strategy = "create"
+	Clone     Strategy = "clone"
+	BitBucket VCSTool  = "bitbucket"
+	GitLab    VCSTool  = "gitlab"
+)
