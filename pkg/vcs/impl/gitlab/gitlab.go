@@ -13,6 +13,74 @@ type GitLab struct {
 	Client resty.Client
 }
 
+func (gitlab GitLab) CheckProjectExist(groupPath, projectName string) (*bool, error) {
+	projectPath := fmt.Sprintf("%v/%v", groupPath, projectName)
+	resp, err := gitlab.Client.R().
+		SetQueryParam("simple", "true").
+		SetPathParams(map[string]string{
+			"project-path": url.PathEscape(projectPath),
+		}).
+		Get("/api/v4/projects/{project-path}")
+	if err != nil {
+		errorMsg := fmt.Sprintf("Unable to check project: %v", err)
+		log.Println(errorMsg)
+		return nil, errors.New(errorMsg)
+	}
+	if resp.StatusCode() == 401 {
+		errorMsg := "unauthorized"
+		log.Println(errorMsg)
+		return nil, errors.New(errorMsg)
+	}
+	exist := resp.StatusCode() == 200
+	return &exist, nil
+}
+
+func (gitlab GitLab) CreateProject(groupPath, projectName string) (string, error) {
+	id, err := gitlab.GetGroupIdByName(groupPath)
+	if err != nil {
+		return "", err
+	}
+	var result map[string]interface{}
+	resp, err := gitlab.Client.R().
+		SetResult(&result).
+		SetQueryParams(map[string]string{
+			"name":         projectName,
+			"namespace_id": id,
+		}).
+		Post("/api/v4/projects")
+	if err != nil {
+		errorMsg := fmt.Sprintf("Unable to create project in GitLab: %v", err)
+		log.Println(errorMsg)
+		return "", errors.New(errorMsg)
+	}
+	if resp.IsError() {
+		errorMsg := fmt.Sprintf(resp.String())
+		log.Println(errorMsg)
+		return "", errors.New(errorMsg)
+	}
+	return simpleConvertFloatToString(result["id"].(float64)), nil
+}
+
+func (gitlab *GitLab) GetRepositorySshUrl(groupPath, projectName string) (string, error) {
+	projectPath := fmt.Sprintf("%v/%v", groupPath, projectName)
+	var result map[string]interface{}
+	_, err := gitlab.Client.R().
+		SetResult(&result).
+		SetQueryParam("simple", "true").
+		SetPathParams(map[string]string{
+			"project-path": url.PathEscape(projectPath),
+		}).
+		Get("/api/v4/projects/{project-path}")
+	if err != nil {
+		errorMsg := fmt.Sprintf("Unable get repository SSH URL: %v", err)
+		log.Println(errorMsg)
+		return "", errors.New(errorMsg)
+	}
+	sshUrl := result["ssh_url_to_repo"].(string)
+
+	return sshUrl, nil
+}
+
 func (gitlab *GitLab) Init(url string, username string, password string) error {
 	client := resty.New()
 	client.SetRetryCount(3)
@@ -61,27 +129,6 @@ func tryToLoginWithPass(url, user, pass string) (*string, error) {
 	return &token, nil
 }
 
-func (gitlab GitLab) CheckProjectExist(projectPath string) (*bool, error) {
-	resp, err := gitlab.Client.R().
-		SetQueryParam("simple", "true").
-		SetPathParams(map[string]string{
-			"project-path": url.PathEscape(projectPath),
-		}).
-		Get("/api/v4/projects/{project-path}")
-	if err != nil {
-		errorMsg := fmt.Sprintf("Unable to check project: %v", err)
-		log.Println(errorMsg)
-		return nil, errors.New(errorMsg)
-	}
-	if resp.StatusCode() == 401 {
-		errorMsg := "unauthorized"
-		log.Println(errorMsg)
-		return nil, errors.New(errorMsg)
-	}
-	exist := resp.StatusCode() == 200
-	return &exist, nil
-}
-
 func (gitlab GitLab) GetGroupIdByName(groupName string) (string, error) {
 	var result map[string]interface{}
 	resp, err := gitlab.Client.R().
@@ -99,28 +146,6 @@ func (gitlab GitLab) GetGroupIdByName(groupName string) (string, error) {
 	if resp.IsError() {
 		log.Println(resp.Status())
 		return "", errors.New(resp.Status())
-	}
-	return simpleConvertFloatToString(result["id"].(float64)), nil
-}
-
-func (gitlab GitLab) CreateProject(vcsProjectName, vcsGroupId string) (string, error) {
-	var result map[string]interface{}
-	resp, err := gitlab.Client.R().
-		SetResult(&result).
-		SetQueryParams(map[string]string{
-			"name":         vcsProjectName,
-			"namespace_id": vcsGroupId,
-		}).
-		Post("/api/v4/projects")
-	if err != nil {
-		errorMsg := fmt.Sprintf("Unable to create project in GitLab: %v", err)
-		log.Println(errorMsg)
-		return "", errors.New(errorMsg)
-	}
-	if resp.IsError() {
-		errorMsg := fmt.Sprintf(resp.String())
-		log.Println(errorMsg)
-		return "", errors.New(errorMsg)
 	}
 	return simpleConvertFloatToString(result["id"].(float64)), nil
 }
@@ -145,23 +170,4 @@ func (gitlab GitLab) DeleteProject(projectId string) error {
 		return errors.New(resp.Status())
 	}
 	return nil
-}
-
-func (gitlab *GitLab) GetRepositorySshUrl(projectPath string) (string, error) {
-	var result map[string]interface{}
-	_, err := gitlab.Client.R().
-		SetResult(&result).
-		SetQueryParam("simple", "true").
-		SetPathParams(map[string]string{
-			"project-path": url.PathEscape(projectPath),
-		}).
-		Get("/api/v4/projects/{project-path}")
-	if err != nil {
-		errorMsg := fmt.Sprintf("Unable get repository SSH URL: %v", err)
-		log.Println(errorMsg)
-		return "", errors.New(errorMsg)
-	}
-	sshUrl := result["ssh_url_to_repo"].(string)
-
-	return sshUrl, nil
 }

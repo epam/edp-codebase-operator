@@ -10,7 +10,6 @@ type gitlab struct {
 	user                      string
 	pass                      string
 	token                     string
-	project                   string
 	group                     string
 	groupId                   string
 	existingProjectInGroup    string
@@ -23,7 +22,6 @@ func createGitlab() gitlab {
 		user:                      os.Getenv("TEST_GITLAB_USERNAME"),
 		pass:                      os.Getenv("TEST_GITLAB_PASSWORD"),
 		token:                     os.Getenv("TEST_GITLAB_TOKEN"),
-		project:                   os.Getenv("TEST_GITLAB_PROJECT"),
 		group:                     os.Getenv("TEST_GITLAB_GROUP"),
 		groupId:                   os.Getenv("TEST_GITLAB_GROUP_ID"),
 		existingProjectInGroup:    os.Getenv("TEST_EXISTING_PROJECT_IN_GROUP"),
@@ -36,7 +34,7 @@ func TestGitLab_CheckProjectExist_ValidPass_ExistingProject(t *testing.T) {
 	client := GitLab{}
 	_ = client.Init(gitlab.url, gitlab.user, gitlab.pass)
 
-	res, err := client.CheckProjectExist(gitlab.project)
+	res, err := client.CheckProjectExist(gitlab.group, gitlab.existingProjectInGroup)
 
 	if err != nil {
 		t.Error("Actual: error. Expected: true")
@@ -51,7 +49,7 @@ func TestGitLab_CheckProjectExist_ValidToken_ExistingProject(t *testing.T) {
 	client := GitLab{}
 	_ = client.Init(gitlab.url, gitlab.user, gitlab.token)
 
-	res, err := client.CheckProjectExist(gitlab.project)
+	res, err := client.CheckProjectExist(gitlab.group, gitlab.existingProjectInGroup)
 
 	if err != nil {
 		t.Error("Actual: error. Expected: true")
@@ -66,7 +64,7 @@ func TestGitLab_CheckProjectExist_InvalidPass_ExistingProject(t *testing.T) {
 	client := GitLab{}
 	_ = client.Init(gitlab.url, gitlab.user, "invalid")
 
-	res, err := client.CheckProjectExist(gitlab.project)
+	res, err := client.CheckProjectExist(gitlab.group, gitlab.existingProjectInGroup)
 
 	if err == nil {
 		t.Errorf("Actual: %v. Expected: error", &res)
@@ -78,7 +76,7 @@ func TestGitLab_CheckProjectExist_ValidPass_NonExistingProject(t *testing.T) {
 	client := GitLab{}
 	_ = client.Init(gitlab.url, gitlab.user, gitlab.pass)
 
-	res, err := client.CheckProjectExist("non/existing/project")
+	res, err := client.CheckProjectExist(gitlab.group, "invalid")
 
 	if err != nil {
 		t.Error("Actual: error. Expected: false")
@@ -135,7 +133,7 @@ func TestGitLab_CreateProject_ValidPass_NonExistingProject_ExistingGroup(t *test
 	client := GitLab{}
 	_ = client.Init(gitlab.url, gitlab.user, gitlab.pass)
 
-	id, err := client.CreateProject(gitlab.nonExistingProjectInGroup, gitlab.groupId)
+	id, err := client.CreateProject(gitlab.group, gitlab.nonExistingProjectInGroup)
 
 	if err != nil {
 		t.Errorf("Actual: error. Expected: created project")
@@ -149,7 +147,7 @@ func TestGitLab_CreateProject_ValidPass_ExistingProject_ExistingGroup(t *testing
 	client := GitLab{}
 	_ = client.Init(gitlab.url, gitlab.user, gitlab.pass)
 
-	_, err := client.CreateProject(gitlab.existingProjectInGroup, gitlab.groupId)
+	_, err := client.CreateProject(gitlab.group, gitlab.existingProjectInGroup)
 
 	if err == nil {
 		t.Errorf("Actual: created project. Expected: error")
@@ -161,7 +159,7 @@ func TestGitLab_CreateProject_ValidPass_NonExistingProject_NonExistingGroup(t *t
 	client := GitLab{}
 	_ = client.Init(gitlab.url, gitlab.user, gitlab.pass)
 
-	_, err := client.CreateProject(gitlab.nonExistingProjectInGroup, "777777")
+	_, err := client.CreateProject("non-existing", "777777")
 
 	if err == nil {
 		t.Errorf("Actual: created project. Expected: error")
@@ -173,7 +171,7 @@ func TestGitLab_CreateProject_ValidToken_NonExistingProject_ExistingGroup(t *tes
 	client := GitLab{}
 	_ = client.Init(gitlab.url, gitlab.user, gitlab.token)
 
-	id, err := client.CreateProject(gitlab.nonExistingProjectInGroup, gitlab.groupId)
+	id, err := client.CreateProject(gitlab.group, gitlab.nonExistingProjectInGroup)
 
 	if err != nil {
 		t.Errorf("Actual: error. Expected: created project")
@@ -187,7 +185,7 @@ func TestGitLab_CreateProject_InValidToken_NonExistingProject_ExistingGroup(t *t
 	client := GitLab{}
 	_ = client.Init(gitlab.url, gitlab.user, "invalid")
 
-	id, err := client.CreateProject(gitlab.nonExistingProjectInGroup, gitlab.groupId)
+	id, err := client.CreateProject(gitlab.group, gitlab.nonExistingProjectInGroup)
 
 	if err == nil {
 		t.Errorf("Actual: %v. Expected: error", id)

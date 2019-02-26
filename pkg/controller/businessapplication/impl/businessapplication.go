@@ -29,15 +29,38 @@ type BusinessApplication struct {
 
 func (businessApplication BusinessApplication) Create() {
 	if businessApplication.CustomResource.Status.Status != models.StatusInit {
+		log.Println("Application status is not init. Skipped")
 		return
 	}
+
+	log.Println("Create application...")
+
 	businessApplication.CustomResource.Status.Status = models.StatusInProgress
-	_ = businessApplication.Client.Update(context.TODO(), businessApplication.CustomResource)
+	err := businessApplication.Client.Update(context.TODO(), businessApplication.CustomResource)
+	if err != nil {
+		log.Printf("Error has been occurred in status update: %v", err)
+		return
+	}
+	log.Println("Status of CR has been changed to 'in progress'")
 
 	clientSet := ClientSet.CreateOpenshiftClients()
+	log.Println("Client set has been created")
+
 	appSettings, err := initAppSettings(businessApplication, clientSet)
+	if err != nil {
+		log.Printf("Error has been occurred in init app settings: %v", err)
+		rollback(businessApplication)
+		return
+	}
+	log.Println("App settings has been retrieved")
 
 	err = gerritConfiguration(appSettings, businessApplication, clientSet)
+	if err != nil {
+		log.Printf("Error has been occurred in gerrit configuration: %v", err)
+		rollback(businessApplication)
+		return
+	}
+	log.Println("Gerrit has been configured")
 
 	err = triggerJobProvisioning(businessApplication, *appSettings)
 	if err != nil {
@@ -347,7 +370,7 @@ func createProjectInVcs(appSettings *models.AppSettings, application *BusinessAp
 		return err
 	}
 
-	projectExist, err := vcsTool.CheckProjectExist(appSettings.VcsProjectPath)
+	projectExist, err := vcsTool.CheckProjectExist(appSettings.ProjectVcsGroupPath, appSettings.Name)
 	if err != nil {
 		return err
 	}
@@ -355,17 +378,13 @@ func createProjectInVcs(appSettings *models.AppSettings, application *BusinessAp
 		return errors.New("Couldn't copy project to your VCS group. Repository %s is already exists in " +
 			application.CustomResource.Name + "" + appSettings.ProjectVcsGroupPath)
 	} else {
-		groupId, err := vcsTool.GetGroupIdByName(appSettings.ProjectVcsGroupPath)
+		_, err = vcsTool.CreateProject(appSettings.ProjectVcsGroupPath, appSettings.Name)
 		if err != nil {
 			return err
 		}
-		_, err = vcsTool.CreateProject(application.CustomResource.Name, groupId)
-		if err != nil {
-			return err
-		}
-		appSettings.VcsSshUrl, err = vcsTool.GetRepositorySshUrl(appSettings.VcsProjectPath)
+		appSettings.VcsSshUrl, err = vcsTool.GetRepositorySshUrl(appSettings.VcsProjectPath, appSettings.Name)
 	}
-	return nil
+	return err
 }
 
 func setRepositoryUrl(appSettings *models.AppSettings, application *BusinessApplication) error {
