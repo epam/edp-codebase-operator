@@ -24,10 +24,10 @@ import (
  */
 
 var allowedAppSettings = map[string][]string{
-"add_repo_strategy": {"create", "clone"},
-"language":   {"java", "dotnet", "javascript"},
-"build_tool": {"maven", "gradle", "dotnet", "npm"},
-"framework": {"springboot", "springboot(multi-module)", "netcore", "react"},
+	"add_repo_strategy": {"create", "clone"},
+	"language":          {"java", "dotnet", "javascript"},
+	"build_tool":        {"maven", "gradle", "dotnet", "npm"},
+	"framework":         {"springboot", "springboot(multi-module)", "netcore", "react"},
 }
 
 func containSettings(slice []string, value string) bool {
@@ -39,15 +39,15 @@ func containSettings(slice []string, value string) bool {
 	return false
 }
 
- type BusinessApplication interface {
- 	Create()
- 	Update()
- 	Delete()
- }
+type BusinessApplication interface {
+	Create()
+	Update()
+	Delete()
+}
 
- func getBusinessApplication(cr *edpv1alpha1.BusinessApplication, r *ReconcileBusinessApplication) (BusinessApplication, error) {
- 	if !(containSettings(allowedAppSettings["add_repo_strategy"], string(cr.Spec.Strategy))) {
- 		return nil, errors.New("Provided unsupported add repository strategy - " + string(cr.Spec.Strategy))
+func getBusinessApplication(cr *edpv1alpha1.BusinessApplication, r *ReconcileBusinessApplication) (BusinessApplication, error) {
+	if !(containSettings(allowedAppSettings["add_repo_strategy"], string(cr.Spec.Strategy))) {
+		return nil, errors.New("Provided unsupported add repository strategy - " + string(cr.Spec.Strategy))
 	} else if !(containSettings(allowedAppSettings["language"], cr.Spec.Lang)) {
 		return nil, errors.New("Provided unsupported language - " + cr.Spec.Lang)
 	} else if !(containSettings(allowedAppSettings["build_tool"], cr.Spec.BuildTool)) {
@@ -55,13 +55,13 @@ func containSettings(slice []string, value string) bool {
 	} else if !(containSettings(allowedAppSettings["framework"], cr.Spec.Framework)) {
 		return nil, errors.New("Provided unsupported framework - " + cr.Spec.Framework)
 	} else {
- 		return impl.BusinessApplication{
- 			cr,
- 			r.client,
- 			r.scheme,
+		return impl.BusinessApplication{
+			cr,
+			r.client,
+			r.scheme,
 		}, nil
-	 }
- }
+	}
+}
 
 // Add creates a new BusinessApplication Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
@@ -129,6 +129,7 @@ func (r *ReconcileBusinessApplication) Reconcile(request reconcile.Request) (rec
 		log.Fatalf("[ERROR] Cannot get Business Application %s. Reason: %s", request.Name, err)
 	}
 	businessApplication.Create()
+	_ = r.client.Update(context.TODO(), instance)
 
 	log.Printf("Reconciling BusinessApplication %s/%s has been finished", request.Namespace, request.Name)
 

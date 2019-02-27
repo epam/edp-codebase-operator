@@ -48,3 +48,10 @@ const (
 	BitBucket VCSTool  = "bitbucket"
 	GitLab    VCSTool  = "gitlab"
 )
+
+const (
+	StatusInit     = "initialized"
+	StatusFailed   = "failed"
+	StatusReopened = "reopened"
+	StatusFinished = "created"
+)

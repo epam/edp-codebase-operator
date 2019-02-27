@@ -8,9 +8,9 @@ import (
 	"business-app-handler-controller/pkg/perf"
 	"business-app-handler-controller/pkg/settings"
 	"business-app-handler-controller/pkg/vcs"
+	"errors"
 	"fmt"
 	"github.com/bndr/gojenkins"
-	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"log"
 	"net/url"
@@ -26,6 +26,10 @@ type BusinessApplication struct {
 }
 
 func (businessApplication BusinessApplication) Create() {
+	if businessApplication.CustomResource.Status.Status != models.StatusInit {
+		return
+	}
+
 	appSettings := models.AppSettings{}
 	appSettings.BasicPatternUrl = "https://github.com/epmd-edp"
 	clientSet := ClientSet.CreateOpenshiftClients()
@@ -83,18 +87,23 @@ func (businessApplication BusinessApplication) Create() {
 
 	err = triggerJobProvisioning(businessApplication, appSettings)
 	if err != nil {
-		rollback()
+		rollback(businessApplication)
+		return
 	}
 
 	err = trySetupPerf(businessApplication, clientSet, appSettings)
 
 	if err != nil {
-		rollback()
+		rollback(businessApplication)
+		return
 	}
+
+	businessApplication.CustomResource.Status.Available = true
+	businessApplication.CustomResource.Status.Status = models.StatusFinished
 }
 
-func rollback() {
-	//TODO add logic
+func rollback(businessApplication BusinessApplication) {
+	businessApplication.CustomResource.Status.Status = models.StatusFailed
 }
 
 func triggerJobProvisioning(app BusinessApplication, appSettings models.AppSettings) error {
