@@ -9,6 +9,7 @@ import (
 	"business-app-handler-controller/pkg/settings"
 	"business-app-handler-controller/pkg/vcs"
 	"fmt"
+	"github.com/bndr/gojenkins"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"log"
@@ -80,6 +81,11 @@ func (businessApplication BusinessApplication) Create() {
 		log.Printf("Cannot access provided git repository: %s", businessApplication.CustomResource.Spec.Repository.Url)
 	}
 
+	err = triggerJobProvisioning(businessApplication, appSettings)
+	if err != nil {
+		rollback()
+	}
+
 	err = trySetupPerf(businessApplication, clientSet, appSettings)
 
 	if err != nil {
@@ -89,6 +95,24 @@ func (businessApplication BusinessApplication) Create() {
 
 func rollback() {
 	//TODO add logic
+}
+
+func triggerJobProvisioning(app BusinessApplication, appSettings models.AppSettings) error {
+	jenkinsUrl := fmt.Sprintf("http://jenkins.%s:8080", appSettings.CicdNamespace)
+	jenkins := gojenkins.CreateJenkins(nil, jenkinsUrl, appSettings.JenkinsUsername, appSettings.JenkinsToken)
+
+	_, err := jenkins.Init()
+	if err != nil {
+		return err
+	}
+
+	_, err = jenkins.BuildJob("Job-provisioning", map[string]string{
+		"PARAM":      "true",
+		"NAME":       app.CustomResource.Name,
+		"TYPE":       "app",
+		"BUILD_TOOL": app.CustomResource.Spec.BuildTool,
+	})
+	return err
 }
 
 func trySetupPerf(app BusinessApplication, set *ClientSet.OpenshiftClientSet, appSettings models.AppSettings) error {
