@@ -1,5 +1,5 @@
-hash: cff6e53b24dc42fae26106d8c16acd9489f784fb33ee25b5a7ace0a739dd8e9d
-updated: 2019-02-25T19:17:04.9053723+02:00
+hash: 90f2ee63932fb2254466c64ad86563a355e2e14e82b55b15cf64605db3bb1aa7
+updated: 2019-03-05T10:58:36.6189438+02:00
 imports:
 - name: cloud.google.com/go
   version: 3b1ae45394a234c385be014e9a488f2bb6eef821
@@ -12,6 +12,8 @@ imports:
   version: 3a771d992973f24aa725d07868b467d1ddfceafb
   subpackages:
   - quantile
+- name: github.com/bndr/gojenkins
+  version: 668c6a1cb16b659ece2e90506e643ea16abc712c
 - name: github.com/davecgh/go-spew
   version: 782f4967f2dc4564575ca782fe2d04090b5faca8
   subpackages:
@@ -40,7 +42,7 @@ imports:
 - name: github.com/go-openapi/spec
   version: 5b6cdde3200976e3ecceb2868706ee39b6aff3e4
 - name: github.com/go-openapi/swag
-  version: 1d0bd113de87027671077d3c71eb3ac5d7dbba72
+  version: f3f9494671f93fcff853e3c6e9e948b3eb71e590
 - name: github.com/gogo/protobuf
   version: 342cbe0a04158f6dcb03ca0079991a51a4248c02
   subpackages:
@@ -128,13 +130,13 @@ imports:
   subpackages:
   - go
 - name: github.com/prometheus/common
-  version: 7a3416fd1f41341905f138746c51a5092e7ddf7a
+  version: bf857faf208676b0294bd49959aa34c8d98163ed
   subpackages:
   - expfmt
   - internal/bitbucket.org/ww/goautoneg
   - model
 - name: github.com/prometheus/procfs
-  version: e4d4a2206da023361ed100d85c5f2cf9c8364e9f
+  version: bbced9601137e764853b2fad7ec3e2dc4c504e02
   subpackages:
   - internal/util
   - iostats
@@ -199,6 +201,7 @@ imports:
   - http2/hpack
   - idna
   - lex/httplex
+  - publicsuffix
 - name: golang.org/x/oauth2
   version: a6bd8cefa1811bd24b86f8902872e4e8225f74c4
   subpackages:
@@ -243,6 +246,8 @@ imports:
   - urlfetch
 - name: gopkg.in/inf.v0
   version: 3887ee99ecf07df5b447e9b00d9c0b2adaa9f3e4
+- name: gopkg.in/resty.v1
+  version: 383acc8a8b687098ee02168c0335a43dfee701f0
 - name: gopkg.in/src-d/go-billy.v4
   version: 982626487c60a5252e7d0b695ca23fb0fa2fd670
   subpackages:

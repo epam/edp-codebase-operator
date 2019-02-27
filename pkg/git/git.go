@@ -25,3 +25,17 @@ func CheckPermissions(repo string, user string, pass string) (accessible bool) {
 	}
 	return len(rfs) != 0
 }
+
+func CloneRepo(repo string, user string, pass string, destination string) error {
+	_, err := git.PlainClone(destination, true, &git.CloneOptions{
+		URL: repo,
+		Auth: &http.BasicAuth{
+			Username: user,
+			Password: pass,
+		}})
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+	return nil
+}

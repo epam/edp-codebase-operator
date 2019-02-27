@@ -3,6 +3,7 @@ package impl
 import (
 	"business-app-handler-controller/models"
 	edpv1alpha1 "business-app-handler-controller/pkg/apis/edp/v1alpha1"
+	"business-app-handler-controller/pkg/gerrit"
 	"business-app-handler-controller/pkg/git"
 	ClientSet "business-app-handler-controller/pkg/openshift"
 	"business-app-handler-controller/pkg/perf"
@@ -33,18 +34,47 @@ func (businessApplication BusinessApplication) Create() {
 	businessApplication.CustomResource.Status.Status = models.StatusInProgress
 	_ = businessApplication.Client.Update(context.TODO(), businessApplication.CustomResource)
 
+	clientSet := ClientSet.CreateOpenshiftClients()
+	appSettings, err := initAppSettings(businessApplication, clientSet)
+
+	err = gerritConfiguration(appSettings, businessApplication, clientSet)
+
+	err = triggerJobProvisioning(businessApplication, *appSettings)
+	if err != nil {
+		rollback(businessApplication)
+		return
+	}
+
+	err = trySetupPerf(businessApplication, clientSet, *appSettings)
+
+	if err != nil {
+		rollback(businessApplication)
+		return
+	}
+
+	businessApplication.CustomResource.Status.Available = true
+	businessApplication.CustomResource.Status.Status = models.StatusFinished
+}
+
+func initAppSettings(businessApplication BusinessApplication, clientSet *ClientSet.OpenshiftClientSet) (*models.AppSettings, error) {
 	appSettings := models.AppSettings{}
 	appSettings.BasicPatternUrl = "https://github.com/epmd-edp"
-	clientSet := ClientSet.CreateOpenshiftClients()
+	appSettings.Name = businessApplication.CustomResource.Name
 
 	log.Printf("Retrieving user settings from config map...")
 	appSettings.CicdNamespace = businessApplication.CustomResource.Namespace
+	appSettings.GerritHost = fmt.Sprintf("gerrit.%v", appSettings.CicdNamespace)
 	appSettings.WorkDir = "/home/edp"
-	appSettings.GerritKeyPath = appSettings.WorkDir + "/gerrit-private.key"
+	appSettings.GerritKeyPath = fmt.Sprintf("%v/gerrit-private.key", appSettings.WorkDir)
 
 	userSettings, err := settings.GetUserSettingsConfigMap(*clientSet, businessApplication.CustomResource.Namespace)
+	if err != nil {
+		return nil, err
+	}
 	gerritSettings, err := settings.GetGerritSettingsConfigMap(*clientSet, businessApplication.CustomResource.Namespace)
-
+	if err != nil {
+		return nil, err
+	}
 	appSettings.UserSettings = *userSettings
 	appSettings.GerritSettings = *gerritSettings
 	appSettings.JenkinsToken, appSettings.JenkinsUsername, err = settings.GetJenkinsCreds(*clientSet,
@@ -72,37 +102,7 @@ func (businessApplication BusinessApplication) Create() {
 
 	log.Printf("Retrieving settings has been finished.")
 
-	_ = settings.CreateGerritPrivateKey(appSettings.GerritPrivateKey, appSettings.GerritKeyPath)
-	err = settings.CreateSshConfig(appSettings)
-
-	err = setRepositoryUrl(&appSettings, &businessApplication)
-
-	repositoryCredentialsSecretName := "repository-application-" + businessApplication.CustomResource.Name + "-temp"
-	repositoryUsername, repositoryPassword, err := settings.GetVcsBasicAuthConfig(*clientSet,
-		businessApplication.CustomResource.Namespace, repositoryCredentialsSecretName)
-
-	isRepositoryAccessible := git.CheckPermissions(appSettings.RepositoryUrl, repositoryUsername, repositoryPassword)
-	if isRepositoryAccessible {
-		err = tryCreateProjectInVcs(&appSettings, &businessApplication, *clientSet)
-	} else {
-		log.Printf("Cannot access provided git repository: %s", businessApplication.CustomResource.Spec.Repository.Url)
-	}
-
-	err = triggerJobProvisioning(businessApplication, appSettings)
-	if err != nil {
-		rollback(businessApplication)
-		return
-	}
-
-	err = trySetupPerf(businessApplication, clientSet, appSettings)
-
-	if err != nil {
-		rollback(businessApplication)
-		return
-	}
-
-	businessApplication.CustomResource.Status.Available = true
-	businessApplication.CustomResource.Status.Status = models.StatusFinished
+	return &appSettings, nil
 }
 
 func rollback(businessApplication BusinessApplication) {
@@ -125,6 +125,67 @@ func triggerJobProvisioning(app BusinessApplication, appSettings models.AppSetti
 		"BUILD_TOOL": app.CustomResource.Spec.BuildTool,
 	})
 	return err
+}
+
+func gerritConfiguration(appSettings *models.AppSettings, businessApplication BusinessApplication,
+	clientSet *ClientSet.OpenshiftClientSet) error {
+	_ = settings.CreateGerritPrivateKey(appSettings.GerritPrivateKey, appSettings.GerritKeyPath)
+	err := settings.CreateSshConfig(*appSettings)
+
+	err = setRepositoryUrl(appSettings, &businessApplication)
+
+	repositoryCredentialsSecretName := fmt.Sprintf("repository-application-%v-temp", businessApplication.CustomResource.Name)
+	repositoryUsername, repositoryPassword, err := settings.GetVcsBasicAuthConfig(*clientSet,
+		businessApplication.CustomResource.Namespace, repositoryCredentialsSecretName)
+
+	isRepositoryAccessible := git.CheckPermissions(appSettings.RepositoryUrl, repositoryUsername, repositoryPassword)
+	if isRepositoryAccessible {
+		err = tryCreateProjectInVcs(appSettings, &businessApplication, *clientSet)
+		if err != nil {
+			return nil
+		}
+		err = tryCloneRepo(businessApplication, *appSettings, repositoryUsername, repositoryPassword)
+		if err != nil {
+			return nil
+		}
+	} else {
+		log.Printf("Cannot access provided git repository: %s", businessApplication.CustomResource.Spec.Repository.Url)
+	}
+
+	err = createProjectInGerrit(appSettings, &businessApplication)
+	if err != nil {
+		return err
+	}
+	err = pushToGerrit(appSettings, &businessApplication)
+	if err != nil {
+		return err
+	}
+	err = trySetupGerritReplication(*appSettings, *clientSet)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func trySetupGerritReplication(appSettings models.AppSettings, clientSet ClientSet.OpenshiftClientSet) error {
+	if appSettings.UserSettings.VcsIntegrationEnabled {
+		err := setupGerritReplication(appSettings, clientSet)
+		if err != nil {
+			return err
+		}
+	} else {
+		log.Println("VCS integration isn't enabled")
+		return nil
+	}
+	return nil
+}
+
+func setupGerritReplication(appSettings models.AppSettings, clientSet ClientSet.OpenshiftClientSet) error {
+	err := gerrit.SetupProjectReplication(appSettings, clientSet)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func trySetupPerf(app BusinessApplication, set *ClientSet.OpenshiftClientSet, appSettings models.AppSettings) error {
@@ -230,6 +291,36 @@ func isGitLab(appSettings models.AppSettings) bool {
 		appSettings.UserSettings.VcsToolName == models.GitLab
 }
 
+func createProjectInGerrit(appSettings *models.AppSettings, application *BusinessApplication) error {
+	projectExist, err := gerrit.CheckProjectExist(appSettings.GerritKeyPath, appSettings.GerritHost,
+		appSettings.GerritSettings.SshPort, application.CustomResource.Name)
+	if err != nil {
+		return err
+	}
+	if *projectExist {
+		return errors.New("couldn't create project in Gerrit. Project already exists")
+	}
+	err = gerrit.CreateProject(appSettings.GerritKeyPath, appSettings.GerritHost,
+		appSettings.GerritSettings.SshPort, application.CustomResource.Name)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func pushToGerrit(appSettings *models.AppSettings, businessApplication *BusinessApplication) error {
+	err := gerrit.AddRemoteLinkToGerrit(appSettings.WorkDir+"/"+businessApplication.CustomResource.Name,
+		appSettings.GerritHost, appSettings.GerritSettings.SshPort, businessApplication.CustomResource.Name)
+	if err != nil {
+		return err
+	}
+	err = gerrit.PushToGerrit(appSettings.WorkDir + "/" + businessApplication.CustomResource.Name)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func tryCreateProjectInVcs(appSettings *models.AppSettings, application *BusinessApplication, clientSet ClientSet.OpenshiftClientSet) error {
 	if appSettings.UserSettings.VcsIntegrationEnabled {
 		err := createProjectInVcs(appSettings, application, clientSet)
@@ -262,7 +353,7 @@ func createProjectInVcs(appSettings *models.AppSettings, application *BusinessAp
 	}
 	if *projectExist {
 		return errors.New("Couldn't copy project to your VCS group. Repository %s is already exists in " +
-			application.CustomResource.Name + appSettings.ProjectVcsGroupPath)
+			application.CustomResource.Name + "" + appSettings.ProjectVcsGroupPath)
 	} else {
 		groupId, err := vcsTool.GetGroupIdByName(appSettings.ProjectVcsGroupPath)
 		if err != nil {
@@ -272,6 +363,7 @@ func createProjectInVcs(appSettings *models.AppSettings, application *BusinessAp
 		if err != nil {
 			return err
 		}
+		appSettings.VcsSshUrl, err = vcsTool.GetRepositorySshUrl(appSettings.VcsProjectPath)
 	}
 	return nil
 }
@@ -296,6 +388,21 @@ func concatCreateRepoUrl(appSettings *models.AppSettings, application *BusinessA
 	} else {
 		appSettings.RepositoryUrl += repoUrl + ".git"
 	}
+}
+
+func tryCloneRepo(businessApplication BusinessApplication, appSettings models.AppSettings, repositoryUsername string,
+	repositoryPassword string) error {
+	if appSettings.UserSettings.VcsIntegrationEnabled {
+		destination := appSettings.WorkDir + "/" + businessApplication.CustomResource.Name
+		err := git.CloneRepo(appSettings.RepositoryUrl, repositoryUsername, repositoryPassword, destination)
+		if err != nil {
+			return err
+		}
+	} else {
+		log.Println("VCS integration isn't enabled")
+		return nil
+	}
+	return nil
 }
 
 func (businessApplication BusinessApplication) Update() {

@@ -47,6 +47,7 @@ func GetUserSettingsConfigMap(clientSet ClientSet.OpenshiftClientSet, namespace 
 
 func GetGerritSettingsConfigMap(clientSet ClientSet.OpenshiftClientSet, namespace string) (*models.GerritSettings, error) {
 	gerritSettings, err := clientSet.CoreClient.ConfigMaps(namespace).Get("gerrit", metav1.GetOptions{})
+	sshPort, err := strconv.ParseInt(gerritSettings.Data["sshPort"], 10, 64 )
 	if err != nil {
 		errorMsg := fmt.Sprintf("Unable to get Gerrit settings configmap: %v", err)
 		log.Println(errorMsg)
@@ -55,7 +56,7 @@ func GetGerritSettingsConfigMap(clientSet ClientSet.OpenshiftClientSet, namespac
 	return &models.GerritSettings{
 		Config:            gerritSettings.Data["config"],
 		ReplicationConfig: gerritSettings.Data["replication.config"],
-		SshPort:           gerritSettings.Data["sshPort"],
+		SshPort:           sshPort,
 	}, nil
 }
 

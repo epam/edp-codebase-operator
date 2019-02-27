@@ -6,14 +6,13 @@ spec:
   lang: "Javascript"
   framework: "React"
   buildTool: "NPM"
-  strategy: "Create"
+  strategy: "create"
   git:
     url: "https://git.epam.com/epmd-edp/examples/basic/edp-react-helloworld.git"
   route:
     site: "helloworld"
     path: "/api"
-  database:
-    kind: "postgresql"
-    version: "9.6"
-    capacity: "1000Gi"
-    storage: "ebs"
+status:
+  status: "initialized"
+  available: false
+  LastTimeUpdated: 0001-01-01T00:00:00Z

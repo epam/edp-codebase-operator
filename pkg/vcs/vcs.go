@@ -10,6 +10,7 @@ import (
 type VCS interface {
 	CreateProject(vcsProjectName, vcsGroupId string) (string, error)
 	GetGroupIdByName(groupName string) (string, error)
+	GetRepositorySshUrl(projectPath string) (string, error)
 	CheckProjectExist(projectPath string) (*bool, error)
 	Init(url string, username string, password string) error
 	DeleteProject(projectId string) error

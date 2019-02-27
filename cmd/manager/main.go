@@ -38,7 +38,7 @@ func main() {
 	// Get a config to talk to the apiserver
 	cfg, err := config.GetConfig()
 	if err != nil {
-		log.Fatalf("", err)
+		log.Fatal(err)
 		os.Exit(1)
 	}
 
@@ -57,13 +57,13 @@ func main() {
 	}
 
 	if err := apis.AddToScheme(mgr.GetScheme()); err != nil {
-		log.Fatalf("", err)
+		log.Fatal(err)
 		os.Exit(1)
 	}
 
 	// Setup all Controllers
 	if err := controller.AddToManager(mgr); err != nil {
-		log.Fatalf("", err)
+		log.Fatal(err)
 		os.Exit(1)
 	}
 
@@ -71,7 +71,7 @@ func main() {
 
 	// Start the Cmd
 	if err := mgr.Start(signals.SetupSignalHandler()); err != nil {
-		log.Fatalf("Manager exited non-zero", err)
+		log.Fatalf("Manager exited non-zero: %v", err)
 		os.Exit(1)
 	}
 }

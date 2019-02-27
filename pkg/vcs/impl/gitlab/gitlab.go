@@ -146,3 +146,22 @@ func (gitlab GitLab) DeleteProject(projectId string) error {
 	}
 	return nil
 }
+
+func (gitlab *GitLab) GetRepositorySshUrl(projectPath string) (string, error) {
+	var result map[string]interface{}
+	_, err := gitlab.Client.R().
+		SetResult(&result).
+		SetQueryParam("simple", "true").
+		SetPathParams(map[string]string{
+			"project-path": url.PathEscape(projectPath),
+		}).
+		Get("/api/v4/projects/{project-path}")
+	if err != nil {
+		errorMsg := fmt.Sprintf("Unable get repository SSH URL: %v", err)
+		log.Println(errorMsg)
+		return "", errors.New(errorMsg)
+	}
+	sshUrl := result["ssh_url_to_repo"].(string)
+
+	return sshUrl, nil
+}

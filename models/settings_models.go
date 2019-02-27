@@ -1,6 +1,7 @@
 package models
 
 type AppSettings struct {
+	Name                  string         `json:"name"`
 	WorkDir               string         `json:"work_dir"`
 	RepositoryUrl         string         `json:"repository_url"`
 	GerritKeyPath         string         `json:"gerrit_key_path"`
@@ -19,6 +20,8 @@ type AppSettings struct {
 	VcsAutouserEmail      string         `json:"vcs_autouser_email"`
 	GerritPrivateKey      string         `json:"gerrit_private_key"`
 	GerritPublicKey       string         `json:"gerrit_public_key"`
+	VcsSshUrl             string         `json:"vcs_ssh_url"`
+	GerritHost            string         `json:"gerrit_host"`
 }
 
 type UserSettings struct {
@@ -37,7 +40,7 @@ type VCSTool string
 type GerritSettings struct {
 	Config            string `json:"config"`
 	ReplicationConfig string `json:"replication_config"`
-	SshPort           string `json:"ssh_port"`
+	SshPort           int64  `json:"ssh_port"`
 }
 
 type Strategy string
