@@ -35,7 +35,7 @@ type BusinessApplicationSpec struct {
 	Framework  string          `json:"framework"`
 	BuildTool  string          `json:"buildTool"`
 	Strategy   models.Strategy `json:"strategy"`
-	Repository *Repository     `json:"git"`
+	Repository *Repository     `json:"repository"`
 	Route      *Route          `json:"route"`
 	Database   *Database       `json:"database"`
 }
