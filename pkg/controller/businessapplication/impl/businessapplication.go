@@ -31,7 +31,7 @@ func (businessApplication BusinessApplication) Create() {
 		return
 	}
 	businessApplication.CustomResource.Status.Status = models.StatusInProgress
-	_ := businessApplication.Client.Update(context.TODO(), businessApplication.CustomResource)
+	_ = businessApplication.Client.Update(context.TODO(), businessApplication.CustomResource)
 
 	appSettings := models.AppSettings{}
 	appSettings.BasicPatternUrl = "https://github.com/epmd-edp"
@@ -72,7 +72,7 @@ func (businessApplication BusinessApplication) Create() {
 
 	log.Printf("Retrieving settings has been finished.")
 
-	settings.CreateGerritPrivateKey(appSettings.GerritPrivateKey, appSettings.GerritKeyPath)
+	_ = settings.CreateGerritPrivateKey(appSettings.GerritPrivateKey, appSettings.GerritKeyPath)
 	err = settings.CreateSshConfig(appSettings)
 
 	err = setRepositoryUrl(&appSettings, &businessApplication)
@@ -111,7 +111,7 @@ func rollback(businessApplication BusinessApplication) {
 
 func triggerJobProvisioning(app BusinessApplication, appSettings models.AppSettings) error {
 	jenkinsUrl := fmt.Sprintf("http://jenkins.%s:8080", appSettings.CicdNamespace)
-	jenkins := gojenkins.CreateJenkins(nil, jenkinsUrl, appSettings.JenkinsUsername, appSettings.JenkinsToken)
+	jenkins := gojenkins.CreateJenkins(jenkinsUrl, appSettings.JenkinsUsername, appSettings.JenkinsToken)
 
 	_, err := jenkins.Init()
 	if err != nil {
