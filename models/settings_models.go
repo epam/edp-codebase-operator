@@ -50,8 +50,9 @@ const (
 )
 
 const (
-	StatusInit     = "initialized"
-	StatusFailed   = "failed"
-	StatusReopened = "reopened"
-	StatusFinished = "created"
+	StatusInit       = "initialized"
+	StatusInProgress = "in progress"
+	StatusFailed     = "failed"
+	StatusReopened   = "reopened"
+	StatusFinished   = "created"
 )

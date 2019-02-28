@@ -8,6 +8,7 @@ import (
 	"business-app-handler-controller/pkg/perf"
 	"business-app-handler-controller/pkg/settings"
 	"business-app-handler-controller/pkg/vcs"
+	"context"
 	"errors"
 	"fmt"
 	"github.com/bndr/gojenkins"
@@ -29,6 +30,8 @@ func (businessApplication BusinessApplication) Create() {
 	if businessApplication.CustomResource.Status.Status != models.StatusInit {
 		return
 	}
+	businessApplication.CustomResource.Status.Status = models.StatusInProgress
+	_ := businessApplication.Client.Update(context.TODO(), businessApplication.CustomResource)
 
 	appSettings := models.AppSettings{}
 	appSettings.BasicPatternUrl = "https://github.com/epmd-edp"
