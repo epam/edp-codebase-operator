@@ -260,7 +260,7 @@ func createProjectInVcs(appSettings *models.AppSettings, application *BusinessAp
 	if err != nil {
 		return err
 	}
-	if projectExist {
+	if *projectExist {
 		return errors.New("Couldn't copy project to your VCS group. Repository %s is already exists in " +
 			application.CustomResource.Name + appSettings.ProjectVcsGroupPath)
 	} else {
@@ -268,7 +268,7 @@ func createProjectInVcs(appSettings *models.AppSettings, application *BusinessAp
 		if err != nil {
 			return err
 		}
-		err = vcsTool.CreateProject(application.CustomResource.Name, groupId)
+		_, err = vcsTool.CreateProject(application.CustomResource.Name, groupId)
 		if err != nil {
 			return err
 		}

@@ -1,7 +1,6 @@
 package gitlab
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"gopkg.in/resty.v1"
@@ -24,86 +23,126 @@ func (gitlab *GitLab) Init(url string, username string, password string) error {
 		},
 	)
 
+	token, err := tryToLoginWithPass(url, username, password)
+	if err != nil {
+		log.Printf("Error has been occured tring login via password for user: %s", username)
+		log.Printf("Setting private_token for user %s", username)
+		client.SetQueryParam("private_token", password)
+	} else {
+		client.Token = *token
+	}
+
+	gitlab.Client = *client
+	return nil
+}
+
+func tryToLoginWithPass(url, user, pass string) (*string, error) {
+	var result map[string]interface{}
 	resp, err := resty.R().
+		SetResult(&result).
 		SetFormData(map[string]string{
 			"grant_type": "password",
-			"username":   username,
-			"password":   password,
+			"username":   user,
+			"password":   pass,
 		}).
 		Post(url + "/oauth/token")
 	if err != nil {
 		errorMsg := fmt.Sprintf("Unable to get GitLab access token: %v", err)
 		log.Println(errorMsg)
-		return errors.New(errorMsg)
+		return nil, errors.New(errorMsg)
 	}
 
 	if resp.IsError() {
 		errorMsg := fmt.Sprintf(resp.String())
 		log.Println(errorMsg)
-		return errors.New(errorMsg)
+		return nil, errors.New(errorMsg)
 	}
-
-	var result map[string]interface{}
-	err = json.Unmarshal(resp.Body(), &result)
-	if err != nil {
-		errorMsg := fmt.Sprintf("Unable to unmarshall response: %v", err)
-		log.Println(errorMsg)
-		return errors.New(errorMsg)
-	}
-
 	token := result["access_token"].(string)
-	client.Token = token
-	gitlab.Client = *client
-
-	return nil
+	return &token, nil
 }
 
-func (gitlab *GitLab) CheckProjectExist(projectPath string) (bool, error) {
+func (gitlab GitLab) CheckProjectExist(projectPath string) (*bool, error) {
 	resp, err := gitlab.Client.R().
-		SetAuthToken(gitlab.Client.Token).
-		Get(gitlab.Client.HostURL + "/api/v4/projects/" + projectPath + "?simple=true")
+		SetQueryParam("simple", "true").
+		SetPathParams(map[string]string{
+			"project-path": url.PathEscape(projectPath),
+		}).
+		Get("/api/v4/projects/{project-path}")
 	if err != nil {
 		errorMsg := fmt.Sprintf("Unable to check project: %v", err)
 		log.Println(errorMsg)
-		return true, errors.New(errorMsg)
+		return nil, errors.New(errorMsg)
 	}
-	return resp.StatusCode() != 404, nil
+	if resp.StatusCode() == 401 {
+		errorMsg := "unauthorized"
+		log.Println(errorMsg)
+		return nil, errors.New(errorMsg)
+	}
+	exist := resp.StatusCode() == 200
+	return &exist, nil
 }
 
-func (gitlab *GitLab) GetGroupIdByName(groupName string) (string, error) {
+func (gitlab GitLab) GetGroupIdByName(groupName string) (string, error) {
+	var result map[string]interface{}
 	resp, err := gitlab.Client.R().
-		SetAuthToken(gitlab.Client.Token).
-		Get(gitlab.Client.HostURL + "/api/v4/groups/" + url.PathEscape(groupName) + "?simple=true")
+		SetQueryParam("simple", "true").
+		SetResult(&result).
+		SetPathParams(map[string]string{
+			"group-name": url.PathEscape(groupName),
+		}).
+		Get("/api/v4/groups/{group-name}")
 	if err != nil {
 		errorMsg := fmt.Sprintf("Unable get repository group id: %v", err)
 		log.Println(errorMsg)
 		return "", errors.New(errorMsg)
 	}
-	var result map[string]interface{}
-	err = json.Unmarshal(resp.Body(), &result)
-	if err != nil {
-		errorMsg := fmt.Sprintf("Unable to unmarshall response: %v", err)
-		log.Println(errorMsg)
-		return "", errors.New(errorMsg)
+	if resp.IsError() {
+		log.Println(resp.Status())
+		return "", errors.New(resp.Status())
 	}
-	id := result["id"].(float64)
-
-	return strconv.FormatFloat(id, 'f', -1, 64), nil
+	return simpleConvertFloatToString(result["id"].(float64)), nil
 }
 
-func (gitlab *GitLab) CreateProject(vcsProjectName string, vcsGroupId string) error {
+func (gitlab GitLab) CreateProject(vcsProjectName, vcsGroupId string) (string, error) {
+	var result map[string]interface{}
 	resp, err := gitlab.Client.R().
-		SetAuthToken(gitlab.Client.Token).
-		Post(gitlab.Client.HostURL + "/api/v4/projects?name=" + vcsProjectName + "&namespace_id=" + vcsGroupId)
+		SetResult(&result).
+		SetQueryParams(map[string]string{
+			"name":         vcsProjectName,
+			"namespace_id": vcsGroupId,
+		}).
+		Post("/api/v4/projects")
 	if err != nil {
 		errorMsg := fmt.Sprintf("Unable to create project in GitLab: %v", err)
 		log.Println(errorMsg)
-		return errors.New(errorMsg)
+		return "", errors.New(errorMsg)
 	}
 	if resp.IsError() {
 		errorMsg := fmt.Sprintf(resp.String())
 		log.Println(errorMsg)
+		return "", errors.New(errorMsg)
+	}
+	return simpleConvertFloatToString(result["id"].(float64)), nil
+}
+
+func simpleConvertFloatToString(number float64) string {
+	return strconv.FormatFloat(number, 'f', -1, 64)
+}
+
+func (gitlab GitLab) DeleteProject(projectId string) error {
+	resp, err := gitlab.Client.R().
+		SetPathParams(map[string]string{
+			"project-id": projectId,
+		}).
+		Delete("/api/v4/projects/{project-id}")
+	if err != nil {
+		errorMsg := fmt.Sprintf("Unable to delete project in GitLab: %v", err)
+		log.Println(errorMsg)
 		return errors.New(errorMsg)
+	}
+	if resp.IsError() {
+		log.Println(resp.Status())
+		return errors.New(resp.Status())
 	}
 	return nil
 }

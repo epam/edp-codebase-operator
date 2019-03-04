@@ -8,10 +8,11 @@ import (
 )
 
 type VCS interface {
-	CreateProject(vcsProjectName string, vcsGroupId string) error
+	CreateProject(vcsProjectName, vcsGroupId string) (string, error)
 	GetGroupIdByName(groupName string) (string, error)
-	CheckProjectExist(projectPath string) (bool, error)
+	CheckProjectExist(projectPath string) (*bool, error)
 	Init(url string, username string, password string) error
+	DeleteProject(projectId string) error
 }
 
 func CreateVCSClient(vcsToolName models.VCSTool, url string, username string, password string) (VCS, error) {
