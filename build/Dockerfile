@@ -8,7 +8,7 @@ ENV OPERATOR=/usr/local/bin/business-app-handler-controller \
 COPY business-app-handler-controller ${OPERATOR}
 
 COPY bin /usr/local/bin
-RUN  chmod u+x /usr/local/bin/user_setup && /usr/local/bin/user_setup
+RUN  chmod u+x /usr/local/bin/user_setup && chmod ugo+x /usr/local/bin/entrypoint && /usr/local/bin/user_setup
 
 ENTRYPOINT ["/usr/local/bin/entrypoint"]
 
