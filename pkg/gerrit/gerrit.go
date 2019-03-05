@@ -185,7 +185,7 @@ func PushToGerrit(repoPath string) error {
 	return nil
 }
 
-func SetupProjectReplication(appSettings models.AppSettings, clientSet ClientSet.OpenshiftClientSet) error {
+func SetupProjectReplication(appSettings models.AppSettings, clientSet ClientSet.ClientSet) error {
 	var renderedTemplate bytes.Buffer
 	tmpl := template.Must(template.New("replication-conf.tmpl").ParseFiles(appSettings.WorkDir +
 		"/templates/gerrit/replication-conf.tmpl"))

@@ -21,6 +21,10 @@ required = [
   revision = "0cf8f7e6ed1d2e3d47d02e3b6e559369af24d803"
 
 [[override]]
+  name = "github.com/openshift/client-go"
+  version = "v3.9.0"
+
+[[override]]
   name = "github.com/go-openapi/spec"
   branch = "master"
 
@@ -71,8 +75,8 @@ required = [
 [[constraint]]
   name = "github.com/operator-framework/operator-sdk"
   # The version rule is used for a specific release and the master branch for in between releases.
-  branch = "master" #osdk_branch_annotation
-  # version = "=v0.5.0" #osdk_version_annotation
+  #branch = "master" #osdk_branch_annotation
+  version = "=v0.5.0" #osdk_version_annotation
 
 [prune]
   go-tests = true

@@ -43,11 +43,7 @@ type GerritSettings struct {
 	SshPort           int64  `json:"ssh_port"`
 }
 
-type Strategy string
-
 const (
-	Create    Strategy = "create"
-	Clone     Strategy = "clone"
 	BitBucket VCSTool  = "bitbucket"
 	GitLab    VCSTool  = "gitlab"
 )
@@ -58,4 +54,10 @@ const (
 	StatusFailed     = "failed"
 	StatusReopened   = "reopened"
 	StatusFinished   = "created"
+)
+
+const (
+	JavaScript string = "javascript"
+	Java       string = "java"
+	DotNet     string = "dotnet"
 )

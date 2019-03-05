@@ -160,7 +160,7 @@ func addToDsConfigMap(ds DataSource, configKey string, configs map[string]string
 	}
 }
 
-func GetPerfSettings(clientSet ClientSet.OpenshiftClientSet, namespace string) map[string]string {
+func GetPerfSettings(clientSet ClientSet.ClientSet, namespace string) map[string]string {
 	perfSettings, err := clientSet.CoreClient.ConfigMaps(namespace).Get("perf-settings", metav1.GetOptions{})
 	if err != nil {
 		return nil
@@ -168,7 +168,7 @@ func GetPerfSettings(clientSet ClientSet.OpenshiftClientSet, namespace string) m
 	return perfSettings.Data
 }
 
-func GetPerfCredentials(clientSet ClientSet.OpenshiftClientSet, namespace string) map[string][]byte {
+func GetPerfCredentials(clientSet ClientSet.ClientSet, namespace string) map[string][]byte {
 	secret, err := clientSet.CoreClient.Secrets(namespace).Get("perf-user", metav1.GetOptions{})
 	if err != nil {
 		return nil

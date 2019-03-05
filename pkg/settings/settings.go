@@ -14,7 +14,19 @@ import (
 	"strconv"
 )
 
-func GetUserSettingsConfigMap(clientSet ClientSet.OpenshiftClientSet, namespace string) (*models.UserSettings, error) {
+func CreateWorkdir(path string) error {
+	if _, err := os.Stat(path); err != nil {
+		if os.IsNotExist(err) {
+			err = os.MkdirAll(path, 766)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func GetUserSettingsConfigMap(clientSet ClientSet.ClientSet, namespace string) (*models.UserSettings, error) {
 	userSettings, err := clientSet.CoreClient.ConfigMaps(namespace).Get("user-settings", metav1.GetOptions{})
 	if err != nil {
 		errorMsg := fmt.Sprintf("Unable to get user settings configmap: %v", err)
@@ -45,7 +57,7 @@ func GetUserSettingsConfigMap(clientSet ClientSet.OpenshiftClientSet, namespace 
 	}, nil
 }
 
-func GetGerritSettingsConfigMap(clientSet ClientSet.OpenshiftClientSet, namespace string) (*models.GerritSettings, error) {
+func GetGerritSettingsConfigMap(clientSet ClientSet.ClientSet, namespace string) (*models.GerritSettings, error) {
 	gerritSettings, err := clientSet.CoreClient.ConfigMaps(namespace).Get("gerrit", metav1.GetOptions{})
 	sshPort, err := strconv.ParseInt(gerritSettings.Data["sshPort"], 10, 64 )
 	if err != nil {
@@ -60,7 +72,7 @@ func GetGerritSettingsConfigMap(clientSet ClientSet.OpenshiftClientSet, namespac
 	}, nil
 }
 
-func GetJenkinsCreds(clientSet ClientSet.OpenshiftClientSet, namespace string) (string, string, error) {
+func GetJenkinsCreds(clientSet ClientSet.ClientSet, namespace string) (string, string, error) {
 	jenkinsTokenSecret, err := clientSet.CoreClient.Secrets(namespace).Get("jenkins-token", metav1.GetOptions{})
 	if err != nil {
 		errorMsg := fmt.Sprint(err)
@@ -70,7 +82,7 @@ func GetJenkinsCreds(clientSet ClientSet.OpenshiftClientSet, namespace string) (
 	return string(jenkinsTokenSecret.Data["token"]), string(jenkinsTokenSecret.Data["username"]), nil
 }
 
-func GetVcsCredentials(clientSet ClientSet.OpenshiftClientSet, namespace string) (string, string, error) {
+func GetVcsCredentials(clientSet ClientSet.ClientSet, namespace string) (string, string, error) {
 	vcsAutouserSecret, err := clientSet.CoreClient.Secrets(namespace).Get("vcs-autouser", metav1.GetOptions{})
 	if err != nil {
 		errorMsg := fmt.Sprintf("Unable to get VCS credentials: %v", err)
@@ -80,7 +92,7 @@ func GetVcsCredentials(clientSet ClientSet.OpenshiftClientSet, namespace string)
 	return string(vcsAutouserSecret.Data["ssh-privatekey"]), string(vcsAutouserSecret.Data["username"]), nil
 }
 
-func GetGerritCredentials(clientSet ClientSet.OpenshiftClientSet, namespace string) (string, string, error) {
+func GetGerritCredentials(clientSet ClientSet.ClientSet, namespace string) (string, string, error) {
 	vcsAutouserSecret, err := clientSet.CoreClient.Secrets(namespace).Get("gerrit-project-creator", metav1.GetOptions{})
 	if err != nil {
 		errorMsg := fmt.Sprintf("Unable to get gerrit credentials: %v", err)
@@ -91,7 +103,7 @@ func GetGerritCredentials(clientSet ClientSet.OpenshiftClientSet, namespace stri
 }
 
 func CreateGerritPrivateKey(privateKey string, path string) error {
-	err := ioutil.WriteFile(path, []byte(privateKey), 0400)
+	err := ioutil.WriteFile(path, []byte(privateKey), 400)
 	if err != nil {
 		errorMsg := fmt.Sprintf("Unable to write the Gerrit ssh key: %v", err)
 		log.Println(errorMsg)
@@ -102,7 +114,7 @@ func CreateGerritPrivateKey(privateKey string, path string) error {
 
 func CreateSshConfig(appSettings models.AppSettings) error {
 	if _, err := os.Stat("~/.ssh"); os.IsNotExist(err) {
-		err := os.Mkdir("~/.ssh", 0644)
+		err := os.Mkdir("~/.ssh", 644)
 		if err != nil {
 			return err
 		}
@@ -127,7 +139,7 @@ func CreateSshConfig(appSettings models.AppSettings) error {
 	return nil
 }
 
-func GetVcsBasicAuthConfig(clientSet ClientSet.OpenshiftClientSet, namespace string, secretName string) (string, string, error) {
+func GetVcsBasicAuthConfig(clientSet ClientSet.ClientSet, namespace string, secretName string) (string, string, error) {
 	vcsCredentialsSecret, err := clientSet.CoreClient.Secrets(namespace).Get(secretName, metav1.GetOptions{})
 	if k8serrors.IsNotFound(err) {
 		return "", "", nil
@@ -139,7 +151,7 @@ func GetVcsBasicAuthConfig(clientSet ClientSet.OpenshiftClientSet, namespace str
 	return string(vcsCredentialsSecret.Data["username"]), string(vcsCredentialsSecret.Data["password"]), nil
 }
 
-func DeleteTempVcsSecret(clientSet ClientSet.OpenshiftClientSet, namespace string, secretName string) error {
+func DeleteTempVcsSecret(clientSet ClientSet.ClientSet, namespace string, secretName string) error {
 	err := clientSet.CoreClient.Secrets(namespace).Delete(secretName, &metav1.DeleteOptions{})
 	if err != nil && k8serrors.IsNotFound(err) {
 		errorMsg := fmt.Sprintf("Unable to delete temp secret: %v", err)

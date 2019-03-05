@@ -43,3 +43,5 @@ import:
     version: v1.9.0
   - package: github.com/bndr/gojenkins
     version: v1.0
+  - package: github.com/openshift/client-go
+    version: v3.9.0

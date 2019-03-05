@@ -34,6 +34,11 @@ func (businessApplication BusinessApplication) Create() {
 	}
 
 	log.Println("Create application...")
+	log.Printf("Retrieved params: name: %v; strategy: %v; lang: %v; framework: %v; buildTool: %v; route: %v; database: %v",
+		businessApplication.CustomResource.Name, businessApplication.CustomResource.Spec.Strategy,
+		businessApplication.CustomResource.Spec.Lang, businessApplication.CustomResource.Spec.Framework,
+		businessApplication.CustomResource.Spec.BuildTool, businessApplication.CustomResource.Spec.Route,
+		businessApplication.CustomResource.Spec.Database)
 
 	businessApplication.CustomResource.Status.Status = models.StatusInProgress
 	err := businessApplication.Client.Update(context.TODO(), businessApplication.CustomResource)
@@ -70,6 +75,9 @@ func (businessApplication BusinessApplication) Create() {
 
 	err = trySetupPerf(businessApplication, clientSet, *appSettings)
 
+	config, err := gerrit.ConfigInit(*clientSet, *appSettings, businessApplication.CustomResource.Spec)
+	err = gerrit.PushConfigs(*config, *appSettings, *clientSet)
+
 	if err != nil {
 		rollback(businessApplication)
 		return
@@ -79,7 +87,8 @@ func (businessApplication BusinessApplication) Create() {
 	businessApplication.CustomResource.Status.Status = models.StatusFinished
 }
 
-func initAppSettings(businessApplication BusinessApplication, clientSet *ClientSet.OpenshiftClientSet) (*models.AppSettings, error) {
+func initAppSettings(businessApplication BusinessApplication, clientSet *ClientSet.ClientSet) (*models.AppSettings, error) {
+	var workDir = fmt.Sprintf("/tmp/edp/%v", businessApplication.CustomResource.Name)
 	appSettings := models.AppSettings{}
 	appSettings.BasicPatternUrl = "https://github.com/epmd-edp"
 	appSettings.Name = businessApplication.CustomResource.Name
@@ -87,7 +96,11 @@ func initAppSettings(businessApplication BusinessApplication, clientSet *ClientS
 	log.Printf("Retrieving user settings from config map...")
 	appSettings.CicdNamespace = businessApplication.CustomResource.Namespace
 	appSettings.GerritHost = fmt.Sprintf("gerrit.%v", appSettings.CicdNamespace)
-	appSettings.WorkDir = "/home/edp"
+	err := settings.CreateWorkdir(workDir)
+	if err != nil {
+		return nil, err
+	}
+	appSettings.WorkDir = workDir
 	appSettings.GerritKeyPath = fmt.Sprintf("%v/gerrit-private.key", appSettings.WorkDir)
 
 	userSettings, err := settings.GetUserSettingsConfigMap(*clientSet, businessApplication.CustomResource.Namespace)
@@ -151,7 +164,7 @@ func triggerJobProvisioning(app BusinessApplication, appSettings models.AppSetti
 }
 
 func gerritConfiguration(appSettings *models.AppSettings, businessApplication BusinessApplication,
-	clientSet *ClientSet.OpenshiftClientSet) error {
+	clientSet *ClientSet.ClientSet) error {
 	_ = settings.CreateGerritPrivateKey(appSettings.GerritPrivateKey, appSettings.GerritKeyPath)
 	err := settings.CreateSshConfig(*appSettings)
 
@@ -190,7 +203,7 @@ func gerritConfiguration(appSettings *models.AppSettings, businessApplication Bu
 	return nil
 }
 
-func trySetupGerritReplication(appSettings models.AppSettings, clientSet ClientSet.OpenshiftClientSet) error {
+func trySetupGerritReplication(appSettings models.AppSettings, clientSet ClientSet.ClientSet) error {
 	if appSettings.UserSettings.VcsIntegrationEnabled {
 		err := setupGerritReplication(appSettings, clientSet)
 		if err != nil {
@@ -203,7 +216,7 @@ func trySetupGerritReplication(appSettings models.AppSettings, clientSet ClientS
 	return nil
 }
 
-func setupGerritReplication(appSettings models.AppSettings, clientSet ClientSet.OpenshiftClientSet) error {
+func setupGerritReplication(appSettings models.AppSettings, clientSet ClientSet.ClientSet) error {
 	err := gerrit.SetupProjectReplication(appSettings, clientSet)
 	if err != nil {
 		return err
@@ -211,7 +224,7 @@ func setupGerritReplication(appSettings models.AppSettings, clientSet ClientSet.
 	return nil
 }
 
-func trySetupPerf(app BusinessApplication, set *ClientSet.OpenshiftClientSet, appSettings models.AppSettings) error {
+func trySetupPerf(app BusinessApplication, set *ClientSet.ClientSet, appSettings models.AppSettings) error {
 	if appSettings.UserSettings.PerfIntegrationEnabled {
 		return setupPerf(app, set, appSettings)
 	} else {
@@ -220,7 +233,7 @@ func trySetupPerf(app BusinessApplication, set *ClientSet.OpenshiftClientSet, ap
 	return nil
 }
 
-func setupPerf(app BusinessApplication, set *ClientSet.OpenshiftClientSet, appSettings models.AppSettings) error {
+func setupPerf(app BusinessApplication, set *ClientSet.ClientSet, appSettings models.AppSettings) error {
 	log.Println("Start perf configuration...")
 	perfSetting := perf.GetPerfSettings(*set, app.CustomResource.Namespace)
 	log.Printf("Perf setting have been retrieved: %v", perfSetting)
@@ -344,7 +357,7 @@ func pushToGerrit(appSettings *models.AppSettings, businessApplication *Business
 	return nil
 }
 
-func tryCreateProjectInVcs(appSettings *models.AppSettings, application *BusinessApplication, clientSet ClientSet.OpenshiftClientSet) error {
+func tryCreateProjectInVcs(appSettings *models.AppSettings, application *BusinessApplication, clientSet ClientSet.ClientSet) error {
 	if appSettings.UserSettings.VcsIntegrationEnabled {
 		err := createProjectInVcs(appSettings, application, clientSet)
 		if err != nil {
@@ -358,7 +371,7 @@ func tryCreateProjectInVcs(appSettings *models.AppSettings, application *Busines
 }
 
 func createProjectInVcs(appSettings *models.AppSettings, application *BusinessApplication,
-	clientSet ClientSet.OpenshiftClientSet) error {
+	clientSet ClientSet.ClientSet) error {
 	VcsCredentialsSecretName := "vcs-autouser-application-" + application.CustomResource.Name + "-temp"
 	vcsAutoUserLogin, vcsAutoUserPassword, err := settings.GetVcsBasicAuthConfig(clientSet,
 		application.CustomResource.Namespace, VcsCredentialsSecretName)
@@ -389,9 +402,9 @@ func createProjectInVcs(appSettings *models.AppSettings, application *BusinessAp
 
 func setRepositoryUrl(appSettings *models.AppSettings, application *BusinessApplication) error {
 	switch application.CustomResource.Spec.Strategy {
-	case models.Create:
+	case edpv1alpha1.Create:
 		concatCreateRepoUrl(appSettings, application)
-	case models.Clone:
+	case edpv1alpha1.Clone:
 		appSettings.RepositoryUrl = application.CustomResource.Spec.Repository.Url
 	}
 	return nil

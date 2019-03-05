@@ -1,0 +1,250 @@
+# Copyright 2018 EPAM Systems.
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: v1
+kind: Template
+metadata:
+  name: {{.AppSettings.Name}}
+  annotations:
+    iconClass: icon-dotnet
+    description: Openshift template for .NET core application/service deploying
+    template.openshift.io/provider-display-name: EPAM
+    template.openshift.io/support-url: https://www.epam.com
+objects:
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: {{.AppSettings.Name}}
+    labels:
+      app: {{.AppSettings.Name}}
+  spec:
+    ports:
+    - name: {{.AppSettings.Name}}
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+    selector:
+      app: {{.AppSettings.Name}}
+    type: ClusterIP
+- apiVersion: v1
+  kind: ServiceAccount
+  metadata:
+    name: {{.AppSettings.Name}}
+{{if .Route -}}
+- apiVersion: v1
+  kind: Route
+  metadata:
+    name: {{.AppSettings.Name}}
+    annotations:
+      description: "Route for {{.AppSettings.Name}} application"
+    labels:
+      app: {{.AppSettings.Name}}
+  spec:
+    tls:
+      insecureEdgeTerminationPolicy: Redirect
+      termination: edge
+{{if and .Route.Site (ne .Route.Site "") -}}
+    host: {{.Route.Site}}-${NAMESPACE}.{{.AppSettings.UserSettings.DnsWildcard}}
+{{- end}}
+    path: {{.Route.Path}}
+    port:
+      targetPort: 8080
+    to:
+      kind: Service
+      name: {{.AppSettings.Name}}
+    wildcardPolicy: None
+{{- end}}
+{{if and .Database (eq .Database.Kind 'PostgreSQL') -}}
+- apiVersion: v1
+  kind: PersistentVolumeClaim
+  metadata:
+    name: {{.AppSettings.Name}}-db
+  spec:
+    accessModes:
+    - ReadWriteOnce
+    resources:
+      requests:
+        storage: "{{.Database.Capacity}}"
+    storageClassName: {{.Database.Storage}}
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: {{.AppSettings.Name}}-db
+    labels:
+      app: {{.AppSettings.Name}}-db
+  spec:
+    ports:
+    - name: {{.AppSettings.Name}}-db
+      port: 5432
+    selector:
+      app: {{.AppSettings.Name}}-db
+    type: ClusterIP
+    sessionAffinity: None
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    labels:
+      app: {{.AppSettings.Name}}
+    name: {{.AppSettings.Name}}-db
+  spec:
+    replicas: 1
+    selector:
+      app: {{.AppSettings.Name}}-db
+    strategy:
+      activeDeadlineSeconds: 21600
+      recreateParams:
+        timeoutSeconds: 600
+      resources: {}
+      type: Recreate
+    template:
+      metadata:
+        labels:
+          app: {{.AppSettings.Name}}-db
+      spec:
+        containers:
+        - name: {{.AppSettings.Name}}-db
+          env:
+          - name: POSTGRES_DB
+            value: {{.AppSettings.Name}}-db
+          - name: POSTGRES_USER
+            value: "admin"
+          - name: POSTGRES_PASSWORD
+            value: "admin"
+          - name: PGDATA
+            value: /var/lib/postgresql/data/pgdata
+          - name: POD_IP
+            valueFrom: { fieldRef: { fieldPath: status.podIP } }
+          image: "{{.Database.Version}}"
+          imagePullPolicy: IfNotPresent
+          resources:
+            requests:
+              memory: "{{.Database.Capacity}}"
+          ports:
+            - containerPort: 5432
+              protocol: TCP
+          livenessProbe:
+            exec:
+              command:
+              - sh
+              - -c
+              - exec pg_isready --host $POD_IP
+            initialDelaySeconds: 60
+            timeoutSeconds: 5
+            failureThreshold: 6
+          readinessProbe:
+            exec:
+              command:
+              - sh
+              - -c
+              - exec pg_isready --host $POD_IP
+            initialDelaySeconds: 60
+            timeoutSeconds: 3
+            periodSeconds: 5
+          volumeMounts:
+            - mountPath: /var/lib/postgresql/data
+              name: {{.AppSettings.Name}}-db
+        serviceAccount: {{.AppSettings.Name}}
+        volumes:
+          - name: {{.AppSettings.Name}}-db
+            persistentVolumeClaim:
+              claimName: {{.AppSettings.Name}}-db
+{{- end}}
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    name: {{.AppSettings.Name}}
+    labels:
+      app: {{.AppSettings.Name}}
+  spec:
+    replicas: 1
+    selector:
+      app: {{.AppSettings.Name}}
+    strategy:
+      activeDeadlineSeconds: 21600
+      type: Rolling
+      rollingParams:
+        failurePolicy: Abort
+        intervalSeconds: 1
+        maxSurge: 25%
+        maxUnavailable: 25%
+        timeoutSeconds: 600
+        updatePeriodSeconds: 1
+    template:
+      metadata:
+        labels:
+          app: {{.AppSettings.Name}}
+      spec:
+{{if and .Database (eq .Database.Kind 'PostgreSQL') -}}
+        initContainers:
+        - name: init-{{.AppSettings.Name}}-db
+          image: busybox
+          command: ["sh", "-c", "while ! nc -w 1 '{{.AppSettings.Name}}'-db 5432 </dev/null; do echo waiting for '{{.AppSettings.Name}}'-db; sleep 10; done;"]
+{{- end}}
+        serviceAccountName: {{.AppSettings.Name}}
+        containers:
+        - name: {{.AppSettings.Name}}
+          image: "docker-registry.default.svc:5000/${IMAGE_NAME}:${APP_VERSION}"
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          livenessProbe:
+            failureThreshold: 5
+            initialDelaySeconds: 180
+            periodSeconds: 20
+            successThreshold: 1
+            tcpSocket:
+              port: 8080
+            timeoutSeconds: 5
+          readinessProbe:
+            failureThreshold: 5
+            initialDelaySeconds: 60
+            periodSeconds: 20
+            successThreshold: 1
+            tcpSocket:
+              port: 8080
+            timeoutSeconds: 5
+          resources:
+            requests:
+              memory: 500Mi
+{{if and .Database (eq .Database.Kind 'PostgreSQL') -}}
+          env:
+          - name: POSTGRES_DATABASE
+            value: {{.AppSettings.Name}}-db
+          - name: POSTGRES_USER
+            value: "admin"
+          - name: POSTGRES_PASSWORD
+            value: "admin"
+{{- end}}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+    triggers:
+      - type: ConfigChange
+parameters:
+- displayName: Application image name
+  name: IMAGE_NAME
+  required: true
+  value: {{.AppSettings.Name}}
+- displayName: Application version
+  name: APP_VERSION
+  required: true
+  value: "latest"
+- displayName: Current namespace
+  name: NAMESPACE
+  required: true
