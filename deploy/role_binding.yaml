@@ -1,11 +1,11 @@
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: business-application-operator
+  name: business-app-handler-controller
 subjects:
 - kind: ServiceAccount
-  name: business-application-operator
+  name: business-app-handler-controller
 roleRef:
   kind: Role
-  name: business-application-operator
+  name: business-app-handler-controller
   apiGroup: rbac.authorization.k8s.io
