@@ -17,10 +17,7 @@ import (
 func CreateWorkdir(path string) error {
 	if _, err := os.Stat(path); err != nil {
 		if os.IsNotExist(err) {
-			err = os.MkdirAll(path, 766)
-			if err != nil {
-				return err
-			}
+			err = os.MkdirAll(path, 0744)
 		}
 	}
 	return nil
@@ -59,7 +56,7 @@ func GetUserSettingsConfigMap(clientSet ClientSet.ClientSet, namespace string) (
 
 func GetGerritSettingsConfigMap(clientSet ClientSet.ClientSet, namespace string) (*models.GerritSettings, error) {
 	gerritSettings, err := clientSet.CoreClient.ConfigMaps(namespace).Get("gerrit", metav1.GetOptions{})
-	sshPort, err := strconv.ParseInt(gerritSettings.Data["sshPort"], 10, 64 )
+	sshPort, err := strconv.ParseInt(gerritSettings.Data["sshPort"], 10, 64)
 	if err != nil {
 		errorMsg := fmt.Sprintf("Unable to get Gerrit settings configmap: %v", err)
 		log.Println(errorMsg)
@@ -113,19 +110,18 @@ func CreateGerritPrivateKey(privateKey string, path string) error {
 }
 
 func CreateSshConfig(appSettings models.AppSettings) error {
-	if _, err := os.Stat("~/.ssh"); os.IsNotExist(err) {
-		err := os.Mkdir("~/.ssh", 644)
+	sshPath := "/home/business-app-handler-controller/.ssh"
+	if _, err := os.Stat(sshPath); os.IsNotExist(err) {
+		err = os.MkdirAll(sshPath, 0744)
 		if err != nil {
 			return err
 		}
 	}
-
-	workDir, err := os.Getwd()
+	tmpl, err := template.New("config.tmpl").ParseFiles("templates/ssh/config.tmpl")
 	if err != nil {
 		return err
 	}
-	tmpl := template.Must(template.New("config.tmpl").ParseFiles(workDir + "/templates/ssh/config.tmpl"))
-	f, err := os.Create("~/.ssh/config")
+	f, err := os.Create(sshPath + "/config")
 	if err != nil {
 		log.Printf("Cannot write SSH config to the file: %v", err)
 		return err

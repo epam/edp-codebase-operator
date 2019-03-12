@@ -10,6 +10,7 @@ import (
 	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 	"html/template"
+	"io/ioutil"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"log"
@@ -93,6 +94,11 @@ func PushConfigs(config gerritConfigGoTemplating, appSettings models.AppSettings
 		return err
 	}
 
+	err = copyPipelines(appSettings, config)
+	if err != nil {
+		return nil
+	}
+
 	if strings.ToLower(config.Lang) == "javascript" {
 		err = copySonarConfigs(config, appSettings)
 		if err != nil {
@@ -151,7 +157,10 @@ func copyTemplate(templatePath string, templateName string, config gerritConfigG
 	if err != nil {
 		return err
 	}
-	tmpl := template.Must(template.New(templateName).ParseFiles(templatePath))
+	tmpl, err := template.New(templateName).ParseFiles(templatePath)
+	if err != nil {
+		return err
+	}
 	err = tmpl.Execute(f, config)
 	if err != nil {
 		log.Printf("Unable to render application deploy template: %v", err)
@@ -160,12 +169,28 @@ func copyTemplate(templatePath string, templateName string, config gerritConfigG
 	return nil
 }
 
-func copySonarConfigs(config gerritConfigGoTemplating, appSettings models.AppSettings) error {
-	executionDir, err := os.Getwd()
+func copyPipelines(appSettings models.AppSettings, config gerritConfigGoTemplating) error {
+	files, err := ioutil.ReadDir(appSettings.WorkDir + "/pipelines")
+	pipelinesDest := fmt.Sprintf("%v/%v", config.TemplatesDir, appSettings.Name)
 	if err != nil {
 		return err
 	}
 
+	for _, f := range files {
+		input, err := ioutil.ReadFile(f.Name())
+		if err != nil {
+			return err
+		}
+
+		err = ioutil.WriteFile(pipelinesDest+"/"+f.Name(), input, 0644)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func copySonarConfigs(config gerritConfigGoTemplating, appSettings models.AppSettings) error {
 	sonarConfigPath := fmt.Sprintf("%v/%v/sonar-project.properties", config.TemplatesDir, appSettings.Name)
 
 	if _, err := os.Stat(sonarConfigPath); err == nil {
@@ -176,8 +201,11 @@ func copySonarConfigs(config gerritConfigGoTemplating, appSettings models.AppSet
 		if err != nil {
 			return err
 		}
-		tmpl := template.Must(template.New("sonar-project.properties.tmpl").
-			ParseFiles(executionDir + "/templates/sonar/sonar-project.properties.tmpl"))
+		tmpl, err := template.New("sonar-project.properties.tmpl").
+			ParseFiles("templates/sonar/sonar-project.properties.tmpl")
+		if err != nil {
+			return err
+		}
 		err = tmpl.Execute(f, config)
 		if err != nil {
 			log.Printf("Unable to render sonar configs fo JS app: %v", err)

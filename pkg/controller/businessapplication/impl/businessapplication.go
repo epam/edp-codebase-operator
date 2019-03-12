@@ -34,11 +34,12 @@ func (businessApplication BusinessApplication) Create() {
 	}
 
 	log.Println("Create application...")
-	log.Printf("Retrieved params: name: %v; strategy: %v; lang: %v; framework: %v; buildTool: %v; route: %v; database: %v",
+	log.Printf("Retrieved params: name: %v; strategy: %v; lang: %v; framework: %v; buildTool: %v; route: %v;"+
+		" database: %v; repository: %v",
 		businessApplication.CustomResource.Name, businessApplication.CustomResource.Spec.Strategy,
 		businessApplication.CustomResource.Spec.Lang, businessApplication.CustomResource.Spec.Framework,
 		businessApplication.CustomResource.Spec.BuildTool, businessApplication.CustomResource.Spec.Route,
-		businessApplication.CustomResource.Spec.Database)
+		businessApplication.CustomResource.Spec.Database, businessApplication.CustomResource.Spec.Repository)
 
 	businessApplication.CustomResource.Status.Status = models.StatusInProgress
 	err := businessApplication.Client.Update(context.TODO(), businessApplication.CustomResource)
@@ -88,7 +89,7 @@ func (businessApplication BusinessApplication) Create() {
 }
 
 func initAppSettings(businessApplication BusinessApplication, clientSet *ClientSet.ClientSet) (*models.AppSettings, error) {
-	var workDir = fmt.Sprintf("/tmp/edp/%v", businessApplication.CustomResource.Name)
+	var workDir = fmt.Sprintf("/home/business-app-handler-controller/edp/%v", businessApplication.CustomResource.Name)
 	appSettings := models.AppSettings{}
 	appSettings.BasicPatternUrl = "https://github.com/epmd-edp"
 	appSettings.Name = businessApplication.CustomResource.Name
@@ -167,8 +168,14 @@ func gerritConfiguration(appSettings *models.AppSettings, businessApplication Bu
 	clientSet *ClientSet.ClientSet) error {
 	_ = settings.CreateGerritPrivateKey(appSettings.GerritPrivateKey, appSettings.GerritKeyPath)
 	err := settings.CreateSshConfig(*appSettings)
+	if err != nil {
+		return err
+	}
 
 	err = setRepositoryUrl(appSettings, &businessApplication)
+	if err != nil {
+		return err
+	}
 
 	repositoryCredentialsSecretName := fmt.Sprintf("repository-application-%v-temp", businessApplication.CustomResource.Name)
 	repositoryUsername, repositoryPassword, err := settings.GetVcsBasicAuthConfig(*clientSet,
@@ -178,11 +185,11 @@ func gerritConfiguration(appSettings *models.AppSettings, businessApplication Bu
 	if isRepositoryAccessible {
 		err = tryCreateProjectInVcs(appSettings, &businessApplication, *clientSet)
 		if err != nil {
-			return nil
+			return err
 		}
 		err = tryCloneRepo(businessApplication, *appSettings, repositoryUsername, repositoryPassword)
 		if err != nil {
-			return nil
+			return err
 		}
 	} else {
 		log.Printf("Cannot access provided git repository: %s", businessApplication.CustomResource.Spec.Repository.Url)
@@ -424,16 +431,12 @@ func concatCreateRepoUrl(appSettings *models.AppSettings, application *BusinessA
 
 func tryCloneRepo(businessApplication BusinessApplication, appSettings models.AppSettings, repositoryUsername string,
 	repositoryPassword string) error {
-	if appSettings.UserSettings.VcsIntegrationEnabled {
 		destination := appSettings.WorkDir + "/" + businessApplication.CustomResource.Name
 		err := git.CloneRepo(appSettings.RepositoryUrl, repositoryUsername, repositoryPassword, destination)
 		if err != nil {
 			return err
 		}
-	} else {
-		log.Println("VCS integration isn't enabled")
-		return nil
-	}
+	fmt.Printf("Repository has been cloned to %v", destination)
 	return nil
 }
 

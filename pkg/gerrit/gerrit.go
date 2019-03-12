@@ -157,6 +157,11 @@ func AddRemoteLinkToGerrit(repoPath string, host string, port int64, appName str
 		log.Println(err)
 		return err
 	}
+	err = r.DeleteRemote("origin")
+	if err != nil {
+		log.Println(err)
+	}
+
 	_, err = r.CreateRemote(&config.RemoteConfig{
 		Name: "origin",
 		URLs: []string{remoteUrl},
@@ -187,9 +192,12 @@ func PushToGerrit(repoPath string) error {
 
 func SetupProjectReplication(appSettings models.AppSettings, clientSet ClientSet.ClientSet) error {
 	var renderedTemplate bytes.Buffer
-	tmpl := template.Must(template.New("replication-conf.tmpl").ParseFiles(appSettings.WorkDir +
-		"/templates/gerrit/replication-conf.tmpl"))
-	err := tmpl.Execute(&renderedTemplate, appSettings)
+	tmpl, err := template.New("replication-conf.tmpl").ParseFiles(appSettings.WorkDir +
+		"/templates/gerrit/replication-conf.tmpl")
+	if err != nil {
+		return err
+	}
+	err = tmpl.Execute(&renderedTemplate, appSettings)
 	if err != nil {
 		log.Printf("Unable to render replication config: %v", err)
 		return err
