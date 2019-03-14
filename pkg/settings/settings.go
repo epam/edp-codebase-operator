@@ -117,7 +117,8 @@ func CreateSshConfig(appSettings models.AppSettings) error {
 			return err
 		}
 	}
-	tmpl, err := template.New("config.tmpl").ParseFiles("templates/ssh/config.tmpl")
+
+	tmpl, err := template.New("config.tmpl").ParseFiles("/usr/local/bin/templates/ssh/config.tmpl")
 	if err != nil {
 		return err
 	}

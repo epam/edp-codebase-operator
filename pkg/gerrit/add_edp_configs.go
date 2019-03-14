@@ -202,7 +202,7 @@ func copySonarConfigs(config gerritConfigGoTemplating, appSettings models.AppSet
 			return err
 		}
 		tmpl, err := template.New("sonar-project.properties.tmpl").
-			ParseFiles("templates/sonar/sonar-project.properties.tmpl")
+			ParseFiles("/usr/local/bin/templates/sonar/sonar-project.properties.tmpl")
 		if err != nil {
 			return err
 		}

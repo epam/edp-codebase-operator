@@ -192,8 +192,8 @@ func PushToGerrit(repoPath string) error {
 
 func SetupProjectReplication(appSettings models.AppSettings, clientSet ClientSet.ClientSet) error {
 	var renderedTemplate bytes.Buffer
-	tmpl, err := template.New("replication-conf.tmpl").ParseFiles(appSettings.WorkDir +
-		"/templates/gerrit/replication-conf.tmpl")
+	tmpl, err := template.New("replication-conf.tmpl").
+		ParseFiles("/usr/local/bin/templates/gerrit/replication-conf.tmpl")
 	if err != nil {
 		return err
 	}

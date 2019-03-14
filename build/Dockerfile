@@ -14,6 +14,9 @@ COPY bin /usr/local/bin
 COPY templates /usr/local/bin/templates
 COPY pipelines /usr/local/bin/pipelines
 
+RUN chgrp -R 0 /usr/local/bin/templates /usr/local/bin/pipelines && \
+    chmod -R g=u /usr/local/bin/templates /usr/local/bin/pipelines
+
 RUN  chmod u+x /usr/local/bin/user_setup && \
      chmod ugo+x /usr/local/bin/entrypoint && \
      /usr/local/bin/user_setup
