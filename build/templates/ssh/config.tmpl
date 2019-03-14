@@ -6,7 +6,7 @@ Host gerrit*
         UserKnownHostsFile /dev/null
         IdentityFile {{.GerritKeyPath}}
         IdentitiesOnly yes
-{{if or (eq .UserSettings.VcsIntegrationEnabled "true") -}}
+{{if or (eq .UserSettings.VcsIntegrationEnabled true) -}}
       Host {{.ProjectVcsHostname}}
         HostName {{.ProjectVcsHostname}}
         Port {{.UserSettings.VcsSshPort}}
