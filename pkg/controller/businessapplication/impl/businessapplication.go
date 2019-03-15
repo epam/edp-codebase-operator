@@ -357,7 +357,7 @@ func pushToGerrit(appSettings *models.AppSettings, businessApplication *Business
 	if err != nil {
 		return err
 	}
-	err = gerrit.PushToGerrit(appSettings.WorkDir + "/" + businessApplication.CustomResource.Name)
+	err = gerrit.PushToGerrit(appSettings.WorkDir + "/" + businessApplication.CustomResource.Name, appSettings.GerritKeyPath)
 	if err != nil {
 		return err
 	}

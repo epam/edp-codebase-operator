@@ -9,6 +9,8 @@ import (
 	"golang.org/x/crypto/ssh"
 	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/config"
+	"gopkg.in/src-d/go-git.v4/plumbing/transport"
+	sshgit "gopkg.in/src-d/go-git.v4/plumbing/transport/ssh"
 	"html/template"
 	"io"
 	"io/ioutil"
@@ -77,6 +79,7 @@ func PublicKeyFile(file string) ssh.AuthMethod {
 }
 
 func SshInit(keyPath string, host string, port int64) (SSHClient, error) {
+	log.Printf("SSH_AUTH_SOCK: %v", os.Getenv("SSH_AUTH_SOCK"))
 	sshConfig := &ssh.ClientConfig{
 		User: "project-creator",
 		Auth: []ssh.AuthMethod{
@@ -90,6 +93,7 @@ func SshInit(keyPath string, host string, port int64) (SSHClient, error) {
 		Host:   host,
 		Port:   port,
 	}
+	log.Printf("SSH Client has been initialized: keyPath: %v Host: %v Port: %v", keyPath, host, port)
 
 	return *client, nil
 }
@@ -170,11 +174,40 @@ func AddRemoteLinkToGerrit(repoPath string, host string, port int64, appName str
 		log.Println(err)
 		return err
 	}
+	log.Printf("Remote link has been added: repoPath: %v Host: %v Port: %v AppName: %v",
+		repoPath, host, port, appName)
 	return nil
 }
 
-func PushToGerrit(repoPath string) error {
+func auth(keyPath string) (transport.AuthMethod, error) {
+	buffer, err := ioutil.ReadFile(keyPath)
+	if err != nil {
+		return nil, err
+	}
+
+	signer, err := ssh.ParsePrivateKey(buffer)
+	if err != nil {
+		return nil, err
+	}
+	return &sshgit.PublicKeys{
+		User:   "project-creator",
+		Signer: signer,
+		HostKeyCallbackHelper: sshgit.HostKeyCallbackHelper{
+			HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		},
+	}, nil
+}
+
+func PushToGerrit(repoPath string, keyPath string) error {
 	r, err := git.PlainOpen(repoPath)
+	if err != nil {
+		return err
+	}
+
+	auth, err := auth(keyPath)
+	if err != nil {
+		return err
+	}
 
 	err = r.Push(&git.PushOptions{
 		RemoteName: "origin",
@@ -182,11 +215,13 @@ func PushToGerrit(repoPath string) error {
 			"refs/heads/*:refs/heads/*",
 			"refs/tags/*:refs/tags/*",
 		},
+		Auth: auth,
 	})
 	if err != nil {
 		log.Println(err)
 		return err
 	}
+	log.Printf("Pushed to gerrit repo %v", repoPath)
 	return nil
 }
 
@@ -218,6 +253,8 @@ func SetupProjectReplication(appSettings models.AppSettings, clientSet ClientSet
 		log.Printf("Unable to reload replication plugin: %v", err)
 		return err
 	}
+	log.Printf("Replication configuration has been finished for app %v", appSettings.Name)
+
 	return nil
 }
 
@@ -242,5 +279,6 @@ func reloadReplicationPlugin(keyPath string, host string, port int64) error {
 		return err
 	}
 
+	log.Printf("Gerrit replication plugin has been reloaded Host: %v Port: %v KeyPath: %v", host, port, keyPath)
 	return nil
 }

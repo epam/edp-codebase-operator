@@ -3,12 +3,14 @@ FROM golang:1.10.3-alpine3.8
 ENV OPERATOR=/usr/local/bin/business-app-handler-controller \
     USER_UID=1001 \
     USER_NAME=business-app-handler-controller \
-    HOME=/home/business-app-handler-controller
+    HOME=/home/business-app-handler-controller \
+    SSH_KNOWN_HOSTS=/home/business-app-handler-controller/.ssh/known_hosts
+
 
 # install operator binary
 COPY business-app-handler-controller ${OPERATOR}
 
-RUN apk add --no-cache ca-certificates
+RUN apk add --no-cache ca-certificates openssh-client
 
 COPY bin /usr/local/bin
 COPY templates /usr/local/bin/templates
