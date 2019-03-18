@@ -357,7 +357,7 @@ func pushToGerrit(appSettings *models.AppSettings, businessApplication *Business
 	if err != nil {
 		return err
 	}
-	err = gerrit.PushToGerrit(appSettings.WorkDir + "/" + businessApplication.CustomResource.Name, appSettings.GerritKeyPath)
+	err = gerrit.PushToGerrit(appSettings.WorkDir+"/"+businessApplication.CustomResource.Name, appSettings.GerritKeyPath)
 	if err != nil {
 		return err
 	}
@@ -402,7 +402,7 @@ func createProjectInVcs(appSettings *models.AppSettings, application *BusinessAp
 		if err != nil {
 			return err
 		}
-		appSettings.VcsSshUrl, err = vcsTool.GetRepositorySshUrl(appSettings.VcsProjectPath, appSettings.Name)
+		appSettings.VcsSshUrl, err = vcsTool.GetRepositorySshUrl(appSettings.ProjectVcsGroupPath, appSettings.Name)
 	}
 	return err
 }
@@ -431,11 +431,11 @@ func concatCreateRepoUrl(appSettings *models.AppSettings, application *BusinessA
 
 func tryCloneRepo(businessApplication BusinessApplication, appSettings models.AppSettings, repositoryUsername string,
 	repositoryPassword string) error {
-		destination := appSettings.WorkDir + "/" + businessApplication.CustomResource.Name
-		err := git.CloneRepo(appSettings.RepositoryUrl, repositoryUsername, repositoryPassword, destination)
-		if err != nil {
-			return err
-		}
+	destination := appSettings.WorkDir + "/" + businessApplication.CustomResource.Name
+	err := git.CloneRepo(appSettings.RepositoryUrl, repositoryUsername, repositoryPassword, destination)
+	if err != nil {
+		return err
+	}
 	fmt.Printf("Repository has been cloned to %v", destination)
 	return nil
 }
