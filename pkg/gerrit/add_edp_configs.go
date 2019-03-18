@@ -8,6 +8,7 @@ import (
 	"fmt"
 	imageV1 "github.com/openshift/api/image/v1"
 	"gopkg.in/src-d/go-git.v4"
+	"gopkg.in/src-d/go-git.v4/config"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 	"html/template"
 	"io/ioutil"
@@ -24,7 +25,7 @@ type gerritConfigGoTemplating struct {
 	Lang              string             `json:"lang"`
 	Framework         string             `json:"framework"`
 	BuildTool         string             `json:"build_tool"`
-	RepositoryUrl     string             `json:"repository_url"`
+	RepositoryUrl     *string            `json:"repository_url"`
 	Route             v1alpha1.Route     `json:"route"`
 	Database          v1alpha1.Database  `json:"database"`
 	AppSettings       models.AppSettings `json:"app_settings"`
@@ -52,14 +53,23 @@ func ConfigInit(clientSet ClientSet.ClientSet, appSettings models.AppSettings,
 		Lang:              spec.Lang,
 		Framework:         spec.Framework,
 		BuildTool:         spec.BuildTool,
-		RepositoryUrl:     spec.Repository.Url,
-		Route:             *spec.Route,
-		Database:          *spec.Database,
 		TemplatesDir:      templatesDir,
 		CloneSshUrl:       cloneSshUrl,
 		MessageHookCmd:    messageHookCmd,
 		AppSettings:       appSettings,
 	}
+	if spec.Repository != nil {
+		config.RepositoryUrl = &spec.Repository.Url
+	}
+	if spec.Database != nil {
+		config.Database = *spec.Database
+	}
+	if spec.Route != nil {
+		config.Route = *spec.Route
+	}
+
+	log.Print("Gerrit config has been initialized")
+
 	return &config, nil
 }
 
@@ -70,6 +80,7 @@ func getOpenshiftDockerRegistryUrl(clientSet ClientSet.ClientSet) (*string, erro
 		log.Println(errorMsg)
 		return nil, errors.New(errorMsg)
 	}
+	log.Printf("Docker registry URL has been retrieved: %v", dtrRegistry.Spec.Host)
 	return &dtrRegistry.Spec.Host, nil
 }
 
@@ -111,7 +122,7 @@ func PushConfigs(config gerritConfigGoTemplating, appSettings models.AppSettings
 		return err
 	}
 
-	err = pushConfigsToGerrit(config, appSettings.Name)
+	err = pushConfigsToGerrit(config, appSettings.Name, appSettings.GerritKeyPath)
 	if err != nil {
 		return err
 	}
@@ -137,6 +148,7 @@ func cloneProjectRepoFromGerrit(config gerritConfigGoTemplating, appSettings mod
 		return err
 	}
 	cmd = exec.Command("scp", "-p", "-P", string(appSettings.GerritSettings.SshPort), config.MessageHookCmd)
+	log.Printf("Project repo from gerrit has been cloned: %v", config.CloneSshUrl)
 	return nil
 }
 
@@ -166,6 +178,7 @@ func copyTemplate(templatePath string, templateName string, config gerritConfigG
 		log.Printf("Unable to render application deploy template: %v", err)
 		return err
 	}
+	log.Printf("Openshift template for application %v has been rendered", appSettings.Name)
 	return nil
 }
 
@@ -187,6 +200,7 @@ func copyPipelines(appSettings models.AppSettings, config gerritConfigGoTemplati
 			return err
 		}
 	}
+	log.Printf("Jenkins pipelines for application %v has been copied", appSettings.Name)
 	return nil
 }
 
@@ -211,6 +225,7 @@ func copySonarConfigs(config gerritConfigGoTemplating, appSettings models.AppSet
 			log.Printf("Unable to render sonar configs fo JS app: %v", err)
 			return err
 		}
+		log.Printf("Sonar configs for application %v has been copied", appSettings.Name)
 		defer f.Close()
 	}
 
@@ -244,19 +259,34 @@ func commitConfigs(config gerritConfigGoTemplating, appName string) error {
 	if err != nil {
 		return err
 	}
+	log.Printf("Commit changes has been completed for application %v", appName)
 	return nil
 }
 
-func pushConfigsToGerrit(config gerritConfigGoTemplating, appName string) error {
-	r, err := git.PlainOpen(config.TemplatesDir + "/" + appName)
+func pushConfigsToGerrit(gerritConfig gerritConfigGoTemplating, appName string, keyPath string) error {
+	auth, err := Auth(keyPath)
 	if err != nil {
 		return err
 	}
 
-	err = r.Push(&git.PushOptions{})
+	r, err := git.PlainOpen(gerritConfig.TemplatesDir + "/" + appName)
 	if err != nil {
 		return err
 	}
+
+	err = r.Push(&git.PushOptions{
+		RemoteName: "origin",
+		RefSpecs: []config.RefSpec{
+			"refs/heads/*:refs/heads/*",
+			"refs/tags/*:refs/tags/*",
+		},
+		Auth: auth,
+	})
+	if err != nil {
+		return err
+	}
+	log.Printf("Configs has been pushed successfully for application %v", appName)
+
 	return nil
 }
 
@@ -265,6 +295,7 @@ func createS2IImageStream(clientSet ClientSet.ClientSet, appSettings models.AppS
 	if err != nil {
 		return err
 	}
+	log.Printf("Image stream in Openshift has been created for application %v", appSettings.Name)
 	return nil
 }
 

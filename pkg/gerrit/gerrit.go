@@ -179,7 +179,7 @@ func AddRemoteLinkToGerrit(repoPath string, host string, port int64, appName str
 	return nil
 }
 
-func auth(keyPath string) (transport.AuthMethod, error) {
+func Auth(keyPath string) (transport.AuthMethod, error) {
 	buffer, err := ioutil.ReadFile(keyPath)
 	if err != nil {
 		return nil, err
@@ -204,7 +204,7 @@ func PushToGerrit(repoPath string, keyPath string) error {
 		return err
 	}
 
-	auth, err := auth(keyPath)
+	auth, err := Auth(keyPath)
 	if err != nil {
 		return err
 	}
