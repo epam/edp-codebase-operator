@@ -79,7 +79,6 @@ func PublicKeyFile(file string) ssh.AuthMethod {
 }
 
 func SshInit(keyPath string, host string, port int64) (SSHClient, error) {
-	log.Printf("SSH_AUTH_SOCK: %v", os.Getenv("SSH_AUTH_SOCK"))
 	sshConfig := &ssh.ClientConfig{
 		User: "project-creator",
 		Auth: []ssh.AuthMethod{

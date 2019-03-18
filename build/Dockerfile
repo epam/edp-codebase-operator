@@ -10,11 +10,12 @@ ENV OPERATOR=/usr/local/bin/business-app-handler-controller \
 # install operator binary
 COPY business-app-handler-controller ${OPERATOR}
 
-RUN apk add --no-cache ca-certificates openssh-client
+RUN apk add --no-cache ca-certificates openssh-client git
 
 COPY bin /usr/local/bin
 COPY templates /usr/local/bin/templates
 COPY pipelines /usr/local/bin/pipelines
+COPY configs /usr/local/bin/configs
 
 RUN chgrp -R 0 /usr/local/bin/templates /usr/local/bin/pipelines && \
     chmod -R g=u /usr/local/bin/templates /usr/local/bin/pipelines

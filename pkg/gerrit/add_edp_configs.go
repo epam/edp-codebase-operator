@@ -11,6 +11,7 @@ import (
 	"gopkg.in/src-d/go-git.v4/config"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 	"html/template"
+	"io"
 	"io/ioutil"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -32,7 +33,6 @@ type gerritConfigGoTemplating struct {
 	DockerRegistryUrl string             `json:"docker_registry_url"`
 	TemplatesDir      string             `json:"templates_dir"`
 	CloneSshUrl       string             `json:"clone_ssh_url"`
-	MessageHookCmd    string             `json:"message_hook_cmd"`
 }
 
 func ConfigInit(clientSet ClientSet.ClientSet, appSettings models.AppSettings,
@@ -45,8 +45,6 @@ func ConfigInit(clientSet ClientSet.ClientSet, appSettings models.AppSettings,
 	templatesDir := fmt.Sprintf("%v/oc-templates", appSettings.WorkDir)
 	cloneSshUrl := fmt.Sprintf("ssh://project-creator@gerrit.%v:%v/%v", appSettings.CicdNamespace,
 		appSettings.GerritSettings.SshPort, appSettings.Name)
-	messageHookCmd := fmt.Sprintf("project-creator@gerrit.%v:hooks/commit-msg %v/.git/hooks/",
-		appSettings.CicdNamespace, appSettings.Name)
 
 	config := gerritConfigGoTemplating{
 		DockerRegistryUrl: *dtrUrl,
@@ -55,7 +53,6 @@ func ConfigInit(clientSet ClientSet.ClientSet, appSettings models.AppSettings,
 		BuildTool:         spec.BuildTool,
 		TemplatesDir:      templatesDir,
 		CloneSshUrl:       cloneSshUrl,
-		MessageHookCmd:    messageHookCmd,
 		AppSettings:       appSettings,
 	}
 	if spec.Repository != nil {
@@ -85,19 +82,24 @@ func getOpenshiftDockerRegistryUrl(clientSet ClientSet.ClientSet) (*string, erro
 }
 
 func PushConfigs(config gerritConfigGoTemplating, appSettings models.AppSettings, clientSet ClientSet.ClientSet) error {
-	err := cloneProjectRepoFromGerrit(config, appSettings)
+	appTemplatesDir := fmt.Sprintf("%v/%v/deploy-templates", config.TemplatesDir, appSettings.Name)
+
+	err := createDirectory(config.TemplatesDir)
 	if err != nil {
 		return err
 	}
 
-	appTemplatesDir := fmt.Sprintf("%v/%v/deploy-templates", config.TemplatesDir, appSettings.Name)
+	err = cloneProjectRepoFromGerrit(config, appSettings)
+	if err != nil {
+		return err
+	}
+
 	err = createDirectory(appTemplatesDir)
 	if err != nil {
 		return err
 	}
-
-	templateBasePath := fmt.Sprintf("%v/%v/", config.AppSettings.Name, config.Lang)
-	templateName := fmt.Sprintf("%v.tmpl", config.Framework)
+	templateBasePath := fmt.Sprintf("/usr/local/bin/templates/applications/%v", strings.ToLower(config.Lang))
+	templateName := fmt.Sprintf("%v.tmpl", strings.ToLower(config.Framework))
 	templatePath := fmt.Sprintf("%v/%v", templateBasePath, templateName)
 
 	err = copyTemplate(templatePath, templateName, config, appSettings)
@@ -141,61 +143,104 @@ func PushConfigs(config gerritConfigGoTemplating, appSettings models.AppSettings
 }
 
 func cloneProjectRepoFromGerrit(config gerritConfigGoTemplating, appSettings models.AppSettings) error {
-	cmd := exec.Command("git", "clone", config.CloneSshUrl)
-	cmd.Dir = config.TemplatesDir
-	_, err := cmd.Output()
+	log.Printf("Cloning repo from gerrit using: %v", config.CloneSshUrl)
+
+	cmd := exec.Command("git", "clone", config.CloneSshUrl, fmt.Sprintf("%v/%v",
+		config.TemplatesDir, appSettings.Name))
+	out, err := cmd.Output()
+	log.Printf("Cloning repo %v to %v: Output: %v", config.CloneSshUrl, config.TemplatesDir, out)
+
 	if err != nil {
 		return err
 	}
-	cmd = exec.Command("scp", "-p", "-P", string(appSettings.GerritSettings.SshPort), config.MessageHookCmd)
-	log.Printf("Project repo from gerrit has been cloned: %v", config.CloneSshUrl)
+	log.Print("Cloning repo has been finished")
+
+	err = copyMessageHookToRepository(config.TemplatesDir, appSettings.Name)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func copyMessageHookToRepository(templatesDir string, appName string) error {
+	log.Printf("Copying message hook to repository")
+	messageHookDestination := fmt.Sprintf("%v/%v/.git/hooks/", templatesDir, appName)
+	messageHookPath := "/usr/local/bin/configs/commit-msg"
+	from, err := os.Open(messageHookPath)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer from.Close()
+
+	to, err := os.OpenFile(messageHookDestination + "commit-msg", os.O_RDWR|os.O_CREATE, 0755)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer to.Close()
+
+	_, err = io.Copy(to, from)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	return nil
 }
 
 func createDirectory(path string) error {
+	log.Printf("Creating directory for oc templates: %v", path)
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		err = os.MkdirAll(path, 0755)
 		if err != nil {
 			return err
 		}
 	}
+	log.Printf("Directory %v has been created", path)
 	return nil
 }
 
 func copyTemplate(templatePath string, templateName string, config gerritConfigGoTemplating, appSettings models.AppSettings) error {
 	templatesDest := fmt.Sprintf("%v/%v/deploy-templates/%v.yaml", config.TemplatesDir, appSettings.Name,
 		appSettings.Name)
+
 	f, err := os.Create(templatesDest)
 	if err != nil {
 		return err
 	}
+
+	log.Printf("Start rendering openshift templates: %v", templatePath)
 	tmpl, err := template.New(templateName).ParseFiles(templatePath)
 	if err != nil {
+		log.Printf("Unable to parse application deploy template: %v", err)
 		return err
 	}
+
 	err = tmpl.Execute(f, config)
 	if err != nil {
 		log.Printf("Unable to render application deploy template: %v", err)
 		return err
 	}
+
 	log.Printf("Openshift template for application %v has been rendered", appSettings.Name)
 	return nil
 }
 
 func copyPipelines(appSettings models.AppSettings, config gerritConfigGoTemplating) error {
-	files, err := ioutil.ReadDir(appSettings.WorkDir + "/pipelines")
-	pipelinesDest := fmt.Sprintf("%v/%v", config.TemplatesDir, appSettings.Name)
+	pipelinesPath := "/usr/local/bin/pipelines"
+	files, err := ioutil.ReadDir(pipelinesPath)
 	if err != nil {
 		return err
 	}
+	pipelinesDest := fmt.Sprintf("%v/%v", config.TemplatesDir, appSettings.Name)
+	log.Printf("Start copying pipelines to %v", pipelinesDest)
 
 	for _, f := range files {
-		input, err := ioutil.ReadFile(f.Name())
+		input, err := ioutil.ReadFile(pipelinesPath + "/" + f.Name())
 		if err != nil {
 			return err
 		}
 
-		err = ioutil.WriteFile(pipelinesDest+"/"+f.Name(), input, 0644)
+		err = ioutil.WriteFile(pipelinesDest+"/"+f.Name(), input, 0755)
 		if err != nil {
 			return err
 		}

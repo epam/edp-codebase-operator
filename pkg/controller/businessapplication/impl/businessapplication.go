@@ -217,7 +217,7 @@ func trySetupGerritReplication(appSettings models.AppSettings, clientSet ClientS
 			return err
 		}
 	} else {
-		log.Println("VCS integration isn't enabled")
+		log.Print("Skipped gerrit replication configuration. VCS integration isn't enabled")
 		return nil
 	}
 	return nil
@@ -235,7 +235,7 @@ func trySetupPerf(app BusinessApplication, set *ClientSet.ClientSet, appSettings
 	if appSettings.UserSettings.PerfIntegrationEnabled {
 		return setupPerf(app, set, appSettings)
 	} else {
-		log.Printf("Perf integration isn't enabled")
+		log.Print("Skipped perf configuration. Perf integration isn't enabled")
 	}
 	return nil
 }
