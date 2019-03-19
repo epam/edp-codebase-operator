@@ -14,6 +14,8 @@ type gitlab struct {
 	groupId                   string
 	existingProjectInGroup    string
 	nonExistingProjectInGroup string
+	sshUrl                    string
+	nonExistingGroup          string
 }
 
 func createGitlab() gitlab {
@@ -26,6 +28,8 @@ func createGitlab() gitlab {
 		groupId:                   os.Getenv("TEST_GITLAB_GROUP_ID"),
 		existingProjectInGroup:    os.Getenv("TEST_EXISTING_PROJECT_IN_GROUP"),
 		nonExistingProjectInGroup: os.Getenv("TEST_NON_EXISTING_PROJECT_IN_GROUP"),
+		sshUrl:                    os.Getenv("TEST_GITLAB_PROJECT_SSH_URL"),
+		nonExistingGroup:          os.Getenv("TEST_GITLAB_NON_EXISTING_GROUP"),
 	}
 }
 
@@ -38,6 +42,7 @@ func TestGitLab_CheckProjectExist_ValidPass_ExistingProject(t *testing.T) {
 
 	if err != nil {
 		t.Error("Actual: error. Expected: true")
+		return
 	}
 	if !*res {
 		t.Error("Actual: false. Expected: true")
@@ -53,6 +58,7 @@ func TestGitLab_CheckProjectExist_ValidToken_ExistingProject(t *testing.T) {
 
 	if err != nil {
 		t.Error("Actual: error. Expected: true")
+		return
 	}
 	if !*res {
 		t.Error("Actual: false. Expected: true")
@@ -189,5 +195,35 @@ func TestGitLab_CreateProject_InValidToken_NonExistingProject_ExistingGroup(t *t
 
 	if err == nil {
 		t.Errorf("Actual: %v. Expected: error", id)
+	}
+}
+
+func TestGitLab_GetRepositorySshUrl(t *testing.T) {
+	gitlab := createGitlab()
+	client := GitLab{}
+	_ = client.Init(gitlab.url, gitlab.user, gitlab.pass)
+
+	sshUrl, err := client.GetRepositorySshUrl(gitlab.group, gitlab.existingProjectInGroup)
+
+	if err != nil {
+		t.Errorf("Expected: %v, actual error: %v", gitlab.sshUrl, err)
+		return
+	}
+
+	if sshUrl != gitlab.sshUrl {
+		t.Errorf("Expected: %v, actual: %v", gitlab.sshUrl, sshUrl)
+	}
+}
+
+func TestGitLab_GetRepositorySshUrlNonExistingGroupPath(t *testing.T) {
+	gitlab := createGitlab()
+	client := GitLab{}
+	_ = client.Init(gitlab.url, gitlab.user, gitlab.pass)
+
+	sshUrl, err := client.GetRepositorySshUrl(gitlab.nonExistingGroup, gitlab.existingProjectInGroup)
+
+	if err == nil {
+		t.Errorf("Expected: error, actual response: %v", sshUrl)
+		return
 	}
 }
