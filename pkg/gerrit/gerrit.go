@@ -34,6 +34,16 @@ type SSHClient struct {
 	Port   int64
 }
 
+type ReplicationConfigParams struct {
+	Name      string
+	VcsSshUrl string
+}
+
+const (
+	ReplicationConfigTemplateName = "replication-conf.tmpl"
+	TemplatesPath                 = "/usr/local/bin/templates/gerrit"
+)
+
 func (client *SSHClient) RunCommand(cmd *SSHCommand) ([]byte, error) {
 	var session *ssh.Session
 	var err error
@@ -224,22 +234,38 @@ func PushToGerrit(repoPath string, keyPath string) error {
 	return nil
 }
 
-func SetupProjectReplication(appSettings models.AppSettings, clientSet ClientSet.ClientSet) error {
+func generateReplicationConfig(templatePath, templateName string, params ReplicationConfigParams) (string, error) {
+	log.Printf("Start generation replication config by template path: %v, template name: %v, with params: %+v",
+		templatePath, templateName, params)
+	replicationFullPath := fmt.Sprintf("%v/%v", templatePath, templateName)
 	var renderedTemplate bytes.Buffer
-	tmpl, err := template.New("replication-conf.tmpl").
-		ParseFiles("/usr/local/bin/templates/gerrit/replication-conf.tmpl")
+	tmpl, err := template.New(templateName).
+		ParseFiles(replicationFullPath)
 	if err != nil {
-		return err
+		log.Printf("Error has been occuerd during the parcing template by full path: %v", replicationFullPath)
+		return "", err
 	}
-	err = tmpl.Execute(&renderedTemplate, appSettings)
+	err = tmpl.Execute(&renderedTemplate, params)
 	if err != nil {
 		log.Printf("Unable to render replication config: %v", err)
-		return err
+		return "", err
 	}
+	log.Printf("Replication config has been generated successsfully"+
+		" by template path: %v, template name: %v, with params: %+v", templatePath, templateName, params)
+	return renderedTemplate.String(), nil
+}
+
+func SetupProjectReplication(appSettings models.AppSettings, clientSet ClientSet.ClientSet) error {
+	log.Printf("Start setup project replication for app: %v", appSettings.Name)
+	replicaConfigNew, err := generateReplicationConfig(
+		TemplatesPath, ReplicationConfigTemplateName, ReplicationConfigParams{
+			Name:      appSettings.Name,
+			VcsSshUrl: appSettings.VcsSshUrl,
+		})
 
 	gerritSettings, err := clientSet.CoreClient.ConfigMaps(appSettings.CicdNamespace).Get("gerrit", metav1.GetOptions{})
 	replicaConfig := gerritSettings.Data["replication.config"]
-	gerritSettings.Data["replication.config"] = replicaConfig + renderedTemplate.String()
+	gerritSettings.Data["replication.config"] = replicaConfig + replicaConfigNew
 	result, err := clientSet.CoreClient.ConfigMaps(appSettings.CicdNamespace).Update(gerritSettings)
 	if err != nil {
 		log.Printf("Unable to update config map with replication config: %v", err)

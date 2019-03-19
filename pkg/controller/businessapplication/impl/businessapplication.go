@@ -170,14 +170,24 @@ func triggerJobProvisioning(app BusinessApplication, appSettings models.AppSetti
 
 func gerritConfiguration(appSettings *models.AppSettings, businessApplication BusinessApplication,
 	clientSet *ClientSet.ClientSet) error {
-	_ = settings.CreateGerritPrivateKey(appSettings.GerritPrivateKey, appSettings.GerritKeyPath)
-	err := settings.CreateSshConfig(*appSettings)
+	log.Printf("Start gerrit configuration for app: %v...", appSettings.Name)
+
+	log.Printf("Start creation of gerrit private key for app: %v...", appSettings.Name)
+	err := settings.CreateGerritPrivateKey(appSettings.GerritPrivateKey, appSettings.GerritKeyPath)
 	if err != nil {
+		log.Printf("Creation of gerrit private key for app %v has been failed. Return error", appSettings.Name)
 		return err
 	}
-
+	log.Printf("Start creation of ssh config for app: %v...", appSettings.Name)
+	err = settings.CreateSshConfig(*appSettings)
+	if err != nil {
+		log.Printf("Creation of ssh config for app %v has been failed. Return error", appSettings.Name)
+		return err
+	}
+	log.Printf("Start setup repo url for app: %v...", appSettings.Name)
 	err = setRepositoryUrl(appSettings, &businessApplication)
 	if err != nil {
+		log.Printf("Setup repo url for app %v has been failed. Return error", appSettings.Name)
 		return err
 	}
 
@@ -187,60 +197,56 @@ func gerritConfiguration(appSettings *models.AppSettings, businessApplication Bu
 
 	isRepositoryAccessible := git.CheckPermissions(appSettings.RepositoryUrl, repositoryUsername, repositoryPassword)
 	if isRepositoryAccessible {
+		log.Printf("Start creation project in VCS for app: %v...", appSettings.Name)
 		err = tryCreateProjectInVcs(appSettings, &businessApplication, *clientSet)
 		if err != nil {
+			log.Printf("Creation project in VCS for app %v has been failed. Return error", appSettings.Name)
 			return err
 		}
+		log.Printf("Start clone project for app: %v...", appSettings.Name)
 		err = tryCloneRepo(businessApplication, *appSettings, repositoryUsername, repositoryPassword)
 		if err != nil {
+			log.Printf("Clone project for app %v has been failed. Return error", appSettings.Name)
 			return err
 		}
 	} else {
 		log.Printf("Cannot access provided git repository: %s", businessApplication.CustomResource.Spec.Repository.Url)
 	}
-
+	log.Printf("Start creation project in Gerrit for app: %v...", appSettings.Name)
 	err = createProjectInGerrit(appSettings, &businessApplication)
 	if err != nil {
+		log.Printf("Creation project in Gerrit for app %v has been failed. Return error", appSettings.Name)
 		return err
 	}
+	log.Printf("Start push project to Gerrit for app: %v...", appSettings.Name)
 	err = pushToGerrit(appSettings, &businessApplication)
 	if err != nil {
+		log.Printf("Push to gerrit for app %v has been failed. Return error", appSettings.Name)
 		return err
 	}
+	log.Printf("Start setup Gerrit replication for app: %v...", appSettings.Name)
 	err = trySetupGerritReplication(*appSettings, *clientSet)
 	if err != nil {
+		log.Printf("Setup gerrit replication for app %v has been failed. Return error", appSettings.Name)
 		return err
 	}
+	log.Printf("Gerrit configuration has been finished successfully for app: %v...", appSettings.Name)
 	return nil
 }
 
 func trySetupGerritReplication(appSettings models.AppSettings, clientSet ClientSet.ClientSet) error {
 	if appSettings.UserSettings.VcsIntegrationEnabled {
-		err := setupGerritReplication(appSettings, clientSet)
-		if err != nil {
-			return err
-		}
-	} else {
-		log.Print("Skipped gerrit replication configuration. VCS integration isn't enabled")
-		return nil
+		return gerrit.SetupProjectReplication(appSettings, clientSet)
 	}
-	return nil
-}
-
-func setupGerritReplication(appSettings models.AppSettings, clientSet ClientSet.ClientSet) error {
-	err := gerrit.SetupProjectReplication(appSettings, clientSet)
-	if err != nil {
-		return err
-	}
+	log.Print("Skipped gerrit replication configuration. VCS integration isn't enabled")
 	return nil
 }
 
 func trySetupPerf(app BusinessApplication, set *ClientSet.ClientSet, appSettings models.AppSettings) error {
 	if appSettings.UserSettings.PerfIntegrationEnabled {
 		return setupPerf(app, set, appSettings)
-	} else {
-		log.Print("Skipped perf configuration. Perf integration isn't enabled")
 	}
+	log.Print("Skipped perf configuration. Perf integration isn't enabled")
 	return nil
 }
 
