@@ -10,7 +10,7 @@ import (
 	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/config"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
-	"html/template"
+	"text/template"
 	"io"
 	"io/ioutil"
 	corev1 "k8s.io/api/core/v1"
