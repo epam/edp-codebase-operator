@@ -73,6 +73,7 @@ func (businessApplication BusinessApplication) Create() {
 		rollback(businessApplication)
 		return
 	}
+	log.Println("Job provisioning has been triggered")
 
 	err = trySetupPerf(businessApplication, clientSet, *appSettings)
 
@@ -80,9 +81,12 @@ func (businessApplication BusinessApplication) Create() {
 	err = gerrit.PushConfigs(*config, *appSettings, *clientSet)
 
 	if err != nil {
+		log.Println(err)
 		rollback(businessApplication)
 		return
 	}
+
+	log.Println("Pipelines and templates has been pushed to Gerrit")
 
 	businessApplication.CustomResource.Status.Available = true
 	businessApplication.CustomResource.Status.Status = models.StatusFinished

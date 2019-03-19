@@ -347,7 +347,7 @@ func createS2IImageStream(clientSet ClientSet.ClientSet, appSettings models.AppS
 func newS2IReact(config gerritConfigGoTemplating) *imageV1.ImageStream {
 	return &imageV1.ImageStream{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "s2i-" + config.Lang,
+			Name: "s2i-" + strings.ToLower(config.Lang),
 		},
 		Spec: imageV1.ImageStreamSpec{
 			LookupPolicy: imageV1.ImageLookupPolicy{
@@ -371,7 +371,7 @@ func newS2IReact(config gerritConfigGoTemplating) *imageV1.ImageStream {
 func newS2IJava(config gerritConfigGoTemplating) *imageV1.ImageStream {
 	return &imageV1.ImageStream{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "s2i-" + config.Lang,
+			Name: "s2i-" + strings.ToLower(config.Lang),
 		},
 		Spec: imageV1.ImageStreamSpec{
 			LookupPolicy: imageV1.ImageLookupPolicy{
@@ -395,7 +395,7 @@ func newS2IJava(config gerritConfigGoTemplating) *imageV1.ImageStream {
 func newS2IDotNet(config gerritConfigGoTemplating) *imageV1.ImageStream {
 	return &imageV1.ImageStream{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        "s2i-" + config.Lang,
+			Name:        "s2i-" + strings.ToLower(config.Lang),
 			Annotations: map[string]string{"openshift.io/display-name": ".NET Core Builder Images"},
 		},
 		Spec: imageV1.ImageStreamSpec{
