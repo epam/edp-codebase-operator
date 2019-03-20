@@ -19,6 +19,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type BusinessApplication struct {
@@ -41,7 +42,8 @@ func (businessApplication BusinessApplication) Create() {
 		businessApplication.CustomResource.Spec.BuildTool, businessApplication.CustomResource.Spec.Route,
 		businessApplication.CustomResource.Spec.Database, businessApplication.CustomResource.Spec.Repository)
 
-	businessApplication.CustomResource.Status.Status = models.StatusInProgress
+	setStatusFields(businessApplication, false, models.StatusInProgress, time.Now())
+
 	err := businessApplication.Client.Update(context.TODO(), businessApplication.CustomResource)
 	if err != nil {
 		log.Printf("Error has been occurred in status update: %v", err)
@@ -87,9 +89,7 @@ func (businessApplication BusinessApplication) Create() {
 	}
 
 	log.Println("Pipelines and templates has been pushed to Gerrit")
-
-	businessApplication.CustomResource.Status.Available = true
-	businessApplication.CustomResource.Status.Status = models.StatusFinished
+	setStatusFields(businessApplication, true, models.StatusFinished, time.Now())
 }
 
 func initAppSettings(businessApplication BusinessApplication, clientSet *ClientSet.ClientSet) (*models.AppSettings, error) {
@@ -147,7 +147,7 @@ func initAppSettings(businessApplication BusinessApplication, clientSet *ClientS
 }
 
 func rollback(businessApplication BusinessApplication) {
-	businessApplication.CustomResource.Status.Status = models.StatusFailed
+	setStatusFields(businessApplication, false, models.StatusFailed, time.Now())
 }
 
 func triggerJobProvisioning(app BusinessApplication, appSettings models.AppSettings) error {
@@ -448,6 +448,14 @@ func tryCloneRepo(businessApplication BusinessApplication, appSettings models.Ap
 	}
 	fmt.Printf("Repository has been cloned to %v", destination)
 	return nil
+}
+
+func setStatusFields(businessApplication BusinessApplication, available bool, status string, time time.Time) {
+	businessApplication.CustomResource.Status.Status = status
+	businessApplication.CustomResource.Status.LastTimeUpdated = time
+	businessApplication.CustomResource.Status.Available = available
+	log.Printf("Status for application %v has been updated to '%v' at %v. Available: %v",
+		businessApplication.CustomResource.Name, status, time, available)
 }
 
 func (businessApplication BusinessApplication) Update() {
