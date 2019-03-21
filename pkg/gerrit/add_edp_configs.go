@@ -10,15 +10,16 @@ import (
 	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/config"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
-	"text/template"
 	"io"
 	"io/ioutil"
 	corev1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"log"
 	"os"
 	"os/exec"
 	"strings"
+	"text/template"
 	"time"
 )
 
@@ -173,7 +174,7 @@ func copyMessageHookToRepository(templatesDir string, appName string) error {
 	}
 	defer from.Close()
 
-	to, err := os.OpenFile(messageHookDestination + "commit-msg", os.O_RDWR|os.O_CREATE, 0755)
+	to, err := os.OpenFile(messageHookDestination+"commit-msg", os.O_RDWR|os.O_CREATE, 0755)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -336,11 +337,16 @@ func pushConfigsToGerrit(gerritConfig gerritConfigGoTemplating, appName string, 
 }
 
 func createS2IImageStream(clientSet ClientSet.ClientSet, appSettings models.AppSettings, is *imageV1.ImageStream) error {
-	_, err := clientSet.ImageClient.ImageStreams(appSettings.CicdNamespace).Create(is)
-	if err != nil {
-		return err
+	_, err := clientSet.ImageClient.ImageStreams(appSettings.CicdNamespace).Get(is.Name, metav1.GetOptions{})
+	if err != nil && k8serrors.IsNotFound(err) {
+		_, err := clientSet.ImageClient.ImageStreams(appSettings.CicdNamespace).Create(is)
+		if err != nil {
+			return err
+		}
+		log.Printf("Image stream in Openshift has been created for application %v", appSettings.Name)
+	} else {
+		log.Printf("Image stream in Openshift for application %v already exist. Creation skipped", appSettings.Name)
 	}
-	log.Printf("Image stream in Openshift has been created for application %v", appSettings.Name)
 	return nil
 }
 
