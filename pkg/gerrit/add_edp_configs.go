@@ -364,7 +364,7 @@ func newS2IReact(config gerritConfigGoTemplating) *imageV1.ImageStream {
 				Annotations: nil,
 				From: &corev1.ObjectReference{
 					Kind: "DockerImage",
-					Name: "ibotty/s2i-nginx:latest",
+					Name: "epamedp/s2i-nginx:latest",
 				},
 				ReferencePolicy: imageV1.TagReferencePolicy{
 					Type: "Source",
@@ -384,11 +384,11 @@ func newS2IJava(config gerritConfigGoTemplating) *imageV1.ImageStream {
 				Local: false,
 			},
 			Tags: []imageV1.TagReference{{
-				Name:        "2.1",
+				Name:        "latest",
 				Annotations: nil,
 				From: &corev1.ObjectReference{
 					Kind: "DockerImage",
-					Name: "fabric8/s2i-java:2.1",
+					Name: "epamedp/s2i-java:latest",
 				},
 				ReferencePolicy: imageV1.TagReferencePolicy{
 					Type: "Source",
@@ -409,30 +409,6 @@ func newS2IDotNet(config gerritConfigGoTemplating) *imageV1.ImageStream {
 				Local: false,
 			},
 			Tags: []imageV1.TagReference{{
-				Name: "2.0",
-				Annotations: map[string]string{
-					"description": "Build and run .NET Core applications on CentOS 7. For more information about" +
-						" using this builder image, including OpenShift considerations, see " +
-						"https://github.com/redhat-developer/s2i-dotnetcore/tree/master/2.0/build/README.md. " +
-						"WARNING: By selecting this tag, your application will automatically update to use the " +
-						"latest version of .NET Core available on OpenShift, including major versions updates.",
-					"iconClass":                 "icon-dotnet",
-					"openshift.io/display-name": ".NET Core (Latest)",
-					"sampleContextDir":          "app",
-					"sampleRef":                 "dotnetcore-2.0",
-					"sampleRepo":                "https://github.com/redhat-developer/s2i-dotnetcore-ex.git",
-					"supports":                  "dotnet",
-					"tags":                      "builder,.net,dotnet,dotnetcore",
-				},
-				From: &corev1.ObjectReference{
-					Kind: "DockerImage",
-					Name: "registry.centos.org/dotnet/dotnet-20-centos7:latest",
-				},
-				ImportPolicy: imageV1.TagImportPolicy{},
-				ReferencePolicy: imageV1.TagReferencePolicy{
-					Type: "Source",
-				},
-			}, {
 				Name: "latest",
 				Annotations: map[string]string{
 					"description": "Build and run .NET Core 2.0 applications on CentOS 7. For more " +
@@ -448,8 +424,8 @@ func newS2IDotNet(config gerritConfigGoTemplating) *imageV1.ImageStream {
 					"version":                   "2.0",
 				},
 				From: &corev1.ObjectReference{
-					Kind: "ImageStreamTag",
-					Name: "2.0",
+					Kind: "DockerImage",
+					Name: "epamedp/dotnet-20-centos7:latest",
 				},
 				ImportPolicy: imageV1.TagImportPolicy{},
 				ReferencePolicy: imageV1.TagReferencePolicy{
