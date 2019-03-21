@@ -163,7 +163,7 @@ func triggerJobProvisioning(app BusinessApplication, appSettings models.AppSetti
 		"PARAM":      "true",
 		"NAME":       app.CustomResource.Name,
 		"TYPE":       "app",
-		"BUILD_TOOL": app.CustomResource.Spec.BuildTool,
+		"BUILD_TOOL": strings.ToLower(app.CustomResource.Spec.BuildTool),
 	})
 	return err
 }
