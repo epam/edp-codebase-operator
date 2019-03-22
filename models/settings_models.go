@@ -13,6 +13,7 @@ type AppSettings struct {
 	VcsProjectPath        string         `json:"vcs_project_path"`
 	JenkinsToken          string         `json:"jenkins_token"`
 	JenkinsUsername       string         `json:"jenkins_username"`
+	JenkinsUrl            string         `json:"jenkins_url"`
 	UserSettings          UserSettings   `json:"user_settings"`
 	GerritSettings        GerritSettings `json:"gerrit_settings"`
 	VcsKeyPath            string         `json:"vcs_key_path"`
@@ -44,8 +45,8 @@ type GerritSettings struct {
 }
 
 const (
-	BitBucket VCSTool  = "bitbucket"
-	GitLab    VCSTool  = "gitlab"
+	BitBucket VCSTool = "bitbucket"
+	GitLab    VCSTool = "gitlab"
 )
 
 const (

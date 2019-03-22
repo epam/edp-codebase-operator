@@ -70,7 +70,7 @@ required = [
 
 [[override]]
   name = "github.com/bndr/gojenkins"
-  version = "=v1.0"
+  revision = "de43c03cf849dd63a9737df6e05791c7a176c93d"
 
 [[constraint]]
   name = "github.com/operator-framework/operator-sdk"

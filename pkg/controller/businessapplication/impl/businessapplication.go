@@ -5,6 +5,7 @@ import (
 	edpv1alpha1 "business-app-handler-controller/pkg/apis/edp/v1alpha1"
 	"business-app-handler-controller/pkg/gerrit"
 	"business-app-handler-controller/pkg/git"
+	"business-app-handler-controller/pkg/jenkins"
 	ClientSet "business-app-handler-controller/pkg/openshift"
 	"business-app-handler-controller/pkg/perf"
 	"business-app-handler-controller/pkg/settings"
@@ -12,7 +13,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/bndr/gojenkins"
 	"k8s.io/apimachinery/pkg/runtime"
 	"log"
 	"net/url"
@@ -70,7 +70,15 @@ func (businessApplication BusinessApplication) Create() {
 	}
 	log.Println("Gerrit has been configured")
 
-	err = triggerJobProvisioning(businessApplication, *appSettings)
+	jenkinsClient, err := jenkins.Init(appSettings.JenkinsUrl, appSettings.JenkinsUsername, appSettings.JenkinsToken)
+	if err != nil {
+		log.Println(err)
+		rollback(businessApplication)
+		return
+	}
+
+	err = jenkinsClient.TriggerJobProvisioning(businessApplication.CustomResource.Name,
+		businessApplication.CustomResource.Spec.BuildTool)
 	if err != nil {
 		rollback(businessApplication)
 		return
@@ -81,7 +89,6 @@ func (businessApplication BusinessApplication) Create() {
 
 	config, err := gerrit.ConfigInit(*clientSet, *appSettings, businessApplication.CustomResource.Spec)
 	err = gerrit.PushConfigs(*config, *appSettings, *clientSet)
-
 	if err != nil {
 		log.Println(err)
 		rollback(businessApplication)
@@ -89,6 +96,16 @@ func (businessApplication BusinessApplication) Create() {
 	}
 
 	log.Println("Pipelines and templates has been pushed to Gerrit")
+
+	err = jenkinsClient.TriggerBuildJob(businessApplication.CustomResource.Name)
+	if err != nil {
+		log.Println(err)
+		rollback(businessApplication)
+		return
+	}
+
+	log.Printf("Build job for %v application has been triggered", businessApplication.CustomResource.Name)
+
 	setStatusFields(businessApplication, true, models.StatusFinished, time.Now())
 }
 
@@ -120,6 +137,7 @@ func initAppSettings(businessApplication BusinessApplication, clientSet *ClientS
 	appSettings.GerritSettings = *gerritSettings
 	appSettings.JenkinsToken, appSettings.JenkinsUsername, err = settings.GetJenkinsCreds(*clientSet,
 		businessApplication.CustomResource.Namespace)
+	appSettings.JenkinsUrl = fmt.Sprintf("http://jenkins.%s:8080", appSettings.CicdNamespace)
 
 	if appSettings.UserSettings.VcsIntegrationEnabled {
 		VcsGroupNameUrl, err := url.Parse(appSettings.UserSettings.VcsGroupNameUrl)
@@ -148,24 +166,6 @@ func initAppSettings(businessApplication BusinessApplication, clientSet *ClientS
 
 func rollback(businessApplication BusinessApplication) {
 	setStatusFields(businessApplication, false, models.StatusFailed, time.Now())
-}
-
-func triggerJobProvisioning(app BusinessApplication, appSettings models.AppSettings) error {
-	jenkinsUrl := fmt.Sprintf("http://jenkins.%s:8080", appSettings.CicdNamespace)
-	jenkins := gojenkins.CreateJenkins(jenkinsUrl, appSettings.JenkinsUsername, appSettings.JenkinsToken)
-
-	_, err := jenkins.Init()
-	if err != nil {
-		return err
-	}
-
-	_, err = jenkins.BuildJob("Job-provisioning", map[string]string{
-		"PARAM":      "true",
-		"NAME":       app.CustomResource.Name,
-		"TYPE":       "app",
-		"BUILD_TOOL": strings.ToLower(app.CustomResource.Spec.BuildTool),
-	})
-	return err
 }
 
 func gerritConfiguration(appSettings *models.AppSettings, businessApplication BusinessApplication,
