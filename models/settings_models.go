@@ -36,6 +36,15 @@ type UserSettings struct {
 	VcsToolName            VCSTool `json:"vcs_tool_name"`
 }
 
+type EnvSettings struct {
+	Name     string    `json:"name"`
+	Triggers []Trigger `json:"triggers"`
+}
+
+type Trigger struct {
+	Type string `json:"type"`
+}
+
 type VCSTool string
 
 type GerritSettings struct {

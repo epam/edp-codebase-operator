@@ -97,14 +97,32 @@ func (businessApplication BusinessApplication) Create() {
 
 	log.Println("Pipelines and templates has been pushed to Gerrit")
 
-	err = jenkinsClient.TriggerBuildJob(businessApplication.CustomResource.Name)
+	envs, err := settings.GetEnvSettings(*clientSet, appSettings.CicdNamespace)
 	if err != nil {
 		log.Println(err)
 		rollback(businessApplication)
 		return
 	}
 
-	log.Printf("Build job for %v application has been triggered", businessApplication.CustomResource.Name)
+	if envs != nil {
+		err = ClientSet.PatchBuildConfig(*clientSet, *appSettings, *envs)
+		if err != nil {
+			log.Println(err)
+			rollback(businessApplication)
+			return
+		}
+
+		log.Printf("Build config for %v application has been patched", businessApplication.CustomResource.Name)
+
+		err = jenkinsClient.TriggerBuildJob(businessApplication.CustomResource.Name)
+		if err != nil {
+			log.Println(err)
+			rollback(businessApplication)
+			return
+		}
+
+		log.Printf("Build job for %v application has been triggered", businessApplication.CustomResource.Name)
+	}
 
 	setStatusFields(businessApplication, true, models.StatusFinished, time.Now())
 }
