@@ -18,6 +18,11 @@ func TestExampleAddEdpConfigs_CopyTemplate_Test(t *testing.T) {
 		Name: "test",
 	}
 
+	route := v1alpha1.Route{
+		Site: "site",
+		Path: "/my_path",
+	}
+
 	database := v1alpha1.Database{
 		Kind:     "PostgreSQL",
 		Version:  "9.6",
@@ -36,7 +41,8 @@ func TestExampleAddEdpConfigs_CopyTemplate_Test(t *testing.T) {
 		TemplatesDir:      templatesDir,
 		CloneSshUrl:       cloneSshUrl,
 		AppSettings:       appSettings,
-		Database:          database,
+		Database:          &database,
+		Route:             &route,
 	}
 
 	err := copyTemplate(templatePath, templateName, config, appSettings)

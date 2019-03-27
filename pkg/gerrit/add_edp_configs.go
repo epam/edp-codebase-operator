@@ -28,8 +28,8 @@ type gerritConfigGoTemplating struct {
 	Framework         string             `json:"framework"`
 	BuildTool         string             `json:"build_tool"`
 	RepositoryUrl     *string            `json:"repository_url"`
-	Route             v1alpha1.Route     `json:"route"`
-	Database          v1alpha1.Database  `json:"database"`
+	Route             *v1alpha1.Route    `json:"route"`
+	Database          *v1alpha1.Database `json:"database"`
 	AppSettings       models.AppSettings `json:"app_settings"`
 	DockerRegistryUrl string             `json:"docker_registry_url"`
 	TemplatesDir      string             `json:"templates_dir"`
@@ -60,10 +60,10 @@ func ConfigInit(clientSet ClientSet.ClientSet, appSettings models.AppSettings,
 		config.RepositoryUrl = &spec.Repository.Url
 	}
 	if spec.Database != nil {
-		config.Database = *spec.Database
+		config.Database = spec.Database
 	}
 	if spec.Route != nil {
-		config.Route = *spec.Route
+		config.Route = spec.Route
 	}
 
 	log.Print("Gerrit config has been initialized")
