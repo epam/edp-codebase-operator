@@ -41,7 +41,7 @@ objects:
   kind: ServiceAccount
   metadata:
     name: {{.AppSettings.Name}}
-{{if .Route -}}
+{{if .Route}}
 - apiVersion: v1
   kind: Route
   metadata:
@@ -54,9 +54,9 @@ objects:
     tls:
       insecureEdgeTerminationPolicy: Redirect
       termination: edge
-{{if and .Route.Site (ne .Route.Site "") -}}
+{{if and .Route.Site (ne .Route.Site "")}}
     host: {{.Route.Site}}-${NAMESPACE}.{{.AppSettings.UserSettings.DnsWildcard}}
-{{- end}}
+{{end}}
     path: {{.Route.Path}}
     port:
       targetPort: 8080
@@ -64,8 +64,8 @@ objects:
       kind: Service
       name: {{.AppSettings.Name}}
     wildcardPolicy: None
-{{- end}}
-{{if and .Database (eq .Database.Kind "PostgreSQL") -}}
+{{end}}
+{{if and .Database (eq .Database.Kind "PostgreSQL")}}
 - apiVersion: v1
   kind: PersistentVolumeClaim
   metadata:
@@ -159,7 +159,7 @@ objects:
           - name: {{.AppSettings.Name}}-db
             persistentVolumeClaim:
               claimName: {{.AppSettings.Name}}-db
-{{- end}}
+{{end}}
 - apiVersion: v1
   kind: DeploymentConfig
   metadata:
@@ -185,12 +185,12 @@ objects:
         labels:
           app: {{.AppSettings.Name}}
       spec:
-{{if and .Database (eq .Database.Kind "PostgreSQL") -}}
+{{if and .Database (eq .Database.Kind "PostgreSQL")}}
         initContainers:
         - name: init-{{.AppSettings.Name}}-db
           image: busybox
           command: ["sh", "-c", "while ! nc -w 1 {{.AppSettings.Name}}-db 5432 </dev/null; do echo waiting for {{.AppSettings.Name}}-db; sleep 10; done;"]
-{{- end}}
+{{end}}
         serviceAccountName: {{.AppSettings.Name}}
         containers:
         - name: {{.AppSettings.Name}}
@@ -218,7 +218,7 @@ objects:
           resources:
             requests:
               memory: 500Mi
-{{if and .Database (eq .Database.Kind "PostgreSQL") -}}
+{{if and .Database (eq .Database.Kind "PostgreSQL")}}
           env:
           - name: POSTGRES_DATABASE
             value: {{.AppSettings.Name}}-db
@@ -226,7 +226,7 @@ objects:
             value: "admin"
           - name: POSTGRES_PASSWORD
             value: "admin"
-{{- end}}
+{{end}}
           terminationMessagePath: /dev/termination-log
           terminationMessagePolicy: File
         dnsPolicy: ClusterFirst

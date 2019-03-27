@@ -41,7 +41,7 @@ objects:
   kind: ServiceAccount
   metadata:
     name: "{{.AppSettings.Name}}"
-{{if .Route -}}
+{{if .Route}}
 - apiVersion: v1
   kind: Route
   metadata:
@@ -54,9 +54,9 @@ objects:
     tls:
       insecureEdgeTerminationPolicy: Redirect
       termination: edge
-{{if and .Route.Site (ne .Route.Site "") -}}
+{{if and .Route.Site (ne .Route.Site "")}}
     host: {{.Route.Site}}-${NAMESPACE}.{{.AppSettings.UserSettings.DnsWildcard}}
-{{- end}}
+{{end}}
     path: {{.Route.Path}}
     port:
       targetPort: 8080
@@ -64,7 +64,7 @@ objects:
       kind: Service
       name: "{{.AppSettings.Name}}"
     wildcardPolicy: None
-{{- end}}
+{{end}}
 - apiVersion: v1
   kind: DeploymentConfig
   metadata:
