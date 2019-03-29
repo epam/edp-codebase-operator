@@ -54,7 +54,7 @@ func (client Client) TriggerBuildJob(appName string) error {
 	jobName := fmt.Sprintf("Build-%v", appName)
 	log.Printf("Trying to trigger jenkins job %v", jobName)
 
-	if client.GetJob(jobName, time.Second, 10) {
+	if client.GetJob(jobName, time.Second, 60) {
 		_, err := client.jenkins.BuildJob(jobName, map[string]string{
 			"GERRIT_PROJECT_NAME": appName,
 			"BRANCH":              "master",
