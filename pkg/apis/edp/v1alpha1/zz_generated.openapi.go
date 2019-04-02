@@ -13,9 +13,78 @@ import (
 
 func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenAPIDefinition {
 	return map[string]common.OpenAPIDefinition{
+		"business-app-handler-controller/pkg/apis/edp/v1alpha1.ApplicationBranch":         schema_pkg_apis_edp_v1alpha1_ApplicationBranch(ref),
+		"business-app-handler-controller/pkg/apis/edp/v1alpha1.ApplicationBranchSpec":     schema_pkg_apis_edp_v1alpha1_ApplicationBranchSpec(ref),
+		"business-app-handler-controller/pkg/apis/edp/v1alpha1.ApplicationBranchStatus":   schema_pkg_apis_edp_v1alpha1_ApplicationBranchStatus(ref),
 		"business-app-handler-controller/pkg/apis/edp/v1alpha1.BusinessApplication":       schema_pkg_apis_edp_v1alpha1_BusinessApplication(ref),
-		"business-app-handler-controller/pkg/apis/edp/v1alpha1.BusinessApplicationSpec":   schema_pkg_apis_edp_v1alpha1_BusinessApplicationSpec(ref),
 		"business-app-handler-controller/pkg/apis/edp/v1alpha1.BusinessApplicationStatus": schema_pkg_apis_edp_v1alpha1_BusinessApplicationStatus(ref),
+	}
+}
+
+func schema_pkg_apis_edp_v1alpha1_ApplicationBranch(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "ApplicationBranch is the Schema for the applicationbranches API",
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
+						},
+					},
+					"spec": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("business-app-handler-controller/pkg/apis/edp/v1alpha1.ApplicationBranchSpec"),
+						},
+					},
+					"status": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("business-app-handler-controller/pkg/apis/edp/v1alpha1.ApplicationBranchStatus"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"business-app-handler-controller/pkg/apis/edp/v1alpha1.ApplicationBranchSpec", "business-app-handler-controller/pkg/apis/edp/v1alpha1.ApplicationBranchStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+	}
+}
+
+func schema_pkg_apis_edp_v1alpha1_ApplicationBranchSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "ApplicationBranchSpec defines the desired state of ApplicationBranch",
+				Properties:  map[string]spec.Schema{},
+			},
+		},
+		Dependencies: []string{},
+	}
+}
+
+func schema_pkg_apis_edp_v1alpha1_ApplicationBranchStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "ApplicationBranchStatus defines the observed state of ApplicationBranch",
+				Properties:  map[string]spec.Schema{},
+			},
+		},
+		Dependencies: []string{},
 	}
 }
 
@@ -62,24 +131,33 @@ func schema_pkg_apis_edp_v1alpha1_BusinessApplication(ref common.ReferenceCallba
 	}
 }
 
-func schema_pkg_apis_edp_v1alpha1_BusinessApplicationSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "BusinessApplicationSpec defines the desired state of BusinessApplication",
-				Properties:  map[string]spec.Schema{},
-			},
-		},
-		Dependencies: []string{},
-	}
-}
-
 func schema_pkg_apis_edp_v1alpha1_BusinessApplicationStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "BusinessApplicationStatus defines the observed state of BusinessApplication",
-				Properties:  map[string]spec.Schema{},
+				Properties: map[string]spec.Schema{
+					"available": {
+						SchemaProps: spec.SchemaProps{
+							Description: "INSERT ADDITIONAL STATUS FIELD - define observed state of cluster Important: Run \"operator-sdk generate k8s\" to regenerate code after modifying this file Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"lastTimeUpdated": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "date-time",
+						},
+					},
+					"status": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+				Required: []string{"available", "lastTimeUpdated", "status"},
 			},
 		},
 		Dependencies: []string{},
