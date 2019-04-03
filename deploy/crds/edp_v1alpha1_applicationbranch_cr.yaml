@@ -1,11 +1,11 @@
 apiVersion: edp.epam.com/v1alpha1
 kind: ApplicationBranch
 metadata:
-  name: test-npm-release
+  name: test-1-release-1.0.0
 spec:
-  appName: "test-npm"
-  branchName: "release-1.1"
-  fromCommit: "af3fb2205136f4314f59f197ab5a22dffa363d81"
+  appName: "test-1"
+  branchName: "test-1-release-1.1.0"
+  fromCommit: "764f11f7c6111966a77a6c4e9cf581b4e9f1a63d"
 status:
-  status: "created"
+  status: "initialized"
   lastTimeUpdated: 0001-01-01T00:00:00Z
