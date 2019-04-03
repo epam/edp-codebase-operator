@@ -51,7 +51,7 @@ func (client Client) GetJob(name string, delay time.Duration, retryCount int) bo
 }
 
 func (client Client) TriggerBuildJob(appName string) error {
-	jobName := fmt.Sprintf("Build-%v", appName)
+	jobName := fmt.Sprintf("MASTER-Build-%v", appName)
 	log.Printf("Trying to trigger jenkins job %v", jobName)
 
 	if client.GetJob(jobName, time.Second, 60) {
