@@ -31,7 +31,7 @@ func (client Client) TriggerJobProvisioning(appName string, buildTool string) er
 	_, err := client.jenkins.BuildJob("Job-provisioning", map[string]string{
 		"PARAM":      "true",
 		"NAME":       appName,
-		"TYPE":       "app",
+		"TYPE":       "application",
 		"BUILD_TOOL": strings.ToLower(buildTool),
 	})
 	return err
