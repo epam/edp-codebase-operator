@@ -67,7 +67,7 @@ func getEnvSettingsConfigMap(clientSet ClientSet.ClientSet, namespace string) (*
 	return &envSettings, nil
 }
 
-func GetEnvSettings(clientSet ClientSet.ClientSet, namespace string) (*models.EnvSettings, error) {
+func GetEnvSettings(clientSet ClientSet.ClientSet, namespace string) ([]models.EnvSettings, error) {
 	var envSettings []models.EnvSettings
 
 	settings, err := getEnvSettingsConfigMap(clientSet, namespace)
@@ -81,7 +81,7 @@ func GetEnvSettings(clientSet ClientSet.ClientSet, namespace string) (*models.En
 		return nil, err
 	}
 
-	return &envSettings[0], nil
+	return envSettings, nil
 }
 
 func GetGerritSettingsConfigMap(clientSet ClientSet.ClientSet, namespace string) (*models.GerritSettings, error) {

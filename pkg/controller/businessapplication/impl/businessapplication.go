@@ -104,12 +104,14 @@ func (businessApplication BusinessApplication) Create() {
 		return
 	}
 
-	if envs != nil {
-		err = ClientSet.PatchBuildConfig(*clientSet, *appSettings, *envs)
-		if err != nil {
-			log.Println(err)
-			rollback(businessApplication)
-			return
+	if len(envs) != 0 {
+		for _, env := range envs {
+			err = ClientSet.PatchBuildConfig(*clientSet, *appSettings, env)
+			if err != nil {
+				log.Println(err)
+				rollback(businessApplication)
+				return
+			}
 		}
 
 		log.Printf("Build config for %v application has been patched", businessApplication.CustomResource.Name)

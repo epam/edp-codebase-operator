@@ -28,39 +28,36 @@ func getBuildConfig(clientSet ClientSet, appSettings models.AppSettings, bcName 
 
 func updateBuildConfig(clientSet ClientSet, appSettings models.AppSettings, envSettings models.EnvSettings,
 	bcName string) (*buildV1.BuildConfig, error) {
-	triggers := make([]buildV1.BuildTriggerPolicy, len(envSettings.Triggers))
 
 	bc, err := getBuildConfig(clientSet, appSettings, bcName)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, value := range envSettings.Triggers{
+	for _, value := range envSettings.Triggers {
 		if value.Type == "ImageStreamChange" {
-			triggers = append(triggers, buildV1.BuildTriggerPolicy{
-				Type:             "ImageChange",
-				ImageChange:      &buildV1.ImageChangeTrigger{
-					From:                 &v1.ObjectReference{
-						Kind:            "ImageStreamTag",
-						Namespace:       fmt.Sprintf("%v-meta", envSettings.Name),
-						Name:            fmt.Sprintf("%v:latest", appSettings.Name),
+			bc.Spec.Triggers = append(bc.Spec.Triggers, buildV1.BuildTriggerPolicy{
+				Type: "ImageChange",
+				ImageChange: &buildV1.ImageChangeTrigger{
+					From: &v1.ObjectReference{
+						Kind:      "ImageStreamTag",
+						Namespace: fmt.Sprintf("%v-meta", envSettings.Name),
+						Name:      fmt.Sprintf("%v-master:latest", appSettings.Name),
 					},
 				},
 			})
 		}
 	}
 
-	bc.Spec.Triggers = triggers
-
 	log.Printf("Triggers inside build config object has been updated")
 
 	return bc, nil
 }
 
-func PatchBuildConfig(clientSet ClientSet, appSettings models.AppSettings, envs models.EnvSettings) error {
-	bcName := fmt.Sprintf("%v-deploy-pipeline", envs.Name)
+func PatchBuildConfig(clientSet ClientSet, appSettings models.AppSettings, env models.EnvSettings) error {
+	bcName := fmt.Sprintf("%v-deploy-pipeline", env.Name)
 
-	bc, err := updateBuildConfig(clientSet, appSettings, envs, bcName)
+	bc, err := updateBuildConfig(clientSet, appSettings, env, bcName)
 	if err != nil {
 		return err
 	}
