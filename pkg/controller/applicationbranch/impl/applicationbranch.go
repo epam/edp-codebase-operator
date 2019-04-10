@@ -24,7 +24,7 @@ func (applicationBranch ApplicationBranchService) Create(cr *edpv1alpha1.Applica
 
 	clientSet := ClientSet.CreateOpenshiftClients()
 	log.Println("Client set has been created")
-	releaseJob := fmt.Sprintf("Create-release-%v", cr.Spec.AppName)
+	releaseJob := fmt.Sprintf("%v/job/Create-release-%v", cr.Spec.AppName, cr.Spec.AppName)
 	jenkinsUrl := fmt.Sprintf("http://jenkins.%s:8080", cr.Namespace)
 	jenkinsToken, jenkinsUsername, err := settings.GetJenkinsCreds(*clientSet, cr.Namespace)
 	if err != nil {

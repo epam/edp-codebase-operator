@@ -65,7 +65,7 @@ func (client Client) TriggerBuildJob(appName string) error {
 }
 
 func (client Client) TriggerReleaseJob(branchName string, fromCommit string, appName string) error {
-	jobName := fmt.Sprintf("Create-release-%v", appName)
+	jobName := fmt.Sprintf("%v/job/Create-release-%v", appName, appName)
 	log.Printf("Trying to trigger jenkins job %v", jobName)
 
 	if client.GetJob(jobName, time.Second, 60) {
