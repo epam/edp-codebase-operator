@@ -265,7 +265,7 @@ func SetupProjectReplication(appSettings models.AppSettings, clientSet ClientSet
 
 	gerritSettings, err := clientSet.CoreClient.ConfigMaps(appSettings.CicdNamespace).Get("gerrit", metav1.GetOptions{})
 	replicaConfig := gerritSettings.Data["replication.config"]
-	gerritSettings.Data["replication.config"] = replicaConfig + replicaConfigNew
+	gerritSettings.Data["replication.config"] = fmt.Sprintf("%v\n%v", replicaConfig, replicaConfigNew)
 	result, err := clientSet.CoreClient.ConfigMaps(appSettings.CicdNamespace).Update(gerritSettings)
 	if err != nil {
 		log.Printf("Unable to update config map with replication config: %v", err)
