@@ -6,6 +6,7 @@ import (
 	"context"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"log"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -13,6 +14,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+	"time"
 )
 
 /**
@@ -85,6 +87,17 @@ func (r *ReconcileApplicationBranch) Reconcile(request reconcile.Request) (recon
 		// Error reading the object - requeue the request.
 		return reconcile.Result{}, err
 	}
+	app, err := r.getApplicationByBranch(*instance)
+
+	if err != nil {
+		log.Printf("[ERROR] Cannot get application for branch %s. Reason: %s", request.Name, err)
+		return reconcile.Result{RequeueAfter: 5 * time.Second}, err
+	}
+
+	if !app.Status.Available {
+		log.Printf("[ERROR] Application %s for branch %s is not ready yet.", app.Name, request.Name)
+		return reconcile.Result{RequeueAfter: 5 * time.Second}, nil
+	}
 
 	applicationBranch, err := getApplicationBranchService(r)
 	if err != nil {
@@ -95,6 +108,20 @@ func (r *ReconcileApplicationBranch) Reconcile(request reconcile.Request) (recon
 
 	log.Printf("Reconciling ApplicationBranch %s/%s has been finished", request.Namespace, request.Name)
 	return reconcile.Result{}, nil
+}
+
+func (r *ReconcileApplicationBranch) getApplicationByBranch(branch edpv1alpha1.ApplicationBranch) (*edpv1alpha1.BusinessApplication, error) {
+	instance := &edpv1alpha1.BusinessApplication{}
+	err := r.client.Get(context.TODO(), types.NamespacedName{
+		Namespace: branch.Namespace,
+		Name:      branch.Spec.AppName,
+	}, instance)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return instance, nil
 }
 
 func getApplicationBranchService(r *ReconcileApplicationBranch) (ApplicationBranchService, error) {
