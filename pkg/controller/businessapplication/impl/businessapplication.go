@@ -115,15 +115,6 @@ func (businessApplication BusinessApplication) Create() {
 		}
 
 		log.Printf("Build config for %v application has been patched", businessApplication.CustomResource.Name)
-
-		err = jenkinsClient.TriggerBuildJob(businessApplication.CustomResource.Name)
-		if err != nil {
-			log.Println(err)
-			rollback(businessApplication)
-			return
-		}
-
-		log.Printf("Build job for %v application has been triggered", businessApplication.CustomResource.Name)
 	}
 
 	setStatusFields(businessApplication, true, models.StatusFinished, time.Now())
