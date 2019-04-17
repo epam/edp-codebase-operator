@@ -84,6 +84,12 @@ func (client Client) GetJobStatus(name string, delay time.Duration, retryCount i
 		isRunning, err := client.IsJobRunning(name)
 		if err != nil {
 			job, err := client.jenkins.GetJob(name)
+			if job.Raw.Color == "notbuilt" {
+				log.Printf("Job %v didn't start yet. Sleeping for %v. %v attempts lasts",
+					name, delay, retryCount-i)
+				time.Sleep(delay)
+			}
+
 			if err == nil {
 				return job.Raw.Color, err
 			}
