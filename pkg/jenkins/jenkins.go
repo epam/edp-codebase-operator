@@ -88,10 +88,11 @@ func (client Client) GetJobStatus(name string, delay time.Duration, retryCount i
 				log.Printf("Job %v didn't start yet. Sleeping for %v. %v attempts lasts",
 					name, delay, retryCount-i)
 				time.Sleep(delay)
+				continue
 			}
 
-			if err == nil {
-				return job.Raw.Color, err
+			if err != nil {
+				return "", err
 			}
 		}
 		if *isRunning || *isQueued {
