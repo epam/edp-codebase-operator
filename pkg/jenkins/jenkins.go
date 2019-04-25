@@ -109,7 +109,7 @@ func (client Client) GetJobStatus(name string, delay time.Duration, retryCount i
 		}
 	}
 
-	return "", nil
+	return "", errors.Errorf("Job %v has not been finished after specified delay", name)
 }
 
 func (client Client) IsJobQueued(name string) (*bool, error) {

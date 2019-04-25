@@ -13,7 +13,7 @@ import (
 )
 
 type ApplicationBranchService struct {
-	Client         client.Client
+	Client client.Client
 }
 
 func (applicationBranch ApplicationBranchService) Create(cr *edpv1alpha1.ApplicationBranch) {
@@ -50,7 +50,7 @@ func (applicationBranch ApplicationBranchService) Create(cr *edpv1alpha1.Applica
 	}
 	log.Println("Release job has been triggered")
 
-	jobStatus, err := jenkinsClient.GetJobStatus(releaseJob, time.Second, 60)
+	jobStatus, err := jenkinsClient.GetJobStatus(releaseJob, 5*time.Second, 24)
 	if err != nil {
 		log.Println(err)
 		rollback(cr)
@@ -60,7 +60,6 @@ func (applicationBranch ApplicationBranchService) Create(cr *edpv1alpha1.Applica
 		setStatusFields(cr, models.StatusFinished, time.Now())
 		log.Printf("Release has been created. Status: %v", models.StatusFinished)
 	} else {
-		log.Println(err)
 		log.Printf("Failed to create release. Release job status is '%v'. ApplicationBranch status: %v",
 			jobStatus, models.StatusFailed)
 		rollback(cr)
