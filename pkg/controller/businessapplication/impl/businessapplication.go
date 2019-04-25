@@ -18,7 +18,6 @@ import (
 	"net/url"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strconv"
-	"strings"
 	"time"
 )
 
@@ -196,32 +195,35 @@ func gerritConfiguration(appSettings *models.AppSettings, businessApplication Bu
 		return err
 	}
 	log.Printf("Start setup repo url for app: %v...", appSettings.Name)
-	err = setRepositoryUrl(appSettings, &businessApplication)
+
+	repoUrl, err := getRepoUrl(appSettings.BasicPatternUrl, businessApplication.CustomResource.Spec)
+
 	if err != nil {
 		log.Printf("Setup repo url for app %v has been failed. Return error", appSettings.Name)
 		return err
 	}
 
+	log.Printf("Repository URL to clone sources has been retrieved: %v", *repoUrl)
+
 	repositoryCredentialsSecretName := fmt.Sprintf("repository-application-%v-temp", businessApplication.CustomResource.Name)
 	repositoryUsername, repositoryPassword, err := settings.GetVcsBasicAuthConfig(*clientSet,
 		businessApplication.CustomResource.Namespace, repositoryCredentialsSecretName)
 
-	isRepositoryAccessible := git.CheckPermissions(appSettings.RepositoryUrl, repositoryUsername, repositoryPassword)
-	if isRepositoryAccessible {
-		log.Printf("Start creation project in VCS for app: %v...", appSettings.Name)
-		err = tryCreateProjectInVcs(appSettings, &businessApplication, *clientSet)
-		if err != nil {
-			log.Printf("Creation project in VCS for app %v has been failed. Return error", appSettings.Name)
-			return err
-		}
-		log.Printf("Start clone project for app: %v...", appSettings.Name)
-		err = tryCloneRepo(businessApplication, *appSettings, repositoryUsername, repositoryPassword)
-		if err != nil {
-			log.Printf("Clone project for app %v has been failed. Return error", appSettings.Name)
-			return err
-		}
-	} else {
-		log.Printf("Cannot access provided git repository: %s", businessApplication.CustomResource.Spec.Repository.Url)
+	isRepositoryAccessible := git.CheckPermissions(*repoUrl, repositoryUsername, repositoryPassword)
+	if !isRepositoryAccessible {
+		return fmt.Errorf("user %v cannot get access to the repository %v", repositoryUsername, repoUrl)
+	}
+	log.Printf("Start creation project in VCS for app: %v...", appSettings.Name)
+	err = tryCreateProjectInVcs(appSettings, &businessApplication, *clientSet)
+	if err != nil {
+		log.Printf("Creation project in VCS for app %v has been failed. Return error", appSettings.Name)
+		return err
+	}
+	log.Printf("Start clone project for app: %v...", appSettings.Name)
+	err = tryCloneRepo(businessApplication, *appSettings, *repoUrl, repositoryUsername, repositoryPassword)
+	if err != nil {
+		log.Printf("Clone project for app %v has been failed. Return error", appSettings.Name)
+		return err
 	}
 	log.Printf("Start creation project in Gerrit for app: %v...", appSettings.Name)
 	err = createProjectInGerrit(appSettings, &businessApplication)
@@ -428,32 +430,10 @@ func createProjectInVcs(appSettings *models.AppSettings, application *BusinessAp
 	return err
 }
 
-func setRepositoryUrl(appSettings *models.AppSettings, application *BusinessApplication) error {
-	switch application.CustomResource.Spec.Strategy {
-	case edpv1alpha1.Create:
-		concatCreateRepoUrl(appSettings, application)
-	case edpv1alpha1.Clone:
-		appSettings.RepositoryUrl = application.CustomResource.Spec.Repository.Url
-	}
-	return nil
-}
-
-func concatCreateRepoUrl(appSettings *models.AppSettings, application *BusinessApplication) {
-	repoUrl := appSettings.BasicPatternUrl + "/" +
-		strings.ToLower(application.CustomResource.Spec.Lang) + "-" +
-		strings.ToLower(application.CustomResource.Spec.BuildTool) + "-" +
-		strings.ToLower(application.CustomResource.Spec.Framework)
-	if application.CustomResource.Spec.Database != nil {
-		appSettings.RepositoryUrl += repoUrl + "-" + strings.ToLower(application.CustomResource.Spec.Database.Kind) + ".git"
-	} else {
-		appSettings.RepositoryUrl += repoUrl + ".git"
-	}
-}
-
-func tryCloneRepo(businessApplication BusinessApplication, appSettings models.AppSettings, repositoryUsername string,
-	repositoryPassword string) error {
+func tryCloneRepo(businessApplication BusinessApplication, appSettings models.AppSettings, repoUrl string,
+	repositoryUsername string, repositoryPassword string) error {
 	destination := appSettings.WorkDir + "/" + businessApplication.CustomResource.Name
-	err := git.CloneRepo(appSettings.RepositoryUrl, repositoryUsername, repositoryPassword, destination)
+	err := git.CloneRepo(repoUrl, repositoryUsername, repositoryPassword, destination)
 	if err != nil {
 		return err
 	}

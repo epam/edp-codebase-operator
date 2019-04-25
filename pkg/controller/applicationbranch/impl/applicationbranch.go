@@ -50,7 +50,7 @@ func (applicationBranch ApplicationBranchService) Create(cr *edpv1alpha1.Applica
 	}
 	log.Println("Release job has been triggered")
 
-	jobStatus, err := jenkinsClient.GetJobStatus(releaseJob, 5*time.Second, 24)
+	jobStatus, err := jenkinsClient.GetJobStatus(releaseJob, 10*time.Second, 50)
 	if err != nil {
 		log.Println(err)
 		rollback(cr)
