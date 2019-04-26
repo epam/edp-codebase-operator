@@ -79,6 +79,7 @@ func (client Client) TriggerReleaseJob(branchName string, fromCommit string, app
 }
 
 func (client Client) GetJobStatus(name string, delay time.Duration, retryCount int) (string, error) {
+	time.Sleep(delay)
 	for i := 0; i < retryCount; i++ {
 		isQueued, err := client.IsJobQueued(name)
 		isRunning, err := client.IsJobRunning(name)
