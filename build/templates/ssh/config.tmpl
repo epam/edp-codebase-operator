@@ -1,4 +1,4 @@
-Host gerrit*
+Host gerrit.{{.CicdNamespace}}*
         HostName gerrit.{{.CicdNamespace}}
         Port {{.GerritSettings.SshPort}}
         User project-creator

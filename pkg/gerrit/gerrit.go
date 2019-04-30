@@ -18,6 +18,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"strconv"
 )
 
 type SSHCommand struct {
@@ -46,12 +47,20 @@ const (
 
 func (client *SSHClient) RunCommand(cmd *SSHCommand) ([]byte, error) {
 	var session *ssh.Session
+	var connection *ssh.Client
 	var err error
 
-	if session, err = client.newSession(); err != nil {
+	if session, connection, err = client.newSession(); err != nil {
 		return nil, err
 	}
-	defer session.Close()
+	defer func() {
+		if deferErr := session.Close(); deferErr != nil {
+			err = deferErr
+		}
+		if deferErr := connection.Close(); deferErr != nil {
+			err = deferErr
+		}
+	}()
 
 	commandOutput, err := session.Output(cmd.Path)
 	if err != nil {
@@ -61,18 +70,18 @@ func (client *SSHClient) RunCommand(cmd *SSHCommand) ([]byte, error) {
 	return commandOutput, err
 }
 
-func (client *SSHClient) newSession() (*ssh.Session, error) {
+func (client *SSHClient) newSession() (*ssh.Session, *ssh.Client, error) {
 	connection, err := ssh.Dial("tcp", fmt.Sprintf("%s:%d", client.Host, client.Port), client.Config)
 	if err != nil {
-		return nil, fmt.Errorf("failed to dial: %s", err)
+		return nil, nil, fmt.Errorf("failed to dial: %s", err)
 	}
 
 	session, err := connection.NewSession()
 	if err != nil {
-		return nil, fmt.Errorf("failed to create session: %s", err)
+		return nil, nil, fmt.Errorf("failed to create session: %s", err)
 	}
 
-	return session, nil
+	return session, connection, nil
 }
 
 func PublicKeyFile(file string) ssh.AuthMethod {
@@ -156,7 +165,7 @@ func CreateProject(keyPath string, host string, port int64, appName string) erro
 		return err
 	}
 
-	client.RunCommand(cmd)
+	_, err = client.RunCommand(cmd)
 	if err != nil {
 		return err
 	}
@@ -164,7 +173,7 @@ func CreateProject(keyPath string, host string, port int64, appName string) erro
 }
 
 func AddRemoteLinkToGerrit(repoPath string, host string, port int64, appName string) error {
-	remoteUrl := fmt.Sprintf("ssh://project-creator@%v:%v/%v", host, string(port), appName)
+	remoteUrl := fmt.Sprintf("ssh://project-creator@%v:%v/%v", host, strconv.FormatInt(port, 10), appName)
 	r, err := git.PlainOpen(repoPath)
 	if err != nil {
 		log.Println(err)
@@ -193,39 +202,41 @@ func Auth(keyPath string) (transport.AuthMethod, error) {
 	if err != nil {
 		return nil, err
 	}
+	log.Println("Private key has been read")
 
 	signer, err := ssh.ParsePrivateKey(buffer)
 	if err != nil {
 		return nil, err
 	}
-	return &sshgit.PublicKeys{
-		User:   "project-creator",
-		Signer: signer,
-		HostKeyCallbackHelper: sshgit.HostKeyCallbackHelper{
-			HostKeyCallback: ssh.InsecureIgnoreHostKey(),
-		},
-	}, nil
+	sshgitPublicKeys := new(sshgit.PublicKeys)
+	sshgitPublicKeys.User = "project-creator"
+	sshgitPublicKeys.Signer = signer
+	sshgitPublicKeys.HostKeyCallbackHelper = sshgit.HostKeyCallbackHelper{
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+	}
+	return sshgitPublicKeys, nil
 }
 
 func PushToGerrit(repoPath string, keyPath string) error {
 	r, err := git.PlainOpen(repoPath)
+	log.Printf("Repo with project has been opened: %v", repoPath)
 	if err != nil {
 		return err
 	}
-
 	auth, err := Auth(keyPath)
 	if err != nil {
 		return err
 	}
 
-	err = r.Push(&git.PushOptions{
-		RemoteName: "origin",
-		RefSpecs: []config.RefSpec{
-			"refs/heads/*:refs/heads/*",
-			"refs/tags/*:refs/tags/*",
-		},
-		Auth: auth,
-	})
+	gitOptions := new(git.PushOptions)
+	gitOptions.RemoteName = "origin"
+	gitOptions.RefSpecs = []config.RefSpec{
+		"refs/heads/*:refs/heads/*",
+		"refs/tags/*:refs/tags/*",
+	}
+	gitOptions.Auth = auth
+
+	err = r.Push(gitOptions)
 	if err != nil {
 		log.Println(err)
 		return err
@@ -242,7 +253,7 @@ func generateReplicationConfig(templatePath, templateName string, params Replica
 	tmpl, err := template.New(templateName).
 		ParseFiles(replicationFullPath)
 	if err != nil {
-		log.Printf("Error has been occuerd during the parcing template by full path: %v", replicationFullPath)
+		log.Printf("Error has been occured during the parcing template by full path: %v", replicationFullPath)
 		return "", err
 	}
 	err = tmpl.Execute(&renderedTemplate, params)
@@ -299,7 +310,7 @@ func reloadReplicationPlugin(keyPath string, host string, port int64) error {
 		return err
 	}
 
-	client.RunCommand(cmd)
+	_, err = client.RunCommand(cmd)
 	if err != nil {
 		return err
 	}

@@ -3,6 +3,7 @@ package settings
 import (
 	"business-app-handler-controller/models"
 	ClientSet "business-app-handler-controller/pkg/openshift"
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -135,11 +136,12 @@ func CreateGerritPrivateKey(privateKey string, path string) error {
 		errorMsg := fmt.Sprintf("Unable to write the Gerrit ssh key: %v", err)
 		log.Println(errorMsg)
 		return errors.New(errorMsg)
-	}
+        }
 	return nil
 }
 
 func CreateSshConfig(appSettings models.AppSettings) error {
+	var config bytes.Buffer
 	sshPath := "/home/business-app-handler-controller/.ssh"
 	if _, err := os.Stat(sshPath); os.IsNotExist(err) {
 		err = os.MkdirAll(sshPath, 0744)
@@ -152,16 +154,23 @@ func CreateSshConfig(appSettings models.AppSettings) error {
 	if err != nil {
 		return err
 	}
-	f, err := os.Create(sshPath + "/config")
-	if err != nil {
-		log.Printf("Cannot write SSH config to the file: %v", err)
-		return err
-	}
-	err = tmpl.Execute(f, appSettings)
+
+	err = tmpl.Execute(&config, appSettings)
 	if err != nil {
 		log.Printf("execute: %v", err)
 		return err
 	}
+
+	f, err := os.OpenFile(sshPath + "/config", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
+	if err != nil {
+		return err
+	}
+
+	_, err = f.WriteString(config.String())
+	if err != nil {
+		return err
+	}
+
 	defer f.Close()
 	return nil
 }

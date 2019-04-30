@@ -120,7 +120,8 @@ func (businessApplication BusinessApplication) Create() {
 }
 
 func initAppSettings(businessApplication BusinessApplication, clientSet *ClientSet.ClientSet) (*models.AppSettings, error) {
-	var workDir = fmt.Sprintf("/home/business-app-handler-controller/edp/%v", businessApplication.CustomResource.Name)
+	var workDir = fmt.Sprintf("/home/business-app-handler-controller/edp/%v/%v",
+		businessApplication.CustomResource.Namespace, businessApplication.CustomResource.Name)
 	appSettings := models.AppSettings{}
 	appSettings.BasicPatternUrl = "https://github.com/epmd-edp"
 	appSettings.Name = businessApplication.CustomResource.Name
@@ -437,7 +438,7 @@ func tryCloneRepo(businessApplication BusinessApplication, appSettings models.Ap
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Repository has been cloned to %v", destination)
+	log.Printf("Repository has been cloned to %v", destination)
 	return nil
 }
 
