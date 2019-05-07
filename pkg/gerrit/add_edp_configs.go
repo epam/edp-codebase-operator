@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	imageV1 "github.com/openshift/api/image/v1"
+	"golang.org/x/crypto/ssh"
 	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/config"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
@@ -145,6 +146,25 @@ func PushConfigs(config gerritConfigGoTemplating, appSettings models.AppSettings
 
 func cloneProjectRepoFromGerrit(config gerritConfigGoTemplating, appSettings models.AppSettings) error {
 	log.Printf("Cloning repo from gerrit using: %v", config.CloneSshUrl)
+	var session *ssh.Session
+	var connection *ssh.Client
+
+	client, err := SshInit(appSettings.GerritKeyPath, appSettings.GerritHost, appSettings.GerritSettings.SshPort)
+	if err != nil {
+		return err
+	}
+
+	if session, connection, err = client.newSession(); err != nil {
+		return err
+	}
+	defer func() {
+		if deferErr := session.Close(); deferErr != nil {
+			err = deferErr
+		}
+		if deferErr := connection.Close(); deferErr != nil {
+			err = deferErr
+		}
+	}()
 
 	cmd := exec.Command("git", "clone", config.CloneSshUrl, fmt.Sprintf("%v/%v",
 		config.TemplatesDir, appSettings.Name))
