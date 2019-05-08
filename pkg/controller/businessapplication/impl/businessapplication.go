@@ -206,13 +206,7 @@ func gerritConfiguration(appSettings *models.AppSettings, businessApplication Bu
 
 	log.Printf("Repository URL to clone sources has been retrieved: %v", *repoUrl)
 
-	repositoryCredentialsSecretName := fmt.Sprintf("repository-application-%v-temp", businessApplication.CustomResource.Name)
-	repositoryUsername, repositoryPassword, err := settings.GetVcsBasicAuthConfig(*clientSet,
-		businessApplication.CustomResource.Namespace, repositoryCredentialsSecretName)
-	if err != nil {
-		log.Printf("Unable to get VCS credentials from secret %v", repositoryCredentialsSecretName)
-		return err
-	}
+	repositoryUsername, repositoryPassword, err := tryGetRepositoryCredentials(businessApplication, clientSet)
 
 	isRepositoryAccessible := git.CheckPermissions(*repoUrl, repositoryUsername, repositoryPassword)
 	if !isRepositoryAccessible {
@@ -250,6 +244,24 @@ func gerritConfiguration(appSettings *models.AppSettings, businessApplication Bu
 	}
 	log.Printf("Gerrit configuration has been finished successfully for app: %v...", appSettings.Name)
 	return nil
+}
+
+func tryGetRepositoryCredentials(app BusinessApplication, clientSet *ClientSet.ClientSet) (string, string, error) {
+	if app.CustomResource.Spec.Repository != nil {
+		return getRepoCreds(app, clientSet)
+	}
+	return "", "", nil
+}
+
+func getRepoCreds(app BusinessApplication, clientSet *ClientSet.ClientSet) (string, string, error) {
+	repositoryCredentialsSecretName := fmt.Sprintf("repository-application-%v-temp", app.CustomResource.Name)
+	repositoryUsername, repositoryPassword, err := settings.GetVcsBasicAuthConfig(*clientSet,
+		app.CustomResource.Namespace, repositoryCredentialsSecretName)
+	if err != nil {
+		log.Printf("Unable to get VCS credentials from secret %v", repositoryCredentialsSecretName)
+		return "", "", err
+	}
+	return repositoryUsername, repositoryPassword, nil
 }
 
 func trySetupGerritReplication(appSettings models.AppSettings, clientSet ClientSet.ClientSet) error {
