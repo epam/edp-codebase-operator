@@ -9,6 +9,7 @@ import (
 )
 
 func CheckPermissions(repo string, user string, pass string) (accessible bool) {
+	log.Printf("Checking permissions for user: %v in %v repository", user, repo)
 	r, _ := git.Init(memory.NewStorage(), nil)
 	remote, _ := r.CreateRemote(&config.RemoteConfig{
 		Name: "origin",
@@ -21,6 +22,7 @@ func CheckPermissions(repo string, user string, pass string) (accessible bool) {
 		}})
 	if err != nil {
 		log.Println(err)
+		log.Printf("User %v do not have access to %v repository", user, repo)
 		return false
 	}
 	return len(rfs) != 0

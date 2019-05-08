@@ -177,8 +177,8 @@ func CreateSshConfig(appSettings models.AppSettings) error {
 
 func GetVcsBasicAuthConfig(clientSet ClientSet.ClientSet, namespace string, secretName string) (string, string, error) {
 	vcsCredentialsSecret, err := clientSet.CoreClient.Secrets(namespace).Get(secretName, metav1.GetOptions{})
-	if k8serrors.IsNotFound(err) {
-		return "", "", nil
+	if k8serrors.IsNotFound(err) || k8serrors.IsForbidden(err) {
+		return "", "", err
 	}
 	err = DeleteTempVcsSecret(clientSet, namespace, secretName)
 	if err != nil {
@@ -188,11 +188,13 @@ func GetVcsBasicAuthConfig(clientSet ClientSet.ClientSet, namespace string, secr
 }
 
 func DeleteTempVcsSecret(clientSet ClientSet.ClientSet, namespace string, secretName string) error {
+	log.Println("Start deleting temp secret with VCS credentials")
 	err := clientSet.CoreClient.Secrets(namespace).Delete(secretName, &metav1.DeleteOptions{})
 	if err != nil && k8serrors.IsNotFound(err) {
 		errorMsg := fmt.Sprintf("Unable to delete temp secret: %v", err)
 		log.Println(errorMsg)
 		return errors.New(errorMsg)
 	}
+	log.Println("Temp secret with VCS credentials has been deleted")
 	return nil
 }

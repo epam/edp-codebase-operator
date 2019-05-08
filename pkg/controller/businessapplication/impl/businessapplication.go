@@ -209,6 +209,10 @@ func gerritConfiguration(appSettings *models.AppSettings, businessApplication Bu
 	repositoryCredentialsSecretName := fmt.Sprintf("repository-application-%v-temp", businessApplication.CustomResource.Name)
 	repositoryUsername, repositoryPassword, err := settings.GetVcsBasicAuthConfig(*clientSet,
 		businessApplication.CustomResource.Namespace, repositoryCredentialsSecretName)
+	if err != nil {
+		log.Printf("Unable to get VCS credentials from secret %v", repositoryCredentialsSecretName)
+		return err
+	}
 
 	isRepositoryAccessible := git.CheckPermissions(*repoUrl, repositoryUsername, repositoryPassword)
 	if !isRepositoryAccessible {
