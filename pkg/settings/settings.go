@@ -166,7 +166,7 @@ func CreateSshConfig(appSettings models.AppSettings) error {
 		return err
 	}
 
-	_, err = f.WriteString(config.String())
+	_, err = fmt.Fprintln(f, config.String())
 	if err != nil {
 		return err
 	}

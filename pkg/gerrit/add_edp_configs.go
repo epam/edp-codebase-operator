@@ -4,6 +4,7 @@ import (
 	"business-app-handler-controller/models"
 	"business-app-handler-controller/pkg/apis/edp/v1alpha1"
 	ClientSet "business-app-handler-controller/pkg/openshift"
+	"bytes"
 	"errors"
 	"fmt"
 	imageV1 "github.com/openshift/api/image/v1"
@@ -148,6 +149,8 @@ func cloneProjectRepoFromGerrit(config gerritConfigGoTemplating, appSettings mod
 	log.Printf("Cloning repo from gerrit using: %v", config.CloneSshUrl)
 	var session *ssh.Session
 	var connection *ssh.Client
+	var out bytes.Buffer
+	var stderr bytes.Buffer
 
 	client, err := SshInit(appSettings.GerritKeyPath, appSettings.GerritHost, appSettings.GerritSettings.SshPort)
 	if err != nil {
@@ -168,10 +171,13 @@ func cloneProjectRepoFromGerrit(config gerritConfigGoTemplating, appSettings mod
 
 	cmd := exec.Command("git", "clone", config.CloneSshUrl, fmt.Sprintf("%v/%v",
 		config.TemplatesDir, appSettings.Name))
-	out, err := cmd.Output()
-	log.Printf("Cloning repo %v to %v: Output: %v", config.CloneSshUrl, config.TemplatesDir, out)
+	cmd.Stdout = &out
+	cmd.Stderr = &stderr
+	err = cmd.Run()
+	log.Printf("Cloning repo %v to %v: Output: %v", config.CloneSshUrl, config.TemplatesDir, out.String())
 
 	if err != nil {
+		fmt.Println(fmt.Sprint(err) + ": " + stderr.String())
 		return err
 	}
 	log.Print("Cloning repo has been finished")
