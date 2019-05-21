@@ -1,20 +1,19 @@
 package settings
 
 import (
-	"business-app-handler-controller/models"
+	"codebase-operator/models"
 	"fmt"
 	"testing"
 )
 
-
-func createAppSettings() models.AppSettings {
-	return models.AppSettings{
+func createAppSettings() models.CodebaseSettings {
+	return models.CodebaseSettings{
 		ProjectVcsHostname: "gerrit",
-		GerritKeyPath: "/test/test",
-		CicdNamespace: "test",
+		GerritKeyPath:      "/test/test",
+		CicdNamespace:      "test",
 		UserSettings: models.UserSettings{
 			VcsIntegrationEnabled: true,
-			VcsSshPort: "22",
+			VcsSshPort:            "22",
 		},
 		GerritSettings: models.GerritSettings{
 			SshPort: 22442,

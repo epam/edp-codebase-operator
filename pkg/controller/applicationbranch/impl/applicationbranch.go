@@ -1,11 +1,11 @@
 package impl
 
 import (
-	"business-app-handler-controller/models"
-	edpv1alpha1 "business-app-handler-controller/pkg/apis/edp/v1alpha1"
-	"business-app-handler-controller/pkg/jenkins"
-	ClientSet "business-app-handler-controller/pkg/openshift"
-	"business-app-handler-controller/pkg/settings"
+	"codebase-operator/models"
+	edpv1alpha1 "codebase-operator/pkg/apis/edp/v1alpha1"
+	"codebase-operator/pkg/jenkins"
+	ClientSet "codebase-operator/pkg/openshift"
+	"codebase-operator/pkg/settings"
 	"fmt"
 	"log"
 	"sigs.k8s.io/controller-runtime/pkg/client"

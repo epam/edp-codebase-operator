@@ -1,7 +1,7 @@
 package impl
 
 import (
-	"business-app-handler-controller/pkg/apis/edp/v1alpha1"
+	"codebase-operator/pkg/apis/edp/v1alpha1"
 	"testing"
 )
 
@@ -12,7 +12,7 @@ var (
 func TestBuildRepoUrl_DatabaseIsNil(t *testing.T) {
 	expectedUrl := "https://github.com/epmd-edp/java-maven-springboot.git"
 
-	spec := v1alpha1.BusinessApplicationSpec{
+	spec := v1alpha1.CodebaseSpec{
 		Lang:      "Java",
 		BuildTool: "Maven",
 		Framework: "SpringBoot",
@@ -31,7 +31,7 @@ func TestBuildRepoUrl_PostgresDatabase(t *testing.T) {
 		Kind: "PostgreSQL",
 	}
 
-	spec := v1alpha1.BusinessApplicationSpec{
+	spec := v1alpha1.CodebaseSpec{
 		Lang:      "Java",
 		BuildTool: "Maven",
 		Framework: "SpringBoot",

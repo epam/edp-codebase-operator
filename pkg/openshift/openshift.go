@@ -1,8 +1,8 @@
 package openshift
 
 import (
-	"business-app-handler-controller/models"
 	"bytes"
+	"codebase-operator/models"
 	"encoding/json"
 	"fmt"
 	buildV1 "github.com/openshift/api/build/v1"
@@ -13,7 +13,7 @@ import (
 	"log"
 )
 
-func getBuildConfig(clientSet ClientSet, appSettings models.AppSettings, bcName string) (*buildV1.BuildConfig, error) {
+func getBuildConfig(clientSet ClientSet, appSettings models.CodebaseSettings, bcName string) (*buildV1.BuildConfig, error) {
 	bc, err := clientSet.
 		BuildClient.
 		BuildConfigs(appSettings.CicdNamespace).
@@ -26,7 +26,7 @@ func getBuildConfig(clientSet ClientSet, appSettings models.AppSettings, bcName 
 	return bc, nil
 }
 
-func updateBuildConfig(clientSet ClientSet, appSettings models.AppSettings, envSettings models.EnvSettings,
+func updateBuildConfig(clientSet ClientSet, appSettings models.CodebaseSettings, envSettings models.EnvSettings,
 	bcName string) (*buildV1.BuildConfig, error) {
 
 	bc, err := getBuildConfig(clientSet, appSettings, bcName)
@@ -54,7 +54,7 @@ func updateBuildConfig(clientSet ClientSet, appSettings models.AppSettings, envS
 	return bc, nil
 }
 
-func PatchBuildConfig(clientSet ClientSet, appSettings models.AppSettings, env models.EnvSettings) error {
+func PatchBuildConfig(clientSet ClientSet, appSettings models.CodebaseSettings, env models.EnvSettings) error {
 	bcName := fmt.Sprintf("%v-deploy-pipeline", env.Name)
 
 	bc, err := updateBuildConfig(clientSet, appSettings, env, bcName)

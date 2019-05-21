@@ -1,9 +1,9 @@
 package vcs
 
 import (
-	"business-app-handler-controller/models"
-	"business-app-handler-controller/pkg/vcs/impl/bitbucket"
-	"business-app-handler-controller/pkg/vcs/impl/gitlab"
+	"codebase-operator/models"
+	"codebase-operator/pkg/vcs/impl/bitbucket"
+	"codebase-operator/pkg/vcs/impl/gitlab"
 	"fmt"
 	"log"
 )

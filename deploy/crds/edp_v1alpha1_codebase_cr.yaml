@@ -1,5 +1,5 @@
 apiVersion: edp.epam.com/v1alpha1
-kind: BusinessApplication
+kind: Codebase
 metadata:
   name: test-npm
 spec:

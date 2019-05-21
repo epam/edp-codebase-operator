@@ -1,7 +1,7 @@
 package controller
 
 import (
-	"business-app-handler-controller/pkg/controller/applicationbranch"
+	"codebase-operator/pkg/controller/applicationbranch"
 )
 
 func init() {

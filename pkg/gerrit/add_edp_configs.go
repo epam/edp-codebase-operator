@@ -1,10 +1,10 @@
 package gerrit
 
 import (
-	"business-app-handler-controller/models"
-	"business-app-handler-controller/pkg/apis/edp/v1alpha1"
-	ClientSet "business-app-handler-controller/pkg/openshift"
 	"bytes"
+	"codebase-operator/models"
+	"codebase-operator/pkg/apis/edp/v1alpha1"
+	ClientSet "codebase-operator/pkg/openshift"
 	"errors"
 	"fmt"
 	imageV1 "github.com/openshift/api/image/v1"
@@ -26,28 +26,28 @@ import (
 )
 
 type gerritConfigGoTemplating struct {
-	Lang              string             `json:"lang"`
-	Framework         string             `json:"framework"`
-	BuildTool         string             `json:"build_tool"`
-	RepositoryUrl     *string            `json:"repository_url"`
-	Route             *v1alpha1.Route    `json:"route"`
-	Database          *v1alpha1.Database `json:"database"`
-	AppSettings       models.AppSettings `json:"app_settings"`
-	DockerRegistryUrl string             `json:"docker_registry_url"`
-	TemplatesDir      string             `json:"templates_dir"`
-	CloneSshUrl       string             `json:"clone_ssh_url"`
+	Lang              string                  `json:"lang"`
+	Framework         string                  `json:"framework"`
+	BuildTool         string                  `json:"build_tool"`
+	RepositoryUrl     *string                 `json:"repository_url"`
+	Route             *v1alpha1.Route         `json:"route"`
+	Database          *v1alpha1.Database      `json:"database"`
+	CodebaseSettings  models.CodebaseSettings `json:"app_settings"`
+	DockerRegistryUrl string                  `json:"docker_registry_url"`
+	TemplatesDir      string                  `json:"templates_dir"`
+	CloneSshUrl       string                  `json:"clone_ssh_url"`
 }
 
-func ConfigInit(clientSet ClientSet.ClientSet, appSettings models.AppSettings,
-	spec v1alpha1.BusinessApplicationSpec) (*gerritConfigGoTemplating, error) {
+func ConfigInit(clientSet ClientSet.ClientSet, codebaseSettings models.CodebaseSettings,
+	spec v1alpha1.CodebaseSpec) (*gerritConfigGoTemplating, error) {
 	dtrUrl, err := getOpenshiftDockerRegistryUrl(clientSet)
 	if err != nil {
 		return nil, err
 	}
 
-	templatesDir := fmt.Sprintf("%v/oc-templates", appSettings.WorkDir)
-	cloneSshUrl := fmt.Sprintf("ssh://project-creator@gerrit.%v:%v/%v", appSettings.CicdNamespace,
-		appSettings.GerritSettings.SshPort, appSettings.Name)
+	templatesDir := fmt.Sprintf("%v/oc-templates", codebaseSettings.WorkDir)
+	cloneSshUrl := fmt.Sprintf("ssh://project-creator@gerrit.%v:%v/%v", codebaseSettings.CicdNamespace,
+		codebaseSettings.GerritSettings.SshPort, codebaseSettings.Name)
 
 	config := gerritConfigGoTemplating{
 		DockerRegistryUrl: *dtrUrl,
@@ -56,7 +56,7 @@ func ConfigInit(clientSet ClientSet.ClientSet, appSettings models.AppSettings,
 		BuildTool:         spec.BuildTool,
 		TemplatesDir:      templatesDir,
 		CloneSshUrl:       cloneSshUrl,
-		AppSettings:       appSettings,
+		CodebaseSettings:  codebaseSettings,
 	}
 	if spec.Repository != nil {
 		config.RepositoryUrl = &spec.Repository.Url
@@ -84,15 +84,15 @@ func getOpenshiftDockerRegistryUrl(clientSet ClientSet.ClientSet) (*string, erro
 	return &dtrRegistry.Spec.Host, nil
 }
 
-func PushConfigs(config gerritConfigGoTemplating, appSettings models.AppSettings, clientSet ClientSet.ClientSet) error {
-	appTemplatesDir := fmt.Sprintf("%v/%v/deploy-templates", config.TemplatesDir, appSettings.Name)
+func PushConfigs(config gerritConfigGoTemplating, codebaseSettings models.CodebaseSettings, clientSet ClientSet.ClientSet) error {
+	appTemplatesDir := fmt.Sprintf("%v/%v/deploy-templates", config.TemplatesDir, codebaseSettings.Name)
 
 	err := createDirectory(config.TemplatesDir)
 	if err != nil {
 		return err
 	}
 
-	err = cloneProjectRepoFromGerrit(config, appSettings)
+	err = cloneProjectRepoFromGerrit(config, codebaseSettings)
 	if err != nil {
 		return err
 	}
@@ -105,29 +105,29 @@ func PushConfigs(config gerritConfigGoTemplating, appSettings models.AppSettings
 	templateName := fmt.Sprintf("%v.tmpl", strings.ToLower(config.Framework))
 	templatePath := fmt.Sprintf("%v/%v", templateBasePath, templateName)
 
-	err = copyTemplate(templatePath, templateName, config, appSettings)
+	err = copyTemplate(templatePath, templateName, config, codebaseSettings)
 	if err != nil {
 		return err
 	}
 
-	err = copyPipelines(appSettings, config)
+	err = copyPipelines(codebaseSettings, config)
 	if err != nil {
 		return nil
 	}
 
 	if strings.ToLower(config.Lang) == "javascript" {
-		err = copySonarConfigs(config, appSettings)
+		err = copySonarConfigs(config, codebaseSettings)
 		if err != nil {
 			return err
 		}
 	}
 
-	err = commitConfigs(config, appSettings.Name)
+	err = commitConfigs(config, codebaseSettings.Name)
 	if err != nil {
 		return err
 	}
 
-	err = pushConfigsToGerrit(config, appSettings.Name, appSettings.GerritKeyPath)
+	err = pushConfigsToGerrit(config, codebaseSettings.Name, codebaseSettings.GerritKeyPath)
 	if err != nil {
 		return err
 	}
@@ -137,7 +137,7 @@ func PushConfigs(config gerritConfigGoTemplating, appSettings models.AppSettings
 		return err
 	}
 
-	err = createS2IImageStream(clientSet, appSettings, appImageStream)
+	err = createS2IImageStream(clientSet, codebaseSettings, appImageStream)
 	if err != nil {
 		return err
 	}
@@ -145,14 +145,14 @@ func PushConfigs(config gerritConfigGoTemplating, appSettings models.AppSettings
 	return nil
 }
 
-func cloneProjectRepoFromGerrit(config gerritConfigGoTemplating, appSettings models.AppSettings) error {
+func cloneProjectRepoFromGerrit(config gerritConfigGoTemplating, codebaseSettings models.CodebaseSettings) error {
 	log.Printf("Cloning repo from gerrit using: %v", config.CloneSshUrl)
 	var session *ssh.Session
 	var connection *ssh.Client
 	var out bytes.Buffer
 	var stderr bytes.Buffer
 
-	client, err := SshInit(appSettings.GerritKeyPath, appSettings.GerritHost, appSettings.GerritSettings.SshPort)
+	client, err := SshInit(codebaseSettings.GerritKeyPath, codebaseSettings.GerritHost, codebaseSettings.GerritSettings.SshPort)
 	if err != nil {
 		return err
 	}
@@ -170,7 +170,7 @@ func cloneProjectRepoFromGerrit(config gerritConfigGoTemplating, appSettings mod
 	}()
 
 	cmd := exec.Command("git", "clone", config.CloneSshUrl, fmt.Sprintf("%v/%v",
-		config.TemplatesDir, appSettings.Name))
+		config.TemplatesDir, codebaseSettings.Name))
 	cmd.Stdout = &out
 	cmd.Stderr = &stderr
 	err = cmd.Run()
@@ -182,7 +182,7 @@ func cloneProjectRepoFromGerrit(config gerritConfigGoTemplating, appSettings mod
 	}
 	log.Print("Cloning repo has been finished")
 
-	err = copyMessageHookToRepository(config.TemplatesDir, appSettings.Name)
+	err = copyMessageHookToRepository(config.TemplatesDir, codebaseSettings.Name)
 	if err != nil {
 		return err
 	}
@@ -226,9 +226,9 @@ func createDirectory(path string) error {
 	return nil
 }
 
-func copyTemplate(templatePath string, templateName string, config gerritConfigGoTemplating, appSettings models.AppSettings) error {
-	templatesDest := fmt.Sprintf("%v/%v/deploy-templates/%v.yaml", config.TemplatesDir, appSettings.Name,
-		appSettings.Name)
+func copyTemplate(templatePath string, templateName string, config gerritConfigGoTemplating, codebaseSettings models.CodebaseSettings) error {
+	templatesDest := fmt.Sprintf("%v/%v/deploy-templates/%v.yaml", config.TemplatesDir, codebaseSettings.Name,
+		codebaseSettings.Name)
 
 	f, err := os.Create(templatesDest)
 	if err != nil {
@@ -248,17 +248,17 @@ func copyTemplate(templatePath string, templateName string, config gerritConfigG
 		return err
 	}
 
-	log.Printf("Openshift template for application %v has been rendered", appSettings.Name)
+	log.Printf("Openshift template for application %v has been rendered", codebaseSettings.Name)
 	return nil
 }
 
-func copyPipelines(appSettings models.AppSettings, config gerritConfigGoTemplating) error {
+func copyPipelines(codebaseSettings models.CodebaseSettings, config gerritConfigGoTemplating) error {
 	pipelinesPath := "/usr/local/bin/pipelines"
 	files, err := ioutil.ReadDir(pipelinesPath)
 	if err != nil {
 		return err
 	}
-	pipelinesDest := fmt.Sprintf("%v/%v", config.TemplatesDir, appSettings.Name)
+	pipelinesDest := fmt.Sprintf("%v/%v", config.TemplatesDir, codebaseSettings.Name)
 	log.Printf("Start copying pipelines to %v", pipelinesDest)
 
 	for _, f := range files {
@@ -272,12 +272,12 @@ func copyPipelines(appSettings models.AppSettings, config gerritConfigGoTemplati
 			return err
 		}
 	}
-	log.Printf("Jenkins pipelines for application %v has been copied", appSettings.Name)
+	log.Printf("Jenkins pipelines for application %v has been copied", codebaseSettings.Name)
 	return nil
 }
 
-func copySonarConfigs(config gerritConfigGoTemplating, appSettings models.AppSettings) error {
-	sonarConfigPath := fmt.Sprintf("%v/%v/sonar-project.properties", config.TemplatesDir, appSettings.Name)
+func copySonarConfigs(config gerritConfigGoTemplating, codebaseSettings models.CodebaseSettings) error {
+	sonarConfigPath := fmt.Sprintf("%v/%v/sonar-project.properties", config.TemplatesDir, codebaseSettings.Name)
 
 	if _, err := os.Stat(sonarConfigPath); err == nil {
 		return nil
@@ -297,7 +297,7 @@ func copySonarConfigs(config gerritConfigGoTemplating, appSettings models.AppSet
 			log.Printf("Unable to render sonar configs fo JS app: %v", err)
 			return err
 		}
-		log.Printf("Sonar configs for application %v has been copied", appSettings.Name)
+		log.Printf("Sonar configs for application %v has been copied", codebaseSettings.Name)
 		defer f.Close()
 	}
 
@@ -362,16 +362,16 @@ func pushConfigsToGerrit(gerritConfig gerritConfigGoTemplating, appName string, 
 	return nil
 }
 
-func createS2IImageStream(clientSet ClientSet.ClientSet, appSettings models.AppSettings, is *imageV1.ImageStream) error {
-	_, err := clientSet.ImageClient.ImageStreams(appSettings.CicdNamespace).Get(is.Name, metav1.GetOptions{})
+func createS2IImageStream(clientSet ClientSet.ClientSet, codebaseSettings models.CodebaseSettings, is *imageV1.ImageStream) error {
+	_, err := clientSet.ImageClient.ImageStreams(codebaseSettings.CicdNamespace).Get(is.Name, metav1.GetOptions{})
 	if err != nil && k8serrors.IsNotFound(err) {
-		_, err := clientSet.ImageClient.ImageStreams(appSettings.CicdNamespace).Create(is)
+		_, err := clientSet.ImageClient.ImageStreams(codebaseSettings.CicdNamespace).Create(is)
 		if err != nil {
 			return err
 		}
-		log.Printf("Image stream in Openshift has been created for application %v", appSettings.Name)
+		log.Printf("Image stream in Openshift has been created for application %v", codebaseSettings.Name)
 	} else {
-		log.Printf("Image stream in Openshift for application %v already exist. Creation skipped", appSettings.Name)
+		log.Printf("Image stream in Openshift for application %v already exist. Creation skipped", codebaseSettings.Name)
 	}
 	return nil
 }

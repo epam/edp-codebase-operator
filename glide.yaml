@@ -1,4 +1,4 @@
-package: business-app-handler-controller
+package: codebase-operator
 import:
   - package: github.com/go-openapi/spec
     version: ^0.18.0

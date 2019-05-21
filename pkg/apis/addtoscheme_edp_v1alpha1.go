@@ -1,7 +1,7 @@
 package apis
 
 import (
-	"business-app-handler-controller/pkg/apis/edp/v1alpha1"
+	"codebase-operator/pkg/apis/edp/v1alpha1"
 )
 
 func init() {

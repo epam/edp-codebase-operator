@@ -1,8 +1,8 @@
 package main
 
 import (
-	"business-app-handler-controller/pkg/apis"
-	"business-app-handler-controller/pkg/controller"
+	"codebase-operator/pkg/apis"
+	"codebase-operator/pkg/controller"
 	"flag"
 	"fmt"
 	"log"

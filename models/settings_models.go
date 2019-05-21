@@ -1,6 +1,6 @@
 package models
 
-type AppSettings struct {
+type CodebaseSettings struct {
 	Name                  string         `json:"name"`
 	WorkDir               string         `json:"work_dir"`
 	RepositoryUrl         string         `json:"repository_url"`

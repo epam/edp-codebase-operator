@@ -1,8 +1,8 @@
 package gerrit
 
 import (
-	"business-app-handler-controller/models"
-	"business-app-handler-controller/pkg/apis/edp/v1alpha1"
+	"codebase-operator/models"
+	"codebase-operator/pkg/apis/edp/v1alpha1"
 	"fmt"
 	"testing"
 )
@@ -14,7 +14,7 @@ func TestExampleAddEdpConfigs_CopyTemplate_Test(t *testing.T) {
 	buildTool := "maven"
 	templatesDir := "/oc-templates"
 	cloneSshUrl := "ssh://gerrit.svc"
-	appSettings := models.AppSettings{
+	codebaseSettings := models.CodebaseSettings{
 		Name: "test",
 	}
 
@@ -40,12 +40,12 @@ func TestExampleAddEdpConfigs_CopyTemplate_Test(t *testing.T) {
 		BuildTool:         buildTool,
 		TemplatesDir:      templatesDir,
 		CloneSshUrl:       cloneSshUrl,
-		AppSettings:       appSettings,
+		CodebaseSettings:  codebaseSettings,
 		Database:          &database,
 		Route:             &route,
 	}
 
-	err := copyTemplate(templatePath, templateName, config, appSettings)
+	err := copyTemplate(templatePath, templateName, config, codebaseSettings)
 	if err != nil {
 		fmt.Println(err)
 	}

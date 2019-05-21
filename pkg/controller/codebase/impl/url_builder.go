@@ -1,14 +1,14 @@
 package impl
 
 import (
-	"business-app-handler-controller/pkg/apis/edp/v1alpha1"
+	"codebase-operator/pkg/apis/edp/v1alpha1"
 	"errors"
 	"fmt"
 	"log"
 	"strings"
 )
 
-func getRepoUrl(baseUrl string, spec v1alpha1.BusinessApplicationSpec) (*string, error) {
+func getRepoUrl(baseUrl string, spec v1alpha1.CodebaseSpec) (*string, error) {
 	if spec.Strategy == v1alpha1.Clone {
 		log.Printf("Strategy is clone. Try to use default value...")
 		return tryGetRepoUrl(spec)
@@ -20,14 +20,14 @@ func getRepoUrl(baseUrl string, spec v1alpha1.BusinessApplicationSpec) (*string,
 
 }
 
-func tryGetRepoUrl(spec v1alpha1.BusinessApplicationSpec) (*string, error) {
+func tryGetRepoUrl(spec v1alpha1.CodebaseSpec) (*string, error) {
 	if spec.Repository == nil {
 		return nil, errors.New("repository cannot be nil for specified strategy")
 	}
 	return &spec.Repository.Url, nil
 }
 
-func buildRepoUrl(baseUrl string, spec v1alpha1.BusinessApplicationSpec) string {
+func buildRepoUrl(baseUrl string, spec v1alpha1.CodebaseSpec) string {
 	log.Printf("Start build repo url by base url: %v and spec %+v", baseUrl, spec)
 	result := fmt.Sprintf("%v/%v-%v-%v",
 		baseUrl, spec.Lang, spec.BuildTool, spec.Framework)

@@ -1,9 +1,9 @@
 package gerrit
 
 import (
-	"business-app-handler-controller/models"
-	ClientSet "business-app-handler-controller/pkg/openshift"
 	"bytes"
+	"codebase-operator/models"
+	ClientSet "codebase-operator/pkg/openshift"
 	"encoding/json"
 	"fmt"
 	"golang.org/x/crypto/ssh"
@@ -266,30 +266,30 @@ func generateReplicationConfig(templatePath, templateName string, params Replica
 	return renderedTemplate.String(), nil
 }
 
-func SetupProjectReplication(appSettings models.AppSettings, clientSet ClientSet.ClientSet) error {
-	log.Printf("Start setup project replication for app: %v", appSettings.Name)
+func SetupProjectReplication(codebaseSettings models.CodebaseSettings, clientSet ClientSet.ClientSet) error {
+	log.Printf("Start setup project replication for app: %v", codebaseSettings.Name)
 	replicaConfigNew, err := generateReplicationConfig(
 		TemplatesPath, ReplicationConfigTemplateName, ReplicationConfigParams{
-			Name:      appSettings.Name,
-			VcsSshUrl: appSettings.VcsSshUrl,
+			Name:      codebaseSettings.Name,
+			VcsSshUrl: codebaseSettings.VcsSshUrl,
 		})
 
-	gerritSettings, err := clientSet.CoreClient.ConfigMaps(appSettings.CicdNamespace).Get("gerrit", metav1.GetOptions{})
+	gerritSettings, err := clientSet.CoreClient.ConfigMaps(codebaseSettings.CicdNamespace).Get("gerrit", metav1.GetOptions{})
 	replicaConfig := gerritSettings.Data["replication.config"]
 	gerritSettings.Data["replication.config"] = fmt.Sprintf("%v\n%v", replicaConfig, replicaConfigNew)
-	result, err := clientSet.CoreClient.ConfigMaps(appSettings.CicdNamespace).Update(gerritSettings)
+	result, err := clientSet.CoreClient.ConfigMaps(codebaseSettings.CicdNamespace).Update(gerritSettings)
 	if err != nil {
 		log.Printf("Unable to update config map with replication config: %v", err)
 		return err
 	}
 	log.Println(result)
-	err = reloadReplicationPlugin(appSettings.GerritKeyPath, appSettings.GerritHost,
-		appSettings.GerritSettings.SshPort)
+	err = reloadReplicationPlugin(codebaseSettings.GerritKeyPath, codebaseSettings.GerritHost,
+		codebaseSettings.GerritSettings.SshPort)
 	if err != nil {
 		log.Printf("Unable to reload replication plugin: %v", err)
 		return err
 	}
-	log.Printf("Replication configuration has been finished for app %v", appSettings.Name)
+	log.Printf("Replication configuration has been finished for app %v", codebaseSettings.Name)
 
 	return nil
 }

@@ -1,7 +1,7 @@
 package perf
 
 import (
-	ClientSet "business-app-handler-controller/pkg/openshift"
+	ClientSet "codebase-operator/pkg/openshift"
 	"errors"
 	"fmt"
 	"gopkg.in/resty.v1"

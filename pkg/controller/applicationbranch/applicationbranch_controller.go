@@ -1,8 +1,8 @@
 package applicationbranch
 
 import (
-	edpv1alpha1 "business-app-handler-controller/pkg/apis/edp/v1alpha1"
-	"business-app-handler-controller/pkg/controller/applicationbranch/impl"
+	edpv1alpha1 "codebase-operator/pkg/apis/edp/v1alpha1"
+	"codebase-operator/pkg/controller/applicationbranch/impl"
 	"context"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -110,8 +110,8 @@ func (r *ReconcileApplicationBranch) Reconcile(request reconcile.Request) (recon
 	return reconcile.Result{}, nil
 }
 
-func (r *ReconcileApplicationBranch) getApplicationByBranch(branch edpv1alpha1.ApplicationBranch) (*edpv1alpha1.BusinessApplication, error) {
-	instance := &edpv1alpha1.BusinessApplication{}
+func (r *ReconcileApplicationBranch) getApplicationByBranch(branch edpv1alpha1.ApplicationBranch) (*edpv1alpha1.Codebase, error) {
+	instance := &edpv1alpha1.Codebase{}
 	err := r.client.Get(context.TODO(), types.NamespacedName{
 		Namespace: branch.Namespace,
 		Name:      branch.Spec.AppName,

@@ -28,8 +28,8 @@ func createGitlab() gitlab {
 		groupId:                   os.Getenv("TEST_GITLAB_GROUP_ID"),
 		existingProjectInGroup:    os.Getenv("TEST_EXISTING_PROJECT_IN_GROUP"),
 		nonExistingProjectInGroup: os.Getenv("TEST_NON_EXISTING_PROJECT_IN_GROUP"),
-		sshUrl:                    os.Getenv("TEST_GITLAB_PROJECT_SSH_URL"),
-		nonExistingGroup:          os.Getenv("TEST_GITLAB_NON_EXISTING_GROUP"),
+		sshUrl:           os.Getenv("TEST_GITLAB_PROJECT_SSH_URL"),
+		nonExistingGroup: os.Getenv("TEST_GITLAB_NON_EXISTING_GROUP"),
 	}
 }
 
