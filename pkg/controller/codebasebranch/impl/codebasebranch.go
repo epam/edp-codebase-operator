@@ -12,19 +12,20 @@ import (
 	"time"
 )
 
-type ApplicationBranchService struct {
+type CodebaseBranchService struct {
 	Client client.Client
 }
 
-func (applicationBranch ApplicationBranchService) Create(cr *edpv1alpha1.ApplicationBranch) {
+func (codebaseBranch CodebaseBranchService) Create(cr *edpv1alpha1.CodebaseBranch) {
 	if cr.Status.Status != models.StatusInit {
-		log.Printf("Release %v for application %v is not in init status. Skipped", cr.Spec.BranchName, cr.Spec.AppName)
+		log.Printf("Release %v for application %v is not in init status. Skipped", cr.Spec.BranchName,
+			cr.Spec.CodebaseName)
 		return
 	}
 
 	clientSet := ClientSet.CreateOpenshiftClients()
 	log.Println("Client set has been created")
-	releaseJob := fmt.Sprintf("%v/job/Create-release-%v", cr.Spec.AppName, cr.Spec.AppName)
+	releaseJob := fmt.Sprintf("%v/job/Create-release-%v", cr.Spec.CodebaseName, cr.Spec.CodebaseName)
 	jenkinsUrl := fmt.Sprintf("http://jenkins.%s:8080", cr.Namespace)
 	jenkinsToken, jenkinsUsername, err := settings.GetJenkinsCreds(*clientSet, cr.Namespace)
 	if err != nil {
@@ -33,7 +34,7 @@ func (applicationBranch ApplicationBranchService) Create(cr *edpv1alpha1.Applica
 		return
 	}
 
-	log.Printf("Started creating release %v for application %v...", cr.Spec.BranchName, cr.Spec.AppName)
+	log.Printf("Started creating release %v for application %v...", cr.Spec.BranchName, cr.Spec.CodebaseName)
 
 	jenkinsClient, err := jenkins.Init(jenkinsUrl, jenkinsUsername, jenkinsToken)
 	if err != nil {
@@ -42,7 +43,7 @@ func (applicationBranch ApplicationBranchService) Create(cr *edpv1alpha1.Applica
 		return
 	}
 
-	err = jenkinsClient.TriggerReleaseJob(cr.Spec.BranchName, cr.Spec.FromCommit, cr.Spec.AppName)
+	err = jenkinsClient.TriggerReleaseJob(cr.Spec.BranchName, cr.Spec.FromCommit, cr.Spec.CodebaseName)
 	if err != nil {
 		log.Println(err)
 		rollback(cr)
@@ -60,27 +61,27 @@ func (applicationBranch ApplicationBranchService) Create(cr *edpv1alpha1.Applica
 		setStatusFields(cr, models.StatusFinished, time.Now())
 		log.Printf("Release has been created. Status: %v", models.StatusFinished)
 	} else {
-		log.Printf("Failed to create release. Release job status is '%v'. ApplicationBranch status: %v",
+		log.Printf("Failed to create release. Release job status is '%v'. CodebaseBranch status: %v",
 			jobStatus, models.StatusFailed)
 		rollback(cr)
 		return
 	}
 }
 
-func rollback(cr *edpv1alpha1.ApplicationBranch) {
+func rollback(cr *edpv1alpha1.CodebaseBranch) {
 	setStatusFields(cr, models.StatusFailed, time.Now())
 }
 
-func setStatusFields(cr *edpv1alpha1.ApplicationBranch, status string, time time.Time) {
+func setStatusFields(cr *edpv1alpha1.CodebaseBranch, status string, time time.Time) {
 	cr.Status.Status = status
 	cr.Status.LastTimeUpdated = time
 	log.Printf("Status for application release %v has been updated to '%v' at %v.", cr.Spec.BranchName, status, time)
 }
 
-func (applicationBranch ApplicationBranchService) Update(cr *edpv1alpha1.ApplicationBranch) {
+func (codebaseBranch CodebaseBranchService) Update(cr *edpv1alpha1.CodebaseBranch) {
 
 }
 
-func (applicationBranch ApplicationBranchService) Delete(cr *edpv1alpha1.ApplicationBranch) {
+func (codebaseBranch CodebaseBranchService) Delete(cr *edpv1alpha1.CodebaseBranch) {
 
 }

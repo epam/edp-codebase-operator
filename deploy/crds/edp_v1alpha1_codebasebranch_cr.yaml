@@ -1,9 +1,9 @@
 apiVersion: edp.epam.com/v1alpha1
-kind: ApplicationBranch
+kind: CodebaseBranch
 metadata:
   name: test-1-release-1.0.0
 spec:
-  appName: "test-1"
+  codebaseName: "test-1"
   branchName: "test-1-release-1.1.0"
   fromCommit: "764f11f7c6111966a77a6c4e9cf581b4e9f1a63d"
 status:

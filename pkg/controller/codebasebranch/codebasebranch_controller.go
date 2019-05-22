@@ -1,8 +1,8 @@
-package applicationbranch
+package codebasebranch
 
 import (
 	edpv1alpha1 "codebase-operator/pkg/apis/edp/v1alpha1"
-	"codebase-operator/pkg/controller/applicationbranch/impl"
+	"codebase-operator/pkg/controller/codebasebranch/impl"
 	"context"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -22,13 +22,13 @@ import (
 * business logic.  Delete these comments after modifying this file.*
  */
 
-type ApplicationBranchService interface {
-	Create(cr *edpv1alpha1.ApplicationBranch)
-	Update(cr *edpv1alpha1.ApplicationBranch)
-	Delete(cr *edpv1alpha1.ApplicationBranch)
+type CodebaseBranchService interface {
+	Create(cr *edpv1alpha1.CodebaseBranch)
+	Update(cr *edpv1alpha1.CodebaseBranch)
+	Delete(cr *edpv1alpha1.CodebaseBranch)
 }
 
-// Add creates a new ApplicationBranch Controller and adds it to the Manager. The Manager will set fields on the Controller
+// Add creates a new CodebaseBranch Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
 func Add(mgr manager.Manager) error {
 	return add(mgr, newReconciler(mgr))
@@ -36,19 +36,19 @@ func Add(mgr manager.Manager) error {
 
 // newReconciler returns a new reconcile.Reconciler
 func newReconciler(mgr manager.Manager) reconcile.Reconciler {
-	return &ReconcileApplicationBranch{client: mgr.GetClient(), scheme: mgr.GetScheme()}
+	return &ReconcileCodebaseBranch{client: mgr.GetClient(), scheme: mgr.GetScheme()}
 }
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
 func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	// Create a new controller
-	c, err := controller.New("applicationbranch-controller", mgr, controller.Options{Reconciler: r})
+	c, err := controller.New("codebasebranch-controller", mgr, controller.Options{Reconciler: r})
 	if err != nil {
 		return err
 	}
 
-	// Watch for changes to primary resource ApplicationBranch
-	err = c.Watch(&source.Kind{Type: &edpv1alpha1.ApplicationBranch{}}, &handler.EnqueueRequestForObject{})
+	// Watch for changes to primary resource CodebaseBranch
+	err = c.Watch(&source.Kind{Type: &edpv1alpha1.CodebaseBranch{}}, &handler.EnqueueRequestForObject{})
 	if err != nil {
 		return err
 	}
@@ -56,26 +56,26 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	return nil
 }
 
-var _ reconcile.Reconciler = &ReconcileApplicationBranch{}
+var _ reconcile.Reconciler = &ReconcileCodebaseBranch{}
 
-// ReconcileApplicationBranch reconciles a ApplicationBranch object
-type ReconcileApplicationBranch struct {
+// ReconcileCodebaseBranch reconciles a CodebaseBranch object
+type ReconcileCodebaseBranch struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the apiserver
 	client client.Client
 	scheme *runtime.Scheme
 }
 
-// Reconcile reads that state of the cluster for a ApplicationBranch object and makes changes based on the state read
-// and what is in the ApplicationBranch.Spec
+// Reconcile reads that state of the cluster for a CodebaseBranch object and makes changes based on the state read
+// and what is in the CodebaseBranch.Spec
 // Note:
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
-func (r *ReconcileApplicationBranch) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	log.Printf("Reconciling ApplicationBranch %s/%s", request.Namespace, request.Name)
+func (r *ReconcileCodebaseBranch) Reconcile(request reconcile.Request) (reconcile.Result, error) {
+	log.Printf("Reconciling CodebaseBranch %s/%s", request.Namespace, request.Name)
 
-	// Fetch the ApplicationBranch instance
-	instance := &edpv1alpha1.ApplicationBranch{}
+	// Fetch the CodebaseBranch instance
+	instance := &edpv1alpha1.CodebaseBranch{}
 	err := r.client.Get(context.TODO(), request.NamespacedName, instance)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -90,31 +90,31 @@ func (r *ReconcileApplicationBranch) Reconcile(request reconcile.Request) (recon
 	app, err := r.getApplicationByBranch(*instance)
 
 	if err != nil {
-		log.Printf("[ERROR] Cannot get application for branch %s. Reason: %s", request.Name, err)
+		log.Printf("[ERROR] Cannot get codebase for branch %s. Reason: %s", request.Name, err)
 		return reconcile.Result{RequeueAfter: 5 * time.Second}, err
 	}
 
 	if !app.Status.Available {
-		log.Printf("[ERROR] Application %s for branch %s is not ready yet.", app.Name, request.Name)
+		log.Printf("[ERROR] Codebase %s for branch %s is not ready yet.", app.Name, request.Name)
 		return reconcile.Result{RequeueAfter: 5 * time.Second}, nil
 	}
 
-	applicationBranch, err := getApplicationBranchService(r)
+	codebaseBranch, err := getCodebaseBranchService(r)
 	if err != nil {
-		log.Fatalf("[ERROR] Cannot get application branch %s. Reason: %s", request.Name, err)
+		log.Fatalf("[ERROR] Cannot get codebase branch %s. Reason: %s", request.Name, err)
 	}
-	applicationBranch.Create(instance)
+	codebaseBranch.Create(instance)
 	_ = r.client.Update(context.TODO(), instance)
 
-	log.Printf("Reconciling ApplicationBranch %s/%s has been finished", request.Namespace, request.Name)
+	log.Printf("Reconciling CodebaseBranch %s/%s has been finished", request.Namespace, request.Name)
 	return reconcile.Result{}, nil
 }
 
-func (r *ReconcileApplicationBranch) getApplicationByBranch(branch edpv1alpha1.ApplicationBranch) (*edpv1alpha1.Codebase, error) {
+func (r *ReconcileCodebaseBranch) getApplicationByBranch(branch edpv1alpha1.CodebaseBranch) (*edpv1alpha1.Codebase, error) {
 	instance := &edpv1alpha1.Codebase{}
 	err := r.client.Get(context.TODO(), types.NamespacedName{
 		Namespace: branch.Namespace,
-		Name:      branch.Spec.AppName,
+		Name:      branch.Spec.CodebaseName,
 	}, instance)
 
 	if err != nil {
@@ -124,8 +124,8 @@ func (r *ReconcileApplicationBranch) getApplicationByBranch(branch edpv1alpha1.A
 	return instance, nil
 }
 
-func getApplicationBranchService(r *ReconcileApplicationBranch) (ApplicationBranchService, error) {
-	return impl.ApplicationBranchService{
+func getCodebaseBranchService(r *ReconcileCodebaseBranch) (CodebaseBranchService, error) {
+	return impl.CodebaseBranchService{
 		r.client,
 	}, nil
 }
