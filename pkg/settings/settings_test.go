@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func createAppSettings() models.CodebaseSettings {
+func createCodebaseSettings() models.CodebaseSettings {
 	return models.CodebaseSettings{
 		ProjectVcsHostname: "gerrit",
 		GerritKeyPath:      "/test/test",
@@ -22,9 +22,9 @@ func createAppSettings() models.CodebaseSettings {
 }
 
 func TestExampleSettings_CreateSshConfig(t *testing.T) {
-	appSettings := createAppSettings()
+	codebaseSettings := createCodebaseSettings()
 
-	err := CreateSshConfig(appSettings)
+	err := CreateSshConfig(codebaseSettings)
 	if err != nil {
 		fmt.Println(err)
 	}

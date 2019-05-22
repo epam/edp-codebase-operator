@@ -13,10 +13,10 @@ import (
 	"log"
 )
 
-func getBuildConfig(clientSet ClientSet, appSettings models.CodebaseSettings, bcName string) (*buildV1.BuildConfig, error) {
+func getBuildConfig(clientSet ClientSet, codebaseSettings models.CodebaseSettings, bcName string) (*buildV1.BuildConfig, error) {
 	bc, err := clientSet.
 		BuildClient.
-		BuildConfigs(appSettings.CicdNamespace).
+		BuildConfigs(codebaseSettings.CicdNamespace).
 		Get(bcName, metav1.GetOptions{})
 	if err != nil && k8serrors.IsNotFound(err) {
 		log.Printf("Build config %v in Openshift hasn't been found", bcName)
@@ -26,10 +26,10 @@ func getBuildConfig(clientSet ClientSet, appSettings models.CodebaseSettings, bc
 	return bc, nil
 }
 
-func updateBuildConfig(clientSet ClientSet, appSettings models.CodebaseSettings, envSettings models.EnvSettings,
+func updateBuildConfig(clientSet ClientSet, codebaseSettings models.CodebaseSettings, envSettings models.EnvSettings,
 	bcName string) (*buildV1.BuildConfig, error) {
 
-	bc, err := getBuildConfig(clientSet, appSettings, bcName)
+	bc, err := getBuildConfig(clientSet, codebaseSettings, bcName)
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +42,7 @@ func updateBuildConfig(clientSet ClientSet, appSettings models.CodebaseSettings,
 					From: &v1.ObjectReference{
 						Kind:      "ImageStreamTag",
 						Namespace: fmt.Sprintf("%v-meta", envSettings.Name),
-						Name:      fmt.Sprintf("%v-master:latest", appSettings.Name),
+						Name:      fmt.Sprintf("%v-master:latest", codebaseSettings.Name),
 					},
 				},
 			})
@@ -54,10 +54,10 @@ func updateBuildConfig(clientSet ClientSet, appSettings models.CodebaseSettings,
 	return bc, nil
 }
 
-func PatchBuildConfig(clientSet ClientSet, appSettings models.CodebaseSettings, env models.EnvSettings) error {
+func PatchBuildConfig(clientSet ClientSet, codebaseSettings models.CodebaseSettings, env models.EnvSettings) error {
 	bcName := fmt.Sprintf("%v-deploy-pipeline", env.Name)
 
-	bc, err := updateBuildConfig(clientSet, appSettings, env, bcName)
+	bc, err := updateBuildConfig(clientSet, codebaseSettings, env, bcName)
 	if err != nil {
 		return err
 	}
@@ -70,7 +70,7 @@ func PatchBuildConfig(clientSet ClientSet, appSettings models.CodebaseSettings, 
 
 	_, err = clientSet.
 		BuildClient.
-		BuildConfigs(appSettings.CicdNamespace).
+		BuildConfigs(codebaseSettings.CicdNamespace).
 		Patch(bcName, types.StrategicMergePatchType, buf.Bytes())
 	if err != nil {
 		return err

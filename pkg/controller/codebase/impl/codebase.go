@@ -280,7 +280,7 @@ func trySetupPerf(s CodebaseService, set *ClientSet.ClientSet, codebaseSettings 
 	return nil
 }
 
-func setupPerf(s CodebaseService, set *ClientSet.ClientSet, appSettings models.CodebaseSettings) error {
+func setupPerf(s CodebaseService, set *ClientSet.ClientSet, codebaseSettings models.CodebaseSettings) error {
 	log.Println("Start perf configuration...")
 	perfSetting := perf.GetPerfSettings(*set, s.CustomResource.Namespace)
 	log.Printf("Perf setting have been retrieved: %v", perfSetting)
@@ -314,7 +314,7 @@ func setupPerf(s CodebaseService, set *ClientSet.ClientSet, appSettings models.C
 		return err
 	}
 
-	err = trySetupGitlabPerf(perfClient, appSettings, perfSetting[perf.GitlabDsSettingsKey])
+	err = trySetupGitlabPerf(perfClient, codebaseSettings, perfSetting[perf.GitlabDsSettingsKey])
 	if err != nil {
 		log.Printf("Error has occurred during setup Gitlab Perf: %v", err)
 		return err
