@@ -4,7 +4,10 @@ metadata:
   name: test-npm
 spec:
   lang: "Javascript"
+  type: "application"
+  description: "My app"
   framework: "React"
+  testReportFramework: "allure"
   buildTool: "NPM"
   strategy: "create"
   git:
