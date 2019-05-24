@@ -254,7 +254,7 @@ func tryGetRepositoryCredentials(s CodebaseService, clientSet *ClientSet.ClientS
 }
 
 func getRepoCreds(s CodebaseService, clientSet *ClientSet.ClientSet) (string, string, error) {
-	repositoryCredentialsSecretName := fmt.Sprintf("repository-application-%v-temp", s.CustomResource.Name)
+	repositoryCredentialsSecretName := fmt.Sprintf("repository-codebase-%v-temp", s.CustomResource.Name)
 	repositoryUsername, repositoryPassword, err := settings.GetVcsBasicAuthConfig(*clientSet,
 		s.CustomResource.Namespace, repositoryCredentialsSecretName)
 	if err != nil {
@@ -419,7 +419,7 @@ func tryCreateProjectInVcs(codebaseSettings *models.CodebaseSettings, s *Codebas
 
 func createProjectInVcs(codebaseSettings *models.CodebaseSettings, s *CodebaseService,
 	clientSet ClientSet.ClientSet) error {
-	VcsCredentialsSecretName := "vcs-autouser-application-" + s.CustomResource.Name + "-temp"
+	VcsCredentialsSecretName := "vcs-autouser-codebase-" + s.CustomResource.Name + "-temp"
 	vcsAutoUserLogin, vcsAutoUserPassword, err := settings.GetVcsBasicAuthConfig(clientSet,
 		s.CustomResource.Namespace, VcsCredentialsSecretName)
 
