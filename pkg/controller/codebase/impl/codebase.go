@@ -33,12 +33,12 @@ func (s CodebaseService) Create() {
 		return
 	}
 
-	log.Println("Creating codebase...")
+	log.Printf("Creating codebase %v ...", s.CustomResource.Spec.Type)
 	log.Printf("Retrieved params: name: %v; strategy: %v; lang: %v; framework: %v; buildTool: %v; route: %v;"+
-		" database: %v; repository: %v",
+		" database: %v; repository: %v; type: %v",
 		s.CustomResource.Name, s.CustomResource.Spec.Strategy, s.CustomResource.Spec.Lang,
 		s.CustomResource.Spec.Framework, s.CustomResource.Spec.BuildTool, s.CustomResource.Spec.Route,
-		s.CustomResource.Spec.Database, s.CustomResource.Spec.Repository)
+		s.CustomResource.Spec.Database, s.CustomResource.Spec.Repository, s.CustomResource.Spec.Type)
 
 	setStatusFields(s, false, models.StatusInProgress, time.Now())
 
@@ -68,7 +68,8 @@ func (s CodebaseService) Create() {
 	}
 	log.Println("Gerrit has been configured")
 
-	jenkinsClient, err := jenkins.Init(codebaseSettings.JenkinsUrl, codebaseSettings.JenkinsUsername, codebaseSettings.JenkinsToken)
+	jenkinsClient, err := jenkins.Init(codebaseSettings.JenkinsUrl, codebaseSettings.JenkinsUsername,
+		codebaseSettings.JenkinsToken)
 	if err != nil {
 		log.Println(err)
 		rollback(s)
@@ -77,9 +78,11 @@ func (s CodebaseService) Create() {
 
 	err = jenkinsClient.TriggerJobProvisioning(s.CustomResource.Name, s.CustomResource.Spec.BuildTool)
 	if err != nil {
+		log.Println(err)
 		rollback(s)
 		return
 	}
+
 	log.Println("Job provisioning has been triggered")
 
 	err = trySetupPerf(s, clientSet, *codebaseSettings)
@@ -123,6 +126,7 @@ func initCodebaseSettings(s CodebaseService, clientSet *ClientSet.ClientSet) (*m
 	codebaseSettings := models.CodebaseSettings{}
 	codebaseSettings.BasicPatternUrl = "https://github.com/epmd-edp"
 	codebaseSettings.Name = s.CustomResource.Name
+	codebaseSettings.Type = s.CustomResource.Spec.Type
 
 	log.Printf("Retrieving user settings from config map...")
 	codebaseSettings.CicdNamespace = s.CustomResource.Namespace
@@ -181,26 +185,26 @@ func rollback(s CodebaseService) {
 
 func gerritConfiguration(codebaseSettings *models.CodebaseSettings, s CodebaseService,
 	clientSet *ClientSet.ClientSet) error {
-	log.Printf("Start gerrit configuration for app: %v...", codebaseSettings.Name)
+	log.Printf("Start gerrit configuration for codebase: %v...", codebaseSettings.Name)
 
-	log.Printf("Start creation of gerrit private key for app: %v...", codebaseSettings.Name)
+	log.Printf("Start creation of gerrit private key for codebase: %v...", codebaseSettings.Name)
 	err := settings.CreateGerritPrivateKey(codebaseSettings.GerritPrivateKey, codebaseSettings.GerritKeyPath)
 	if err != nil {
-		log.Printf("Creation of gerrit private key for app %v has been failed. Return error", codebaseSettings.Name)
+		log.Printf("Creation of gerrit private key for codebase %v has been failed. Return error", codebaseSettings.Name)
 		return err
 	}
-	log.Printf("Start creation of ssh config for app: %v...", codebaseSettings.Name)
+	log.Printf("Start creation of ssh config for codebase: %v...", codebaseSettings.Name)
 	err = settings.CreateSshConfig(*codebaseSettings)
 	if err != nil {
-		log.Printf("Creation of ssh config for app %v has been failed. Return error", codebaseSettings.Name)
+		log.Printf("Creation of ssh config for codebase %v has been failed. Return error", codebaseSettings.Name)
 		return err
 	}
-	log.Printf("Start setup repo url for app: %v...", codebaseSettings.Name)
+	log.Printf("Start setup repo url for codebase: %v...", codebaseSettings.Name)
 
 	repoUrl, err := getRepoUrl(codebaseSettings.BasicPatternUrl, s.CustomResource.Spec)
 
 	if err != nil {
-		log.Printf("Setup repo url for app %v has been failed. Return error", codebaseSettings.Name)
+		log.Printf("Setup repo url for codebase %v has been failed. Return error", codebaseSettings.Name)
 		return err
 	}
 
@@ -210,39 +214,39 @@ func gerritConfiguration(codebaseSettings *models.CodebaseSettings, s CodebaseSe
 
 	isRepositoryAccessible := git.CheckPermissions(*repoUrl, repositoryUsername, repositoryPassword)
 	if !isRepositoryAccessible {
-		return fmt.Errorf("user %v cannot get access to the repository %v", repositoryUsername, repoUrl)
+		return fmt.Errorf("user %v cannot get access to the repository %v", repositoryUsername, *repoUrl)
 	}
-	log.Printf("Start creation project in VCS for app: %v...", codebaseSettings.Name)
+	log.Printf("Start creation project in VCS for codebase: %v...", codebaseSettings.Name)
 	err = tryCreateProjectInVcs(codebaseSettings, &s, *clientSet)
 	if err != nil {
-		log.Printf("Creation project in VCS for app %v has been failed. Return error", codebaseSettings.Name)
+		log.Printf("Creation project in VCS for codebase %v has been failed. Return error", codebaseSettings.Name)
 		return err
 	}
-	log.Printf("Start clone project for app: %v...", codebaseSettings.Name)
+	log.Printf("Start clone project for codebase: %v...", codebaseSettings.Name)
 	err = tryCloneRepo(s, *codebaseSettings, *repoUrl, repositoryUsername, repositoryPassword)
 	if err != nil {
-		log.Printf("Clone project for app %v has been failed. Return error", codebaseSettings.Name)
+		log.Printf("Clone project for codebase %v has been failed. Return error", codebaseSettings.Name)
 		return err
 	}
-	log.Printf("Start creation project in Gerrit for app: %v...", codebaseSettings.Name)
+	log.Printf("Start creation project in Gerrit for codebase: %v...", codebaseSettings.Name)
 	err = createProjectInGerrit(codebaseSettings, &s)
 	if err != nil {
-		log.Printf("Creation project in Gerrit for app %v has been failed. Return error", codebaseSettings.Name)
+		log.Printf("Creation project in Gerrit for codebase %v has been failed. Return error", codebaseSettings.Name)
 		return err
 	}
-	log.Printf("Start push project to Gerrit for app: %v...", codebaseSettings.Name)
+	log.Printf("Start push project to Gerrit for codebase: %v...", codebaseSettings.Name)
 	err = pushToGerrit(codebaseSettings, &s)
 	if err != nil {
-		log.Printf("Push to gerrit for app %v has been failed. Return error", codebaseSettings.Name)
+		log.Printf("Push to gerrit for codebase %v has been failed. Return error", codebaseSettings.Name)
 		return err
 	}
-	log.Printf("Start setup Gerrit replication for app: %v...", codebaseSettings.Name)
+	log.Printf("Start setup Gerrit replication for codebase: %v...", codebaseSettings.Name)
 	err = trySetupGerritReplication(*codebaseSettings, *clientSet)
 	if err != nil {
-		log.Printf("Setup gerrit replication for app %v has been failed. Return error", codebaseSettings.Name)
+		log.Printf("Setup gerrit replication for codebase %v has been failed. Return error", codebaseSettings.Name)
 		return err
 	}
-	log.Printf("Gerrit configuration has been finished successfully for app: %v...", codebaseSettings.Name)
+	log.Printf("Gerrit configuration has been finished successfully for codebase: %v...", codebaseSettings.Name)
 	return nil
 }
 
@@ -324,31 +328,31 @@ func setupPerf(s CodebaseService, set *ClientSet.ClientSet, codebaseSettings mod
 	return nil
 }
 
-func setupJenkinsPerf(client *perf.Client, appName string, dsId string) error {
+func setupJenkinsPerf(client *perf.Client, codebaseName string, dsId string) error {
 	jenkinsDsID, err := strconv.Atoi(dsId)
 	if err != nil {
 		return err
 	}
-	jenkinsJobs := []string{fmt.Sprintf("/Code-review-%s", appName), fmt.Sprintf("/Build-%s", appName)}
+	jenkinsJobs := []string{fmt.Sprintf("/Code-review-%s", codebaseName), fmt.Sprintf("/Build-%s", codebaseName)}
 	return client.AddJobsToJenkinsDS(jenkinsDsID, jenkinsJobs)
 }
 
-func setupSonarPerf(client *perf.Client, appName string, dsId string) error {
+func setupSonarPerf(client *perf.Client, codebaseName string, dsId string) error {
 	sonarDsID, err := strconv.Atoi(dsId)
 	if err != nil {
 		return err
 	}
-	sonarProjects := []string{fmt.Sprintf("%s:master", appName)}
+	sonarProjects := []string{fmt.Sprintf("%s:master", codebaseName)}
 	return client.AddProjectsToSonarDS(sonarDsID, sonarProjects)
 }
 
-func setupGerritPerf(client *perf.Client, appName string, dsId string) error {
+func setupGerritPerf(client *perf.Client, codebaseName string, dsId string) error {
 	gerritDsID, err := strconv.Atoi(dsId)
 	if err != nil {
 		return err
 	}
 
-	gerritProjects := []perf.GerritPerfConfig{{ProjectName: appName, Branches: []string{"master"}}}
+	gerritProjects := []perf.GerritPerfConfig{{ProjectName: codebaseName, Branches: []string{"master"}}}
 	return client.AddProjectsToGerritDS(gerritDsID, gerritProjects)
 }
 
@@ -359,13 +363,13 @@ func trySetupGitlabPerf(client *perf.Client, codebaseSettings models.CodebaseSet
 	return nil
 }
 
-func setupGitlabPerf(client *perf.Client, appName string, dsId string) error {
+func setupGitlabPerf(client *perf.Client, codebaseName string, dsId string) error {
 	gitDsID, err := strconv.Atoi(dsId)
 	if err != nil {
 		return err
 	}
 
-	gitProjects := map[string]string{appName: "master"}
+	gitProjects := map[string]string{codebaseName: "master"}
 	return client.AddRepositoriesToGitlabDS(gitDsID, gitProjects)
 }
 

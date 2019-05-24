@@ -63,7 +63,7 @@ func getCodebase(cr *edpv1alpha1.Codebase, r *ReconcileCodebase) (CodebaseServic
 	}
 }
 
-// Add creates a new BusinessApplication Controller and adds it to the Manager. The Manager will set fields on the Controller
+// Add creates a new Codebase Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
 func Add(mgr manager.Manager) error {
 	return add(mgr, newReconciler(mgr))
@@ -82,7 +82,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
-	// Watch for changes to primary resource BusinessApplication
+	// Watch for changes to primary resource Codebase
 	err = c.Watch(&source.Kind{Type: &edpv1alpha1.Codebase{}}, &handler.EnqueueRequestForObject{})
 	if err != nil {
 		return err

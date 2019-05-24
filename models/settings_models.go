@@ -2,6 +2,7 @@ package models
 
 type CodebaseSettings struct {
 	Name                  string         `json:"name"`
+	Type                  string         `json:"type"`
 	WorkDir               string         `json:"work_dir"`
 	RepositoryUrl         string         `json:"repository_url"`
 	GerritKeyPath         string         `json:"gerrit_key_path"`

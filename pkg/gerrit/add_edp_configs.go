@@ -101,13 +101,16 @@ func PushConfigs(config gerritConfigGoTemplating, codebaseSettings models.Codeba
 	if err != nil {
 		return err
 	}
-	templateBasePath := fmt.Sprintf("/usr/local/bin/templates/applications/%v", strings.ToLower(config.Lang))
-	templateName := fmt.Sprintf("%v.tmpl", strings.ToLower(config.Framework))
-	templatePath := fmt.Sprintf("%v/%v", templateBasePath, templateName)
 
-	err = copyTemplate(templatePath, templateName, config, codebaseSettings)
-	if err != nil {
-		return err
+	if codebaseSettings.Type == "application" {
+		templateBasePath := fmt.Sprintf("/usr/local/bin/templates/applications/%v", strings.ToLower(config.Lang))
+		templateName := fmt.Sprintf("%v.tmpl", strings.ToLower(config.Framework))
+		templatePath := fmt.Sprintf("%v/%v", templateBasePath, templateName)
+
+		err = copyTemplate(templatePath, templateName, config, codebaseSettings)
+		if err != nil {
+			return err
+		}
 	}
 
 	err = copyPipelines(codebaseSettings, config)
@@ -132,14 +135,16 @@ func PushConfigs(config gerritConfigGoTemplating, codebaseSettings models.Codeba
 		return err
 	}
 
-	appImageStream, err := getAppImageStream(config)
-	if err != nil {
-		return err
-	}
+	if codebaseSettings.Type == "application" {
+		appImageStream, err := getAppImageStream(config)
+		if err != nil {
+			return err
+		}
 
-	err = createS2IImageStream(clientSet, codebaseSettings, appImageStream)
-	if err != nil {
-		return err
+		err = createS2IImageStream(clientSet, codebaseSettings, appImageStream)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -238,17 +243,17 @@ func copyTemplate(templatePath string, templateName string, config gerritConfigG
 	log.Printf("Start rendering openshift templates: %v", templatePath)
 	tmpl, err := template.New(templateName).ParseFiles(templatePath)
 	if err != nil {
-		log.Printf("Unable to parse application deploy template: %v", err)
+		log.Printf("Unable to parse codebase deploy template: %v", err)
 		return err
 	}
 
 	err = tmpl.Execute(f, config)
 	if err != nil {
-		log.Printf("Unable to render application deploy template: %v", err)
+		log.Printf("Unable to render codebase deploy template: %v", err)
 		return err
 	}
 
-	log.Printf("Openshift template for application %v has been rendered", codebaseSettings.Name)
+	log.Printf("Openshift template for codebase %v has been rendered", codebaseSettings.Name)
 	return nil
 }
 
@@ -258,10 +263,15 @@ func copyPipelines(codebaseSettings models.CodebaseSettings, config gerritConfig
 	if err != nil {
 		return err
 	}
+
 	pipelinesDest := fmt.Sprintf("%v/%v", config.TemplatesDir, codebaseSettings.Name)
 	log.Printf("Start copying pipelines to %v", pipelinesDest)
 
 	for _, f := range files {
+		if codebaseSettings.Type == "autotests" && f.Name() == "build.groovy" {
+			continue
+		}
+
 		input, err := ioutil.ReadFile(pipelinesPath + "/" + f.Name())
 		if err != nil {
 			return err
@@ -272,7 +282,8 @@ func copyPipelines(codebaseSettings models.CodebaseSettings, config gerritConfig
 			return err
 		}
 	}
-	log.Printf("Jenkins pipelines for application %v has been copied", codebaseSettings.Name)
+
+	log.Printf("Jenkins pipelines for codebase %v has been copied", codebaseSettings.Name)
 	return nil
 }
 
@@ -297,7 +308,7 @@ func copySonarConfigs(config gerritConfigGoTemplating, codebaseSettings models.C
 			log.Printf("Unable to render sonar configs fo JS app: %v", err)
 			return err
 		}
-		log.Printf("Sonar configs for application %v has been copied", codebaseSettings.Name)
+		log.Printf("Sonar configs for codebase %v has been copied", codebaseSettings.Name)
 		defer f.Close()
 	}
 

@@ -27,11 +27,10 @@ func Init(url string, username string, token string) (*Client, error) {
 	}, nil
 }
 
-func (client Client) TriggerJobProvisioning(appName string, buildTool string) error {
+func (client Client) TriggerJobProvisioning(codebaseName string, buildTool string) error {
 	_, err := client.jenkins.BuildJob("Job-provisioning", map[string]string{
 		"PARAM":      "true",
-		"NAME":       appName,
-		"TYPE":       "application",
+		"NAME":       codebaseName,
 		"BUILD_TOOL": strings.ToLower(buildTool),
 	})
 	return err
