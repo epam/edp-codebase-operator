@@ -34,11 +34,19 @@ func (s CodebaseService) Create() {
 	}
 
 	log.Printf("Creating codebase %v ...", s.CustomResource.Spec.Type)
-	log.Printf("Retrieved params: name: %v; strategy: %v; lang: %v; framework: %v; buildTool: %v; route: %v;"+
-		" database: %v; repository: %v; type: %v",
-		s.CustomResource.Name, s.CustomResource.Spec.Strategy, s.CustomResource.Spec.Lang,
-		s.CustomResource.Spec.Framework, s.CustomResource.Spec.BuildTool, s.CustomResource.Spec.Route,
-		s.CustomResource.Spec.Database, s.CustomResource.Spec.Repository, s.CustomResource.Spec.Type)
+	if s.CustomResource.Spec.Type == "application" {
+		log.Printf("Retrieved params: name: %v; strategy: %v; lang: %v; framework: %v; buildTool: %v; route: %v;"+
+			" database: %v; repository: %v; type: %v",
+			s.CustomResource.Name, s.CustomResource.Spec.Strategy, s.CustomResource.Spec.Lang,
+			*s.CustomResource.Spec.Framework, s.CustomResource.Spec.BuildTool, s.CustomResource.Spec.Route,
+			s.CustomResource.Spec.Database, s.CustomResource.Spec.Repository, s.CustomResource.Spec.Type)
+	} else if s.CustomResource.Spec.Type == "autotests" {
+		log.Printf("Retrieved params: name: %v; strategy: %v; lang: %v; buildTool: %v; route: %v;"+
+			" database: %v; repository: %v; type: %v",
+			s.CustomResource.Name, s.CustomResource.Spec.Strategy, s.CustomResource.Spec.Lang,
+			s.CustomResource.Spec.BuildTool, s.CustomResource.Spec.Route, s.CustomResource.Spec.Database,
+			s.CustomResource.Spec.Repository, s.CustomResource.Spec.Type)
+	}
 
 	setStatusFields(s, false, models.StatusInProgress, time.Now())
 

@@ -11,11 +11,12 @@ var (
 
 func TestBuildRepoUrl_DatabaseIsNil(t *testing.T) {
 	expectedUrl := "https://github.com/epmd-edp/java-maven-springboot.git"
+	framework := "SpringBoot"
 
 	spec := v1alpha1.CodebaseSpec{
 		Lang:      "Java",
 		BuildTool: "Maven",
-		Framework: "SpringBoot",
+		Framework: &framework,
 	}
 	url := buildRepoUrl(baseUrl, spec)
 
@@ -26,6 +27,7 @@ func TestBuildRepoUrl_DatabaseIsNil(t *testing.T) {
 
 func TestBuildRepoUrl_PostgresDatabase(t *testing.T) {
 	expectedUrl := "https://github.com/epmd-edp/java-maven-springboot-postgresql.git"
+	framework := "SpringBoot"
 
 	db := v1alpha1.Database{
 		Kind: "PostgreSQL",
@@ -34,7 +36,7 @@ func TestBuildRepoUrl_PostgresDatabase(t *testing.T) {
 	spec := v1alpha1.CodebaseSpec{
 		Lang:      "Java",
 		BuildTool: "Maven",
-		Framework: "SpringBoot",
+		Framework: &framework,
 		Database:  &db,
 	}
 	url := buildRepoUrl(baseUrl, spec)

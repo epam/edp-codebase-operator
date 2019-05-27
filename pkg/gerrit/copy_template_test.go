@@ -36,7 +36,7 @@ func TestExampleAddEdpConfigs_CopyTemplate_Test(t *testing.T) {
 	config := gerritConfigGoTemplating{
 		DockerRegistryUrl: dtrUrl,
 		Lang:              lang,
-		Framework:         framework,
+		Framework:         &framework,
 		BuildTool:         buildTool,
 		TemplatesDir:      templatesDir,
 		CloneSshUrl:       cloneSshUrl,
