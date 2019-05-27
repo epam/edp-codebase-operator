@@ -39,7 +39,7 @@ type CodebaseSpec struct {
 	// Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html
 	Lang                string      `json:"lang"`
 	Description         *string     `json:"description"`
-	Framework           string      `json:"framework"`
+	Framework           *string     `json:"framework"`
 	BuildTool           string      `json:"buildTool"`
 	Strategy            Strategy    `json:"strategy"`
 	Repository          *Repository `json:"repository"`

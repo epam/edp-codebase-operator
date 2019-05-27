@@ -52,8 +52,6 @@ func getCodebase(cr *edpv1alpha1.Codebase, r *ReconcileCodebase) (CodebaseServic
 		return nil, errors.New("Provided unsupported language - " + cr.Spec.Lang)
 	} else if !(containSettings(allowedCodebaseSettings["build_tool"], cr.Spec.BuildTool)) {
 		return nil, errors.New("Provided unsupported build tool - " + cr.Spec.BuildTool)
-	} else if !(containSettings(allowedCodebaseSettings["framework"], cr.Spec.Framework)) {
-		return nil, errors.New("Provided unsupported framework - " + cr.Spec.Framework)
 	} else {
 		return impl.CodebaseService{
 			cr,

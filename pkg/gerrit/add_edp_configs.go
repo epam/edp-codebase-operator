@@ -27,7 +27,7 @@ import (
 
 type gerritConfigGoTemplating struct {
 	Lang              string                  `json:"lang"`
-	Framework         string                  `json:"framework"`
+	Framework         *string                 `json:"framework"`
 	BuildTool         string                  `json:"build_tool"`
 	RepositoryUrl     *string                 `json:"repository_url"`
 	Route             *v1alpha1.Route         `json:"route"`
@@ -104,7 +104,7 @@ func PushConfigs(config gerritConfigGoTemplating, codebaseSettings models.Codeba
 
 	if codebaseSettings.Type == "application" {
 		templateBasePath := fmt.Sprintf("/usr/local/bin/templates/applications/%v", strings.ToLower(config.Lang))
-		templateName := fmt.Sprintf("%v.tmpl", strings.ToLower(config.Framework))
+		templateName := fmt.Sprintf("%v.tmpl", strings.ToLower(*config.Framework))
 		templatePath := fmt.Sprintf("%v/%v", templateBasePath, templateName)
 
 		err = copyTemplate(templatePath, templateName, config, codebaseSettings)
