@@ -27,6 +27,7 @@ type CodebaseBranchStatus struct {
 	// Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html
 	LastTimeUpdated time.Time `json:"last_time_updated"`
 	Status          string    `json:"status"`
+	Username        string    `json:"username"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

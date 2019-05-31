@@ -58,6 +58,7 @@ type CodebaseStatus struct {
 	Available       bool      `json:"available"`
 	LastTimeUpdated time.Time `json:"last_time_updated"`
 	Status          string    `json:"status"`
+	Username        string    `json:"username"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

@@ -75,6 +75,7 @@ func rollback(cr *edpv1alpha1.CodebaseBranch) {
 func setStatusFields(cr *edpv1alpha1.CodebaseBranch, status string, time time.Time) {
 	cr.Status.Status = status
 	cr.Status.LastTimeUpdated = time
+	cr.Status.Username = "system"
 	log.Printf("Status for application release %v has been updated to '%v' at %v.", cr.Spec.BranchName, status, time)
 }
 

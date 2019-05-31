@@ -474,6 +474,7 @@ func setStatusFields(s CodebaseService, available bool, status string, time time
 	s.CustomResource.Status.Status = status
 	s.CustomResource.Status.LastTimeUpdated = time
 	s.CustomResource.Status.Available = available
+	s.CustomResource.Status.Username = "system"
 	log.Printf("Status for codebase %v has been updated to '%v' at %v. Available: %v",
 		s.CustomResource.Name, status, time, available)
 }
