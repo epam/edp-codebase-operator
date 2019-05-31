@@ -105,24 +105,11 @@ func (s CodebaseService) Create() {
 
 	log.Println("Pipelines and templates has been pushed to Gerrit")
 
-	envs, err := settings.GetEnvSettings(*clientSet, codebaseSettings.CicdNamespace)
+	err = tryPatchBuildConfig(s.CustomResource.Spec.Type, s.CustomResource.Name, clientSet, *codebaseSettings)
 	if err != nil {
 		log.Println(err)
 		rollback(s)
 		return
-	}
-
-	if len(envs) != 0 {
-		for _, env := range envs {
-			err = ClientSet.PatchBuildConfig(*clientSet, *codebaseSettings, env)
-			if err != nil {
-				log.Println(err)
-				rollback(s)
-				return
-			}
-		}
-
-		log.Printf("Build config for %v codebase has been patched", s.CustomResource.Name)
 	}
 
 	setStatusFields(s, true, models.StatusFinished, time.Now())
@@ -263,6 +250,34 @@ func tryGetRepositoryCredentials(s CodebaseService, clientSet *ClientSet.ClientS
 		return getRepoCreds(s, clientSet)
 	}
 	return "", "", nil
+}
+
+func tryPatchBuildConfig(codebaseType string, codebaseName string, clientSet *ClientSet.ClientSet, codebaseSettings models.CodebaseSettings) error {
+	if codebaseType == "application" {
+		return patchBuildConfig(codebaseName, clientSet, codebaseSettings)
+	}
+
+	log.Printf("Codebase type is %v. BuildConfig updating does not required", codebaseType)
+
+	return nil
+}
+
+func patchBuildConfig(codebaseName string, clientSet *ClientSet.ClientSet, codebaseSettings models.CodebaseSettings) error {
+	envs, err := settings.GetEnvSettings(*clientSet, codebaseSettings.CicdNamespace)
+	if err != nil {
+		return err
+	}
+
+	for _, env := range envs {
+		err = ClientSet.PatchBuildConfig(*clientSet, codebaseSettings, env)
+		if err != nil {
+			return err
+		}
+	}
+
+	log.Printf("Build config for %v codebase has been patched", codebaseName)
+
+	return nil
 }
 
 func getRepoCreds(s CodebaseService, clientSet *ClientSet.ClientSet) (string, string, error) {
