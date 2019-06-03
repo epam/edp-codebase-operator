@@ -55,11 +55,29 @@ type CodebaseStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html
-	Available       bool      `json:"available"`
-	LastTimeUpdated time.Time `json:"last_time_updated"`
-	Status          string    `json:"status"`
-	Username        string    `json:"username"`
+	Available       bool       `json:"available"`
+	LastTimeUpdated time.Time  `json:"last_time_updated"`
+	Status          string     `json:"status"`
+	Username        string     `json:"username"`
+	Action          ActionType `json:"action"`
+	Result          Result     `json:"result"`
+	DetailedMessage string     `json:"detailed_message"`
 }
+
+type ActionType string
+type Result string
+
+const (
+	CodebaseRegistration         ActionType = "codebase_registration"
+	GerritRepositoryProvisioning ActionType = "gerrit_repository_provisioning"
+	JenkinsConfiguration         ActionType = "jenkins_configuration"
+	PergRegistration             ActionType = "perf_registration"
+	SetupDeploymentTemplates     ActionType = "setup_deployment_templates"
+	CodebaseBranchRegistration   ActionType = "codebase_branch_registration"
+
+	Success Result = "success"
+	Error   Result = "error"
+)
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 

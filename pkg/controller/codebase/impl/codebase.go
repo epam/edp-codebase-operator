@@ -48,9 +48,16 @@ func (s CodebaseService) Create() {
 			s.CustomResource.Spec.Repository, s.CustomResource.Spec.Type)
 	}
 
-	setStatusFields(s, false, models.StatusInProgress, time.Now())
+	statusCR := edpv1alpha1.CodebaseStatus{
+		Available:       false,
+		Status:          models.StatusInProgress,
+		LastTimeUpdated: time.Now(),
+		Action:          edpv1alpha1.CodebaseRegistration,
+		Result:          edpv1alpha1.Success,
+		Username:        "system",
+	}
 
-	err := s.Client.Update(context.TODO(), s.CustomResource)
+	err := updateStatusFields(s, statusCR)
 	if err != nil {
 		log.Printf("Error has been occurred in status update: %v", err)
 		return
@@ -63,34 +70,35 @@ func (s CodebaseService) Create() {
 	codebaseSettings, err := initCodebaseSettings(s, clientSet)
 	if err != nil {
 		log.Printf("Error has been occurred in init codebase settings: %v", err)
-		rollback(s)
+		setFailedFields(s, edpv1alpha1.CodebaseRegistration, err.Error())
 		return
 	}
+	setIntermediateSuccessFields(s, edpv1alpha1.CodebaseRegistration)
 	log.Println("Codebase settings has been retrieved")
 
 	err = gerritConfiguration(codebaseSettings, s, clientSet)
 	if err != nil {
 		log.Printf("Error has been occurred in gerrit configuration: %v", err)
-		rollback(s)
+		setFailedFields(s, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
 		return
 	}
+	setIntermediateSuccessFields(s, edpv1alpha1.GerritRepositoryProvisioning)
 	log.Println("Gerrit has been configured")
 
 	jenkinsClient, err := jenkins.Init(codebaseSettings.JenkinsUrl, codebaseSettings.JenkinsUsername,
 		codebaseSettings.JenkinsToken)
 	if err != nil {
 		log.Println(err)
-		rollback(s)
+		setFailedFields(s, edpv1alpha1.JenkinsConfiguration, err.Error())
 		return
 	}
-
 	err = jenkinsClient.TriggerJobProvisioning(s.CustomResource.Name, s.CustomResource.Spec.BuildTool)
 	if err != nil {
 		log.Println(err)
-		rollback(s)
+		setFailedFields(s, edpv1alpha1.JenkinsConfiguration, err.Error())
 		return
 	}
-
+	setIntermediateSuccessFields(s, edpv1alpha1.JenkinsConfiguration)
 	log.Println("Job provisioning has been triggered")
 
 	err = trySetupPerf(s, clientSet, *codebaseSettings)
@@ -99,7 +107,7 @@ func (s CodebaseService) Create() {
 	err = gerrit.PushConfigs(*config, *codebaseSettings, *clientSet)
 	if err != nil {
 		log.Println(err)
-		rollback(s)
+		setFailedFields(s, edpv1alpha1.SetupDeploymentTemplates, err.Error())
 		return
 	}
 
@@ -108,11 +116,19 @@ func (s CodebaseService) Create() {
 	err = tryPatchBuildConfig(s.CustomResource.Spec.Type, s.CustomResource.Name, clientSet, *codebaseSettings)
 	if err != nil {
 		log.Println(err)
-		rollback(s)
+		setFailedFields(s, edpv1alpha1.SetupDeploymentTemplates, err.Error())
 		return
 	}
 
-	setStatusFields(s, true, models.StatusFinished, time.Now())
+	s.CustomResource.Status = edpv1alpha1.CodebaseStatus{
+		Available:       true,
+		Status:          models.StatusFinished,
+		LastTimeUpdated: time.Now(),
+		Username:        "system",
+		Action:          edpv1alpha1.SetupDeploymentTemplates,
+		Result:          edpv1alpha1.Success,
+	}
+
 }
 
 func initCodebaseSettings(s CodebaseService, clientSet *ClientSet.ClientSet) (*models.CodebaseSettings, error) {
@@ -172,10 +188,6 @@ func initCodebaseSettings(s CodebaseService, clientSet *ClientSet.ClientSet) (*m
 	log.Printf("Retrieving settings has been finished.")
 
 	return &codebaseSettings, nil
-}
-
-func rollback(s CodebaseService) {
-	setStatusFields(s, false, models.StatusFailed, time.Now())
 }
 
 func gerritConfiguration(codebaseSettings *models.CodebaseSettings, s CodebaseService,
@@ -485,13 +497,36 @@ func tryCloneRepo(s CodebaseService, codebaseSettings models.CodebaseSettings, r
 	return nil
 }
 
-func setStatusFields(s CodebaseService, available bool, status string, time time.Time) {
-	s.CustomResource.Status.Status = status
-	s.CustomResource.Status.LastTimeUpdated = time
-	s.CustomResource.Status.Available = available
-	s.CustomResource.Status.Username = "system"
-	log.Printf("Status for codebase %v has been updated to '%v' at %v. Available: %v",
-		s.CustomResource.Name, status, time, available)
+func setFailedFields(s CodebaseService, action edpv1alpha1.ActionType, message string) {
+	s.CustomResource.Status = edpv1alpha1.CodebaseStatus{
+		Available:       false,
+		Status:          models.StatusFailed,
+		LastTimeUpdated: time.Now(),
+		Username:        "system",
+		Action:          action,
+		Result:          edpv1alpha1.Error,
+		DetailedMessage: message,
+	}
+}
+
+func setIntermediateSuccessFields(s CodebaseService, action edpv1alpha1.ActionType) {
+	s.CustomResource.Status = edpv1alpha1.CodebaseStatus{
+		Available:       false,
+		Status:          models.StatusInProgress,
+		LastTimeUpdated: time.Now(),
+		Username:        "system",
+		Action:          action,
+		Result:          edpv1alpha1.Success,
+	}
+	err := s.Client.Update(context.TODO(), s.CustomResource)
+	if err != nil {
+		log.Printf("Error has been occured during the update success fields fot codebase: %v", s.CustomResource.Name)
+	}
+}
+
+func updateStatusFields(service CodebaseService, status edpv1alpha1.CodebaseStatus) error {
+	service.CustomResource.Status = status
+	return service.Client.Update(context.TODO(), service.CustomResource)
 }
 
 func (s CodebaseService) Update() {
