@@ -26,4 +26,4 @@ RUN  chmod u+x /usr/local/bin/user_setup && \
 
 ENTRYPOINT ["/usr/local/bin/entrypoint"]
 
-USER ${USER_NAME}
+USER ${USER_UID}
