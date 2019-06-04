@@ -104,7 +104,10 @@ func (r *ReconcileCodebaseBranch) Reconcile(request reconcile.Request) (reconcil
 		log.Fatalf("[ERROR] Cannot get codebase branch %s. Reason: %s", request.Name, err)
 	}
 	codebaseBranch.Create(instance)
-	_ = r.client.Update(context.TODO(), instance)
+	err = r.client.Update(context.TODO(), instance)
+	if err != nil {
+		log.Printf("[ERROR] Cannot update status of the branch: %v status", instance.Name)
+	}
 
 	log.Printf("Reconciling CodebaseBranch %s/%s has been finished", request.Namespace, request.Name)
 	return reconcile.Result{}, nil
