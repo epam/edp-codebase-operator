@@ -62,6 +62,7 @@ type CodebaseStatus struct {
 	Action          ActionType `json:"action"`
 	Result          Result     `json:"result"`
 	DetailedMessage string     `json:"detailed_message"`
+	Value           string     `json:"value"`
 }
 
 type ActionType string

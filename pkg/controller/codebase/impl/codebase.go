@@ -55,6 +55,7 @@ func (s CodebaseService) Create() {
 		Action:          edpv1alpha1.CodebaseRegistration,
 		Result:          edpv1alpha1.Success,
 		Username:        "system",
+		Value:           "inactive",
 	}
 
 	err := updateStatusFields(s, statusCR)
@@ -127,6 +128,7 @@ func (s CodebaseService) Create() {
 		Username:        "system",
 		Action:          edpv1alpha1.SetupDeploymentTemplates,
 		Result:          edpv1alpha1.Success,
+		Value:           "active",
 	}
 
 }
@@ -506,6 +508,7 @@ func setFailedFields(s CodebaseService, action edpv1alpha1.ActionType, message s
 		Action:          action,
 		Result:          edpv1alpha1.Error,
 		DetailedMessage: message,
+		Value:           "failed",
 	}
 }
 
@@ -517,6 +520,7 @@ func setIntermediateSuccessFields(s CodebaseService, action edpv1alpha1.ActionTy
 		Username:        "system",
 		Action:          action,
 		Result:          edpv1alpha1.Success,
+		Value:           "inactive",
 	}
 	err := s.Client.Update(context.TODO(), s.CustomResource)
 	if err != nil {
