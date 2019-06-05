@@ -29,8 +29,15 @@ func tryGetRepoUrl(spec v1alpha1.CodebaseSpec) (*string, error) {
 
 func buildRepoUrl(baseUrl string, spec v1alpha1.CodebaseSpec) string {
 	log.Printf("Start build repo url by base url: %v and spec %+v", baseUrl, spec)
-	result := fmt.Sprintf("%v/%v-%v-%v",
-		baseUrl, spec.Lang, spec.BuildTool, *spec.Framework)
+	var result string
+	if spec.Type == "application" {
+		result = fmt.Sprintf("%v/%v-%v-%v",
+			baseUrl, spec.Lang, spec.BuildTool, *spec.Framework)
+	} else {
+		result = fmt.Sprintf("%v/%v-%v",
+			baseUrl, spec.Lang, spec.BuildTool)
+	}
+
 	if spec.Database != nil {
 		result += "-" + spec.Database.Kind
 	}

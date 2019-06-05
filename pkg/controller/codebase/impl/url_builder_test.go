@@ -16,7 +16,25 @@ func TestBuildRepoUrl_DatabaseIsNil(t *testing.T) {
 	spec := v1alpha1.CodebaseSpec{
 		Lang:      "Java",
 		BuildTool: "Maven",
+		Type:      "application",
 		Framework: &framework,
+	}
+	url := buildRepoUrl(baseUrl, spec)
+
+	if url != expectedUrl {
+		t.Fatalf("Expected: %v. Actual: %v", expectedUrl, url)
+	}
+}
+
+func TestBuildRepoUrl_FrameworkIsNil(t *testing.T) {
+	expectedUrl := "https://github.com/epmd-edp/java-maven.git"
+	var framework *string = nil
+
+	spec := v1alpha1.CodebaseSpec{
+		Lang:      "Java",
+		BuildTool: "Maven",
+		Type:      "library",
+		Framework: framework,
 	}
 	url := buildRepoUrl(baseUrl, spec)
 
