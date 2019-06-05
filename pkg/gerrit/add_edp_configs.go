@@ -86,6 +86,7 @@ func getOpenshiftDockerRegistryUrl(clientSet ClientSet.ClientSet) (*string, erro
 
 func PushConfigs(config gerritConfigGoTemplating, codebaseSettings models.CodebaseSettings, clientSet ClientSet.ClientSet) error {
 	appTemplatesDir := fmt.Sprintf("%v/%v/deploy-templates", config.TemplatesDir, codebaseSettings.Name)
+	appConfigFilesDir := fmt.Sprintf("%v/%v/config-files", config.TemplatesDir, codebaseSettings.Name)
 
 	err := createDirectory(config.TemplatesDir)
 	if err != nil {
@@ -93,6 +94,19 @@ func PushConfigs(config gerritConfigGoTemplating, codebaseSettings models.Codeba
 	}
 
 	err = cloneProjectRepoFromGerrit(config, codebaseSettings)
+	if err != nil {
+		return err
+	}
+
+	err = createDirectory(appConfigFilesDir)
+	if err != nil {
+		return err
+	}
+
+	destinationPath := fmt.Sprintf("%v/%v/config-files", config.TemplatesDir, codebaseSettings.Name)
+	sourcePath := "/usr/local/bin/templates/gerrit"
+	fileName := "Readme.md"
+	err = copyFile(destinationPath, sourcePath, fileName)
 	if err != nil {
 		return err
 	}
@@ -187,7 +201,10 @@ func cloneProjectRepoFromGerrit(config gerritConfigGoTemplating, codebaseSetting
 	}
 	log.Print("Cloning repo has been finished")
 
-	err = copyMessageHookToRepository(config.TemplatesDir, codebaseSettings.Name)
+	destinationPath := fmt.Sprintf("%v/%v/.git/hooks", config.TemplatesDir, codebaseSettings.Name)
+	sourcePath := "/usr/local/bin/configs"
+	fileName := "commit-msg"
+	err = copyFile(destinationPath, sourcePath, fileName)
 	if err != nil {
 		return err
 	}
@@ -195,23 +212,23 @@ func cloneProjectRepoFromGerrit(config gerritConfigGoTemplating, codebaseSetting
 	return nil
 }
 
-func copyMessageHookToRepository(templatesDir string, appName string) error {
-	log.Printf("Copying message hook to repository")
-	messageHookDestination := fmt.Sprintf("%v/%v/.git/hooks/", templatesDir, appName)
-	messageHookPath := "/usr/local/bin/configs/commit-msg"
-	from, err := os.Open(messageHookPath)
+func copyFile(destinationPath string, sourcePath string, fileName string) error {
+	fullDestinationPath := fmt.Sprintf("%v/%v", destinationPath, fileName)
+	fullSourcePath := fmt.Sprintf("%v/%v", sourcePath, fileName)
+	log.Printf("Copying %v to config maps", fullSourcePath)
+	copyFrom, err := os.Open(fullSourcePath)
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer from.Close()
+	defer copyFrom.Close()
 
-	to, err := os.OpenFile(messageHookDestination+"commit-msg", os.O_RDWR|os.O_CREATE, 0755)
+	copyTo, err := os.OpenFile(fullDestinationPath, os.O_RDWR|os.O_CREATE, 0755)
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer to.Close()
+	defer copyTo.Close()
 
-	_, err = io.Copy(to, from)
+	_, err = io.Copy(copyTo, copyFrom)
 	if err != nil {
 		log.Fatal(err)
 	}
