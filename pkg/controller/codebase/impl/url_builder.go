@@ -33,9 +33,12 @@ func buildRepoUrl(baseUrl string, spec v1alpha1.CodebaseSpec) string {
 	if spec.Type == "application" {
 		result = fmt.Sprintf("%v/%v-%v-%v",
 			baseUrl, spec.Lang, spec.BuildTool, *spec.Framework)
-	} else {
+	} else if spec.Type == "autotests" {
 		result = fmt.Sprintf("%v/%v-%v",
 			baseUrl, spec.Lang, spec.BuildTool)
+	} else if spec.Type == "library" {
+		result = fmt.Sprintf("%v/%v",
+			baseUrl, "sample-library")
 	}
 
 	if spec.Database != nil {
