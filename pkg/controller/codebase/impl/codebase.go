@@ -50,7 +50,6 @@ func (s CodebaseService) Create() {
 
 	statusCR := edpv1alpha1.CodebaseStatus{
 		Available:       false,
-		Status:          models.StatusInProgress,
 		LastTimeUpdated: time.Now(),
 		Action:          edpv1alpha1.CodebaseRegistration,
 		Result:          edpv1alpha1.Success,
@@ -123,7 +122,6 @@ func (s CodebaseService) Create() {
 
 	s.CustomResource.Status = edpv1alpha1.CodebaseStatus{
 		Available:       true,
-		Status:          models.StatusFinished,
 		LastTimeUpdated: time.Now(),
 		Username:        "system",
 		Action:          edpv1alpha1.SetupDeploymentTemplates,
@@ -502,7 +500,6 @@ func tryCloneRepo(s CodebaseService, codebaseSettings models.CodebaseSettings, r
 func setFailedFields(s CodebaseService, action edpv1alpha1.ActionType, message string) {
 	s.CustomResource.Status = edpv1alpha1.CodebaseStatus{
 		Available:       false,
-		Status:          models.StatusFailed,
 		LastTimeUpdated: time.Now(),
 		Username:        "system",
 		Action:          action,
@@ -515,7 +512,6 @@ func setFailedFields(s CodebaseService, action edpv1alpha1.ActionType, message s
 func setIntermediateSuccessFields(s CodebaseService, action edpv1alpha1.ActionType) {
 	s.CustomResource.Status = edpv1alpha1.CodebaseStatus{
 		Available:       false,
-		Status:          models.StatusInProgress,
 		LastTimeUpdated: time.Now(),
 		Username:        "system",
 		Action:          action,

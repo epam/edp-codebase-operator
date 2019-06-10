@@ -69,7 +69,6 @@ func (service CodebaseBranchService) Create(cr *edpv1alpha1.CodebaseBranch) {
 	}
 	if jobStatus == "blue" {
 		cr.Status = edpv1alpha1.CodebaseBranchStatus{
-			Status:          models.StatusFinished,
 			LastTimeUpdated: time.Now(),
 			Username:        "system",
 			Action:          edpv1alpha1.JenkinsConfiguration,
