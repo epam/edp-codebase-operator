@@ -29,7 +29,7 @@ func TestBuildRepoUrl_DatabaseIsNil(t *testing.T) {
 }
 
 func TestBuildRepoUrl_FrameworkIsNil(t *testing.T) {
-	expectedUrl := "https://github.com/epmd-edp/sample-library.git"
+	expectedUrl := "https://github.com/epmd-edp/java-maven-springboot.git"
 	var framework *string = nil
 
 	spec := v1alpha1.CodebaseSpec{

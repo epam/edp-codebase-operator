@@ -37,12 +37,22 @@ func buildRepoUrl(baseUrl string, spec v1alpha1.CodebaseSpec) string {
 		result = fmt.Sprintf("%v/%v-%v",
 			baseUrl, spec.Lang, spec.BuildTool)
 	} else if spec.Type == "library" {
-		result = fmt.Sprintf("%v/%v",
-			baseUrl, "sample-library")
+		result = fmt.Sprintf("%v/%v-%v-%v",
+			baseUrl, spec.Lang, spec.BuildTool, setLibraryFramework(strings.ToLower(spec.Lang)))
 	}
 
 	if spec.Database != nil {
 		result += "-" + spec.Database.Kind
 	}
 	return strings.ToLower(result + ".git")
+}
+
+func setLibraryFramework(lang string) string {
+	frameworks := []string{"springboot", "react", "netcore"}
+	if lang == "java" {
+		return frameworks[0]
+	} else if lang == "javascript" {
+		return frameworks[1]
+	}
+	return frameworks[2]
 }
