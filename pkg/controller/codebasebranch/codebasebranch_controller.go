@@ -90,12 +90,12 @@ func (r *ReconcileCodebaseBranch) Reconcile(request reconcile.Request) (reconcil
 	app, err := r.getApplicationByBranch(*instance)
 
 	if err != nil {
-		log.Printf("[ERROR] Cannot get codebase for branch %s. Reason: %s", request.Name, err)
+		log.Printf("[INFO] Cannot get codebase for branch %s. Reason: %s", request.Name, err)
 		return reconcile.Result{RequeueAfter: 5 * time.Second}, err
 	}
 
 	if !app.Status.Available {
-		log.Printf("[ERROR] Codebase %s for branch %s is not ready yet.", app.Name, request.Name)
+		log.Printf("[INFO] Codebase %s for branch %s is not ready yet.", app.Name, request.Name)
 		return reconcile.Result{RequeueAfter: 5 * time.Second}, nil
 	}
 

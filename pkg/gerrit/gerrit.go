@@ -19,6 +19,7 @@ import (
 	"net"
 	"os"
 	"strconv"
+	"time"
 )
 
 type SSHCommand struct {
@@ -283,6 +284,10 @@ func SetupProjectReplication(codebaseSettings models.CodebaseSettings, clientSet
 		return err
 	}
 	log.Println(result)
+
+	log.Println("Waiting for gerrit replication config map appears in gerrit pod. Sleeping for 90 seconds...")
+	time.Sleep(90 * time.Second)
+	
 	err = reloadReplicationPlugin(codebaseSettings.GerritKeyPath, codebaseSettings.GerritHost,
 		codebaseSettings.GerritSettings.SshPort)
 	if err != nil {
