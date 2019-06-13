@@ -69,12 +69,14 @@ type ActionType string
 type Result string
 
 const (
-	CodebaseRegistration         ActionType = "codebase_registration"
-	GerritRepositoryProvisioning ActionType = "gerrit_repository_provisioning"
-	JenkinsConfiguration         ActionType = "jenkins_configuration"
-	PergRegistration             ActionType = "perf_registration"
-	SetupDeploymentTemplates     ActionType = "setup_deployment_templates"
-	CodebaseBranchRegistration   ActionType = "codebase_branch_registration"
+	CodebaseRegistration             ActionType = "codebase_registration"
+	AcceptCodebaseRegistration       ActionType = "accept_codebase_registration"
+	GerritRepositoryProvisioning     ActionType = "gerrit_repository_provisioning"
+	JenkinsConfiguration             ActionType = "jenkins_configuration"
+	PergRegistration                 ActionType = "perf_registration"
+	SetupDeploymentTemplates         ActionType = "setup_deployment_templates"
+	CodebaseBranchRegistration       ActionType = "codebase_branch_registration"
+	AcceptCodebaseBranchRegistration ActionType = "accept_codebase_branch_registration"
 
 	Success Result = "success"
 	Error   Result = "error"

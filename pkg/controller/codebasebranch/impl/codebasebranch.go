@@ -27,7 +27,7 @@ func (service CodebaseBranchService) Create(cr *edpv1alpha1.CodebaseBranch) {
 	err := service.updateStatusFields(cr, edpv1alpha1.CodebaseBranchStatus{
 		LastTimeUpdated: time.Now(),
 		Username:        "system",
-		Action:          edpv1alpha1.CodebaseBranchRegistration,
+		Action:          edpv1alpha1.AcceptCodebaseBranchRegistration,
 		Result:          "success",
 		Value:           "inactive",
 	})

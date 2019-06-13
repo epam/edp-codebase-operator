@@ -51,7 +51,7 @@ func (s CodebaseService) Create() {
 	statusCR := edpv1alpha1.CodebaseStatus{
 		Available:       false,
 		LastTimeUpdated: time.Now(),
-		Action:          edpv1alpha1.CodebaseRegistration,
+		Action:          edpv1alpha1.AcceptCodebaseRegistration,
 		Result:          edpv1alpha1.Success,
 		Username:        "system",
 		Value:           "inactive",
@@ -70,10 +70,9 @@ func (s CodebaseService) Create() {
 	codebaseSettings, err := initCodebaseSettings(s, clientSet)
 	if err != nil {
 		log.Printf("Error has been occurred in init codebase settings: %v", err)
-		setFailedFields(s, edpv1alpha1.CodebaseRegistration, err.Error())
+		setFailedFields(s, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
 		return
 	}
-	setIntermediateSuccessFields(s, edpv1alpha1.CodebaseRegistration)
 	log.Println("Codebase settings has been retrieved")
 
 	err = gerritConfiguration(codebaseSettings, s, clientSet)
