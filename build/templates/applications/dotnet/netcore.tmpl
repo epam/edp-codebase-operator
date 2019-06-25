@@ -128,9 +128,6 @@ objects:
             valueFrom: { fieldRef: { fieldPath: status.podIP } }
           image: "{{.Database.Version}}"
           imagePullPolicy: IfNotPresent
-          resources:
-            requests:
-              memory: "{{.Database.Capacity}}"
           ports:
             - containerPort: 5432
               protocol: TCP
