@@ -518,7 +518,7 @@ func setIntermediateSuccessFields(s CodebaseService, action edpv1alpha1.ActionTy
 		Result:          edpv1alpha1.Success,
 		Value:           "inactive",
 	}
-	err := s.Client.Update(context.TODO(), s.CustomResource)
+	err := s.Client.Status().Update(context.TODO(), s.CustomResource)
 	if err != nil {
 		log.Printf("Error has been occured during the update success fields fot codebase: %v", s.CustomResource.Name)
 	}
@@ -526,7 +526,7 @@ func setIntermediateSuccessFields(s CodebaseService, action edpv1alpha1.ActionTy
 
 func updateStatusFields(service CodebaseService, status edpv1alpha1.CodebaseStatus) error {
 	service.CustomResource.Status = status
-	return service.Client.Update(context.TODO(), service.CustomResource)
+	return service.Client.Status().Update(context.TODO(), service.CustomResource)
 }
 
 func (s CodebaseService) Update() {
