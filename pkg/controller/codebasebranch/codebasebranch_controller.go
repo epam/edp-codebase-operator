@@ -106,7 +106,10 @@ func (r *ReconcileCodebaseBranch) Reconcile(request reconcile.Request) (reconcil
 	codebaseBranch.Create(instance)
 	err = r.client.Status().Update(context.TODO(), instance)
 	if err != nil {
-		log.Printf("[ERROR] Cannot update status of the branch: %v status", instance.Name)
+		err = r.client.Update(context.TODO(), instance)
+		if err != nil {
+			log.Printf("[ERROR] Cannot update status of the branch: %v status", instance.Name)
+		}
 	}
 
 	log.Printf("Reconciling CodebaseBranch %s/%s has been finished", request.Namespace, request.Name)

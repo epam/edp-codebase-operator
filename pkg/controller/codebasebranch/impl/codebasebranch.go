@@ -94,7 +94,14 @@ func (service CodebaseBranchService) Delete(cr *edpv1alpha1.CodebaseBranch) {
 func (service CodebaseBranchService) updateStatusFields(obj *edpv1alpha1.CodebaseBranch,
 	status edpv1alpha1.CodebaseBranchStatus) error {
 	obj.Status = status
-	return service.Client.Status().Update(context.TODO(), obj)
+	err := service.Client.Status().Update(context.TODO(), obj)
+	if err != nil {
+		err = service.Client.Update(context.TODO(), obj)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (service CodebaseBranchService) setFailedFields(obj *edpv1alpha1.CodebaseBranch,
