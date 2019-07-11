@@ -16,6 +16,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"log"
 	"net/url"
+	"os"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strconv"
 	"time"
@@ -118,6 +119,13 @@ func (s CodebaseService) Create() {
 		setFailedFields(s, edpv1alpha1.SetupDeploymentTemplates, err.Error())
 		return
 	}
+
+	err = os.RemoveAll(codebaseSettings.WorkDir)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	log.Printf("Workdir %v has been cleaned", codebaseSettings.WorkDir)
 
 	s.CustomResource.Status = edpv1alpha1.CodebaseStatus{
 		Available:       true,
