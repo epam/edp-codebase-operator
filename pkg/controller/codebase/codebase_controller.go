@@ -127,7 +127,7 @@ func (r *ReconcileCodebase) Reconcile(request reconcile.Request) (reconcile.Resu
 		log.Fatalf("[ERROR] Cannot get codebase %s. Reason: %s", request.Name, err)
 	}
 	codebase.Create()
-	_ = r.client.Update(context.TODO(), instance)
+	_ = r.client.Status().Update(context.TODO(), instance)
 
 	log.Printf("Reconciling codebase %s/%s has been finished", request.Namespace, request.Name)
 
