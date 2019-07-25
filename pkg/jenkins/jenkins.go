@@ -28,22 +28,7 @@ func Init(url string, username string, token string) (*Client, error) {
 }
 
 func (client Client) TriggerJobProvisioning(codebaseName string, buildTool string) error {
-	isQueued, err := client.IsJobQueued("Job-provisioning")
-	if err != nil {
-		return err
-	}
-	if *isQueued {
-		return errors.New("Job-provisioning already queued")
-	}
-	isRunning, err := client.IsJobRunning("Job-provisioning")
-	if err != nil {
-		return err
-	}
-	if *isRunning {
-		return errors.New("Job-provisioning already running")
-	}
-
-	_, err = client.jenkins.BuildJob("Job-provisioning", map[string]string{
+	_, err := client.jenkins.BuildJob("Job-provisioning", map[string]string{
 		"PARAM":      "true",
 		"NAME":       codebaseName,
 		"BUILD_TOOL": strings.ToLower(buildTool),
