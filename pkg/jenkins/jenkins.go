@@ -27,13 +27,19 @@ func Init(url string, username string, token string) (*Client, error) {
 	}, nil
 }
 
-func (client Client) TriggerJobProvisioning(codebaseName string, buildTool string) error {
-	_, err := client.jenkins.BuildJob("Job-provisioning", map[string]string{
-		"PARAM":      "true",
-		"NAME":       codebaseName,
-		"BUILD_TOOL": strings.ToLower(buildTool),
-	})
-	return err
+func (client Client) TriggerJobProvisioning(codebaseName string, buildTool string, delay time.Duration, retryCount int) error {
+	for i := 0; i < retryCount; i++ {
+		buildNumber, err := client.jenkins.BuildJob("Job-provisioning", map[string]string{
+			"PARAM":      "true",
+			"NAME":       codebaseName,
+			"BUILD_TOOL": strings.ToLower(buildTool),
+		})
+		if buildNumber != 0 || err != nil {
+			return err
+		}
+		time.Sleep(delay)
+	}
+	return errors.Errorf("Job provisioning for %v has not been finished after specified delay", codebaseName)
 }
 
 func (client Client) GetJob(name string, delay time.Duration, retryCount int) bool {

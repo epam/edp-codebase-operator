@@ -92,7 +92,7 @@ func (s CodebaseService) Create() {
 		setFailedFields(s, edpv1alpha1.JenkinsConfiguration, err.Error())
 		return
 	}
-	err = jenkinsClient.TriggerJobProvisioning(s.CustomResource.Name, s.CustomResource.Spec.BuildTool)
+	err = jenkinsClient.TriggerJobProvisioning(s.CustomResource.Name, s.CustomResource.Spec.BuildTool, 10*time.Second, 12)
 	if err != nil {
 		log.Println(err)
 		setFailedFields(s, edpv1alpha1.JenkinsConfiguration, err.Error())
