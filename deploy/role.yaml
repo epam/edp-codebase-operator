@@ -39,7 +39,7 @@ rules:
   - get
   - create
 - apiGroups:
-  - edp.epam.com
+  - v2.edp.epam.com
   resources:
   - '*'
   verbs:
