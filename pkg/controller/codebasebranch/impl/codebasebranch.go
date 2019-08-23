@@ -79,7 +79,7 @@ func (service CodebaseBranchService) Create(cr *edpv1alpha1.CodebaseBranch) {
 	} else {
 		log.Printf("Failed to create release. Release job status is '%v'. CodebaseBranch status: %v",
 			jobStatus, models.StatusFailed)
-		service.setFailedFields(cr, edpv1alpha1.JenkinsConfiguration, err.Error())
+		service.setFailedFields(cr, edpv1alpha1.JenkinsConfiguration, "Release job was failed.")
 		return
 	}
 }
