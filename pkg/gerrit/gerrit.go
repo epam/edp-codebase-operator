@@ -18,9 +18,12 @@ import (
 	"log"
 	"net"
 	"os"
+	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"strconv"
 	"time"
 )
+
+var logger = logf.Log.WithName("git-server-service")
 
 type SSHCommand struct {
 	Path   string
@@ -39,6 +42,13 @@ type SSHClient struct {
 type ReplicationConfigParams struct {
 	Name      string
 	VcsSshUrl string
+}
+
+type GitSshData struct {
+	Host string
+	User string
+	Key  string
+	Port int64
 }
 
 const (
@@ -287,7 +297,7 @@ func SetupProjectReplication(codebaseSettings models.CodebaseSettings, clientSet
 
 	log.Println("Waiting for gerrit replication config map appears in gerrit pod. Sleeping for 90 seconds...")
 	time.Sleep(90 * time.Second)
-	
+
 	err = reloadReplicationPlugin(codebaseSettings.GerritKeyPath, codebaseSettings.GerritHost,
 		codebaseSettings.GerritSettings.SshPort)
 	if err != nil {
@@ -322,4 +332,56 @@ func reloadReplicationPlugin(keyPath string, host string, port int64) error {
 
 	log.Printf("Gerrit replication plugin has been reloaded Host: %v Port: %v KeyPath: %v", host, port, keyPath)
 	return nil
+}
+
+func SshInitFromSecret(data GitSshData) (SSHClient, error) {
+	sshConfig := &ssh.ClientConfig{
+		User: data.User,
+		Auth: []ssh.AuthMethod{
+			publicKey(data.Key),
+		},
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+	}
+
+	client := &SSHClient{
+		Config: sshConfig,
+		Host:   data.Host,
+		Port:   data.Port,
+	}
+
+	logger.Info("SSH Client has been initialized: Host: %v Port: %v", data.Host, data.Port)
+
+	return *client, nil
+}
+
+func publicKey(key string) ssh.AuthMethod {
+	signer, err := ssh.ParsePrivateKey([]byte(key))
+	if err != nil {
+		panic(err)
+	}
+	return ssh.PublicKeys(signer)
+}
+
+func IsGitServerAccessible(data GitSshData) bool {
+	logger.Info(fmt.Sprintf("Start executing IsGitServerAccessible method to check connection to %v server...", data.Host))
+
+	sshClient, err := SshInitFromSecret(data)
+	if err != nil {
+		logger.Info(fmt.Sprintf("An error has occurred while initing SSH client. Check data in Git Server resource and secret: %v", err))
+		return false
+	}
+
+	var (
+		session    *ssh.Session
+		connection *ssh.Client
+	)
+
+	if session, connection, err = sshClient.newSession(); err != nil {
+		logger.Info(fmt.Sprintf("An error has occurred while connecting to server. Check data in Git Server resource and secret: %v", err))
+		return false
+	}
+	defer session.Close()
+	defer connection.Close()
+
+	return session != nil && connection != nil
 }
