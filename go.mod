@@ -45,7 +45,7 @@ require (
 	golang.org/x/sys v0.0.0-20190813064441-fde4db37ae7a // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/resty.v1 v1.12.0
-	gopkg.in/src-d/go-git.v4 v4.13.1
+	gopkg.in/src-d/go-git.v4 v4.10.0
 	k8s.io/api v0.0.0-20190222213804-5cb15d344471
 	k8s.io/apiextensions-apiserver v0.0.0-20190228180357-d002e88f6236 // indirect
 	k8s.io/apimachinery v0.0.0-20190221213512-86fb29eff628

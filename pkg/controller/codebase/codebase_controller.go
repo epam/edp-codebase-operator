@@ -3,11 +3,15 @@ package codebase
 import (
 	"context"
 	"errors"
+	"github.com/epmd-edp/codebase-operator/v2/pkg/openshift"
+	"github.com/epmd-edp/codebase-operator/v2/pkg/service/git_server"
+	openshift_service "github.com/epmd-edp/codebase-operator/v2/pkg/service/openshift"
 	"log"
 	"strings"
 
 	edpv1alpha1 "github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/codebase/impl"
+	errWrap "github.com/pkg/errors"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -24,7 +28,7 @@ import (
  */
 
 var allowedCodebaseSettings = map[string][]string{
-	"add_repo_strategy": {"create", "clone"},
+	"add_repo_strategy": {"create", "clone", "import"},
 	"language":          {"java", "dotnet", "javascript"},
 	"build_tool":        {"maven", "gradle", "dotnet", "npm"},
 	"framework":         {"springboot", "springboot(multi-module)", "netcore", "react"},
@@ -40,7 +44,7 @@ func containSettings(slice []string, value string) bool {
 }
 
 type CodebaseService interface {
-	Create()
+	Create() error
 	Update()
 	Delete()
 }
@@ -53,10 +57,22 @@ func getCodebase(cr *edpv1alpha1.Codebase, r *ReconcileCodebase) (CodebaseServic
 	} else if !(containSettings(allowedCodebaseSettings["build_tool"], cr.Spec.BuildTool)) {
 		return nil, errors.New("Provided unsupported build tool - " + cr.Spec.BuildTool)
 	} else {
+		clientSet := openshift.CreateOpenshiftClients()
+
+		log.Println("Client set has been created")
+
 		return impl.CodebaseService{
-			cr,
-			r.client,
-			r.scheme,
+			ClientSet:      clientSet,
+			CustomResource: cr,
+			Client:         r.client,
+			Scheme:         r.scheme,
+			GitServerService: git_server.GitServerService{
+				ClientSet: clientSet,
+			},
+			OpenshiftService: openshift_service.OpenshiftService{
+				ClientSet: clientSet,
+				Client:    r.client,
+			},
 		}, nil
 	}
 }
@@ -126,7 +142,11 @@ func (r *ReconcileCodebase) Reconcile(request reconcile.Request) (reconcile.Resu
 	if err != nil {
 		log.Fatalf("[ERROR] Cannot get codebase %s. Reason: %s", request.Name, err)
 	}
-	codebase.Create()
+	err = codebase.Create()
+	if err != nil {
+		return reconcile.Result{}, errWrap.Wrap(err, "an error has occurred while executing Create method")
+	}
+
 	err = r.client.Status().Update(context.TODO(), instance)
 	if err != nil {
 		_ = r.client.Update(context.TODO(), instance)

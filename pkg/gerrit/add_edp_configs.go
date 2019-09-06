@@ -25,7 +25,7 @@ import (
 	"time"
 )
 
-type gerritConfigGoTemplating struct {
+type GerritConfigGoTemplating struct {
 	Lang              string                  `json:"lang"`
 	Framework         *string                 `json:"framework"`
 	BuildTool         string                  `json:"build_tool"`
@@ -39,7 +39,7 @@ type gerritConfigGoTemplating struct {
 }
 
 func ConfigInit(clientSet ClientSet.ClientSet, codebaseSettings models.CodebaseSettings,
-	spec v1alpha1.CodebaseSpec) (*gerritConfigGoTemplating, error) {
+	spec v1alpha1.CodebaseSpec) (*GerritConfigGoTemplating, error) {
 	dtrUrl, err := getOpenshiftDockerRegistryUrl(clientSet)
 	if err != nil {
 		return nil, err
@@ -49,7 +49,7 @@ func ConfigInit(clientSet ClientSet.ClientSet, codebaseSettings models.CodebaseS
 	cloneSshUrl := fmt.Sprintf("ssh://project-creator@gerrit.%v:%v/%v", codebaseSettings.CicdNamespace,
 		codebaseSettings.GerritSettings.SshPort, codebaseSettings.Name)
 
-	config := gerritConfigGoTemplating{
+	config := GerritConfigGoTemplating{
 		DockerRegistryUrl: *dtrUrl,
 		Lang:              spec.Lang,
 		Framework:         spec.Framework,
@@ -84,7 +84,7 @@ func getOpenshiftDockerRegistryUrl(clientSet ClientSet.ClientSet) (*string, erro
 	return &dtrRegistry.Spec.Host, nil
 }
 
-func PushConfigs(config gerritConfigGoTemplating, codebaseSettings models.CodebaseSettings, clientSet ClientSet.ClientSet) error {
+func PushConfigs(config GerritConfigGoTemplating, codebaseSettings models.CodebaseSettings, clientSet ClientSet.ClientSet) error {
 	appTemplatesDir := fmt.Sprintf("%v/%v/deploy-templates", config.TemplatesDir, codebaseSettings.Name)
 	appConfigFilesDir := fmt.Sprintf("%v/%v/config-files", config.TemplatesDir, codebaseSettings.Name)
 
@@ -150,12 +150,12 @@ func PushConfigs(config gerritConfigGoTemplating, codebaseSettings models.Codeba
 	}
 
 	if codebaseSettings.Type == "application" {
-		appImageStream, err := getAppImageStream(config)
+		appImageStream, err := GetAppImageStream(config.Lang)
 		if err != nil {
 			return err
 		}
 
-		err = createS2IImageStream(clientSet, codebaseSettings, appImageStream)
+		err = CreateS2IImageStream(clientSet, codebaseSettings.Name, codebaseSettings.CicdNamespace, appImageStream)
 		if err != nil {
 			return err
 		}
@@ -164,7 +164,7 @@ func PushConfigs(config gerritConfigGoTemplating, codebaseSettings models.Codeba
 	return nil
 }
 
-func cloneProjectRepoFromGerrit(config gerritConfigGoTemplating, codebaseSettings models.CodebaseSettings) error {
+func cloneProjectRepoFromGerrit(config GerritConfigGoTemplating, codebaseSettings models.CodebaseSettings) error {
 	log.Printf("Cloning repo from gerrit using: %v", config.CloneSshUrl)
 	var session *ssh.Session
 	var connection *ssh.Client
@@ -248,7 +248,7 @@ func createDirectory(path string) error {
 	return nil
 }
 
-func copyTemplate(templatePath string, templateName string, config gerritConfigGoTemplating, codebaseSettings models.CodebaseSettings) error {
+func copyTemplate(templatePath string, templateName string, config GerritConfigGoTemplating, codebaseSettings models.CodebaseSettings) error {
 	templatesDest := fmt.Sprintf("%v/%v/deploy-templates/%v.yaml", config.TemplatesDir, codebaseSettings.Name,
 		codebaseSettings.Name)
 
@@ -274,7 +274,7 @@ func copyTemplate(templatePath string, templateName string, config gerritConfigG
 	return nil
 }
 
-func copyPipelines(codebaseSettings models.CodebaseSettings, config gerritConfigGoTemplating) error {
+func copyPipelines(codebaseSettings models.CodebaseSettings, config GerritConfigGoTemplating) error {
 	pipelinesPath := "/usr/local/bin/pipelines"
 	files, err := ioutil.ReadDir(pipelinesPath)
 	if err != nil {
@@ -304,7 +304,7 @@ func copyPipelines(codebaseSettings models.CodebaseSettings, config gerritConfig
 	return nil
 }
 
-func copySonarConfigs(config gerritConfigGoTemplating, codebaseSettings models.CodebaseSettings) error {
+func copySonarConfigs(config GerritConfigGoTemplating, codebaseSettings models.CodebaseSettings) error {
 	sonarConfigPath := fmt.Sprintf("%v/%v/sonar-project.properties", config.TemplatesDir, codebaseSettings.Name)
 
 	if _, err := os.Stat(sonarConfigPath); err == nil {
@@ -332,7 +332,7 @@ func copySonarConfigs(config gerritConfigGoTemplating, codebaseSettings models.C
 	return nil
 }
 
-func commitConfigs(config gerritConfigGoTemplating, appName string) error {
+func commitConfigs(config GerritConfigGoTemplating, appName string) error {
 	commitMessage := fmt.Sprintf("Add template for %v", appName)
 	r, err := git.PlainOpen(config.TemplatesDir + "/" + appName)
 	if err != nil {
@@ -363,7 +363,7 @@ func commitConfigs(config gerritConfigGoTemplating, appName string) error {
 	return nil
 }
 
-func pushConfigsToGerrit(gerritConfig gerritConfigGoTemplating, appName string, keyPath string) error {
+func pushConfigsToGerrit(gerritConfig GerritConfigGoTemplating, appName string, keyPath string) error {
 	auth, err := Auth(keyPath)
 	if err != nil {
 		return err
@@ -390,24 +390,27 @@ func pushConfigsToGerrit(gerritConfig gerritConfigGoTemplating, appName string, 
 	return nil
 }
 
-func createS2IImageStream(clientSet ClientSet.ClientSet, codebaseSettings models.CodebaseSettings, is *imageV1.ImageStream) error {
-	_, err := clientSet.ImageClient.ImageStreams(codebaseSettings.CicdNamespace).Get(is.Name, metav1.GetOptions{})
+func CreateS2IImageStream(clientSet ClientSet.ClientSet, codebaseName string, namespace string, is *imageV1.ImageStream) error {
+	log.Printf("Trying to create s2i image stream for %v codebase in %v namespace", codebaseName, namespace)
+
+	_, err := clientSet.ImageClient.ImageStreams(namespace).Get(is.Name, metav1.GetOptions{})
 	if err != nil && k8serrors.IsNotFound(err) {
-		_, err := clientSet.ImageClient.ImageStreams(codebaseSettings.CicdNamespace).Create(is)
+		_, err := clientSet.ImageClient.ImageStreams(namespace).Create(is)
 		if err != nil {
 			return err
 		}
-		log.Printf("Image stream in Openshift has been created for application %v", codebaseSettings.Name)
+		log.Printf("Image stream in Openshift has been created for application %v", codebaseName)
 	} else {
-		log.Printf("Image stream in Openshift for application %v already exist. Creation skipped", codebaseSettings.Name)
+		log.Printf("Image stream in Openshift for application %v already exist. Creation skipped", codebaseName)
 	}
+
 	return nil
 }
 
-func newS2IReact(config gerritConfigGoTemplating) *imageV1.ImageStream {
+func newS2IReact(lang string) *imageV1.ImageStream {
 	return &imageV1.ImageStream{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "s2i-" + strings.ToLower(config.Lang),
+			Name: "s2i-" + strings.ToLower(lang),
 		},
 		Spec: imageV1.ImageStreamSpec{
 			LookupPolicy: imageV1.ImageLookupPolicy{
@@ -428,10 +431,10 @@ func newS2IReact(config gerritConfigGoTemplating) *imageV1.ImageStream {
 	}
 }
 
-func newS2IJava(config gerritConfigGoTemplating) *imageV1.ImageStream {
+func newS2IJava(lang string) *imageV1.ImageStream {
 	return &imageV1.ImageStream{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "s2i-" + strings.ToLower(config.Lang),
+			Name: "s2i-" + strings.ToLower(lang),
 		},
 		Spec: imageV1.ImageStreamSpec{
 			LookupPolicy: imageV1.ImageLookupPolicy{
@@ -452,10 +455,10 @@ func newS2IJava(config gerritConfigGoTemplating) *imageV1.ImageStream {
 	}
 }
 
-func newS2IDotNet(config gerritConfigGoTemplating) *imageV1.ImageStream {
+func newS2IDotNet(lang string) *imageV1.ImageStream {
 	return &imageV1.ImageStream{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        "s2i-" + strings.ToLower(config.Lang),
+			Name:        "s2i-" + strings.ToLower(lang),
 			Annotations: map[string]string{"openshift.io/display-name": ".NET Core Builder Images"},
 		},
 		Spec: imageV1.ImageStreamSpec{
@@ -490,14 +493,16 @@ func newS2IDotNet(config gerritConfigGoTemplating) *imageV1.ImageStream {
 	}
 }
 
-func getAppImageStream(config gerritConfigGoTemplating) (*imageV1.ImageStream, error) {
-	switch strings.ToLower(config.Lang) {
+func GetAppImageStream(lang string) (*imageV1.ImageStream, error) {
+	log.Printf("Trying to get image stream %v", lang)
+
+	switch strings.ToLower(lang) {
 	case models.JavaScript:
-		return newS2IReact(config), nil
+		return newS2IReact(lang), nil
 	case models.Java:
-		return newS2IJava(config), nil
+		return newS2IJava(lang), nil
 	case models.DotNet:
-		return newS2IDotNet(config), nil
+		return newS2IDotNet(lang), nil
 	}
 	return nil, nil
 }

@@ -7,7 +7,7 @@ import (
 	edpv1alpha1 "github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/model"
 	ClientSet "github.com/epmd-edp/codebase-operator/v2/pkg/openshift"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/service"
+	"github.com/epmd-edp/codebase-operator/v2/pkg/service/git_server"
 	"github.com/pkg/errors"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -39,7 +39,7 @@ func Add(mgr manager.Manager) error {
 func newReconciler(mgr manager.Manager) reconcile.Reconciler {
 	return &ReconcileGitServer{
 		Client: mgr.GetClient(),
-		GitServerService: service.GitServerService{
+		GitServerService: git_server.GitServerService{
 			ClientSet: ClientSet.CreateOpenshiftClients(),
 		},
 	}
@@ -80,7 +80,7 @@ type ReconcileGitServer struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the apiserver
 	Client           client.Client
-	GitServerService service.GitServerService
+	GitServerService git_server.GitServerService
 }
 
 // Reconcile reads that state of the cluster for a GitServer object and makes changes based on the state read

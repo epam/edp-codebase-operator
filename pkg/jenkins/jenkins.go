@@ -6,7 +6,6 @@ import (
 	"github.com/pkg/errors"
 	"log"
 	"net/http"
-	"strings"
 	"time"
 )
 
@@ -27,19 +26,15 @@ func Init(url string, username string, token string) (*Client, error) {
 	}, nil
 }
 
-func (client Client) TriggerJobProvisioning(codebaseName string, buildTool string, delay time.Duration, retryCount int) error {
+func (client Client) TriggerJobProvisioning(parameters map[string]string, delay time.Duration, retryCount int) error {
 	for i := 0; i < retryCount; i++ {
-		buildNumber, err := client.jenkins.BuildJob("Job-provisioning", map[string]string{
-			"PARAM":      "true",
-			"NAME":       codebaseName,
-			"BUILD_TOOL": strings.ToLower(buildTool),
-		})
+		buildNumber, err := client.jenkins.BuildJob("Job-provisioning", parameters)
 		if buildNumber != 0 || err != nil {
 			return err
 		}
 		time.Sleep(delay)
 	}
-	return errors.Errorf("Job provisioning for %v has not been finished after specified delay", codebaseName)
+	return errors.Errorf("Job provisioning for %v has not been finished after specified delay", parameters["NAME"])
 }
 
 func (client Client) GetJob(name string, delay time.Duration, retryCount int) bool {

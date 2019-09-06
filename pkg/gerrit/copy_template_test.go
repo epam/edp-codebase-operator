@@ -33,7 +33,7 @@ func TestExampleAddEdpConfigs_CopyTemplate_Test(t *testing.T) {
 	templatePath := "/templates/applications/java/springboot.tmpl"
 	templateName := "springboot.tmpl"
 
-	config := gerritConfigGoTemplating{
+	config := GerritConfigGoTemplating{
 		DockerRegistryUrl: dtrUrl,
 		Lang:              lang,
 		Framework:         &framework,
