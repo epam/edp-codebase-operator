@@ -2,11 +2,11 @@ package settings
 
 import (
 	"bytes"
-	"codebase-operator/models"
-	ClientSet "codebase-operator/pkg/openshift"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/epmd-edp/codebase-operator/v2/models"
+	ClientSet "github.com/epmd-edp/codebase-operator/v2/pkg/openshift"
 	"html/template"
 	"io/ioutil"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"

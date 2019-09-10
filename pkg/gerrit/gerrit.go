@@ -2,10 +2,10 @@ package gerrit
 
 import (
 	"bytes"
-	"codebase-operator/models"
-	ClientSet "codebase-operator/pkg/openshift"
 	"encoding/json"
 	"fmt"
+	"github.com/epmd-edp/codebase-operator/v2/models"
+	ClientSet "github.com/epmd-edp/codebase-operator/v2/pkg/openshift"
 	"golang.org/x/crypto/ssh"
 	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/config"

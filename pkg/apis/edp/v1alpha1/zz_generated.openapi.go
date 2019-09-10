@@ -13,11 +13,11 @@ import (
 
 func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenAPIDefinition {
 	return map[string]common.OpenAPIDefinition{
-		"codebase-operator/pkg/apis/edp/v1alpha1.Codebase":             schema_pkg_apis_edp_v1alpha1_Codebase(ref),
-		"codebase-operator/pkg/apis/edp/v1alpha1.CodebaseBranch":       schema_pkg_apis_edp_v1alpha1_CodebaseBranch(ref),
-		"codebase-operator/pkg/apis/edp/v1alpha1.CodebaseBranchSpec":   schema_pkg_apis_edp_v1alpha1_CodebaseBranchSpec(ref),
-		"codebase-operator/pkg/apis/edp/v1alpha1.CodebaseBranchStatus": schema_pkg_apis_edp_v1alpha1_CodebaseBranchStatus(ref),
-		"codebase-operator/pkg/apis/edp/v1alpha1.CodebaseStatus":       schema_pkg_apis_edp_v1alpha1_CodebaseStatus(ref),
+		"github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1.Codebase":             schema_pkg_apis_edp_v1alpha1_Codebase(ref),
+		"github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1.CodebaseBranch":       schema_pkg_apis_edp_v1alpha1_CodebaseBranch(ref),
+		"github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1.CodebaseBranchSpec":   schema_pkg_apis_edp_v1alpha1_CodebaseBranchSpec(ref),
+		"github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1.CodebaseBranchStatus": schema_pkg_apis_edp_v1alpha1_CodebaseBranchStatus(ref),
+		"github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1.CodebaseStatus":       schema_pkg_apis_edp_v1alpha1_CodebaseStatus(ref),
 	}
 }
 
@@ -48,19 +48,19 @@ func schema_pkg_apis_edp_v1alpha1_Codebase(ref common.ReferenceCallback) common.
 					},
 					"spec": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("codebase-operator/pkg/apis/edp/v1alpha1.CodebaseSpec"),
+							Ref: ref("github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1.CodebaseSpec"),
 						},
 					},
 					"status": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("codebase-operator/pkg/apis/edp/v1alpha1.CodebaseStatus"),
+							Ref: ref("github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1.CodebaseStatus"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"codebase-operator/pkg/apis/edp/v1alpha1.CodebaseSpec", "codebase-operator/pkg/apis/edp/v1alpha1.CodebaseStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1.CodebaseSpec", "github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1.CodebaseStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
@@ -91,19 +91,19 @@ func schema_pkg_apis_edp_v1alpha1_CodebaseBranch(ref common.ReferenceCallback) c
 					},
 					"spec": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("codebase-operator/pkg/apis/edp/v1alpha1.CodebaseBranchSpec"),
+							Ref: ref("github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1.CodebaseBranchSpec"),
 						},
 					},
 					"status": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("codebase-operator/pkg/apis/edp/v1alpha1.CodebaseBranchStatus"),
+							Ref: ref("github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1.CodebaseBranchStatus"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"codebase-operator/pkg/apis/edp/v1alpha1.CodebaseBranchSpec", "codebase-operator/pkg/apis/edp/v1alpha1.CodebaseBranchStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1.CodebaseBranchSpec", "github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1.CodebaseBranchStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 

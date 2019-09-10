@@ -1,7 +1,7 @@
 package controller
 
 import (
-	"codebase-operator/pkg/controller/gitserver"
+	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/gitserver"
 )
 
 func init() {

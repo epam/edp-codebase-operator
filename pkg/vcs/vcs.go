@@ -1,10 +1,10 @@
 package vcs
 
 import (
-	"codebase-operator/models"
-	"codebase-operator/pkg/vcs/impl/bitbucket"
-	"codebase-operator/pkg/vcs/impl/gitlab"
 	"fmt"
+	"github.com/epmd-edp/codebase-operator/v2/models"
+	"github.com/epmd-edp/codebase-operator/v2/pkg/vcs/impl/bitbucket"
+	"github.com/epmd-edp/codebase-operator/v2/pkg/vcs/impl/gitlab"
 	"log"
 )
 

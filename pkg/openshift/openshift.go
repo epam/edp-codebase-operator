@@ -2,9 +2,9 @@ package openshift
 
 import (
 	"bytes"
-	"codebase-operator/models"
 	"encoding/json"
 	"fmt"
+	"github.com/epmd-edp/codebase-operator/v2/models"
 	buildV1 "github.com/openshift/api/build/v1"
 	"k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"

@@ -1,4 +1,4 @@
-module codebase-operator
+module github.com/epmd-edp/codebase-operator/v2
 
 go 1.12
 

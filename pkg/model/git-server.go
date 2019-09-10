@@ -1,8 +1,8 @@
 package model
 
 import (
-	"codebase-operator/pkg/apis/edp/v1alpha1"
 	"errors"
+	"github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"strconv"
 	"strings"

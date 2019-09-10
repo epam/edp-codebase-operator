@@ -1,10 +1,10 @@
 package service
 
 import (
-	"codebase-operator/pkg/gerrit"
-	"codebase-operator/pkg/model"
-	"codebase-operator/pkg/openshift"
 	"fmt"
+	"github.com/epmd-edp/codebase-operator/v2/pkg/gerrit"
+	"github.com/epmd-edp/codebase-operator/v2/pkg/model"
+	"github.com/epmd-edp/codebase-operator/v2/pkg/openshift"
 	"github.com/pkg/errors"
 	"k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"

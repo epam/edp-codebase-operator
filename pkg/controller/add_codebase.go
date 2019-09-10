@@ -1,7 +1,7 @@
 package controller
 
 import (
-	"codebase-operator/pkg/controller/codebase"
+	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/codebase"
 )
 
 func init() {

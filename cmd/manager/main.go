@@ -1,10 +1,10 @@
 package main
 
 import (
-	"codebase-operator/pkg/apis"
-	"codebase-operator/pkg/controller"
 	"flag"
 	"fmt"
+	"github.com/epmd-edp/codebase-operator/v2/pkg/apis"
+	"github.com/epmd-edp/codebase-operator/v2/pkg/controller"
 	appsv1 "github.com/openshift/api/apps/v1"
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	"github.com/operator-framework/operator-sdk/pkg/log/zap"

@@ -1,13 +1,13 @@
 package gitserver
 
 import (
-	"codebase-operator/pkg/apis/edp/v1alpha1"
-	edpv1alpha1 "codebase-operator/pkg/apis/edp/v1alpha1"
-	"codebase-operator/pkg/model"
-	ClientSet "codebase-operator/pkg/openshift"
-	"codebase-operator/pkg/service"
 	"context"
 	"fmt"
+	"github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	edpv1alpha1 "github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	"github.com/epmd-edp/codebase-operator/v2/pkg/model"
+	ClientSet "github.com/epmd-edp/codebase-operator/v2/pkg/openshift"
+	"github.com/epmd-edp/codebase-operator/v2/pkg/service"
 	"github.com/pkg/errors"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"

@@ -1,7 +1,7 @@
 package apis
 
 import (
-	"codebase-operator/pkg/apis/edp/v1alpha1"
+	"github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
 )
 
 func init() {

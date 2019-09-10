@@ -1,9 +1,9 @@
 package perf
 
 import (
-	ClientSet "codebase-operator/pkg/openshift"
 	"errors"
 	"fmt"
+	ClientSet "github.com/epmd-edp/codebase-operator/v2/pkg/openshift"
 	"gopkg.in/resty.v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"log"

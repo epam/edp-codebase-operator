@@ -1,13 +1,13 @@
 package impl
 
 import (
-	"codebase-operator/models"
-	edpv1alpha1 "codebase-operator/pkg/apis/edp/v1alpha1"
-	"codebase-operator/pkg/jenkins"
-	ClientSet "codebase-operator/pkg/openshift"
-	"codebase-operator/pkg/settings"
 	"context"
 	"fmt"
+	"github.com/epmd-edp/codebase-operator/v2/models"
+	edpv1alpha1 "github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	"github.com/epmd-edp/codebase-operator/v2/pkg/jenkins"
+	ClientSet "github.com/epmd-edp/codebase-operator/v2/pkg/openshift"
+	"github.com/epmd-edp/codebase-operator/v2/pkg/settings"
 	"log"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"time"

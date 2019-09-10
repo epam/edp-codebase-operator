@@ -1,8 +1,8 @@
 package settings
 
 import (
-	"codebase-operator/models"
 	"fmt"
+	"github.com/epmd-edp/codebase-operator/v2/models"
 	"testing"
 )
 

@@ -1,9 +1,9 @@
 package codebasebranch
 
 import (
-	edpv1alpha1 "codebase-operator/pkg/apis/edp/v1alpha1"
-	"codebase-operator/pkg/controller/codebasebranch/impl"
 	"context"
+	edpv1alpha1 "github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/codebasebranch/impl"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
