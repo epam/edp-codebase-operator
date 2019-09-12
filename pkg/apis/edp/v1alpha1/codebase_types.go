@@ -47,6 +47,8 @@ type CodebaseSpec struct {
 	Database            *Database   `json:"database"`
 	TestReportFramework *string     `json:"testReportFramework"`
 	Type                string      `json:"type"`
+	GitServer           string      `json:"gitServer"`
+	GitUrlPath          *string     `json:"gitUrlPath"`
 }
 
 // CodebaseStatus defines the observed state of Codebase
