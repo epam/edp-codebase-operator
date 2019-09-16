@@ -1,15 +1,12 @@
 package openshift
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
 	"github.com/epmd-edp/codebase-operator/v2/models"
 	buildV1 "github.com/openshift/api/build/v1"
 	"k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"log"
 )
 
@@ -52,29 +49,4 @@ func updateBuildConfig(clientSet ClientSet, codebaseSettings models.CodebaseSett
 	log.Printf("Triggers inside build config object has been updated")
 
 	return bc, nil
-}
-
-func PatchBuildConfig(clientSet ClientSet, codebaseSettings models.CodebaseSettings, env models.EnvSettings) error {
-	bcName := fmt.Sprintf("%v-deploy-pipeline", env.Name)
-
-	bc, err := updateBuildConfig(clientSet, codebaseSettings, env, bcName)
-	if err != nil {
-		return err
-	}
-
-	buf := new(bytes.Buffer)
-	err = json.NewEncoder(buf).Encode(bc)
-	if err != nil {
-		return err
-	}
-
-	_, err = clientSet.
-		BuildClient.
-		BuildConfigs(codebaseSettings.CicdNamespace).
-		Patch(bcName, types.StrategicMergePatchType, buf.Bytes())
-	if err != nil {
-		return err
-	}
-
-	return nil
 }

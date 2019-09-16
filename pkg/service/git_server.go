@@ -37,7 +37,7 @@ func (s *GitServerService) CheckConnectionToGitServer(gitServer model.GitServer)
 
 	gitSshData := extractSshData(gitServer, sshSecret)
 
-	log.Info("Extracted data from request", "data", gitSshData)
+	log.V(1).Info("Extracted data from request", "data", gitSshData)
 
 	accessible := gerrit.IsGitServerAccessible(gitSshData)
 

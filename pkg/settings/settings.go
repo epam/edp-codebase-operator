@@ -2,7 +2,6 @@ package settings
 
 import (
 	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/epmd-edp/codebase-operator/v2/models"
@@ -54,35 +53,6 @@ func GetUserSettingsConfigMap(clientSet ClientSet.ClientSet, namespace string) (
 		VcsSshPort:             userSettings.Data["vcs_ssh_port"],
 		VcsToolName:            models.VCSTool(userSettings.Data["vcs_tool_name"]),
 	}, nil
-}
-
-func getEnvSettingsConfigMap(clientSet ClientSet.ClientSet, namespace string) (*string, error) {
-	projectSettings, err := clientSet.CoreClient.ConfigMaps(namespace).Get("project-settings", metav1.GetOptions{})
-	if err != nil {
-		errorMsg := fmt.Sprintf("Unable to get env settings configmap: %v", err)
-		log.Println(errorMsg)
-		return nil, errors.New(errorMsg)
-	}
-	envSettings := projectSettings.Data["env.settings.json"]
-
-	return &envSettings, nil
-}
-
-func GetEnvSettings(clientSet ClientSet.ClientSet, namespace string) ([]models.EnvSettings, error) {
-	var envSettings []models.EnvSettings
-
-	settings, err := getEnvSettingsConfigMap(clientSet, namespace)
-
-	err = json.Unmarshal([]byte(*settings), &envSettings)
-	if err != nil {
-		return nil, err
-	}
-
-	if len(envSettings) == 0 {
-		return nil, err
-	}
-
-	return envSettings, nil
 }
 
 func GetGerritSettingsConfigMap(clientSet ClientSet.ClientSet, namespace string) (*models.GerritSettings, error) {
