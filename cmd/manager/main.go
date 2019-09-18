@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/apis"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/controller"
+	jenkinsApis "github.com/epmd-edp/jenkins-operator/v2/pkg/apis"
 	appsv1 "github.com/openshift/api/apps/v1"
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	"github.com/operator-framework/operator-sdk/pkg/log/zap"
@@ -79,6 +80,11 @@ func main() {
 	}
 
 	if err := apis.AddToScheme(mgr.GetScheme()); err != nil {
+		log.Error(err, "")
+		os.Exit(1)
+	}
+
+	if err := jenkinsApis.AddToScheme(mgr.GetScheme()); err != nil {
 		log.Error(err, "")
 		os.Exit(1)
 	}

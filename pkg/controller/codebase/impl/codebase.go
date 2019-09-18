@@ -389,7 +389,7 @@ func (s CodebaseService) initCodebaseSettingsForImportStrategy() (*models.Codeba
 	codebaseSettings.Framework = *s.CustomResource.Spec.Framework
 	codebaseSettings.RepositoryPath = *s.CustomResource.Spec.GitUrlPath
 
-	codebaseSettings.JenkinsToken, codebaseSettings.JenkinsUsername, err = settings.GetJenkinsCreds(*s.ClientSet,
+	codebaseSettings.JenkinsToken, codebaseSettings.JenkinsUsername, err = settings.GetJenkinsCreds(*s.ClientSet, s.Client,
 		s.CustomResource.Namespace)
 	codebaseSettings.JenkinsUrl = fmt.Sprintf("http://jenkins.%s:8080", codebaseSettings.CicdNamespace)
 
@@ -446,7 +446,7 @@ func (s CodebaseService) initCodebaseSettings(clientSet *ClientSet.ClientSet) (*
 
 	codebaseSettings.UserSettings = *userSettings
 	codebaseSettings.GerritSettings = *gerritSettings
-	codebaseSettings.JenkinsToken, codebaseSettings.JenkinsUsername, err = settings.GetJenkinsCreds(*s.ClientSet,
+	codebaseSettings.JenkinsToken, codebaseSettings.JenkinsUsername, err = settings.GetJenkinsCreds(*s.ClientSet, s.Client,
 		s.CustomResource.Namespace)
 	codebaseSettings.JenkinsUrl = fmt.Sprintf("http://jenkins.%s:8080", codebaseSettings.CicdNamespace)
 

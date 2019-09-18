@@ -2,16 +2,20 @@ package settings
 
 import (
 	"bytes"
-	"errors"
+	"context"
 	"fmt"
 	"github.com/epmd-edp/codebase-operator/v2/models"
 	ClientSet "github.com/epmd-edp/codebase-operator/v2/pkg/openshift"
+	jenkinsApi "github.com/epmd-edp/jenkins-operator/v2/pkg/apis/v2/v1alpha1"
+	jenkinsOperatorSpec "github.com/epmd-edp/jenkins-operator/v2/pkg/service/jenkins/spec"
+	"github.com/pkg/errors"
 	"html/template"
 	"io/ioutil"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"log"
 	"os"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strconv"
 )
 
@@ -70,14 +74,33 @@ func GetGerritSettingsConfigMap(clientSet ClientSet.ClientSet, namespace string)
 	}, nil
 }
 
-func GetJenkinsCreds(clientSet ClientSet.ClientSet, namespace string) (string, string, error) {
-	jenkinsTokenSecret, err := clientSet.CoreClient.Secrets(namespace).Get("jenkins-token", metav1.GetOptions{})
+func GetJenkinsCreds(clientSet ClientSet.ClientSet, k8sClient client.Client, namespace string) (string, string, error) {
+	options := client.ListOptions{Namespace: namespace}
+	jenkinsList := &jenkinsApi.JenkinsList{}
+
+	err := k8sClient.List(context.TODO(), &options, jenkinsList)
 	if err != nil {
-		errorMsg := fmt.Sprint(err)
-		log.Println(errorMsg)
-		return "", "", errors.New(errorMsg)
+		if k8serrors.IsNotFound(err) {
+			return "", "", errors.Wrapf(err, "Jenkins installation is not found in namespace %v", namespace)
+		}
+		return "", "", errors.Wrapf(err, "Unable to get Jenkins CRs in namespace %v", namespace)
 	}
-	return string(jenkinsTokenSecret.Data["token"]), string(jenkinsTokenSecret.Data["username"]), nil
+
+	if len(jenkinsList.Items) == 0 {
+		errors.Wrapf(err, "Jenkins installation is not found in namespace %v", namespace)
+	}
+
+	jenkins := &jenkinsList.Items[0]
+	annotationKey := fmt.Sprintf("%v/%v", jenkinsOperatorSpec.EdpAnnotationsPrefix, jenkinsOperatorSpec.JenkinsTokenAnnotationSuffix)
+	jenkinsTokenSecretName := jenkins.Annotations[annotationKey]
+	jenkinsTokenSecret, err := clientSet.CoreClient.Secrets(namespace).Get(jenkinsTokenSecretName, metav1.GetOptions{})
+	if err != nil {
+		if k8serrors.IsNotFound(err) {
+			return "", "", errors.Wrapf(err, "Secret %v in not found", jenkinsTokenSecretName)
+		}
+		return "", "", errors.Wrapf(err, "Getting secret %v failed", jenkinsTokenSecretName)
+	}
+	return string(jenkinsTokenSecret.Data["password"]), string(jenkinsTokenSecret.Data["username"]), nil
 }
 
 func GetVcsCredentials(clientSet ClientSet.ClientSet, namespace string) (string, string, error) {
