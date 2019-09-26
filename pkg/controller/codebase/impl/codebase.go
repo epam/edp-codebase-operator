@@ -387,6 +387,12 @@ func (s CodebaseService) initCodebaseSettingsForImportStrategy() (*models.Codeba
 		s.CustomResource.Namespace)
 	codebaseSettings.JenkinsUrl = fmt.Sprintf("http://jenkins.%s:8080", codebaseSettings.CicdNamespace)
 
+	userSettings, err := settings.GetUserSettingsConfigMap(*s.ClientSet, s.CustomResource.Namespace)
+	if err != nil {
+		return nil, err
+	}
+	codebaseSettings.UserSettings = *userSettings
+
 	if codebaseSettings.UserSettings.VcsIntegrationEnabled {
 		VcsGroupNameUrl, err := url.Parse(codebaseSettings.UserSettings.VcsGroupNameUrl)
 		if err != nil {
