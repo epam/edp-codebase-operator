@@ -53,7 +53,7 @@ const (
 )
 
 func (s CodebaseService) Create() error {
-	/*if s.CustomResource.Status.Status != models.StatusInit {
+	if s.CustomResource.Status.Status != models.StatusInit {
 		return errors.New("codebase status is not init. skipped")
 	}
 
@@ -87,9 +87,8 @@ func (s CodebaseService) Create() error {
 	if err != nil {
 		return errWrap.Wrap(err, "Error has been occurred in status update")
 	}
-	log.Println("Status of codebase CR has been changed to 'in progress'")*/
+	log.Println("Status of codebase CR has been changed to 'in progress'")
 
-	var err error
 	var codebaseSettings *models.CodebaseSettings
 
 	if s.CustomResource.Spec.Strategy == ImportStrategy {
