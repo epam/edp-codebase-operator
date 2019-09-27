@@ -27,7 +27,7 @@ func CreateDirectory(path string) error {
 	return nil
 }
 
-func CopyPipelines(src, pipelineDestination string) error {
+func CopyPipelines(codebaseType string, src, pipelineDestination string) error {
 	log.Info("Start copying pipelines", "src", src, "target", pipelineDestination)
 
 	files, err := ioutil.ReadDir(src)
@@ -36,6 +36,10 @@ func CopyPipelines(src, pipelineDestination string) error {
 	}
 
 	for _, f := range files {
+		if codebaseType == "autotests" && f.Name() == "build.groovy" {
+			continue
+		}
+
 		input, err := ioutil.ReadFile(src + "/" + f.Name())
 		if err != nil {
 			return err

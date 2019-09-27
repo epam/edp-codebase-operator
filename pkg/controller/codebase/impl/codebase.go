@@ -53,7 +53,7 @@ const (
 )
 
 func (s CodebaseService) Create() error {
-	if s.CustomResource.Status.Status != models.StatusInit {
+	/*if s.CustomResource.Status.Status != models.StatusInit {
 		return errors.New("codebase status is not init. skipped")
 	}
 
@@ -87,11 +87,12 @@ func (s CodebaseService) Create() error {
 	if err != nil {
 		return errWrap.Wrap(err, "Error has been occurred in status update")
 	}
-	log.Println("Status of codebase CR has been changed to 'in progress'")
+	log.Println("Status of codebase CR has been changed to 'in progress'")*/
 
+	var err error
 	var codebaseSettings *models.CodebaseSettings
 
-	if s.CustomResource.Spec.Type == Application && s.CustomResource.Spec.Strategy == ImportStrategy {
+	if s.CustomResource.Spec.Strategy == ImportStrategy {
 		log.Println("Start executing flow for Import strategy")
 
 		codebaseSettings, err = s.initCodebaseSettingsForImportStrategy()
@@ -272,17 +273,19 @@ func (s CodebaseService) pushBuildConfigs(codebaseSettings *models.CodebaseSetti
 		return errWrap.Wrap(err, fmt.Sprintf("an error has occurred while creating template folder %v", templatesDir))
 	}
 
-	templateBasePath := fmt.Sprintf("/usr/local/bin/templates/applications/%v", strings.ToLower(codebaseSettings.Lang))
-	templateName := fmt.Sprintf("%v.tmpl", strings.ToLower(codebaseSettings.Framework))
-	templatePath := fmt.Sprintf("%v/%v", templateBasePath, templateName)
-	templateConfig := buildTemplateConfig(*codebaseSettings, s.CustomResource.Spec)
+	if codebaseSettings.Type == Application {
+		templateBasePath := fmt.Sprintf("/usr/local/bin/templates/applications/%v", strings.ToLower(codebaseSettings.Lang))
+		templateName := fmt.Sprintf("%v.tmpl", strings.ToLower(codebaseSettings.Framework))
+		templatePath := fmt.Sprintf("%v/%v", templateBasePath, templateName)
+		templateConfig := buildTemplateConfig(*codebaseSettings, s.CustomResource.Spec)
 
-	err = util.CopyTemplate(templatePath, templateName, templateConfig)
-	if err != nil {
-		return errWrap.Wrap(err, "an error has occurred while copying template")
+		err = util.CopyTemplate(templatePath, templateName, templateConfig)
+		if err != nil {
+			return errWrap.Wrap(err, "an error has occurred while copying template")
+		}
 	}
 
-	err = util.CopyPipelines(PipelinesSourcePath, pathToCopiedGitFolder)
+	err = util.CopyPipelines(codebaseSettings.Type, PipelinesSourcePath, pathToCopiedGitFolder)
 	if err != nil {
 		return errWrap.Wrap(err, "an error has occurred while copying pipelines")
 	}
@@ -297,14 +300,16 @@ func (s CodebaseService) pushBuildConfigs(codebaseSettings *models.CodebaseSetti
 		return errWrap.Wrap(err, "an error has occurred while pushing changes")
 	}
 
-	appImageStream, err := gerrit.GetAppImageStream(codebaseSettings.Lang)
-	if err != nil {
-		return err
-	}
+	if codebaseSettings.Type == Application {
+		appImageStream, err := gerrit.GetAppImageStream(codebaseSettings.Lang)
+		if err != nil {
+			return err
+		}
 
-	err = gerrit.CreateS2IImageStream(*s.ClientSet, codebaseSettings.Name, codebaseSettings.CicdNamespace, appImageStream)
-	if err != nil {
-		return err
+		err = gerrit.CreateS2IImageStream(*s.ClientSet, codebaseSettings.Name, codebaseSettings.CicdNamespace, appImageStream)
+		if err != nil {
+			return err
+		}
 	}
 
 	log.Println("End pushing build configs to remote git server...")
@@ -380,8 +385,11 @@ func (s CodebaseService) initCodebaseSettingsForImportStrategy() (*models.Codeba
 	codebaseSettings.Name = s.CustomResource.Name
 	codebaseSettings.Type = s.CustomResource.Spec.Type
 	codebaseSettings.CicdNamespace = s.CustomResource.Namespace
-	codebaseSettings.Framework = *s.CustomResource.Spec.Framework
 	codebaseSettings.RepositoryPath = *s.CustomResource.Spec.GitUrlPath
+
+	if codebaseSettings.Type == Application {
+		codebaseSettings.Framework = *s.CustomResource.Spec.Framework
+	}
 
 	codebaseSettings.JenkinsToken, codebaseSettings.JenkinsUsername, err = settings.GetJenkinsCreds(*s.ClientSet, s.Client,
 		s.CustomResource.Namespace)
