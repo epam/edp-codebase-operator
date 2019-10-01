@@ -202,7 +202,7 @@ func (s CodebaseService) Create() error {
 
 		err = s.trySetupPerf(*codebaseSettings)
 
-		config, err := gerrit.ConfigInit(*s.ClientSet, *codebaseSettings, s.CustomResource.Spec)
+		config, err := gerrit.ConfigInit(*codebaseSettings, s.CustomResource.Spec)
 		err = gerrit.PushConfigs(*config, *codebaseSettings, *s.ClientSet)
 		if err != nil {
 			setFailedFields(s, edpv1alpha1.SetupDeploymentTemplates, err.Error())

@@ -2,7 +2,6 @@ package gerrit
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"github.com/epmd-edp/codebase-operator/v2/models"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
@@ -38,25 +37,20 @@ type GerritConfigGoTemplating struct {
 	CloneSshUrl       string                  `json:"clone_ssh_url"`
 }
 
-func ConfigInit(clientSet ClientSet.ClientSet, codebaseSettings models.CodebaseSettings,
+func ConfigInit(codebaseSettings models.CodebaseSettings,
 	spec v1alpha1.CodebaseSpec) (*GerritConfigGoTemplating, error) {
-	dtrUrl, err := getOpenshiftDockerRegistryUrl(clientSet)
-	if err != nil {
-		return nil, err
-	}
 
 	templatesDir := fmt.Sprintf("%v/oc-templates", codebaseSettings.WorkDir)
 	cloneSshUrl := fmt.Sprintf("ssh://project-creator@gerrit.%v:%v/%v", codebaseSettings.CicdNamespace,
 		codebaseSettings.GerritSettings.SshPort, codebaseSettings.Name)
 
 	config := GerritConfigGoTemplating{
-		DockerRegistryUrl: *dtrUrl,
-		Lang:              spec.Lang,
-		Framework:         spec.Framework,
-		BuildTool:         spec.BuildTool,
-		TemplatesDir:      templatesDir,
-		CloneSshUrl:       cloneSshUrl,
-		CodebaseSettings:  codebaseSettings,
+		Lang:             spec.Lang,
+		Framework:        spec.Framework,
+		BuildTool:        spec.BuildTool,
+		TemplatesDir:     templatesDir,
+		CloneSshUrl:      cloneSshUrl,
+		CodebaseSettings: codebaseSettings,
 	}
 	if spec.Repository != nil {
 		config.RepositoryUrl = &spec.Repository.Url
@@ -71,17 +65,6 @@ func ConfigInit(clientSet ClientSet.ClientSet, codebaseSettings models.CodebaseS
 	log.Print("Gerrit config has been initialized")
 
 	return &config, nil
-}
-
-func getOpenshiftDockerRegistryUrl(clientSet ClientSet.ClientSet) (*string, error) {
-	dtrRegistry, err := clientSet.RouteClient.Routes("default").Get("docker-registry", metav1.GetOptions{})
-	if err != nil {
-		errorMsg := fmt.Sprintf("Unable to get user settings configmap: %v", err)
-		log.Println(errorMsg)
-		return nil, errors.New(errorMsg)
-	}
-	log.Printf("Docker registry URL has been retrieved: %v", dtrRegistry.Spec.Host)
-	return &dtrRegistry.Spec.Host, nil
 }
 
 func PushConfigs(config GerritConfigGoTemplating, codebaseSettings models.CodebaseSettings, clientSet ClientSet.ClientSet) error {
