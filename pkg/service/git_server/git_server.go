@@ -30,14 +30,13 @@ type GerritJenkinsSshSecret struct {
 }
 
 const (
-	EdpPostfix = "edp-cicd"
-	KeyName    = "id_rsa"
+	KeyName = "id_rsa"
 )
 
 func (s *GitServerService) CheckConnectionToGitServer(gitServer model.GitServer) (bool, error) {
 	log.Info("Start CheckConnectionToGitServer method", "Git host", gitServer.GitHost)
 
-	sshSecret, err := s.getSecret(gitServer.NameSshKeySecret, gitServer.Tenant)
+	sshSecret, err := s.getSecret(gitServer.NameSshKeySecret, gitServer.Namespace)
 	if err != nil {
 		return false, errors.Wrap(err, fmt.Sprintf("an error has occurred  while getting %v secret", gitServer.NameSshKeySecret))
 	}
@@ -54,7 +53,7 @@ func (s *GitServerService) CheckConnectionToGitServer(gitServer model.GitServer)
 
 func (s *GitServerService) getSecret(secretName, namespace string) (*v1.Secret, error) {
 	secret, err := s.ClientSet.CoreClient.
-		Secrets(fmt.Sprintf("%s-%s", namespace, EdpPostfix)).
+		Secrets(namespace).
 		Get(secretName, metav1.GetOptions{})
 	if k8serrors.IsNotFound(err) || k8serrors.IsForbidden(err) {
 		return nil, err

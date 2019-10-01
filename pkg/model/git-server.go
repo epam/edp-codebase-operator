@@ -30,7 +30,7 @@ type GitServer struct {
 	NameSshKeySecret         string
 	CreateCodeReviewPipeline bool
 	ActionLog                ActionLog
-	Tenant                   string
+	Namespace                string
 	Name                     string
 }
 
@@ -60,7 +60,7 @@ func ConvertToGitServer(k8sObj v1alpha1.GitServer) (*GitServer, error) {
 		NameSshKeySecret:         spec.NameSshKeySecret,
 		CreateCodeReviewPipeline: spec.CreateCodeReviewPipeline,
 		ActionLog:                *actionLog,
-		Tenant:                   strings.TrimSuffix(k8sObj.Namespace, "-edp-cicd"),
+		Namespace:                k8sObj.Namespace,
 		Name:                     k8sObj.Name,
 	}
 
