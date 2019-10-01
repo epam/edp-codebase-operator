@@ -87,7 +87,7 @@ func GetJenkinsCreds(clientSet ClientSet.ClientSet, k8sClient client.Client, nam
 	}
 
 	if len(jenkinsList.Items) == 0 {
-		errors.Wrapf(err, "Jenkins installation is not found in namespace %v", namespace)
+		return "", "", errors.Wrapf(err, "Jenkins installation is not found in namespace %v", namespace)
 	}
 
 	jenkins := &jenkinsList.Items[0]
