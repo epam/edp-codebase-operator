@@ -7,6 +7,7 @@ import (
 	"github.com/epmd-edp/codebase-operator/v2/models"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	edpv1alpha1 "github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/platform"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/gerrit"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/git"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/jenkins"
@@ -299,21 +300,27 @@ func (s CodebaseService) pushBuildConfigs(codebaseSettings *models.CodebaseSetti
 		return errWrap.Wrap(err, "an error has occurred while pushing changes")
 	}
 
-	if codebaseSettings.Type == Application {
-		appImageStream, err := gerrit.GetAppImageStream(codebaseSettings.Lang)
-		if err != nil {
-			return err
-		}
-
-		err = gerrit.CreateS2IImageStream(*s.ClientSet, codebaseSettings.Name, codebaseSettings.CicdNamespace, appImageStream)
-		if err != nil {
-			return err
-		}
+	err = s.trySetupS2I(*codebaseSettings)
+	if err != nil {
+		return err
 	}
 
 	log.Println("End pushing build configs to remote git server...")
-
 	return nil
+}
+
+func (s CodebaseService) trySetupS2I(cs models.CodebaseSettings) error {
+	if cs.Type != Application {
+		return nil
+	}
+	if platform.IsK8S() {
+		return nil
+	}
+	is, err := gerrit.GetAppImageStream(cs.Lang)
+	if err != nil {
+		return err
+	}
+	return gerrit.CreateS2IImageStream(*s.ClientSet, cs.Name, cs.CicdNamespace, is)
 }
 
 func buildTemplateConfig(codebaseSettings models.CodebaseSettings, spec v1alpha1.CodebaseSpec) gerrit.GerritConfigGoTemplating {
