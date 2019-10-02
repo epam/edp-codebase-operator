@@ -36,13 +36,18 @@ func (service CodebaseBranchService) Create(cr *edpv1alpha1.CodebaseBranch) {
 	log.Println("Client set has been created")
 
 	releaseJob := fmt.Sprintf("%v/job/Create-release-%v", cr.Spec.CodebaseName, cr.Spec.CodebaseName)
-	jenkinsUrl := fmt.Sprintf("http://jenkins.%s:8080", cr.Namespace)
-	jenkinsToken, jenkinsUsername, err := settings.GetJenkinsCreds(*clientSet, service.Client, cr.Namespace)
+
+	jen, err := settings.GetJenkins(service.Client, cr.Namespace)
+	if err != nil {
+		return
+	}
+	jenkinsToken, jenkinsUsername, err := settings.GetJenkinsCreds(*jen, *clientSet, cr.Namespace)
 	if err != nil {
 		log.Println(err)
 		service.setFailedFields(cr, edpv1alpha1.JenkinsConfiguration, err.Error())
 		return
 	}
+	jenkinsUrl := settings.GetJenkinsUrl(*jen, cr.Namespace)
 
 	log.Printf("Started creating release %v for application %v...", cr.Spec.BranchName, cr.Spec.CodebaseName)
 

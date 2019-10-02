@@ -397,9 +397,16 @@ func (s CodebaseService) initCodebaseSettingsForImportStrategy() (*models.Codeba
 		codebaseSettings.Framework = *s.CustomResource.Spec.Framework
 	}
 
-	codebaseSettings.JenkinsToken, codebaseSettings.JenkinsUsername, err = settings.GetJenkinsCreds(*s.ClientSet, s.Client,
+	jen, err := settings.GetJenkins(s.Client, s.CustomResource.Namespace)
+	if err != nil {
+		return nil, err
+	}
+	codebaseSettings.JenkinsToken, codebaseSettings.JenkinsUsername, err = settings.GetJenkinsCreds(*jen, *s.ClientSet,
 		s.CustomResource.Namespace)
-	codebaseSettings.JenkinsUrl = fmt.Sprintf("http://jenkins.%s:8080", codebaseSettings.CicdNamespace)
+	if err != nil {
+		return nil, err
+	}
+	codebaseSettings.JenkinsUrl = settings.GetJenkinsUrl(*jen, s.CustomResource.Namespace)
 
 	userSettings, err := settings.GetUserSettingsConfigMap(*s.ClientSet, s.CustomResource.Namespace)
 	if err != nil {
@@ -460,9 +467,16 @@ func (s CodebaseService) initCodebaseSettings(clientSet *ClientSet.ClientSet) (*
 
 	codebaseSettings.UserSettings = *userSettings
 	codebaseSettings.GerritSettings = *gerritSettings
-	codebaseSettings.JenkinsToken, codebaseSettings.JenkinsUsername, err = settings.GetJenkinsCreds(*s.ClientSet, s.Client,
+	jen, err := settings.GetJenkins(s.Client, s.CustomResource.Namespace)
+	if err != nil {
+		return nil, err
+	}
+	codebaseSettings.JenkinsToken, codebaseSettings.JenkinsUsername, err = settings.GetJenkinsCreds(*jen, *s.ClientSet,
 		s.CustomResource.Namespace)
-	codebaseSettings.JenkinsUrl = fmt.Sprintf("http://jenkins.%s:8080", codebaseSettings.CicdNamespace)
+	if err != nil {
+		return nil, err
+	}
+	codebaseSettings.JenkinsUrl = settings.GetJenkinsUrl(*jen, s.CustomResource.Namespace)
 
 	if codebaseSettings.UserSettings.VcsIntegrationEnabled {
 		VcsGroupNameUrl, err := url.Parse(codebaseSettings.UserSettings.VcsGroupNameUrl)

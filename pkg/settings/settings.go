@@ -74,23 +74,23 @@ func GetGerritSettingsConfigMap(clientSet ClientSet.ClientSet, namespace string)
 	}, nil
 }
 
-func GetJenkinsCreds(clientSet ClientSet.ClientSet, k8sClient client.Client, namespace string) (string, string, error) {
+func GetJenkins(k8sClient client.Client, namespace string) (*jenkinsApi.Jenkins, error) {
 	options := client.ListOptions{Namespace: namespace}
 	jenkinsList := &jenkinsApi.JenkinsList{}
 
 	err := k8sClient.List(context.TODO(), &options, jenkinsList)
 	if err != nil {
-		if k8serrors.IsNotFound(err) {
-			return "", "", errors.Wrapf(err, "Jenkins installation is not found in namespace %v", namespace)
-		}
-		return "", "", errors.Wrapf(err, "Unable to get Jenkins CRs in namespace %v", namespace)
+		return nil, errors.Wrapf(err, "Unable to get Jenkins CRs in namespace %v", namespace)
 	}
 
 	if len(jenkinsList.Items) == 0 {
-		return "", "", errors.Wrapf(err, "Jenkins installation is not found in namespace %v", namespace)
+		return nil, fmt.Errorf("jenkins installation is not found in namespace %v", namespace)
 	}
 
-	jenkins := &jenkinsList.Items[0]
+	return &jenkinsList.Items[0], nil
+}
+
+func GetJenkinsCreds(jenkins jenkinsApi.Jenkins, clientSet ClientSet.ClientSet, namespace string) (string, string, error) {
 	annotationKey := fmt.Sprintf("%v/%v", jenkinsOperatorSpec.EdpAnnotationsPrefix, jenkinsOperatorSpec.JenkinsTokenAnnotationSuffix)
 	jenkinsTokenSecretName := jenkins.Annotations[annotationKey]
 	jenkinsTokenSecret, err := clientSet.CoreClient.Secrets(namespace).Get(jenkinsTokenSecretName, metav1.GetOptions{})
@@ -101,6 +101,15 @@ func GetJenkinsCreds(clientSet ClientSet.ClientSet, k8sClient client.Client, nam
 		return "", "", errors.Wrapf(err, "Getting secret %v failed", jenkinsTokenSecretName)
 	}
 	return string(jenkinsTokenSecret.Data["password"]), string(jenkinsTokenSecret.Data["username"]), nil
+}
+
+func GetJenkinsUrl(jenkins jenkinsApi.Jenkins, namespace string) string {
+	key := fmt.Sprintf("%v/%v", jenkinsOperatorSpec.EdpAnnotationsPrefix, "externalUrl")
+	url := jenkins.Annotations[key]
+	if len(url) == 0 {
+		return fmt.Sprintf("http://jenkins.%s:8080", namespace)
+	}
+	return url
 }
 
 func GetVcsCredentials(clientSet ClientSet.ClientSet, namespace string) (string, string, error) {
