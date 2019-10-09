@@ -132,19 +132,24 @@ func PushConfigs(config GerritConfigGoTemplating, codebaseSettings models.Codeba
 		return err
 	}
 
-	if codebaseSettings.Type == "application" {
-		appImageStream, err := GetAppImageStream(config.Lang)
-		if err != nil {
-			return err
-		}
+	return tryCreateImageStream(clientSet, codebaseSettings)
+}
 
-		err = CreateS2IImageStream(clientSet, codebaseSettings.Name, codebaseSettings.CicdNamespace, appImageStream)
-		if err != nil {
-			return err
-		}
+func tryCreateImageStream(cs ClientSet.ClientSet, c models.CodebaseSettings) error {
+	if !isSupportedType(c) {
+		log.Println("couldn't create image stream as type of codebase is not acceptable")
+		return nil
 	}
 
-	return nil
+	appImageStream, err := GetAppImageStream(c.Lang)
+	if err != nil {
+		return err
+	}
+	return CreateS2IImageStream(cs, c.Name, c.CicdNamespace, appImageStream)
+}
+
+func isSupportedType(c models.CodebaseSettings) bool {
+	return c.Type == "application" && c.Lang != "other"
 }
 
 func cloneProjectRepoFromGerrit(config GerritConfigGoTemplating, codebaseSettings models.CodebaseSettings) error {

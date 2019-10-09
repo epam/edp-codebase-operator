@@ -29,9 +29,7 @@ import (
 
 var allowedCodebaseSettings = map[string][]string{
 	"add_repo_strategy": {"create", "clone", "import"},
-	"language":          {"java", "dotnet", "javascript"},
-	"build_tool":        {"maven", "gradle", "dotnet", "npm"},
-	"framework":         {"springboot", "springboot(multi-module)", "netcore", "react"},
+	"language":          {"java", "dotnet", "javascript", "other"},
 }
 
 func containSettings(slice []string, value string) bool {
@@ -54,8 +52,6 @@ func getCodebase(cr *edpv1alpha1.Codebase, r *ReconcileCodebase) (CodebaseServic
 		return nil, errors.New("Provided unsupported add repository strategy - " + string(cr.Spec.Strategy))
 	} else if !(containSettings(allowedCodebaseSettings["language"], cr.Spec.Lang)) {
 		return nil, errors.New("Provided unsupported language - " + cr.Spec.Lang)
-	} else if !(containSettings(allowedCodebaseSettings["build_tool"], cr.Spec.BuildTool)) {
-		return nil, errors.New("Provided unsupported build tool - " + cr.Spec.BuildTool)
 	} else {
 		clientSet := openshift.CreateOpenshiftClients()
 

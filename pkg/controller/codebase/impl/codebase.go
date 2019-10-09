@@ -51,6 +51,7 @@ const (
 	StatusFinished      = "created"
 	StatusInProgress    = "in progress"
 	GerritGitServerName = "gerrit"
+	OtherLanguage       = "other"
 )
 
 func (s CodebaseService) Create() error {
@@ -310,7 +311,7 @@ func (s CodebaseService) pushBuildConfigs(codebaseSettings *models.CodebaseSetti
 }
 
 func (s CodebaseService) trySetupS2I(cs models.CodebaseSettings) error {
-	if cs.Type != Application {
+	if cs.Type != Application || cs.Lang == OtherLanguage {
 		return nil
 	}
 	if platform.IsK8S() {
@@ -444,6 +445,7 @@ func (s CodebaseService) initCodebaseSettings(clientSet *ClientSet.ClientSet) (*
 	codebaseSettings.Name = s.CustomResource.Name
 	codebaseSettings.Type = s.CustomResource.Spec.Type
 	codebaseSettings.RepositoryPath = "/" + s.CustomResource.Name
+	codebaseSettings.Lang = s.CustomResource.Spec.Lang
 
 	log.Printf("Retrieving user settings from config map...")
 	codebaseSettings.CicdNamespace = s.CustomResource.Namespace
