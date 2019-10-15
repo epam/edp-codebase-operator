@@ -49,6 +49,8 @@ type CodebaseSpec struct {
 	Type                string      `json:"type"`
 	GitServer           string      `json:"gitServer"`
 	GitUrlPath          *string     `json:"gitUrlPath"`
+	JenkinsSlave        string      `json:"jenkinsSlave"`
+	JobProvisioning     string      `json:"jobProvisioning"`
 }
 
 // CodebaseStatus defines the observed state of Codebase
