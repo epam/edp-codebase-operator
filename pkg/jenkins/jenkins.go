@@ -26,9 +26,9 @@ func Init(url string, username string, token string) (*Client, error) {
 	}, nil
 }
 
-func (client Client) TriggerJobProvisioning(parameters map[string]string, delay time.Duration, retryCount int) error {
+func (client Client) TriggerJobProvisioning(jobName string, parameters map[string]string, delay time.Duration, retryCount int) error {
 	for i := 0; i < retryCount; i++ {
-		buildNumber, err := client.jenkins.BuildJob("job-provisions/job/default", parameters)
+		buildNumber, err := client.jenkins.BuildJob("job-provisions/job/"+jobName, parameters)
 		if buildNumber != 0 || err != nil {
 			return err
 		}

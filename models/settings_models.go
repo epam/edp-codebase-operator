@@ -30,6 +30,7 @@ type CodebaseSettings struct {
 	Lang                  string          `json:"language"`
 	GitServer             model.GitServer `json:"gitServer"`
 	Framework             string          `json:"framework"`
+	JobProvisioning       string          `json:"jobProvisioning"`
 }
 
 type UserSettings struct {

@@ -128,6 +128,7 @@ func (s CodebaseService) Create() error {
 			JenkinsUrl:      codebaseSettings.JenkinsUrl,
 			JenkinsUsername: codebaseSettings.JenkinsUsername,
 			JenkinsToken:    codebaseSettings.JenkinsToken,
+			JobName:         codebaseSettings.JobProvisioning,
 		},
 			map[string]string{
 				"PARAM":                 "true",
@@ -184,6 +185,7 @@ func (s CodebaseService) Create() error {
 			JenkinsUrl:      codebaseSettings.JenkinsUrl,
 			JenkinsUsername: codebaseSettings.JenkinsUsername,
 			JenkinsToken:    codebaseSettings.JenkinsToken,
+			JobName:         codebaseSettings.JobProvisioning,
 		},
 			map[string]string{
 				"PARAM":                 "true",
@@ -356,7 +358,7 @@ func (s CodebaseService) triggerJobProvisioning(data model.Jenkins, parameters m
 		return err
 	}
 
-	err = jenkinsClient.TriggerJobProvisioning(parameters, 10*time.Second, 12)
+	err = jenkinsClient.TriggerJobProvisioning(data.JobName, parameters, 10*time.Second, 12)
 	if err != nil {
 		return err
 	}
@@ -393,6 +395,7 @@ func (s CodebaseService) initCodebaseSettingsForImportStrategy() (*models.Codeba
 	codebaseSettings.Type = s.CustomResource.Spec.Type
 	codebaseSettings.CicdNamespace = s.CustomResource.Namespace
 	codebaseSettings.RepositoryPath = *s.CustomResource.Spec.GitUrlPath
+	codebaseSettings.JobProvisioning = s.CustomResource.Spec.JobProvisioning
 
 	if codebaseSettings.Type == Application {
 		codebaseSettings.Framework = *s.CustomResource.Spec.Framework
@@ -446,6 +449,7 @@ func (s CodebaseService) initCodebaseSettings(clientSet *ClientSet.ClientSet) (*
 	codebaseSettings.Type = s.CustomResource.Spec.Type
 	codebaseSettings.RepositoryPath = "/" + s.CustomResource.Name
 	codebaseSettings.Lang = s.CustomResource.Spec.Lang
+	codebaseSettings.JobProvisioning = s.CustomResource.Spec.JobProvisioning
 
 	log.Printf("Retrieving user settings from config map...")
 	codebaseSettings.CicdNamespace = s.CustomResource.Namespace
