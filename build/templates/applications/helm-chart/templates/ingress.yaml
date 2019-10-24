@@ -1,0 +1,21 @@
+{{- if .Values.ingress.required }}
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+    name: {{ .Values.name }}
+    annotations:
+        description: "Ingress for {{ .Values.name }} application"
+    labels:
+        app: {{ .Values.name }}
+spec:
+    rules:
+        - http:
+              paths:
+                  - path: {{ .Values.ingress.path }}
+                    backend:
+                        serviceName: {{ .Values.name }}
+                        servicePort: 8080
+{{- if and .Values.ingress.site (ne .Values.ingress.site "") }}
+          host: {{ .Values.ingress.site }}-{{ .Values.namespace }}.{{ .Values.dnsWildcard }}
+{{- end }}
+{{- end }}

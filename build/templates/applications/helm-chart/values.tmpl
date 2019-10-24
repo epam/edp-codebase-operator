@@ -1,0 +1,27 @@
+name: {{.CodebaseSettings.Name}}
+namespace: ""
+dnsWildcard: {{.CodebaseSettings.UserSettings.DnsWildcard}}
+{{if and .Database (not .CodebaseSettings.Type javascript)}}
+{{if eq .Database.Kind "PostgreSQL"}}
+database:
+  required: true
+  version: {{.Database.Version}}
+  storageClass: {{.Database.Storage}}
+  capacity: {{.Database.Capacity}}
+{{end}}
+{{else}}
+database:
+  required: false
+{{end}}
+{{if .Route}}
+ingress:
+  required: true
+  site: {{.Route.Site}}
+  path: {{.Route.Path}}
+{{else}}
+ingress:
+  required: false
+{{end}}
+image:
+  name: {{.CodebaseSettings.Name}}
+  version: latest
