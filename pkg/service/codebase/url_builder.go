@@ -1,4 +1,4 @@
-package impl
+package codebase
 
 import (
 	"errors"

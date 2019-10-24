@@ -2,20 +2,20 @@ package settings
 
 import (
 	"fmt"
-	"github.com/epmd-edp/codebase-operator/v2/models"
+	"github.com/epmd-edp/codebase-operator/v2/pkg/model"
 	"testing"
 )
 
-func createCodebaseSettings() models.CodebaseSettings {
-	return models.CodebaseSettings{
+func createCodebaseSettings() model.CodebaseSettings {
+	return model.CodebaseSettings{
 		ProjectVcsHostname: "gerrit",
 		GerritKeyPath:      "/test/test",
 		CicdNamespace:      "test",
-		UserSettings: models.UserSettings{
+		UserSettings: model.UserSettings{
 			VcsIntegrationEnabled: true,
 			VcsSshPort:            "22",
 		},
-		GerritSettings: models.GerritSettings{
+		GerritSettings: model.GerritSettings{
 			SshPort: 22442,
 		},
 	}

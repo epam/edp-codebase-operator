@@ -3,9 +3,9 @@ package impl
 import (
 	"context"
 	"fmt"
-	"github.com/epmd-edp/codebase-operator/v2/models"
 	edpv1alpha1 "github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/jenkins"
+	"github.com/epmd-edp/codebase-operator/v2/pkg/model"
 	ClientSet "github.com/epmd-edp/codebase-operator/v2/pkg/openshift"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/settings"
 	"log"
@@ -18,7 +18,7 @@ type CodebaseBranchService struct {
 }
 
 func (service CodebaseBranchService) Create(cr *edpv1alpha1.CodebaseBranch) {
-	if cr.Status.Status != models.StatusInit {
+	if cr.Status.Status != model.StatusInit {
 		log.Printf("Release %v for application %v is not in init status. Skipped", cr.Spec.BranchName,
 			cr.Spec.CodebaseName)
 		return
@@ -80,10 +80,10 @@ func (service CodebaseBranchService) Create(cr *edpv1alpha1.CodebaseBranch) {
 			Result:          edpv1alpha1.Success,
 			Value:           "active",
 		}
-		log.Printf("Release has been created. Status: %v", models.StatusFinished)
+		log.Printf("Release has been created. Status: %v", model.StatusFinished)
 	} else {
 		log.Printf("Failed to create release. Release job status is '%v'. CodebaseBranch status: %v",
-			jobStatus, models.StatusFailed)
+			jobStatus, model.StatusFailed)
 		service.setFailedFields(cr, edpv1alpha1.JenkinsConfiguration, "Release job was failed.")
 		return
 	}

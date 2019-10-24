@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/epmd-edp/codebase-operator/v2/models"
+	"github.com/epmd-edp/codebase-operator/v2/pkg/model"
 	ClientSet "github.com/epmd-edp/codebase-operator/v2/pkg/openshift"
 	"golang.org/x/crypto/ssh"
 	"gopkg.in/src-d/go-git.v4"
@@ -277,7 +277,7 @@ func generateReplicationConfig(templatePath, templateName string, params Replica
 	return renderedTemplate.String(), nil
 }
 
-func SetupProjectReplication(codebaseSettings models.CodebaseSettings, clientSet ClientSet.ClientSet) error {
+func SetupProjectReplication(codebaseSettings model.CodebaseSettings, clientSet ClientSet.ClientSet) error {
 	log.Printf("Start setup project replication for app: %v", codebaseSettings.Name)
 	replicaConfigNew, err := generateReplicationConfig(
 		TemplatesPath, ReplicationConfigTemplateName, ReplicationConfigParams{

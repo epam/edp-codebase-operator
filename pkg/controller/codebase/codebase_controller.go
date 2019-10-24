@@ -4,13 +4,13 @@ import (
 	"context"
 	"errors"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/openshift"
+	"github.com/epmd-edp/codebase-operator/v2/pkg/service/codebase"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/service/git_server"
 	openshift_service "github.com/epmd-edp/codebase-operator/v2/pkg/service/openshift"
 	"log"
 	"strings"
 
 	edpv1alpha1 "github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/codebase/impl"
 	errWrap "github.com/pkg/errors"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -57,7 +57,7 @@ func getCodebase(cr *edpv1alpha1.Codebase, r *ReconcileCodebase) (CodebaseServic
 
 		log.Println("Client set has been created")
 
-		return impl.CodebaseService{
+		return codebase.CodebaseService{
 			ClientSet:      clientSet,
 			CustomResource: cr,
 			Client:         r.client,
@@ -134,11 +134,12 @@ func (r *ReconcileCodebase) Reconcile(request reconcile.Request) (reconcile.Resu
 		return reconcile.Result{}, err
 	}
 
-	codebase, err := getCodebase(instance, r)
+	c, err := getCodebase(instance, r)
 	if err != nil {
 		log.Fatalf("[ERROR] Cannot get codebase %s. Reason: %s", request.Name, err)
 	}
-	err = codebase.Create()
+
+	err = c.Create()
 	if err != nil {
 		return reconcile.Result{}, errWrap.Wrap(err, "an error has occurred while executing Create method")
 	}

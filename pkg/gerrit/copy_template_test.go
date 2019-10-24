@@ -2,8 +2,8 @@ package gerrit
 
 import (
 	"fmt"
-	"github.com/epmd-edp/codebase-operator/v2/models"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	"github.com/epmd-edp/codebase-operator/v2/pkg/model"
 	"testing"
 )
 
@@ -14,7 +14,7 @@ func TestExampleAddEdpConfigs_CopyTemplate_Test(t *testing.T) {
 	buildTool := "maven"
 	templatesDir := "/oc-templates"
 	cloneSshUrl := "ssh://gerrit.svc"
-	codebaseSettings := models.CodebaseSettings{
+	codebaseSettings := model.CodebaseSettings{
 		Name: "test",
 	}
 
@@ -33,7 +33,7 @@ func TestExampleAddEdpConfigs_CopyTemplate_Test(t *testing.T) {
 	templatePath := "/templates/applications/java/springboot.tmpl"
 	templateName := "springboot.tmpl"
 
-	config := GerritConfigGoTemplating{
+	config := model.GerritConfigGoTemplating{
 		DockerRegistryUrl: dtrUrl,
 		Lang:              lang,
 		Framework:         &framework,

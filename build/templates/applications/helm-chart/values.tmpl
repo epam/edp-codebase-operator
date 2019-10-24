@@ -1,7 +1,7 @@
 name: {{.CodebaseSettings.Name}}
 namespace: ""
 dnsWildcard: {{.CodebaseSettings.UserSettings.DnsWildcard}}
-{{if and .Database (not .CodebaseSettings.Type javascript)}}
+{{if and .Database (ne .CodebaseSettings.Lang "javascript")}}
 {{if eq .Database.Kind "PostgreSQL"}}
 database:
   required: true

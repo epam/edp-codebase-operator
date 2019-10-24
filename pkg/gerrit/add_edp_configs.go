@@ -3,9 +3,10 @@ package gerrit
 import (
 	"bytes"
 	"fmt"
-	"github.com/epmd-edp/codebase-operator/v2/models"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	"github.com/epmd-edp/codebase-operator/v2/pkg/model"
 	ClientSet "github.com/epmd-edp/codebase-operator/v2/pkg/openshift"
+	"github.com/epmd-edp/codebase-operator/v2/pkg/util"
 	imageV1 "github.com/openshift/api/image/v1"
 	"golang.org/x/crypto/ssh"
 	"gopkg.in/src-d/go-git.v4"
@@ -24,27 +25,14 @@ import (
 	"time"
 )
 
-type GerritConfigGoTemplating struct {
-	Lang              string                  `json:"lang"`
-	Framework         *string                 `json:"framework"`
-	BuildTool         string                  `json:"build_tool"`
-	RepositoryUrl     *string                 `json:"repository_url"`
-	Route             *v1alpha1.Route         `json:"route"`
-	Database          *v1alpha1.Database      `json:"database"`
-	CodebaseSettings  models.CodebaseSettings `json:"app_settings"`
-	DockerRegistryUrl string                  `json:"docker_registry_url"`
-	TemplatesDir      string                  `json:"templates_dir"`
-	CloneSshUrl       string                  `json:"clone_ssh_url"`
-}
+func ConfigInit(codebaseSettings model.CodebaseSettings,
+	spec v1alpha1.CodebaseSpec) (*model.GerritConfigGoTemplating, error) {
 
-func ConfigInit(codebaseSettings models.CodebaseSettings,
-	spec v1alpha1.CodebaseSpec) (*GerritConfigGoTemplating, error) {
-
-	templatesDir := fmt.Sprintf("%v/oc-templates", codebaseSettings.WorkDir)
+	templatesDir := createTemplateDirectory(codebaseSettings.WorkDir, codebaseSettings.DeploymentScript)
 	cloneSshUrl := fmt.Sprintf("ssh://project-creator@gerrit.%v:%v/%v", codebaseSettings.CicdNamespace,
 		codebaseSettings.GerritSettings.SshPort, codebaseSettings.Name)
 
-	config := GerritConfigGoTemplating{
+	config := model.GerritConfigGoTemplating{
 		Lang:             spec.Lang,
 		Framework:        spec.Framework,
 		BuildTool:        spec.BuildTool,
@@ -67,7 +55,14 @@ func ConfigInit(codebaseSettings models.CodebaseSettings,
 	return &config, nil
 }
 
-func PushConfigs(config GerritConfigGoTemplating, codebaseSettings models.CodebaseSettings, clientSet ClientSet.ClientSet) error {
+func createTemplateDirectory(workDir string, deploymentScriptType string) string {
+	if deploymentScriptType == util.OpenshiftTemplate {
+		return fmt.Sprintf("%v/%v", workDir, util.OcTemplatesFolder)
+	}
+	return fmt.Sprintf("%v/%v", workDir, util.HelmChartTemplatesFolder)
+}
+
+func PushConfigs(config model.GerritConfigGoTemplating, codebaseSettings model.CodebaseSettings, clientSet ClientSet.ClientSet) error {
 	appTemplatesDir := fmt.Sprintf("%v/%v/deploy-templates", config.TemplatesDir, codebaseSettings.Name)
 	appConfigFilesDir := fmt.Sprintf("%v/%v/config-files", config.TemplatesDir, codebaseSettings.Name)
 
@@ -100,11 +95,9 @@ func PushConfigs(config GerritConfigGoTemplating, codebaseSettings models.Codeba
 	}
 
 	if codebaseSettings.Type == "application" {
-		templateBasePath := fmt.Sprintf("/usr/local/bin/templates/applications/%v", strings.ToLower(config.Lang))
-		templateName := fmt.Sprintf("%v.tmpl", strings.ToLower(*config.Framework))
-		templatePath := fmt.Sprintf("%v/%v", templateBasePath, templateName)
+		config.CodebaseSettings = codebaseSettings
 
-		err = copyTemplate(templatePath, templateName, config, codebaseSettings)
+		err = util.CopyTemplate(config)
 		if err != nil {
 			return err
 		}
@@ -135,7 +128,14 @@ func PushConfigs(config GerritConfigGoTemplating, codebaseSettings models.Codeba
 	return tryCreateImageStream(clientSet, codebaseSettings)
 }
 
-func tryCreateImageStream(cs ClientSet.ClientSet, c models.CodebaseSettings) error {
+func getTemplateName(deploymentScriptType, framework string) string {
+	if deploymentScriptType == util.OpenshiftTemplate {
+		return framework
+	}
+	return "values"
+}
+
+func tryCreateImageStream(cs ClientSet.ClientSet, c model.CodebaseSettings) error {
 	if !isSupportedType(c) {
 		log.Println("couldn't create image stream as type of codebase is not acceptable")
 		return nil
@@ -148,11 +148,11 @@ func tryCreateImageStream(cs ClientSet.ClientSet, c models.CodebaseSettings) err
 	return CreateS2IImageStream(cs, c.Name, c.CicdNamespace, appImageStream)
 }
 
-func isSupportedType(c models.CodebaseSettings) bool {
+func isSupportedType(c model.CodebaseSettings) bool {
 	return c.Type == "application" && c.Lang != "other"
 }
 
-func cloneProjectRepoFromGerrit(config GerritConfigGoTemplating, codebaseSettings models.CodebaseSettings) error {
+func cloneProjectRepoFromGerrit(config model.GerritConfigGoTemplating, codebaseSettings model.CodebaseSettings) error {
 	log.Printf("Cloning repo from gerrit using: %v", config.CloneSshUrl)
 	var session *ssh.Session
 	var connection *ssh.Client
@@ -236,33 +236,7 @@ func createDirectory(path string) error {
 	return nil
 }
 
-func copyTemplate(templatePath string, templateName string, config GerritConfigGoTemplating, codebaseSettings models.CodebaseSettings) error {
-	templatesDest := fmt.Sprintf("%v/%v/deploy-templates/%v.yaml", config.TemplatesDir, codebaseSettings.Name,
-		codebaseSettings.Name)
-
-	f, err := os.Create(templatesDest)
-	if err != nil {
-		return err
-	}
-
-	log.Printf("Start rendering openshift templates: %v", templatePath)
-	tmpl, err := template.New(templateName).ParseFiles(templatePath)
-	if err != nil {
-		log.Printf("Unable to parse codebase deploy template: %v", err)
-		return err
-	}
-
-	err = tmpl.Execute(f, config)
-	if err != nil {
-		log.Printf("Unable to render codebase deploy template: %v", err)
-		return err
-	}
-
-	log.Printf("Openshift template for codebase %v has been rendered", codebaseSettings.Name)
-	return nil
-}
-
-func copyPipelines(codebaseSettings models.CodebaseSettings, config GerritConfigGoTemplating) error {
+func copyPipelines(codebaseSettings model.CodebaseSettings, config model.GerritConfigGoTemplating) error {
 	pipelinesPath := "/usr/local/bin/pipelines"
 	files, err := ioutil.ReadDir(pipelinesPath)
 	if err != nil {
@@ -292,7 +266,7 @@ func copyPipelines(codebaseSettings models.CodebaseSettings, config GerritConfig
 	return nil
 }
 
-func copySonarConfigs(config GerritConfigGoTemplating, codebaseSettings models.CodebaseSettings) error {
+func copySonarConfigs(config model.GerritConfigGoTemplating, codebaseSettings model.CodebaseSettings) error {
 	sonarConfigPath := fmt.Sprintf("%v/%v/sonar-project.properties", config.TemplatesDir, codebaseSettings.Name)
 
 	if _, err := os.Stat(sonarConfigPath); err == nil {
@@ -320,7 +294,7 @@ func copySonarConfigs(config GerritConfigGoTemplating, codebaseSettings models.C
 	return nil
 }
 
-func commitConfigs(config GerritConfigGoTemplating, appName string) error {
+func commitConfigs(config model.GerritConfigGoTemplating, appName string) error {
 	commitMessage := fmt.Sprintf("Add template for %v", appName)
 	r, err := git.PlainOpen(config.TemplatesDir + "/" + appName)
 	if err != nil {
@@ -351,7 +325,7 @@ func commitConfigs(config GerritConfigGoTemplating, appName string) error {
 	return nil
 }
 
-func pushConfigsToGerrit(gerritConfig GerritConfigGoTemplating, appName string, keyPath string) error {
+func pushConfigsToGerrit(gerritConfig model.GerritConfigGoTemplating, appName string, keyPath string) error {
 	auth, err := Auth(keyPath)
 	if err != nil {
 		return err
@@ -485,11 +459,11 @@ func GetAppImageStream(lang string) (*imageV1.ImageStream, error) {
 	log.Printf("Trying to get image stream %v", lang)
 
 	switch strings.ToLower(lang) {
-	case models.JavaScript:
+	case model.JavaScript:
 		return newS2IReact(lang), nil
-	case models.Java:
+	case model.Java:
 		return newS2IJava(lang), nil
-	case models.DotNet:
+	case model.DotNet:
 		return newS2IDotNet(lang), nil
 	}
 	return nil, nil

@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/epmd-edp/codebase-operator/v2/models"
+	"github.com/epmd-edp/codebase-operator/v2/pkg/model"
 	ClientSet "github.com/epmd-edp/codebase-operator/v2/pkg/openshift"
 	jenkinsApi "github.com/epmd-edp/jenkins-operator/v2/pkg/apis/v2/v1alpha1"
 	jenkinsOperatorSpec "github.com/epmd-edp/jenkins-operator/v2/pkg/service/jenkins/spec"
@@ -28,7 +28,7 @@ func CreateWorkdir(path string) error {
 	return nil
 }
 
-func GetUserSettingsConfigMap(clientSet ClientSet.ClientSet, namespace string) (*models.UserSettings, error) {
+func GetUserSettingsConfigMap(clientSet ClientSet.ClientSet, namespace string) (*model.UserSettings, error) {
 	userSettings, err := clientSet.CoreClient.ConfigMaps(namespace).Get("user-settings", metav1.GetOptions{})
 	if err != nil {
 		errorMsg := fmt.Sprintf("Unable to get user settings configmap: %v", err)
@@ -47,7 +47,7 @@ func GetUserSettingsConfigMap(clientSet ClientSet.ClientSet, namespace string) (
 		log.Println(errorMsg)
 		return nil, errors.New(errorMsg)
 	}
-	return &models.UserSettings{
+	return &model.UserSettings{
 		DnsWildcard:            userSettings.Data["dns_wildcard"],
 		EdpName:                userSettings.Data["edp_name"],
 		EdpVersion:             userSettings.Data["edp_version"],
@@ -55,11 +55,11 @@ func GetUserSettingsConfigMap(clientSet ClientSet.ClientSet, namespace string) (
 		VcsGroupNameUrl:        userSettings.Data["vcs_group_name_url"],
 		VcsIntegrationEnabled:  vcsIntegrationEnabled,
 		VcsSshPort:             userSettings.Data["vcs_ssh_port"],
-		VcsToolName:            models.VCSTool(userSettings.Data["vcs_tool_name"]),
+		VcsToolName:            model.VCSTool(userSettings.Data["vcs_tool_name"]),
 	}, nil
 }
 
-func GetGerritSettingsConfigMap(clientSet ClientSet.ClientSet, namespace string) (*models.GerritSettings, error) {
+func GetGerritSettingsConfigMap(clientSet ClientSet.ClientSet, namespace string) (*model.GerritSettings, error) {
 	gerritSettings, err := clientSet.CoreClient.ConfigMaps(namespace).Get("gerrit", metav1.GetOptions{})
 	sshPort, err := strconv.ParseInt(gerritSettings.Data["sshPort"], 10, 64)
 	if err != nil {
@@ -67,7 +67,7 @@ func GetGerritSettingsConfigMap(clientSet ClientSet.ClientSet, namespace string)
 		log.Println(errorMsg)
 		return nil, errors.New(errorMsg)
 	}
-	return &models.GerritSettings{
+	return &model.GerritSettings{
 		Config:            gerritSettings.Data["config"],
 		ReplicationConfig: gerritSettings.Data["replication.config"],
 		SshPort:           sshPort,
@@ -142,7 +142,7 @@ func CreateGerritPrivateKey(privateKey string, path string) error {
 	return nil
 }
 
-func CreateSshConfig(codebaseSettings models.CodebaseSettings) error {
+func CreateSshConfig(codebaseSettings model.CodebaseSettings) error {
 	var config bytes.Buffer
 	sshPath := "/home/codebase-operator/.ssh"
 	if _, err := os.Stat(sshPath); os.IsNotExist(err) {

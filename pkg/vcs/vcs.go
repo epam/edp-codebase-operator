@@ -2,7 +2,7 @@ package vcs
 
 import (
 	"fmt"
-	"github.com/epmd-edp/codebase-operator/v2/models"
+	"github.com/epmd-edp/codebase-operator/v2/pkg/model"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/vcs/impl/bitbucket"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/vcs/impl/gitlab"
 	"log"
@@ -14,9 +14,9 @@ type VCS interface {
 	GetRepositorySshUrl(groupPath, projectName string) (string, error)
 }
 
-func CreateVCSClient(vcsToolName models.VCSTool, url string, username string, password string) (VCS, error) {
+func CreateVCSClient(vcsToolName model.VCSTool, url string, username string, password string) (VCS, error) {
 	switch vcsToolName {
-	case models.GitLab:
+	case model.GitLab:
 		log.Print("Creating VCS for GitLab implementation...")
 		vcsClient := gitlab.GitLab{}
 		err := vcsClient.Init(url, username, password)
@@ -24,7 +24,7 @@ func CreateVCSClient(vcsToolName models.VCSTool, url string, username string, pa
 			return nil, err
 		}
 		return &vcsClient, nil
-	case models.BitBucket:
+	case model.BitBucket:
 		log.Print("Creating VCS for BitBucket implementation...")
 		vcsClient := bitbucket.BitBucket{}
 		err := vcsClient.Init(url, username, password)
