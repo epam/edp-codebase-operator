@@ -24,6 +24,7 @@ type GitServerSpec struct {
 
 // GitServerStatus defines the observed state of GitServer
 // +k8s:openapi-gen=true
+
 type GitServerStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file

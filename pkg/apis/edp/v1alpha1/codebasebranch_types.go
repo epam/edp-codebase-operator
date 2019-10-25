@@ -21,6 +21,7 @@ type CodebaseBranchSpec struct {
 
 // CodebaseBranchStatus defines the observed state of CodebaseBranch
 // +k8s:openapi-gen=true
+
 type CodebaseBranchStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file

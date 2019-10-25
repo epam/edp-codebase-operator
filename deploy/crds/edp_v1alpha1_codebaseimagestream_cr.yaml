@@ -1,0 +1,5 @@
+apiVersion: v2.edp.epam.com/v1alpha1
+kind: CodebaseImageStream
+metadata:
+  name: example-codebaseimagestream
+spec:
