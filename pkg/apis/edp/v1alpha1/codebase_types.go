@@ -56,18 +56,17 @@ type CodebaseSpec struct {
 
 // CodebaseStatus defines the observed state of Codebase
 // +k8s:openapi-gen=true
-
 type CodebaseStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html
 	Available       bool       `json:"available"`
-	LastTimeUpdated time.Time  `json:"last_time_updated"`
+	LastTimeUpdated time.Time  `json:"lastTimeUpdated"`
 	Status          string     `json:"status"`
 	Username        string     `json:"username"`
 	Action          ActionType `json:"action"`
 	Result          Result     `json:"result"`
-	DetailedMessage string     `json:"detailed_message"`
+	DetailedMessage string     `json:"detailedMessage"`
 	Value           string     `json:"value"`
 }
 

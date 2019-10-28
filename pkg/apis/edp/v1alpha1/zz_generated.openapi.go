@@ -14,9 +14,11 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/epmd-edp/codebase-operator/pkg/apis/edp/v1alpha1.Codebase":                  schema_pkg_apis_edp_v1alpha1_Codebase(ref),
 		"github.com/epmd-edp/codebase-operator/pkg/apis/edp/v1alpha1.CodebaseBranch":            schema_pkg_apis_edp_v1alpha1_CodebaseBranch(ref),
 		"github.com/epmd-edp/codebase-operator/pkg/apis/edp/v1alpha1.CodebaseBranchSpec":        schema_pkg_apis_edp_v1alpha1_CodebaseBranchSpec(ref),
+		"github.com/epmd-edp/codebase-operator/pkg/apis/edp/v1alpha1.CodebaseBranchStatus":      schema_pkg_apis_edp_v1alpha1_CodebaseBranchStatus(ref),
 		"github.com/epmd-edp/codebase-operator/pkg/apis/edp/v1alpha1.CodebaseImageStream":       schema_pkg_apis_edp_v1alpha1_CodebaseImageStream(ref),
 		"github.com/epmd-edp/codebase-operator/pkg/apis/edp/v1alpha1.CodebaseImageStreamSpec":   schema_pkg_apis_edp_v1alpha1_CodebaseImageStreamSpec(ref),
 		"github.com/epmd-edp/codebase-operator/pkg/apis/edp/v1alpha1.CodebaseImageStreamStatus": schema_pkg_apis_edp_v1alpha1_CodebaseImageStreamStatus(ref),
+		"github.com/epmd-edp/codebase-operator/pkg/apis/edp/v1alpha1.CodebaseStatus":            schema_pkg_apis_edp_v1alpha1_CodebaseStatus(ref),
 		"github.com/epmd-edp/codebase-operator/pkg/apis/edp/v1alpha1.GitServer":                 schema_pkg_apis_edp_v1alpha1_GitServer(ref),
 		"github.com/epmd-edp/codebase-operator/pkg/apis/edp/v1alpha1.GitServerSpec":             schema_pkg_apis_edp_v1alpha1_GitServerSpec(ref),
 		"github.com/epmd-edp/codebase-operator/pkg/apis/edp/v1alpha1.Tag":                       schema_pkg_apis_edp_v1alpha1_Tag(ref),
@@ -142,6 +144,63 @@ func schema_pkg_apis_edp_v1alpha1_CodebaseBranchSpec(ref common.ReferenceCallbac
 	}
 }
 
+func schema_pkg_apis_edp_v1alpha1_CodebaseBranchStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "CodebaseBranchStatus defines the observed state of CodebaseBranch",
+				Properties: map[string]spec.Schema{
+					"lastTimeUpdated": {
+						SchemaProps: spec.SchemaProps{
+							Description: "INSERT ADDITIONAL STATUS FIELD - define observed state of cluster Important: Run \"operator-sdk generate k8s\" to regenerate code after modifying this file Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html",
+							Type:        []string{"string"},
+							Format:      "date-time",
+						},
+					},
+					"status": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"username": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"action": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"result": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"detailedMessage": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"value": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+				Required: []string{"lastTimeUpdated", "status", "username", "action", "result", "detailedMessage", "value"},
+			},
+		},
+		Dependencies: []string{},
+	}
+}
+
 func schema_pkg_apis_edp_v1alpha1_CodebaseImageStream(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -225,6 +284,69 @@ func schema_pkg_apis_edp_v1alpha1_CodebaseImageStreamStatus(ref common.Reference
 			SchemaProps: spec.SchemaProps{
 				Description: "CodebaseImageStreamStatus defines the observed state of CodebaseImageStream",
 				Properties:  map[string]spec.Schema{},
+			},
+		},
+		Dependencies: []string{},
+	}
+}
+
+func schema_pkg_apis_edp_v1alpha1_CodebaseStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "CodebaseStatus defines the observed state of Codebase",
+				Properties: map[string]spec.Schema{
+					"available": {
+						SchemaProps: spec.SchemaProps{
+							Description: "INSERT ADDITIONAL STATUS FIELD - define observed state of cluster Important: Run \"operator-sdk generate k8s\" to regenerate code after modifying this file Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"lastTimeUpdated": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "date-time",
+						},
+					},
+					"status": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"username": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"action": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"result": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"detailedMessage": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"value": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+				Required: []string{"available", "lastTimeUpdated", "status", "username", "action", "result", "detailedMessage", "value"},
 			},
 		},
 		Dependencies: []string{},
