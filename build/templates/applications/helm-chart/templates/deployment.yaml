@@ -25,7 +25,7 @@ spec:
             serviceAccountName: {{ .Values.name }}
             containers:
                 - name: {{ .Values.name }}
-                  image: "docker-registry.default.svc:5000/{{ .Values.image.name }}:{{ .Values.image.version }}"
+                  image: "{{ .Values.image.name }}:{{ .Values.image.version }}"
                   imagePullPolicy: Always
                   ports:
                       - containerPort: 8080
