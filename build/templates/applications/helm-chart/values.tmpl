@@ -1,5 +1,7 @@
 name: {{.CodebaseSettings.Name}}
 namespace: ""
+cdPipelineName: ""
+cdPipelineStageName: ""
 dnsWildcard: {{.CodebaseSettings.UserSettings.DnsWildcard}}
 {{if and .Database (ne .CodebaseSettings.Lang "javascript")}}
 {{if eq .Database.Kind "PostgreSQL"}}
