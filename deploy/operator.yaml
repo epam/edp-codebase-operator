@@ -12,12 +12,19 @@ spec:
       labels:
         name: codebase-operator-v2
     spec:
+      securityContext:
+        runAsUser: 999 
+        runAsNonRoot: true
+        runAsGroup: 999
+        fsGroup: 999
       serviceAccountName: edp
       containers:
         - name: codebase-operator-v2
           # Replace this with the built image name
           image: REPLACE_IMAGE
           imagePullPolicy: Always
+          securityContext:
+            allowPrivilegeEscalation: false
           env:
             - name: WATCH_NAMESPACE
               value: REPLACE_VALUE
