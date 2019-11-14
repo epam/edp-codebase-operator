@@ -5,8 +5,8 @@ metadata:
 spec:
   gitHost: "https://git.epam.com"
   gitUser: "git user name"
-  httpsPort: "443"
-  sshPort: "58291"
+  httpsPort: 443
+  sshPort: 58291
   nameSshKeySecret: "secret name"
   createCodeReviewPipeline: false
 status:

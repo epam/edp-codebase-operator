@@ -417,14 +417,14 @@ func schema_pkg_apis_edp_v1alpha1_GitServerSpec(ref common.ReferenceCallback) co
 					},
 					"httpsPort": {
 						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
+							Type:   []string{"integer"},
+							Format: "int32",
 						},
 					},
 					"sshPort": {
 						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
+							Type:   []string{"integer"},
+							Format: "int32",
 						},
 					},
 					"nameSshKeySecret": {

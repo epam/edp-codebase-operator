@@ -58,7 +58,7 @@ type VCSTool string
 type GerritSettings struct {
 	Config            string `json:"config"`
 	ReplicationConfig string `json:"replication_config"`
-	SshPort           int64  `json:"ssh_port"`
+	SshPort           int32  `json:"ssh_port"`
 }
 
 const (

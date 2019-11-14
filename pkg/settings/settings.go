@@ -70,7 +70,7 @@ func GetGerritSettingsConfigMap(clientSet ClientSet.ClientSet, namespace string)
 	return &model.GerritSettings{
 		Config:            gerritSettings.Data["config"],
 		ReplicationConfig: gerritSettings.Data["replication.config"],
-		SshPort:           sshPort,
+		SshPort:           int32(sshPort),
 	}, nil
 }
 

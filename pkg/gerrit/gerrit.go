@@ -19,7 +19,6 @@ import (
 	"net"
 	"os"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
-	"strconv"
 	"time"
 )
 
@@ -36,7 +35,7 @@ type SSHCommand struct {
 type SSHClient struct {
 	Config *ssh.ClientConfig
 	Host   string
-	Port   int64
+	Port   int32
 }
 
 type ReplicationConfigParams struct {
@@ -48,7 +47,7 @@ type GitSshData struct {
 	Host string
 	User string
 	Key  string
-	Port int64
+	Port int32
 }
 
 const (
@@ -108,7 +107,7 @@ func PublicKeyFile(file string) ssh.AuthMethod {
 	return ssh.PublicKeys(key)
 }
 
-func SshInit(keyPath string, host string, port int64) (SSHClient, error) {
+func SshInit(keyPath string, host string, port int32) (SSHClient, error) {
 	sshConfig := &ssh.ClientConfig{
 		User: "project-creator",
 		Auth: []ssh.AuthMethod{
@@ -127,7 +126,7 @@ func SshInit(keyPath string, host string, port int64) (SSHClient, error) {
 	return *client, nil
 }
 
-func CheckProjectExist(keyPath string, host string, port int64, appName string) (*bool, error) {
+func CheckProjectExist(keyPath string, host string, port int32, appName string) (*bool, error) {
 	var raw map[string]interface{}
 
 	command := "gerrit ls-projects --format json"
@@ -161,7 +160,7 @@ func CheckProjectExist(keyPath string, host string, port int64, appName string) 
 	return &isExist, nil
 }
 
-func CreateProject(keyPath string, host string, port int64, appName string) error {
+func CreateProject(keyPath string, host string, port int32, appName string) error {
 	command := fmt.Sprintf("gerrit create-project %v", appName)
 	cmd := &SSHCommand{
 		Path:   command,
@@ -183,8 +182,8 @@ func CreateProject(keyPath string, host string, port int64, appName string) erro
 	return nil
 }
 
-func AddRemoteLinkToGerrit(repoPath string, host string, port int64, appName string) error {
-	remoteUrl := fmt.Sprintf("ssh://project-creator@%v:%v/%v", host, strconv.FormatInt(port, 10), appName)
+func AddRemoteLinkToGerrit(repoPath string, host string, port int32, appName string) error {
+	remoteUrl := fmt.Sprintf("ssh://project-creator@%v:%v/%v", host, port, appName)
 	r, err := git.PlainOpen(repoPath)
 	if err != nil {
 		log.Println(err)
@@ -309,7 +308,7 @@ func SetupProjectReplication(codebaseSettings model.CodebaseSettings, clientSet 
 	return nil
 }
 
-func reloadReplicationPlugin(keyPath string, host string, port int64) error {
+func reloadReplicationPlugin(keyPath string, host string, port int32) error {
 	command := "gerrit plugin reload replication"
 
 	cmd := &SSHCommand{

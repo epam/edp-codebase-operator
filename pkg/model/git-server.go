@@ -4,7 +4,6 @@ import (
 	"errors"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -25,8 +24,8 @@ type ActionLog struct {
 type GitServer struct {
 	GitHost                  string
 	GitUser                  string
-	HttpsPort                int64
-	SshPort                  int64
+	HttpsPort                int32
+	SshPort                  int32
 	NameSshKeySecret         string
 	CreateCodeReviewPipeline bool
 	ActionLog                ActionLog
@@ -37,7 +36,7 @@ type GitServer struct {
 type RepositoryData struct {
 	User          string
 	Key           string
-	Port          int64
+	Port          int32
 	RepositoryUrl string
 	FolderToClone string
 }
@@ -55,8 +54,8 @@ func ConvertToGitServer(k8sObj v1alpha1.GitServer) (*GitServer, error) {
 	gitServer := GitServer{
 		GitHost:                  spec.GitHost,
 		GitUser:                  spec.GitUser,
-		HttpsPort:                convertToInt(spec.HttpsPort),
-		SshPort:                  convertToInt(spec.SshPort),
+		HttpsPort:                spec.HttpsPort,
+		SshPort:                  spec.SshPort,
 		NameSshKeySecret:         spec.NameSshKeySecret,
 		CreateCodeReviewPipeline: spec.CreateCodeReviewPipeline,
 		ActionLog:                *actionLog,
@@ -67,10 +66,6 @@ func ConvertToGitServer(k8sObj v1alpha1.GitServer) (*GitServer, error) {
 	return &gitServer, nil
 }
 
-func convertToInt(val string) int64 {
-	res, _ := strconv.ParseInt(val, 10, 64)
-	return res
-}
 func convertGitServerActionLog(status v1alpha1.GitServerStatus) *ActionLog {
 	if &status == nil {
 		return nil

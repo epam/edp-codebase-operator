@@ -16,8 +16,8 @@ type GitServerSpec struct {
 	// Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html
 	GitHost                  string `json:"gitHost"`
 	GitUser                  string `json:"gitUser"`
-	HttpsPort                string `json:"httpsPort"`
-	SshPort                  string `json:"sshPort"`
+	HttpsPort                int32  `json:"httpsPort"`
+	SshPort                  int32  `json:"sshPort"`
 	NameSshKeySecret         string `json:"nameSshKeySecret"`
 	CreateCodeReviewPipeline bool   `json:"createCodeReviewPipeline"`
 }
