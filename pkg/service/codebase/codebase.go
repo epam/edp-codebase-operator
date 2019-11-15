@@ -91,7 +91,7 @@ func (s CodebaseService) Create() error {
 
 	cs, err := s.initCodebaseSettings()
 	if err != nil {
-		setFailedFields(s, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
+		setFailedFields(s, edpv1alpha1.JenkinsConfiguration, err.Error())
 		return errWrap.Wrap(err, "an error has been occurred while initializing codebase settings")
 	}
 	log.Printf("Codebase settings are set up for %v codebase", cs.Name)

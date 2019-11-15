@@ -87,6 +87,8 @@ func (r *ReconcileCodebaseBranch) Reconcile(request reconcile.Request) (reconcil
 		// Error reading the object - requeue the request.
 		return reconcile.Result{}, err
 	}
+	defer r.updateStatus(instance)
+
 	app, err := r.getApplicationByBranch(*instance)
 
 	if err != nil {
@@ -104,13 +106,6 @@ func (r *ReconcileCodebaseBranch) Reconcile(request reconcile.Request) (reconcil
 		log.Fatalf("[ERROR] Cannot get codebase branch %s. Reason: %s", request.Name, err)
 	}
 	codebaseBranch.Create(instance)
-	err = r.client.Status().Update(context.TODO(), instance)
-	if err != nil {
-		err = r.client.Update(context.TODO(), instance)
-		if err != nil {
-			log.Printf("[ERROR] Cannot update status of the branch: %v status", instance.Name)
-		}
-	}
 
 	log.Printf("Reconciling CodebaseBranch %s/%s has been finished", request.Namespace, request.Name)
 	return reconcile.Result{}, nil
@@ -134,4 +129,11 @@ func getCodebaseBranchService(r *ReconcileCodebaseBranch) (CodebaseBranchService
 	return impl.CodebaseBranchService{
 		r.client,
 	}, nil
+}
+
+func (r *ReconcileCodebaseBranch) updateStatus(instance *edpv1alpha1.CodebaseBranch) {
+	err := r.client.Status().Update(context.TODO(), instance)
+	if err != nil {
+		_ = r.client.Update(context.TODO(), instance)
+	}
 }

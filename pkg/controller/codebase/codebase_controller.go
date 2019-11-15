@@ -134,6 +134,8 @@ func (r *ReconcileCodebase) Reconcile(request reconcile.Request) (reconcile.Resu
 		return reconcile.Result{}, err
 	}
 
+	defer r.updateStatus(instance)
+
 	c, err := getCodebase(instance, r)
 	if err != nil {
 		log.Fatalf("[ERROR] Cannot get codebase %s. Reason: %s", request.Name, err)
@@ -144,12 +146,14 @@ func (r *ReconcileCodebase) Reconcile(request reconcile.Request) (reconcile.Resu
 		return reconcile.Result{}, errWrap.Wrap(err, "an error has occurred while executing Create method")
 	}
 
-	err = r.client.Status().Update(context.TODO(), instance)
-	if err != nil {
-		_ = r.client.Update(context.TODO(), instance)
-	}
-
 	log.Printf("Reconciling codebase %s/%s has been finished", request.Namespace, request.Name)
 
 	return reconcile.Result{}, nil
+}
+
+func (r *ReconcileCodebase) updateStatus(instance *edpv1alpha1.Codebase) {
+	err := r.client.Status().Update(context.TODO(), instance)
+	if err != nil {
+		_ = r.client.Update(context.TODO(), instance)
+	}
 }
