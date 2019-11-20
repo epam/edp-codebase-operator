@@ -29,7 +29,7 @@ func CreateWorkdir(path string) error {
 }
 
 func GetUserSettingsConfigMap(clientSet ClientSet.ClientSet, namespace string) (*model.UserSettings, error) {
-	userSettings, err := clientSet.CoreClient.ConfigMaps(namespace).Get("user-settings", metav1.GetOptions{})
+	userSettings, err := clientSet.CoreClient.ConfigMaps(namespace).Get("edp-config", metav1.GetOptions{})
 	if err != nil {
 		errorMsg := fmt.Sprintf("Unable to get user settings configmap: %v", err)
 		log.Println(errorMsg)
