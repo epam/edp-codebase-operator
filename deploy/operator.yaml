@@ -13,10 +13,10 @@ spec:
         name: codebase-operator-v2
     spec:
       securityContext:
-        runAsUser: 999 
+        runAsUser: 1001 
         runAsNonRoot: true
-        runAsGroup: 999
-        fsGroup: 999
+        runAsGroup: 1001
+        fsGroup: 1001
       serviceAccountName: edp
       containers:
         - name: codebase-operator-v2
