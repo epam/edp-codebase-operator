@@ -455,6 +455,30 @@ func newS2IDotNet(lang string) *imageV1.ImageStream {
 	}
 }
 
+func newS2IGroovyPipeline(lang string) *imageV1.ImageStream {
+	return &imageV1.ImageStream{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "s2i-" + strings.ToLower(lang),
+		},
+		Spec: imageV1.ImageStreamSpec{
+			LookupPolicy: imageV1.ImageLookupPolicy{
+				Local: false,
+			},
+			Tags: []imageV1.TagReference{{
+				Name:        "latest",
+				Annotations: nil,
+				From: &corev1.ObjectReference{
+					Kind: "DockerImage",
+					Name: "epamedp/s2i-java:latest",
+				},
+				ReferencePolicy: imageV1.TagReferencePolicy{
+					Type: "Source",
+				},
+			}},
+		},
+	}
+}
+
 func GetAppImageStream(lang string) (*imageV1.ImageStream, error) {
 	log.Printf("Trying to get image stream %v", lang)
 
@@ -465,6 +489,8 @@ func GetAppImageStream(lang string) (*imageV1.ImageStream, error) {
 		return newS2IJava(lang), nil
 	case model.DotNet:
 		return newS2IDotNet(lang), nil
+	case model.GroovyPipeline:
+		return newS2IGroovyPipeline(lang), nil
 	}
 	return nil, nil
 }

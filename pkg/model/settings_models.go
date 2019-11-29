@@ -69,7 +69,8 @@ const (
 	StatusFailed             = "failed"
 	StatusReopened           = "reopened"
 	StatusFinished           = "created"
-	JavaScript       string  = "javascript"
-	Java             string  = "java"
-	DotNet           string  = "dotnet"
+	JavaScript               = "javascript"
+	Java                     = "java"
+	DotNet                   = "dotnet"
+	GroovyPipeline           = "groovy-pipeline"
 )

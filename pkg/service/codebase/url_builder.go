@@ -48,11 +48,13 @@ func buildRepoUrl(baseUrl string, spec v1alpha1.CodebaseSpec) string {
 }
 
 func setLibraryFramework(lang string) string {
-	frameworks := []string{"springboot", "react", "netcore"}
+	frameworks := []string{"springboot", "react", "groovy", "netcore"}
 	if lang == "java" {
 		return frameworks[0]
 	} else if lang == "javascript" {
 		return frameworks[1]
+	} else if lang == "groovy-pipeline" {
+		return frameworks[2]
 	}
-	return frameworks[2]
+	return frameworks[3]
 }

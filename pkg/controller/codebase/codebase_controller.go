@@ -29,7 +29,7 @@ import (
 
 var allowedCodebaseSettings = map[string][]string{
 	"add_repo_strategy": {"create", "clone", "import"},
-	"language":          {"java", "dotnet", "javascript", "other"},
+	"language":          {"java", "dotnet", "javascript", "groovy-pipeline", "other"},
 }
 
 func containSettings(slice []string, value string) bool {
