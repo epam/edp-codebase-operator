@@ -55,6 +55,8 @@ const (
 	OtherLanguage       = "other"
 
 	OpenshiftTemplate = "openshift-template"
+
+	GithubDomain = "https://github.com/epmd-edp"
 )
 
 func (s CodebaseService) Create() error {
@@ -89,33 +91,44 @@ func (s CodebaseService) Create() error {
 	}
 	log.Println("Status of codebase CR has been changed to 'in progress'")
 
-	cs, err := s.initCodebaseSettings()
-	if err != nil {
-		setFailedFields(s, edpv1alpha1.JenkinsConfiguration, err.Error())
-		return errWrap.Wrap(err, "an error has been occurred while initializing codebase settings")
+	wd := fmt.Sprintf("/home/codebase-operator/edp/%v/%v", s.CustomResource.Namespace, s.CustomResource.Name)
+	if err := settings.CreateWorkdir(wd); err != nil {
+		return err
 	}
-	log.Printf("Codebase settings are set up for %v codebase", cs.Name)
 
-	if cs.Strategy == ImportStrategy {
-		err = s.pushBuildConfigs(cs)
-		if err != nil {
+	if sp.Strategy == ImportStrategy {
+		if err := s.pushBuildConfigs(); err != nil {
 			setFailedFields(s, edpv1alpha1.SetupDeploymentTemplates, err.Error())
 			return errWrap.Wrap(err, "an error has been occurred while pushing build configs")
 		}
 	} else {
-		err = s.gerritConfiguration(cs)
+		gs, err := settings.GetGerritSettingsConfigMap(*s.ClientSet, s.CustomResource.Namespace)
 		if err != nil {
+			return err
+		}
+
+		us, err := settings.GetUserSettingsConfigMap(*s.ClientSet, s.CustomResource.Namespace)
+		if err != nil {
+			return err
+		}
+
+		if err := s.gerritConfiguration(us, gs); err != nil {
 			setFailedFields(s, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
 			return errWrap.Wrap(err, "Error has been occurred in gerrit configuration")
 		}
 		setIntermediateSuccessFields(s, edpv1alpha1.GerritRepositoryProvisioning)
 		log.Println("Gerrit has been configured")
 
-		err = s.trySetupPerf(*cs)
+		if err := s.trySetupPerf(us); err != nil {
+			return err
+		}
 
-		config, err := gerrit.ConfigInit(*cs, s.CustomResource.Spec)
-		err = gerrit.PushConfigs(*config, *cs, *s.ClientSet)
+		config, err := gerrit.ConfigInit(us.DnsWildcard, gs.SshPort, *s.CustomResource)
 		if err != nil {
+			return err
+		}
+
+		if err := gerrit.PushConfigs(*s.CustomResource, gs.SshPort, *config, *s.ClientSet); err != nil {
 			setFailedFields(s, edpv1alpha1.SetupDeploymentTemplates, err.Error())
 			return err
 		}
@@ -123,22 +136,27 @@ func (s CodebaseService) Create() error {
 		log.Println("Pipelines and templates has been pushed to Gerrit")
 	}
 
-	sshLink := s.generateSshLink(*cs)
+	gs, err := s.getGitServerCR()
+	if err != nil {
+		return err
+	}
+
+	sshLink := s.generateSshLink(gs)
 	log.Printf("Repository path: %v", sshLink)
 
-	err = s.triggerJobProvisioning(model.Jenkins{
-		JenkinsUrl:      cs.JenkinsUrl,
-		JenkinsUsername: cs.JenkinsUsername,
-		JenkinsToken:    cs.JenkinsToken,
-		JobName:         cs.JobProvisioning,
-	},
+	j, err := s.getJenkinsData(err)
+	if err != nil {
+		return err
+	}
+
+	err = s.triggerJobProvisioning(*j,
 		map[string]string{
 			"PARAM":                 "true",
 			"NAME":                  s.CustomResource.Name,
 			"BUILD_TOOL":            strings.ToLower(s.CustomResource.Spec.BuildTool),
-			"GIT_SERVER_CR_NAME":    cs.GitServer.Name,
+			"GIT_SERVER_CR_NAME":    gs.Name,
 			"GIT_SERVER_CR_VERSION": "v2",
-			"GIT_CREDENTIALS_ID":    cs.GitServer.NameSshKeySecret,
+			"GIT_CREDENTIALS_ID":    gs.NameSshKeySecret,
 			"REPOSITORY_PATH":       sshLink,
 		})
 	if err != nil {
@@ -148,11 +166,11 @@ func (s CodebaseService) Create() error {
 	setIntermediateSuccessFields(s, edpv1alpha1.JenkinsConfiguration)
 	log.Println("Job provisioning has been triggered")
 
-	err = os.RemoveAll(cs.WorkDir)
+	err = os.RemoveAll(wd)
 	if err != nil {
 		return err
 	}
-	log.Printf("Workdir %v has been cleaned", cs.WorkDir)
+	log.Printf("Workdir %v has been cleaned", wd)
 
 	s.CustomResource.Status = edpv1alpha1.CodebaseStatus{
 		Status:          StatusFinished,
@@ -167,32 +185,71 @@ func (s CodebaseService) Create() error {
 	return nil
 }
 
-func (s CodebaseService) generateSshLink(codebaseSettings model.CodebaseSettings) string {
-	return fmt.Sprintf("ssh://%v@%v:%v%v", codebaseSettings.GitServer.GitUser, codebaseSettings.GitServer.GitHost,
-		codebaseSettings.GitServer.SshPort, codebaseSettings.RepositoryPath)
+func (s CodebaseService) getJenkinsData(err error) (*model.Jenkins, error) {
+	jen, err := settings.GetJenkins(s.Client, s.CustomResource.Namespace)
+	if err != nil {
+		return nil, err
+	}
+	jt, ju, err := settings.GetJenkinsCreds(*jen, *s.ClientSet,
+		s.CustomResource.Namespace)
+	if err != nil {
+		return nil, err
+	}
+	jurl := settings.GetJenkinsUrl(*jen, s.CustomResource.Namespace)
+
+	return &model.Jenkins{
+		JenkinsUrl:      jurl,
+		JenkinsUsername: ju,
+		JenkinsToken:    jt,
+		JobName:         s.CustomResource.Spec.JobProvisioning,
+	}, nil
 }
 
-func (s CodebaseService) pushBuildConfigs(codebaseSettings *model.CodebaseSettings) error {
-	log.Println("Start pushing build configs to remote git server...")
+func (s CodebaseService) generateSshLink(gs *model.GitServer) string {
+	return fmt.Sprintf("ssh://%v@%v:%v%v", gs.GitUser, gs.GitHost, gs.SshPort, s.getRepositoryPath())
+}
 
-	gitServer := codebaseSettings.GitServer
-
-	secret, err := s.OpenshiftService.GetSecret(gitServer.NameSshKeySecret, codebaseSettings.CicdNamespace)
+func (s CodebaseService) getGitServerCR() (*model.GitServer, error) {
+	gitSec, err := s.OpenshiftService.GetGitServer(s.CustomResource.Spec.GitServer, s.CustomResource.Namespace)
 	if err != nil {
-		return errWrap.Wrap(err, fmt.Sprintf("an error has occurred  while getting %v secret", gitServer.NameSshKeySecret))
+		return nil, errWrap.Wrapf(err, "an error has occurred while getting Git Server CR for %v codebase",
+			s.CustomResource.Name)
 	}
 
-	templatesDir := fmt.Sprintf("%v/%v", codebaseSettings.WorkDir, getTemplateFolderName(codebaseSettings.DeploymentScript))
-	err = util.CreateDirectory(templatesDir)
+	gs, err := model.ConvertToGitServer(*gitSec)
 	if err != nil {
+		return nil, errWrap.Wrapf(err, "an error has occurred while converting request Git Server to DTO for %v codebase",
+			s.CustomResource.Name)
+	}
+
+	return gs, nil
+}
+
+func (s CodebaseService) pushBuildConfigs() error {
+	log.Println("Start pushing build configs to remote git server...")
+
+	gs, err := s.getGitServerCR()
+	if err != nil {
+		return err
+	}
+
+	secret, err := s.OpenshiftService.GetSecret(gs.NameSshKeySecret, s.CustomResource.Namespace)
+	if err != nil {
+		return errWrap.Wrap(err, fmt.Sprintf("an error has occurred  while getting %v secret", gs.NameSshKeySecret))
+	}
+
+	wd := fmt.Sprintf("/home/codebase-operator/edp/%v/%v", s.CustomResource.Namespace, s.CustomResource.Name)
+	templatesDir := fmt.Sprintf("%v/%v", wd, getTemplateFolderName(s.CustomResource.Spec.DeploymentScript))
+
+	if err := util.CreateDirectory(templatesDir); err != nil {
 		return errWrap.Wrap(err, fmt.Sprintf("an error has occurred while creating folder %v", templatesDir))
 	}
 
-	pathToCopiedGitFolder := fmt.Sprintf("%v/%v", templatesDir, codebaseSettings.Name)
+	pathToCopiedGitFolder := fmt.Sprintf("%v/%v", templatesDir, s.CustomResource.Name)
 
 	log.Printf("Path to local Git folder: %v", pathToCopiedGitFolder)
 
-	repoData := collectRepositoryData(gitServer, secret, *s.CustomResource.Spec.GitUrlPath, pathToCopiedGitFolder)
+	repoData := collectRepositoryData(*gs, secret, *s.CustomResource.Spec.GitUrlPath, pathToCopiedGitFolder)
 
 	log.Printf("Repo data is collected: repo url %v; port %v; user %v", repoData.RepositoryUrl, repoData.Port, repoData.User)
 
@@ -201,39 +258,37 @@ func (s CodebaseService) pushBuildConfigs(codebaseSettings *model.CodebaseSettin
 		return errWrap.Wrap(err, fmt.Sprintf("an error has occurred while cloning repository %v", repoData.RepositoryUrl))
 	}
 
-	appTemplatesDir := fmt.Sprintf("%v/%v/deploy-templates", fmt.Sprintf("%v/%v", codebaseSettings.WorkDir, getTemplateFolderName(codebaseSettings.DeploymentScript)),
-		codebaseSettings.Name)
-	err = util.CreateDirectory(appTemplatesDir)
-	if err != nil {
+	appTemplatesDir := fmt.Sprintf("%v/%v/deploy-templates", fmt.Sprintf("%v/%v", wd, getTemplateFolderName(s.CustomResource.Spec.DeploymentScript)),
+		s.CustomResource.Name)
+
+	if err := util.CreateDirectory(appTemplatesDir); err != nil {
 		return errWrap.Wrap(err, fmt.Sprintf("an error has occurred while creating template folder %v", templatesDir))
 	}
 
-	if codebaseSettings.Type == Application {
-		templateConfig := s.buildTemplateConfig(*codebaseSettings)
-
-		err = util.CopyTemplate(templateConfig)
+	if s.CustomResource.Spec.Type == Application {
+		tc, err := s.buildTemplateConfig()
 		if err != nil {
+			return errWrap.Wrap(err, "an error has occurred while building template config")
+		}
+
+		if err := util.CopyTemplate(*tc); err != nil {
 			return errWrap.Wrap(err, "an error has occurred while copying template")
 		}
 	}
 
-	err = util.CopyPipelines(codebaseSettings.Type, PipelinesSourcePath, pathToCopiedGitFolder)
-	if err != nil {
+	if err := util.CopyPipelines(s.CustomResource.Spec.Type, PipelinesSourcePath, pathToCopiedGitFolder); err != nil {
 		return errWrap.Wrap(err, "an error has occurred while copying pipelines")
 	}
 
-	err = s.GitServerService.CommitChanges(pathToCopiedGitFolder)
-	if err != nil {
+	if err := s.GitServerService.CommitChanges(pathToCopiedGitFolder); err != nil {
 		return errWrap.Wrap(err, "an error has occurred while commiting changes")
 	}
 
-	err = s.GitServerService.PushChanges(repoData, pathToCopiedGitFolder)
-	if err != nil {
+	if err := s.GitServerService.PushChanges(repoData, pathToCopiedGitFolder); err != nil {
 		return errWrap.Wrap(err, "an error has occurred while pushing changes")
 	}
 
-	err = s.trySetupS2I(*codebaseSettings)
-	if err != nil {
+	if err := s.trySetupS2I(); err != nil {
 		return err
 	}
 
@@ -248,28 +303,38 @@ func getTemplateFolderName(deploymentScript string) string {
 	return "oc-templates"
 }
 
-func (s CodebaseService) trySetupS2I(cs model.CodebaseSettings) error {
-	if cs.Type != Application || cs.Lang == OtherLanguage {
+func (s CodebaseService) trySetupS2I() error {
+	if s.CustomResource.Spec.Type != Application || strings.ToLower(s.CustomResource.Spec.Lang) == OtherLanguage {
 		return nil
 	}
 	if platform.IsK8S() {
 		return nil
 	}
-	is, err := gerrit.GetAppImageStream(cs.Lang)
+	is, err := gerrit.GetAppImageStream(strings.ToLower(s.CustomResource.Spec.Lang))
 	if err != nil {
 		return err
 	}
-	return gerrit.CreateS2IImageStream(*s.ClientSet, cs.Name, cs.CicdNamespace, is)
+	return gerrit.CreateS2IImageStream(*s.ClientSet, s.CustomResource.Name, s.CustomResource.Namespace, is)
 }
 
-func (s CodebaseService) buildTemplateConfig(codebaseSettings model.CodebaseSettings) model.GerritConfigGoTemplating {
+func (s CodebaseService) buildTemplateConfig() (*model.GerritConfigGoTemplating, error) {
 	log.Print("Start configuring template config ...")
+
+	us, err := settings.GetUserSettingsConfigMap(*s.ClientSet, s.CustomResource.Namespace)
+	if err != nil {
+		return nil, err
+	}
+
 	sp := s.CustomResource.Spec
 	config := model.GerritConfigGoTemplating{
 		Lang:             sp.Lang,
 		Framework:        sp.Framework,
 		BuildTool:        sp.BuildTool,
-		CodebaseSettings: codebaseSettings,
+		DeploymentScript: s.CustomResource.Spec.DeploymentScript,
+		WorkDir: fmt.Sprintf("/home/codebase-operator/edp/%v/%v",
+			s.CustomResource.Namespace, s.CustomResource.Name),
+		DnsWildcard: us.DnsWildcard,
+		Name:        s.CustomResource.Name,
 	}
 	if sp.Repository != nil {
 		config.RepositoryUrl = &sp.Repository.Url
@@ -283,7 +348,7 @@ func (s CodebaseService) buildTemplateConfig(codebaseSettings model.CodebaseSett
 
 	log.Print("Gerrit config has been initialized")
 
-	return config
+	return &config, nil
 }
 
 func (s CodebaseService) triggerJobProvisioning(data model.Jenkins, parameters map[string]string) error {
@@ -314,98 +379,6 @@ func collectRepositoryData(gitServer model.GitServer, secret *v1.Secret, project
 	}
 }
 
-func (s CodebaseService) initCodebaseSettings() (*model.CodebaseSettings, error) {
-	var (
-		workDir = fmt.Sprintf("/home/codebase-operator/edp/%v/%v", s.CustomResource.Namespace, s.CustomResource.Name)
-	)
-
-	err := settings.CreateWorkdir(workDir)
-	if err != nil {
-		return nil, err
-	}
-
-	cs := model.CodebaseSettings{}
-	cs.WorkDir = workDir
-	cs.Lang = strings.ToLower(s.CustomResource.Spec.Lang)
-	cs.Name = s.CustomResource.Name
-	cs.Type = s.CustomResource.Spec.Type
-	cs.CicdNamespace = s.CustomResource.Namespace
-	cs.RepositoryPath = s.getRepositoryPath()
-	cs.JobProvisioning = s.CustomResource.Spec.JobProvisioning
-	cs.Strategy = string(s.CustomResource.Spec.Strategy)
-	cs.DeploymentScript = s.CustomResource.Spec.DeploymentScript
-
-	if cs.Type == Application {
-		cs.Framework = *s.CustomResource.Spec.Framework
-	}
-
-	jen, err := settings.GetJenkins(s.Client, s.CustomResource.Namespace)
-	if err != nil {
-		return nil, err
-	}
-	cs.JenkinsToken, cs.JenkinsUsername, err = settings.GetJenkinsCreds(*jen, *s.ClientSet,
-		s.CustomResource.Namespace)
-	if err != nil {
-		return nil, err
-	}
-	cs.JenkinsUrl = settings.GetJenkinsUrl(*jen, s.CustomResource.Namespace)
-
-	userSettings, err := settings.GetUserSettingsConfigMap(*s.ClientSet, s.CustomResource.Namespace)
-	if err != nil {
-		return nil, err
-	}
-	cs.UserSettings = *userSettings
-
-	if cs.UserSettings.VcsIntegrationEnabled {
-		VcsGroupNameUrl, err := url.Parse(cs.UserSettings.VcsGroupNameUrl)
-		if err != nil {
-			log.Print(err)
-		}
-		cs.ProjectVcsHostname = VcsGroupNameUrl.Host
-		cs.ProjectVcsGroupPath = VcsGroupNameUrl.Path[1:len(VcsGroupNameUrl.Path)]
-		cs.ProjectVcsHostnameUrl = VcsGroupNameUrl.Scheme + "://" + cs.ProjectVcsHostname
-		cs.VcsProjectPath = cs.ProjectVcsGroupPath + "/" + s.CustomResource.Name
-		cs.VcsKeyPath = cs.WorkDir + "/vcs-private.key"
-
-		cs.VcsAutouserSshKey, cs.VcsAutouserEmail, err = settings.GetVcsCredentials(*s.ClientSet,
-			s.CustomResource.Namespace)
-	} else {
-		log.Printf("VCS integration isn't enabled")
-	}
-
-	if s.CustomResource.Spec.Strategy != ImportStrategy {
-		cs.BasicPatternUrl = "https://github.com/epmd-edp"
-		cs.GerritHost = fmt.Sprintf("gerrit.%v", cs.CicdNamespace)
-		cs.GerritKeyPath = fmt.Sprintf("%v/gerrit-private.key", cs.WorkDir)
-
-		gerritSettings, err := settings.GetGerritSettingsConfigMap(*s.ClientSet, s.CustomResource.Namespace)
-		if err != nil {
-			return nil, err
-		}
-		cs.GerritSettings = *gerritSettings
-
-		cs.GerritPrivateKey, cs.GerritPublicKey, err = settings.GetGerritCredentials(*s.ClientSet,
-			s.CustomResource.Namespace)
-	}
-
-	gitServerRequest, err := s.OpenshiftService.GetGitServer(s.CustomResource.Spec.GitServer, cs.CicdNamespace)
-	if err != nil {
-		return nil, errWrap.Wrapf(err, "an error has occurred while getting Git Server CR for %v codebase",
-			cs.Name)
-	}
-
-	gitServer, err := model.ConvertToGitServer(*gitServerRequest)
-	if err != nil {
-		return nil, errWrap.Wrapf(err, "an error has occurred while converting request Git Server to DTO for %v codebase",
-			cs.Name)
-	}
-	cs.GitServer = *gitServer
-
-	log.Printf("Retrieving settings has been finished.")
-
-	return &cs, nil
-}
-
 func (s CodebaseService) getRepositoryPath() string {
 	if s.CustomResource.Spec.Strategy == ImportStrategy {
 		return *s.CustomResource.Spec.GitUrlPath
@@ -413,27 +386,39 @@ func (s CodebaseService) getRepositoryPath() string {
 	return "/" + s.CustomResource.Name
 }
 
-func (s CodebaseService) gerritConfiguration(codebaseSettings *model.CodebaseSettings) error {
-	log.Printf("Start gerrit configuration for codebase: %v...", codebaseSettings.Name)
+func (s CodebaseService) gerritConfiguration(us *model.UserSettings, gs *model.GerritSettings) error {
+	log.Printf("Start gerrit configuration for codebase: %v...", s.CustomResource.Name)
 
-	log.Printf("Start creation of gerrit private key for codebase: %v...", codebaseSettings.Name)
-	err := settings.CreateGerritPrivateKey(codebaseSettings.GerritPrivateKey, codebaseSettings.GerritKeyPath)
+	gprk, _, err := settings.GetGerritCredentials(*s.ClientSet, s.CustomResource.Namespace)
 	if err != nil {
-		log.Printf("Creation of gerrit private key for codebase %v has been failed. Return error", codebaseSettings.Name)
 		return err
 	}
-	log.Printf("Start creation of ssh config for codebase: %v...", codebaseSettings.Name)
-	err = settings.CreateSshConfig(*codebaseSettings)
-	if err != nil {
-		log.Printf("Creation of ssh config for codebase %v has been failed. Return error", codebaseSettings.Name)
+
+	log.Printf("Start creation of gerrit private key for codebase: %v...", s.CustomResource)
+
+	wd := fmt.Sprintf("/home/codebase-operator/edp/%v/%v", s.CustomResource.Namespace, s.CustomResource.Name)
+	path := fmt.Sprintf("%v/gerrit-private.key", wd)
+	if err := settings.CreateGerritPrivateKey(gprk, path); err != nil {
+		log.Printf("Creation of gerrit private key for codebase %v has been failed. Return error", s.CustomResource.Name)
 		return err
 	}
-	log.Printf("Start setup repo url for codebase: %v...", codebaseSettings.Name)
 
-	repoUrl, err := getRepoUrl(codebaseSettings.BasicPatternUrl, s.CustomResource.Spec)
+	log.Printf("Start creation of ssh config for codebase: %v...", s.CustomResource.Name)
+	sshConf, err := s.getSshConfig(us, gs)
+	if err != nil {
+		return err
+	}
+
+	if err := settings.CreateSshConfig(*sshConf); err != nil {
+		log.Printf("Creation of ssh config for codebase %v has been failed. Return error", s.CustomResource.Name)
+		return err
+	}
+	log.Printf("Start setup repo url for codebase: %v...", s.CustomResource.Name)
+
+	repoUrl, err := getRepoUrl(GithubDomain, s.CustomResource.Spec)
 
 	if err != nil {
-		log.Printf("Setup repo url for codebase %v has been failed. Return error", codebaseSettings.Name)
+		log.Printf("Setup repo url for codebase %v has been failed. Return error", s.CustomResource.Name)
 		return err
 	}
 
@@ -445,40 +430,104 @@ func (s CodebaseService) gerritConfiguration(codebaseSettings *model.CodebaseSet
 	if !isRepositoryAccessible {
 		return fmt.Errorf("user %v cannot get access to the repository %v", repositoryUsername, *repoUrl)
 	}
-	log.Printf("Start creation project in VCS for codebase: %v...", codebaseSettings.Name)
-	err = tryCreateProjectInVcs(codebaseSettings, &s, *s.ClientSet)
-	if err != nil {
-		log.Printf("Creation project in VCS for codebase %v has been failed. Return error", codebaseSettings.Name)
+
+	log.Printf("Start creation project in VCS for codebase: %v...", s.CustomResource.Name)
+
+	if err := s.tryCreateProjectInVcs(us); err != nil {
+		log.Printf("Creation project in VCS for codebase %v has been failed. Return error", s.CustomResource.Name)
 		return err
 	}
-	log.Printf("Start clone project for codebase: %v...", codebaseSettings.Name)
-	err = tryCloneRepo(s, *codebaseSettings, *repoUrl, repositoryUsername, repositoryPassword)
-	if err != nil {
-		log.Printf("Clone project for codebase %v has been failed. Return error", codebaseSettings.Name)
+	log.Printf("Start clone project for codebase: %v...", s.CustomResource.Name)
+
+	if err := s.tryCloneRepo(*repoUrl, repositoryUsername, repositoryPassword); err != nil {
+		log.Printf("Clone project for codebase %v has been failed. Return error", s.CustomResource.Name)
 		return err
 	}
-	log.Printf("Start creation project in Gerrit for codebase: %v...", codebaseSettings.Name)
-	err = createProjectInGerrit(codebaseSettings, &s)
+
+	log.Printf("Start creation project in Gerrit for codebase: %v...", s.CustomResource.Name)
+
+	gf, err := s.getGerritConfig(gs)
 	if err != nil {
-		log.Printf("Creation project in Gerrit for codebase %v has been failed. Return error", codebaseSettings.Name)
 		return err
 	}
-	log.Printf("Start push project to Gerrit for codebase: %v...", codebaseSettings.Name)
-	err = pushToGerrit(codebaseSettings, &s)
-	if err != nil {
-		log.Printf("Push to gerrit for codebase %v has been failed. Return error", codebaseSettings.Name)
+
+	if err := s.createProjectInGerrit(gf); err != nil {
+		log.Printf("Creation project in Gerrit for codebase %v has been failed. Return error", s.CustomResource.Name)
 		return err
 	}
-	log.Printf("Start setup Gerrit replication for codebase: %v...", codebaseSettings.Name)
-	err = trySetupGerritReplication(*codebaseSettings, *s.ClientSet)
-	if err != nil {
-		log.Printf("Setup gerrit replication for codebase %v has been failed. Return error", codebaseSettings.Name)
+
+	log.Printf("Start push project to Gerrit for codebase: %v...", s.CustomResource.Name)
+	if err := s.pushToGerrit(gf); err != nil {
+		log.Printf("Push to gerrit for codebase %v has been failed. Return error", s.CustomResource.Name)
 		return err
 	}
-	log.Printf("Gerrit configuration has been finished successfully for codebase: %v...", codebaseSettings.Name)
+	log.Printf("Start setup Gerrit replication for codebase: %v...", s.CustomResource.Name)
+
+	if err := s.trySetupGerritReplication(us, gf); err != nil {
+		log.Printf("Setup gerrit replication for codebase %v has been failed. Return error", s.CustomResource.Name)
+		return err
+	}
+	log.Printf("Gerrit configuration has been finished successfully for codebase: %v...", s.CustomResource.Name)
 	return nil
 }
 
+func (s CodebaseService) getVcsConfig(us *model.UserSettings) (*model.Vcs, error) {
+	vcsGroupNameUrl, err := url.Parse(us.VcsGroupNameUrl)
+	if err != nil {
+		return nil, err
+	}
+
+	projectVcsHostnameUrl := vcsGroupNameUrl.Scheme + "://" + vcsGroupNameUrl.Host
+	VcsCredentialsSecretName := "vcs-autouser-codebase-" + s.CustomResource.Name + "-temp"
+	vcsAutoUserLogin, vcsAutoUserPassword, err := settings.GetVcsBasicAuthConfig(*s.ClientSet,
+		s.CustomResource.Namespace, VcsCredentialsSecretName)
+
+	vcsTool, err := vcs.CreateVCSClient(us.VcsToolName, projectVcsHostnameUrl, vcsAutoUserLogin, vcsAutoUserPassword)
+	if err != nil {
+		return nil, err
+	}
+
+	vcsSshUrl, err := vcsTool.GetRepositorySshUrl(vcsGroupNameUrl.Path[1:len(vcsGroupNameUrl.Path)], s.CustomResource.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.Vcs{
+		VcsSshUrl:             vcsSshUrl,
+		VcsIntegrationEnabled: us.VcsIntegrationEnabled,
+		VcsToolName:           us.VcsToolName,
+		ProjectVcsHostnameUrl: projectVcsHostnameUrl,
+		ProjectVcsGroupPath:   vcsGroupNameUrl.Path[1:len(vcsGroupNameUrl.Path)],
+	}, nil
+}
+
+func (s CodebaseService) getGerritConfig(gs *model.GerritSettings) (*model.GerritConf, error) {
+	wd := fmt.Sprintf("/home/codebase-operator/edp/%v/%v", s.CustomResource.Namespace, s.CustomResource.Name)
+	return &model.GerritConf{
+		GerritKeyPath: fmt.Sprintf("%v/gerrit-private.key", wd),
+		GerritHost:    fmt.Sprintf("gerrit.%v", s.CustomResource.Namespace),
+		SshPort:       gs.SshPort,
+		WorkDir:       wd,
+	}, nil
+}
+
+func (s CodebaseService) getSshConfig(us *model.UserSettings, gs *model.GerritSettings) (*model.SshConfig, error) {
+	vcsGroup, err := url.Parse(us.VcsGroupNameUrl)
+	if err != nil {
+		return nil, err
+	}
+
+	wd := fmt.Sprintf("/home/codebase-operator/edp/%v/%v", s.CustomResource.Namespace, s.CustomResource.Name)
+	return &model.SshConfig{
+		CicdNamespace:         s.CustomResource.Namespace,
+		SshPort:               gs.SshPort,
+		GerritKeyPath:         fmt.Sprintf("%v/gerrit-private.key", wd),
+		VcsIntegrationEnabled: us.VcsIntegrationEnabled,
+		ProjectVcsHostname:    vcsGroup.Host,
+		VcsSshPort:            us.VcsSshPort,
+		VcsKeyPath:            wd + "/vcs-private.key",
+	}, nil
+}
 func tryGetRepositoryCredentials(s CodebaseService, clientSet *ClientSet.ClientSet) (string, string, error) {
 	if s.CustomResource.Spec.Repository != nil {
 		return getRepoCreds(s, clientSet)
@@ -497,23 +546,28 @@ func getRepoCreds(s CodebaseService, clientSet *ClientSet.ClientSet) (string, st
 	return repositoryUsername, repositoryPassword, nil
 }
 
-func trySetupGerritReplication(codebaseSettings model.CodebaseSettings, clientSet ClientSet.ClientSet) error {
-	if codebaseSettings.UserSettings.VcsIntegrationEnabled {
-		return gerrit.SetupProjectReplication(codebaseSettings, clientSet)
+func (s CodebaseService) trySetupGerritReplication(us *model.UserSettings, gf *model.GerritConf) error {
+	if us.VcsIntegrationEnabled {
+		vcsConf, err := s.getVcsConfig(us)
+		if err != nil {
+			return err
+		}
+		return gerrit.SetupProjectReplication(s.CustomResource.Name, s.CustomResource.Namespace, *gf, *vcsConf, *s.ClientSet)
 	}
+
 	log.Print("Skipped gerrit replication configuration. VCS integration isn't enabled")
 	return nil
 }
 
-func (s CodebaseService) trySetupPerf(codebaseSettings model.CodebaseSettings) error {
-	if codebaseSettings.UserSettings.PerfIntegrationEnabled {
-		return s.setupPerf(codebaseSettings)
+func (s CodebaseService) trySetupPerf(us *model.UserSettings) error {
+	if us.PerfIntegrationEnabled {
+		return s.setupPerf(us)
 	}
 	log.Print("Skipped perf configuration. Perf integration isn't enabled")
 	return nil
 }
 
-func (s CodebaseService) setupPerf(codebaseSettings model.CodebaseSettings) error {
+func (s CodebaseService) setupPerf(us *model.UserSettings) error {
 	log.Println("Start perf configuration...")
 	perfSetting := perf.GetPerfSettings(*s.ClientSet, s.CustomResource.Namespace)
 	log.Printf("Perf setting have been retrieved: %v", perfSetting)
@@ -547,7 +601,7 @@ func (s CodebaseService) setupPerf(codebaseSettings model.CodebaseSettings) erro
 		return err
 	}
 
-	err = trySetupGitlabPerf(perfClient, codebaseSettings, perfSetting[perf.GitlabDsSettingsKey])
+	err = s.trySetupGitlabPerf(perfClient, perfSetting[perf.GitlabDsSettingsKey], us)
 	if err != nil {
 		log.Printf("Error has occurred during setup Gitlab Perf: %v", err)
 		return err
@@ -585,9 +639,14 @@ func setupGerritPerf(client *perf.Client, codebaseName string, dsId string) erro
 	return client.AddProjectsToGerritDS(gerritDsID, gerritProjects)
 }
 
-func trySetupGitlabPerf(client *perf.Client, codebaseSettings model.CodebaseSettings, dsId string) error {
-	if isGitLab(codebaseSettings) {
-		return setupGitlabPerf(client, codebaseSettings.VcsProjectPath, dsId)
+func (s CodebaseService) trySetupGitlabPerf(client *perf.Client, dsId string, us *model.UserSettings) error {
+	if isGitLab(us.VcsIntegrationEnabled, us.VcsToolName) {
+		vcsGroupNameUrl, err := url.Parse(us.VcsGroupNameUrl)
+		if err != nil {
+			return err
+		}
+		vcspp := vcsGroupNameUrl.Path[1:len(vcsGroupNameUrl.Path)] + "/" + s.CustomResource.Name
+		return setupGitlabPerf(client, vcspp, dsId)
 	}
 	return nil
 }
@@ -602,92 +661,92 @@ func setupGitlabPerf(client *perf.Client, codebaseName string, dsId string) erro
 	return client.AddRepositoriesToGitlabDS(gitDsID, gitProjects)
 }
 
-func isGitLab(codebaseSettings model.CodebaseSettings) bool {
-	return codebaseSettings.UserSettings.VcsIntegrationEnabled &&
-		codebaseSettings.UserSettings.VcsToolName == model.GitLab
+func isGitLab(vcsIntegrationEnabled bool, vcsToolName model.VCSTool) bool {
+	return vcsIntegrationEnabled && vcsToolName == model.GitLab
 }
 
-func createProjectInGerrit(codebaseSettings *model.CodebaseSettings, s *CodebaseService) error {
-	projectExist, err := gerrit.CheckProjectExist(codebaseSettings.GerritKeyPath, codebaseSettings.GerritHost,
-		codebaseSettings.GerritSettings.SshPort, s.CustomResource.Name)
+func (s CodebaseService) createProjectInGerrit(conf *model.GerritConf) error {
+	projectExist, err := gerrit.CheckProjectExist(conf.GerritKeyPath, conf.GerritHost, conf.SshPort, s.CustomResource.Name)
 	if err != nil {
 		return err
 	}
 	if *projectExist {
 		return errors.New("couldn't create project in Gerrit. Project already exists")
 	}
-	err = gerrit.CreateProject(codebaseSettings.GerritKeyPath, codebaseSettings.GerritHost,
-		codebaseSettings.GerritSettings.SshPort, s.CustomResource.Name)
-	if err != nil {
+
+	if err := gerrit.CreateProject(conf.GerritKeyPath, conf.GerritHost, conf.SshPort, s.CustomResource.Name); err != nil {
 		return err
 	}
 	return nil
 }
 
-func pushToGerrit(codebaseSettings *model.CodebaseSettings, s *CodebaseService) error {
-	err := gerrit.AddRemoteLinkToGerrit(codebaseSettings.WorkDir+"/"+s.CustomResource.Name,
-		codebaseSettings.GerritHost, codebaseSettings.GerritSettings.SshPort, s.CustomResource.Name)
-	if err != nil {
+func (s CodebaseService) pushToGerrit(conf *model.GerritConf) error {
+	if err := gerrit.AddRemoteLinkToGerrit(conf.WorkDir+"/"+s.CustomResource.Name, conf.GerritHost, conf.SshPort, s.CustomResource.Name); err != nil {
 		return err
 	}
-	err = gerrit.PushToGerrit(codebaseSettings.WorkDir+"/"+s.CustomResource.Name, codebaseSettings.GerritKeyPath)
-	if err != nil {
+
+	if err := gerrit.PushToGerrit(conf.WorkDir+"/"+s.CustomResource.Name, conf.GerritKeyPath); err != nil {
 		return err
 	}
+
 	return nil
 }
 
-func tryCreateProjectInVcs(codebaseSettings *model.CodebaseSettings, s *CodebaseService, clientSet ClientSet.ClientSet) error {
-	if codebaseSettings.UserSettings.VcsIntegrationEnabled {
-		err := createProjectInVcs(codebaseSettings, s, clientSet)
-		if err != nil {
+func (s *CodebaseService) tryCreateProjectInVcs(us *model.UserSettings) error {
+	if us.VcsIntegrationEnabled {
+		if err := s.createProjectInVcs(us); err != nil {
 			return err
 		}
-	} else {
-		log.Println("VCS integration isn't enabled")
 		return nil
 	}
+
+	log.Println("VCS integration isn't enabled")
 	return nil
 }
 
-func createProjectInVcs(codebaseSettings *model.CodebaseSettings, s *CodebaseService,
-	clientSet ClientSet.ClientSet) error {
+func (s *CodebaseService) createProjectInVcs(us *model.UserSettings) error {
+	vcsConf, err := s.getVcsConfig(us)
+	if err != nil {
+		return err
+	}
+
 	VcsCredentialsSecretName := "vcs-autouser-codebase-" + s.CustomResource.Name + "-temp"
-	vcsAutoUserLogin, vcsAutoUserPassword, err := settings.GetVcsBasicAuthConfig(clientSet,
+	vcsAutoUserLogin, vcsAutoUserPassword, err := settings.GetVcsBasicAuthConfig(*s.ClientSet,
 		s.CustomResource.Namespace, VcsCredentialsSecretName)
 
-	vcsTool, err := vcs.CreateVCSClient(model.VCSTool(codebaseSettings.UserSettings.VcsToolName),
-		codebaseSettings.ProjectVcsHostnameUrl, vcsAutoUserLogin, vcsAutoUserPassword)
+	vcsTool, err := vcs.CreateVCSClient(model.VCSTool(vcsConf.VcsToolName),
+		vcsConf.ProjectVcsHostnameUrl, vcsAutoUserLogin, vcsAutoUserPassword)
 	if err != nil {
 		log.Printf("Unable to create VCS client: %v", err)
 		return err
 	}
 
-	projectExist, err := vcsTool.CheckProjectExist(codebaseSettings.ProjectVcsGroupPath, codebaseSettings.Name)
+	projectExist, err := vcsTool.CheckProjectExist(vcsConf.ProjectVcsGroupPath, s.CustomResource.Name)
 	if err != nil {
 		return err
 	}
 	if *projectExist {
 		return errors.New("Couldn't copy project to your VCS group. Repository %s is already exists in " +
-			s.CustomResource.Name + "" + codebaseSettings.ProjectVcsGroupPath)
+			s.CustomResource.Name + "" + vcsConf.ProjectVcsGroupPath)
 	} else {
-		_, err = vcsTool.CreateProject(codebaseSettings.ProjectVcsGroupPath, codebaseSettings.Name)
+		_, err = vcsTool.CreateProject(vcsConf.ProjectVcsGroupPath, s.CustomResource.Name)
 		if err != nil {
 			return err
 		}
-		codebaseSettings.VcsSshUrl, err = vcsTool.GetRepositorySshUrl(codebaseSettings.ProjectVcsGroupPath, codebaseSettings.Name)
+		vcsConf.VcsSshUrl, err = vcsTool.GetRepositorySshUrl(vcsConf.ProjectVcsGroupPath, s.CustomResource.Name)
 	}
 	return err
 }
 
-func tryCloneRepo(s CodebaseService, codebaseSettings model.CodebaseSettings, repoUrl string,
-	repositoryUsername string, repositoryPassword string) error {
-	destination := codebaseSettings.WorkDir + "/" + s.CustomResource.Name
-	err := git.CloneRepo(repoUrl, repositoryUsername, repositoryPassword, destination)
-	if err != nil {
+func (s CodebaseService) tryCloneRepo(repoUrl string, repositoryUsername string, repositoryPassword string) error {
+	workDir := fmt.Sprintf("/home/codebase-operator/edp/%v/%v", s.CustomResource.Namespace, s.CustomResource.Name)
+	destination := fmt.Sprintf("%v/%v", workDir, s.CustomResource.Name)
+
+	if err := git.CloneRepo(repoUrl, repositoryUsername, repositoryPassword, destination); err != nil {
 		return err
 	}
 	log.Printf("Repository has been cloned to %v", destination)
+
 	return nil
 }
 

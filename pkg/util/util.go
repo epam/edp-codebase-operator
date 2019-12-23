@@ -58,10 +58,8 @@ func CopyPipelines(codebaseType string, src, pipelineDestination string) error {
 }
 
 func CopyHelmChartTemplates(config model.GerritConfigGoTemplating) error {
-	templatesDest := createTemplateFolderPath(config.CodebaseSettings.WorkDir, config.CodebaseSettings.Name,
-		config.CodebaseSettings.DeploymentScript)
-	templateBasePath := fmt.Sprintf("/usr/local/bin/templates/applications/%v",
-		config.CodebaseSettings.DeploymentScript)
+	templatesDest := createTemplateFolderPath(config.WorkDir, config.Name, config.DeploymentScript)
+	templateBasePath := fmt.Sprintf("/usr/local/bin/templates/applications/%v", config.DeploymentScript)
 
 	log.Info("Paths", "templatesDest", templatesDest, "templateBasePath", templateBasePath)
 
@@ -114,10 +112,10 @@ func CopyHelmChartTemplates(config model.GerritConfigGoTemplating) error {
 }
 
 func CopyOpenshiftTemplate(config model.GerritConfigGoTemplating) error {
-	templatesDest := createTemplateFolderPath(config.CodebaseSettings.WorkDir, config.CodebaseSettings.Name,
-		config.CodebaseSettings.DeploymentScript)
+	templatesDest := createTemplateFolderPath(config.WorkDir, config.Name,
+		config.DeploymentScript)
 	templateBasePath := fmt.Sprintf("/usr/local/bin/templates/applications/%v/%v",
-		config.CodebaseSettings.DeploymentScript, strings.ToLower(config.Lang))
+		config.DeploymentScript, strings.ToLower(config.Lang))
 	templateName := fmt.Sprintf("%v.tmpl", strings.ToLower(*config.Framework))
 
 	log.Info("Paths", "templatesDest", templatesDest, "templateBasePath", templateBasePath,
@@ -129,7 +127,7 @@ func CopyOpenshiftTemplate(config model.GerritConfigGoTemplating) error {
 	}
 	log.Info("directory is created", "path", templatesDest)
 
-	fp := fmt.Sprintf("%v/%v.yaml", templatesDest, config.CodebaseSettings.Name)
+	fp := fmt.Sprintf("%v/%v.yaml", templatesDest, config.Name)
 	f, err := os.Create(fp)
 	if err != nil {
 		return err
@@ -140,7 +138,7 @@ func CopyOpenshiftTemplate(config model.GerritConfigGoTemplating) error {
 }
 
 func CopyTemplate(config model.GerritConfigGoTemplating) error {
-	if config.CodebaseSettings.DeploymentScript == HelmChartDeploymentScriptType {
+	if config.DeploymentScript == HelmChartDeploymentScriptType {
 		return CopyHelmChartTemplates(config)
 	}
 	return CopyOpenshiftTemplate(config)
@@ -159,7 +157,7 @@ func renderTemplate(file *os.File, templateBasePath, templateName string, config
 		return errWrap.Wrap(err, "unable to render codebase deploy template")
 	}
 
-	log.Info("Helm Chart template has been rendered", "codebase", config.CodebaseSettings.Name)
+	log.Info("Helm Chart template has been rendered", "codebase", config.Name)
 
 	return nil
 }

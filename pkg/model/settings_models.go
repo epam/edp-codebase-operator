@@ -1,38 +1,5 @@
 package model
 
-type CodebaseSettings struct {
-	Name                  string         `json:"name"`
-	Type                  string         `json:"type"`
-	WorkDir               string         `json:"work_dir"`
-	RepositoryUrl         string         `json:"repository_url"`
-	GerritKeyPath         string         `json:"gerrit_key_path"`
-	BasicPatternUrl       string         `json:"basic_pattern_url"`
-	CicdNamespace         string         `json:"cicd_namespace"`
-	ProjectVcsHostname    string         `json:"project_vcs_hostname"`
-	ProjectVcsGroupPath   string         `json:"project_vcs_group_path"`
-	ProjectVcsHostnameUrl string         `json:"project_vcs_hostname_url"`
-	VcsProjectPath        string         `json:"vcs_project_path"`
-	JenkinsToken          string         `json:"jenkins_token"`
-	JenkinsUsername       string         `json:"jenkins_username"`
-	JenkinsUrl            string         `json:"jenkins_url"`
-	UserSettings          UserSettings   `json:"user_settings"`
-	GerritSettings        GerritSettings `json:"gerrit_settings"`
-	VcsKeyPath            string         `json:"vcs_key_path"`
-	VcsAutouserSshKey     string         `json:"vcs_autouser_ssh_key"`
-	VcsAutouserEmail      string         `json:"vcs_autouser_email"`
-	GerritPrivateKey      string         `json:"gerrit_private_key"`
-	GerritPublicKey       string         `json:"gerrit_public_key"`
-	VcsSshUrl             string         `json:"vcs_ssh_url"`
-	GerritHost            string         `json:"gerrit_host"`
-	RepositoryPath        string         `json:"repositoryPath"`
-	Lang                  string         `json:"language"`
-	GitServer             GitServer      `json:"gitServer"`
-	Framework             string         `json:"framework"`
-	JobProvisioning       string         `json:"jobProvisioning"`
-	Strategy              string         `json:"strategy"`
-	DeploymentScript      string         `json:"deploymentScript"`
-}
-
 type UserSettings struct {
 	DnsWildcard            string  `json:"dns_wildcard"`
 	EdpName                string  `json:"edp_name"`
@@ -59,6 +26,31 @@ type GerritSettings struct {
 	Config            string `json:"config"`
 	ReplicationConfig string `json:"replication_config"`
 	SshPort           int32  `json:"ssh_port"`
+}
+
+type SshConfig struct {
+	CicdNamespace         string
+	SshPort               int32
+	GerritKeyPath         string
+	VcsIntegrationEnabled bool
+	ProjectVcsHostname    string
+	VcsSshPort            string
+	VcsKeyPath            string
+}
+
+type GerritConf struct {
+	GerritKeyPath string
+	GerritHost    string
+	SshPort       int32
+	WorkDir       string
+}
+
+type Vcs struct {
+	VcsSshUrl             string
+	VcsIntegrationEnabled bool
+	VcsToolName           VCSTool
+	ProjectVcsHostnameUrl string
+	ProjectVcsGroupPath   string
 }
 
 const (

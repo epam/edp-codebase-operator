@@ -3,7 +3,7 @@ package gerrit
 import (
 	"bytes"
 	"fmt"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	edpv1alpha1 "github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/model"
 	ClientSet "github.com/epmd-edp/codebase-operator/v2/pkg/openshift"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/util"
@@ -25,34 +25,33 @@ import (
 	"time"
 )
 
-func ConfigInit(codebaseSettings model.CodebaseSettings,
-	spec v1alpha1.CodebaseSpec) (*model.GerritConfigGoTemplating, error) {
-
-	templatesDir := createTemplateDirectory(codebaseSettings.WorkDir, codebaseSettings.DeploymentScript)
-	cloneSshUrl := fmt.Sprintf("ssh://project-creator@gerrit.%v:%v/%v", codebaseSettings.CicdNamespace,
-		codebaseSettings.GerritSettings.SshPort, codebaseSettings.Name)
-
-	config := model.GerritConfigGoTemplating{
-		Lang:             spec.Lang,
-		Framework:        spec.Framework,
-		BuildTool:        spec.BuildTool,
-		TemplatesDir:     templatesDir,
-		CloneSshUrl:      cloneSshUrl,
-		CodebaseSettings: codebaseSettings,
+func ConfigInit(dnsWildcard string, sshPort int32, codebase edpv1alpha1.Codebase) (*model.GerritConfigGoTemplating, error) {
+	wd := fmt.Sprintf("/home/codebase-operator/edp/%v/%v", codebase.Namespace, codebase.Name)
+	cf := model.GerritConfigGoTemplating{
+		Type:             codebase.Spec.Type,
+		DnsWildcard:      dnsWildcard,
+		Name:             codebase.Name,
+		DeploymentScript: codebase.Spec.DeploymentScript,
+		WorkDir:          wd,
+		Lang:             codebase.Spec.Lang,
+		Framework:        codebase.Spec.Framework,
+		BuildTool:        codebase.Spec.BuildTool,
+		TemplatesDir:     createTemplateDirectory(wd, codebase.Spec.DeploymentScript),
+		CloneSshUrl:      fmt.Sprintf("ssh://project-creator@gerrit.%v:%v/%v", codebase.Namespace, sshPort, codebase.Name),
 	}
-	if spec.Repository != nil {
-		config.RepositoryUrl = &spec.Repository.Url
+	if codebase.Spec.Repository != nil {
+		cf.RepositoryUrl = &codebase.Spec.Repository.Url
 	}
-	if spec.Database != nil {
-		config.Database = spec.Database
+	if codebase.Spec.Database != nil {
+		cf.Database = codebase.Spec.Database
 	}
-	if spec.Route != nil {
-		config.Route = spec.Route
+	if codebase.Spec.Route != nil {
+		cf.Route = codebase.Spec.Route
 	}
 
 	log.Print("Gerrit config has been initialized")
 
-	return &config, nil
+	return &cf, nil
 }
 
 func createTemplateDirectory(workDir string, deploymentScriptType string) string {
@@ -62,70 +61,59 @@ func createTemplateDirectory(workDir string, deploymentScriptType string) string
 	return fmt.Sprintf("%v/%v", workDir, util.HelmChartTemplatesFolder)
 }
 
-func PushConfigs(config model.GerritConfigGoTemplating, codebaseSettings model.CodebaseSettings, clientSet ClientSet.ClientSet) error {
-	appTemplatesDir := fmt.Sprintf("%v/%v/deploy-templates", config.TemplatesDir, codebaseSettings.Name)
-	appConfigFilesDir := fmt.Sprintf("%v/%v/config-files", config.TemplatesDir, codebaseSettings.Name)
+func PushConfigs(codebase edpv1alpha1.Codebase, sshPort int32, config model.GerritConfigGoTemplating, clientSet ClientSet.ClientSet) error {
+	appTemplatesDir := fmt.Sprintf("%v/%v/deploy-templates", config.TemplatesDir, codebase.Name)
+	appConfigFilesDir := fmt.Sprintf("%v/%v/config-files", config.TemplatesDir, codebase.Name)
 
-	err := createDirectory(config.TemplatesDir)
-	if err != nil {
+	if err := createDirectory(config.TemplatesDir); err != nil {
 		return err
 	}
 
-	err = cloneProjectRepoFromGerrit(config, codebaseSettings)
-	if err != nil {
+	if err := cloneProjectRepoFromGerrit(codebase.Name, codebase.Namespace, sshPort, config); err != nil {
 		return err
 	}
 
-	err = createDirectory(appConfigFilesDir)
-	if err != nil {
+	if err := createDirectory(appConfigFilesDir); err != nil {
 		return err
 	}
 
-	destinationPath := fmt.Sprintf("%v/%v/config-files", config.TemplatesDir, codebaseSettings.Name)
+	destinationPath := fmt.Sprintf("%v/%v/config-files", config.TemplatesDir, codebase.Name)
 	sourcePath := "/usr/local/bin/templates/gerrit"
 	fileName := "Readme.md"
-	err = copyFile(destinationPath, sourcePath, fileName)
-	if err != nil {
+
+	if err := copyFile(destinationPath, sourcePath, fileName); err != nil {
 		return err
 	}
 
-	err = createDirectory(appTemplatesDir)
-	if err != nil {
+	if err := createDirectory(appTemplatesDir); err != nil {
 		return err
 	}
 
-	if codebaseSettings.Type == "application" {
-		config.CodebaseSettings = codebaseSettings
-
-		err = util.CopyTemplate(config)
-		if err != nil {
+	if codebase.Spec.Type == "application" {
+		if err := util.CopyTemplate(config); err != nil {
 			return err
 		}
 	}
 
-	err = copyPipelines(codebaseSettings, config)
-	if err != nil {
+	if err := copyPipelines(config); err != nil {
 		return nil
 	}
 
 	if strings.ToLower(config.Lang) == "javascript" {
-		err = copySonarConfigs(config, codebaseSettings)
-		if err != nil {
+		if err := copySonarConfigs(config); err != nil {
 			return err
 		}
 	}
 
-	err = commitConfigs(config, codebaseSettings.Name)
-	if err != nil {
+	if err := commitConfigs(config, codebase.Name); err != nil {
 		return err
 	}
 
-	err = pushConfigsToGerrit(config, codebaseSettings.Name, codebaseSettings.GerritKeyPath)
-	if err != nil {
+	if err := pushConfigsToGerrit(config, codebase.Name); err != nil {
 		return err
 	}
 
-	return tryCreateImageStream(clientSet, codebaseSettings)
+	return tryCreateImageStream(codebase, clientSet)
 }
 
 func getTemplateName(deploymentScriptType, framework string) string {
@@ -135,31 +123,33 @@ func getTemplateName(deploymentScriptType, framework string) string {
 	return "values"
 }
 
-func tryCreateImageStream(cs ClientSet.ClientSet, c model.CodebaseSettings) error {
-	if !isSupportedType(c) {
+func tryCreateImageStream(codebase edpv1alpha1.Codebase, cs ClientSet.ClientSet) error {
+	if !isSupportedType(codebase) {
 		log.Println("couldn't create image stream as type of codebase is not acceptable")
 		return nil
 	}
 
-	appImageStream, err := GetAppImageStream(c.Lang)
+	appImageStream, err := GetAppImageStream(codebase.Spec.Lang)
 	if err != nil {
 		return err
 	}
-	return CreateS2IImageStream(cs, c.Name, c.CicdNamespace, appImageStream)
+	return CreateS2IImageStream(cs, codebase.Name, codebase.Namespace, appImageStream)
 }
 
-func isSupportedType(c model.CodebaseSettings) bool {
-	return c.Type == "application" && c.Lang != "other"
+func isSupportedType(codebase edpv1alpha1.Codebase) bool {
+	return codebase.Spec.Type == "application" && codebase.Spec.Lang != "other"
 }
 
-func cloneProjectRepoFromGerrit(config model.GerritConfigGoTemplating, codebaseSettings model.CodebaseSettings) error {
+func cloneProjectRepoFromGerrit(name, namespace string, sshPort int32, config model.GerritConfigGoTemplating) error {
 	log.Printf("Cloning repo from gerrit using: %v", config.CloneSshUrl)
 	var session *ssh.Session
 	var connection *ssh.Client
 	var out bytes.Buffer
 	var stderr bytes.Buffer
 
-	client, err := SshInit(codebaseSettings.GerritKeyPath, codebaseSettings.GerritHost, codebaseSettings.GerritSettings.SshPort)
+	gkp := fmt.Sprintf("%v/gerrit-private.key", config.WorkDir)
+	gh := fmt.Sprintf("gerrit.%v", namespace)
+	client, err := SshInit(gkp, gh, sshPort)
 	if err != nil {
 		return err
 	}
@@ -177,7 +167,7 @@ func cloneProjectRepoFromGerrit(config model.GerritConfigGoTemplating, codebaseS
 	}()
 
 	cmd := exec.Command("git", "clone", config.CloneSshUrl, fmt.Sprintf("%v/%v",
-		config.TemplatesDir, codebaseSettings.Name))
+		config.TemplatesDir, name))
 	cmd.Stdout = &out
 	cmd.Stderr = &stderr
 	err = cmd.Run()
@@ -189,7 +179,7 @@ func cloneProjectRepoFromGerrit(config model.GerritConfigGoTemplating, codebaseS
 	}
 	log.Print("Cloning repo has been finished")
 
-	destinationPath := fmt.Sprintf("%v/%v/.git/hooks", config.TemplatesDir, codebaseSettings.Name)
+	destinationPath := fmt.Sprintf("%v/%v/.git/hooks", config.TemplatesDir, name)
 	sourcePath := "/usr/local/bin/configs"
 	fileName := "commit-msg"
 	err = copyFile(destinationPath, sourcePath, fileName)
@@ -236,18 +226,18 @@ func createDirectory(path string) error {
 	return nil
 }
 
-func copyPipelines(codebaseSettings model.CodebaseSettings, config model.GerritConfigGoTemplating) error {
+func copyPipelines(config model.GerritConfigGoTemplating) error {
 	pipelinesPath := "/usr/local/bin/pipelines"
 	files, err := ioutil.ReadDir(pipelinesPath)
 	if err != nil {
 		return err
 	}
 
-	pipelinesDest := fmt.Sprintf("%v/%v", config.TemplatesDir, codebaseSettings.Name)
+	pipelinesDest := fmt.Sprintf("%v/%v", config.TemplatesDir, config.Name)
 	log.Printf("Start copying pipelines to %v", pipelinesDest)
 
 	for _, f := range files {
-		if codebaseSettings.Type == "autotests" && f.Name() == "build.groovy" {
+		if config.Type == "autotests" && f.Name() == "build.groovy" {
 			continue
 		}
 
@@ -262,16 +252,15 @@ func copyPipelines(codebaseSettings model.CodebaseSettings, config model.GerritC
 		}
 	}
 
-	log.Printf("Jenkins pipelines for codebase %v has been copied", codebaseSettings.Name)
+	log.Printf("Jenkins pipelines for codebase %v has been copied", config.Name)
 	return nil
 }
 
-func copySonarConfigs(config model.GerritConfigGoTemplating, codebaseSettings model.CodebaseSettings) error {
-	sonarConfigPath := fmt.Sprintf("%v/%v/sonar-project.properties", config.TemplatesDir, codebaseSettings.Name)
+func copySonarConfigs(config model.GerritConfigGoTemplating) error {
+	sonarConfigPath := fmt.Sprintf("%v/%v/sonar-project.properties", config.TemplatesDir, config.Name)
 
 	if _, err := os.Stat(sonarConfigPath); err == nil {
 		return nil
-
 	} else if os.IsNotExist(err) {
 		f, err := os.Create(sonarConfigPath)
 		if err != nil {
@@ -287,7 +276,7 @@ func copySonarConfigs(config model.GerritConfigGoTemplating, codebaseSettings mo
 			log.Printf("Unable to render sonar configs fo JS app: %v", err)
 			return err
 		}
-		log.Printf("Sonar configs for codebase %v has been copied", codebaseSettings.Name)
+		log.Printf("Sonar configs for codebase %v has been copied", config.Name)
 		defer f.Close()
 	}
 
@@ -325,8 +314,9 @@ func commitConfigs(config model.GerritConfigGoTemplating, appName string) error 
 	return nil
 }
 
-func pushConfigsToGerrit(gerritConfig model.GerritConfigGoTemplating, appName string, keyPath string) error {
-	auth, err := Auth(keyPath)
+func pushConfigsToGerrit(gerritConfig model.GerritConfigGoTemplating, appName string) error {
+	gkp := fmt.Sprintf("%v/gerrit-private.key", gerritConfig.WorkDir)
+	auth, err := Auth(gkp)
 	if err != nil {
 		return err
 	}

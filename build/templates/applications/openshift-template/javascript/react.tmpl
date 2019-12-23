@@ -15,7 +15,7 @@
 apiVersion: v1
 kind: Template
 metadata:
-  name: "{{.CodebaseSettings.Name}}"
+  name: "{{.Name}}"
   annotations:
     iconClass: "icon-js"
     description: Openshift template for ReactJS application/service deploying
@@ -25,56 +25,56 @@ objects:
 - apiVersion: v1
   kind: Service
   metadata:
-    name: "{{.CodebaseSettings.Name}}"
+    name: "{{.Name}}"
     labels:
-      app: "{{.CodebaseSettings.Name}}"
+      app: "{{.Name}}"
   spec:
     ports:
-    - name: "{{.CodebaseSettings.Name}}"
+    - name: "{{.Name}}"
       port: 8080
       protocol: TCP
       targetPort: 8080
     selector:
-      app: "{{.CodebaseSettings.Name}}"
+      app: "{{.Name}}"
     type: ClusterIP
 - apiVersion: v1
   kind: ServiceAccount
   metadata:
-    name: "{{.CodebaseSettings.Name}}"
+    name: "{{.Name}}"
 {{if .Route}}
 - apiVersion: v1
   kind: Route
   metadata:
-    name: "{{.CodebaseSettings.Name}}"
+    name: "{{.Name}}"
     annotations:
-      description: "Route for {{.CodebaseSettings.Name}} application"
+      description: "Route for {{.Name}} application"
     labels:
-      app: "{{.CodebaseSettings.Name}}"
+      app: "{{.Name}}"
   spec:
     tls:
       insecureEdgeTerminationPolicy: Redirect
       termination: edge
 {{if and .Route.Site (ne .Route.Site "")}}
-    host: {{.Route.Site}}-${NAMESPACE}.{{.CodebaseSettings.UserSettings.DnsWildcard}}
+    host: {{.Route.Site}}-${NAMESPACE}.{{.DnsWildcard}}
 {{end}}
     path: {{.Route.Path}}
     port:
       targetPort: 8080
     to:
       kind: Service
-      name: "{{.CodebaseSettings.Name}}"
+      name: "{{.Name}}"
     wildcardPolicy: None
 {{end}}
 - apiVersion: v1
   kind: DeploymentConfig
   metadata:
-    name: "{{.CodebaseSettings.Name}}"
+    name: "{{.Name}}"
     labels:
-      app: "{{.CodebaseSettings.Name}}"
+      app: "{{.Name}}"
   spec:
     replicas: 1
     selector:
-      app: "{{.CodebaseSettings.Name}}"
+      app: "{{.Name}}"
     strategy:
       activeDeadlineSeconds: 21600
       type: Rolling
@@ -88,11 +88,11 @@ objects:
     template:
       metadata:
         labels:
-          app: "{{.CodebaseSettings.Name}}"
+          app: "{{.Name}}"
       spec:
-        serviceAccountName: "{{.CodebaseSettings.Name}}"
+        serviceAccountName: "{{.Name}}"
         containers:
-        - name: "{{.CodebaseSettings.Name}}"
+        - name: "{{.Name}}"
           image: "docker-registry.default.svc:5000/${IMAGE_NAME}:${APP_VERSION}"
           imagePullPolicy: Always
           ports:
@@ -130,7 +130,7 @@ parameters:
 - displayName: Application image name
   name: IMAGE_NAME
   required: true
-  value: "{{.CodebaseSettings.Name}}"
+  value: "{{.Name}}"
 - displayName: Application version
   name: APP_VERSION
   required: true

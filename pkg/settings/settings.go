@@ -142,7 +142,7 @@ func CreateGerritPrivateKey(privateKey string, path string) error {
 	return nil
 }
 
-func CreateSshConfig(codebaseSettings model.CodebaseSettings) error {
+func CreateSshConfig(ssh model.SshConfig) error {
 	var config bytes.Buffer
 	sshPath := "/home/codebase-operator/.ssh"
 	if _, err := os.Stat(sshPath); os.IsNotExist(err) {
@@ -157,7 +157,7 @@ func CreateSshConfig(codebaseSettings model.CodebaseSettings) error {
 		return err
 	}
 
-	err = tmpl.Execute(&config, codebaseSettings)
+	err = tmpl.Execute(&config, ssh)
 	if err != nil {
 		log.Printf("execute: %v", err)
 		return err

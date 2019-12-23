@@ -1,15 +1,15 @@
 Host gerrit.{{.CicdNamespace}}*
         HostName gerrit.{{.CicdNamespace}}
-        Port {{.GerritSettings.SshPort}}
+        Port {{.SshPort}}
         User project-creator
         StrictHostKeyChecking no
         UserKnownHostsFile /dev/null
         IdentityFile {{.GerritKeyPath}}
         IdentitiesOnly yes
-{{if or (eq .UserSettings.VcsIntegrationEnabled true) -}}
+{{if or (eq .VcsIntegrationEnabled true) -}}
       Host {{.ProjectVcsHostname}}
         HostName {{.ProjectVcsHostname}}
-        Port {{.UserSettings.VcsSshPort}}
+        Port {{.VcsSshPort}}
         User git
         StrictHostKeyChecking no
         UserKnownHostsFile /dev/null

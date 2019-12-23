@@ -11,8 +11,12 @@ type GerritConfigGoTemplating struct {
 	RepositoryUrl     *string            `json:"repository_url"`
 	Route             *v1alpha1.Route    `json:"route"`
 	Database          *v1alpha1.Database `json:"database"`
-	CodebaseSettings  CodebaseSettings   `json:"app_settings"`
-	DockerRegistryUrl string             `json:"docker_registry_url"`
-	TemplatesDir      string             `json:"templates_dir"`
-	CloneSshUrl       string             `json:"clone_ssh_url"`
+	DeploymentScript  string
+	WorkDir           string
+	Name              string
+	DnsWildcard       string
+	Type              string
+	DockerRegistryUrl string `json:"docker_registry_url"`
+	TemplatesDir      string `json:"templates_dir"`
+	CloneSshUrl       string `json:"clone_ssh_url"`
 }

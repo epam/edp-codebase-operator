@@ -1,9 +1,9 @@
-name: {{.CodebaseSettings.Name}}
+name: {{.Name}}
 namespace: ""
 cdPipelineName: ""
 cdPipelineStageName: ""
-dnsWildcard: {{.CodebaseSettings.UserSettings.DnsWildcard}}
-{{if and .Database (ne .CodebaseSettings.Lang "javascript")}}
+dnsWildcard: {{.DnsWildcard}}
+{{if and .Database (ne .Lang "javascript")}}
 {{if eq .Database.Kind "PostgreSQL"}}
 database:
   required: true
@@ -25,5 +25,5 @@ ingress:
   required: false
 {{end}}
 image:
-  name: {{.CodebaseSettings.Name}}
+  name: {{.Name}}
   version: latest

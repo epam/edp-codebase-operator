@@ -15,7 +15,7 @@
 apiVersion: v1
 kind: Template
 metadata:
-  name: {{.CodebaseSettings.Name}}
+  name: {{.Name}}
   annotations:
     iconClass: icon-dotnet
     description: Openshift template for .NET core application/service deploying
@@ -25,44 +25,44 @@ objects:
 - apiVersion: v1
   kind: Service
   metadata:
-    name: {{.CodebaseSettings.Name}}
+    name: {{.Name}}
     labels:
-      app: {{.CodebaseSettings.Name}}
+      app: {{.Name}}
   spec:
     ports:
-    - name: {{.CodebaseSettings.Name}}
+    - name: {{.Name}}
       port: 8080
       protocol: TCP
       targetPort: 8080
     selector:
-      app: {{.CodebaseSettings.Name}}
+      app: {{.Name}}
     type: ClusterIP
 - apiVersion: v1
   kind: ServiceAccount
   metadata:
-    name: {{.CodebaseSettings.Name}}
+    name: {{.Name}}
 {{if .Route}}
 - apiVersion: v1
   kind: Route
   metadata:
-    name: {{.CodebaseSettings.Name}}
+    name: {{.Name}}
     annotations:
-      description: "Route for {{.CodebaseSettings.Name}} application"
+      description: "Route for {{.Name}} application"
     labels:
-      app: {{.CodebaseSettings.Name}}
+      app: {{.Name}}
   spec:
     tls:
       insecureEdgeTerminationPolicy: Redirect
       termination: edge
 {{if and .Route.Site (ne .Route.Site "")}}
-    host: {{.Route.Site}}-${NAMESPACE}.{{.CodebaseSettings.UserSettings.DnsWildcard}}
+    host: {{.Route.Site}}-${NAMESPACE}.{{.DnsWildcard}}
 {{end}}
     path: {{.Route.Path}}
     port:
       targetPort: 8080
     to:
       kind: Service
-      name: {{.CodebaseSettings.Name}}
+      name: {{.Name}}
     wildcardPolicy: None
 {{end}}
 {{if .Database}}
@@ -70,7 +70,7 @@ objects:
 - apiVersion: v1
   kind: PersistentVolumeClaim
   metadata:
-    name: {{.CodebaseSettings.Name}}-db
+    name: {{.Name}}-db
   spec:
     accessModes:
     - ReadWriteOnce
@@ -81,27 +81,27 @@ objects:
 - apiVersion: v1
   kind: Service
   metadata:
-    name: {{.CodebaseSettings.Name}}-db
+    name: {{.Name}}-db
     labels:
-      app: {{.CodebaseSettings.Name}}-db
+      app: {{.Name}}-db
   spec:
     ports:
-    - name: {{.CodebaseSettings.Name}}-db
+    - name: {{.Name}}-db
       port: 5432
     selector:
-      app: {{.CodebaseSettings.Name}}-db
+      app: {{.Name}}-db
     type: ClusterIP
     sessionAffinity: None
 - apiVersion: v1
   kind: DeploymentConfig
   metadata:
     labels:
-      app: {{.CodebaseSettings.Name}}
-    name: {{.CodebaseSettings.Name}}-db
+      app: {{.Name}}
+    name: {{.Name}}-db
   spec:
     replicas: 1
     selector:
-      app: {{.CodebaseSettings.Name}}-db
+      app: {{.Name}}-db
     strategy:
       activeDeadlineSeconds: 21600
       recreateParams:
@@ -111,13 +111,13 @@ objects:
     template:
       metadata:
         labels:
-          app: {{.CodebaseSettings.Name}}-db
+          app: {{.Name}}-db
       spec:
         containers:
-        - name: {{.CodebaseSettings.Name}}-db
+        - name: {{.Name}}-db
           env:
           - name: POSTGRES_DB
-            value: {{.CodebaseSettings.Name}}-db
+            value: {{.Name}}-db
           - name: POSTGRES_USER
             value: "admin"
           - name: POSTGRES_PASSWORD
@@ -151,24 +151,24 @@ objects:
             periodSeconds: 5
           volumeMounts:
             - mountPath: /var/lib/postgresql/data
-              name: {{.CodebaseSettings.Name}}-db
-        serviceAccount: {{.CodebaseSettings.Name}}
+              name: {{.Name}}-db
+        serviceAccount: {{.Name}}
         volumes:
-          - name: {{.CodebaseSettings.Name}}-db
+          - name: {{.Name}}-db
             persistentVolumeClaim:
-              claimName: {{.CodebaseSettings.Name}}-db
+              claimName: {{.Name}}-db
 {{end}}
 {{end}}
 - apiVersion: v1
   kind: DeploymentConfig
   metadata:
-    name: {{.CodebaseSettings.Name}}
+    name: {{.Name}}
     labels:
-      app: {{.CodebaseSettings.Name}}
+      app: {{.Name}}
   spec:
     replicas: 1
     selector:
-      app: {{.CodebaseSettings.Name}}
+      app: {{.Name}}
     strategy:
       activeDeadlineSeconds: 21600
       type: Rolling
@@ -182,19 +182,19 @@ objects:
     template:
       metadata:
         labels:
-          app: {{.CodebaseSettings.Name}}
+          app: {{.Name}}
       spec:
 {{if .Database}}
 {{if eq .Database.Kind "PostgreSQL"}}
         initContainers:
-        - name: init-{{.CodebaseSettings.Name}}-db
+        - name: init-{{.Name}}-db
           image: busybox
-          command: ["sh", "-c", "while ! nc -w 1 {{.CodebaseSettings.Name}}-db 5432 </dev/null; do echo waiting for {{.CodebaseSettings.Name}}-db; sleep 10; done;"]
+          command: ["sh", "-c", "while ! nc -w 1 {{.Name}}-db 5432 </dev/null; do echo waiting for {{.Name}}-db; sleep 10; done;"]
 {{end}}
 {{end}}
-        serviceAccountName: {{.CodebaseSettings.Name}}
+        serviceAccountName: {{.Name}}
         containers:
-        - name: {{.CodebaseSettings.Name}}
+        - name: {{.Name}}
           image: "docker-registry.default.svc:5000/${IMAGE_NAME}:${APP_VERSION}"
           imagePullPolicy: Always
           ports:
@@ -223,7 +223,7 @@ objects:
 {{if eq .Database.Kind "PostgreSQL"}}
           env:
           - name: POSTGRES_DATABASE
-            value: {{.CodebaseSettings.Name}}-db
+            value: {{.Name}}-db
           - name: POSTGRES_USER
             value: "admin"
           - name: POSTGRES_PASSWORD
@@ -243,7 +243,7 @@ parameters:
 - displayName: Application image name
   name: IMAGE_NAME
   required: true
-  value: {{.CodebaseSettings.Name}}
+  value: {{.Name}}
 - displayName: Application version
   name: APP_VERSION
   required: true

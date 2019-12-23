@@ -276,18 +276,18 @@ func generateReplicationConfig(templatePath, templateName string, params Replica
 	return renderedTemplate.String(), nil
 }
 
-func SetupProjectReplication(codebaseSettings model.CodebaseSettings, clientSet ClientSet.ClientSet) error {
-	log.Printf("Start setup project replication for app: %v", codebaseSettings.Name)
+func SetupProjectReplication(codebaseName, namespace string, gerritConf model.GerritConf, conf model.Vcs, clientSet ClientSet.ClientSet) error {
+	log.Printf("Start setup project replication for app: %v", codebaseName)
 	replicaConfigNew, err := generateReplicationConfig(
 		TemplatesPath, ReplicationConfigTemplateName, ReplicationConfigParams{
-			Name:      codebaseSettings.Name,
-			VcsSshUrl: codebaseSettings.VcsSshUrl,
+			Name:      codebaseName,
+			VcsSshUrl: conf.VcsSshUrl,
 		})
 
-	gerritSettings, err := clientSet.CoreClient.ConfigMaps(codebaseSettings.CicdNamespace).Get("gerrit", metav1.GetOptions{})
+	gerritSettings, err := clientSet.CoreClient.ConfigMaps(namespace).Get("gerrit", metav1.GetOptions{})
 	replicaConfig := gerritSettings.Data["replication.config"]
 	gerritSettings.Data["replication.config"] = fmt.Sprintf("%v\n%v", replicaConfig, replicaConfigNew)
-	result, err := clientSet.CoreClient.ConfigMaps(codebaseSettings.CicdNamespace).Update(gerritSettings)
+	result, err := clientSet.CoreClient.ConfigMaps(namespace).Update(gerritSettings)
 	if err != nil {
 		log.Printf("Unable to update config map with replication config: %v", err)
 		return err
@@ -297,13 +297,12 @@ func SetupProjectReplication(codebaseSettings model.CodebaseSettings, clientSet 
 	log.Println("Waiting for gerrit replication config map appears in gerrit pod. Sleeping for 90 seconds...")
 	time.Sleep(90 * time.Second)
 
-	err = reloadReplicationPlugin(codebaseSettings.GerritKeyPath, codebaseSettings.GerritHost,
-		codebaseSettings.GerritSettings.SshPort)
+	err = reloadReplicationPlugin(gerritConf.GerritKeyPath, gerritConf.GerritHost, gerritConf.SshPort)
 	if err != nil {
 		log.Printf("Unable to reload replication plugin: %v", err)
 		return err
 	}
-	log.Printf("Replication configuration has been finished for app %v", codebaseSettings.Name)
+	log.Printf("Replication configuration has been finished for app %v", codebaseName)
 
 	return nil
 }
