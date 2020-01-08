@@ -1,21 +1,22 @@
-package codebase
+package util
 
 import (
 	"errors"
 	"fmt"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	"log"
 	"strings"
 )
 
-func getRepoUrl(baseUrl string, spec v1alpha1.CodebaseSpec) (*string, error) {
-	if spec.Strategy == v1alpha1.Clone {
-		log.Printf("Strategy is clone. Try to use default value...")
-		return tryGetRepoUrl(spec)
+func GetRepoUrl(baseUrl string, c *v1alpha1.Codebase) (*string, error) {
+	log.Info("Setup repo url", "codebase name", c.Name)
+	if c.Spec.Strategy == v1alpha1.Clone {
+		log.Info("strategy is clone. Try to use default value...", "codebase name", c.Name)
+		return tryGetRepoUrl(c.Spec)
 	}
-	log.Printf("Strategy is not clone. Start build url...")
-	url := buildRepoUrl(baseUrl, spec)
-	log.Printf("Url has been generated: %v", url)
+
+	log.Info("Strategy is not clone. Start build url...", "codebase name", c.Name)
+	url := buildRepoUrl(baseUrl, c.Spec)
+	log.Info("Url has been generated", "url", url, "codebase name", c.Name)
 	return &url, nil
 
 }
@@ -28,7 +29,7 @@ func tryGetRepoUrl(spec v1alpha1.CodebaseSpec) (*string, error) {
 }
 
 func buildRepoUrl(baseUrl string, spec v1alpha1.CodebaseSpec) string {
-	log.Printf("Start build repo url by base url: %v and spec %+v", baseUrl, spec)
+	log.Info("Start building repo url", "base url", baseUrl, "spec", spec)
 	var result string
 	if spec.Type == "application" {
 		result = fmt.Sprintf("%v/%v-%v-%v",
@@ -44,6 +45,7 @@ func buildRepoUrl(baseUrl string, spec v1alpha1.CodebaseSpec) string {
 	if spec.Database != nil {
 		result += "-" + spec.Database.Kind
 	}
+
 	return strings.ToLower(result + ".git")
 }
 

@@ -7,7 +7,6 @@ import (
 	"github.com/epmd-edp/codebase-operator/v2/pkg/jenkins"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/model"
 	ClientSet "github.com/epmd-edp/codebase-operator/v2/pkg/openshift"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/settings"
 	"log"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"time"
@@ -37,18 +36,18 @@ func (s CodebaseBranchService) Create(cr *edpv1alpha1.CodebaseBranch) {
 
 	releaseJob := fmt.Sprintf("%v/job/Create-release-%v", cr.Spec.CodebaseName, cr.Spec.CodebaseName)
 
-	jen, err := settings.GetJenkins(s.Client, cr.Namespace)
+	jen, err := jenkins.GetJenkins(s.Client, cr.Namespace)
 	if err != nil {
 		s.setFailedFields(cr, edpv1alpha1.JenkinsConfiguration, err.Error())
 		return
 	}
-	jenkinsToken, jenkinsUsername, err := settings.GetJenkinsCreds(*jen, *clientSet, cr.Namespace)
+	jenkinsToken, jenkinsUsername, err := jenkins.GetJenkinsCreds(*jen, *clientSet, cr.Namespace)
 	if err != nil {
 		log.Println(err)
 		s.setFailedFields(cr, edpv1alpha1.JenkinsConfiguration, err.Error())
 		return
 	}
-	jenkinsUrl := settings.GetJenkinsUrl(*jen, cr.Namespace)
+	jenkinsUrl := jenkins.GetJenkinsUrl(*jen, cr.Namespace)
 
 	log.Printf("Started creating release %v for application %v...", cr.Spec.BranchName, cr.Spec.CodebaseName)
 

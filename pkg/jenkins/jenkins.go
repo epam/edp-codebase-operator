@@ -1,11 +1,18 @@
 package jenkins
 
 import (
+	"context"
 	"fmt"
 	"github.com/bndr/gojenkins"
+	ClientSet "github.com/epmd-edp/codebase-operator/v2/pkg/openshift"
+	jenkinsApi "github.com/epmd-edp/jenkins-operator/v2/pkg/apis/v2/v1alpha1"
+	jenkinsOperatorSpec "github.com/epmd-edp/jenkins-operator/v2/pkg/service/jenkins/spec"
 	"github.com/pkg/errors"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"log"
 	"net/http"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"time"
 )
 
@@ -139,4 +146,42 @@ func (client Client) IsJobRunning(name string) (*bool, error) {
 	}
 
 	return &isRunning, nil
+}
+
+func GetJenkins(k8sClient client.Client, namespace string) (*jenkinsApi.Jenkins, error) {
+	options := client.ListOptions{Namespace: namespace}
+	jenkinsList := &jenkinsApi.JenkinsList{}
+
+	err := k8sClient.List(context.TODO(), &options, jenkinsList)
+	if err != nil {
+		return nil, errors.Wrapf(err, "Unable to get Jenkins CRs in namespace %v", namespace)
+	}
+
+	if len(jenkinsList.Items) == 0 {
+		return nil, fmt.Errorf("jenkins installation is not found in namespace %v", namespace)
+	}
+
+	return &jenkinsList.Items[0], nil
+}
+
+func GetJenkinsCreds(jenkins jenkinsApi.Jenkins, clientSet ClientSet.ClientSet, namespace string) (string, string, error) {
+	annotationKey := fmt.Sprintf("%v/%v", jenkinsOperatorSpec.EdpAnnotationsPrefix, jenkinsOperatorSpec.JenkinsTokenAnnotationSuffix)
+	jenkinsTokenSecretName := jenkins.Annotations[annotationKey]
+	jenkinsTokenSecret, err := clientSet.CoreClient.Secrets(namespace).Get(jenkinsTokenSecretName, metav1.GetOptions{})
+	if err != nil {
+		if k8serrors.IsNotFound(err) {
+			return "", "", errors.Wrapf(err, "Secret %v in not found", jenkinsTokenSecretName)
+		}
+		return "", "", errors.Wrapf(err, "Getting secret %v failed", jenkinsTokenSecretName)
+	}
+	return string(jenkinsTokenSecret.Data["password"]), string(jenkinsTokenSecret.Data["username"]), nil
+}
+
+func GetJenkinsUrl(jenkins jenkinsApi.Jenkins, namespace string) string {
+	key := fmt.Sprintf("%v/%v", jenkinsOperatorSpec.EdpAnnotationsPrefix, "externalUrl")
+	url := jenkins.Annotations[key]
+	if len(url) == 0 {
+		return fmt.Sprintf("http://jenkins.%s:8080", namespace)
+	}
+	return url
 }

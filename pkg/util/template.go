@@ -3,33 +3,15 @@ package util
 import (
 	"fmt"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/model"
-	errWrap "github.com/pkg/errors"
+	"github.com/pkg/errors"
 	"io/ioutil"
 	"os"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"strings"
 	"text/template"
 )
 
-var log = logf.Log.WithName("util-service")
-
-func CreateDirectory(path string) error {
-	log.Info("Creating directory for oc templates", "path", path)
-
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		err = os.MkdirAll(path, 0755)
-		if err != nil {
-			return err
-		}
-	}
-
-	log.Info("Directory has been created", "path", path)
-
-	return nil
-}
-
-func CopyPipelines(codebaseType string, src, pipelineDestination string) error {
-	log.Info("Start copying pipelines", "src", src, "target", pipelineDestination)
+func CopyPipelines(codebaseType, src, dest string) error {
+	log.Info("Start copying pipelines", "src", src, "target", dest)
 
 	files, err := ioutil.ReadDir(src)
 	if err != nil {
@@ -46,18 +28,19 @@ func CopyPipelines(codebaseType string, src, pipelineDestination string) error {
 			return err
 		}
 
-		err = ioutil.WriteFile(fmt.Sprintf("%s/%s", pipelineDestination, f.Name()), input, 0755)
+		err = ioutil.WriteFile(fmt.Sprintf("%s/%s", dest, f.Name()), input, 0755)
 		if err != nil {
 			return err
 		}
 	}
 
-	log.Info("Jenkins pipelines for codebase has been copied", "target", pipelineDestination)
+	log.Info("Jenkins pipelines for codebase has been copied", "target", dest)
 
 	return nil
 }
 
 func CopyHelmChartTemplates(config model.GerritConfigGoTemplating) error {
+	log.Info("start handling Helm Chart templates", "codebase name", config.Name)
 	templatesDest := createTemplateFolderPath(config.WorkDir, config.Name, config.DeploymentScript)
 	templateBasePath := fmt.Sprintf("/usr/local/bin/templates/applications/%v", config.DeploymentScript)
 
@@ -97,21 +80,20 @@ func CopyHelmChartTemplates(config model.GerritConfigGoTemplating) error {
 	}
 	log.Info("files were copied", "from", tsf, "to", tf)
 
-	err = renderTemplate(fv, fmt.Sprintf("%v/%v", templateBasePath, ChartValuesTemplate),
-		ChartValuesTemplate, config)
-	if err != nil {
+	if err := renderTemplate(fv, fmt.Sprintf("%v/%v", templateBasePath, ChartValuesTemplate),
+		ChartValuesTemplate, config); err != nil {
 		return err
 	}
 
-	err = renderTemplate(fc, fmt.Sprintf("%v/%v", templateBasePath, ChartTemplate), ChartTemplate, config)
-	if err != nil {
+	if err := renderTemplate(fc, fmt.Sprintf("%v/%v", templateBasePath, ChartTemplate), ChartTemplate, config); err != nil {
 		return err
 	}
-
+	log.Info("end handling Helm Chart templates", "codebase name", config.Name)
 	return nil
 }
 
 func CopyOpenshiftTemplate(config model.GerritConfigGoTemplating) error {
+	log.Info("start handling Openshift template", "codebase name", config.Name)
 	templatesDest := createTemplateFolderPath(config.WorkDir, config.Name,
 		config.DeploymentScript)
 	templateBasePath := fmt.Sprintf("/usr/local/bin/templates/applications/%v/%v",
@@ -134,7 +116,11 @@ func CopyOpenshiftTemplate(config model.GerritConfigGoTemplating) error {
 	}
 	log.Info("file is created", "path", fp)
 
-	return renderTemplate(f, fmt.Sprintf("%v/%v", templateBasePath, templateName), templateName, config)
+	if err := renderTemplate(f, fmt.Sprintf("%v/%v", templateBasePath, templateName), templateName, config); err != nil {
+		return err
+	}
+	log.Info("end handling Openshift template", "codebase name", config.Name)
+	return nil
 }
 
 func CopyTemplate(config model.GerritConfigGoTemplating) error {
@@ -145,20 +131,17 @@ func CopyTemplate(config model.GerritConfigGoTemplating) error {
 }
 
 func renderTemplate(file *os.File, templateBasePath, templateName string, config model.GerritConfigGoTemplating) error {
-	log.Info("Start rendering Helm Chart template", "path", templateBasePath)
+	log.Info("start rendering deploy template", "path", templateBasePath)
 
 	tmpl, err := template.New(templateName).ParseFiles(templateBasePath)
 	if err != nil {
-		return errWrap.Wrap(err, "unable to parse codebase deploy template")
+		return errors.Wrap(err, "unable to parse codebase deploy template")
 	}
 
-	err = tmpl.Execute(file, config)
-	if err != nil {
-		return errWrap.Wrap(err, "unable to render codebase deploy template")
+	if err := tmpl.Execute(file, config); err != nil {
+		return errors.Wrap(err, "unable to render codebase deploy template")
 	}
-
-	log.Info("Helm Chart template has been rendered", "codebase", config.Name)
-
+	log.Info("template has been rendered", "codebase", config.Name)
 	return nil
 }
 
@@ -167,47 +150,4 @@ func createTemplateFolderPath(workDir, name, deploymentScriptType string) string
 		return fmt.Sprintf("%v/%v/%v/deploy-templates", workDir, OcTemplatesFolder, name)
 	}
 	return fmt.Sprintf("%v/%v/%v/deploy-templates", workDir, HelmChartTemplatesFolder, name)
-}
-
-func CopyFiles(src, dest string) error {
-	log.Info("Start copying files", "src", src, "dest", dest)
-
-	files, err := ioutil.ReadDir(src)
-	if err != nil {
-		return err
-	}
-
-	for _, f := range files {
-		input, err := ioutil.ReadFile(src + "/" + f.Name())
-		if err != nil {
-			return err
-		}
-
-		err = ioutil.WriteFile(fmt.Sprintf("%s/%s", dest, f.Name()), input, 0755)
-		if err != nil {
-			return err
-		}
-	}
-
-	log.Info("Files have been copied", "dest", dest)
-
-	return nil
-}
-
-func CopyFile(src, dest string) error {
-	log.Info("Start copying file", "src", src, "dest", dest)
-
-	input, err := ioutil.ReadFile(src)
-	if err != nil {
-		return err
-	}
-
-	err = ioutil.WriteFile(dest, input, 0755)
-	if err != nil {
-		return err
-	}
-
-	log.Info("File has been copied", "dest", dest)
-
-	return nil
 }

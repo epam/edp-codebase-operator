@@ -5,11 +5,13 @@ import (
 	coreV1Client "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/client-go/tools/clientcmd"
 	"log"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type ClientSet struct {
 	CoreClient  *coreV1Client.CoreV1Client
 	ImageClient *imageV1Client.ImageV1Client
+	Client      client.Client
 }
 
 func CreateOpenshiftClients() *ClientSet {

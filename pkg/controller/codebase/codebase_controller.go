@@ -2,16 +2,12 @@ package codebase
 
 import (
 	"context"
-	"errors"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/openshift"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/service/codebase"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/service/git_server"
-	openshift_service "github.com/epmd-edp/codebase-operator/v2/pkg/service/openshift"
-	"log"
-	"strings"
-
 	edpv1alpha1 "github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	errWrap "github.com/pkg/errors"
+	validate "github.com/epmd-edp/codebase-operator/v2/pkg/controller/codebase/validation"
+	"github.com/epmd-edp/codebase-operator/v2/pkg/openshift"
+	"github.com/epmd-edp/codebase-operator/v2/pkg/service/codebase/chain"
+	cHand "github.com/epmd-edp/codebase-operator/v2/pkg/service/codebase/chain/handler"
+	"github.com/pkg/errors"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -19,6 +15,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
@@ -27,50 +24,12 @@ import (
 * business logic.  Delete these comments after modifying this file.*
  */
 
-var allowedCodebaseSettings = map[string][]string{
-	"add_repo_strategy": {"create", "clone", "import"},
-	"language":          {"java", "dotnet", "javascript", "groovy-pipeline", "other"},
-}
-
-func containSettings(slice []string, value string) bool {
-	for _, element := range slice {
-		if element == strings.ToLower(value) {
-			return true
-		}
-	}
-	return false
-}
+var log = logf.Log.WithName("controller_codebase")
 
 type CodebaseService interface {
 	Create() error
 	Update()
 	Delete()
-}
-
-func getCodebase(cr *edpv1alpha1.Codebase, r *ReconcileCodebase) (CodebaseService, error) {
-	if !(containSettings(allowedCodebaseSettings["add_repo_strategy"], string(cr.Spec.Strategy))) {
-		return nil, errors.New("Provided unsupported add repository strategy - " + string(cr.Spec.Strategy))
-	} else if !(containSettings(allowedCodebaseSettings["language"], cr.Spec.Lang)) {
-		return nil, errors.New("Provided unsupported language - " + cr.Spec.Lang)
-	} else {
-		clientSet := openshift.CreateOpenshiftClients()
-
-		log.Println("Client set has been created")
-
-		return codebase.CodebaseService{
-			ClientSet:      clientSet,
-			CustomResource: cr,
-			Client:         r.client,
-			Scheme:         r.scheme,
-			GitServerService: git_server.GitServerService{
-				ClientSet: clientSet,
-			},
-			OpenshiftService: openshift_service.OpenshiftService{
-				ClientSet: clientSet,
-				Client:    r.client,
-			},
-		}, nil
-	}
 }
 
 // Add creates a new Codebase Controller and adds it to the Manager. The Manager will set fields on the Controller
@@ -81,7 +40,10 @@ func Add(mgr manager.Manager) error {
 
 // newReconciler returns a new reconcile.Reconciler
 func newReconciler(mgr manager.Manager) reconcile.Reconciler {
-	return &ReconcileCodebase{client: mgr.GetClient(), scheme: mgr.GetScheme()}
+	return &ReconcileCodebase{
+		client: mgr.GetClient(),
+		scheme: mgr.GetScheme(),
+	}
 }
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
@@ -107,8 +69,9 @@ var _ reconcile.Reconciler = &ReconcileCodebase{}
 type ReconcileCodebase struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the apiserver
-	client client.Client
-	scheme *runtime.Scheme
+	client  client.Client
+	scheme  *runtime.Scheme
+	handler cHand.CodebaseHandler
 }
 
 // Reconcile reads that state of the cluster for a Codebase object and makes changes based on the state read
@@ -118,7 +81,8 @@ type ReconcileCodebase struct {
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
 func (r *ReconcileCodebase) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	log.Printf("Reconciling Codebase %s/%s", request.Namespace, request.Name)
+	reqLogger := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
+	reqLogger.Info("Reconciling Codebase")
 
 	// Fetch the Codebase instance
 	instance := &edpv1alpha1.Codebase{}
@@ -133,22 +97,33 @@ func (r *ReconcileCodebase) Reconcile(request reconcile.Request) (reconcile.Resu
 		// Error reading the object - requeue the request.
 		return reconcile.Result{}, err
 	}
-
 	defer r.updateStatus(instance)
 
-	c, err := getCodebase(instance, r)
-	if err != nil {
-		log.Fatalf("[ERROR] Cannot get codebase %s. Reason: %s", request.Name, err)
+	if !validate.IsCodebaseValid(instance) {
+		return reconcile.Result{}, nil
 	}
 
-	err = c.Create()
+	ch, err := r.getChain(instance)
 	if err != nil {
-		return reconcile.Result{}, errWrap.Wrap(err, "an error has occurred while executing Create method")
+		return reconcile.Result{}, errors.Wrap(err, "an error has occurred while selecting chain")
 	}
 
-	log.Printf("Reconciling codebase %s/%s has been finished", request.Namespace, request.Name)
+	if err := ch.ServeRequest(instance); err != nil {
+		return reconcile.Result{}, errors.Wrapf(err, "an error has occurred while handling codebase %v", instance.Name)
+	}
 
+	reqLogger.Info("Reconciling codebase has been finished")
 	return reconcile.Result{}, nil
+}
+
+func (r ReconcileCodebase) getChain(cr *edpv1alpha1.Codebase) (cHand.CodebaseHandler, error) {
+	log.Info("select correct chain to handle codebase", "name", cr.Name)
+	cs := openshift.CreateOpenshiftClients()
+	cs.Client = r.client
+	if cr.Spec.Strategy == "import" {
+		return chain.CreateThirdPartyVcsProviderDefChain(*cs, r.scheme), nil
+	}
+	return chain.CreateGerritDefChain(*cs, r.scheme), nil
 }
 
 func (r *ReconcileCodebase) updateStatus(instance *edpv1alpha1.Codebase) {

@@ -11,4 +11,15 @@ const (
 	ChartTemplate       = "Chart.tmpl"
 	ChartValuesTemplate = "values.tmpl"
 	TemplateFolder      = "templates"
+
+	//statuses
+	StatusFailed     = "failed"
+	StatusFinished   = "created"
+	StatusInProgress = "in progress"
+
+	PrivateSShKeyName = "id_rsa"
+
+	//paths
+	GerritTemplates   = "/usr/local/bin/templates/gerrit"
+	PipelineTemplates = "/usr/local/bin/pipelines"
 )

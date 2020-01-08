@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/model"
 	ClientSet "github.com/epmd-edp/codebase-operator/v2/pkg/openshift"
+	"github.com/epmd-edp/codebase-operator/v2/pkg/util"
 	"golang.org/x/crypto/ssh"
 	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/config"
@@ -43,16 +44,8 @@ type ReplicationConfigParams struct {
 	VcsSshUrl string
 }
 
-type GitSshData struct {
-	Host string
-	User string
-	Key  string
-	Port int32
-}
-
 const (
 	ReplicationConfigTemplateName = "replication-conf.tmpl"
-	TemplatesPath                 = "/usr/local/bin/templates/gerrit"
 )
 
 func (client *SSHClient) RunCommand(cmd *SSHCommand) ([]byte, error) {
@@ -60,7 +53,7 @@ func (client *SSHClient) RunCommand(cmd *SSHCommand) ([]byte, error) {
 	var connection *ssh.Client
 	var err error
 
-	if session, connection, err = client.newSession(); err != nil {
+	if session, connection, err = client.NewSession(); err != nil {
 		return nil, err
 	}
 	defer func() {
@@ -80,7 +73,7 @@ func (client *SSHClient) RunCommand(cmd *SSHCommand) ([]byte, error) {
 	return commandOutput, err
 }
 
-func (client *SSHClient) newSession() (*ssh.Session, *ssh.Client, error) {
+func (client *SSHClient) NewSession() (*ssh.Session, *ssh.Client, error) {
 	connection, err := ssh.Dial("tcp", fmt.Sprintf("%s:%d", client.Host, client.Port), client.Config)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to dial: %s", err)
@@ -227,34 +220,6 @@ func Auth(keyPath string) (transport.AuthMethod, error) {
 	return sshgitPublicKeys, nil
 }
 
-func PushToGerrit(repoPath string, keyPath string) error {
-	r, err := git.PlainOpen(repoPath)
-	log.Printf("Repo with project has been opened: %v", repoPath)
-	if err != nil {
-		return err
-	}
-	auth, err := Auth(keyPath)
-	if err != nil {
-		return err
-	}
-
-	gitOptions := new(git.PushOptions)
-	gitOptions.RemoteName = "origin"
-	gitOptions.RefSpecs = []config.RefSpec{
-		"refs/heads/*:refs/heads/*",
-		"refs/tags/*:refs/tags/*",
-	}
-	gitOptions.Auth = auth
-
-	err = r.Push(gitOptions)
-	if err != nil {
-		log.Println(err)
-		return err
-	}
-	log.Printf("Pushed to gerrit repo %v", repoPath)
-	return nil
-}
-
 func generateReplicationConfig(templatePath, templateName string, params ReplicationConfigParams) (string, error) {
 	log.Printf("Start generation replication config by template path: %v, template name: %v, with params: %+v",
 		templatePath, templateName, params)
@@ -279,7 +244,7 @@ func generateReplicationConfig(templatePath, templateName string, params Replica
 func SetupProjectReplication(codebaseName, namespace string, gerritConf model.GerritConf, conf model.Vcs, clientSet ClientSet.ClientSet) error {
 	log.Printf("Start setup project replication for app: %v", codebaseName)
 	replicaConfigNew, err := generateReplicationConfig(
-		TemplatesPath, ReplicationConfigTemplateName, ReplicationConfigParams{
+		util.GerritTemplates, ReplicationConfigTemplateName, ReplicationConfigParams{
 			Name:      codebaseName,
 			VcsSshUrl: conf.VcsSshUrl,
 		})
@@ -330,56 +295,4 @@ func reloadReplicationPlugin(keyPath string, host string, port int32) error {
 
 	log.Printf("Gerrit replication plugin has been reloaded Host: %v Port: %v KeyPath: %v", host, port, keyPath)
 	return nil
-}
-
-func SshInitFromSecret(data GitSshData) (SSHClient, error) {
-	sshConfig := &ssh.ClientConfig{
-		User: data.User,
-		Auth: []ssh.AuthMethod{
-			publicKey(data.Key),
-		},
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
-	}
-
-	client := &SSHClient{
-		Config: sshConfig,
-		Host:   data.Host,
-		Port:   data.Port,
-	}
-
-	logger.Info("SSH Client has been initialized: Host: %v Port: %v", data.Host, data.Port)
-
-	return *client, nil
-}
-
-func publicKey(key string) ssh.AuthMethod {
-	signer, err := ssh.ParsePrivateKey([]byte(key))
-	if err != nil {
-		panic(err)
-	}
-	return ssh.PublicKeys(signer)
-}
-
-func IsGitServerAccessible(data GitSshData) bool {
-	logger.Info(fmt.Sprintf("Start executing IsGitServerAccessible method to check connection to %v server...", data.Host))
-
-	sshClient, err := SshInitFromSecret(data)
-	if err != nil {
-		logger.Info(fmt.Sprintf("An error has occurred while initing SSH client. Check data in Git Server resource and secret: %v", err))
-		return false
-	}
-
-	var (
-		session    *ssh.Session
-		connection *ssh.Client
-	)
-
-	if session, connection, err = sshClient.newSession(); err != nil {
-		logger.Info(fmt.Sprintf("An error has occurred while connecting to server. Check data in Git Server resource and secret: %v", err))
-		return false
-	}
-	defer session.Close()
-	defer connection.Close()
-
-	return session != nil && connection != nil
 }

@@ -6,10 +6,10 @@ import (
 	"github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	edpv1alpha1 "github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/model"
-	ClientSet "github.com/epmd-edp/codebase-operator/v2/pkg/openshift"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/service/git_server"
+	"github.com/epmd-edp/codebase-operator/v2/pkg/openshift"
 	"github.com/pkg/errors"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	coreV1Client "k8s.io/client-go/kubernetes/typed/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -38,10 +38,8 @@ func Add(mgr manager.Manager) error {
 // newReconciler returns a new reconcile.Reconciler
 func newReconciler(mgr manager.Manager) reconcile.Reconciler {
 	return &ReconcileGitServer{
-		Client: mgr.GetClient(),
-		GitServerService: git_server.GitServerService{
-			ClientSet: ClientSet.CreateOpenshiftClients(),
-		},
+		Client:     mgr.GetClient(),
+		CoreClient: openshift.CreateOpenshiftClients().CoreClient,
 	}
 }
 
@@ -79,8 +77,8 @@ var _ reconcile.Reconciler = &ReconcileGitServer{}
 type ReconcileGitServer struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the apiserver
-	Client           client.Client
-	GitServerService git_server.GitServerService
+	Client     client.Client
+	CoreClient *coreV1Client.CoreV1Client
 }
 
 // Reconcile reads that state of the cluster for a GitServer object and makes changes based on the state read
@@ -109,7 +107,7 @@ func (r *ReconcileGitServer) Reconcile(request reconcile.Request) (reconcile.Res
 
 	gitServer, _ := model.ConvertToGitServer(*instance)
 
-	hasConnection, err := r.GitServerService.CheckConnectionToGitServer(*gitServer)
+	hasConnection, err := checkConnectionToGitServer(*r.CoreClient, *gitServer)
 	if err != nil {
 		return reconcile.Result{}, errors.Wrap(err, fmt.Sprintf("an error has occurred while checking connection to Git Server %v", gitServer.GitHost))
 	}

@@ -1,4 +1,4 @@
-package codebase
+package util
 
 import (
 	"fmt"
