@@ -6,7 +6,6 @@ import (
 	"github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	edpv1alpha1 "github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	git "github.com/epmd-edp/codebase-operator/v2/pkg/controller/gitserver"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/model"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/openshift"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/service/codebase/chain/handler"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/util"
@@ -25,15 +24,7 @@ type CloneGitProject struct {
 func (h CloneGitProject) ServeRequest(c *v1alpha1.Codebase) error {
 	rLog := log.WithValues("codebase name", c.Name)
 	rLog.Info("Start cloning project...")
-
-	if c.Status.Status != model.StatusInit {
-		rLog.Info("Codebase is not in initialized status. Skipped.", "name", c.Name,
-			"status", c.Status.Status)
-		return nil
-	}
-
-	log.Info("start handling codebase", "name", c.Name, "spec", c.Spec)
-
+	rLog.Info("codebase data", "spec", c.Spec)
 	if err := h.setIntermediateSuccessFields(c, edpv1alpha1.AcceptCodebaseRegistration); err != nil {
 		return errors.Wrapf(err, "an error has been occurred while updating %v Codebase status", c.Name)
 	}
@@ -92,13 +83,14 @@ func (h CloneGitProject) getSecret(secretName, namespace string) (*v1.Secret, er
 
 func (h CloneGitProject) setIntermediateSuccessFields(c *edpv1alpha1.Codebase, action edpv1alpha1.ActionType) error {
 	c.Status = edpv1alpha1.CodebaseStatus{
-		Status:          util.StatusInProgress,
-		Available:       false,
-		LastTimeUpdated: time.Now(),
-		Action:          action,
-		Result:          edpv1alpha1.Success,
-		Username:        "system",
-		Value:           "inactive",
+		Status:                         util.StatusInProgress,
+		Available:                      false,
+		LastTimeUpdated:                time.Now(),
+		Action:                         action,
+		Result:                         edpv1alpha1.Success,
+		Username:                       "system",
+		Value:                          "inactive",
+		JenkinsJobProvisionBuildNumber: c.Status.JenkinsJobProvisionBuildNumber,
 	}
 
 	if err := h.clientSet.Client.Status().Update(context.TODO(), c); err != nil {

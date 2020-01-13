@@ -10,10 +10,13 @@ import (
 	"github.com/pkg/errors"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/source"
@@ -54,8 +57,19 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
+	pred := predicate.Funcs{
+		UpdateFunc: func(e event.UpdateEvent) bool {
+			oo := e.ObjectOld.(*edpv1alpha1.Codebase)
+			no := e.ObjectNew.(*edpv1alpha1.Codebase)
+			if !reflect.DeepEqual(oo.Spec, no.Spec) {
+				return true
+			}
+			return false
+		},
+	}
+
 	// Watch for changes to primary resource Codebase
-	err = c.Watch(&source.Kind{Type: &edpv1alpha1.Codebase{}}, &handler.EnqueueRequestForObject{})
+	err = c.Watch(&source.Kind{Type: &edpv1alpha1.Codebase{}}, &handler.EnqueueRequestForObject{}, pred)
 	if err != nil {
 		return err
 	}
@@ -121,9 +135,9 @@ func (r ReconcileCodebase) getChain(cr *edpv1alpha1.Codebase) (cHand.CodebaseHan
 	cs := openshift.CreateOpenshiftClients()
 	cs.Client = r.client
 	if cr.Spec.Strategy == "import" {
-		return chain.CreateThirdPartyVcsProviderDefChain(*cs, r.scheme), nil
+		return chain.CreateThirdPartyVcsProviderDefChain(*cs), nil
 	}
-	return chain.CreateGerritDefChain(*cs, r.scheme), nil
+	return chain.CreateGerritDefChain(*cs), nil
 }
 
 func (r *ReconcileCodebase) updateStatus(instance *edpv1alpha1.Codebase) {

@@ -4,5 +4,4 @@ type Jenkins struct {
 	JenkinsUrl      string
 	JenkinsUsername string
 	JenkinsToken    string
-	JobName         string
 }

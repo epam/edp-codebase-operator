@@ -2,6 +2,7 @@ package util
 
 import (
 	"fmt"
+	"github.com/pkg/errors"
 	"io/ioutil"
 	"os"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
@@ -69,4 +70,12 @@ func DoesDirectoryExist(path string) bool {
 		return false
 	}
 	return true
+}
+
+func RemoveDirectory(path string) error {
+	if err := os.RemoveAll(path); err != nil {
+		return errors.Wrapf(err, "couldn't remove directory %v", path)
+	}
+	log.Info("directory has been cleaned", "directory", path)
+	return nil
 }

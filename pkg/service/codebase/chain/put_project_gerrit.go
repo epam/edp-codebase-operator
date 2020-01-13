@@ -34,14 +34,7 @@ const (
 func (h PutProjectGerrit) ServeRequest(c *v1alpha1.Codebase) error {
 	rLog := log.WithValues("codebase name", c.Name)
 	rLog.Info("Start putting Codebase...")
-
-	if c.Status.Status != model.StatusInit {
-		rLog.Info("Codebase is not in initialized status. Skipped.", "name", c.Name,
-			"status", c.Status.Status)
-		return nil
-	}
-	log.Info("start handling codebase", "name", c.Name, "spec", c.Spec)
-
+	rLog.Info("codebase data", "spec", c.Spec)
 	if err := h.setIntermediateSuccessFields(c, edpv1alpha1.AcceptCodebaseRegistration); err != nil {
 		return errors.Wrapf(err, "an error has been occurred while updating %v Codebase status", c.Name)
 	}
@@ -106,7 +99,7 @@ func (h PutProjectGerrit) tryToPushProjectToGerrit(gs *model.GerritSettings, cod
 		SshPort:       gs.SshPort,
 		WorkDir:       workDir,
 	}
-	if err := h.createProjectInGerrit(gf, codebaseName); err != nil {
+	if err := h.tryToCreateProjectInGerrit(gf, codebaseName); err != nil {
 		return errors.Wrapf(err, "creation project in Gerrit for codebase %v has been failed", codebaseName)
 	}
 	return h.pushToGerrit(gf, codebaseName)
@@ -160,7 +153,7 @@ func readFile(path string) (string, error) {
 	return string(b), nil
 }
 
-func (h PutProjectGerrit) createProjectInGerrit(conf *model.GerritConf, codebaseName string) error {
+func (h PutProjectGerrit) tryToCreateProjectInGerrit(conf *model.GerritConf, codebaseName string) error {
 	log.Info("Start creating project in Gerrit", "codebase name")
 	projectExist, err := gerrit.CheckProjectExist(conf.GerritKeyPath, conf.GerritHost, conf.SshPort, codebaseName)
 	if err != nil {
@@ -301,13 +294,14 @@ func (h PutProjectGerrit) getGerritCredentials(namespace string) (string, string
 
 func (h PutProjectGerrit) setIntermediateSuccessFields(c *edpv1alpha1.Codebase, action edpv1alpha1.ActionType) error {
 	c.Status = edpv1alpha1.CodebaseStatus{
-		Status:          util.StatusInProgress,
-		Available:       false,
-		LastTimeUpdated: time.Now(),
-		Action:          action,
-		Result:          edpv1alpha1.Success,
-		Username:        "system",
-		Value:           "inactive",
+		Status:                         util.StatusInProgress,
+		Available:                      false,
+		LastTimeUpdated:                time.Now(),
+		Action:                         action,
+		Result:                         edpv1alpha1.Success,
+		Username:                       "system",
+		Value:                          "inactive",
+		JenkinsJobProvisionBuildNumber: c.Status.JenkinsJobProvisionBuildNumber,
 	}
 
 	if err := h.clientSet.Client.Status().Update(context.TODO(), c); err != nil {
@@ -320,13 +314,14 @@ func (h PutProjectGerrit) setIntermediateSuccessFields(c *edpv1alpha1.Codebase, 
 
 func setFailedFields(c edpv1alpha1.Codebase, a edpv1alpha1.ActionType, message string) {
 	c.Status = edpv1alpha1.CodebaseStatus{
-		Status:          util.StatusFailed,
-		Available:       false,
-		LastTimeUpdated: time.Now(),
-		Username:        "system",
-		Action:          a,
-		Result:          edpv1alpha1.Error,
-		DetailedMessage: message,
-		Value:           "failed",
+		Status:                         util.StatusFailed,
+		Available:                      false,
+		LastTimeUpdated:                time.Now(),
+		Username:                       "system",
+		Action:                         a,
+		Result:                         edpv1alpha1.Error,
+		DetailedMessage:                message,
+		Value:                          "failed",
+		JenkinsJobProvisionBuildNumber: c.Status.JenkinsJobProvisionBuildNumber,
 	}
 }

@@ -11,7 +11,6 @@ import (
 	"github.com/epmd-edp/codebase-operator/v2/pkg/service/codebase/chain/handler"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/util"
 	"github.com/pkg/errors"
-	"os"
 	"strings"
 	"time"
 )
@@ -21,11 +20,65 @@ type TriggerJobProvisioning struct {
 	clientSet openshift.ClientSet
 }
 
-const ImportStrategy = "import"
+const (
+	ImportStrategy = "import"
+)
 
 func (h TriggerJobProvisioning) ServeRequest(c *v1alpha1.Codebase) error {
 	rLog := log.WithValues("codebase name", c.Name)
 	rLog.Info("Start triggering job provisioning...")
+
+	if err := h.setIntermediateSuccessFields(c, edpv1alpha1.JenkinsConfiguration); err != nil {
+		return errors.Wrapf(err, "an error has been occurred while updating %v Codebase status", c.Name)
+	}
+
+	if err := h.tryToTriggerJobProvisioning(c); err != nil {
+		setFailedFields(*c, edpv1alpha1.JenkinsConfiguration, err.Error())
+		return err
+	}
+	rLog.Info("Job provisioning has been triggered")
+
+	if err := h.updateFinishStatus(c); err != nil {
+		return errors.Wrapf(err, "an error has been occurred while updating %v Codebase status", c.Name)
+	}
+
+	wd := fmt.Sprintf("/home/codebase-operator/edp/%v/%v", c.Namespace, c.Name)
+	if err := util.RemoveDirectory(wd); err != nil {
+		return err
+	}
+	return nextServeOrNil(h.next, c)
+}
+
+func (h TriggerJobProvisioning) initJenkinsClient(namespace string) (*jenkins.JenkinsClient, error) {
+	j, err := h.getJenkinsData(namespace)
+	if err != nil {
+		return nil, errors.Wrap(err, "couldn't get Jenkins info")
+	}
+	log.Info("jenkins data", "url", j.JenkinsUrl, "username", j.JenkinsUsername)
+
+	js, err := jenkins.Init(j.JenkinsUrl, j.JenkinsUsername, j.JenkinsToken)
+	if err != nil {
+		return nil, err
+	}
+	return js, nil
+}
+
+func (h TriggerJobProvisioning) tryToTriggerJobProvisioning(c *v1alpha1.Codebase) error {
+	log.Info("start triggering job provisioning", "name", c.Spec.JobProvisioning)
+	js, err := h.initJenkinsClient(c.Namespace)
+	if err != nil {
+		return err
+	}
+
+	success, err := js.IsBuildSuccessful(c.Spec.JobProvisioning, c.Status.JenkinsJobProvisionBuildNumber)
+	if err != nil {
+		return errors.Wrapf(err, "couldn't check build status for job %v", c.Spec.JobProvisioning)
+	}
+
+	if success {
+		log.Info("las build was successful. triggering of job provision is skipped")
+		return nil
+	}
 
 	gs, err := util.GetGitServer(h.clientSet.Client, c.Name, c.Spec.GitServer, c.Namespace)
 	if err != nil {
@@ -34,41 +87,22 @@ func (h TriggerJobProvisioning) ServeRequest(c *v1alpha1.Codebase) error {
 
 	path := getRepositoryPath(c.Name, string(c.Spec.Strategy), c.Spec.GitUrlPath)
 	sshLink := generateSshLink(path, gs)
-	j, err := h.getJenkinsData(c.Spec.JobProvisioning, c.Namespace)
-	if err != nil {
-		return errors.Wrap(err, "couldn't get Jenkins info")
+	jpm := map[string]string{
+		"PARAM":                 "true",
+		"NAME":                  c.Name,
+		"BUILD_TOOL":            strings.ToLower(c.Spec.BuildTool),
+		"GIT_SERVER_CR_NAME":    gs.Name,
+		"GIT_SERVER_CR_VERSION": "v2",
+		"GIT_CREDENTIALS_ID":    gs.NameSshKeySecret,
+		"REPOSITORY_PATH":       sshLink,
 	}
 
-	err = h.triggerJobProvisioning(*j,
-		map[string]string{
-			"PARAM":                 "true",
-			"NAME":                  c.Name,
-			"BUILD_TOOL":            strings.ToLower(c.Spec.BuildTool),
-			"GIT_SERVER_CR_NAME":    gs.Name,
-			"GIT_SERVER_CR_VERSION": "v2",
-			"GIT_CREDENTIALS_ID":    gs.NameSshKeySecret,
-			"REPOSITORY_PATH":       sshLink,
-		})
+	bn, err := js.TriggerJobProvisioning(c.Spec.JobProvisioning, jpm)
 	if err != nil {
-		setFailedFields(*c, edpv1alpha1.JenkinsConfiguration, err.Error())
 		return errors.Wrap(err, "an error has been occurred while triggering job provisioning")
 	}
-
-	if err := h.setIntermediateSuccessFields(c, edpv1alpha1.JenkinsConfiguration); err != nil {
-		return errors.Wrapf(err, "an error has been occurred while updating %v Codebase status", c.Name)
-	}
-	rLog.Info("Job provisioning has been triggered")
-
-	wd := fmt.Sprintf("/home/codebase-operator/edp/%v/%v", c.Namespace, c.Name)
-	if err := os.RemoveAll(wd); err != nil {
-		return errors.Wrapf(err, "couldn't remove work directory %v", wd)
-	}
-	rLog.Info("work directory has been cleaned", "directory", wd)
-
-	if err := h.updateFinishStatus(c); err != nil {
-		return errors.Wrapf(err, "an error has been occurred while updating %v Codebase status", c.Name)
-	}
-	return nextServeOrNil(h.next, c)
+	c.Status.JenkinsJobProvisionBuildNumber = *bn
+	return nil
 }
 
 func generateSshLink(repoPath string, gs *model.GitServer) string {
@@ -84,7 +118,7 @@ func getRepositoryPath(codebaseName, strategy string, gitUrlPath *string) string
 	return "/" + codebaseName
 }
 
-func (h TriggerJobProvisioning) getJenkinsData(jobProvision, namespace string) (*model.Jenkins, error) {
+func (h TriggerJobProvisioning) getJenkinsData(namespace string) (*model.Jenkins, error) {
 	jen, err := jenkins.GetJenkins(h.clientSet.Client, namespace)
 	if err != nil {
 		return nil, err
@@ -93,51 +127,37 @@ func (h TriggerJobProvisioning) getJenkinsData(jobProvision, namespace string) (
 	if err != nil {
 		return nil, err
 	}
-	jurl := jenkins.GetJenkinsUrl(*jen, namespace)
 	return &model.Jenkins{
-		JenkinsUrl:      jurl,
+		JenkinsUrl:      jenkins.GetJenkinsUrl(*jen, namespace),
 		JenkinsUsername: ju,
 		JenkinsToken:    jt,
-		JobName:         jobProvision,
 	}, nil
-}
-
-func (h TriggerJobProvisioning) triggerJobProvisioning(data model.Jenkins, parameters map[string]string) error {
-	log.Info("start triggering job provision", "codebase name", parameters["NAME"])
-	js, err := jenkins.Init(data.JenkinsUrl, data.JenkinsUsername, data.JenkinsToken)
-	if err != nil {
-		return err
-	}
-
-	if err := js.TriggerJobProvisioning(data.JobName, parameters, 10*time.Second, 12); err != nil {
-		return err
-	}
-	log.Info("end triggering job provision", "codebase name", parameters["NAME"])
-	return nil
 }
 
 func (h TriggerJobProvisioning) setIntermediateSuccessFields(c *edpv1alpha1.Codebase, action edpv1alpha1.ActionType) error {
 	c.Status = edpv1alpha1.CodebaseStatus{
-		Status:          util.StatusInProgress,
-		Available:       false,
-		LastTimeUpdated: time.Now(),
-		Action:          action,
-		Result:          edpv1alpha1.Success,
-		Username:        "system",
-		Value:           "inactive",
+		Status:                         util.StatusInProgress,
+		Available:                      false,
+		LastTimeUpdated:                time.Now(),
+		Action:                         action,
+		Result:                         edpv1alpha1.Success,
+		Username:                       "system",
+		Value:                          "inactive",
+		JenkinsJobProvisionBuildNumber: c.Status.JenkinsJobProvisionBuildNumber,
 	}
 	return h.updateStatus(c)
 }
 
 func (h TriggerJobProvisioning) updateFinishStatus(c *edpv1alpha1.Codebase) error {
 	c.Status = edpv1alpha1.CodebaseStatus{
-		Status:          util.StatusFinished,
-		Available:       true,
-		LastTimeUpdated: time.Now(),
-		Username:        "system",
-		Action:          edpv1alpha1.SetupDeploymentTemplates,
-		Result:          edpv1alpha1.Success,
-		Value:           "active",
+		Status:                         util.StatusFinished,
+		Available:                      true,
+		LastTimeUpdated:                time.Now(),
+		Username:                       "system",
+		Action:                         edpv1alpha1.SetupDeploymentTemplates,
+		Result:                         edpv1alpha1.Success,
+		Value:                          "active",
+		JenkinsJobProvisionBuildNumber: c.Status.JenkinsJobProvisionBuildNumber,
 	}
 	return h.updateStatus(c)
 }
