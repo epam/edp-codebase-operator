@@ -4,18 +4,14 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/model"
-	ClientSet "github.com/epmd-edp/codebase-operator/v2/pkg/openshift"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/util"
 	"golang.org/x/crypto/ssh"
 	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/config"
-	"gopkg.in/src-d/go-git.v4/plumbing/transport"
-	sshgit "gopkg.in/src-d/go-git.v4/plumbing/transport/ssh"
 	"html/template"
 	"io"
-	"io/ioutil"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	coreV1Client "k8s.io/client-go/kubernetes/typed/core/v1"
 	"log"
 	"net"
 	"os"
@@ -87,24 +83,19 @@ func (client *SSHClient) NewSession() (*ssh.Session, *ssh.Client, error) {
 	return session, connection, nil
 }
 
-func PublicKeyFile(file string) ssh.AuthMethod {
-	buffer, err := ioutil.ReadFile(file)
-	if err != nil {
-		return nil
-	}
-
-	key, err := ssh.ParsePrivateKey(buffer)
+func PublicKeyFile(idrsa string) ssh.AuthMethod {
+	key, err := ssh.ParsePrivateKey([]byte(idrsa))
 	if err != nil {
 		return nil
 	}
 	return ssh.PublicKeys(key)
 }
 
-func SshInit(keyPath string, host string, port int32) (SSHClient, error) {
+func SshInit(port int32, idrsa, host string) (SSHClient, error) {
 	sshConfig := &ssh.ClientConfig{
 		User: "project-creator",
 		Auth: []ssh.AuthMethod{
-			PublicKeyFile(keyPath),
+			PublicKeyFile(idrsa),
 		},
 		HostKeyCallback: ssh.HostKeyCallback(func(hostname string, remote net.Addr, key ssh.PublicKey) error { return nil }),
 	}
@@ -114,12 +105,12 @@ func SshInit(keyPath string, host string, port int32) (SSHClient, error) {
 		Host:   host,
 		Port:   port,
 	}
-	log.Printf("SSH Client has been initialized: keyPath: %v Host: %v Port: %v", keyPath, host, port)
+	log.Printf("SSH Client has been initialized: Host: %v Port: %v", host, port)
 
 	return *client, nil
 }
 
-func CheckProjectExist(keyPath string, host string, port int32, appName string) (*bool, error) {
+func CheckProjectExist(port int32, idrsa, host, appName string) (*bool, error) {
 	var raw map[string]interface{}
 
 	command := "gerrit ls-projects --format json"
@@ -132,7 +123,7 @@ func CheckProjectExist(keyPath string, host string, port int32, appName string) 
 		Stderr: os.Stderr,
 	}
 
-	client, err := SshInit(keyPath, host, port)
+	client, err := SshInit(port, idrsa, host)
 	if err != nil {
 		return nil, err
 	}
@@ -153,7 +144,7 @@ func CheckProjectExist(keyPath string, host string, port int32, appName string) 
 	return &isExist, nil
 }
 
-func CreateProject(keyPath string, host string, port int32, appName string) error {
+func CreateProject(port int32, idrsa, host, appName string) error {
 	command := fmt.Sprintf("gerrit create-project %v", appName)
 	cmd := &SSHCommand{
 		Path:   command,
@@ -163,7 +154,7 @@ func CreateProject(keyPath string, host string, port int32, appName string) erro
 		Stderr: os.Stderr,
 	}
 
-	client, err := SshInit(keyPath, host, port)
+	client, err := SshInit(port, idrsa, host)
 	if err != nil {
 		return err
 	}
@@ -200,26 +191,6 @@ func AddRemoteLinkToGerrit(repoPath string, host string, port int32, appName str
 	return nil
 }
 
-func Auth(keyPath string) (transport.AuthMethod, error) {
-	buffer, err := ioutil.ReadFile(keyPath)
-	if err != nil {
-		return nil, err
-	}
-	log.Println("Private key has been read")
-
-	signer, err := ssh.ParsePrivateKey(buffer)
-	if err != nil {
-		return nil, err
-	}
-	sshgitPublicKeys := new(sshgit.PublicKeys)
-	sshgitPublicKeys.User = "project-creator"
-	sshgitPublicKeys.Signer = signer
-	sshgitPublicKeys.HostKeyCallbackHelper = sshgit.HostKeyCallbackHelper{
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
-	}
-	return sshgitPublicKeys, nil
-}
-
 func generateReplicationConfig(templatePath, templateName string, params ReplicationConfigParams) (string, error) {
 	log.Printf("Start generation replication config by template path: %v, template name: %v, with params: %+v",
 		templatePath, templateName, params)
@@ -241,18 +212,19 @@ func generateReplicationConfig(templatePath, templateName string, params Replica
 	return renderedTemplate.String(), nil
 }
 
-func SetupProjectReplication(codebaseName, namespace string, gerritConf model.GerritConf, conf model.Vcs, clientSet ClientSet.ClientSet) error {
+func SetupProjectReplication(client coreV1Client.CoreV1Client, sshPort int32, host, idrsa, codebaseName, namespace, vcsSshUrl string) error {
+
 	log.Printf("Start setup project replication for app: %v", codebaseName)
 	replicaConfigNew, err := generateReplicationConfig(
 		util.GerritTemplates, ReplicationConfigTemplateName, ReplicationConfigParams{
 			Name:      codebaseName,
-			VcsSshUrl: conf.VcsSshUrl,
+			VcsSshUrl: vcsSshUrl,
 		})
 
-	gerritSettings, err := clientSet.CoreClient.ConfigMaps(namespace).Get("gerrit", metav1.GetOptions{})
+	gerritSettings, err := client.ConfigMaps(namespace).Get("gerrit", metav1.GetOptions{})
 	replicaConfig := gerritSettings.Data["replication.config"]
 	gerritSettings.Data["replication.config"] = fmt.Sprintf("%v\n%v", replicaConfig, replicaConfigNew)
-	result, err := clientSet.CoreClient.ConfigMaps(namespace).Update(gerritSettings)
+	result, err := client.ConfigMaps(namespace).Update(gerritSettings)
 	if err != nil {
 		log.Printf("Unable to update config map with replication config: %v", err)
 		return err
@@ -262,7 +234,7 @@ func SetupProjectReplication(codebaseName, namespace string, gerritConf model.Ge
 	log.Println("Waiting for gerrit replication config map appears in gerrit pod. Sleeping for 90 seconds...")
 	time.Sleep(90 * time.Second)
 
-	err = reloadReplicationPlugin(gerritConf.GerritKeyPath, gerritConf.GerritHost, gerritConf.SshPort)
+	err = reloadReplicationPlugin(sshPort, idrsa, host)
 	if err != nil {
 		log.Printf("Unable to reload replication plugin: %v", err)
 		return err
@@ -272,7 +244,7 @@ func SetupProjectReplication(codebaseName, namespace string, gerritConf model.Ge
 	return nil
 }
 
-func reloadReplicationPlugin(keyPath string, host string, port int32) error {
+func reloadReplicationPlugin(port int32, idrsa, host string) error {
 	command := "gerrit plugin reload replication"
 
 	cmd := &SSHCommand{
@@ -283,7 +255,7 @@ func reloadReplicationPlugin(keyPath string, host string, port int32) error {
 		Stderr: os.Stderr,
 	}
 
-	client, err := SshInit(keyPath, host, port)
+	client, err := SshInit(port, idrsa, host)
 	if err != nil {
 		return err
 	}
@@ -293,6 +265,6 @@ func reloadReplicationPlugin(keyPath string, host string, port int32) error {
 		return err
 	}
 
-	log.Printf("Gerrit replication plugin has been reloaded Host: %v Port: %v KeyPath: %v", host, port, keyPath)
+	log.Printf("Gerrit replication plugin has been reloaded Host: %v Port: %v", host, port)
 	return nil
 }

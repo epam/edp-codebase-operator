@@ -86,22 +86,6 @@ func PushChanges(key, user, directory string) error {
 	return nil
 }
 
-func initAuth(key, user string) (*goGit.PublicKeys, error) {
-	log.Info("Initializing auth", "user", user)
-	signer, err := ssh.ParsePrivateKey([]byte(key))
-	if err != nil {
-		return nil, err
-	}
-
-	return &goGit.PublicKeys{
-		User:   user,
-		Signer: signer,
-		HostKeyCallbackHelper: goGit.HostKeyCallbackHelper{
-			HostKeyCallback: ssh.InsecureIgnoreHostKey(),
-		},
-	}, nil
-}
-
 func CheckPermissions(repo string, user string, pass string) (accessible bool) {
 	log.Info("checking permissions", "user", user, "repository", repo)
 	r, _ := git.Init(memory.NewStorage(), nil)
@@ -123,7 +107,7 @@ func CheckPermissions(repo string, user string, pass string) (accessible bool) {
 
 func CloneRepositoryBySsh(key, user, repoUrl, destination string) error {
 	log.Info("Start cloning", "repository", repoUrl)
-	auth, err := initSSHAuth(key, user)
+	auth, err := initAuth(key, user)
 	if err != nil {
 		return err
 	}
@@ -139,24 +123,9 @@ func CloneRepositoryBySsh(key, user, repoUrl, destination string) error {
 	return nil
 }
 
-func initSSHAuth(key, user string) (*goGit.PublicKeys, error) {
-	log.Info("Initializing auth", "user", user)
-	signer, err := ssh.ParsePrivateKey([]byte(key))
-	if err != nil {
-		return nil, err
-	}
-	return &goGit.PublicKeys{
-		User:   user,
-		Signer: signer,
-		HostKeyCallbackHelper: goGit.HostKeyCallbackHelper{
-			HostKeyCallback: ssh.InsecureIgnoreHostKey(),
-		},
-	}, nil
-}
-
 func CloneRepository(repo, user, pass, destination string) error {
 	log.Info("Start cloning", "repository", repo)
-	_, err := git.PlainClone(destination, true, &git.CloneOptions{
+	_, err := git.PlainClone(destination, false, &git.CloneOptions{
 		URL: repo,
 		Auth: &http.BasicAuth{
 			Username: user,
@@ -167,6 +136,22 @@ func CloneRepository(repo, user, pass, destination string) error {
 	}
 	log.Info("End cloning", "repository", repo)
 	return nil
+}
+
+func initAuth(key, user string) (*goGit.PublicKeys, error) {
+	log.Info("Initializing auth", "user", user)
+	signer, err := ssh.ParsePrivateKey([]byte(key))
+	if err != nil {
+		return nil, err
+	}
+
+	return &goGit.PublicKeys{
+		User:   user,
+		Signer: signer,
+		HostKeyCallbackHelper: goGit.HostKeyCallbackHelper{
+			HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		},
+	}, nil
 }
 
 func checkConnectionToGitServer(c coreV1Client.CoreV1Client, gitServer model.GitServer) (bool, error) {

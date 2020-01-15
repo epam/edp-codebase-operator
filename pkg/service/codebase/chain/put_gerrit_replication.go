@@ -5,7 +5,6 @@ import (
 	"github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	edpv1alpha1 "github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/gerrit"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/model"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/openshift"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/service/codebase/chain/handler"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/util"
@@ -33,25 +32,25 @@ func (h PutGerritReplication) ServeRequest(c *v1alpha1.Codebase) error {
 func (h PutGerritReplication) tryToSetupGerritReplication(codebaseName, namespace string) error {
 	log.Info("Start setting Gerrit replication", "codebase name", codebaseName)
 
-	gs, us, err := util.GetConfigSettings(h.clientSet, namespace)
+	gs, us, err := util.GetConfigSettings(h.clientSet.CoreClient, namespace)
 	if err != nil {
 		return errors.Wrap(err, "unable get config settings")
 	}
 
-	wd := fmt.Sprintf("/home/codebase-operator/edp/%v/%v", namespace, codebaseName)
-
-	gf := &model.GerritConf{
-		GerritKeyPath: fmt.Sprintf("%v/gerrit-private.key", wd),
-		GerritHost:    fmt.Sprintf("gerrit.%v", namespace),
-		SshPort:       gs.SshPort,
-		WorkDir:       wd,
-	}
 	if us.VcsIntegrationEnabled {
 		vcsConf, err := vcs.GetVcsConfig(*h.clientSet.CoreClient, us, codebaseName, namespace)
 		if err != nil {
 			return err
 		}
-		return gerrit.SetupProjectReplication(codebaseName, namespace, *gf, *vcsConf, h.clientSet)
+
+		s, err := util.GetSecret(*h.clientSet.CoreClient, "gerrit-project-creator", namespace)
+		if err != nil {
+			return errors.Wrap(err, "unable to get gerrit-project-creator secret")
+		}
+
+		idrsa := string(s.Data[util.PrivateSShKeyName])
+		host := fmt.Sprintf("gerrit.%v", namespace)
+		return gerrit.SetupProjectReplication(*h.clientSet.CoreClient, gs.SshPort, host, idrsa, codebaseName, vcsConf.VcsSshUrl, namespace)
 	}
 	log.Info("Skipped Gerrit replication configuration. VCS integration isn't enabled")
 	return nil

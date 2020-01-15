@@ -85,7 +85,7 @@ func (h PutDeployConfigsToGitProvider) ServeRequest(c *v1alpha1.Codebase) error 
 
 func (h PutDeployConfigsToGitProvider) getTemplateConfig(c edpv1alpha1.Codebase) (*model.GerritConfigGoTemplating, error) {
 	log.Info("Start configuring template config ...")
-	_, us, err := util.GetConfigSettings(h.clientSet, c.Namespace)
+	_, us, err := util.GetConfigSettings(h.clientSet.CoreClient, c.Namespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable get config settings")
 	}

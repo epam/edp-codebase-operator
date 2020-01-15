@@ -33,7 +33,7 @@ func (h SetupPerf) ServeRequest(c *v1alpha1.Codebase) error {
 
 func (h SetupPerf) tryToSetupPerf(codebaseName, namespace string) error {
 	log.Info("start setting up perf")
-	_, us, err := util.GetConfigSettings(h.clientSet, namespace)
+	_, us, err := util.GetConfigSettings(h.clientSet.CoreClient, namespace)
 	if err != nil {
 		return errors.Wrap(err, "unable get config settings")
 	}

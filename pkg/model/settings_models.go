@@ -38,13 +38,6 @@ type SshConfig struct {
 	VcsKeyPath            string
 }
 
-type GerritConf struct {
-	GerritKeyPath string
-	GerritHost    string
-	SshPort       int32
-	WorkDir       string
-}
-
 type Vcs struct {
 	VcsSshUrl             string
 	VcsIntegrationEnabled bool

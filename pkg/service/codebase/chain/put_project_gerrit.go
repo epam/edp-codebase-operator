@@ -1,7 +1,6 @@
 package chain
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
@@ -14,11 +13,6 @@ import (
 	"github.com/epmd-edp/codebase-operator/v2/pkg/util"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/vcs"
 	"github.com/pkg/errors"
-	"html/template"
-	"io/ioutil"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"net/url"
-	"os"
 	"time"
 )
 
@@ -48,19 +42,9 @@ func (h PutProjectGerrit) ServeRequest(c *v1alpha1.Codebase) error {
 		return err
 	}
 
-	gs, us, err := util.GetConfigSettings(h.clientSet, c.Namespace)
+	gs, us, err := util.GetConfigSettings(h.clientSet.CoreClient, c.Namespace)
 	if err != nil {
 		return errors.Wrap(err, "unable get config settings")
-	}
-
-	if err := h.tryToCreateGerritPrivateKey(c.Namespace, wd); err != nil {
-		setFailedFields(*c, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
-		return errors.Wrapf(err, "unable to write the Gerrit ssh key for %v codebase", c.Name)
-	}
-
-	if err := h.tryToCreateSshConfig(gs, us, wd, c.Namespace); err != nil {
-		setFailedFields(*c, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
-		return errors.Wrapf(err, "creation of SSH config for %v codebase has been failed", c.Name)
 	}
 
 	ru, err := util.GetRepoUrl(GithubDomain, c)
@@ -84,7 +68,7 @@ func (h PutProjectGerrit) ServeRequest(c *v1alpha1.Codebase) error {
 		return errors.Wrap(err, "clonning project hsa been failed")
 	}
 
-	if err := h.tryToPushProjectToGerrit(gs, c.Name, wd, c.Namespace); err != nil {
+	if err := h.tryToPushProjectToGerrit(gs.SshPort, c.Name, wd, c.Namespace); err != nil {
 		setFailedFields(*c, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
 		return errors.Wrapf(err, "push to gerrit for codebase %v has been failed", c.Name)
 	}
@@ -92,48 +76,28 @@ func (h PutProjectGerrit) ServeRequest(c *v1alpha1.Codebase) error {
 	return nextServeOrNil(h.next, c)
 }
 
-func (h PutProjectGerrit) tryToPushProjectToGerrit(gs *model.GerritSettings, codebaseName, workDir, namespace string) error {
-	gf := &model.GerritConf{
-		GerritKeyPath: fmt.Sprintf("%v/gerrit-private.key", workDir),
-		GerritHost:    fmt.Sprintf("gerrit.%v", namespace),
-		SshPort:       gs.SshPort,
-		WorkDir:       workDir,
+func (h PutProjectGerrit) tryToPushProjectToGerrit(sshPort int32, codebaseName, workDir, namespace string) error {
+	s, err := util.GetSecret(*h.clientSet.CoreClient, "gerrit-project-creator", namespace)
+	if err != nil {
+		return errors.Wrap(err, "unable to get gerrit-project-creator secret")
 	}
-	if err := h.tryToCreateProjectInGerrit(gf, codebaseName); err != nil {
+
+	idrsa := string(s.Data[util.PrivateSShKeyName])
+	host := fmt.Sprintf("gerrit.%v", namespace)
+	if err := h.tryToCreateProjectInGerrit(sshPort, idrsa, host, codebaseName); err != nil {
 		return errors.Wrapf(err, "creation project in Gerrit for codebase %v has been failed", codebaseName)
 	}
-	return h.pushToGerrit(gf, codebaseName)
+	d := fmt.Sprintf("%v/%v", workDir, codebaseName)
+	return h.pushToGerrit(sshPort, idrsa, host, codebaseName, d)
 }
 
-func (h PutProjectGerrit) tryToCreateGerritPrivateKey(namespace, workDir string) error {
-	idrsa, _, err := h.getGerritCredentials(namespace)
-	if err != nil {
-		return errors.Wrap(err, "unable to get Gerrit credentials")
-	}
-	return h.createGerritPrivateKey(idrsa, workDir)
-}
-
-func (h PutProjectGerrit) tryToCreateSshConfig(gs *model.GerritSettings, us *model.UserSettings, workDir, namespace string) error {
-	sshConf, err := h.getSshConfig(us, gs, namespace, workDir)
-	if err != nil {
-		return errors.Wrap(err, "couldn't create SSH config model")
-	}
-	return h.createSshConfig(sshConf)
-}
-
-func (h PutProjectGerrit) pushToGerrit(conf *model.GerritConf, codebaseName string) error {
+func (h PutProjectGerrit) pushToGerrit(sshPost int32, idrsa, host, codebaseName, directory string) error {
 	log.Info("Start pushing project to Gerrit ", "codebase name", codebaseName)
-	rp := fmt.Sprintf("%v/%v", conf.WorkDir, codebaseName)
-	if err := gerrit.AddRemoteLinkToGerrit(rp, conf.GerritHost, conf.SshPort, codebaseName); err != nil {
+	if err := gerrit.AddRemoteLinkToGerrit(directory, host, sshPost, codebaseName); err != nil {
 		return errors.Wrap(err, "couldn't add remote link to Gerrit")
 	}
 
-	k, err := readFile(conf.GerritKeyPath)
-	if err != nil {
-		return err
-	}
-
-	if err := git.PushChanges(k, "project-creator", rp); err != nil {
+	if err := git.PushChanges(idrsa, "project-creator", directory); err != nil {
 		if err.Error() == "already up-to-date" {
 			log.Info("project already up-to-date. skip pushing")
 			return nil
@@ -144,18 +108,9 @@ func (h PutProjectGerrit) pushToGerrit(conf *model.GerritConf, codebaseName stri
 	return nil
 }
 
-func readFile(path string) (string, error) {
-	b, err := ioutil.ReadFile(path)
-	if err != nil {
-		return "", err
-	}
-	log.Info("Private key has been read")
-	return string(b), nil
-}
-
-func (h PutProjectGerrit) tryToCreateProjectInGerrit(conf *model.GerritConf, codebaseName string) error {
+func (h PutProjectGerrit) tryToCreateProjectInGerrit(sshPort int32, idrsa, host, codebaseName string) error {
 	log.Info("Start creating project in Gerrit", "codebase name")
-	projectExist, err := gerrit.CheckProjectExist(conf.GerritKeyPath, conf.GerritHost, conf.SshPort, codebaseName)
+	projectExist, err := gerrit.CheckProjectExist(sshPort, idrsa, host, codebaseName)
 	if err != nil {
 		return errors.Wrap(err, "couldn't check project")
 	}
@@ -164,7 +119,7 @@ func (h PutProjectGerrit) tryToCreateProjectInGerrit(conf *model.GerritConf, cod
 		return nil
 	}
 
-	if err := gerrit.CreateProject(conf.GerritKeyPath, conf.GerritHost, conf.SshPort, codebaseName); err != nil {
+	if err := gerrit.CreateProject(sshPort, idrsa, host, codebaseName); err != nil {
 		return err
 	}
 	return nil
@@ -212,84 +167,6 @@ func (h PutProjectGerrit) getRepoCreds(codebaseName, namespace string) (string, 
 		return "", "", err
 	}
 	return repositoryUsername, repositoryPassword, nil
-}
-
-func (h PutProjectGerrit) createSshConfig(ssh *model.SshConfig) error {
-	sshPath := "/home/codebase-operator/.ssh"
-	log.Info("start creation of SSH config", "path", sshPath)
-	var config bytes.Buffer
-	if _, err := os.Stat(sshPath); os.IsNotExist(err) {
-		if err := os.MkdirAll(sshPath, 0744); err != nil {
-			return err
-		}
-	}
-
-	tmpl, err := template.
-		New("config.tmpl").
-		ParseFiles("/usr/local/bin/templates/ssh/config.tmpl")
-	if err != nil {
-		return err
-	}
-
-	if err := tmpl.Execute(&config, ssh); err != nil {
-		return err
-	}
-
-	f, err := os.OpenFile(sshPath+"/config", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	_, err = fmt.Fprintln(f, config.String())
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (h PutProjectGerrit) getSshConfig(us *model.UserSettings, gs *model.GerritSettings, namespace, workDir string) (*model.SshConfig, error) {
-	log.Info("creating SSH config model")
-	vcsGroup, err := url.Parse(us.VcsGroupNameUrl)
-	if err != nil {
-		return nil, err
-	}
-
-	return &model.SshConfig{
-		CicdNamespace:         namespace,
-		SshPort:               gs.SshPort,
-		GerritKeyPath:         fmt.Sprintf("%v/gerrit-private.key", workDir),
-		VcsIntegrationEnabled: us.VcsIntegrationEnabled,
-		ProjectVcsHostname:    vcsGroup.Host,
-		VcsSshPort:            us.VcsSshPort,
-		VcsKeyPath:            workDir + "/vcs-private.key",
-	}, nil
-}
-
-func (h PutProjectGerrit) createGerritPrivateKey(privateKey string, workDir string) error {
-	log.Info("start creation of Gerrit private key")
-	path := fmt.Sprintf("%v/gerrit-private.key", workDir)
-	if err := ioutil.WriteFile(path, []byte(privateKey), 400); err != nil {
-		if os.IsExist(err) {
-			log.Info("file already exists", "path", path)
-			return nil
-		}
-		return err
-	}
-	return nil
-}
-
-func (h PutProjectGerrit) getGerritCredentials(namespace string) (string, string, error) {
-	log.Info("getting Gerrit credentials", "namespace", namespace)
-	s, err := h.clientSet.CoreClient.
-		Secrets(namespace).
-		Get("gerrit-project-creator", metav1.GetOptions{})
-
-	if err != nil {
-		return "", "", err
-	}
-	return string(s.Data[util.PrivateSShKeyName]), string(s.Data["id_rsa.pub"]), nil
 }
 
 func (h PutProjectGerrit) setIntermediateSuccessFields(c *edpv1alpha1.Codebase, action edpv1alpha1.ActionType) error {

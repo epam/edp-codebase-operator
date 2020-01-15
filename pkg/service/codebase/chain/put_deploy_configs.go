@@ -1,7 +1,6 @@
 package chain
 
 import (
-	"bytes"
 	"fmt"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	edpv1alpha1 "github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
@@ -14,7 +13,6 @@ import (
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/ssh"
 	"os"
-	"os/exec"
 	"strings"
 	"text/template"
 )
@@ -28,7 +26,7 @@ func (h PutDeployConfigs) ServeRequest(c *v1alpha1.Codebase) error {
 	rLog := log.WithValues("codebase name", c.Name)
 	rLog.Info("Start pushing configs...")
 
-	gs, us, err := util.GetConfigSettings(h.clientSet, c.Namespace)
+	gs, us, err := util.GetConfigSettings(h.clientSet.CoreClient, c.Namespace)
 	if err != nil {
 		return errors.Wrap(err, "unable get config settings")
 	}
@@ -90,11 +88,18 @@ func (h PutDeployConfigs) tryToPushConfigs(c edpv1alpha1.Codebase, sshPort int32
 	appTemplatesDir := fmt.Sprintf("%v/%v/deploy-templates", config.TemplatesDir, c.Name)
 	appConfigFilesDir := fmt.Sprintf("%v/%v/config-files", config.TemplatesDir, c.Name)
 
+	s, err := util.GetSecret(*h.clientSet.CoreClient, "gerrit-project-creator", c.Namespace)
+	if err != nil {
+		return errors.Wrap(err, "unable to get gerrit-project-creator secret")
+	}
+
+	idrsa := string(s.Data[util.PrivateSShKeyName])
+
 	if err := util.CreateDirectory(config.TemplatesDir); err != nil {
 		return err
 	}
 
-	if err := cloneProjectRepoFromGerrit(c.Name, c.Namespace, sshPort, config); err != nil {
+	if err := cloneProjectRepoFromGerrit(sshPort, idrsa, c.Name, c.Namespace, config); err != nil {
 		return err
 	}
 
@@ -136,12 +141,7 @@ func (h PutDeployConfigs) tryToPushConfigs(c edpv1alpha1.Codebase, sshPort int32
 		return err
 	}
 
-	k, err := readFile(fmt.Sprintf("%v/gerrit-private.key", config.WorkDir))
-	if err != nil {
-		return err
-	}
-
-	if err := git.PushChanges(k, "project-creator", d); err != nil {
+	if err := git.PushChanges(idrsa, "project-creator", d); err != nil {
 		return err
 	}
 	return nil
@@ -173,20 +173,17 @@ func copySonarConfigs(config model.GerritConfigGoTemplating) error {
 	return nil
 }
 
-func cloneProjectRepoFromGerrit(name, namespace string, sshPort int32, config model.GerritConfigGoTemplating) error {
+func cloneProjectRepoFromGerrit(sshPort int32, idrsa, name, namespace string, config model.GerritConfigGoTemplating) error {
 	log.Info("start cloning repository from Gerrit", "ssh url", config.CloneSshUrl)
 
 	var (
-		s      *ssh.Session
-		c      *ssh.Client
-		out    bytes.Buffer
-		stderr bytes.Buffer
+		s *ssh.Session
+		c *ssh.Client
 
-		gkp = fmt.Sprintf("%v/gerrit-private.key", config.WorkDir)
-		gh  = fmt.Sprintf("gerrit.%v", namespace)
+		h = fmt.Sprintf("gerrit.%v", namespace)
 	)
 
-	sshcl, err := gerrit.SshInit(gkp, gh, sshPort)
+	sshcl, err := gerrit.SshInit(sshPort, idrsa, h)
 	if err != nil {
 		return errors.Wrap(err, "couldn't initialize SSH client")
 	}
@@ -204,17 +201,16 @@ func cloneProjectRepoFromGerrit(name, namespace string, sshPort int32, config mo
 		}
 	}()
 
-	cmd := exec.Command("git", "clone", config.CloneSshUrl, fmt.Sprintf("%v/%v",
-		config.TemplatesDir, name))
-	cmd.Stdout = &out
-	cmd.Stderr = &stderr
-	if err := cmd.Run(); err != nil {
+	d := fmt.Sprintf("%v/%v", config.TemplatesDir, name)
+	if err := git.CloneRepositoryBySsh(idrsa, "project-creator", config.CloneSshUrl, d); err != nil {
 		return err
 	}
-	log.Info("cloning repo", "from", config.CloneSshUrl,
-		"to", config.TemplatesDir, "output", out.String())
 
 	destinationPath := fmt.Sprintf("%v/%v/.git/hooks", config.TemplatesDir, name)
+	if err := util.CreateDirectory(destinationPath); err != nil {
+		return errors.Wrapf(err, "couldn't create folder %v", destinationPath)
+	}
+
 	sourcePath := "/usr/local/bin/configs"
 	fileName := "commit-msg"
 	src := fmt.Sprintf("%v/%v", sourcePath, fileName)
