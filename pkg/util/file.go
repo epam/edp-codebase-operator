@@ -79,3 +79,12 @@ func RemoveDirectory(path string) error {
 	log.Info("directory has been cleaned", "directory", path)
 	return nil
 }
+
+func IsDirectoryEmpty(path string) bool {
+	files, err := ioutil.ReadDir(path)
+	if err != nil {
+		log.Error(err, "unable to check directory")
+		return false
+	}
+	return len(files) == 0
+}

@@ -22,4 +22,9 @@ const (
 	//paths
 	GerritTemplates   = "/usr/local/bin/templates/gerrit"
 	PipelineTemplates = "/usr/local/bin/pipelines"
+
+	ImportStrategy = "import"
+	Application    = "application"
+	OtherLanguage  = "other"
+	Javascript     = "javascript"
 )

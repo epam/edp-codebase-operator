@@ -7,6 +7,7 @@ import (
 	"github.com/epmd-edp/codebase-operator/v2/pkg/openshift"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/service/codebase/chain"
 	cHand "github.com/epmd-edp/codebase-operator/v2/pkg/service/codebase/chain/handler"
+	"github.com/epmd-edp/codebase-operator/v2/pkg/util"
 	"github.com/pkg/errors"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -134,7 +135,7 @@ func (r ReconcileCodebase) getChain(cr *edpv1alpha1.Codebase) (cHand.CodebaseHan
 	log.Info("select correct chain to handle codebase", "name", cr.Name)
 	cs := openshift.CreateOpenshiftClients()
 	cs.Client = r.client
-	if cr.Spec.Strategy == "import" {
+	if cr.Spec.Strategy == util.ImportStrategy {
 		return chain.CreateThirdPartyVcsProviderDefChain(*cs), nil
 	}
 	return chain.CreateGerritDefChain(*cs), nil

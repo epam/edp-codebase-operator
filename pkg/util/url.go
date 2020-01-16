@@ -31,7 +31,7 @@ func tryGetRepoUrl(spec v1alpha1.CodebaseSpec) (*string, error) {
 func buildRepoUrl(baseUrl string, spec v1alpha1.CodebaseSpec) string {
 	log.Info("Start building repo url", "base url", baseUrl, "spec", spec)
 	var result string
-	if spec.Type == "application" {
+	if spec.Type == Application {
 		result = fmt.Sprintf("%v/%v-%v-%v",
 			baseUrl, spec.Lang, spec.BuildTool, *spec.Framework)
 	} else if spec.Type == "autotests" {

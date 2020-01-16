@@ -20,10 +20,6 @@ type TriggerJobProvisioning struct {
 	clientSet openshift.ClientSet
 }
 
-const (
-	ImportStrategy = "import"
-)
-
 func (h TriggerJobProvisioning) ServeRequest(c *v1alpha1.Codebase) error {
 	rLog := log.WithValues("codebase name", c.Name)
 	rLog.Info("Start triggering job provisioning...")
@@ -112,7 +108,7 @@ func generateSshLink(repoPath string, gs *model.GitServer) string {
 }
 
 func getRepositoryPath(codebaseName, strategy string, gitUrlPath *string) string {
-	if strategy == ImportStrategy {
+	if strategy == util.ImportStrategy {
 		return *gitUrlPath
 	}
 	return "/" + codebaseName

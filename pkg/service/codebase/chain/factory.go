@@ -15,7 +15,10 @@ func CreateGerritDefChain(cs openshift.ClientSet) handler.CodebaseHandler {
 		next: PutGerritReplication{
 			next: SetupPerf{
 				next: PutDeployConfigs{
-					next: TriggerJobProvisioning{
+					next: PutS2iIs{
+						next: TriggerJobProvisioning{
+							clientSet: cs,
+						},
 						clientSet: cs,
 					},
 					clientSet: cs,
@@ -32,7 +35,10 @@ func CreateThirdPartyVcsProviderDefChain(cs openshift.ClientSet) handler.Codebas
 	log.Info("chain is selected", "type", "third party VCS")
 	return CloneGitProject{
 		next: PutDeployConfigsToGitProvider{
-			next: TriggerJobProvisioning{
+			next: PutS2iIs{
+				next: TriggerJobProvisioning{
+					clientSet: cs,
+				},
 				clientSet: cs,
 			},
 			clientSet: cs,

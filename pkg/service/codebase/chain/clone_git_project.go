@@ -55,8 +55,10 @@ func (h CloneGitProject) ServeRequest(c *v1alpha1.Codebase) error {
 	k := string(secret.Data[util.PrivateSShKeyName])
 	u := gs.GitUser
 	ru := fmt.Sprintf("%v:%v%v", gs.GitHost, gs.SshPort, *c.Spec.GitUrlPath)
-	if err := git.CloneRepositoryBySsh(k, u, ru, gf); err != nil {
-		return errors.Wrapf(err, "an error has occurred while cloning repository %v", ru)
+	if !util.DoesDirectoryExist(gf) || util.IsDirectoryEmpty(gf) {
+		if err := git.CloneRepositoryBySsh(k, u, ru, gf); err != nil {
+			return errors.Wrapf(err, "an error has occurred while cloning repository %v", ru)
+		}
 	}
 	rLog.Info("end cloning project")
 	return nextServeOrNil(h.next, c)

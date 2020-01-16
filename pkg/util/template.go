@@ -39,10 +39,10 @@ func CopyPipelines(codebaseType, src, dest string) error {
 	return nil
 }
 
-func CopyHelmChartTemplates(config model.GerritConfigGoTemplating) error {
+func CopyHelmChartTemplates(deploymentScript, workDir string, config model.GerritConfigGoTemplating) error {
 	log.Info("start handling Helm Chart templates", "codebase name", config.Name)
-	templatesDest := createTemplateFolderPath(config.WorkDir, config.Name, config.DeploymentScript)
-	templateBasePath := fmt.Sprintf("/usr/local/bin/templates/applications/%v", config.DeploymentScript)
+	templatesDest := createTemplateFolderPath(workDir, config.Name, deploymentScript)
+	templateBasePath := fmt.Sprintf("/usr/local/bin/templates/applications/%v", deploymentScript)
 
 	log.Info("Paths", "templatesDest", templatesDest, "templateBasePath", templateBasePath)
 
@@ -92,13 +92,12 @@ func CopyHelmChartTemplates(config model.GerritConfigGoTemplating) error {
 	return nil
 }
 
-func CopyOpenshiftTemplate(config model.GerritConfigGoTemplating) error {
+func CopyOpenshiftTemplate(framework, deploymentScript, workDir string, config model.GerritConfigGoTemplating) error {
 	log.Info("start handling Openshift template", "codebase name", config.Name)
-	templatesDest := createTemplateFolderPath(config.WorkDir, config.Name,
-		config.DeploymentScript)
+	templatesDest := createTemplateFolderPath(workDir, config.Name, deploymentScript)
 	templateBasePath := fmt.Sprintf("/usr/local/bin/templates/applications/%v/%v",
-		config.DeploymentScript, strings.ToLower(config.Lang))
-	templateName := fmt.Sprintf("%v.tmpl", strings.ToLower(*config.Framework))
+		deploymentScript, strings.ToLower(config.Lang))
+	templateName := fmt.Sprintf("%v.tmpl", strings.ToLower(framework))
 
 	log.Info("Paths", "templatesDest", templatesDest, "templateBasePath", templateBasePath,
 		"templateName", templateName)
@@ -123,11 +122,11 @@ func CopyOpenshiftTemplate(config model.GerritConfigGoTemplating) error {
 	return nil
 }
 
-func CopyTemplate(config model.GerritConfigGoTemplating) error {
-	if config.DeploymentScript == HelmChartDeploymentScriptType {
-		return CopyHelmChartTemplates(config)
+func CopyTemplate(framework, deploymentScript, workDir string, cf model.GerritConfigGoTemplating) error {
+	if deploymentScript == HelmChartDeploymentScriptType {
+		return CopyHelmChartTemplates(deploymentScript, workDir, cf)
 	}
-	return CopyOpenshiftTemplate(config)
+	return CopyOpenshiftTemplate(framework, deploymentScript, workDir, cf)
 }
 
 func renderTemplate(file *os.File, templateBasePath, templateName string, config model.GerritConfigGoTemplating) error {
@@ -150,4 +149,11 @@ func createTemplateFolderPath(workDir, name, deploymentScriptType string) string
 		return fmt.Sprintf("%v/%v/%v/deploy-templates", workDir, OcTemplatesFolder, name)
 	}
 	return fmt.Sprintf("%v/%v/%v/deploy-templates", workDir, HelmChartTemplatesFolder, name)
+}
+
+func GetTemplateDirectory(workDir string, deploymentScriptType string) string {
+	if deploymentScriptType == OpenshiftTemplate {
+		return fmt.Sprintf("%v/%v", workDir, OcTemplatesFolder)
+	}
+	return fmt.Sprintf("%v/%v", workDir, HelmChartTemplatesFolder)
 }
