@@ -2,17 +2,20 @@ package codebasebranch
 
 import (
 	"context"
+	"fmt"
 	edpv1alpha1 "github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/codebasebranch/impl"
-	"k8s.io/apimachinery/pkg/api/errors"
+	"github.com/epmd-edp/jenkins-operator/v2/pkg/apis/v2/v1alpha1"
+	"github.com/pkg/errors"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"log"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 	"time"
 )
@@ -21,6 +24,8 @@ import (
 * USER ACTION REQUIRED: This is a scaffold file intended for the user to modify with their own Controller
 * business logic.  Delete these comments after modifying this file.*
  */
+
+var log = logf.Log.WithName("codebase-branch-controller")
 
 type CodebaseBranchService interface {
 	Create(cr *edpv1alpha1.CodebaseBranch)
@@ -72,13 +77,14 @@ type ReconcileCodebaseBranch struct {
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
 func (r *ReconcileCodebaseBranch) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	log.Printf("Reconciling CodebaseBranch %s/%s", request.Namespace, request.Name)
+	reqLogger := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
+	reqLogger.Info("Reconciling CodebaseBranch")
 
 	// Fetch the CodebaseBranch instance
 	instance := &edpv1alpha1.CodebaseBranch{}
 	err := r.client.Get(context.TODO(), request.NamespacedName, instance)
 	if err != nil {
-		if errors.IsNotFound(err) {
+		if k8serrors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
 			// Return and don't requeue
@@ -92,22 +98,30 @@ func (r *ReconcileCodebaseBranch) Reconcile(request reconcile.Request) (reconcil
 	app, err := r.getApplicationByBranch(*instance)
 
 	if err != nil {
-		log.Printf("[INFO] Cannot get codebase for branch %s. Reason: %s", request.Name, err)
+		return reconcile.Result{RequeueAfter: 5 * time.Second},
+			errors.Wrapf(err, "couldn't get codebase for branch %s", request.Name)
+	}
+
+	jfn := fmt.Sprintf("%v-%v", app.Name, "jenkins-folder")
+	jf, err := r.getJenkinsFolder(jfn, app.Namespace)
+	if err != nil {
 		return reconcile.Result{RequeueAfter: 5 * time.Second}, err
 	}
 
-	if !app.Status.Available {
-		log.Printf("[INFO] Codebase %s for branch %s is not ready yet.", app.Name, request.Name)
+	a := jf == nil || !jf.Status.Available
+	if !app.Status.Available && a {
+		log.Info("can't start reconcile for branch", "codebase", app.Name,
+			"codebase status", app.Status.Available, "branch", request.Name, "jenkins folder", a)
 		return reconcile.Result{RequeueAfter: 5 * time.Second}, nil
 	}
 
 	codebaseBranch, err := getCodebaseBranchService(r)
 	if err != nil {
-		log.Fatalf("[ERROR] Cannot get codebase branch %s. Reason: %s", request.Name, err)
+		log.Error(err, "couldn't initializate codebase branch service")
 	}
 	codebaseBranch.Create(instance)
 
-	log.Printf("Reconciling CodebaseBranch %s/%s has been finished", request.Namespace, request.Name)
+	reqLogger.Info("Reconciling CodebaseBranch has been finished")
 	return reconcile.Result{}, nil
 }
 
@@ -136,4 +150,19 @@ func (r *ReconcileCodebaseBranch) updateStatus(instance *edpv1alpha1.CodebaseBra
 	if err != nil {
 		_ = r.client.Update(context.TODO(), instance)
 	}
+}
+
+func (r *ReconcileCodebaseBranch) getJenkinsFolder(name, namespace string) (*v1alpha1.JenkinsFolder, error) {
+	i := &v1alpha1.JenkinsFolder{}
+	err := r.client.Get(context.TODO(), types.NamespacedName{
+		Namespace: namespace,
+		Name:      name,
+	}, i)
+	if err != nil {
+		if k8serrors.IsNotFound(err) {
+			return nil, nil
+		}
+		return nil, errors.Wrapf(err, "failed to get jenkins folder %v", name)
+	}
+	return i, nil
 }

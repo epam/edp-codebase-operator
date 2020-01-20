@@ -13,7 +13,6 @@ import (
 	"net/http"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
-	"strconv"
 	"time"
 )
 
@@ -34,34 +33,6 @@ func Init(url string, username string, token string) (*JenkinsClient, error) {
 	}, nil
 }
 
-func (c JenkinsClient) TriggerJobProvisioning(jobName string, parameters map[string]string) (*int64, error) {
-	jn := fmt.Sprintf("job-provisions/job/%v", jobName)
-	log.Info("start triggering job provision", "name", jn, "codebase name", parameters["NAME"])
-	qn, err := c.Jenkins.BuildJob(jn, parameters)
-	if qn != 0 || err != nil {
-		log.Info("end triggering job provision", "name", jn, "codebase name", parameters["NAME"])
-		return c.getBuildNumber(qn)
-	}
-	return nil, errors.Errorf("couldn't finish triggering job provision for %v codebase", parameters["NAME"])
-}
-
-func (c JenkinsClient) getBuildNumber(queueNumber int64) (*int64, error) {
-	log.Info("start getting build number", "queueNumber", queueNumber)
-	for i := 0; i < 3; i++ {
-		t, err := c.Jenkins.GetQueueItem(queueNumber)
-		if err != nil {
-			return nil, err
-		}
-		n := t.Raw.Executable.Number
-		if n != 0 {
-			log.Info("end getting build number", "number", n)
-			return &n, nil
-		}
-		time.Sleep(5 * time.Second)
-	}
-	return nil, fmt.Errorf("couldn't get build number by queue number %v", queueNumber)
-}
-
 func (c JenkinsClient) GetJob(name string, delay time.Duration, retryCount int) bool {
 	for i := 0; i < retryCount; i++ {
 		_, err := c.Jenkins.GetJob(name)
@@ -72,20 +43,6 @@ func (c JenkinsClient) GetJob(name string, delay time.Duration, retryCount int) 
 		time.Sleep(delay)
 	}
 	return false
-}
-
-func (c JenkinsClient) TriggerBuildJob(appName string) error {
-	jobName := fmt.Sprintf("%v/job/MASTER-Build-%v", appName, appName)
-	log.Info("Trying to trigger jenkins job", "name", jobName)
-
-	if c.GetJob(jobName, time.Second, 60) {
-		_, err := c.Jenkins.BuildJob(jobName, map[string]string{
-			"GERRIT_PROJECT_NAME": appName,
-			"BRANCH":              "master",
-		})
-		return err
-	}
-	return errors.New(fmt.Sprintf("Couldn't trigger %v job", jobName))
 }
 
 func (c JenkinsClient) TriggerReleaseJob(branchName string, fromCommit string, appName string) error {
@@ -161,38 +118,6 @@ func (c JenkinsClient) IsJobRunning(name string) (*bool, error) {
 	}
 
 	return &isRunning, nil
-}
-
-func (c JenkinsClient) IsBuildSuccessful(jobName string, buildNumber int64) (bool, error) {
-	log.Info("start checking build", "job name", jobName, "build number", buildNumber)
-	jp := fmt.Sprintf("job-provisions/job/%s", jobName)
-	job, err := c.Jenkins.GetJob(jp)
-	if err != nil {
-		return false, errors.Wrapf(err, "could't get job %v", jp)
-	}
-
-	b, err := getBuild(jp, job, buildNumber)
-	if err != nil {
-		if err.Error() == "404" {
-			log.Info("couldn't find build", "build number", buildNumber)
-			return false, nil
-		}
-		return false, err
-	}
-	return b.GetResult() == "SUCCESS", nil
-}
-
-func getBuild(jp string, job *gojenkins.Job, id int64) (*gojenkins.Build, error) {
-	endpoint := "/job/" + jp
-	build := gojenkins.Build{Jenkins: job.Jenkins, Job: job, Raw: new(gojenkins.BuildResponse), Depth: 1, Base: endpoint + "/" + strconv.FormatInt(id, 10)}
-	status, err := build.Poll()
-	if err != nil {
-		return nil, err
-	}
-	if status == 200 {
-		return &build, nil
-	}
-	return nil, errors.New(strconv.Itoa(status))
 }
 
 func GetJenkins(c client.Client, namespace string) (*jenkinsApi.Jenkins, error) {

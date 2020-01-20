@@ -171,14 +171,13 @@ func (h PutProjectGerrit) getRepoCreds(codebaseName, namespace string) (string, 
 
 func (h PutProjectGerrit) setIntermediateSuccessFields(c *edpv1alpha1.Codebase, action edpv1alpha1.ActionType) error {
 	c.Status = edpv1alpha1.CodebaseStatus{
-		Status:                         util.StatusInProgress,
-		Available:                      false,
-		LastTimeUpdated:                time.Now(),
-		Action:                         action,
-		Result:                         edpv1alpha1.Success,
-		Username:                       "system",
-		Value:                          "inactive",
-		JenkinsJobProvisionBuildNumber: c.Status.JenkinsJobProvisionBuildNumber,
+		Status:          util.StatusInProgress,
+		Available:       false,
+		LastTimeUpdated: time.Now(),
+		Action:          action,
+		Result:          edpv1alpha1.Success,
+		Username:        "system",
+		Value:           "inactive",
 	}
 
 	if err := h.clientSet.Client.Status().Update(context.TODO(), c); err != nil {
@@ -191,14 +190,13 @@ func (h PutProjectGerrit) setIntermediateSuccessFields(c *edpv1alpha1.Codebase, 
 
 func setFailedFields(c edpv1alpha1.Codebase, a edpv1alpha1.ActionType, message string) {
 	c.Status = edpv1alpha1.CodebaseStatus{
-		Status:                         util.StatusFailed,
-		Available:                      false,
-		LastTimeUpdated:                time.Now(),
-		Username:                       "system",
-		Action:                         a,
-		Result:                         edpv1alpha1.Error,
-		DetailedMessage:                message,
-		Value:                          "failed",
-		JenkinsJobProvisionBuildNumber: c.Status.JenkinsJobProvisionBuildNumber,
+		Status:          util.StatusFailed,
+		Available:       false,
+		LastTimeUpdated: time.Now(),
+		Username:        "system",
+		Action:          a,
+		Result:          edpv1alpha1.Error,
+		DetailedMessage: message,
+		Value:           "failed",
 	}
 }

@@ -85,14 +85,13 @@ func (h CloneGitProject) getSecret(secretName, namespace string) (*v1.Secret, er
 
 func (h CloneGitProject) setIntermediateSuccessFields(c *edpv1alpha1.Codebase, action edpv1alpha1.ActionType) error {
 	c.Status = edpv1alpha1.CodebaseStatus{
-		Status:                         util.StatusInProgress,
-		Available:                      false,
-		LastTimeUpdated:                time.Now(),
-		Action:                         action,
-		Result:                         edpv1alpha1.Success,
-		Username:                       "system",
-		Value:                          "inactive",
-		JenkinsJobProvisionBuildNumber: c.Status.JenkinsJobProvisionBuildNumber,
+		Status:          util.StatusInProgress,
+		Available:       false,
+		LastTimeUpdated: time.Now(),
+		Action:          action,
+		Result:          edpv1alpha1.Success,
+		Username:        "system",
+		Value:           "inactive",
 	}
 
 	if err := h.clientSet.Client.Status().Update(context.TODO(), c); err != nil {

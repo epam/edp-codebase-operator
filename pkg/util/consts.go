@@ -27,4 +27,6 @@ const (
 	Application    = "application"
 	OtherLanguage  = "other"
 	Javascript     = "javascript"
+
+	CodebaseKind = "Codebase"
 )
