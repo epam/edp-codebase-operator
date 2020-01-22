@@ -55,10 +55,11 @@ func (h PutJenkinsFolder) putJenkinsFolder(c *v1alpha1.Codebase) error {
 			Namespace: c.Namespace,
 			OwnerReferences: []metav1.OwnerReference{
 				{
-					APIVersion: "v2.edp.epam.com/v1alpha1",
-					Kind:       util.CodebaseKind,
-					Name:       c.Name,
-					UID:        c.UID,
+					APIVersion:         "v2.edp.epam.com/v1alpha1",
+					Kind:               util.CodebaseKind,
+					Name:               c.Name,
+					UID:                c.UID,
+					BlockOwnerDeletion: newTrue(),
 				},
 			},
 		},
@@ -112,4 +113,9 @@ func (h PutJenkinsFolder) updateStatus(c *v1alpha1.Codebase) error {
 		}
 	}
 	return nil
+}
+
+func newTrue() *bool {
+	b := true
+	return &b
 }

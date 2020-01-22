@@ -80,6 +80,8 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 
 var _ reconcile.Reconciler = &ReconcileCodebase{}
 
+const ForegroundDeletionFinalizerName = "foregroundDeletion"
+
 // ReconcileCodebase reconciles a codebase object
 type ReconcileCodebase struct {
 	// This client, initialized using mgr.Client() above, is a split client
@@ -114,6 +116,10 @@ func (r *ReconcileCodebase) Reconcile(request reconcile.Request) (reconcile.Resu
 	}
 	defer r.updateStatus(instance)
 
+	if err := r.tryToAddFinalizer(instance); err != nil {
+		return reconcile.Result{}, err
+	}
+
 	if !validate.IsCodebaseValid(instance) {
 		return reconcile.Result{}, nil
 	}
@@ -146,4 +152,14 @@ func (r *ReconcileCodebase) updateStatus(instance *edpv1alpha1.Codebase) {
 	if err != nil {
 		_ = r.client.Update(context.TODO(), instance)
 	}
+}
+
+func (r ReconcileCodebase) tryToAddFinalizer(c *edpv1alpha1.Codebase) error {
+	if !util.ContainsString(c.ObjectMeta.Finalizers, ForegroundDeletionFinalizerName) {
+		c.ObjectMeta.Finalizers = append(c.ObjectMeta.Finalizers, ForegroundDeletionFinalizerName)
+		if err := r.client.Update(context.TODO(), c); err != nil {
+			return err
+		}
+	}
+	return nil
 }
