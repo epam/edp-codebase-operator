@@ -25,13 +25,6 @@ func (h PutDeployConfigsToGitProvider) ServeRequest(c *v1alpha1.Codebase) error 
 		setFailedFields(*c, edpv1alpha1.SetupDeploymentTemplates, err.Error())
 		return errors.Wrapf(err, "couldn't push deploy configs", "codebase name", c.Name)
 	}
-
-	wd := fmt.Sprintf("/home/codebase-operator/edp/%v/%v", c.Namespace, c.Name)
-	if err := util.RemoveDirectory(wd); err != nil {
-		return err
-	}
-	log.Info("directory was cleaned", "path", wd)
-
 	rLog.Info("end pushing configs to remote git server")
 	return nextServeOrNil(h.next, c)
 }

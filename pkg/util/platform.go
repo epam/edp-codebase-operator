@@ -75,24 +75,7 @@ func GetVcsBasicAuthConfig(c coreV1Client.CoreV1Client, namespace string, secret
 	if k8serrors.IsNotFound(err) || k8serrors.IsForbidden(err) {
 		return "", "", err
 	}
-
-	if err := deleteTempVcsSecret(c, namespace, secretName); err != nil {
-		return "", "", errors.Wrap(err, "unable to delete temp secret")
-	}
-
 	return string(vcsCredentialsSecret.Data["username"]), string(vcsCredentialsSecret.Data["password"]), nil
-}
-
-func deleteTempVcsSecret(c coreV1Client.CoreV1Client, namespace string, secretName string) error {
-	log.Info("Start deleting temp secret with VCS credentials", "name", secretName)
-	err := c.
-		Secrets(namespace).
-		Delete(secretName, &metav1.DeleteOptions{})
-	if err != nil && k8serrors.IsNotFound(err) {
-		return err
-	}
-	log.Info("Temp secret with VCS credentials has been deleted", "name", secretName)
-	return nil
 }
 
 func GetGitServer(c client.Client, codebaseName, gitServerName, namespace string) (*model.GitServer, error) {
