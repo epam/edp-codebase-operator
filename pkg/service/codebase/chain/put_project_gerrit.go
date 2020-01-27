@@ -102,6 +102,10 @@ func (h PutProjectGerrit) pushToGerrit(sshPost int32, idrsa, host, codebaseName,
 			log.Info("project already up-to-date. skip pushing")
 			return nil
 		}
+		if err.Error() == "non-fast-forward update: refs/heads/master" {
+			log.Info("non-fast-forward update: refs/heads/master. skip pushing")
+			return nil
+		}
 		return err
 	}
 

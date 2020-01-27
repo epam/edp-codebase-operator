@@ -26,6 +26,9 @@ func (h PutJenkinsFolder) ServeRequest(c *v1alpha1.Codebase) error {
 	if err := h.putJenkinsFolder(c); err != nil {
 		return err
 	}
+	if err := h.updateFinishStatus(c); err != nil {
+		return errors.Wrapf(err, "an error has been occurred while updating %v Codebase status", c.Name)
+	}
 	rLog.Info("end creating jenkins folder...")
 	return nextServeOrNil(h.next, c)
 }
@@ -93,4 +96,26 @@ func (h PutJenkinsFolder) getJenkinsFolder(name, namespace string) (*jenkinsv1al
 func newTrue() *bool {
 	b := true
 	return &b
+}
+
+func (h PutJenkinsFolder) updateFinishStatus(c *v1alpha1.Codebase) error {
+	c.Status = v1alpha1.CodebaseStatus{
+		Status:          util.StatusFinished,
+		Available:       true,
+		LastTimeUpdated: time.Now(),
+		Username:        "system",
+		Action:          v1alpha1.SetupDeploymentTemplates,
+		Result:          v1alpha1.Success,
+		Value:           "active",
+	}
+	return h.updateStatus(c)
+}
+
+func (h PutJenkinsFolder) updateStatus(c *v1alpha1.Codebase) error {
+	if err := h.clientSet.Client.Status().Update(context.TODO(), c); err != nil {
+		if err := h.clientSet.Client.Update(context.TODO(), c); err != nil {
+			return err
+		}
+	}
+	return nil
 }

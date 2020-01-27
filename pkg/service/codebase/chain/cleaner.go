@@ -1,7 +1,6 @@
 package chain
 
 import (
-	"context"
 	"fmt"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/openshift"
@@ -10,7 +9,6 @@ import (
 	"github.com/pkg/errors"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"time"
 )
 
 type Cleaner struct {
@@ -23,9 +21,6 @@ func (h Cleaner) ServeRequest(c *v1alpha1.Codebase) error {
 	rLog.Info("start cleaning data...")
 	if err := h.tryToClean(c); err != nil {
 		return err
-	}
-	if err := h.updateFinishStatus(c); err != nil {
-		return errors.Wrapf(err, "an error has been occurred while updating %v Codebase status", c.Name)
 	}
 	rLog.Info("end cleaning data...")
 	return nextServeOrNil(h.next, c)
@@ -64,27 +59,5 @@ func deleteWorkDirectory(dir string) error {
 		return errors.Wrapf(err, "couldn't delete directory %v", dir)
 	}
 	log.Info("directory was cleaned", "path", dir)
-	return nil
-}
-
-func (h Cleaner) updateFinishStatus(c *v1alpha1.Codebase) error {
-	c.Status = v1alpha1.CodebaseStatus{
-		Status:          util.StatusFinished,
-		Available:       true,
-		LastTimeUpdated: time.Now(),
-		Username:        "system",
-		Action:          v1alpha1.SetupDeploymentTemplates,
-		Result:          v1alpha1.Success,
-		Value:           "active",
-	}
-	return h.updateStatus(c)
-}
-
-func (h Cleaner) updateStatus(c *v1alpha1.Codebase) error {
-	if err := h.clientSet.Client.Status().Update(context.TODO(), c); err != nil {
-		if err := h.clientSet.Client.Update(context.TODO(), c); err != nil {
-			return err
-		}
-	}
 	return nil
 }
