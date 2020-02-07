@@ -30,7 +30,7 @@ func PrepareTemplates(client *coreV1Client.CoreV1Client, c v1alpha1.Codebase) er
 		}
 	}
 
-	td := util.GetTemplateDirectory(wd, c.Spec.DeploymentScript)
+	td := fmt.Sprintf("%v/%v", wd, "templates")
 	dest := fmt.Sprintf("%v/%v", td, c.Name)
 	if err := util.CopyPipelines(c.Spec.Type, util.PipelineTemplates, dest); err != nil {
 		return errors.Wrapf(err, "an error has occurred while copying pipelines for %v codebase", c.Name)

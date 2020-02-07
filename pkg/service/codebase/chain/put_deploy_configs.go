@@ -46,7 +46,7 @@ func (h PutDeployConfigs) tryToPushConfigs(c edpv1alpha1.Codebase, sshPort int32
 	u := "project-creator"
 	url := fmt.Sprintf("ssh://%v@gerrit.%v:%v/%v", u, c.Namespace, sshPort, c.Name)
 	wd := fmt.Sprintf("/home/codebase-operator/edp/%v/%v", c.Namespace, c.Name)
-	td := util.GetTemplateDirectory(wd, c.Spec.DeploymentScript)
+	td := fmt.Sprintf("%v/%v", wd, "templates")
 	d := fmt.Sprintf("%v/%v", td, c.Name)
 
 	if !util.DoesDirectoryExist(d) || util.IsDirectoryEmpty(d) {

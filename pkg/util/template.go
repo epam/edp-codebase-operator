@@ -41,7 +41,7 @@ func CopyPipelines(codebaseType, src, dest string) error {
 
 func CopyHelmChartTemplates(deploymentScript, workDir string, config model.GerritConfigGoTemplating) error {
 	log.Info("start handling Helm Chart templates", "codebase name", config.Name)
-	templatesDest := createTemplateFolderPath(workDir, config.Name, deploymentScript)
+	templatesDest := fmt.Sprintf("%v/%v/%v/deploy-templates", workDir, "templates", config.Name)
 	templateBasePath := fmt.Sprintf("/usr/local/bin/templates/applications/%v", deploymentScript)
 
 	log.Info("Paths", "templatesDest", templatesDest, "templateBasePath", templateBasePath)
@@ -94,7 +94,7 @@ func CopyHelmChartTemplates(deploymentScript, workDir string, config model.Gerri
 
 func CopyOpenshiftTemplate(framework, deploymentScript, workDir string, config model.GerritConfigGoTemplating) error {
 	log.Info("start handling Openshift template", "codebase name", config.Name)
-	templatesDest := createTemplateFolderPath(workDir, config.Name, deploymentScript)
+	templatesDest := fmt.Sprintf("%v/%v/%v/deploy-templates", workDir, "templates", config.Name)
 	templateBasePath := fmt.Sprintf("/usr/local/bin/templates/applications/%v/%v",
 		deploymentScript, strings.ToLower(config.Lang))
 	templateName := fmt.Sprintf("%v.tmpl", strings.ToLower(framework))
@@ -142,18 +142,4 @@ func renderTemplate(file *os.File, templateBasePath, templateName string, config
 	}
 	log.Info("template has been rendered", "codebase", config.Name)
 	return nil
-}
-
-func createTemplateFolderPath(workDir, name, deploymentScriptType string) string {
-	if deploymentScriptType == OpenshiftTemplate {
-		return fmt.Sprintf("%v/%v/%v/deploy-templates", workDir, OcTemplatesFolder, name)
-	}
-	return fmt.Sprintf("%v/%v/%v/deploy-templates", workDir, HelmChartTemplatesFolder, name)
-}
-
-func GetTemplateDirectory(workDir string, deploymentScriptType string) string {
-	if deploymentScriptType == OpenshiftTemplate {
-		return fmt.Sprintf("%v/%v", workDir, OcTemplatesFolder)
-	}
-	return fmt.Sprintf("%v/%v", workDir, HelmChartTemplatesFolder)
 }

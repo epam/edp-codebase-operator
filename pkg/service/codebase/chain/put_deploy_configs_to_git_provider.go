@@ -41,23 +41,21 @@ func (h PutDeployConfigsToGitProvider) tryToPushConfigs(c v1alpha1.Codebase) err
 	}
 
 	wd := fmt.Sprintf("/home/codebase-operator/edp/%v/%v", c.Namespace, c.Name)
-	td := fmt.Sprintf("%v/%v", wd, getTemplateFolderName(c.Spec.DeploymentScript))
+	td := fmt.Sprintf("%v/%v", wd, "templates")
 	gf := fmt.Sprintf("%v/%v", td, c.Name)
 	log.Info("path to local Git folder", "path", gf)
 
-	d := fmt.Sprintf("%v/%v", td, c.Name)
 	if err := template.PrepareTemplates(h.clientSet.CoreClient, c); err != nil {
 		return err
 	}
 
-	if err := git.CommitChanges(d); err != nil {
+	if err := git.CommitChanges(gf); err != nil {
 		return err
 	}
 
 	k := string(secret.Data[util.PrivateSShKeyName])
 	u := gs.GitUser
-	dest := fmt.Sprintf("%v/%v", td, c.Name)
-	if err := git.PushChanges(k, u, dest); err != nil {
+	if err := git.PushChanges(k, u, gf); err != nil {
 		return errors.Wrapf(err, "an error has occurred while pushing changes for %v codebase", c.Name)
 	}
 	return nil

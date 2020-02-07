@@ -44,7 +44,7 @@ func (h CloneGitProject) ServeRequest(c *v1alpha1.Codebase) error {
 		return errors.Wrapf(err, "an error has occurred while getting %v secret", gs.NameSshKeySecret)
 	}
 
-	td := fmt.Sprintf("%v/%v", wd, getTemplateFolderName(c.Spec.DeploymentScript))
+	td := fmt.Sprintf("%v/%v", wd, "templates")
 	if err := util.CreateDirectory(td); err != nil {
 		return errors.Wrapf(err, "an error has occurred while creating folder %v", td)
 	}
@@ -62,13 +62,6 @@ func (h CloneGitProject) ServeRequest(c *v1alpha1.Codebase) error {
 	}
 	rLog.Info("end cloning project")
 	return nextServeOrNil(h.next, c)
-}
-
-func getTemplateFolderName(deploymentScript string) string {
-	if deploymentScript == util.HelmChartDeploymentScriptType {
-		return "helm-charts"
-	}
-	return "oc-templates"
 }
 
 func (h CloneGitProject) getSecret(secretName, namespace string) (*v1.Secret, error) {
