@@ -80,6 +80,24 @@ objects:
                   value: "codebase-operator"
                 - name: PLATFORM_TYPE
                   value: "openshift"
+                - name: DB_HOST
+                  value: "postgres"
+                - name: DB_PORT
+                  value: "5432"
+                - name: DB_NAME
+                  value: "edp-install-wizard-db"
+                - name: DB_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: db-admin-console
+                      key: username
+                - name: DB_PASS
+                  valueFrom:
+                    secretKeyRef:
+                      name: db-admin-console
+                      key: password
+                - name: DB_SSL_MODE
+                  value: "disable"
 parameters:
   - displayName: Application image name
     name: IMAGE_NAME

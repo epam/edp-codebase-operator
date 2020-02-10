@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	edpv1alpha1 "github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/codebase/helper"
+	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/codebase/repository"
+	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/codebase/service/chain/handler"
 	git "github.com/epmd-edp/codebase-operator/v2/pkg/controller/gitserver"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/gerrit"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/model"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/openshift"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/service/codebase/chain/handler"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/util"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/vcs"
 	"github.com/pkg/errors"
@@ -19,6 +21,7 @@ import (
 type PutProjectGerrit struct {
 	next      handler.CodebaseHandler
 	clientSet openshift.ClientSet
+	cr        repository.CodebaseRepository
 }
 
 const (
@@ -78,6 +81,21 @@ func (h PutProjectGerrit) ServeRequest(c *v1alpha1.Codebase) error {
 }
 
 func (h PutProjectGerrit) tryToPushProjectToGerrit(sshPort int32, codebaseName, workDir, namespace string) error {
+	edpN, err := helper.GetEDPName(h.clientSet.Client, namespace)
+	if err != nil {
+		return errors.Wrap(err, "couldn't get edp name")
+	}
+
+	p, err := h.cr.SelectPushedValue(codebaseName, *edpN)
+	if err != nil {
+		return errors.Wrapf(err, "couldn't get pushed value for %v codebase", codebaseName)
+	}
+
+	if p {
+		log.V(2).Info("skip pushing to gerrit. project already pushed", "name", codebaseName)
+		return nil
+	}
+
 	s, err := util.GetSecret(*h.clientSet.CoreClient, "gerrit-project-creator", namespace)
 	if err != nil {
 		return errors.Wrap(err, "unable to get gerrit-project-creator secret")
@@ -88,8 +106,17 @@ func (h PutProjectGerrit) tryToPushProjectToGerrit(sshPort int32, codebaseName, 
 	if err := h.tryToCreateProjectInGerrit(sshPort, idrsa, host, codebaseName); err != nil {
 		return errors.Wrapf(err, "creation project in Gerrit for codebase %v has been failed", codebaseName)
 	}
+
 	d := fmt.Sprintf("%v/%v", workDir, codebaseName)
-	return h.pushToGerrit(sshPort, idrsa, host, codebaseName, d)
+	if err := h.pushToGerrit(sshPort, idrsa, host, codebaseName, d); err != nil {
+		return err
+	}
+
+	if err := h.cr.SetPushedValue(true, codebaseName, *edpN); err != nil {
+		return errors.Wrapf(err, "couldn't set pushed value for %v codebase", codebaseName)
+	}
+
+	return nil
 }
 
 func (h PutProjectGerrit) pushToGerrit(sshPost int32, idrsa, host, codebaseName, directory string) error {
@@ -97,19 +124,9 @@ func (h PutProjectGerrit) pushToGerrit(sshPost int32, idrsa, host, codebaseName,
 	if err := gerrit.AddRemoteLinkToGerrit(directory, host, sshPost, codebaseName); err != nil {
 		return errors.Wrap(err, "couldn't add remote link to Gerrit")
 	}
-
 	if err := git.PushChanges(idrsa, "project-creator", directory); err != nil {
-		if err.Error() == "already up-to-date" {
-			log.Info("project already up-to-date. skip pushing")
-			return nil
-		}
-		if err.Error() == "non-fast-forward update: refs/heads/master" {
-			log.Info("non-fast-forward update: refs/heads/master. skip pushing")
-			return nil
-		}
 		return err
 	}
-
 	return nil
 }
 

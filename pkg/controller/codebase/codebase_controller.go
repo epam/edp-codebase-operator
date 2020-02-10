@@ -2,11 +2,13 @@ package codebase
 
 import (
 	"context"
+	"database/sql"
+	"github.com/epmd-edp/codebase-operator/v2/db"
 	edpv1alpha1 "github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/codebase/service/chain"
+	cHand "github.com/epmd-edp/codebase-operator/v2/pkg/controller/codebase/service/chain/handler"
 	validate "github.com/epmd-edp/codebase-operator/v2/pkg/controller/codebase/validation"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/openshift"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/service/codebase/chain"
-	cHand "github.com/epmd-edp/codebase-operator/v2/pkg/service/codebase/chain/handler"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/util"
 	"github.com/pkg/errors"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -47,6 +49,7 @@ func newReconciler(mgr manager.Manager) reconcile.Reconciler {
 	return &ReconcileCodebase{
 		client: mgr.GetClient(),
 		scheme: mgr.GetScheme(),
+		db:     db.GetConnection(),
 	}
 }
 
@@ -89,6 +92,7 @@ type ReconcileCodebase struct {
 	client  client.Client
 	scheme  *runtime.Scheme
 	handler cHand.CodebaseHandler
+	db      *sql.DB
 }
 
 // Reconcile reads that state of the cluster for a Codebase object and makes changes based on the state read
@@ -144,7 +148,7 @@ func (r ReconcileCodebase) getChain(cr *edpv1alpha1.Codebase) (cHand.CodebaseHan
 	if cr.Spec.Strategy == util.ImportStrategy {
 		return chain.CreateThirdPartyVcsProviderDefChain(*cs), nil
 	}
-	return chain.CreateGerritDefChain(*cs), nil
+	return chain.CreateGerritDefChain(*cs, r.db), nil
 }
 
 func (r *ReconcileCodebase) updateStatus(instance *edpv1alpha1.Codebase) {

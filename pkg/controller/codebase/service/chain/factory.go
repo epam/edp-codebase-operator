@@ -1,15 +1,17 @@
 package chain
 
 import (
+	"database/sql"
 	edpv1alpha1 "github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/codebase/repository"
+	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/codebase/service/chain/handler"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/openshift"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/service/codebase/chain/handler"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
 var log = logf.Log.WithName("codebase_handler")
 
-func CreateGerritDefChain(cs openshift.ClientSet) handler.CodebaseHandler {
+func CreateGerritDefChain(cs openshift.ClientSet, db *sql.DB) handler.CodebaseHandler {
 	log.Info("chain is selected", "type", "gerrit")
 	return PutProjectGerrit{
 		next: PutGerritReplication{
@@ -31,6 +33,7 @@ func CreateGerritDefChain(cs openshift.ClientSet) handler.CodebaseHandler {
 			clientSet: cs,
 		},
 		clientSet: cs,
+		cr:        repository.CodebaseRepository{DB: db},
 	}
 }
 
