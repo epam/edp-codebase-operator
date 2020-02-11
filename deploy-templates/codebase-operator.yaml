@@ -81,7 +81,7 @@ objects:
                 - name: PLATFORM_TYPE
                   value: "openshift"
                 - name: DB_HOST
-                  value: "postgres"
+                  value: "edp-install-wizard-db"
                 - name: DB_PORT
                   value: "5432"
                 - name: DB_NAME
