@@ -10,6 +10,9 @@ spec:
   testReportFramework: "allure"
   buildTool: "NPM"
   strategy: "create"
+  versioning:
+    type: "edp"
+    startFrom: "0.0.1"
   git:
     url: "https://git.epam.com/epmd-edp/examples/basic/edp-react-helloworld.git"
   route:

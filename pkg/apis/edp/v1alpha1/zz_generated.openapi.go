@@ -11,17 +11,17 @@ import (
 
 func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenAPIDefinition {
 	return map[string]common.OpenAPIDefinition{
-		"github.com/epmd-edp/codebase-operator/pkg/apis/edp/v1alpha1.Codebase":                  schema_pkg_apis_edp_v1alpha1_Codebase(ref),
-		"github.com/epmd-edp/codebase-operator/pkg/apis/edp/v1alpha1.CodebaseBranch":            schema_pkg_apis_edp_v1alpha1_CodebaseBranch(ref),
-		"github.com/epmd-edp/codebase-operator/pkg/apis/edp/v1alpha1.CodebaseBranchSpec":        schema_pkg_apis_edp_v1alpha1_CodebaseBranchSpec(ref),
-		"github.com/epmd-edp/codebase-operator/pkg/apis/edp/v1alpha1.CodebaseBranchStatus":      schema_pkg_apis_edp_v1alpha1_CodebaseBranchStatus(ref),
-		"github.com/epmd-edp/codebase-operator/pkg/apis/edp/v1alpha1.CodebaseImageStream":       schema_pkg_apis_edp_v1alpha1_CodebaseImageStream(ref),
-		"github.com/epmd-edp/codebase-operator/pkg/apis/edp/v1alpha1.CodebaseImageStreamSpec":   schema_pkg_apis_edp_v1alpha1_CodebaseImageStreamSpec(ref),
-		"github.com/epmd-edp/codebase-operator/pkg/apis/edp/v1alpha1.CodebaseImageStreamStatus": schema_pkg_apis_edp_v1alpha1_CodebaseImageStreamStatus(ref),
-		"github.com/epmd-edp/codebase-operator/pkg/apis/edp/v1alpha1.CodebaseStatus":            schema_pkg_apis_edp_v1alpha1_CodebaseStatus(ref),
-		"github.com/epmd-edp/codebase-operator/pkg/apis/edp/v1alpha1.GitServer":                 schema_pkg_apis_edp_v1alpha1_GitServer(ref),
-		"github.com/epmd-edp/codebase-operator/pkg/apis/edp/v1alpha1.GitServerSpec":             schema_pkg_apis_edp_v1alpha1_GitServerSpec(ref),
-		"github.com/epmd-edp/codebase-operator/pkg/apis/edp/v1alpha1.Tag":                       schema_pkg_apis_edp_v1alpha1_Tag(ref),
+		"./pkg/apis/edp/v1alpha1.Codebase":                  schema_pkg_apis_edp_v1alpha1_Codebase(ref),
+		"./pkg/apis/edp/v1alpha1.CodebaseBranch":            schema_pkg_apis_edp_v1alpha1_CodebaseBranch(ref),
+		"./pkg/apis/edp/v1alpha1.CodebaseBranchSpec":        schema_pkg_apis_edp_v1alpha1_CodebaseBranchSpec(ref),
+		"./pkg/apis/edp/v1alpha1.CodebaseBranchStatus":      schema_pkg_apis_edp_v1alpha1_CodebaseBranchStatus(ref),
+		"./pkg/apis/edp/v1alpha1.CodebaseImageStream":       schema_pkg_apis_edp_v1alpha1_CodebaseImageStream(ref),
+		"./pkg/apis/edp/v1alpha1.CodebaseImageStreamSpec":   schema_pkg_apis_edp_v1alpha1_CodebaseImageStreamSpec(ref),
+		"./pkg/apis/edp/v1alpha1.CodebaseImageStreamStatus": schema_pkg_apis_edp_v1alpha1_CodebaseImageStreamStatus(ref),
+		"./pkg/apis/edp/v1alpha1.CodebaseStatus":            schema_pkg_apis_edp_v1alpha1_CodebaseStatus(ref),
+		"./pkg/apis/edp/v1alpha1.GitServer":                 schema_pkg_apis_edp_v1alpha1_GitServer(ref),
+		"./pkg/apis/edp/v1alpha1.GitServerSpec":             schema_pkg_apis_edp_v1alpha1_GitServerSpec(ref),
+		"./pkg/apis/edp/v1alpha1.Tag":                       schema_pkg_apis_edp_v1alpha1_Tag(ref),
 	}
 }
 
@@ -30,6 +30,7 @@ func schema_pkg_apis_edp_v1alpha1_Codebase(ref common.ReferenceCallback) common.
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Codebase is the Schema for the codebases API",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -52,19 +53,19 @@ func schema_pkg_apis_edp_v1alpha1_Codebase(ref common.ReferenceCallback) common.
 					},
 					"spec": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/epmd-edp/codebase-operator/pkg/apis/edp/v1alpha1.CodebaseSpec"),
+							Ref: ref("./pkg/apis/edp/v1alpha1.CodebaseSpec"),
 						},
 					},
 					"status": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/epmd-edp/codebase-operator/pkg/apis/edp/v1alpha1.CodebaseStatus"),
+							Ref: ref("./pkg/apis/edp/v1alpha1.CodebaseStatus"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/epmd-edp/codebase-operator/pkg/apis/edp/v1alpha1.CodebaseSpec", "github.com/epmd-edp/codebase-operator/pkg/apis/edp/v1alpha1.CodebaseStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"./pkg/apis/edp/v1alpha1.CodebaseSpec", "./pkg/apis/edp/v1alpha1.CodebaseStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
@@ -73,6 +74,7 @@ func schema_pkg_apis_edp_v1alpha1_CodebaseBranch(ref common.ReferenceCallback) c
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "CodebaseBranch is the Schema for the codebasebranches API",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -95,19 +97,19 @@ func schema_pkg_apis_edp_v1alpha1_CodebaseBranch(ref common.ReferenceCallback) c
 					},
 					"spec": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/epmd-edp/codebase-operator/pkg/apis/edp/v1alpha1.CodebaseBranchSpec"),
+							Ref: ref("./pkg/apis/edp/v1alpha1.CodebaseBranchSpec"),
 						},
 					},
 					"status": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/epmd-edp/codebase-operator/pkg/apis/edp/v1alpha1.CodebaseBranchStatus"),
+							Ref: ref("./pkg/apis/edp/v1alpha1.CodebaseBranchStatus"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/epmd-edp/codebase-operator/pkg/apis/edp/v1alpha1.CodebaseBranchSpec", "github.com/epmd-edp/codebase-operator/pkg/apis/edp/v1alpha1.CodebaseBranchStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"./pkg/apis/edp/v1alpha1.CodebaseBranchSpec", "./pkg/apis/edp/v1alpha1.CodebaseBranchStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
@@ -116,6 +118,7 @@ func schema_pkg_apis_edp_v1alpha1_CodebaseBranchSpec(ref common.ReferenceCallbac
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "CodebaseBranchSpec defines the desired state of CodebaseBranch",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"codebaseName": {
 						SchemaProps: spec.SchemaProps{
@@ -140,7 +143,6 @@ func schema_pkg_apis_edp_v1alpha1_CodebaseBranchSpec(ref common.ReferenceCallbac
 				Required: []string{"codebaseName", "branchName", "fromCommit"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -149,6 +151,7 @@ func schema_pkg_apis_edp_v1alpha1_CodebaseBranchStatus(ref common.ReferenceCallb
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "CodebaseBranchStatus defines the observed state of CodebaseBranch",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"lastTimeUpdated": {
 						SchemaProps: spec.SchemaProps{
@@ -197,7 +200,6 @@ func schema_pkg_apis_edp_v1alpha1_CodebaseBranchStatus(ref common.ReferenceCallb
 				Required: []string{"lastTimeUpdated", "status", "username", "action", "result", "detailedMessage", "value"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -206,6 +208,7 @@ func schema_pkg_apis_edp_v1alpha1_CodebaseImageStream(ref common.ReferenceCallba
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "CodebaseImageStream is the Schema for the codebaseimagestreams API",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -228,19 +231,19 @@ func schema_pkg_apis_edp_v1alpha1_CodebaseImageStream(ref common.ReferenceCallba
 					},
 					"spec": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/epmd-edp/codebase-operator/pkg/apis/edp/v1alpha1.CodebaseImageStreamSpec"),
+							Ref: ref("./pkg/apis/edp/v1alpha1.CodebaseImageStreamSpec"),
 						},
 					},
 					"status": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/epmd-edp/codebase-operator/pkg/apis/edp/v1alpha1.CodebaseImageStreamStatus"),
+							Ref: ref("./pkg/apis/edp/v1alpha1.CodebaseImageStreamStatus"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/epmd-edp/codebase-operator/pkg/apis/edp/v1alpha1.CodebaseImageStreamSpec", "github.com/epmd-edp/codebase-operator/pkg/apis/edp/v1alpha1.CodebaseImageStreamStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"./pkg/apis/edp/v1alpha1.CodebaseImageStreamSpec", "./pkg/apis/edp/v1alpha1.CodebaseImageStreamStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
@@ -249,6 +252,7 @@ func schema_pkg_apis_edp_v1alpha1_CodebaseImageStreamSpec(ref common.ReferenceCa
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "CodebaseImageStreamSpec defines the desired state of CodebaseImageStream",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"imageName": {
 						SchemaProps: spec.SchemaProps{
@@ -263,7 +267,7 @@ func schema_pkg_apis_edp_v1alpha1_CodebaseImageStreamSpec(ref common.ReferenceCa
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/epmd-edp/codebase-operator/pkg/apis/edp/v1alpha1.Tag"),
+										Ref: ref("./pkg/apis/edp/v1alpha1.Tag"),
 									},
 								},
 							},
@@ -274,7 +278,7 @@ func schema_pkg_apis_edp_v1alpha1_CodebaseImageStreamSpec(ref common.ReferenceCa
 			},
 		},
 		Dependencies: []string{
-			"github.com/epmd-edp/codebase-operator/pkg/apis/edp/v1alpha1.Tag"},
+			"./pkg/apis/edp/v1alpha1.Tag"},
 	}
 }
 
@@ -283,10 +287,9 @@ func schema_pkg_apis_edp_v1alpha1_CodebaseImageStreamStatus(ref common.Reference
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "CodebaseImageStreamStatus defines the observed state of CodebaseImageStream",
-				Properties:  map[string]spec.Schema{},
+				Type:        []string{"object"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -295,6 +298,7 @@ func schema_pkg_apis_edp_v1alpha1_CodebaseStatus(ref common.ReferenceCallback) c
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "CodebaseStatus defines the observed state of Codebase",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"available": {
 						SchemaProps: spec.SchemaProps{
@@ -349,7 +353,6 @@ func schema_pkg_apis_edp_v1alpha1_CodebaseStatus(ref common.ReferenceCallback) c
 				Required: []string{"available", "lastTimeUpdated", "status", "username", "action", "result", "detailedMessage", "value"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -358,6 +361,7 @@ func schema_pkg_apis_edp_v1alpha1_GitServer(ref common.ReferenceCallback) common
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "GitServer is the Schema for the gitservers API",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -380,19 +384,19 @@ func schema_pkg_apis_edp_v1alpha1_GitServer(ref common.ReferenceCallback) common
 					},
 					"spec": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/epmd-edp/codebase-operator/pkg/apis/edp/v1alpha1.GitServerSpec"),
+							Ref: ref("./pkg/apis/edp/v1alpha1.GitServerSpec"),
 						},
 					},
 					"status": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/epmd-edp/codebase-operator/pkg/apis/edp/v1alpha1.GitServerStatus"),
+							Ref: ref("./pkg/apis/edp/v1alpha1.GitServerStatus"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/epmd-edp/codebase-operator/pkg/apis/edp/v1alpha1.GitServerSpec", "github.com/epmd-edp/codebase-operator/pkg/apis/edp/v1alpha1.GitServerStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"./pkg/apis/edp/v1alpha1.GitServerSpec", "./pkg/apis/edp/v1alpha1.GitServerStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
@@ -401,6 +405,7 @@ func schema_pkg_apis_edp_v1alpha1_GitServerSpec(ref common.ReferenceCallback) co
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "GitServerSpec defines the desired state of GitServer",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"gitHost": {
 						SchemaProps: spec.SchemaProps{
@@ -443,7 +448,6 @@ func schema_pkg_apis_edp_v1alpha1_GitServerSpec(ref common.ReferenceCallback) co
 				Required: []string{"gitHost", "gitUser", "httpsPort", "sshPort", "nameSshKeySecret", "createCodeReviewPipeline"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -451,6 +455,7 @@ func schema_pkg_apis_edp_v1alpha1_Tag(ref common.ReferenceCallback) common.OpenA
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
@@ -461,6 +466,5 @@ func schema_pkg_apis_edp_v1alpha1_Tag(ref common.ReferenceCallback) common.OpenA
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }

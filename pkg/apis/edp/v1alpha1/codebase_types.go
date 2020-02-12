@@ -11,11 +11,20 @@ import (
 // CodebaseSpec defines the desired state of Codebase
 // +k8s:openapi-gen=true
 const (
-	Create Strategy = "create"
-	Clone  Strategy = "clone"
+	Create  Strategy       = "create"
+	Clone   Strategy       = "clone"
+	Edp     VersioningType = "edp"
+	Default VersioningType = "default"
 )
 
+type VersioningType string
+
 type Strategy string
+
+type Versioning struct {
+	Type      VersioningType `json:"type"`
+	StartFrom *string        `json:"startFrom, omitempty"`
+}
 
 type Repository struct {
 	Url string `json:"url"`
@@ -52,6 +61,7 @@ type CodebaseSpec struct {
 	JenkinsSlave        string      `json:"jenkinsSlave"`
 	JobProvisioning     string      `json:"jobProvisioning"`
 	DeploymentScript    string      `json:"deploymentScript"`
+	Versioning          Versioning  `json:"versioning"`
 }
 
 // CodebaseStatus defines the observed state of Codebase
