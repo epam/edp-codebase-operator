@@ -6,6 +6,9 @@ spec:
   codebaseName: "test-1"
   branchName: "test-1-release-1.1.0"
   fromCommit: "764f11f7c6111966a77a6c4e9cf581b4e9f1a63d"
+  version: "0.0.1"
+  build: "1"
 status:
   status: "initialized"
   lastTimeUpdated: 0001-01-01T00:00:00Z
+  lastSuccessfulBuild: "0.0.1"

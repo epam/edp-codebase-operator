@@ -17,6 +17,8 @@ type CodebaseBranchSpec struct {
 	CodebaseName string `json:"codebaseName"`
 	BranchName   string `json:"branchName"`
 	FromCommit   string `json:"fromCommit"`
+	Version      string `json:"version"`
+	Build        string `json:"build"`
 }
 
 // CodebaseBranchStatus defines the observed state of CodebaseBranch
@@ -25,13 +27,14 @@ type CodebaseBranchStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html
-	LastTimeUpdated time.Time  `json:"lastTimeUpdated"`
-	Status          string     `json:"status"`
-	Username        string     `json:"username"`
-	Action          ActionType `json:"action"`
-	Result          Result     `json:"result"`
-	DetailedMessage string     `json:"detailedMessage"`
-	Value           string     `json:"value"`
+	LastTimeUpdated     time.Time  `json:"lastTimeUpdated"`
+	LastSuccessfulBuild string     `json:"lastSuccessfulBuild"`
+	Status              string     `json:"status"`
+	Username            string     `json:"username"`
+	Action              ActionType `json:"action"`
+	Result              Result     `json:"result"`
+	DetailedMessage     string     `json:"detailedMessage"`
+	Value               string     `json:"value"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
