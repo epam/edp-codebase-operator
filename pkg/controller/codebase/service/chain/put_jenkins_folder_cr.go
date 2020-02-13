@@ -51,7 +51,7 @@ func (h PutJenkinsFolder) putJenkinsFolder(c *v1alpha1.Codebase) error {
 			Kind:       "JenkinsFolder",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%v-%v", c.Name, "jenkins-folder"),
+			Name:      c.Name,
 			Namespace: c.Namespace,
 			OwnerReferences: []metav1.OwnerReference{
 				{
