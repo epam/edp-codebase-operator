@@ -34,7 +34,7 @@ func (h PutJenkinsFolder) ServeRequest(c *v1alpha1.Codebase) error {
 }
 
 func (h PutJenkinsFolder) putJenkinsFolder(c *v1alpha1.Codebase) error {
-	jfn := fmt.Sprintf("%v-%v", c.Name, "jenkins-folder")
+	jfn := fmt.Sprintf("%v-%v", c.Name, "codebase")
 	jfr, err := h.getJenkinsFolder(jfn, c.Namespace)
 	if err != nil {
 		return err
@@ -51,7 +51,7 @@ func (h PutJenkinsFolder) putJenkinsFolder(c *v1alpha1.Codebase) error {
 			Kind:       "JenkinsFolder",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      c.Name,
+			Name:      jfn,
 			Namespace: c.Namespace,
 			OwnerReferences: []metav1.OwnerReference{
 				{

@@ -102,7 +102,7 @@ func (r *ReconcileCodebaseBranch) Reconcile(request reconcile.Request) (reconcil
 			errors.Wrapf(err, "couldn't get codebase for branch %s", request.Name)
 	}
 
-	jfn := fmt.Sprintf("%v-%v", app.Name, "jenkins-folder")
+	jfn := fmt.Sprintf("%v-%v", app.Name, "codebase")
 	jf, err := r.getJenkinsFolder(jfn, app.Namespace)
 	if err != nil {
 		return reconcile.Result{RequeueAfter: 5 * time.Second}, err
