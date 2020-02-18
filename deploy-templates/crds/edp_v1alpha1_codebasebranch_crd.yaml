@@ -45,8 +45,6 @@ spec:
               - codebaseName
               - branchName
               - fromCommit
-              - version
-              - build
             type: object
           status:
             type: object
