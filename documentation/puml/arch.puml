@@ -1,0 +1,164 @@
+@startuml
+
+skinparam class {
+    BackgroundColor #white
+	BackgroundColor<<wip>> LightGoldenRodYellow
+	BackgroundColor<<tbd>> Khaki
+}
+
+package com.epam.edp.codebase {
+
+  class Codebase {
+    -- metadata --
+        String name
+    -- spec --
+        CodebaseType type
+        String lang
+        String description
+        String framework
+        String buildTool
+        Strategy strategy
+        Repository repository
+        Database database
+        String testReportFramework
+        String gitServer
+        String gitUrlPath
+        String jenkinsSlave
+        String jobProvisioning
+        String deploymentScript
+    -- status --
+        Boolean available
+        Date lastTimeUpdated
+        String status
+        String username
+        ActionType action
+        Result result
+        String detailedMessage
+        String value
+  }
+
+  Codebase -> Strategy : strategy
+  enum Strategy {
+    CREATE
+    CLONE
+  }
+
+  Codebase --> CodebaseType : type
+  enum CodebaseType {
+    APPLICATION
+    AUTOTESTS
+    LIBRARY
+  }
+
+  Codebase "1" -r-* "0..1" Repository : internal structure
+  class Repository {
+    String url
+  }
+
+  Codebase "1" --* "0..1" Route : internal structure
+  class Route {
+    String site
+    String path
+  }
+
+  Codebase "1" --* "0..1" Database : internal structure
+  class Database {
+    String kind
+    String version
+    String capacity
+    String storage
+  }
+
+  Codebase "1" --* "1..*" CodebaseBranch : codebaseName, owner ref
+  class CodebaseBranch {
+    -- metadata --
+        String name
+    -- spec --
+        String codebaseName
+        String branchName
+        String fromCommit
+    -- status --
+        Date lastTimeUpdated
+        String status
+        String username
+        ActionType action
+        Result result
+        String detailedMessage
+        String value
+  }
+
+  CodebaseBranch "1" --o "0..1" CodebaseImageStream : creates, owner ref
+  class CodebaseImageStream {
+    -- metadata --
+        String name
+    -- spec --
+        String imageName
+        []Tag tags
+    -- status --
+        <color red>String version</color>
+        <color red>String url</color>
+  }
+
+  CodebaseImageStream "1" --* "0..*" Tag : internal structure
+  class Tag {
+    String name
+  }
+
+  Codebase "0..*" o-- "1" GitServer : gitServer
+  class GitServer {
+    -- metadata --
+        String name
+    -- spec --
+        String gitHost
+        String gitUser
+        String httpsPort
+        String sshPort
+        String nameSshKeySecret
+        Boolean createCodeReviewPipeline
+    -- status --
+        Date lastTimeUpdated
+        String status
+        String username
+        ActionType action
+        Result result
+        String detailedMessage
+        String value
+  }
+
+  GitServer "1" --* "1" GitServerSecret : nameSshKeySecret
+  class GitServerSecret <Secret> {
+    -- metadata --
+      String name
+    -- data --
+      String id_rsa
+      String id_rsa.pub
+      String username
+  }
+
+  GitRepository <-- GitServer : owner ref
+  class GitRepository <<tbd>> {
+    -- metadata --
+        String name
+    -- spec --
+    -- status --
+        Boolean available
+  }
+
+}
+
+class EdpComponent <<tbd>> {
+}
+
+GitServer --> EdpComponent : creates, owner
+Codebase -u-> ImageStream : creates (s2i, Openshift)
+Codebase "1" -u-> "1" JenkinsFolder : creates, owner
+
+legend
+|Type | Field | Status |
+|<back:LightGoldenRodYellow>    </back> | <color brown>String name</color>   |Work In Progress|
+|<back:white>    </back>| String name  |Implemented |
+|<back:Khaki>    </back>| <color red>String name</color>|TBD |
+endlegend
+
+
+@enduml
