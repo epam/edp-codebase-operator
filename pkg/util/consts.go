@@ -29,4 +29,8 @@ const (
 	Javascript     = "javascript"
 
 	CodebaseKind = "Codebase"
+
+	ProjectCreatedStatus         = "created"
+	ProjectPushedStatus          = "pushed"
+	ProjectTemplatesPushedStatus = "templates_pushed"
 )

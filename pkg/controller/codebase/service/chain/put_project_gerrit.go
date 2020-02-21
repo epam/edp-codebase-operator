@@ -86,12 +86,12 @@ func (h PutProjectGerrit) tryToPushProjectToGerrit(sshPort int32, codebaseName, 
 		return errors.Wrap(err, "couldn't get edp name")
 	}
 
-	p, err := h.cr.SelectPushedValue(codebaseName, *edpN)
+	ps, err := h.cr.SelectProjectStatusValue(codebaseName, *edpN)
 	if err != nil {
 		return errors.Wrapf(err, "couldn't get pushed value for %v codebase", codebaseName)
 	}
 
-	if p {
+	if *ps != util.ProjectCreatedStatus {
 		log.V(2).Info("skip pushing to gerrit. project already pushed", "name", codebaseName)
 		return nil
 	}
@@ -112,8 +112,9 @@ func (h PutProjectGerrit) tryToPushProjectToGerrit(sshPort int32, codebaseName, 
 		return err
 	}
 
-	if err := h.cr.SetPushedValue(true, codebaseName, *edpN); err != nil {
-		return errors.Wrapf(err, "couldn't set pushed value for %v codebase", codebaseName)
+	if err := h.cr.UpdateProjectStatusValue(util.ProjectPushedStatus, codebaseName, *edpN); err != nil {
+		return errors.Wrapf(err, "couldn't set project_status %v value for %v codebase",
+			util.ProjectTemplatesPushedStatus, codebaseName)
 	}
 
 	return nil

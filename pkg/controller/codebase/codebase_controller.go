@@ -146,7 +146,7 @@ func (r ReconcileCodebase) getChain(cr *edpv1alpha1.Codebase) (cHand.CodebaseHan
 	cs := openshift.CreateOpenshiftClients()
 	cs.Client = r.client
 	if cr.Spec.Strategy == util.ImportStrategy {
-		return chain.CreateThirdPartyVcsProviderDefChain(*cs), nil
+		return chain.CreateThirdPartyVcsProviderDefChain(*cs, r.db), nil
 	}
 	return chain.CreateGerritDefChain(*cs, r.db), nil
 }

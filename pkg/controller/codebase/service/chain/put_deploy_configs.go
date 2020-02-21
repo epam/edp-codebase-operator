@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	edpv1alpha1 "github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/codebase/helper"
+	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/codebase/repository"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/codebase/service/chain/handler"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/codebase/service/template"
 	git "github.com/epmd-edp/codebase-operator/v2/pkg/controller/gitserver"
@@ -17,6 +19,7 @@ import (
 type PutDeployConfigs struct {
 	next      handler.CodebaseHandler
 	clientSet openshift.ClientSet
+	cr        repository.CodebaseRepository
 }
 
 func (h PutDeployConfigs) ServeRequest(c *v1alpha1.Codebase) error {
@@ -37,6 +40,21 @@ func (h PutDeployConfigs) ServeRequest(c *v1alpha1.Codebase) error {
 }
 
 func (h PutDeployConfigs) tryToPushConfigs(c edpv1alpha1.Codebase, sshPort int32) error {
+	edpN, err := helper.GetEDPName(h.clientSet.Client, c.Namespace)
+	if err != nil {
+		return errors.Wrap(err, "couldn't get edp name")
+	}
+
+	ps, err := h.cr.SelectProjectStatusValue(c.Name, *edpN)
+	if err != nil {
+		return errors.Wrapf(err, "couldn't get pushed value for %v codebase", c.Name)
+	}
+
+	if *ps == util.ProjectTemplatesPushedStatus {
+		log.V(2).Info("skip pushing templates to gerrit. teplates already pushed", "name", c.Name)
+		return nil
+	}
+
 	s, err := util.GetSecret(*h.clientSet.CoreClient, "gerrit-project-creator", c.Namespace)
 	if err != nil {
 		return errors.Wrap(err, "unable to get gerrit-project-creator secret")
@@ -78,6 +96,12 @@ func (h PutDeployConfigs) tryToPushConfigs(c edpv1alpha1.Codebase, sshPort int32
 	if err := git.PushChanges(idrsa, u, d); err != nil {
 		return err
 	}
+
+	if err := h.cr.UpdateProjectStatusValue(util.ProjectTemplatesPushedStatus, c.Name, c.Namespace); err != nil {
+		return errors.Wrapf(err, "couldn't set project_status %v value for %v codebase",
+			util.ProjectTemplatesPushedStatus, c.Name)
+	}
+
 	return nil
 }
 
