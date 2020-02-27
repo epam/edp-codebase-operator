@@ -56,6 +56,21 @@ func (h PutProjectGerrit) ServeRequest(c *v1alpha1.Codebase) error {
 	}
 	rLog.Info("Repository URL to clone sources has been retrieved", "url", *ru)
 
+	edpN, err := helper.GetEDPName(h.clientSet.Client, c.Namespace)
+	if err != nil {
+		return errors.Wrap(err, "couldn't get edp name")
+	}
+
+	ps, err := h.cr.SelectProjectStatusValue(c.Name, *edpN)
+	if err != nil {
+		return errors.Wrapf(err, "couldn't get pushed value for %v codebase", c.Name)
+	}
+
+	if *ps == util.ProjectPushedStatus || *ps == util.ProjectTemplatesPushedStatus {
+		log.V(2).Info("skip pushing to gerrit. project already pushed", "name", c.Name)
+		return nextServeOrNil(h.next, c)
+	}
+
 	repu, repp, err := h.tryToGetRepositoryCredentials(c)
 	if !git.CheckPermissions(*ru, repu, repp) {
 		return fmt.Errorf("user %v cannot get access to the repository %v", repu, *ru)
@@ -76,26 +91,16 @@ func (h PutProjectGerrit) ServeRequest(c *v1alpha1.Codebase) error {
 		return errors.Wrapf(err, "push to gerrit for codebase %v has been failed", c.Name)
 	}
 
+	if err := h.cr.UpdateProjectStatusValue(util.ProjectPushedStatus, c.Name, *edpN); err != nil {
+		return errors.Wrapf(err, "couldn't set project_status %v value for %v codebase",
+			util.ProjectTemplatesPushedStatus, c.Name)
+	}
+
 	rLog.Info("end creating project in Gerrit")
 	return nextServeOrNil(h.next, c)
 }
 
 func (h PutProjectGerrit) tryToPushProjectToGerrit(sshPort int32, codebaseName, workDir, namespace string) error {
-	edpN, err := helper.GetEDPName(h.clientSet.Client, namespace)
-	if err != nil {
-		return errors.Wrap(err, "couldn't get edp name")
-	}
-
-	ps, err := h.cr.SelectProjectStatusValue(codebaseName, *edpN)
-	if err != nil {
-		return errors.Wrapf(err, "couldn't get pushed value for %v codebase", codebaseName)
-	}
-
-	if *ps != util.ProjectCreatedStatus {
-		log.V(2).Info("skip pushing to gerrit. project already pushed", "name", codebaseName)
-		return nil
-	}
-
 	s, err := util.GetSecret(*h.clientSet.CoreClient, "gerrit-project-creator", namespace)
 	if err != nil {
 		return errors.Wrap(err, "unable to get gerrit-project-creator secret")
@@ -111,12 +116,6 @@ func (h PutProjectGerrit) tryToPushProjectToGerrit(sshPort int32, codebaseName, 
 	if err := h.pushToGerrit(sshPort, idrsa, host, codebaseName, d); err != nil {
 		return err
 	}
-
-	if err := h.cr.UpdateProjectStatusValue(util.ProjectPushedStatus, codebaseName, *edpN); err != nil {
-		return errors.Wrapf(err, "couldn't set project_status %v value for %v codebase",
-			util.ProjectTemplatesPushedStatus, codebaseName)
-	}
-
 	return nil
 }
 
