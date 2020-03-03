@@ -106,8 +106,12 @@ func GetJenkinsCreds(jenkins jenkinsApi.Jenkins, clientSet ClientSet.ClientSet, 
 func GetJenkinsUrl(jenkins jenkinsApi.Jenkins, namespace string) string {
 	key := fmt.Sprintf("%v/%v", jenkinsOperatorSpec.EdpAnnotationsPrefix, "externalUrl")
 	url := jenkins.Annotations[key]
+	basePath := ""
+	if len(jenkins.Spec.BasePath) > 0 {
+		basePath = fmt.Sprintf("/%v", jenkins.Spec.BasePath)
+	}
 	if len(url) == 0 {
-		return fmt.Sprintf("http://jenkins.%s:8080", namespace)
+		return fmt.Sprintf("http://jenkins.%s:8080%v", namespace, basePath)
 	}
 	return url
 }
