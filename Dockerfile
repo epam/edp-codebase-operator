@@ -12,10 +12,10 @@ COPY codebase-operator ${OPERATOR}
 
 RUN apk add --no-cache ca-certificates openssh-client git
 
-COPY bin /usr/local/bin
-COPY templates /usr/local/bin/templates
-COPY pipelines /usr/local/bin/pipelines
-COPY configs /usr/local/bin/configs
+COPY build/bin /usr/local/bin
+COPY build/templates /usr/local/bin/templates
+COPY build/pipelines /usr/local/bin/pipelines
+COPY build/configs /usr/local/bin/configs
 
 RUN chgrp -R 0 /usr/local/bin/templates /usr/local/bin/pipelines && \
     chmod -R g=u /usr/local/bin/templates /usr/local/bin/pipelines
