@@ -72,7 +72,6 @@ type CodebaseStatus struct {
 	// Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html
 	Available        bool       `json:"available"`
 	LastTimeUpdated  time.Time  `json:"lastTimeUpdated"`
-	ReleasedVersions []string   `json:"releasedVersions,omitempty"`
 	Status           string     `json:"status"`
 	Username         string     `json:"username"`
 	Action           ActionType `json:"action"`

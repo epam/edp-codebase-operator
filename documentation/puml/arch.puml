@@ -26,6 +26,7 @@ package com.epam.edp.codebase {
         String jenkinsSlave
         String jobProvisioning
         String deploymentScript
+        Versioning versioning
     -- status --
         Boolean available
         Date lastTimeUpdated
@@ -50,9 +51,21 @@ package com.epam.edp.codebase {
     LIBRARY
   }
 
+  Versioning -> VersioningType : versioningType
+    enum VersioningType {
+      EDP
+      DEFAULT
+  }
+
   Codebase "1" -r-* "0..1" Repository : internal structure
   class Repository {
     String url
+  }
+
+  Codebase "1" --* "1" Versioning : internal structure
+    class Versioning {
+     VersioningType type
+     String startFrom
   }
 
   Codebase "1" --* "0..1" Route : internal structure
@@ -77,9 +90,13 @@ package com.epam.edp.codebase {
         String codebaseName
         String branchName
         String fromCommit
+        String version
+        String build
+        Boolean release
     -- status --
         Date lastTimeUpdated
         String status
+        String versionHistory
         String username
         ActionType action
         Result result

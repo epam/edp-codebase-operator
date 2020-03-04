@@ -19,6 +19,7 @@ type CodebaseBranchSpec struct {
 	FromCommit   string  `json:"fromCommit"`
 	Version      *string `json:"version,omitempty"`
 	Build        *string `json:"build,omitempty"`
+	Release      bool    `json:"release"`
 }
 
 // CodebaseBranchStatus defines the observed state of CodebaseBranch
@@ -28,6 +29,7 @@ type CodebaseBranchStatus struct {
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html
 	LastTimeUpdated     time.Time  `json:"lastTimeUpdated"`
+	VersionHistory     []string   `json:"versionsHistory"`
 	LastSuccessfulBuild *string    `json:"lastSuccessfulBuild,omitempty"`
 	Status              string     `json:"status"`
 	Username            string     `json:"username"`
