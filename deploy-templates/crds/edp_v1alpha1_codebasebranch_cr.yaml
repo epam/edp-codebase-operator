@@ -12,4 +12,4 @@ spec:
 status:
   status: "initialized"
   lastTimeUpdated: 0001-01-01T00:00:00Z
-  lastSuccessfulBuild: "0.0.1"
+  lastSuccessfulBuild: "0"

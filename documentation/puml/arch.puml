@@ -96,7 +96,7 @@ package com.epam.edp.codebase {
     -- status --
         Date lastTimeUpdated
         String status
-        String versionHistory
+        []String versionHistory
         String username
         ActionType action
         Result result

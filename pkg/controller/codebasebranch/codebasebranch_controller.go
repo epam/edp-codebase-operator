@@ -6,6 +6,7 @@ import (
 	edpv1alpha1 "github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/codebasebranch/service"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/openshift"
+	"github.com/epmd-edp/codebase-operator/v2/pkg/util"
 	"github.com/epmd-edp/jenkins-operator/v2/pkg/apis/v2/v1alpha1"
 	"github.com/pkg/errors"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -117,6 +118,13 @@ func (r *ReconcileCodebaseBranch) Reconcile(request reconcile.Request) (reconcil
 		return reconcile.Result{}, err
 	}
 
+	if hasNewVersion(i) {
+		err := r.processNewVersion(i)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+	}
+
 	rl.Info("Reconciling CodebaseBranch has been finished")
 	return reconcile.Result{}, nil
 }
@@ -148,4 +156,20 @@ func (r *ReconcileCodebaseBranch) getJenkinsFolder(name, namespace string) (*v1a
 		return nil, errors.Wrapf(err, "failed to get jenkins folder %v", name)
 	}
 	return i, nil
+}
+
+func hasNewVersion(b *edpv1alpha1.CodebaseBranch) bool {
+	return !util.SearchVersion(b.Status.VersionHistory, *b.Spec.Version)
+}
+
+func (r *ReconcileCodebaseBranch) processNewVersion(b *edpv1alpha1.CodebaseBranch) error {
+	if err := r.codebaseBranchService.ResetBranchBuildCounter(b); err != nil {
+		return err
+	}
+
+	if err := r.codebaseBranchService.ResetBranchSuccessBuildCounter(b); err != nil {
+		return err
+	}
+
+	return r.codebaseBranchService.AppendVersionToTheHistorySlice(b)
 }
