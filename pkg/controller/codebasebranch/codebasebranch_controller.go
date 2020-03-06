@@ -118,11 +118,12 @@ func (r *ReconcileCodebaseBranch) Reconcile(request reconcile.Request) (reconcil
 		return reconcile.Result{}, err
 	}
 
-	if hasNewVersion(i) {
+	if c.Spec.Versioning.Type == "edp" && hasNewVersion(i) {
 		err := r.processNewVersion(i)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
+
 	}
 
 	rl.Info("Reconciling CodebaseBranch has been finished")
