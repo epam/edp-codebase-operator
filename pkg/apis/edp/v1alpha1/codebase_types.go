@@ -70,14 +70,14 @@ type CodebaseStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html
-	Available        bool       `json:"available"`
-	LastTimeUpdated  time.Time  `json:"lastTimeUpdated"`
-	Status           string     `json:"status"`
-	Username         string     `json:"username"`
-	Action           ActionType `json:"action"`
-	Result           Result     `json:"result"`
-	DetailedMessage  string     `json:"detailedMessage"`
-	Value            string     `json:"value"`
+	Available       bool       `json:"available"`
+	LastTimeUpdated time.Time  `json:"lastTimeUpdated"`
+	Status          string     `json:"status"`
+	Username        string     `json:"username"`
+	Action          ActionType `json:"action"`
+	Result          Result     `json:"result"`
+	DetailedMessage string     `json:"detailedMessage"`
+	Value           string     `json:"value"`
 }
 
 type ActionType string

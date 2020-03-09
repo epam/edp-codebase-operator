@@ -16,15 +16,20 @@ type PutS2iIs struct {
 func (h PutS2iIs) ServeRequest(c *v1alpha1.Codebase) error {
 	rLog := log.WithValues("codebase name", c.Name)
 	rLog.Info("start creating s2i is...")
-	if err := h.trySetupS2I(*c); err != nil {
+	if err := h.tryToSetupS2I(*c); err != nil {
 		return err
 	}
 	rLog.Info("end creating s2i is...")
 	return nextServeOrNil(h.next, c)
 }
 
-func (h PutS2iIs) trySetupS2I(c v1alpha1.Codebase) error {
+func (h PutS2iIs) tryToSetupS2I(c v1alpha1.Codebase) error {
 	log.Info("start creating image stream", "codebase name", c.Name)
+	if c.Spec.Lang == util.LanguageJava {
+		log.V(2).Info("skip creating s2i for java lang", "name", c.Name)
+		return nil
+	}
+
 	if !isSupportedType(c) {
 		log.Info("couldn't create image stream as type of codebase is not acceptable")
 		return nil

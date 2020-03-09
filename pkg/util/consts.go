@@ -25,6 +25,8 @@ const (
 
 	ImportStrategy = "import"
 	Application    = "application"
+	Autotests      = "autotests"
+	Library        = "library"
 	OtherLanguage  = "other"
 	Javascript     = "javascript"
 
@@ -33,4 +35,7 @@ const (
 	ProjectCreatedStatus         = "created"
 	ProjectPushedStatus          = "pushed"
 	ProjectTemplatesPushedStatus = "templates_pushed"
+
+	GithubDomain = "https://github.com/epmd-edp"
+	LanguageJava = "Java"
 )

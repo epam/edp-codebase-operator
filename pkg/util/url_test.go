@@ -6,21 +6,16 @@ import (
 	"testing"
 )
 
-var (
-	baseUrl = "https://github.com/epmd-edp"
-)
-
 func TestBuildRepoUrl_DatabaseIsNil(t *testing.T) {
-	expectedUrl := "https://github.com/epmd-edp/java-maven-springboot.git"
-	framework := "SpringBoot"
-
+	expectedUrl := "https://github.com/epmd-edp/java-maven-java11.git"
+	framework := "java11"
 	spec := v1alpha1.CodebaseSpec{
 		Lang:      "Java",
 		BuildTool: "Maven",
 		Type:      "application",
 		Framework: &framework,
 	}
-	url := buildRepoUrl(baseUrl, spec)
+	url := buildRepoUrl(spec)
 	fmt.Printf("Expected: %v. Actual: %s", expectedUrl, url)
 
 	if url != expectedUrl {
@@ -29,16 +24,13 @@ func TestBuildRepoUrl_DatabaseIsNil(t *testing.T) {
 }
 
 func TestBuildRepoUrl_FrameworkIsNil(t *testing.T) {
-	expectedUrl := "https://github.com/epmd-edp/java-maven-springboot.git"
-	var framework *string = nil
-
+	expectedUrl := "https://github.com/epmd-edp/javascript-npm-react.git"
 	spec := v1alpha1.CodebaseSpec{
-		Lang:      "Java",
-		BuildTool: "Maven",
+		Lang:      "javascript",
+		BuildTool: "npm",
 		Type:      "library",
-		Framework: framework,
 	}
-	url := buildRepoUrl(baseUrl, spec)
+	url := buildRepoUrl(spec)
 	fmt.Printf("Expected: %v. Actual: %v", expectedUrl, url)
 
 	if url != expectedUrl {
@@ -47,21 +39,16 @@ func TestBuildRepoUrl_FrameworkIsNil(t *testing.T) {
 }
 
 func TestBuildRepoUrl_PostgresDatabase(t *testing.T) {
-	expectedUrl := "https://github.com/epmd-edp/java-maven-springboot-postgresql.git"
-	framework := "SpringBoot"
-
-	db := v1alpha1.Database{
-		Kind: "PostgreSQL",
-	}
-
+	expectedUrl := "https://github.com/epmd-edp/javascript-npm-react-postgresql.git"
 	spec := v1alpha1.CodebaseSpec{
-		Lang:      "Java",
-		Type:      "application",
-		BuildTool: "Maven",
-		Framework: &framework,
-		Database:  &db,
+		Lang:      "javascript",
+		BuildTool: "npm",
+		Type:      "library",
+		Database: &v1alpha1.Database{
+			Kind: "PostgreSQL",
+		},
 	}
-	url := buildRepoUrl(baseUrl, spec)
+	url := buildRepoUrl(spec)
 	fmt.Printf("Expected: %v. Actual: %v", expectedUrl, url)
 
 	if url != expectedUrl {

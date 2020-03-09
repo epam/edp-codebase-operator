@@ -7,7 +7,13 @@ import (
 	"strings"
 )
 
-func GetRepoUrl(baseUrl string, c *v1alpha1.Codebase) (*string, error) {
+var lf = map[string]string{
+	"javascript":      "react",
+	"groovy-pipeline": "groovy",
+	"dotnet":          "netcore",
+}
+
+func GetRepoUrl(c *v1alpha1.Codebase) (*string, error) {
 	log.Info("Setup repo url", "codebase name", c.Name)
 	if c.Spec.Strategy == v1alpha1.Clone {
 		log.Info("strategy is clone. Try to use default value...", "codebase name", c.Name)
@@ -15,7 +21,7 @@ func GetRepoUrl(baseUrl string, c *v1alpha1.Codebase) (*string, error) {
 	}
 
 	log.Info("Strategy is not clone. Start build url...", "codebase name", c.Name)
-	url := buildRepoUrl(baseUrl, c.Spec)
+	url := buildRepoUrl(c.Spec)
 	log.Info("Url has been generated", "url", url, "codebase name", c.Name)
 	return &url, nil
 
@@ -28,35 +34,22 @@ func tryGetRepoUrl(spec v1alpha1.CodebaseSpec) (*string, error) {
 	return &spec.Repository.Url, nil
 }
 
-func buildRepoUrl(baseUrl string, spec v1alpha1.CodebaseSpec) string {
-	log.Info("Start building repo url", "base url", baseUrl, "spec", spec)
-	var result string
-	if spec.Type == Application {
-		result = fmt.Sprintf("%v/%v-%v-%v",
-			baseUrl, spec.Lang, spec.BuildTool, *spec.Framework)
-	} else if spec.Type == "autotests" {
-		result = fmt.Sprintf("%v/%v-%v",
-			baseUrl, spec.Lang, spec.BuildTool)
-	} else if spec.Type == "library" {
-		result = fmt.Sprintf("%v/%v-%v-%v",
-			baseUrl, spec.Lang, spec.BuildTool, setLibraryFramework(strings.ToLower(spec.Lang)))
-	}
-
-	if spec.Database != nil {
-		result += "-" + spec.Database.Kind
-	}
-
-	return strings.ToLower(result + ".git")
+func buildRepoUrl(spec v1alpha1.CodebaseSpec) string {
+	log.Info("Start building repo url", "base url", GithubDomain, "spec", spec)
+	return strings.ToLower(fmt.Sprintf("%v/%v-%v-%v%v.git", GithubDomain, spec.Lang, spec.BuildTool,
+		getFrameworkOrEmpty(spec), getDatabaseOrEmpty(spec.Database)))
 }
 
-func setLibraryFramework(lang string) string {
-	frameworks := []string{"springboot", "react", "groovy", "netcore"}
-	if lang == "java" {
-		return frameworks[0]
-	} else if lang == "javascript" {
-		return frameworks[1]
-	} else if lang == "groovy-pipeline" {
-		return frameworks[2]
+func getDatabaseOrEmpty(db *v1alpha1.Database) string {
+	if db != nil {
+		return fmt.Sprintf("-%v", db.Kind)
 	}
-	return frameworks[3]
+	return ""
+}
+
+func getFrameworkOrEmpty(spec v1alpha1.CodebaseSpec) string {
+	if spec.Framework != nil && *spec.Framework != "" {
+		return *spec.Framework
+	}
+	return lf[strings.ToLower(spec.Lang)]
 }

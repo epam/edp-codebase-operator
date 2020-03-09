@@ -97,7 +97,7 @@ func CopyOpenshiftTemplate(framework, deploymentScript, workDir string, config m
 	templatesDest := fmt.Sprintf("%v/%v/%v/deploy-templates", workDir, "templates", config.Name)
 	templateBasePath := fmt.Sprintf("/usr/local/bin/templates/applications/%v/%v",
 		deploymentScript, strings.ToLower(config.Lang))
-	templateName := fmt.Sprintf("%v.tmpl", strings.ToLower(framework))
+	templateName := fmt.Sprintf("%v.tmpl", strings.ToLower(config.Lang))
 
 	log.Info("Paths", "templatesDest", templatesDest, "templateBasePath", templateBasePath,
 		"templateName", templateName)

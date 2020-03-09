@@ -24,10 +24,6 @@ type PutProjectGerrit struct {
 	cr        repository.CodebaseRepository
 }
 
-const (
-	GithubDomain = "https://github.com/epmd-edp"
-)
-
 func (h PutProjectGerrit) ServeRequest(c *v1alpha1.Codebase) error {
 	rLog := log.WithValues("codebase name", c.Name)
 	rLog.Info("Start putting Codebase...")
@@ -50,7 +46,7 @@ func (h PutProjectGerrit) ServeRequest(c *v1alpha1.Codebase) error {
 		return errors.Wrap(err, "unable get config settings")
 	}
 
-	ru, err := util.GetRepoUrl(GithubDomain, c)
+	ru, err := util.GetRepoUrl(c)
 	if err != nil {
 		return errors.Wrap(err, "couldn't build repo url")
 	}
