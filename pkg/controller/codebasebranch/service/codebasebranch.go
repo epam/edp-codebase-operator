@@ -44,7 +44,7 @@ func (s *CodebaseBranchService) TriggerReleaseJob(cb *v1alpha1.CodebaseBranch) e
 	}
 	rLog.V(2).Info("start creating release for codebase")
 
-	if err = jc.TriggerReleaseJob(strings.Replace(cb.Spec.BranchName, "/", "-'", 1), cb.Spec.FromCommit, cb.Spec.CodebaseName); err != nil {
+	if err = jc.TriggerReleaseJob(strings.Replace(cb.Spec.BranchName, "/", "-", 1), cb.Spec.FromCommit, cb.Spec.CodebaseName); err != nil {
 		if err := s.setFailStatus(cb, edpv1alpha1.JenkinsConfiguration, err.Error()); err != nil {
 			return err
 		}
