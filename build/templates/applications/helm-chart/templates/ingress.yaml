@@ -15,7 +15,7 @@ spec:
                     backend:
                         serviceName: {{ .Values.name }}
                         servicePort: 8080
-{{- if and .Values.ingress.site (ne .Values.ingress.site "") }}
+{{- if .Values.ingress.site }}
           host: {{ .Values.ingress.site }}-{{ .Values.namespace }}.{{ .Values.dnsWildcard }}
 {{- else }}
           host: {{ .Values.dnsWildcard }}
