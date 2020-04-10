@@ -24,6 +24,7 @@ func (h PutJenkinsFolder) ServeRequest(c *v1alpha1.Codebase) error {
 	rLog := log.WithValues("codebase name", c.Name)
 	rLog.Info("start creating jenkins folder...")
 	if err := h.putJenkinsFolder(c); err != nil {
+		setFailedFields(c, v1alpha1.PutJenkinsFolder, err.Error())
 		return err
 	}
 	if err := h.updateFinishStatus(c); err != nil {
@@ -107,6 +108,7 @@ func (h PutJenkinsFolder) updateFinishStatus(c *v1alpha1.Codebase) error {
 		Action:          v1alpha1.SetupDeploymentTemplates,
 		Result:          v1alpha1.Success,
 		Value:           "active",
+		FailureCount:    0,
 	}
 	return h.updateStatus(c)
 }

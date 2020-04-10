@@ -38,27 +38,32 @@ func (h PutProjectGerrit) ServeRequest(c *v1alpha1.Codebase) error {
 
 	wd := fmt.Sprintf("/home/codebase-operator/edp/%v/%v/templates", c.Namespace, c.Name)
 	if err := util.CreateDirectory(wd); err != nil {
+		setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
 		return err
 	}
 
 	gs, us, err := util.GetConfigSettings(h.clientSet.CoreClient, c.Namespace)
 	if err != nil {
+		setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
 		return errors.Wrap(err, "unable get config settings")
 	}
 
 	ru, err := util.GetRepoUrl(c)
 	if err != nil {
+		setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
 		return errors.Wrap(err, "couldn't build repo url")
 	}
 	rLog.Info("Repository URL to clone sources has been retrieved", "url", *ru)
 
 	edpN, err := helper.GetEDPName(h.clientSet.Client, c.Namespace)
 	if err != nil {
+		setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
 		return errors.Wrap(err, "couldn't get edp name")
 	}
 
 	ps, err := h.cr.SelectProjectStatusValue(c.Name, *edpN)
 	if err != nil {
+		setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
 		return errors.Wrapf(err, "couldn't get pushed value for %v codebase", c.Name)
 	}
 
@@ -69,25 +74,28 @@ func (h PutProjectGerrit) ServeRequest(c *v1alpha1.Codebase) error {
 
 	repu, repp, err := h.tryToGetRepositoryCredentials(c)
 	if !git.CheckPermissions(*ru, repu, repp) {
-		return fmt.Errorf("user %v cannot get access to the repository %v", repu, *ru)
+		msg := fmt.Errorf("user %v cannot get access to the repository %v", repu, *ru)
+		setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, msg.Error())
+		return msg
 	}
 
 	if err := h.tryToCreateProjectInVcs(us, c.Name, c.Namespace); err != nil {
-		setFailedFields(*c, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
+		setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
 		return errors.Wrap(err, "unable to create project in VCS")
 	}
 
 	if err := h.tryToCloneRepo(*ru, repu, repp, wd, c.Name); err != nil {
-		setFailedFields(*c, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
+		setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
 		return errors.Wrap(err, "cloning project hsa been failed")
 	}
 
 	if err := h.tryToPushProjectToGerrit(gs.SshPort, c.Name, wd, c.Namespace); err != nil {
-		setFailedFields(*c, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
+		setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
 		return errors.Wrapf(err, "push to gerrit for codebase %v has been failed", c.Name)
 	}
 
 	if err := h.cr.UpdateProjectStatusValue(util.ProjectPushedStatus, c.Name, *edpN); err != nil {
+		setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
 		return errors.Wrapf(err, "couldn't set project_status %v value for %v codebase",
 			util.ProjectTemplatesPushedStatus, c.Name)
 	}
@@ -196,6 +204,7 @@ func (h PutProjectGerrit) setIntermediateSuccessFields(c *edpv1alpha1.Codebase, 
 		Result:          edpv1alpha1.Success,
 		Username:        "system",
 		Value:           "inactive",
+		FailureCount:    c.Status.FailureCount,
 	}
 
 	if err := h.clientSet.Client.Status().Update(context.TODO(), c); err != nil {
@@ -206,7 +215,7 @@ func (h PutProjectGerrit) setIntermediateSuccessFields(c *edpv1alpha1.Codebase, 
 	return nil
 }
 
-func setFailedFields(c edpv1alpha1.Codebase, a edpv1alpha1.ActionType, message string) {
+func setFailedFields(c *edpv1alpha1.Codebase, a edpv1alpha1.ActionType, message string) {
 	c.Status = edpv1alpha1.CodebaseStatus{
 		Status:          util.StatusFailed,
 		Available:       false,
@@ -216,5 +225,6 @@ func setFailedFields(c edpv1alpha1.Codebase, a edpv1alpha1.ActionType, message s
 		Result:          edpv1alpha1.Error,
 		DetailedMessage: message,
 		Value:           "failed",
+		FailureCount:    c.Status.FailureCount,
 	}
 }
