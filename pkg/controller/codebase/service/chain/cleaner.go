@@ -20,6 +20,7 @@ func (h Cleaner) ServeRequest(c *v1alpha1.Codebase) error {
 	rLog := log.WithValues("codebase name", c.Name)
 	rLog.Info("start cleaning data...")
 	if err := h.tryToClean(c); err != nil {
+		setFailedFields(c, v1alpha1.CleanData, err.Error())
 		return err
 	}
 	rLog.Info("end cleaning data...")

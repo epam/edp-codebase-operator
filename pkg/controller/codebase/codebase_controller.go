@@ -13,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"math"
 	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -23,6 +24,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+	"time"
 )
 
 /**
@@ -134,11 +136,26 @@ func (r *ReconcileCodebase) Reconcile(request reconcile.Request) (reconcile.Resu
 	}
 
 	if err := ch.ServeRequest(instance); err != nil {
-		return reconcile.Result{}, errors.Wrapf(err, "an error has occurred while handling codebase %v", instance.Name)
+		timeout := setFailureCount(instance)
+		log.Error(err, "an error has occurred while handling codebase", "name", instance.Name)
+		return reconcile.Result{RequeueAfter: timeout}, nil
 	}
 
 	reqLogger.Info("Reconciling codebase has been finished")
 	return reconcile.Result{}, nil
+}
+
+// setFailureCount increments failure count and returns delay for next reconciliation
+func setFailureCount(c *edpv1alpha1.Codebase) time.Duration {
+	timeout := getTimeout(c.Status.FailureCount)
+	log.V(2).Info("wait for next reconcilation", "next reconcilation in", timeout)
+	c.Status.FailureCount += 1
+	return timeout
+}
+
+func getTimeout(factor int64) time.Duration {
+	t := float64(500*time.Millisecond) * math.Pow(math.E, float64(factor+1))
+	return time.Duration(t)
 }
 
 func (r ReconcileCodebase) getChain(cr *edpv1alpha1.Codebase) (cHand.CodebaseHandler, error) {

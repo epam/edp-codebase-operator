@@ -22,7 +22,7 @@ func (h PutGerritReplication) ServeRequest(c *v1alpha1.Codebase) error {
 	rLog.Info("Start setting Gerrit replication...")
 
 	if err := h.tryToSetupGerritReplication(c.Name, c.Namespace); err != nil {
-		setFailedFields(*c, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
+		setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
 		return errors.Wrapf(err, "setup Gerrit replication for codebase %v has been failed", c.Name)
 	}
 	log.Info("Gerrit configuration has been finished successfully")

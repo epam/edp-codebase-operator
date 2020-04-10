@@ -17,6 +17,7 @@ func (h PutS2iIs) ServeRequest(c *v1alpha1.Codebase) error {
 	rLog := log.WithValues("codebase name", c.Name)
 	rLog.Info("start creating s2i is...")
 	if err := h.tryToSetupS2I(*c); err != nil {
+		setFailedFields(c, v1alpha1.PutS2I, err.Error())
 		return err
 	}
 	rLog.Info("end creating s2i is...")

@@ -78,6 +78,7 @@ type CodebaseStatus struct {
 	Result          Result     `json:"result"`
 	DetailedMessage string     `json:"detailedMessage"`
 	Value           string     `json:"value"`
+	FailureCount    int64      `json:"failureCount"`
 }
 
 type ActionType string
@@ -92,6 +93,10 @@ const (
 	SetupDeploymentTemplates         ActionType = "setup_deployment_templates"
 	CodebaseBranchRegistration       ActionType = "codebase_branch_registration"
 	AcceptCodebaseBranchRegistration ActionType = "accept_codebase_branch_registration"
+	PutS2I                           ActionType = "put_s2i"
+	PutJenkinsFolder                 ActionType = "put_jenkins_folder"
+	CleanData                        ActionType = "clean_data"
+	ImportProject                    ActionType = "import_project"
 
 	Success Result = "success"
 	Error   Result = "error"

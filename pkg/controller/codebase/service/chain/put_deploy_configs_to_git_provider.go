@@ -25,7 +25,7 @@ func (h PutDeployConfigsToGitProvider) ServeRequest(c *v1alpha1.Codebase) error 
 	rLog.Info("Start pushing configs...")
 
 	if err := h.tryToPushConfigs(*c); err != nil {
-		setFailedFields(*c, edpv1alpha1.SetupDeploymentTemplates, err.Error())
+		setFailedFields(c, edpv1alpha1.SetupDeploymentTemplates, err.Error())
 		return errors.Wrapf(err, "couldn't push deploy configs", "codebase name", c.Name)
 	}
 	rLog.Info("end pushing configs to remote git server")

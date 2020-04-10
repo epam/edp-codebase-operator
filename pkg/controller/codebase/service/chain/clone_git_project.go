@@ -31,21 +31,25 @@ func (h CloneGitProject) ServeRequest(c *v1alpha1.Codebase) error {
 
 	wd := fmt.Sprintf("/home/codebase-operator/edp/%v/%v", c.Namespace, c.Name)
 	if err := util.CreateDirectory(wd); err != nil {
+		setFailedFields(c, edpv1alpha1.ImportProject, err.Error())
 		return err
 	}
 
 	gs, err := util.GetGitServer(h.clientSet.Client, c.Name, c.Spec.GitServer, c.Namespace)
 	if err != nil {
+		setFailedFields(c, edpv1alpha1.ImportProject, err.Error())
 		return err
 	}
 
 	secret, err := util.GetSecret(*h.clientSet.CoreClient, gs.NameSshKeySecret, c.Namespace)
 	if err != nil {
+		setFailedFields(c, edpv1alpha1.ImportProject, err.Error())
 		return errors.Wrapf(err, "an error has occurred while getting %v secret", gs.NameSshKeySecret)
 	}
 
 	td := fmt.Sprintf("%v/%v", wd, "templates")
 	if err := util.CreateDirectory(td); err != nil {
+		setFailedFields(c, edpv1alpha1.ImportProject, err.Error())
 		return errors.Wrapf(err, "an error has occurred while creating folder %v", td)
 	}
 
@@ -57,6 +61,7 @@ func (h CloneGitProject) ServeRequest(c *v1alpha1.Codebase) error {
 	ru := fmt.Sprintf("%v:%v%v", gs.GitHost, gs.SshPort, *c.Spec.GitUrlPath)
 	if !util.DoesDirectoryExist(gf) || util.IsDirectoryEmpty(gf) {
 		if err := git.CloneRepositoryBySsh(k, u, ru, gf); err != nil {
+			setFailedFields(c, edpv1alpha1.ImportProject, err.Error())
 			return errors.Wrapf(err, "an error has occurred while cloning repository %v", ru)
 		}
 	}

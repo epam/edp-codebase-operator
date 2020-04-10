@@ -28,11 +28,12 @@ func (h PutDeployConfigs) ServeRequest(c *v1alpha1.Codebase) error {
 
 	gs, _, err := util.GetConfigSettings(h.clientSet.CoreClient, c.Namespace)
 	if err != nil {
+		setFailedFields(c, edpv1alpha1.SetupDeploymentTemplates, err.Error())
 		return errors.Wrap(err, "unable get config settings")
 	}
 
 	if err := h.tryToPushConfigs(*c, gs.SshPort); err != nil {
-		setFailedFields(*c, edpv1alpha1.SetupDeploymentTemplates, err.Error())
+		setFailedFields(c, edpv1alpha1.SetupDeploymentTemplates, err.Error())
 		return errors.Wrapf(err, "couldn't push deploy configs", "codebase name", c.Name)
 	}
 	rLog.Info("end pushing configs")

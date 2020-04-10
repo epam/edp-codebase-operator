@@ -24,7 +24,7 @@ func (h SetupPerf) ServeRequest(c *v1alpha1.Codebase) error {
 	rLog.Info("Start setting Perf...")
 
 	if err := h.tryToSetupPerf(c.Name, c.Namespace); err != nil {
-		setFailedFields(*c, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
+		setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
 		return errors.Wrapf(err, "setup Gerrit Perf for codebase %v has been failed", c.Name)
 	}
 	rLog.Info("end setting up Perf")
