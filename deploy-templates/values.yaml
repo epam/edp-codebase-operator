@@ -1,7 +1,6 @@
 name: codebase-operator
 namespace: ""
 platform: "openshift"
-dnsWildcard: ""
 database:
   required: false
   host: edp-install-wizard-db
