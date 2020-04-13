@@ -90,6 +90,7 @@ func (h CloneGitProject) setIntermediateSuccessFields(c *edpv1alpha1.Codebase, a
 		Result:          edpv1alpha1.Success,
 		Username:        "system",
 		Value:           "inactive",
+		FailureCount:    c.Status.FailureCount,
 	}
 
 	if err := h.clientSet.Client.Status().Update(context.TODO(), c); err != nil {
