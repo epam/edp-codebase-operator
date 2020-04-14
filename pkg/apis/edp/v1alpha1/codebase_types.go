@@ -47,17 +47,17 @@ type CodebaseSpec struct {
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html
 	Lang                string      `json:"lang"`
-	Description         *string     `json:"description"`
-	Framework           *string     `json:"framework"`
+	Description         *string     `json:"description,omitempty"`
+	Framework           *string     `json:"framework,omitempty"`
 	BuildTool           string      `json:"buildTool"`
 	Strategy            Strategy    `json:"strategy"`
-	Repository          *Repository `json:"repository"`
-	Route               *Route      `json:"route"`
-	Database            *Database   `json:"database"`
-	TestReportFramework *string     `json:"testReportFramework"`
+	Repository          *Repository `json:"repository,omitempty"`
+	Route               *Route      `json:"route,omitempty"`
+	Database            *Database   `json:"database,omitempty"`
+	TestReportFramework *string     `json:"testReportFramework,omitempty"`
 	Type                string      `json:"type"`
 	GitServer           string      `json:"gitServer"`
-	GitUrlPath          *string     `json:"gitUrlPath"`
+	GitUrlPath          *string     `json:"gitUrlPath,omitempty"`
 	JenkinsSlave        string      `json:"jenkinsSlave"`
 	JobProvisioning     string      `json:"jobProvisioning"`
 	DeploymentScript    string      `json:"deploymentScript"`
