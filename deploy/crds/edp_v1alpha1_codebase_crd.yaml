@@ -50,7 +50,9 @@ spec:
                 type:
                   type: string
                 startFrom:
-                  type: string
+                  anyOf:
+                    - type: null
+                    - type: string
               required:
                 - type
             git:
