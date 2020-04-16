@@ -88,25 +88,31 @@ func initJenkinsClient(cs openshift.ClientSet, namespace string) (*jenkins.Jenki
 
 func (s *CodebaseBranchService) setIntermediateStatus(cb *v1alpha1.CodebaseBranch, action v1alpha1.ActionType) error {
 	cb.Status = v1alpha1.CodebaseBranchStatus{
-		LastTimeUpdated: time.Now(),
-		Username:        "system",
-		Action:          action,
-		Result:          "success",
-		Value:           "inactive",
-		Status:          model.StatusInit,
+		LastTimeUpdated:     time.Now(),
+		Username:            "system",
+		Action:              action,
+		Result:              "success",
+		Value:               "inactive",
+		Status:              model.StatusInit,
+		VersionHistory:      cb.Status.VersionHistory,
+		LastSuccessfulBuild: cb.Status.LastSuccessfulBuild,
+		Build:               cb.Status.Build,
 	}
 	return s.updateStatus(cb)
 }
 
 func (s *CodebaseBranchService) setFailStatus(cb *v1alpha1.CodebaseBranch, action v1alpha1.ActionType, msg string) error {
 	cb.Status = v1alpha1.CodebaseBranchStatus{
-		LastTimeUpdated: time.Now(),
-		Username:        "system",
-		Action:          action,
-		Result:          edpv1alpha1.Error,
-		DetailedMessage: msg,
-		Value:           "failed",
-		Status:          model.StatusInit,
+		LastTimeUpdated:     time.Now(),
+		Status:              model.StatusInit,
+		Username:            "system",
+		Action:              action,
+		Result:              edpv1alpha1.Error,
+		DetailedMessage:     msg,
+		Value:               "failed",
+		VersionHistory:      cb.Status.VersionHistory,
+		LastSuccessfulBuild: cb.Status.LastSuccessfulBuild,
+		Build:               cb.Status.Build,
 	}
 	return s.updateStatus(cb)
 
@@ -146,12 +152,15 @@ func (s *CodebaseBranchService) ResetBranchSuccessBuildCounter(cb *v1alpha1.Code
 
 func (s *CodebaseBranchService) setSuccessStatus(cb *v1alpha1.CodebaseBranch, action v1alpha1.ActionType) error {
 	cb.Status = v1alpha1.CodebaseBranchStatus{
-		LastTimeUpdated: time.Now(),
-		Username:        "system",
-		Action:          action,
-		Result:          edpv1alpha1.Success,
-		Value:           "active",
-		Status:          model.StatusFinished,
+		LastTimeUpdated:     time.Now(),
+		Username:            "system",
+		Action:              action,
+		Result:              edpv1alpha1.Success,
+		Value:               "active",
+		Status:              model.StatusFinished,
+		VersionHistory:      cb.Status.VersionHistory,
+		LastSuccessfulBuild: cb.Status.LastSuccessfulBuild,
+		Build:               cb.Status.Build,
 	}
 	return s.updateStatus(cb)
 
