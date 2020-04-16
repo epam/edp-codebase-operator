@@ -114,16 +114,15 @@ func (r *ReconcileCodebaseBranch) Reconcile(request reconcile.Request) (reconcil
 		return reconcile.Result{RequeueAfter: 5 * time.Second}, nil
 	}
 
-	if err := r.codebaseBranchService.TriggerReleaseJob(i); err != nil {
-		return reconcile.Result{}, err
-	}
-
 	if c.Spec.Versioning.Type == "edp" && hasNewVersion(i) {
 		err := r.processNewVersion(i)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
+	}
 
+	if err := r.codebaseBranchService.TriggerReleaseJob(i); err != nil {
+		return reconcile.Result{}, err
 	}
 
 	rl.Info("Reconciling CodebaseBranch has been finished")
