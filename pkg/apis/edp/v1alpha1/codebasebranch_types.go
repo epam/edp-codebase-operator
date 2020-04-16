@@ -18,7 +18,6 @@ type CodebaseBranchSpec struct {
 	BranchName   string  `json:"branchName"`
 	FromCommit   string  `json:"fromCommit"`
 	Version      *string `json:"version,omitempty"`
-	Build        *string `json:"build,omitempty"`
 	Release      bool    `json:"release"`
 }
 
@@ -31,6 +30,7 @@ type CodebaseBranchStatus struct {
 	LastTimeUpdated     time.Time  `json:"lastTimeUpdated"`
 	VersionHistory      []string   `json:"versionHistory"`
 	LastSuccessfulBuild *string    `json:"lastSuccessfulBuild,omitempty"`
+	Build               *string    `json:"build,omitempty"`
 	Status              string     `json:"status"`
 	Username            string     `json:"username"`
 	Action              ActionType `json:"action"`

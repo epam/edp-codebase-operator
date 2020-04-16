@@ -105,11 +105,6 @@ func (in *CodebaseBranchSpec) DeepCopyInto(out *CodebaseBranchSpec) {
 		*out = new(string)
 		**out = **in
 	}
-	if in.Build != nil {
-		in, out := &in.Build, &out.Build
-		*out = new(string)
-		**out = **in
-	}
 	return
 }
 

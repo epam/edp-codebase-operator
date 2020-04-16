@@ -37,8 +37,6 @@ spec:
               type: string
             version:
               type: string
-            build:
-              type: string
             release:
               type: boolean
           required:
@@ -51,6 +49,6 @@ spec:
           type: object
   version: v1alpha1
   versions:
-  - name: v1alpha1
-    served: true
-    storage: true
+    - name: v1alpha1
+      served: true
+      storage: true

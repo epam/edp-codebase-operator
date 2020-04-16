@@ -123,13 +123,13 @@ func (s *CodebaseBranchService) AppendVersionToTheHistorySlice(b *v1alpha1.Codeb
 
 func (s *CodebaseBranchService) ResetBranchBuildCounter(cb *v1alpha1.CodebaseBranch) error {
 	v := "0"
-	if cb.Spec.Build == nil {
+	if cb.Status.Build == nil {
 		return nil
 	}
 
-	b := cb.Spec.Build
+	b := cb.Status.Build
 	if *b != "0" {
-		cb.Spec.Build = &v
+		cb.Status.Build = &v
 	}
 
 	return s.updateStatus(cb)
