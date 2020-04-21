@@ -67,8 +67,6 @@ spec:
                   type: string
                 path:
                   type: string
-              required:
-                - type
           required:
             - lang
             - type
