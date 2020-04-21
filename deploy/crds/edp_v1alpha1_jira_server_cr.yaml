@@ -1,0 +1,12 @@
+apiVersion: v2.edp.epam.com/v1alpha1
+kind: JiraServer
+metadata:
+  name: epam-jira
+spec:
+  apiUrl: https://jiraeu-api.epam.com
+  rootUrl: https://jiraeu.epam.com
+  credentials: secretName
+status:
+  status: "initialized"
+  available: false
+  LastTimeUpdated: 0001-01-01T00:00:00Z
