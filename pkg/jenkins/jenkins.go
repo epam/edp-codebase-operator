@@ -153,11 +153,12 @@ func GetJenkinsUrl(jenkins jenkinsApi.Jenkins, namespace string) string {
 	log.Info("creating Jenkins url")
 	key := fmt.Sprintf("%v/%v", jenkinsOperatorSpec.EdpAnnotationsPrefix, "externalUrl")
 	url := jenkins.Annotations[key]
-	if len(url) == 0 {
-		url := fmt.Sprintf("http://jenkins.%s:8080", namespace)
-		log.Info("annotation doesn't contain Jenkins url. creating from template", "url", url)
-		return url
+	basePath := ""
+	if len(jenkins.Spec.BasePath) > 0 {
+		basePath = fmt.Sprintf("/%v", jenkins.Spec.BasePath)
 	}
-	log.Info("Jenkins url is taken from annotation", "url", url)
+	if len(url) == 0 {
+		return fmt.Sprintf("http://jenkins.%s:8080%v", namespace, basePath)
+	}
 	return url
 }
