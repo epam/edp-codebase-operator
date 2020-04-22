@@ -196,6 +196,7 @@ func (s CodebaseService) pushBuildConfigs(codebaseSettings *model.CodebaseSettin
 
 	log.Printf("Repo data is collected: repo url %v; port %v; user %v", repoData.RepositoryUrl, repoData.Port, repoData.User)
 
+	defer util.RemoveDirectory(pathToCopiedGitFolder)
 	err = s.GitServerService.CloneRepository(repoData)
 	if err != nil {
 		return errWrap.Wrap(err, fmt.Sprintf("an error has occurred while cloning repository %v", repoData.RepositoryUrl))
@@ -234,10 +235,6 @@ func (s CodebaseService) pushBuildConfigs(codebaseSettings *model.CodebaseSettin
 
 	err = s.trySetupS2I(*codebaseSettings)
 	if err != nil {
-		return err
-	}
-
-	if err := util.RemoveDirectory(pathToCopiedGitFolder); err != nil {
 		return err
 	}
 
