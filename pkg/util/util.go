@@ -213,3 +213,11 @@ func CopyFile(src, dest string) error {
 
 	return nil
 }
+
+func RemoveDirectory(path string) error {
+	if err := os.RemoveAll(path); err != nil {
+		return errWrap.Wrapf(err, "couldn't remove directory %v", path)
+	}
+	log.Info("directory has been cleaned", "directory", path)
+	return nil
+}
