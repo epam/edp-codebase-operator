@@ -5,7 +5,7 @@ metadata:
 spec:
   apiUrl: https://jiraeu-api.epam.com
   rootUrl: https://jiraeu.epam.com
-  credentials: secretName
+  credentialName: epam-jira
 status:
   status: "initialized"
   available: false

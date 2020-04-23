@@ -22,7 +22,7 @@ func GetRepoUrl(c *v1alpha1.Codebase) (*string, error) {
 
 	log.Info("Strategy is not clone. Start build url...", "codebase name", c.Name)
 	url := buildRepoUrl(c.Spec)
-	log.Info("Url has been generated", "url", url, "codebase name", c.Name)
+	log.Info("ApiUrl has been generated", "url", url, "codebase name", c.Name)
 	return &url, nil
 
 }
