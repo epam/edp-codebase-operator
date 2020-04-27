@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	jiraIconPath         = "/usr/local/img/jira.svg"
+	jiraIconPath         = "/usr/local/bin/img/jira.svg"
 	edpComponentJiraType = "jira"
 )
 
