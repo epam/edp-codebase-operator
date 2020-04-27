@@ -6,10 +6,14 @@ import (
 	"github.com/epmd-edp/codebase-operator/v2/pkg/client/jira"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/client/jira/adapter"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/client/jira/dto"
+	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/jiraserver/chain"
+	"github.com/epmd-edp/edp-component-operator/pkg/apis/v1/v1alpha1"
 	"github.com/pkg/errors"
 	coreV1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -20,21 +24,32 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/source"
-	"time"
 )
 
-var log = logf.Log.WithName("controller_jira_server")
+var (
+	log                = logf.Log.WithName("controller_jira_server")
+	schemeGroupVersion = schema.GroupVersion{Group: "v1.edp.epam.com", Version: "v1alpha1"}
+)
 
 func Add(mgr manager.Manager) error {
 	return add(mgr, newReconciler(mgr))
 }
 
 func newReconciler(mgr manager.Manager) reconcile.Reconciler {
+	scheme := mgr.GetScheme()
+	addKnownTypes(scheme)
 	return &ReconcileJiraServer{
-		client:  mgr.GetClient(),
-		scheme:  mgr.GetScheme(),
-		factory: new(adapter.GoJiraAdapterFactory),
+		client: mgr.GetClient(),
+		scheme: scheme,
 	}
+}
+
+func addKnownTypes(scheme *runtime.Scheme) {
+	scheme.AddKnownTypes(schemeGroupVersion,
+		&v1alpha1.EDPComponent{},
+		&v1alpha1.EDPComponentList{},
+	)
+	metav1.AddToGroupVersion(scheme, schemeGroupVersion)
 }
 
 func add(mgr manager.Manager, r reconcile.Reconciler) error {
@@ -64,9 +79,8 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 var _ reconcile.Reconciler = &ReconcileJiraServer{}
 
 type ReconcileJiraServer struct {
-	client  client.Client
-	scheme  *runtime.Scheme
-	factory jira.ClientFactory
+	client client.Client
+	scheme *runtime.Scheme
 }
 
 func (r *ReconcileJiraServer) Reconcile(request reconcile.Request) (reconcile.Result, error) {
@@ -82,13 +96,16 @@ func (r *ReconcileJiraServer) Reconcile(request reconcile.Request) (reconcile.Re
 	}
 	defer r.updateStatus(i)
 
-	connected, err := r.checkConnection(*i)
-	i.Status.Available = err == nil && connected == true
+	c, err := r.initJiraClient(*i)
 	if err != nil {
-		rl.Error(err, "couldn't establish connection to Jira server", "url", i.Spec.ApiUrl)
-		return reconcile.Result{RequeueAfter: time.Minute}, nil
+		i.Status.Available = false
+		return reconcile.Result{}, err
 	}
 
+	jiraHandler := chain.CreateDefChain(c, r.client)
+	if err := jiraHandler.ServeRequest(i); err != nil {
+		return reconcile.Result{}, err
+	}
 	rl.Info("Reconciling JiraServer has been finished")
 	return reconcile.Result{}, nil
 }
@@ -100,23 +117,18 @@ func (r *ReconcileJiraServer) updateStatus(instance *edpv1alpha1.JiraServer) {
 	}
 }
 
-func (r ReconcileJiraServer) checkConnection(jira edpv1alpha1.JiraServer) (bool, error) {
+func (r *ReconcileJiraServer) initJiraClient(jira edpv1alpha1.JiraServer) (jira.Client, error) {
 	s, err := r.getSecretData(jira.Spec.CredentialName, jira.Namespace)
 	if err != nil {
-		return false, err
+		return nil, errors.Wrapf(err, "couldn't get secret %v", jira.Spec.CredentialName)
 	}
 	user := string(s.Data["username"])
 	pwd := string(s.Data["password"])
-	jiraClient, err := r.factory.New(dto.ConvertSpecToJiraServer(jira.Spec.ApiUrl, user, pwd))
+	c, err := new(adapter.GoJiraAdapterFactory).New(dto.ConvertSpecToJiraServer(jira.Spec.ApiUrl, user, pwd))
 	if err != nil {
-		return false, err
+		return nil, errors.Wrap(err, "couldn't create Jira client")
 	}
-	connected, err := jiraClient.Connected()
-	if err != nil {
-		return false, errors.Wrap(err, "couldn't connect to Jira server")
-	}
-	log.Info("connection to Jira server", "established", connected)
-	return connected, nil
+	return c, nil
 }
 
 func (r ReconcileJiraServer) getSecretData(name, namespace string) (*coreV1.Secret, error) {
