@@ -62,6 +62,7 @@ type CodebaseSpec struct {
 	JobProvisioning     string      `json:"jobProvisioning"`
 	DeploymentScript    string      `json:"deploymentScript"`
 	Versioning          Versioning  `json:"versioning"`
+	JiraServer          *string     `json:"jiraServer,omitempty"`
 }
 
 // CodebaseStatus defines the observed state of Codebase
