@@ -65,6 +65,10 @@ spec:
                   type: string
                 path:
                   type: string
+            jiraServer:
+              anyOf:
+                - type: null
+                - type: string
           required:
             - lang
             - type
