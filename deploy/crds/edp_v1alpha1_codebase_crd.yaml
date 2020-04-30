@@ -36,9 +36,13 @@ spec:
             type:
               type: string
             description:
-              type: string
+              anyOf:
+                - type: null
+                - type: string
             framework:
-              type: string
+              anyOf:
+                - type: null
+                - type: string
             testReportFramework:
               type: string
             buildTool:
