@@ -73,12 +73,17 @@ spec:
               anyOf:
                 - type: null
                 - type: string
+            commitMessageRegex:
+              type: string
+            ticketNameRegex:
+              type: string
           required:
             - lang
             - type
             - buildTool
             - strategy
-            - versioning
+            - commitMessageRegex
+            - ticketNameRegex
           type: object
         status:
           type: object
