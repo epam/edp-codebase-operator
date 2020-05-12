@@ -22,6 +22,7 @@ package com.epam.edp.codebase {
         Database database
         String testReportFramework
         String gitServer
+        String jiraServer
         String gitUrlPath
         String jenkinsSlave
         String jobProvisioning
@@ -163,10 +164,33 @@ package com.epam.edp.codebase {
 
 }
 
+Codebase "0..*" o-- "1" JiraServer : jiraServer
+  class JiraServer {
+    -- metadata --
+        String name
+    -- spec --
+        String apiUrl
+        String rootUrl
+        String credentialName
+    -- status --
+        Date lastTimeUpdated
+        Boolean available
+  }
+
+JiraServer "1" --* "1" JiraUserServerSecret : credentialName
+  class JiraUserServerSecret <Secret> {
+    -- metadata --
+       String name
+    -- spec --
+       String password
+       String username
+  }
+
 class EdpComponent <<tbd>> {
 }
 
 GitServer --> EdpComponent : creates, owner
+JiraServer --> EdpComponent : creates, owner
 Codebase -u-> ImageStream : creates (s2i, Openshift)
 Codebase "1" -u-> "1" JenkinsFolder : creates, owner
 
