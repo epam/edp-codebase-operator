@@ -63,8 +63,8 @@ type CodebaseSpec struct {
 	DeploymentScript     string      `json:"deploymentScript"`
 	Versioning           Versioning  `json:"versioning"`
 	JiraServer           *string     `json:"jiraServer,omitempty"`
-	CommitMessagePattern string      `json:"commitMessagePattern"`
-	TicketNamePattern    string      `json:"ticketNamePattern"`
+	CommitMessagePattern *string     `json:"commitMessagePattern"`
+	TicketNamePattern    *string     `json:"ticketNamePattern"`
 }
 
 // CodebaseStatus defines the observed state of Codebase

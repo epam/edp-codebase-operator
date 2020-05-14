@@ -78,17 +78,19 @@ spec:
                 - type: null
                 - type: string
             commitMessagePattern:
-              type: string
+              anyOf:
+                - type: null
+                - type: string
             ticketNamePattern:
-              type: string
+              anyOf:
+                - type: null
+                - type: string
           required:
             - lang
             - type
             - buildTool
             - strategy
             - versioning
-            - commitMessagePattern
-            - ticketNamePattern
           type: object
         status:
           type: object
