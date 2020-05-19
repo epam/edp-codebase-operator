@@ -6,6 +6,14 @@ import (
 
 type Client interface {
 	Connected() (bool, error)
+
+	FixVersionExists(projectId, version string) (bool, error)
+
+	GetProjectId(issue string) (*string, error)
+
+	CreateFixVersion(projectId int, versionName string) error
+
+	SetFixVersionToIssue(issue, fixVersion string) error
 }
 
 type ClientFactory interface {
