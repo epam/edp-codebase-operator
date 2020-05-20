@@ -34,6 +34,7 @@ func (h PutJiraEDPComponent) ServeRequest(jira *v1alpha1.JiraServer) error {
 		return errors.Wrapf(err, "couldn't create EDP component", "name", jira.Name)
 	}
 	jira.Status.Status = statusFinished
+	jira.Status.DetailedMessage = ""
 	rl.Info("end putting Jira EDP component...")
 	return nextServeOrNil(h.next, jira)
 }
