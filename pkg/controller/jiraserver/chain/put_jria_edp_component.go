@@ -25,12 +25,15 @@ type PutJiraEDPComponent struct {
 	client client.Client
 }
 
+const statusFinished = "finished"
+
 func (h PutJiraEDPComponent) ServeRequest(jira *v1alpha1.JiraServer) error {
 	rl := log.WithValues("jira server name", jira.Name)
 	rl.V(2).Info("start putting Jira EDP component...")
 	if err := h.createEDPComponentIfNotExists(*jira); err != nil {
 		return errors.Wrapf(err, "couldn't create EDP component", "name", jira.Name)
 	}
+	jira.Status.Status = statusFinished
 	rl.Info("end putting Jira EDP component...")
 	return nextServeOrNil(h.next, jira)
 }

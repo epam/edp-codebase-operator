@@ -24,6 +24,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+	"time"
 )
 
 var (
@@ -78,6 +79,8 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 
 var _ reconcile.Reconciler = &ReconcileJiraServer{}
 
+const statusError = "error"
+
 type ReconcileJiraServer struct {
 	client client.Client
 	scheme *runtime.Scheme
@@ -104,6 +107,8 @@ func (r *ReconcileJiraServer) Reconcile(request reconcile.Request) (reconcile.Re
 
 	jiraHandler := chain.CreateDefChain(c, r.client)
 	if err := jiraHandler.ServeRequest(i); err != nil {
+		i.Status.Status = statusError
+		i.Status.DetailedMessage = err.Error()
 		return reconcile.Result{}, err
 	}
 	rl.Info("Reconciling JiraServer has been finished")
@@ -111,6 +116,7 @@ func (r *ReconcileJiraServer) Reconcile(request reconcile.Request) (reconcile.Re
 }
 
 func (r *ReconcileJiraServer) updateStatus(instance *edpv1alpha1.JiraServer) {
+	instance.Status.LastTimeUpdated = time.Now()
 	err := r.client.Status().Update(context.TODO(), instance)
 	if err != nil {
 		_ = r.client.Update(context.TODO(), instance)
