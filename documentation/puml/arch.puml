@@ -186,6 +186,21 @@ JiraServer "1" --* "1" JiraUserServerSecret : credentialName
        String username
   }
 
+  class JiraFixVersion {
+    -- metadata --
+        String name
+    -- spec --
+        String []commits
+        String []tickets
+        String codebaseName
+    -- status --
+        Date lastTimeUpdated
+        String detailedMessage
+        Boolean released
+        Boolean archived
+        String status
+  }
+
 class EdpComponent <<tbd>> {
 }
 

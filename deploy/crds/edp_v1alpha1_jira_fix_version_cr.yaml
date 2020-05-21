@@ -5,6 +5,9 @@ metadata:
 spec:
   commits: ["val1", "val2"]
   tickets: ["EPMDEDP-1111"]
+  codebaseName: test-name
 status:
   status: "initialized"
-  LastTimeUpdated: 0001-01-01T00:00:00Z
+  lastTimeUpdated: 0001-01-01T00:00:00Z
+  released: false
+  archived: false

@@ -11,9 +11,11 @@ import (
 	coreV1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -31,6 +33,7 @@ func Add(mgr manager.Manager) error {
 func newReconciler(mgr manager.Manager) reconcile.Reconciler {
 	return &ReconcileJiraFixVersion{
 		client: mgr.GetClient(),
+		scheme: mgr.GetScheme(),
 	}
 }
 
@@ -59,6 +62,7 @@ const (
 
 type ReconcileJiraFixVersion struct {
 	client client.Client
+	scheme *runtime.Scheme
 }
 
 func (r *ReconcileJiraFixVersion) Reconcile(request reconcile.Request) (reconcile.Result, error) {
@@ -74,11 +78,15 @@ func (r *ReconcileJiraFixVersion) Reconcile(request reconcile.Request) (reconcil
 	}
 	defer r.updateStatus(i)
 
+	if err := r.setOwnerRef(i); err != nil {
+		setErrorStatus(i, err.Error())
+		return reconcile.Result{}, err
+	}
+
 	jc, err := r.initJiraClient(*i)
 	if err != nil {
 		setErrorStatus(i, err.Error())
-		log.Error(err, "couldn't set fix version")
-		return reconcile.Result{RequeueAfter: time.Hour}, nil
+		return reconcile.Result{}, err
 	}
 
 	ch := chain.CreateDefChain(jc)
@@ -89,6 +97,22 @@ func (r *ReconcileJiraFixVersion) Reconcile(request reconcile.Request) (reconcil
 	}
 
 	return reconcile.Result{}, nil
+}
+
+func (r *ReconcileJiraFixVersion) setOwnerRef(version *edpv1alpha1.JiraFixVersion) error {
+	c := &edpv1alpha1.Codebase{}
+	err := r.client.Get(context.TODO(), types.NamespacedName{
+		Namespace: version.Namespace,
+		Name:      version.Spec.CodebaseName,
+	}, c)
+	if err != nil {
+		return err
+	}
+
+	if err := controllerutil.SetControllerReference(c, version, r.scheme); err != nil {
+		return errors.Wrap(err, "cannot set owner ref for JiraFixVersion CR")
+	}
+	return nil
 }
 
 func setErrorStatus(version *edpv1alpha1.JiraFixVersion, msg string) {

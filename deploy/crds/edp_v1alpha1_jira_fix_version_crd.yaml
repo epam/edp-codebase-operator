@@ -34,7 +34,10 @@ spec:
               type: array
             tickets:
               type: array
+            codebaseName:
+              type: string
           required:
             - commits
             - tickets
+            - codebaseName
           type: object
