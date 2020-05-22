@@ -50,6 +50,8 @@ rules:
     - jiraservers
     - jiraservers/finalizers
     - jiraservers/status
+    - jirafixversions
+    - jirafixversions/status
   verbs:
     - '*'
 {{ end }}
