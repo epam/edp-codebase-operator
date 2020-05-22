@@ -162,22 +162,36 @@ package com.epam.edp.codebase {
         Boolean available
   }
 
-}
-
-Codebase "0..*" o-- "1" JiraServer : jiraServer
+  Codebase "0..*" o--- "1" JiraServer : jiraServer
   class JiraServer {
     -- metadata --
-        String name
+    String name
     -- spec --
-        String apiUrl
-        String rootUrl
-        String credentialName
+    String apiUrl
+    String rootUrl
+    String credentialName
     -- status --
-        Date lastTimeUpdated
-        Boolean available
+    Date lastTimeUpdated
+    Boolean available
   }
 
-JiraServer "1" --* "1" JiraUserServerSecret : credentialName
+  Codebase "1" ---* "0..*" JiraFixVersion : codebaseName
+  class JiraFixVersion {
+    -- metadata --
+    String name
+    -- spec --
+    String []commits
+    String []tickets
+    String codebaseName
+    -- status --
+    Date lastTimeUpdated
+    String detailedMessage
+    Boolean released
+    Boolean archived
+    String status
+    }
+
+  JiraServer "1" --* "1" JiraUserServerSecret : credentialName
   class JiraUserServerSecret <Secret> {
     -- metadata --
        String name
@@ -185,21 +199,7 @@ JiraServer "1" --* "1" JiraUserServerSecret : credentialName
        String password
        String username
   }
-
-  class JiraFixVersion {
-    -- metadata --
-        String name
-    -- spec --
-        String []commits
-        String []tickets
-        String codebaseName
-    -- status --
-        Date lastTimeUpdated
-        String detailedMessage
-        Boolean released
-        Boolean archived
-        String status
-  }
+}
 
 class EdpComponent <<tbd>> {
 }
