@@ -1,0 +1,29 @@
+@startuml
+start
+:Codebase CR;
+if (Import strategy) then (yes)
+    #lightgreen:Clone Git project;
+    #lightgreen:Ensure Deploy Config in Git;
+    #pink:Ensure S2I Image Stream;
+    #lightblue:Ensure Jenkins Folder CR;
+    #lightgrey:Cleaner;
+else (no (clone or create))
+    #olive:Ensure Project in Gerrit;
+    #olive:Ensure Gerrit Replication;
+    #pink:Ensure Perf integration;
+    #olive:Ensure Deploy Config in Gerrit;
+    #pink:Ensure S2I Image Stream;
+    #lightblue:Ensure Jenkins Folder CR;
+    #lightgrey:Cleaner;
+endif
+stop
+
+legend
+|= |= Component |
+|<back:#lightgreen>   </back>| Git Server |
+|<back:#lightblue>   </back>| Jenkins |
+|<back:#olive>   </back>| Gerrit |
+|<back:#pink>   </back>| Deprecated |
+|<back:#lightgrey>   </back>| Technical  |
+endlegend
+@enduml
