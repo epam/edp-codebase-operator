@@ -1,0 +1,23 @@
+@startuml
+start
+:Codebase Branch CR;
+:Check parent Codebase;
+#lightblue: Check Jenkins Folder;
+if (is spec.version in status."version history") then (no)
+    if (edp versioning?) then (yes)
+        #lightblue:Reset Jenkins build count;
+        #lightblue:Reset Jenkins last successful build;
+        :Add spec.version to status."version history";
+    else (no)
+    endif
+else (yes)
+endif
+#lightblue: Trigger Jenkins Release Job;
+stop
+
+legend
+|= |= Component |
+|<back:#lightyellow>   </back>| Codebase |
+|<back:#lightblue>   </back>| Jenkins |
+endlegend
+@enduml

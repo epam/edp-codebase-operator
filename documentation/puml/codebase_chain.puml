@@ -20,6 +20,7 @@ stop
 
 legend
 |= |= Component |
+|<back:#lightyellow>   </back>| Codebase |
 |<back:#lightgreen>   </back>| Git Server |
 |<back:#lightblue>   </back>| Jenkins |
 |<back:#olive>   </back>| Gerrit |
