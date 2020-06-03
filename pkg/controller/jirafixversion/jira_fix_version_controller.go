@@ -7,12 +7,14 @@ import (
 	"github.com/epmd-edp/codebase-operator/v2/pkg/client/jira/adapter"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/client/jira/dto"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/jirafixversion/chain"
+	"github.com/epmd-edp/codebase-operator/v2/pkg/util"
 	"github.com/pkg/errors"
 	coreV1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"os"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -25,6 +27,11 @@ import (
 )
 
 var log = logf.Log.WithName("controller_jira_fix_version")
+
+const (
+	reconcilationPeriod        = "RECONCILATION_PERIOD"
+	defaultReconcilationPeriod = "360"
+)
 
 func Add(mgr manager.Manager) error {
 	return add(mgr, newReconciler(mgr))
@@ -89,14 +96,34 @@ func (r *ReconcileJiraFixVersion) Reconcile(request reconcile.Request) (reconcil
 		return reconcile.Result{}, err
 	}
 
-	ch := chain.CreateDefChain(jc)
+	ch := chain.CreateDefChain(jc, r.client)
 	if err := ch.ServeRequest(i); err != nil {
 		setErrorStatus(i, err.Error())
-		log.Error(err, "couldn't set fix version")
-		return reconcile.Result{RequeueAfter: time.Hour}, nil
+		timeout := setFailureCount(i)
+		log.Error(err, "couldn't set fix version", "name", i.Name)
+		return reconcile.Result{RequeueAfter: timeout}, nil
 	}
 
-	return reconcile.Result{}, nil
+	duration, err := time.ParseDuration(lookup() + "m")
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+	return reconcile.Result{RequeueAfter: duration * time.Minute}, nil
+}
+
+func lookup() string {
+	if value, ok := os.LookupEnv(reconcilationPeriod); ok {
+		return value
+	}
+	return defaultReconcilationPeriod
+}
+
+// setFailureCount increments failure count and returns delay for next reconciliation
+func setFailureCount(version *edpv1alpha1.JiraFixVersion) time.Duration {
+	timeout := util.GetTimeout(version.Status.FailureCount)
+	log.V(2).Info("wait for next reconcilation", "next reconcilation in", timeout)
+	version.Status.FailureCount += 1
+	return timeout
 }
 
 func (r *ReconcileJiraFixVersion) setOwnerRef(version *edpv1alpha1.JiraFixVersion) error {

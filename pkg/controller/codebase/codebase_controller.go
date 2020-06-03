@@ -13,7 +13,6 @@ import (
 	"github.com/pkg/errors"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
-	"math"
 	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -147,15 +146,10 @@ func (r *ReconcileCodebase) Reconcile(request reconcile.Request) (reconcile.Resu
 
 // setFailureCount increments failure count and returns delay for next reconciliation
 func setFailureCount(c *edpv1alpha1.Codebase) time.Duration {
-	timeout := getTimeout(c.Status.FailureCount)
+	timeout := util.GetTimeout(c.Status.FailureCount)
 	log.V(2).Info("wait for next reconcilation", "next reconcilation in", timeout)
 	c.Status.FailureCount += 1
 	return timeout
-}
-
-func getTimeout(factor int64) time.Duration {
-	t := float64(500*time.Millisecond) * math.Pow(math.E, float64(factor+1))
-	return time.Duration(t)
 }
 
 func (r ReconcileCodebase) getChain(cr *edpv1alpha1.Codebase) (cHand.CodebaseHandler, error) {

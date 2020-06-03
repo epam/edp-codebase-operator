@@ -54,3 +54,5 @@ spec:
                   key: password
             - name: DB_SSL_MODE
               value: "disable"
+            - name: RECONCILATION_PERIOD
+              value: "360" # The value should be typed in minutes.

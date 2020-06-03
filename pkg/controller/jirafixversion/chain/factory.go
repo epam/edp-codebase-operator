@@ -4,17 +4,22 @@ import (
 	"github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/client/jira"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/jirafixversion/chain/handler"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
 var log = logf.Log.WithName("jira_fix_version_handler")
 
-func CreateDefChain(client *jira.Client) handler.JiraFixVersionHandler {
+func CreateDefChain(jiraClient *jira.Client, client client.Client) handler.JiraFixVersionHandler {
 	return PutFixVersion{
 		next: SetFixVersion{
-			client: *client,
+			client: *jiraClient,
+			next: DeleteFixVersionCr{
+				jc: nil,
+				c:  client,
+			},
 		},
-		client: *client,
+		client: *jiraClient,
 	}
 }
 
