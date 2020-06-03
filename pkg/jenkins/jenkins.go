@@ -2,11 +2,16 @@ package jenkins
 
 import (
 	"fmt"
-	"github.com/bndr/gojenkins"
-	"github.com/pkg/errors"
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/bndr/gojenkins"
+	"github.com/pkg/errors"
+)
+
+const (
+	jpf = "ci"
 )
 
 type Client struct {
@@ -28,7 +33,7 @@ func Init(url string, username string, token string) (*Client, error) {
 
 func (client Client) TriggerJobProvisioning(jobName string, parameters map[string]string, delay time.Duration, retryCount int) error {
 	for i := 0; i < retryCount; i++ {
-		buildNumber, err := client.jenkins.BuildJob("job-provisions/job/"+jobName, parameters)
+		buildNumber, err := client.jenkins.BuildJob(fmt.Sprintf("job-provisions/job/%v/job/%v", jpf, jobName), parameters)
 		if buildNumber != 0 || err != nil {
 			return err
 		}
