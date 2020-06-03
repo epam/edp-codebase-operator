@@ -1,0 +1,12 @@
+@startuml
+start
+:Git Server CR;
+:Ensure connection to Git Server;
+:Update status;
+stop
+
+legend
+|= |= Component |
+|<back:#lightyellow>   </back>| Git Server |
+endlegend
+@enduml
