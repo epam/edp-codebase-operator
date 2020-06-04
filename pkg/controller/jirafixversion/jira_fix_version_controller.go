@@ -15,11 +15,14 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"os"
+	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/source"
@@ -51,8 +54,19 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
+	pred := predicate.Funcs{
+		UpdateFunc: func(e event.UpdateEvent) bool {
+			oo := e.ObjectOld.(*edpv1alpha1.JiraFixVersion)
+			no := e.ObjectNew.(*edpv1alpha1.JiraFixVersion)
+			if !reflect.DeepEqual(oo.Spec, no.Spec) {
+				return true
+			}
+			return false
+		},
+	}
+
 	// Watch for changes to primary resource GitServer
-	err = c.Watch(&source.Kind{Type: &edpv1alpha1.JiraFixVersion{}}, &handler.EnqueueRequestForObject{})
+	err = c.Watch(&source.Kind{Type: &edpv1alpha1.JiraFixVersion{}}, &handler.EnqueueRequestForObject{}, pred)
 	if err != nil {
 		return err
 	}
