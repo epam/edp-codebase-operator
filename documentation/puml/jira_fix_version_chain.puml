@@ -1,0 +1,13 @@
+@startuml
+start
+:Jira Fix Version CR;
+:Check parent Jira Server CR;
+:Ensure Jira Fix version;
+:Ensure Jira Tickets with fix version;
+stop
+
+legend
+|= |= Component |
+|<back:#lightyellow>   </back>| Jira Fix version |
+endlegend
+@enduml

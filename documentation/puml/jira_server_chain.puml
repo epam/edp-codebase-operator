@@ -1,0 +1,14 @@
+@startuml
+start
+:Jira Server CR;
+:Ensure connection to Jira Server;
+#lightgreen:Put EDP Component;
+:Update status;
+stop
+
+legend
+|= |= Component |
+|<back:#lightyellow>   </back>| Jira Server |
+|<back:#lightgreen>   </back>| EDP Component |
+endlegend
+@enduml
