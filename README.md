@@ -30,3 +30,7 @@ helm install codebase-operator --namespace <edp_cicd_project> --set name=codebas
 * Check the <edp_cicd_project> namespace that should contain Deployment with your operator in a running status
 
 * Check the <edp_cicd_project> namespace that should contain Deployment with your operator in a running status.
+
+### Related Articles
+
+- [Codebase Controller Overview](documentation/codebase_controller.md)
