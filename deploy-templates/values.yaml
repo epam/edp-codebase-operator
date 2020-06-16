@@ -1,7 +1,6 @@
 name: codebase-operator
 namespace: ""
 platform: "openshift"
-dnsWildcard: ""
 database:
   required: false
   host: edp-install-wizard-db
@@ -10,3 +9,10 @@ database:
 image:
   name: epamedp/codebase-operator
   version: v2.4.0
+
+jira:
+  integration: true
+  name: "epam-jira"
+  apiUrl: "https://jiraeu-api.epam.com"
+  rootUrl: "https://jiraeu.epam.com"
+  credentialName: "epam-jira-user"
