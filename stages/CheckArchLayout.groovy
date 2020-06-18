@@ -1,7 +1,7 @@
 import com.epam.edp.stages.impl.ci.ProjectType
 import com.epam.edp.stages.impl.ci.Stage
 
-@Stage(name = "check-arch", buildTool = "maven", type = ProjectType.APPLICATION)
+@Stage(name = "check-arch", buildTool = "go", type = ProjectType.APPLICATION)
 class CheckArchLayout {
     Script script
 
