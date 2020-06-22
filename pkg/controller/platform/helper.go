@@ -26,3 +26,7 @@ func lookup() string {
 func IsK8S() bool {
 	return value == K8S
 }
+
+func GetPlatformType() string {
+	return value
+}

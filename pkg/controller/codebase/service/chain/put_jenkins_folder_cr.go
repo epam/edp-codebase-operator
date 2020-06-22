@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/codebase/service/chain/handler"
+	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/platform"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/model"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/openshift"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/util"
@@ -45,6 +46,7 @@ func (h PutJenkinsFolder) ServeRequest(c *v1alpha1.Codebase) error {
 		"GIT_CREDENTIALS_ID":       gs.NameSshKeySecret,
 		"REPOSITORY_PATH":          sshLink,
 		"JIRA_INTEGRATION_ENABLED": strconv.FormatBool(isJiraIntegrationEnabled(c.Spec.JiraServer)),
+		"PLATFORM_TYPE":            platform.GetPlatformType(),
 	}
 
 	jc, err := json.Marshal(jpm)
