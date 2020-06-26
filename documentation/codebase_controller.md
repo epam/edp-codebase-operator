@@ -36,3 +36,7 @@ enabled if the vcs_integration_enabled field in the edp-config config map is set
 - *Ensure S2i Image Stream*. The deprecated step that should be deleted in https://jiraeu.epam.com/browse/EPMDEDP-4116.
 - *Ensure Jenkins Folder CR*. Custom resource for Jenkins folder is added to hold CI/CD pipelines related to this codebase.
 - *Cleaner*. The technical step, it ensures that all workspaces are wiped out.
+
+### Related Articles
+
+- [Codebase Branch Controller](documentation/codebase_branch_controller.md)

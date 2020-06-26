@@ -4,12 +4,12 @@ EDP installation can be applied on two container orchestration platforms: OpenSh
 
 _**NOTE:** Installation of operators is platform-independent, that is why there is a unified instruction for deploying._
 
-### Prerequisites
+## Prerequisites
 1. Linux machine or Windows Subsystem for Linux instance with [Helm 3](https://helm.sh/docs/intro/install/) installed;
 2. Cluster admin access to the cluster;
 3. EDP project/namespace is deployed by following one of the instructions: [edp-install-openshift](https://github.com/epmd-edp/edp-install/blob/master/documentation/openshift_install_edp.md#edp-project) or [edp-install-kubernetes](https://github.com/epmd-edp/edp-install/blob/master/documentation/kubernetes_install_edp.md#edp-namespace).
 
-### Installation
+## Installation
 * Go to the [releases](https://github.com/epmd-edp/codebase-operator/releases) page of this repository, choose a version, download an archive and unzip it;
 
 _**NOTE:** It is highly recommended to use the latest released version._
@@ -34,3 +34,5 @@ helm install codebase-operator --namespace <edp_cicd_project> --set name=codebas
 ### Related Articles
 
 - [Codebase Controller Overview](documentation/codebase_controller.md)
+- [Codebase Branch Controller](documentation/codebase_branch_controller.md)
+- [Jira Server Controller](documentation/jira_server_controller.md)
