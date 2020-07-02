@@ -36,3 +36,4 @@ helm install codebase-operator --namespace <edp_cicd_project> --set name=codebas
 - [Codebase Controller Overview](documentation/codebase_controller.md)
 - [Codebase Branch Controller](documentation/codebase_branch_controller.md)
 - [Jira Server Controller](documentation/jira_server_controller.md)
+- [Jira Fix Version Controller](documentation/jira_fix_version_controller.md)

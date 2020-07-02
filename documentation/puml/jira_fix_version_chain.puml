@@ -1,9 +1,10 @@
 @startuml
 start
 :Jira Fix Version CR;
-:Check parent Jira Server CR;
-:Ensure Jira Fix version;
-:Ensure Jira Tickets with fix version;
+:Check Parent Jira Server CR;
+:Ensure Jira Fix Version;
+:Ensure Jira Tickets With Fix Version;
+:Delete Jira Fix Version CR;
 stop
 
 legend
