@@ -1,13 +1,13 @@
 @startuml
 start
 :Codebase Branch CR;
-:Check parent Codebase;
+:Check Parent Codebase;
 #lightblue: Check Jenkins Folder;
-if (is spec.version in status."version history") then (no)
-    if (edp versioning?) then (yes)
-        #lightblue:Reset Jenkins build count;
-        #lightblue:Reset Jenkins last successful build;
-        :Add spec.version to status."version history";
+if (Check new version/ is spec.version in "version history" status) then (no)
+    if (EDP Versioning) then (yes)
+        #lightblue:Reset Jenkins Build Count;
+        #lightblue:Reset Jenkins Last Successful Build;
+        :Add spec.version to "version history" status;
     else (no)
     endif
 else (yes)
