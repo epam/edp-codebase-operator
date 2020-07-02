@@ -1,9 +1,9 @@
 @startuml
 start
 :Jira Server CR;
-:Ensure connection to Jira Server;
+:Ensure Connection to Jira Server;
 #lightgreen:Put EDP Component;
-:Update status;
+:Update Status;
 stop
 
 legend

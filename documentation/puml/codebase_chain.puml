@@ -1,8 +1,8 @@
 @startuml
 start
 :Codebase CR;
-if (Import strategy) then (yes)
-    #lightgreen:Clone Git project;
+if (Import Strategy) then (yes)
+    #lightgreen:Clone Git Project;
     #lightgreen:Ensure Deploy Config in Git;
     #pink:Ensure S2I Image Stream;
     #lightblue:Ensure Jenkins Folder CR;
