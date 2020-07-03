@@ -1,8 +1,8 @@
 @startuml
 start
 :Git Server CR;
-:Ensure connection to Git Server;
-:Update status;
+:Ensure Connection to Git Server;
+:Update Status;
 stop
 
 legend
