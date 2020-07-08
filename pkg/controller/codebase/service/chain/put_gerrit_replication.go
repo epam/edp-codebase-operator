@@ -32,9 +32,14 @@ func (h PutGerritReplication) ServeRequest(c *v1alpha1.Codebase) error {
 func (h PutGerritReplication) tryToSetupGerritReplication(codebaseName, namespace string) error {
 	log.Info("Start setting Gerrit replication", "codebase name", codebaseName)
 
-	gs, us, err := util.GetConfigSettings(h.clientSet.CoreClient, namespace)
+	port, err := util.GetGerritPort(h.clientSet.Client, namespace)
 	if err != nil {
-		return errors.Wrap(err, "unable get config settings")
+		return errors.Wrap(err, "unable get gerrit port")
+	}
+
+	us, err := util.GetUserSettings(h.clientSet.CoreClient, namespace)
+	if err != nil {
+		return errors.Wrap(err, "unable get user settings settings")
 	}
 
 	if us.VcsIntegrationEnabled {
@@ -50,7 +55,7 @@ func (h PutGerritReplication) tryToSetupGerritReplication(codebaseName, namespac
 
 		idrsa := string(s.Data[util.PrivateSShKeyName])
 		host := fmt.Sprintf("gerrit.%v", namespace)
-		return gerrit.SetupProjectReplication(*h.clientSet.CoreClient, gs.SshPort, host, idrsa, codebaseName, vcsConf.VcsSshUrl, namespace)
+		return gerrit.SetupProjectReplication(*h.clientSet.CoreClient, *port, host, idrsa, codebaseName, vcsConf.VcsSshUrl, namespace)
 	}
 	log.Info("Skipped Gerrit replication configuration. VCS integration isn't enabled")
 	return nil

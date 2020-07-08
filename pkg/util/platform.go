@@ -14,7 +14,7 @@ import (
 	"strconv"
 )
 
-func getUserSettingsConfigMap(client *coreV1Client.CoreV1Client, namespace string) (*model.UserSettings, error) {
+func GetUserSettings(client *coreV1Client.CoreV1Client, namespace string) (*model.UserSettings, error) {
 	us, err := client.ConfigMaps(namespace).Get("edp-config", metav1.GetOptions{})
 	if err != nil {
 		return nil, err
@@ -39,32 +39,16 @@ func getUserSettingsConfigMap(client *coreV1Client.CoreV1Client, namespace strin
 	}, nil
 }
 
-func getGerritSettingsConfigMap(client *coreV1Client.CoreV1Client, namespace string) (*model.GerritSettings, error) {
-	gs, err := client.ConfigMaps(namespace).Get("gerrit", metav1.GetOptions{})
-	sshPort, err := strconv.ParseInt(gs.Data["sshPort"], 10, 64)
+func GetGerritPort(c client.Client, namespace string) (*int32, error) {
+	gs, err := getGitServerCR(c, "gerrit", namespace)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "an error has occurred while getting %v Git Server CR", "gerrit")
 	}
-	return &model.GerritSettings{
-		Config:            gs.Data["config"],
-		ReplicationConfig: gs.Data["replication.config"],
-		SshPort:           int32(sshPort),
-	}, nil
+	return getInt32P(gs.Spec.SshPort), nil
 }
 
-func GetConfigSettings(client *coreV1Client.CoreV1Client, namespace string) (*model.GerritSettings, *model.UserSettings, error) {
-	log.Info("Start getting Gerrit Settings Config Map...")
-	gs, err := getGerritSettingsConfigMap(client, namespace)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	log.Info("Start getting User Settings Config Map...")
-	us, err := getUserSettingsConfigMap(client, namespace)
-	if err != nil {
-		return nil, nil, err
-	}
-	return gs, us, nil
+func getInt32P(val int32) *int32 {
+	return &val
 }
 
 func GetVcsBasicAuthConfig(c coreV1Client.CoreV1Client, namespace string, secretName string) (string, string, error) {

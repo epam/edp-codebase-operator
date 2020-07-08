@@ -47,9 +47,9 @@ func PrepareTemplates(client *coreV1Client.CoreV1Client, c v1alpha1.Codebase) er
 
 func buildTemplateConfig(client *coreV1Client.CoreV1Client, c v1alpha1.Codebase) (*model.GerritConfigGoTemplating, error) {
 	log.Info("start creating template config", "codebase name", c.Name)
-	_, us, err := util.GetConfigSettings(client, c.Namespace)
+	us, err := util.GetUserSettings(client, c.Namespace)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable get config settings")
+		return nil, errors.Wrap(err, "unable get user settings settings")
 	}
 
 	cf := model.GerritConfigGoTemplating{

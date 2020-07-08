@@ -26,13 +26,13 @@ func (h PutDeployConfigs) ServeRequest(c *v1alpha1.Codebase) error {
 	rLog := log.WithValues("codebase name", c.Name)
 	rLog.Info("Start pushing configs...")
 
-	gs, _, err := util.GetConfigSettings(h.clientSet.CoreClient, c.Namespace)
+	port, err := util.GetGerritPort(h.clientSet.Client, c.Namespace)
 	if err != nil {
 		setFailedFields(c, edpv1alpha1.SetupDeploymentTemplates, err.Error())
-		return errors.Wrap(err, "unable get config settings")
+		return errors.Wrap(err, "unable get gerrit port")
 	}
 
-	if err := h.tryToPushConfigs(*c, gs.SshPort); err != nil {
+	if err := h.tryToPushConfigs(*c, *port); err != nil {
 		setFailedFields(c, edpv1alpha1.SetupDeploymentTemplates, err.Error())
 		return errors.Wrapf(err, "couldn't push deploy configs", "codebase name", c.Name)
 	}

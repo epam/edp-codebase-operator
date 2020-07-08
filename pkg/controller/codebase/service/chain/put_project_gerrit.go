@@ -42,10 +42,16 @@ func (h PutProjectGerrit) ServeRequest(c *v1alpha1.Codebase) error {
 		return err
 	}
 
-	gs, us, err := util.GetConfigSettings(h.clientSet.CoreClient, c.Namespace)
+	port, err := util.GetGerritPort(h.clientSet.Client, c.Namespace)
 	if err != nil {
 		setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
-		return errors.Wrap(err, "unable get config settings")
+		return errors.Wrap(err, "unable get gerrit port")
+	}
+
+	us, err := util.GetUserSettings(h.clientSet.CoreClient, c.Namespace)
+	if err != nil {
+		setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
+		return errors.Wrap(err, "unable get user settings settings")
 	}
 
 	ru, err := util.GetRepoUrl(c)
@@ -89,7 +95,7 @@ func (h PutProjectGerrit) ServeRequest(c *v1alpha1.Codebase) error {
 		return errors.Wrap(err, "cloning project hsa been failed")
 	}
 
-	if err := h.tryToPushProjectToGerrit(gs.SshPort, c.Name, wd, c.Namespace); err != nil {
+	if err := h.tryToPushProjectToGerrit(*port, c.Name, wd, c.Namespace); err != nil {
 		setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
 		return errors.Wrapf(err, "push to gerrit for codebase %v has been failed", c.Name)
 	}
