@@ -33,9 +33,9 @@ func (h SetupPerf) ServeRequest(c *v1alpha1.Codebase) error {
 
 func (h SetupPerf) tryToSetupPerf(codebaseName, namespace string) error {
 	log.Info("start setting up perf")
-	_, us, err := util.GetConfigSettings(h.clientSet.CoreClient, namespace)
+	us, err := util.GetUserSettings(h.clientSet.CoreClient, namespace)
 	if err != nil {
-		return errors.Wrap(err, "unable get config settings")
+		return errors.Wrap(err, "unable get user settings settings")
 	}
 
 	if us.PerfIntegrationEnabled {

@@ -22,12 +22,6 @@ type Trigger struct {
 
 type VCSTool string
 
-type GerritSettings struct {
-	Config            string `json:"config"`
-	ReplicationConfig string `json:"replication_config"`
-	SshPort           int32  `json:"ssh_port"`
-}
-
 type SshConfig struct {
 	CicdNamespace         string
 	SshPort               int32
