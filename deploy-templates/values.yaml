@@ -1,6 +1,7 @@
+global:
+  edpName: ""
+  platform: "openshift"
 name: codebase-operator
-namespace: ""
-platform: "openshift"
 database:
   required: false
   host: edp-install-wizard-db

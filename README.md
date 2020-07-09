@@ -16,7 +16,7 @@ _**NOTE:** It is highly recommended to use the latest released version._
 
 * Go to the unzipped directory and deploy operator:
 ```bash
-helm install codebase-operator --namespace <edp_cicd_project> --set name=codebase-operator --set namespace=<edp_cicd_project> --set platform=<platform_type> --set image.name=epamedp/codebase-operator --set image.version=<operator_version> --set dnsWildcard=<dns_wildcard> deploy-templates
+helm install codebase-operator --namespace <edp_cicd_project> --set name=codebase-operator --set global.edpName=<edp_cicd_project> --set global.platform=<platform_type> --set image.name=epamedp/codebase-operator --set image.version=<operator_version> deploy-templates
 ```
 
 - _<edp_cicd_project> - a namespace or a project name (in case of OpenShift) that is created by one of the instructions: [edp-install-openshift](https://github.com/epmd-edp/edp-install/blob/master/documentation/openshift_install_edp.md#install-edp) or [edp-install-kubernetes](https://github.com/epmd-edp/edp-install/blob/master/documentation/kubernetes_install_edp.md#install-edp);_ 
@@ -24,8 +24,6 @@ helm install codebase-operator --namespace <edp_cicd_project> --set name=codebas
 - _<platform_type> - a platform type that can be "kubernetes" or "openshift";_
 
 - _<operator_version> - a selected release version;_
-
-- _<dns_wildcard> - a cluster DNS wildcard name_.
 
 * Check the <edp_cicd_project> namespace that should contain Deployment with your operator in a running status
 

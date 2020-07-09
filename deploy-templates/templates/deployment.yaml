@@ -35,7 +35,7 @@ spec:
             - name: OPERATOR_NAME
               value: {{ .Values.name }}
             - name: PLATFORM_TYPE
-              value: "{{ .Values.platform }}"
+              value: "{{ .Values.global.platform }}"
             - name: DB_HOST
               value: "{{ .Values.database.host }}"
             - name: DB_PORT
