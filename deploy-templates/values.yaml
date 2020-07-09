@@ -1,12 +1,12 @@
 global:
   edpName: ""
   platform: "openshift"
+  database:
+    port: 5432
+    host:
+    name: "edp-install-wizard-db"
+
 name: codebase-operator
-database:
-  required: false
-  host: edp-install-wizard-db
-  name: edp-install-wizard-db
-  port: 5432
 image:
   name: epamedp/codebase-operator
   version: v2.4.0

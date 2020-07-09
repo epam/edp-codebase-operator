@@ -37,11 +37,11 @@ spec:
             - name: PLATFORM_TYPE
               value: "{{ .Values.global.platform }}"
             - name: DB_HOST
-              value: "{{ .Values.database.host }}"
+              value: "{{ .Values.global.database.host }}"
             - name: DB_PORT
-              value: "{{ .Values.database.port }}"
+              value: "{{ .Values.global.database.port }}"
             - name: DB_NAME
-              value: "{{ .Values.database.name }}"
+              value: "{{ .Values.global.database.name }}"
             - name: DB_USER
               valueFrom:
                 secretKeyRef:
