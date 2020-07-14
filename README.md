@@ -1,8 +1,14 @@
-# How to Install Operator
+# Codebase Operator
 
-EDP installation can be applied on two container orchestration platforms: OpenShift and Kubernetes.
+Get acquainted with the Codebase Operator and the installation process as well as the local development, 
+and architecture scheme.
 
-_**NOTE:** Installation of operators is platform-independent, that is why there is a unified instruction for deploying._
+## Overview
+
+Codebase Operator is an EDP operator that is responsible for provisioning codebase entities. 
+Operator installation can be applied on two container orchestration platforms: OpenShift and Kubernetes.
+
+_**NOTE:** Operator is platform-independent, that is why there is a unified instruction for deploying._
 
 ## Prerequisites
 1. Linux machine or Windows Subsystem for Linux instance with [Helm 3](https://helm.sh/docs/intro/install/) installed;
@@ -10,7 +16,7 @@ _**NOTE:** Installation of operators is platform-independent, that is why there 
 3. EDP project/namespace is deployed by following one of the instructions: [edp-install-openshift](https://github.com/epmd-edp/edp-install/blob/master/documentation/openshift_install_edp.md#edp-project) or [edp-install-kubernetes](https://github.com/epmd-edp/edp-install/blob/master/documentation/kubernetes_install_edp.md#edp-namespace).
 
 ## Installation
-In order to install the Codebase operator, follow the steps below:
+In order to install the Codebase Operator, follow the steps below:
 
 1. To add the Helm EPAMEDP Charts for local client, run "helm repo add":
      ```bash
@@ -23,11 +29,15 @@ In order to install the Codebase operator, follow the steps below:
      epamedp/codebase-operator      v2.4.0                          Helm chart for Golang application/service deplo...
      ```
   
-Parameters:
- ```
+    _**NOTE:** It is highly recommended to use the latest released version._
+
+3. Deploy operator:
+
+   Full available chart parameters list:
+   ```
     - chart_version                                   # a version of CD Pipeline operator Helm chart;
     - global.edpName                                  # a namespace or a project name (in case of OpenShift);
-    - global.platform                                 # openShift or kubernetes;
+    - global.platform                                 # openshift or kubernetes;
     - global.database.host                            # Host to DB (<db-name>.<namespace>);
     - global.database.port                            # Port to DB;
     - global.database.name                            # Name of DB;
@@ -38,19 +48,16 @@ Parameters:
     - jira.apiUrl                                     # API URL for development;
     - jira.rootUrl                                    # URL to Jira server;
     - jira.credentialName                             # Name of secret with credentials to Jira server;
- ```
+   ```
  
-_**NOTE:** Follow instruction to create namespace [edp-install-openshift](https://github.com/epmd-edp/edp-install/blob/master/documentation/openshift_install_edp.md#install-edp) or [edp-install-kubernetes](https://github.com/epmd-edp/edp-install/blob/master/documentation/kubernetes_install_edp.md#install-edp)._
- 
-Inspect the sample of launching a Helm template for Codebase operator installation:
-```bash
-helm install codebase-operator epamedp/codebase-operator --version <chart_version> --namespace <edp_cicd_project> --set name=codebase-operator --set global.edpName=<edp_cicd_project> --set global.platform=<platform_type>
-```
-
-* Check the <edp_cicd_project> namespace that should contain Deployment with your operator in a running status.
+4. Install operator in the <edp_cicd_project> namespace with the helm command; find below the installation command example:
+    ```bash
+    helm install codebase-operator epamedp/codebase-operator --version <chart_version> --namespace <edp_cicd_project> --set name=codebase-operator --set global.edpName=<edp_cicd_project> --set global.platform=<platform_type> --set global.database.name=<db-name> --set global.database.host=<db-name>.<namespace_name> --set global.database.port=<port> --set jira.integration=false
+    ```
+5. Check the <edp_cicd_project> namespace that should contain operator deployment with your operator in a running status.
 
 ### Related Articles
-
+- [Architecture Scheme of Codebase Operator](documentation/arch.md)
 - [Codebase Controller Overview](documentation/codebase_controller.md)
 - [Codebase Branch Controller](documentation/codebase_branch_controller.md)
 - [Jira Server Controller](documentation/jira_server_controller.md)
