@@ -13,7 +13,6 @@ spec:
       - cb
   scope: Namespaced
   subresources:
-    status: {}
   validation:
     openAPIV3Schema:
       properties:
@@ -42,7 +41,7 @@ spec:
             build:
               type: string
             release:
-              type: bool
+              type: boolean
           required:
             - codebaseName
             - branchName
