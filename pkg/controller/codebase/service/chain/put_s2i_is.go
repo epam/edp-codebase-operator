@@ -26,8 +26,8 @@ func (h PutS2iIs) ServeRequest(c *v1alpha1.Codebase) error {
 
 func (h PutS2iIs) tryToSetupS2I(c v1alpha1.Codebase) error {
 	log.Info("start creating image stream", "codebase name", c.Name)
-	if c.Spec.Lang == util.LanguageJava {
-		log.V(2).Info("skip creating s2i for java lang", "name", c.Name)
+	if c.Spec.Lang == util.LanguageJava || c.Spec.Lang == util.LanguageGo {
+		log.V(2).Info("skip creating s2i for java/go langs", "name", c.Name)
 		return nil
 	}
 

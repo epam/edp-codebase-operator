@@ -38,4 +38,5 @@ const (
 
 	GithubDomain = "https://github.com/epmd-edp"
 	LanguageJava = "Java"
+	LanguageGo   = "Go"
 )
