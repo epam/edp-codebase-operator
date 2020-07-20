@@ -41,8 +41,8 @@ In order to install the Codebase Operator, follow the steps below:
     - global.database.host                            # Host to DB (<db-name>.<namespace>);
     - global.database.port                            # Port to DB;
     - global.database.name                            # Name of DB;
-    - image.name                                      # EDP image. The released image can be found on [Dockerhub](https://hub.docker.com/repository/docker/epamedp/codebase-operator);
-    - image.version                                   # EDP tag. The released image can be found on [Dockerhub](https://hub.docker.com/repository/docker/epamedp/codebase-operator/tags);
+    - image.name                                      # EDP image. The released image can be found on [Dockerhub](https://hub.docker.com/r/epamedp/codebase-operator);
+    - image.version                                   # EDP tag. The released image can be found on [Dockerhub](https://hub.docker.com/r/epamedp/codebase-operator/tags);
     - jira.integration                                # Flag to enable/disable Jira integration;
     - jira.name                                       # JiraServer CR name;
     - jira.apiUrl                                     # API URL for development;
