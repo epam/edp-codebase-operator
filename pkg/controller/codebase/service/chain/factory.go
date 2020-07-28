@@ -17,9 +17,12 @@ func CreateGerritDefChain(cs openshift.ClientSet, db *sql.DB) handler.CodebaseHa
 		next: PutGerritReplication{
 			next: SetupPerf{
 				next: PutDeployConfigs{
-					next: PutS2iIs{
-						next: PutJenkinsFolder{
-							next: Cleaner{
+					next: PutVersionFile{
+						next: PutS2iIs{
+							next: PutJenkinsFolder{
+								next: Cleaner{
+									clientSet: cs,
+								},
 								clientSet: cs,
 							},
 							clientSet: cs,
@@ -42,9 +45,12 @@ func CreateThirdPartyVcsProviderDefChain(cs openshift.ClientSet, db *sql.DB) han
 	log.Info("chain is selected", "type", "third party VCS")
 	return CloneGitProject{
 		next: PutDeployConfigsToGitProvider{
-			next: PutS2iIs{
-				next: PutJenkinsFolder{
-					next: Cleaner{
+			next: PutVersionFile{
+				next: PutS2iIs{
+					next: PutJenkinsFolder{
+						next: Cleaner{
+							clientSet: cs,
+						},
 						clientSet: cs,
 					},
 					clientSet: cs,
