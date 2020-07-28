@@ -67,7 +67,7 @@ func (h PutDeployConfigsToGitProvider) tryToPushConfigs(c v1alpha1.Codebase) err
 		return err
 	}
 
-	if err := git.CommitChanges(gf); err != nil {
+	if err := git.CommitChanges(gf, fmt.Sprintf("Add template for %v", c.Name)); err != nil {
 		return err
 	}
 

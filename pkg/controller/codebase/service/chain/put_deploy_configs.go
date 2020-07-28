@@ -90,7 +90,7 @@ func (h PutDeployConfigs) tryToPushConfigs(c edpv1alpha1.Codebase, sshPort int32
 		return err
 	}
 
-	if err := git.CommitChanges(d); err != nil {
+	if err := git.CommitChanges(d, fmt.Sprintf("Add template for %v", c.Name)); err != nil {
 		return err
 	}
 

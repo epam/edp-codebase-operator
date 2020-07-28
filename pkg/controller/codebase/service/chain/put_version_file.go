@@ -71,7 +71,7 @@ func (h PutVersionFile) tryToPutVersionFile(c *v1alpha1.Codebase, projectPath st
 }
 
 func (h PutVersionFile) pushChanges(projectPath, privateKey, user string) error {
-	if err := git.CommitChanges(projectPath); err != nil {
+	if err := git.CommitChanges(projectPath, fmt.Sprintf("Add %v file", versionFileName)); err != nil {
 		return err
 	}
 

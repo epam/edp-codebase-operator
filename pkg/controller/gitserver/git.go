@@ -15,7 +15,6 @@ import (
 	"gopkg.in/src-d/go-git.v4/storage/memory"
 	v1 "k8s.io/api/core/v1"
 	coreV1Client "k8s.io/client-go/kubernetes/typed/core/v1"
-	"strings"
 	"time"
 )
 
@@ -26,7 +25,7 @@ type GitSshData struct {
 	Port int32
 }
 
-func CommitChanges(directory string) error {
+func CommitChanges(directory, commitMsg string) error {
 	log.Info("Start commiting changes", "directory", directory)
 	r, err := git.PlainOpen(directory)
 	if err != nil {
@@ -43,9 +42,7 @@ func CommitChanges(directory string) error {
 		return err
 	}
 
-	array := strings.Split(directory, "/")
-	cmsg := fmt.Sprintf("Add template for %v", array[len(array)-1])
-	_, err = w.Commit(cmsg, &git.CommitOptions{
+	_, err = w.Commit(commitMsg, &git.CommitOptions{
 		Author: &object.Signature{
 			Name:  "admin",
 			Email: "admin@epam-edp.com",
