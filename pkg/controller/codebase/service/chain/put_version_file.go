@@ -9,6 +9,7 @@ import (
 	"github.com/epmd-edp/codebase-operator/v2/pkg/util"
 	"github.com/pkg/errors"
 	"os"
+	"strings"
 )
 
 type PutVersionFile struct {
@@ -23,7 +24,7 @@ const (
 )
 
 func (h PutVersionFile) ServeRequest(c *v1alpha1.Codebase) error {
-	if c.Spec.Lang != goLang {
+	if strings.ToLower(c.Spec.Lang) != goLang {
 		return nextServeOrNil(h.next, c)
 	}
 
