@@ -24,7 +24,8 @@ const (
 )
 
 func (h PutVersionFile) ServeRequest(c *v1alpha1.Codebase) error {
-	if strings.ToLower(c.Spec.Lang) != goLang {
+	if strings.ToLower(c.Spec.Lang) != goLang ||
+		(strings.ToLower(c.Spec.Lang) == goLang && c.Spec.Versioning.Type == "edp") {
 		return nextServeOrNil(h.next, c)
 	}
 
