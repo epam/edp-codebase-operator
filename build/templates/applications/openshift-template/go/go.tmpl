@@ -230,28 +230,6 @@ objects:
           {{end}}
           image: "docker-registry.default.svc:5000/${IMAGE_NAME}:${APP_VERSION}"
           imagePullPolicy: Always
-          ports:
-            - containerPort: 8080
-              protocol: TCP
-          livenessProbe:
-            failureThreshold: 5
-            initialDelaySeconds: 180
-            periodSeconds: 20
-            successThreshold: 1
-            tcpSocket:
-              port: 8080
-            timeoutSeconds: 5
-          readinessProbe:
-            failureThreshold: 5
-            initialDelaySeconds: 60
-            periodSeconds: 20
-            successThreshold: 1
-            tcpSocket:
-              port: 8080
-            timeoutSeconds: 5
-          resources:
-            requests:
-              memory: 500Mi
 {{if .Database}}
 {{if eq .Database.Kind "PostgreSQL"}}
           env:
@@ -279,8 +257,6 @@ objects:
          {{end}}
 {{end}}
 {{end}}
-          terminationMessagePath: /dev/termination-log
-          terminationMessagePolicy: File
         dnsPolicy: ClusterFirst
         restartPolicy: Always
         schedulerName: default-scheduler
