@@ -32,9 +32,10 @@ const (
 
 	CodebaseKind = "Codebase"
 
-	ProjectCreatedStatus         = "created"
-	ProjectPushedStatus          = "pushed"
-	ProjectTemplatesPushedStatus = "templates_pushed"
+	ProjectCreatedStatus             = "created"
+	ProjectPushedStatus              = "pushed"
+	ProjectTemplatesPushedStatus     = "templates_pushed"
+	ProjectVersionGoFilePushedStatus = "version_go"
 
 	GithubDomain = "https://github.com/epmd-edp"
 	LanguageJava = "Java"

@@ -48,7 +48,7 @@ func (h PutDeployConfigs) tryToPushConfigs(c edpv1alpha1.Codebase, sshPort int32
 
 	ps, err := h.cr.SelectProjectStatusValue(c.Name, *edpN)
 	if err != nil {
-		return errors.Wrapf(err, "couldn't get pushed value for %v codebase", c.Name)
+		return errors.Wrapf(err, "couldn't get project_status value for %v codebase", c.Name)
 	}
 
 	if *ps == util.ProjectTemplatesPushedStatus {

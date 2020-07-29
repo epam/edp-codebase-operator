@@ -70,7 +70,7 @@ func (h PutProjectGerrit) ServeRequest(c *v1alpha1.Codebase) error {
 	ps, err := h.cr.SelectProjectStatusValue(c.Name, *edpN)
 	if err != nil {
 		setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
-		return errors.Wrapf(err, "couldn't get pushed value for %v codebase", c.Name)
+		return errors.Wrapf(err, "couldn't get project_status value for %v codebase", c.Name)
 	}
 
 	if *ps == util.ProjectPushedStatus || *ps == util.ProjectTemplatesPushedStatus {
@@ -144,7 +144,7 @@ func (h PutProjectGerrit) tryToCreateProjectInGerrit(sshPort int32, idrsa, host,
 	log.Info("Start creating project in Gerrit", "codebase name")
 	projectExist, err := gerrit.CheckProjectExist(sshPort, idrsa, host, codebaseName)
 	if err != nil {
-		return errors.Wrap(err, "couldn't check project")
+		return errors.Wrap(err, "couldn't versionFileExists project")
 	}
 	if *projectExist {
 		log.Info("couldn't create project in Gerrit. Project already exists", "name", codebaseName)

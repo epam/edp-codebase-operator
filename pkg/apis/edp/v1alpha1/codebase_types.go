@@ -100,6 +100,7 @@ const (
 	PutJenkinsFolder                 ActionType = "put_jenkins_folder"
 	CleanData                        ActionType = "clean_data"
 	ImportProject                    ActionType = "import_project"
+	PutVersionFile                   ActionType = "put_version_file"
 
 	Success Result = "success"
 	Error   Result = "error"

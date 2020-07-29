@@ -40,7 +40,7 @@ func (h PutDeployConfigsToGitProvider) tryToPushConfigs(c v1alpha1.Codebase) err
 
 	ps, err := h.cr.SelectProjectStatusValue(c.Name, *edpN)
 	if err != nil {
-		return errors.Wrapf(err, "couldn't get pushed value for %v codebase", c.Name)
+		return errors.Wrapf(err, "couldn't get project_status value for %v codebase", c.Name)
 	}
 
 	if *ps == util.ProjectTemplatesPushedStatus {

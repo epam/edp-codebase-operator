@@ -3,6 +3,8 @@ package chain
 import (
 	"fmt"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/codebase/helper"
+	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/codebase/repository"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/codebase/service/chain/handler"
 	git "github.com/epmd-edp/codebase-operator/v2/pkg/controller/gitserver"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/openshift"
@@ -15,6 +17,7 @@ import (
 type PutVersionFile struct {
 	next      handler.CodebaseHandler
 	clientSet openshift.ClientSet
+	cr        repository.CodebaseRepository
 }
 
 const (
@@ -31,15 +34,54 @@ func (h PutVersionFile) ServeRequest(c *v1alpha1.Codebase) error {
 
 	rLog := log.WithValues("codebase name", c.Name)
 	rLog.Info("start putting VERSION file...")
+
+	name, err := helper.GetEDPName(h.clientSet.Client, c.Namespace)
+	if err != nil {
+		setFailedFields(c, v1alpha1.PutVersionFile, err.Error())
+		return err
+	}
+
+	exists, err := h.versionFileExists(c.Name, *name, c.Namespace)
+	if err != nil {
+		setFailedFields(c, v1alpha1.PutVersionFile, err.Error())
+		return err
+	}
+
+	if exists {
+		log.V(2).Info("skip pushing VERSION file to Git provider. file already exists",
+			"name", c.Name)
+		return nextServeOrNil(h.next, c)
+	}
+
 	projectPath := fmt.Sprintf("/home/codebase-operator/edp/%v/%v/%v/%v",
 		c.Namespace, c.Name, "templates", c.Name)
 	if err := h.tryToPutVersionFile(c, projectPath); err != nil {
-		setFailedFields(c, v1alpha1.CleanData, err.Error())
+		setFailedFields(c, v1alpha1.PutVersionFile, err.Error())
+		return err
+	}
+
+	if err := h.cr.UpdateProjectStatusValue(util.ProjectVersionGoFilePushedStatus, c.Name, *name); err != nil {
+		err := errors.Wrapf(err, "couldn't set project_status %v value for %v codebase",
+			util.ProjectVersionGoFilePushedStatus, c.Name)
+		setFailedFields(c, v1alpha1.PutVersionFile, err.Error())
 		return err
 	}
 
 	rLog.Info("end putting VERSION file...")
 	return nextServeOrNil(h.next, c)
+}
+
+func (h PutVersionFile) versionFileExists(codebaseName, edpName, namespace string) (bool, error) {
+	ps, err := h.cr.SelectProjectStatusValue(codebaseName, edpName)
+	if err != nil {
+		return false, errors.Wrapf(err, "couldn't get project_status value for %v codebase", codebaseName)
+	}
+
+	if *ps == util.ProjectVersionGoFilePushedStatus {
+		return true, nil
+	}
+
+	return false, nil
 }
 
 func (h PutVersionFile) tryToPutVersionFile(c *v1alpha1.Codebase, projectPath string) error {

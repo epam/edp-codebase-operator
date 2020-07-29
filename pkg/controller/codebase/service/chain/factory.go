@@ -13,6 +13,7 @@ var log = logf.Log.WithName("codebase_handler")
 
 func CreateGerritDefChain(cs openshift.ClientSet, db *sql.DB) handler.CodebaseHandler {
 	log.Info("chain is selected", "type", "gerrit")
+	cr := repository.CodebaseRepository{DB: db}
 	return PutProjectGerrit{
 		next: PutGerritReplication{
 			next: SetupPerf{
@@ -28,21 +29,23 @@ func CreateGerritDefChain(cs openshift.ClientSet, db *sql.DB) handler.CodebaseHa
 							clientSet: cs,
 						},
 						clientSet: cs,
+						cr:        cr,
 					},
 					clientSet: cs,
-					cr:        repository.CodebaseRepository{DB: db},
+					cr:        cr,
 				},
 				clientSet: cs,
 			},
 			clientSet: cs,
 		},
 		clientSet: cs,
-		cr:        repository.CodebaseRepository{DB: db},
+		cr:        cr,
 	}
 }
 
 func CreateThirdPartyVcsProviderDefChain(cs openshift.ClientSet, db *sql.DB) handler.CodebaseHandler {
 	log.Info("chain is selected", "type", "third party VCS")
+	cr := repository.CodebaseRepository{DB: db}
 	return CloneGitProject{
 		next: PutDeployConfigsToGitProvider{
 			next: PutVersionFile{
@@ -56,9 +59,10 @@ func CreateThirdPartyVcsProviderDefChain(cs openshift.ClientSet, db *sql.DB) han
 					clientSet: cs,
 				},
 				clientSet: cs,
+				cr:        cr,
 			},
 			clientSet: cs,
-			cr:        repository.CodebaseRepository{DB: db},
+			cr:        cr,
 		},
 		clientSet: cs,
 	}
