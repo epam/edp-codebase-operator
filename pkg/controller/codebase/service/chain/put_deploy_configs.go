@@ -51,7 +51,8 @@ func (h PutDeployConfigs) tryToPushConfigs(c edpv1alpha1.Codebase, sshPort int32
 		return errors.Wrapf(err, "couldn't get project_status value for %v codebase", c.Name)
 	}
 
-	if *ps == util.ProjectTemplatesPushedStatus {
+	var status = []string{util.ProjectTemplatesPushedStatus, util.ProjectVersionGoFilePushedStatus}
+	if util.ContainsString(status, *ps) {
 		log.V(2).Info("skip pushing templates to gerrit. teplates already pushed", "name", c.Name)
 		return nil
 	}

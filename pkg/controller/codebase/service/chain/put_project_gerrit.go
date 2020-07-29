@@ -73,7 +73,8 @@ func (h PutProjectGerrit) ServeRequest(c *v1alpha1.Codebase) error {
 		return errors.Wrapf(err, "couldn't get project_status value for %v codebase", c.Name)
 	}
 
-	if *ps == util.ProjectPushedStatus || *ps == util.ProjectTemplatesPushedStatus {
+	var status = []string{util.ProjectPushedStatus, util.ProjectTemplatesPushedStatus, util.ProjectVersionGoFilePushedStatus}
+	if util.ContainsString(status, *ps) {
 		log.V(2).Info("skip pushing to gerrit. project already pushed", "name", c.Name)
 		return nextServeOrNil(h.next, c)
 	}

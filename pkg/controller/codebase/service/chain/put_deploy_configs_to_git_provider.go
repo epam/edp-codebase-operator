@@ -43,7 +43,8 @@ func (h PutDeployConfigsToGitProvider) tryToPushConfigs(c v1alpha1.Codebase) err
 		return errors.Wrapf(err, "couldn't get project_status value for %v codebase", c.Name)
 	}
 
-	if *ps == util.ProjectTemplatesPushedStatus {
+	var status = []string{util.ProjectTemplatesPushedStatus, util.ProjectVersionGoFilePushedStatus}
+	if util.ContainsString(status, *ps) {
 		log.V(2).Info("skip pushing templates to gerrit. teplates already pushed", "name", c.Name)
 		return nil
 	}
