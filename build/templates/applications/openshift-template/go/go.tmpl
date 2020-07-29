@@ -116,6 +116,22 @@ objects:
         containers:
         - name: {{.Name}}-db
           env:
+          {{if eq .Framework "operator-sdk"}}
+          - name: WATCH_NAMESPACE
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.namespace
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.name
+          - name: OPERATOR_NAME
+            value: {{.Name}}
+          - name: PLATFORM_TYPE
+            value: {{.PlatformType}}
+          {{end}}
           - name: POSTGRES_DB
             value: {{.Name}}-db
           - name: POSTGRES_USER
@@ -195,6 +211,23 @@ objects:
         serviceAccountName: {{.Name}}
         containers:
         - name: {{.Name}}
+        {{if eq .Framework "operator-sdk"}}
+          env:
+          - name: WATCH_NAMESPACE
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.namespace
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.name
+          - name: OPERATOR_NAME
+            value: {{.Name}}
+          - name: PLATFORM_TYPE
+            value: {{.PlatformType}}
+          {{end}}
           image: "docker-registry.default.svc:5000/${IMAGE_NAME}:${APP_VERSION}"
           imagePullPolicy: Always
           ports:
@@ -228,6 +261,22 @@ objects:
             value: "admin"
           - name: POSTGRES_PASSWORD
             value: "admin"
+        {{if eq .Framework "operator-sdk"}}
+          - name: WATCH_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+          - name: POD_NAME
+            valueFrom:
+             fieldRef:
+               apiVersion: v1
+               fieldPath: metadata.name
+          - name: OPERATOR_NAME
+            value: {{.Name}}
+          - name: PLATFORM_TYPE
+            value: {{.PlatformType}}
+         {{end}}
 {{end}}
 {{end}}
           terminationMessagePath: /dev/termination-log
