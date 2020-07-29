@@ -22,6 +22,35 @@ metadata:
     template.openshift.io/provider-display-name: EPAM
     template.openshift.io/support-url: https://www.epam.com
 objects:
+{{if eq .Framework "operator-sdk"}}
+- apiVersion: authorization.openshift.io/v1
+  kind: Role
+  metadata:
+    name: edp-{{.Name}}-role-${NAMESPACE}
+  rules:
+  - apiGroups:
+    - '*'
+    attributeRestrictions: null
+    resources:
+    - configmaps
+    - helloworlds
+    verbs:
+    - '*'
+- apiVersion: authorization.openshift.io/v1
+  kind: RoleBinding
+  metadata:
+    name: {{.Name}}-edp-${NAMESPACE}
+  roleRef:
+    name: edp-{{.Name}}-role-${NAMESPACE}
+    namespace: ${NAMESPACE}
+  subjects:
+    - kind: ServiceAccount
+      name: {{.Name}}
+      namespace: ${NAMESPACE}
+  userNames:
+    - system:serviceaccount:${NAMESPACE}:{{.Name}}
+  groupNames: []
+{{end}}
 - apiVersion: v1
   kind: Service
   metadata:
@@ -276,61 +305,3 @@ parameters:
 - displayName: Current namespace
   name: NAMESPACE
   required: true
-
-{{if eq .PlatformType "openshift"}}
-apiVersion: authorization.openshift.io/v1
-kind: Role
-metadata:
-  name: edp-{{.Name}}-role-${NAMESPACE}
-rules:
-- apiGroups:
-  - '*'
-  attributeRestrictions: null
-  resources:
-  - configmaps
-  - helloworlds
-  verbs:
-  - '*'
-
-apiVersion: authorization.openshift.io/v1
-kind: RoleBinding
-metadata:
-  name: {{.Name}}-edp-${NAMESPACE}
-roleRef:
-  name: edp-{{.Name}}-role-${NAMESPACE}
-  namespace: ${NAMESPACE}
-subjects:
-  - kind: ServiceAccount
-    name: {{.Name}}
-    namespace: ${NAMESPACE}
-userNames:
-  - system:serviceaccount:${NAMESPACE}:{{.Name}}
-groupNames: []
-{{else}}
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  name: edp-{{.Name}}-role-${NAMESPACE}
-rules:
-- apiGroups:
-  - '*'
-  attributeRestrictions: null
-  resources:
-  - configmaps
-  - helloworlds
-  verbs:
-  - '*'
-
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: {{.Name}}-edp-${NAMESPACE}
-roleRef:
-  kind: Role
-  name: edp-{{.Name}}-role-${NAMESPACE}
-  apiGroup: rbac.authorization.k8s.io
-subjects:
-  - kind: ServiceAccount
-    name: {{.Name}}
-    namespace: ${NAMESPACE}
-{{end}}
