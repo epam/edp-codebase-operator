@@ -255,10 +255,10 @@ objects:
             value: "admin"
         {{if eq .Framework "operator-sdk"}}
           - name: WATCH_NAMESPACE
-              valueFrom:
-                fieldRef:
-                  apiVersion: v1
-                  fieldPath: metadata.namespace
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.namespace
           - name: POD_NAME
             valueFrom:
              fieldRef:
