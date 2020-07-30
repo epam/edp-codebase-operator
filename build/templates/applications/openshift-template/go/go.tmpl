@@ -29,13 +29,14 @@ objects:
     name: edp-{{.Name}}-role-${NAMESPACE}
   rules:
   - apiGroups:
-    - '*'
+    - ""
     attributeRestrictions: null
     resources:
     - configmaps
-    - helloworlds
     verbs:
-    - '*'
+    - create
+    - get
+    - list
 - apiVersion: authorization.openshift.io/v1
   kind: RoleBinding
   metadata:

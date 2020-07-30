@@ -3,6 +3,7 @@ namespace: ""
 cdPipelineName: ""
 cdPipelineStageName: ""
 dnsWildcard: {{.DnsWildcard}}
+framework: {{.Framework}}
 {{if and .Database (ne .Lang "javascript")}}
 {{if eq .Database.Kind "PostgreSQL"}}
 database:
