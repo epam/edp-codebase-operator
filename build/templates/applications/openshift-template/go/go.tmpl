@@ -271,7 +271,7 @@ objects:
          {{end}}
 {{end}}
 {{end}}
-{{if and (eq .Values.framework "operator-sdk") (not .Values.database.required)}}
+{{if and (eq .Framework "operator-sdk") (not .Database)}}
             env:
               - name: WATCH_NAMESPACE
                 valueFrom:
