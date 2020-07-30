@@ -57,7 +57,40 @@ spec:
                         value: "admin"
                       - name: POSTGRES_PASSWORD
                         value: "admin"
+                      {{if eq .Values.framework "operator-sdk"}}
+                      - name: WATCH_NAMESPACE
+                          valueFrom:
+                            fieldRef:
+                              apiVersion: v1
+                              fieldPath: metadata.namespace
+                      - name: POD_NAME
+                        valueFrom:
+                          fieldRef:
+                            apiVersion: v1
+                            fieldPath: metadata.name
+                      - name: OPERATOR_NAME
+                        value: {{.Name}}
+                      - name: PLATFORM_TYPE
+                        value: {{.PlatformType}}
+                      {{end}}
 {{- end }}
+                        {{if and (eq .Values.framework "operator-sdk") (not .Values.database.required)}}
+                  env:
+                      - name: WATCH_NAMESPACE
+                          valueFrom:
+                            fieldRef:
+                              apiVersion: v1
+                              fieldPath: metadata.namespace
+                      - name: POD_NAME
+                        valueFrom:
+                          fieldRef:
+                            apiVersion: v1
+                            fieldPath: metadata.name
+                      - name: OPERATOR_NAME
+                        value: {{.Name}}
+                      - name: PLATFORM_TYPE
+                        value: {{.PlatformType}}
+                        {{end}}
                   terminationMessagePath: /dev/termination-log
                   terminationMessagePolicy: File
             dnsPolicy: ClusterFirst

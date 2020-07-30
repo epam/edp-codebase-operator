@@ -242,23 +242,6 @@ objects:
         serviceAccountName: {{.Name}}
         containers:
         - name: {{.Name}}
-        {{if eq .Framework "operator-sdk"}}
-          env:
-          - name: WATCH_NAMESPACE
-            valueFrom:
-              fieldRef:
-                apiVersion: v1
-                fieldPath: metadata.namespace
-          - name: POD_NAME
-            valueFrom:
-              fieldRef:
-                apiVersion: v1
-                fieldPath: metadata.name
-          - name: OPERATOR_NAME
-            value: {{.Name}}
-          - name: PLATFORM_TYPE
-            value: {{.PlatformType}}
-          {{end}}
           image: "docker-registry.default.svc:5000/${IMAGE_NAME}:${APP_VERSION}"
           imagePullPolicy: Always
 {{if .Database}}
@@ -287,6 +270,23 @@ objects:
             value: {{.PlatformType}}
          {{end}}
 {{end}}
+{{end}}
+{{if and (eq .Values.framework "operator-sdk") (not .Values.database.required)}}
+            env:
+              - name: WATCH_NAMESPACE
+                valueFrom:
+                  fieldRef:
+                    apiVersion: v1
+                    fieldPath: metadata.namespace
+              - name: POD_NAME
+                valueFrom:
+                  fieldRef:
+                    apiVersion: v1
+                    fieldPath: metadata.name
+              - name: OPERATOR_NAME
+                value: {{.Name}}
+              - name: PLATFORM_TYPE
+                value: {{.PlatformType}}
 {{end}}
         dnsPolicy: ClusterFirst
         restartPolicy: Always
