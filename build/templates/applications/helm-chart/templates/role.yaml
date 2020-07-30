@@ -13,4 +13,5 @@ rules:
           - create
           - get
           - list
+          - delete
 {{ end}}
