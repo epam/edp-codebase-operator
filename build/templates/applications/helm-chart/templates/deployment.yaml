@@ -59,10 +59,10 @@ spec:
                         value: "admin"
                       {{if eq .Values.framework "operator-sdk"}}
                       - name: WATCH_NAMESPACE
-                          valueFrom:
-                            fieldRef:
-                              apiVersion: v1
-                              fieldPath: metadata.namespace
+                        valueFrom:
+                          fieldRef:
+                            apiVersion: v1
+                            fieldPath: metadata.namespace
                       - name: POD_NAME
                         valueFrom:
                           fieldRef:
@@ -77,10 +77,10 @@ spec:
                         {{if and (eq .Values.framework "operator-sdk") (not .Values.database.required)}}
                   env:
                       - name: WATCH_NAMESPACE
-                          valueFrom:
-                            fieldRef:
-                              apiVersion: v1
-                              fieldPath: metadata.namespace
+                        valueFrom:
+                          fieldRef:
+                            apiVersion: v1
+                            fieldPath: metadata.namespace
                       - name: POD_NAME
                         valueFrom:
                           fieldRef:
