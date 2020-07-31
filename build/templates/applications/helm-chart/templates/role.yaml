@@ -9,6 +9,7 @@ rules:
       attributeRestrictions: null
       resources:
           - configmaps
+          - pods
       verbs:
           - create
           - get
