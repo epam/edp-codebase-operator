@@ -1,3 +1,8 @@
 sonar.projectKey={{.Name}}
 sonar.projectName={{.Name}}
+{{- if eq .Lang "javascript"}}
 sonar.sources=src
+{{- else}}
+sonar.go.coverage.reportPaths=coverage.out
+sonar.exclusions=**/cmd/**,**/deploy/**,**/deploy-templates/**
+{{- end}}

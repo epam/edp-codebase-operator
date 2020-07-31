@@ -37,7 +37,9 @@ func PrepareTemplates(client *coreV1Client.CoreV1Client, c v1alpha1.Codebase) er
 		return errors.Wrapf(err, "an error has occurred while copying pipelines for %v codebase", c.Name)
 	}
 
-	if strings.ToLower(c.Spec.Lang) == util.Javascript && c.Spec.Strategy != util.ImportStrategy {
+	if (strings.ToLower(c.Spec.Lang) == util.Javascript ||
+		strings.ToLower(c.Spec.Lang) == strings.ToLower(util.LanguageGo)) &&
+		c.Spec.Strategy != util.ImportStrategy {
 		if err := copySonarConfigs(td, *cf); err != nil {
 			return err
 		}
@@ -90,7 +92,7 @@ func copySonarConfigs(templateDirectory string, config model.GerritConfigGoTempl
 	}
 
 	if err := tmpl.Execute(f, config); err != nil {
-		return errors.Wrapf(err, "couldn't render Sonar configs fo JS app: %v", config.Name)
+		return errors.Wrapf(err, "couldn't render Sonar configs fo %v app: %v", config.Lang, config.Name)
 	}
 	log.Info("Sonar configs has been copied", "codebase name", config.Name)
 	return nil
