@@ -22,7 +22,7 @@ metadata:
     template.openshift.io/provider-display-name: EPAM
     template.openshift.io/support-url: https://www.epam.com
 objects:
-{{if eq .Framework "operator-sdk"}}
+{{- if eq .Framework "operator-sdk"}}
 - apiVersion: authorization.openshift.io/v1
   kind: Role
   metadata:
@@ -52,7 +52,7 @@ objects:
   userNames:
     - system:serviceaccount:${NAMESPACE}:{{.Name}}
   groupNames: []
-{{end}}
+{{- end}}
 - apiVersion: v1
   kind: Service
   metadata:
@@ -72,7 +72,7 @@ objects:
   kind: ServiceAccount
   metadata:
     name: {{.Name}}
-{{if .Route}}
+{{- if .Route}}
 - apiVersion: v1
   kind: Route
   metadata:
@@ -85,9 +85,9 @@ objects:
     tls:
       insecureEdgeTerminationPolicy: Redirect
       termination: edge
-{{if and .Route.Site (ne .Route.Site "")}}
+{{- if and .Route.Site (ne .Route.Site "")}}
     host: {{.Route.Site}}-${NAMESPACE}.{{.DnsWildcard}}
-{{end}}
+{{- end}}
     path: {{.Route.Path}}
     port:
       targetPort: 8080
@@ -95,9 +95,9 @@ objects:
       kind: Service
       name: {{.Name}}
     wildcardPolicy: None
-{{end}}
-{{if .Database}}
-{{if eq .Database.Kind "PostgreSQL"}}
+{{- end}}
+{{- if .Database}}
+{{- if eq .Database.Kind "PostgreSQL"}}
 - apiVersion: v1
   kind: PersistentVolumeClaim
   metadata:
@@ -147,7 +147,7 @@ objects:
         containers:
         - name: {{.Name}}-db
           env:
-          {{if eq .Framework "operator-sdk"}}
+          {{- if eq .Framework "operator-sdk"}}
           - name: WATCH_NAMESPACE
             valueFrom:
               fieldRef:
@@ -162,7 +162,7 @@ objects:
             value: {{.Name}}
           - name: PLATFORM_TYPE
             value: {{.PlatformType}}
-          {{end}}
+          {{- end}}
           - name: POSTGRES_DB
             value: {{.Name}}-db
           - name: POSTGRES_USER
@@ -204,8 +204,8 @@ objects:
           - name: {{.Name}}-db
             persistentVolumeClaim:
               claimName: {{.Name}}-db
-{{end}}
-{{end}}
+{{- end}}
+{{- end}}
 - apiVersion: v1
   kind: DeploymentConfig
   metadata:
@@ -231,21 +231,21 @@ objects:
         labels:
           app: {{.Name}}
       spec:
-{{if .Database}}
-{{if eq .Database.Kind "PostgreSQL"}}
+{{- if .Database}}
+{{- if eq .Database.Kind "PostgreSQL"}}
         initContainers:
         - name: init-{{.Name}}-db
           image: busybox
           command: ["sh", "-c", "while ! nc -w 1 {{.Name}}-db 5432 </dev/null; do echo waiting for {{.Name}}-db; sleep 10; done;"]
-{{end}}
-{{end}}
+{{- end}}
+{{- end}}
         serviceAccountName: {{.Name}}
         containers:
         - name: {{.Name}}
           image: "docker-registry.default.svc:5000/${IMAGE_NAME}:${APP_VERSION}"
           imagePullPolicy: Always
-{{if .Database}}
-{{if eq .Database.Kind "PostgreSQL"}}
+{{- if .Database}}
+{{- if eq .Database.Kind "PostgreSQL"}}
           env:
           - name: POSTGRES_DATABASE
             value: {{.Name}}-db
@@ -253,7 +253,7 @@ objects:
             value: "admin"
           - name: POSTGRES_PASSWORD
             value: "admin"
-        {{if eq .Framework "operator-sdk"}}
+        {{- if eq .Framework "operator-sdk"}}
           - name: WATCH_NAMESPACE
             valueFrom:
               fieldRef:
@@ -268,10 +268,10 @@ objects:
             value: {{.Name}}
           - name: PLATFORM_TYPE
             value: {{.PlatformType}}
-         {{end}}
-{{end}}
-{{end}}
-{{if and (eq .Framework "operator-sdk") (not .Database)}}
+         {{- end}}
+{{- end}}
+{{- end}}
+{{- if and (eq .Framework "operator-sdk") (not .Database)}}
             env:
               - name: WATCH_NAMESPACE
                 valueFrom:
@@ -287,7 +287,7 @@ objects:
                 value: {{.Name}}
               - name: PLATFORM_TYPE
                 value: {{.PlatformType}}
-{{end}}
+{{- end}}
         dnsPolicy: ClusterFirst
         restartPolicy: Always
         schedulerName: default-scheduler
