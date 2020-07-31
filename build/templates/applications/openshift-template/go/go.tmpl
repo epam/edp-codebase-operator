@@ -272,21 +272,21 @@ objects:
 {{- end}}
 {{- end}}
 {{- if and (eq .Framework "operator-sdk") (not .Database)}}
-            env:
-              - name: WATCH_NAMESPACE
-                valueFrom:
-                  fieldRef:
-                    apiVersion: v1
-                    fieldPath: metadata.namespace
-              - name: POD_NAME
-                valueFrom:
-                  fieldRef:
-                    apiVersion: v1
-                    fieldPath: metadata.name
-              - name: OPERATOR_NAME
-                value: {{.Name}}
-              - name: PLATFORM_TYPE
-                value: {{.PlatformType}}
+          env:
+            - name: WATCH_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.name
+            - name: OPERATOR_NAME
+              value: {{.Name}}
+            - name: PLATFORM_TYPE
+              value: {{.PlatformType}}
 {{- end}}
         dnsPolicy: ClusterFirst
         restartPolicy: Always
