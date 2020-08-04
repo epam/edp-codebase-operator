@@ -18,6 +18,7 @@ type PutDeployConfigsToGitProvider struct {
 	next      handler.CodebaseHandler
 	clientSet openshift.ClientSet
 	cr        repository.CodebaseRepository
+	git       git.Git
 }
 
 func (h PutDeployConfigsToGitProvider) ServeRequest(c *v1alpha1.Codebase) error {
@@ -26,7 +27,7 @@ func (h PutDeployConfigsToGitProvider) ServeRequest(c *v1alpha1.Codebase) error 
 
 	if err := h.tryToPushConfigs(*c); err != nil {
 		setFailedFields(c, edpv1alpha1.SetupDeploymentTemplates, err.Error())
-		return errors.Wrapf(err, "couldn't push deploy configs", "codebase name", c.Name)
+		return errors.Wrapf(err, "couldn't push deploy configs for %v codebase", c.Name)
 	}
 	rLog.Info("end pushing configs to remote git server")
 	return nextServeOrNil(h.next, c)
@@ -68,13 +69,13 @@ func (h PutDeployConfigsToGitProvider) tryToPushConfigs(c v1alpha1.Codebase) err
 		return err
 	}
 
-	if err := git.CommitChanges(gf, fmt.Sprintf("Add template for %v", c.Name)); err != nil {
+	if err := h.git.CommitChanges(gf, fmt.Sprintf("Add template for %v", c.Name)); err != nil {
 		return err
 	}
 
 	k := string(secret.Data[util.PrivateSShKeyName])
 	u := gs.GitUser
-	if err := git.PushChanges(k, u, gf); err != nil {
+	if err := h.git.PushChanges(k, u, gf); err != nil {
 		return errors.Wrapf(err, "an error has occurred while pushing changes for %v codebase", c.Name)
 	}
 

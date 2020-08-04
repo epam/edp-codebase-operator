@@ -22,6 +22,7 @@ type PutProjectGerrit struct {
 	next      handler.CodebaseHandler
 	clientSet openshift.ClientSet
 	cr        repository.CodebaseRepository
+	git       git.Git
 }
 
 func (h PutProjectGerrit) ServeRequest(c *v1alpha1.Codebase) error {
@@ -80,7 +81,7 @@ func (h PutProjectGerrit) ServeRequest(c *v1alpha1.Codebase) error {
 	}
 
 	repu, repp, err := h.tryToGetRepositoryCredentials(c)
-	if !git.CheckPermissions(*ru, repu, repp) {
+	if !h.git.CheckPermissions(*ru, repu, repp) {
 		msg := fmt.Errorf("user %v cannot get access to the repository %v", repu, *ru)
 		setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, msg.Error())
 		return msg
@@ -135,7 +136,7 @@ func (h PutProjectGerrit) pushToGerrit(sshPost int32, idrsa, host, codebaseName,
 	if err := gerrit.AddRemoteLinkToGerrit(directory, host, sshPost, codebaseName); err != nil {
 		return errors.Wrap(err, "couldn't add remote link to Gerrit")
 	}
-	if err := git.PushChanges(idrsa, "project-creator", directory); err != nil {
+	if err := h.git.PushChanges(idrsa, "project-creator", directory); err != nil {
 		return err
 	}
 	return nil
@@ -167,7 +168,7 @@ func (h PutProjectGerrit) tryToCloneRepo(repoUrl string, repositoryUsername stri
 		return nil
 	}
 
-	if err := git.CloneRepository(repoUrl, repositoryUsername, repositoryPassword, destination); err != nil {
+	if err := h.git.CloneRepository(repoUrl, repositoryUsername, repositoryPassword, destination); err != nil {
 		return err
 	}
 	log.Info("Repository has been cloned", "src", repoUrl, "dest", destination)

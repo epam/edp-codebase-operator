@@ -19,6 +19,7 @@ import (
 type CloneGitProject struct {
 	next      handler.CodebaseHandler
 	clientSet openshift.ClientSet
+	git       git.Git
 }
 
 func (h CloneGitProject) ServeRequest(c *v1alpha1.Codebase) error {
@@ -60,7 +61,7 @@ func (h CloneGitProject) ServeRequest(c *v1alpha1.Codebase) error {
 	u := gs.GitUser
 	ru := fmt.Sprintf("%v:%v%v", gs.GitHost, gs.SshPort, *c.Spec.GitUrlPath)
 	if !util.DoesDirectoryExist(gf) || util.IsDirectoryEmpty(gf) {
-		if err := git.CloneRepositoryBySsh(k, u, ru, gf); err != nil {
+		if err := h.git.CloneRepositoryBySsh(k, u, ru, gf); err != nil {
 			setFailedFields(c, edpv1alpha1.ImportProject, err.Error())
 			return errors.Wrapf(err, "an error has occurred while cloning repository %v", ru)
 		}

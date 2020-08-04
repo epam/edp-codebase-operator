@@ -25,7 +25,18 @@ type GitSshData struct {
 	Port int32
 }
 
-func CommitChanges(directory, commitMsg string) error {
+type Git interface {
+	CommitChanges(directory, commitMsg string) error
+	PushChanges(key, user, directory string) error
+	CheckPermissions(repo string, user string, pass string) (accessible bool)
+	CloneRepositoryBySsh(key, user, repoUrl, destination string) error
+	CloneRepository(repo, user, pass, destination string) error
+}
+
+type GitProvider struct {
+}
+
+func (GitProvider) CommitChanges(directory, commitMsg string) error {
 	log.Info("Start commiting changes", "directory", directory)
 	r, err := git.PlainOpen(directory)
 	if err != nil {
@@ -56,7 +67,7 @@ func CommitChanges(directory, commitMsg string) error {
 	return nil
 }
 
-func PushChanges(key, user, directory string) error {
+func (GitProvider) PushChanges(key, user, directory string) error {
 	log.Info("Start pushing changes", "directory", directory)
 	auth, err := initAuth(key, user)
 	if err != nil {
@@ -83,7 +94,7 @@ func PushChanges(key, user, directory string) error {
 	return nil
 }
 
-func CheckPermissions(repo string, user string, pass string) (accessible bool) {
+func (GitProvider) CheckPermissions(repo string, user string, pass string) (accessible bool) {
 	log.Info("checking permissions", "user", user, "repository", repo)
 	r, _ := git.Init(memory.NewStorage(), nil)
 	remote, _ := r.CreateRemote(&config.RemoteConfig{
@@ -102,7 +113,7 @@ func CheckPermissions(repo string, user string, pass string) (accessible bool) {
 	return len(rfs) != 0
 }
 
-func CloneRepositoryBySsh(key, user, repoUrl, destination string) error {
+func (GitProvider) CloneRepositoryBySsh(key, user, repoUrl, destination string) error {
 	log.Info("Start cloning", "repository", repoUrl)
 	auth, err := initAuth(key, user)
 	if err != nil {
@@ -120,7 +131,7 @@ func CloneRepositoryBySsh(key, user, repoUrl, destination string) error {
 	return nil
 }
 
-func CloneRepository(repo, user, pass, destination string) error {
+func (GitProvider) CloneRepository(repo, user, pass, destination string) error {
 	log.Info("Start cloning", "repository", repo)
 	_, err := git.PlainClone(destination, false, &git.CloneOptions{
 		URL: repo,

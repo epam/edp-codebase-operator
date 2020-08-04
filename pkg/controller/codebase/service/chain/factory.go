@@ -5,6 +5,7 @@ import (
 	edpv1alpha1 "github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/codebase/repository"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/codebase/service/chain/handler"
+	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/gitserver"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/openshift"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
@@ -30,9 +31,11 @@ func CreateGerritDefChain(cs openshift.ClientSet, db *sql.DB) handler.CodebaseHa
 						},
 						clientSet: cs,
 						cr:        cr,
+						git:       gitserver.GitProvider{},
 					},
 					clientSet: cs,
 					cr:        cr,
+					git:       gitserver.GitProvider{},
 				},
 				clientSet: cs,
 			},
@@ -40,6 +43,7 @@ func CreateGerritDefChain(cs openshift.ClientSet, db *sql.DB) handler.CodebaseHa
 		},
 		clientSet: cs,
 		cr:        cr,
+		git:       gitserver.GitProvider{},
 	}
 }
 
@@ -60,11 +64,14 @@ func CreateThirdPartyVcsProviderDefChain(cs openshift.ClientSet, db *sql.DB) han
 				},
 				clientSet: cs,
 				cr:        cr,
+				git:       gitserver.GitProvider{},
 			},
 			clientSet: cs,
 			cr:        cr,
+			git:       gitserver.GitProvider{},
 		},
 		clientSet: cs,
+		git:       gitserver.GitProvider{},
 	}
 }
 

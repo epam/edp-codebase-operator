@@ -20,6 +20,7 @@ type PutDeployConfigs struct {
 	next      handler.CodebaseHandler
 	clientSet openshift.ClientSet
 	cr        repository.CodebaseRepository
+	git       git.Git
 }
 
 func (h PutDeployConfigs) ServeRequest(c *v1alpha1.Codebase) error {
@@ -34,7 +35,7 @@ func (h PutDeployConfigs) ServeRequest(c *v1alpha1.Codebase) error {
 
 	if err := h.tryToPushConfigs(*c, *port); err != nil {
 		setFailedFields(c, edpv1alpha1.SetupDeploymentTemplates, err.Error())
-		return errors.Wrapf(err, "couldn't push deploy configs", "codebase name", c.Name)
+		return errors.Wrapf(err, "couldn't push deploy configs for %v codebase", c.Name)
 	}
 	rLog.Info("end pushing configs")
 	return nextServeOrNil(h.next, c)
@@ -70,7 +71,7 @@ func (h PutDeployConfigs) tryToPushConfigs(c edpv1alpha1.Codebase, sshPort int32
 	d := fmt.Sprintf("%v/%v", td, c.Name)
 
 	if !util.DoesDirectoryExist(d) || util.IsDirectoryEmpty(d) {
-		if err := cloneProjectRepoFromGerrit(sshPort, idrsa, c.Name, c.Namespace, url, td); err != nil {
+		if err := h.cloneProjectRepoFromGerrit(sshPort, idrsa, c.Name, c.Namespace, url, td); err != nil {
 			return err
 		}
 	}
@@ -91,11 +92,11 @@ func (h PutDeployConfigs) tryToPushConfigs(c edpv1alpha1.Codebase, sshPort int32
 		return err
 	}
 
-	if err := git.CommitChanges(d, fmt.Sprintf("Add template for %v", c.Name)); err != nil {
+	if err := h.git.CommitChanges(d, fmt.Sprintf("Add template for %v", c.Name)); err != nil {
 		return err
 	}
 
-	if err := git.PushChanges(idrsa, u, d); err != nil {
+	if err := h.git.PushChanges(idrsa, u, d); err != nil {
 		return err
 	}
 
@@ -107,17 +108,17 @@ func (h PutDeployConfigs) tryToPushConfigs(c edpv1alpha1.Codebase, sshPort int32
 	return nil
 }
 
-func cloneProjectRepoFromGerrit(sshPort int32, idrsa, name, namespace, cloneSshUrl, td string) error {
+func (h PutDeployConfigs) cloneProjectRepoFromGerrit(sshPort int32, idrsa, name, namespace, cloneSshUrl, td string) error {
 	log.Info("start cloning repository from Gerrit", "ssh url", cloneSshUrl)
 
 	var (
 		s *ssh.Session
 		c *ssh.Client
 
-		h = fmt.Sprintf("gerrit.%v", namespace)
+		host = fmt.Sprintf("gerrit.%v", namespace)
 	)
 
-	sshcl, err := gerrit.SshInit(sshPort, idrsa, h)
+	sshcl, err := gerrit.SshInit(sshPort, idrsa, host)
 	if err != nil {
 		return errors.Wrap(err, "couldn't initialize SSH client")
 	}
@@ -136,7 +137,7 @@ func cloneProjectRepoFromGerrit(sshPort int32, idrsa, name, namespace, cloneSshU
 	}()
 
 	d := fmt.Sprintf("%v/%v", td, name)
-	if err := git.CloneRepositoryBySsh(idrsa, "project-creator", cloneSshUrl, d); err != nil {
+	if err := h.git.CloneRepositoryBySsh(idrsa, "project-creator", cloneSshUrl, d); err != nil {
 		return err
 	}
 
