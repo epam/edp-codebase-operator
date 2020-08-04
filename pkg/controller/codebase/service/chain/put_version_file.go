@@ -30,11 +30,16 @@ const (
 	versionFileName = "VERSION"
 	initVersion     = "0.0.1"
 	goLang          = "go"
+	pyLang          = "python"
 )
 
 func (h PutVersionFile) ServeRequest(c *v1alpha1.Codebase) error {
 	if strings.ToLower(c.Spec.Lang) != goLang ||
-		(strings.ToLower(c.Spec.Lang) == goLang && c.Spec.Versioning.Type == "edp") {
+		(strings.ToLower(c.Spec.Lang) != pyLang)  {
+		return nextServeOrNil(h.next, c)
+	}
+	if strings.ToLower(c.Spec.Lang) == goLang && c.Spec.Versioning.Type == "edp" ||
+		(strings.ToLower(c.Spec.Lang) == pyLang && c.Spec.Versioning.Type == "edp")  {
 		return nextServeOrNil(h.next, c)
 	}
 

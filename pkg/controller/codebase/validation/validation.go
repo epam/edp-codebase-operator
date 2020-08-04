@@ -10,7 +10,7 @@ var log = logf.Log.WithName("codebase_validator")
 
 var allowedCodebaseSettings = map[string][]string{
 	"add_repo_strategy": {"create", "clone", "import"},
-	"language":          {"java", "dotnet", "javascript", "groovy-pipeline", "other", "go"},
+	"language":          {"java", "dotnet", "javascript", "groovy-pipeline", "other", "go", "python"},
 }
 
 func IsCodebaseValid(cr *edpv1alpha1.Codebase) bool {

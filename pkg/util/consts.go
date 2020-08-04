@@ -37,7 +37,8 @@ const (
 	ProjectTemplatesPushedStatus     = "templates_pushed"
 	ProjectVersionGoFilePushedStatus = "version_go"
 
-	GithubDomain = "https://github.com/epmd-edp"
-	LanguageJava = "Java"
-	LanguageGo   = "Go"
+	GithubDomain   = "https://github.com/epmd-edp"
+	LanguageJava   = "Java"
+	LanguageGo     = "Go"
+	LanguagePython = "Python"
 )
