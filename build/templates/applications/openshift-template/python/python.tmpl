@@ -46,6 +46,149 @@ objects:
       name: {{.Name}}
     wildcardPolicy: None
 {{- end}}
+{{- if .Database}}
+{{- if eq .Database.Kind "PostgreSQL"}}
+- apiVersion: v1
+  kind: PersistentVolumeClaim
+  metadata:
+    name: {{.Name}}-db
+  spec:
+    accessModes:
+    - ReadWriteOnce
+    resources:
+      requests:
+        storage: "{{.Database.Capacity}}"
+    storageClassName: {{.Database.Storage}}
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: {{.Name}}-db
+    labels:
+      app: {{.Name}}-db
+  spec:
+    ports:
+    - name: {{.Name}}-db
+      port: 5432
+    selector:
+      app: {{.Name}}-db
+    type: ClusterIP
+    sessionAffinity: None
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    labels:
+      app: {{.Name}}
+    name: {{.Name}}-db
+  spec:
+    replicas: 1
+    selector:
+      app: {{.Name}}-db
+    strategy:
+      activeDeadlineSeconds: 21600
+      recreateParams:
+        timeoutSeconds: 600
+      resources: {}
+      type: Recreate
+    template:
+      metadata:
+        labels:
+          app: {{.Name}}-db
+      spec:
+        containers:
+        - name: {{.Name}}-db
+          env:
+          - name: POSTGRES_DB
+            value: {{.Name}}-db
+          - name: POSTGRES_USER
+            value: "admin"
+          - name: POSTGRES_PASSWORD
+            value: "admin"
+          - name: PGDATA
+            value: /var/lib/postgresql/data/pgdata
+          - name: POD_IP
+            valueFrom: { fieldRef: { fieldPath: status.podIP } }
+          image: "{{.Database.Version}}"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5432
+              protocol: TCP
+          livenessProbe:
+            exec:
+              command:
+              - sh
+              - -c
+              - exec pg_isready --host $POD_IP
+            initialDelaySeconds: 60
+            timeoutSeconds: 5
+            failureThreshold: 6
+          readinessProbe:
+            exec:
+              command:
+              - sh
+              - -c
+              - exec pg_isready --host $POD_IP
+            initialDelaySeconds: 60
+            timeoutSeconds: 3
+            periodSeconds: 5
+          volumeMounts:
+            - mountPath: /var/lib/postgresql/data
+              name: {{.Name}}-db
+        serviceAccount: {{.Name}}
+        volumes:
+          - name: {{.Name}}-db
+            persistentVolumeClaim:
+              claimName: {{.Name}}-db
+{{- end}}
+{{- end}}
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    name: {{.Name}}
+    labels:
+      app: {{.Name}}
+  spec:
+    replicas: 1
+    selector:
+      app: {{.Name}}
+    strategy:
+      activeDeadlineSeconds: 21600
+      type: Rolling
+      rollingParams:
+        failurePolicy: Abort
+        intervalSeconds: 1
+        maxSurge: 25%
+        maxUnavailable: 25%
+        timeoutSeconds: 600
+        updatePeriodSeconds: 1
+    template:
+      metadata:
+        labels:
+          app: {{.Name}}
+      spec:
+{{- if .Database}}
+{{- if eq .Database.Kind "PostgreSQL"}}
+        initContainers:
+        - name: init-{{.Name}}-db
+          image: busybox
+          command: ["sh", "-c", "while ! nc -w 1 {{.Name}}-db 5432 </dev/null; do echo waiting for {{.Name}}-db; sleep 10; done;"]
+{{- end}}
+{{- end}}
+        serviceAccountName: {{.Name}}
+        containers:
+        - name: {{.Name}}
+          image: "docker-registry.default.svc:5000/${IMAGE_NAME}:${APP_VERSION}"
+          imagePullPolicy: Always
+{{- if .Database}}
+{{- if eq .Database.Kind "PostgreSQL"}}
+          env:
+          - name: POSTGRES_DATABASE
+            value: {{.Name}}-db
+          - name: POSTGRES_USER
+            value: "admin"
+          - name: POSTGRES_PASSWORD
+            value: "admin"
+{{- end}}
+{{- end}}
 - apiVersion: v1
   kind: Service
   metadata:
