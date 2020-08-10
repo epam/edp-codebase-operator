@@ -40,7 +40,7 @@ objects:
 {{- end}}
     path: {{.Route.Path}}
     port:
-      targetPort: 8000
+      targetPort: 8080
     to:
       kind: Service
       name: {{.Name}}
@@ -198,9 +198,9 @@ objects:
   spec:
     ports:
     - name: {{.Name}}
-      port: 8000
+      port: 8080
       protocol: TCP
-      targetPort: 8000
+      targetPort: 8080
     selector:
       app: {{.Name}}
     type: ClusterIP
@@ -239,7 +239,7 @@ objects:
           image: "docker-registry.default.svc:5000/${IMAGE_NAME}:${APP_VERSION}"
           imagePullPolicy: Always
           ports:
-            - containerPort: 8000
+            - containerPort: 8080
               protocol: TCP
           resources:
             requests:
