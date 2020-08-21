@@ -85,6 +85,10 @@ spec:
               anyOf:
                 - type: null
                 - type: string
+            ciTool:
+              anyOf:
+                - type: null
+                - type: string
           required:
             - lang
             - type

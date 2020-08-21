@@ -19,6 +19,7 @@ spec:
     site: "helloworld"
     path: "/api"
   jiraServer: "epam-jira"
+  ciTool: "jira"
 status:
   status: "initialized"
   available: false
