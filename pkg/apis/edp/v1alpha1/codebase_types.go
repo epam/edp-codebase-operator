@@ -65,6 +65,7 @@ type CodebaseSpec struct {
 	JiraServer           *string     `json:"jiraServer,omitempty"`
 	CommitMessagePattern *string     `json:"commitMessagePattern"`
 	TicketNamePattern    *string     `json:"ticketNamePattern"`
+	CiTool               string      `json:"ciTool"`
 }
 
 // CodebaseStatus defines the observed state of Codebase
