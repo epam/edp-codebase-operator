@@ -51,9 +51,10 @@ func (h PutJiraEDPComponent) createEDPComponentIfNotExists(jira v1alpha1.JiraSer
 			Namespace: jira.Namespace,
 		},
 		Spec: edpApi.EDPComponentSpec{
-			Type: edpComponentJiraType,
-			Url:  jira.Spec.RootUrl,
-			Icon: *icon,
+			Type:    edpComponentJiraType,
+			Url:     jira.Spec.RootUrl,
+			Icon:    *icon,
+			Visible: true,
 		},
 	}
 	if err := h.client.Create(context.TODO(), c); err != nil {
