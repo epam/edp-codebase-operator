@@ -66,7 +66,7 @@ func (s *CodebaseBranchService) TriggerReleaseJob(cb *v1alpha1.CodebaseBranch) e
 		return nil
 	}
 	rLog.Info("release has been created. Status: %v", model.StatusFinished)
-	return s.setSuccessStatus(cb, edpv1alpha1.JenkinsConfiguration)
+	return nil
 }
 
 func initJenkinsClient(client client.Client, namespace string) (*jenkins.JenkinsClient, error) {
@@ -143,22 +143,6 @@ func (s *CodebaseBranchService) ResetBranchSuccessBuildCounter(cb *v1alpha1.Code
 
 	cb.Status.LastSuccessfulBuild = nil
 	return s.updateStatus(cb)
-}
-
-func (s *CodebaseBranchService) setSuccessStatus(cb *v1alpha1.CodebaseBranch, action v1alpha1.ActionType) error {
-	cb.Status = v1alpha1.CodebaseBranchStatus{
-		LastTimeUpdated:     time.Now(),
-		Username:            "system",
-		Action:              action,
-		Result:              edpv1alpha1.Success,
-		Value:               "active",
-		Status:              model.StatusFinished,
-		VersionHistory:      cb.Status.VersionHistory,
-		LastSuccessfulBuild: cb.Status.LastSuccessfulBuild,
-		Build:               cb.Status.Build,
-	}
-	return s.updateStatus(cb)
-
 }
 
 func (s *CodebaseBranchService) updateStatus(cb *v1alpha1.CodebaseBranch) error {

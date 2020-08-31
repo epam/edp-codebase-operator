@@ -4,7 +4,9 @@ import (
 	"context"
 	edpv1alpha1 "github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/codebasebranch/chain"
+	"github.com/epmd-edp/codebase-operator/v2/pkg/model"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/util"
+	"github.com/pkg/errors"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"reflect"
@@ -75,22 +77,22 @@ func (r *ReconcileCodebaseBranch) Reconcile(request reconcile.Request) (reconcil
 	rl := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
 	rl.Info("Reconciling CodebaseBranch")
 
-	i := &edpv1alpha1.CodebaseBranch{}
-	if err := r.client.Get(context.TODO(), request.NamespacedName, i); err != nil {
+	cb := &edpv1alpha1.CodebaseBranch{}
+	if err := r.client.Get(context.TODO(), request.NamespacedName, cb); err != nil {
 		if k8serrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, err
 	}
 
-	c, err := util.GetCodebase(r.client, i.Spec.CodebaseName, i.Namespace)
+	c, err := util.GetCodebase(r.client, cb.Spec.CodebaseName, cb.Namespace)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
 	cbChain := chain.GetChain(c.Spec.CiTool, r.client)
-	if err := cbChain.ServeRequest(i); err != nil {
-		log.Error(err, "an error has occurred while handling codebase branch", "name", i.Name)
+	if err := cbChain.ServeRequest(cb); err != nil {
+		log.Error(err, "an error has occurred while handling codebase branch", "name", cb.Name)
 		switch err.(type) {
 		case *util.CodebaseBranchReconcileError:
 			return reconcile.Result{RequeueAfter: 5 * time.Second}, nil
@@ -99,6 +101,36 @@ func (r *ReconcileCodebaseBranch) Reconcile(request reconcile.Request) (reconcil
 		}
 	}
 
+	if err := r.setSuccessStatus(cb, edpv1alpha1.JenkinsConfiguration); err != nil {
+		return reconcile.Result{},
+			errors.Wrapf(err, "an error has been occurred while updating %v Codebase branch status", cb.Name)
+	}
+
 	rl.Info("Reconciling CodebaseBranch has been finished")
 	return reconcile.Result{}, nil
+}
+
+func (r *ReconcileCodebaseBranch) setSuccessStatus(cb *edpv1alpha1.CodebaseBranch, action edpv1alpha1.ActionType) error {
+	cb.Status = edpv1alpha1.CodebaseBranchStatus{
+		LastTimeUpdated:     time.Now(),
+		Username:            "system",
+		Action:              cb.Status.Action,
+		Result:              edpv1alpha1.Success,
+		Value:               "active",
+		Status:              model.StatusFinished,
+		VersionHistory:      cb.Status.VersionHistory,
+		LastSuccessfulBuild: cb.Status.LastSuccessfulBuild,
+		Build:               cb.Status.Build,
+	}
+	return r.updateStatus(cb)
+}
+
+func (r *ReconcileCodebaseBranch) updateStatus(cb *edpv1alpha1.CodebaseBranch) error {
+	if err := r.client.Status().Update(context.TODO(), cb); err != nil {
+		if err := r.client.Update(context.TODO(), cb); err != nil {
+			return errors.Wrap(err, "couldn't update codebase branch status")
+		}
+	}
+	log.V(2).Info("codebase branch status has been updated", "name", cb.Name)
+	return nil
 }
