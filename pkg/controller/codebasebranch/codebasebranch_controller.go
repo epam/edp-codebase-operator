@@ -17,6 +17,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+	"time"
 )
 
 var log = logf.Log.WithName("codebase-branch-controller")
@@ -92,7 +93,7 @@ func (r *ReconcileCodebaseBranch) Reconcile(request reconcile.Request) (reconcil
 		log.Error(err, "an error has occurred while handling codebase branch", "name", i.Name)
 		switch err.(type) {
 		case *util.CodebaseBranchReconcileError:
-			return reconcile.Result{}, nil
+			return reconcile.Result{RequeueAfter: 5 * time.Second}, nil
 		default:
 			return reconcile.Result{}, err
 		}
