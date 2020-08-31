@@ -56,7 +56,7 @@ func (h PutBranchInGit) ServeRequest(cb *v1alpha1.CodebaseBranch) error {
 		}
 	}
 
-	if err := h.git.CreateRemoteBranch(string(secret.Data[util.PrivateSShKeyName]), gs.GitUser, wd, cb.Name); err != nil {
+	if err := h.git.CreateRemoteBranch(string(secret.Data[util.PrivateSShKeyName]), gs.GitUser, wd, cb.Spec.BranchName); err != nil {
 		return err
 	}
 	rl.Info("end PutBranchInGit method...")
