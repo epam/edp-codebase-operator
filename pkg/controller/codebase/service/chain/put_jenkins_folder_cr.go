@@ -59,9 +59,6 @@ func (h PutJenkinsFolder) ServeRequest(c *v1alpha1.Codebase) error {
 		setFailedFields(c, v1alpha1.PutJenkinsFolder, err.Error())
 		return err
 	}
-	if err := h.updateFinishStatus(c); err != nil {
-		return errors.Wrapf(err, "an error has been occurred while updating %v Codebase status", c.Name)
-	}
 	rLog.Info("end creating jenkins folder...")
 	return nextServeOrNil(h.next, c)
 }
@@ -134,28 +131,6 @@ func newTrue() *bool {
 	return &b
 }
 
-func (h PutJenkinsFolder) updateFinishStatus(c *v1alpha1.Codebase) error {
-	c.Status = v1alpha1.CodebaseStatus{
-		Status:          util.StatusFinished,
-		Available:       true,
-		LastTimeUpdated: time.Now(),
-		Username:        "system",
-		Action:          v1alpha1.SetupDeploymentTemplates,
-		Result:          v1alpha1.Success,
-		Value:           "active",
-		FailureCount:    0,
-	}
-	return h.updateStatus(c)
-}
-
-func (h PutJenkinsFolder) updateStatus(c *v1alpha1.Codebase) error {
-	if err := h.clientSet.Client.Status().Update(context.TODO(), c); err != nil {
-		if err := h.clientSet.Client.Update(context.TODO(), c); err != nil {
-			return err
-		}
-	}
-	return nil
-}
 func getRepositoryPath(codebaseName, strategy string, gitUrlPath *string) string {
 	if strategy == consts.ImportStrategy {
 		return *gitUrlPath

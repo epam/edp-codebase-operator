@@ -49,7 +49,7 @@ func CreateGerritDefChain(cs openshift.ClientSet, db *sql.DB) handler.CodebaseHa
 }
 
 func CreateThirdPartyVcsProviderDefChain(cs openshift.ClientSet, db *sql.DB) handler.CodebaseHandler {
-	log.Info("chain is selected", "type", "third party VCS")
+	log.Info("chain is selected", "type", "third party VCS provider")
 	cr := repository.CodebaseRepository{DB: db}
 	gp := gitserver.GitProvider{}
 	return CloneGitProject{
@@ -78,7 +78,7 @@ func CreateThirdPartyVcsProviderDefChain(cs openshift.ClientSet, db *sql.DB) han
 }
 
 func CreateGitlabCiDefChain(cs openshift.ClientSet, db *sql.DB) handler.CodebaseHandler {
-	log.Info("chain is selected", "type", "third party VCS")
+	log.Info("chain is selected", "type", "gitlab ci")
 	cr := repository.CodebaseRepository{DB: db}
 	gp := gitserver.GitProvider{}
 	return CloneGitProject{

@@ -108,8 +108,8 @@ func (r *ReconcileCodebase) Reconcile(request reconcile.Request) (reconcile.Resu
 	reqLogger.Info("Reconciling Codebase")
 
 	// Fetch the Codebase instance
-	instance := &edpv1alpha1.Codebase{}
-	err := r.client.Get(context.TODO(), request.NamespacedName, instance)
+	c := &edpv1alpha1.Codebase{}
+	err := r.client.Get(context.TODO(), request.NamespacedName, c)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
@@ -120,29 +120,47 @@ func (r *ReconcileCodebase) Reconcile(request reconcile.Request) (reconcile.Resu
 		// Error reading the object - requeue the request.
 		return reconcile.Result{}, err
 	}
-	defer r.updateStatus(instance)
+	defer r.updateStatus(c)
 
-	if err := r.tryToAddFinalizer(instance); err != nil {
+	if err := r.tryToAddFinalizer(c); err != nil {
 		return reconcile.Result{}, err
 	}
 
-	if !validate.IsCodebaseValid(instance) {
+	if !validate.IsCodebaseValid(c) {
 		return reconcile.Result{}, nil
 	}
 
-	ch, err := r.getChain(instance)
+	ch, err := r.getChain(c)
 	if err != nil {
 		return reconcile.Result{}, errors.Wrap(err, "an error has occurred while selecting chain")
 	}
 
-	if err := ch.ServeRequest(instance); err != nil {
-		timeout := setFailureCount(instance)
-		log.Error(err, "an error has occurred while handling codebase", "name", instance.Name)
+	if err := ch.ServeRequest(c); err != nil {
+		timeout := setFailureCount(c)
+		log.Error(err, "an error has occurred while handling codebase", "name", c.Name)
 		return reconcile.Result{RequeueAfter: timeout}, nil
+	}
+
+	if err := r.updateFinishStatus(c); err != nil {
+		return reconcile.Result{}, errors.Wrapf(err, "an error has been occurred while updating %v Codebase status", c.Name)
 	}
 
 	reqLogger.Info("Reconciling codebase has been finished")
 	return reconcile.Result{}, nil
+}
+
+func (r ReconcileCodebase) updateFinishStatus(c *edpv1alpha1.Codebase) error {
+	c.Status = edpv1alpha1.CodebaseStatus{
+		Status:          util.StatusFinished,
+		Available:       true,
+		LastTimeUpdated: time.Now(),
+		Username:        "system",
+		Action:          edpv1alpha1.SetupDeploymentTemplates,
+		Result:          edpv1alpha1.Success,
+		Value:           "active",
+		FailureCount:    0,
+	}
+	return r.updateStatus(c)
 }
 
 // setFailureCount increments failure count and returns delay for next reconciliation
@@ -174,11 +192,13 @@ func (r ReconcileCodebase) getCiChain(c *edpv1alpha1.Codebase, cs *openshift.Cli
 	return chain.CreateThirdPartyVcsProviderDefChain(*cs, r.db), nil
 }
 
-func (r *ReconcileCodebase) updateStatus(instance *edpv1alpha1.Codebase) {
-	err := r.client.Status().Update(context.TODO(), instance)
-	if err != nil {
-		_ = r.client.Update(context.TODO(), instance)
+func (r *ReconcileCodebase) updateStatus(instance *edpv1alpha1.Codebase) error {
+	if err := r.client.Status().Update(context.TODO(), instance); err != nil {
+		if err := r.client.Update(context.TODO(), instance); err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
 func (r ReconcileCodebase) tryToAddFinalizer(c *edpv1alpha1.Codebase) error {
