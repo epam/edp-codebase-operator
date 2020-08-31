@@ -31,15 +31,14 @@ func PrepareTemplates(client *coreV1Client.CoreV1Client, c v1alpha1.Codebase) er
 		}
 	}
 
-	td := fmt.Sprintf("%v/%v", wd, "templates")
-	dest := fmt.Sprintf("%v/%v", td, c.Name)
-	if err := util.CopyPipelines(c.Spec.Type, util.PipelineTemplates, dest); err != nil {
+	if err := util.CopyPipelines(c.Spec.Type, util.PipelineTemplates, util.GetWorkDir(c.Name, c.Namespace)); err != nil {
 		return errors.Wrapf(err, "an error has occurred while copying pipelines for %v codebase", c.Name)
 	}
 
 	if (strings.ToLower(c.Spec.Lang) == util.Javascript ||
 		strings.ToLower(c.Spec.Lang) == strings.ToLower(util.LanguageGo)) &&
 		c.Spec.Strategy != util.ImportStrategy {
+		td := fmt.Sprintf("%v/%v", wd, "templates")
 		if err := copySonarConfigs(td, *cf); err != nil {
 			return err
 		}

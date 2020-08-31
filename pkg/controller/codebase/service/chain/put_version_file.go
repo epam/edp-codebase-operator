@@ -59,9 +59,7 @@ func (h PutVersionFile) ServeRequest(c *v1alpha1.Codebase) error {
 		return nextServeOrNil(h.next, c)
 	}
 
-	projectPath := fmt.Sprintf("/home/codebase-operator/edp/%v/%v/%v/%v",
-		c.Namespace, c.Name, "templates", c.Name)
-	if err := h.tryToPutVersionFile(c, projectPath); err != nil {
+	if err := h.tryToPutVersionFile(c, util.GetWorkDir(c.Name, c.Namespace)); err != nil {
 		setFailedFields(c, v1alpha1.PutVersionFile, err.Error())
 		return err
 	}

@@ -9,7 +9,6 @@ import (
 	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/jirafixversion/chain"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/util"
 	"github.com/pkg/errors"
-	coreV1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -174,7 +173,7 @@ func (r *ReconcileJiraFixVersion) initJiraClient(version edpv1alpha1.JiraFixVers
 		return nil, err
 	}
 
-	s, err := r.getSecretData(server.Spec.CredentialName, server.Namespace)
+	s, err := util.GetSecretData(r.client, server.Spec.CredentialName, server.Namespace)
 	if err != nil {
 		return nil, errors.Wrapf(err, "couldn't get secret %v", server.Spec.CredentialName)
 	}
@@ -225,16 +224,4 @@ func getOwnerReference(ownerKind string, ors []metav1.OwnerReference) (*metav1.O
 		}
 	}
 	return nil, errors.New("JiraFixVersion CR doesnt have owner reference")
-}
-
-func (r ReconcileJiraFixVersion) getSecretData(name, namespace string) (*coreV1.Secret, error) {
-	s := &coreV1.Secret{}
-	err := r.client.Get(context.TODO(), types.NamespacedName{
-		Name:      name,
-		Namespace: namespace,
-	}, s)
-	if err != nil {
-		return nil, err
-	}
-	return s, nil
 }

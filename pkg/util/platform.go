@@ -5,6 +5,7 @@ import (
 	edpv1alpha1 "github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/model"
 	"github.com/pkg/errors"
+	coreV1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -99,4 +100,30 @@ func GetSecret(c coreV1Client.CoreV1Client, secretName, namespace string) (*v1.S
 	}
 	log.Info("Secret has been fetched", "secret name", secretName, "namespace", namespace)
 	return secret, nil
+}
+
+func GetCodebase(client client.Client, name, namespace string) (*edpv1alpha1.Codebase, error) {
+	instance := &edpv1alpha1.Codebase{}
+	err := client.Get(context.TODO(), types.NamespacedName{
+		Namespace: namespace,
+		Name:      name,
+	}, instance)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return instance, nil
+}
+
+func GetSecretData(client client.Client, name, namespace string) (*coreV1.Secret, error) {
+	s := &coreV1.Secret{}
+	err := client.Get(context.TODO(), types.NamespacedName{
+		Name:      name,
+		Namespace: namespace,
+	}, s)
+	if err != nil {
+		return nil, err
+	}
+	return s, nil
 }

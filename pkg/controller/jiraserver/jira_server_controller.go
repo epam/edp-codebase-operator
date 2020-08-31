@@ -7,14 +7,13 @@ import (
 	"github.com/epmd-edp/codebase-operator/v2/pkg/client/jira/adapter"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/client/jira/dto"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/jiraserver/chain"
+	"github.com/epmd-edp/codebase-operator/v2/pkg/util"
 	"github.com/epmd-edp/edp-component-operator/pkg/apis/v1/v1alpha1"
 	"github.com/pkg/errors"
-	coreV1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -124,7 +123,7 @@ func (r *ReconcileJiraServer) updateStatus(instance *edpv1alpha1.JiraServer) {
 }
 
 func (r *ReconcileJiraServer) initJiraClient(jira edpv1alpha1.JiraServer) (jira.Client, error) {
-	s, err := r.getSecretData(jira.Spec.CredentialName, jira.Namespace)
+	s, err := util.GetSecretData(r.client, jira.Spec.CredentialName, jira.Namespace)
 	if err != nil {
 		return nil, errors.Wrapf(err, "couldn't get secret %v", jira.Spec.CredentialName)
 	}
@@ -135,16 +134,4 @@ func (r *ReconcileJiraServer) initJiraClient(jira edpv1alpha1.JiraServer) (jira.
 		return nil, errors.Wrap(err, "couldn't create Jira client")
 	}
 	return c, nil
-}
-
-func (r ReconcileJiraServer) getSecretData(name, namespace string) (*coreV1.Secret, error) {
-	s := &coreV1.Secret{}
-	err := r.client.Get(context.TODO(), types.NamespacedName{
-		Name:      name,
-		Namespace: namespace,
-	}, s)
-	if err != nil {
-		return nil, err
-	}
-	return s, nil
 }

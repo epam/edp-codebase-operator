@@ -9,7 +9,9 @@ import (
 	"golang.org/x/crypto/ssh"
 	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/config"
+	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
+	"gopkg.in/src-d/go-git.v4/plumbing/storer"
 	"gopkg.in/src-d/go-git.v4/plumbing/transport/http"
 	goGit "gopkg.in/src-d/go-git.v4/plumbing/transport/ssh"
 	"gopkg.in/src-d/go-git.v4/storage/memory"
@@ -31,9 +33,64 @@ type Git interface {
 	CheckPermissions(repo string, user string, pass string) (accessible bool)
 	CloneRepositoryBySsh(key, user, repoUrl, destination string) error
 	CloneRepository(repo, user, pass, destination string) error
+	CreateRemoteBranch(key, user, path, name string) error
 }
 
 type GitProvider struct {
+}
+
+func (gp GitProvider) CreateRemoteBranch(key, user, path, name string) error {
+	log.Info("start creating remote branch", "name", name)
+	r, err := git.PlainOpen(path)
+	if err != nil {
+		return err
+	}
+
+	branches, err := r.Branches()
+	if err != nil {
+		return err
+	}
+
+	exists, err := isBranchExists(name, branches)
+	if err != nil {
+		return err
+	}
+
+	if exists {
+		log.Info("branch already exists. skip creating", "name", name)
+		return nil
+	}
+
+	ref, err := r.Head()
+	if err != nil {
+		return err
+	}
+
+	newRef := plumbing.NewReferenceFromStrings(fmt.Sprintf("refs/heads/%v", name), ref.Hash().String())
+	if err := r.Storer.SetReference(newRef); err != nil {
+		return err
+	}
+
+	if err := gp.PushChanges(key, user, path); err != nil {
+		return err
+	}
+	log.Info("branch has been created", "name", name)
+	return nil
+}
+
+func isBranchExists(name string, branches storer.ReferenceIter) (bool, error) {
+	for {
+		b, err := branches.Next()
+		if err != nil {
+			if err.Error() == "EOF" {
+				return false, nil
+			}
+			return false, err
+		}
+		if b.Name().Short() == name {
+			return true, nil
+		}
+	}
 }
 
 func (GitProvider) CommitChanges(directory, commitMsg string) error {

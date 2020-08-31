@@ -23,6 +23,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+	"strings"
 	"time"
 )
 
@@ -154,12 +155,23 @@ func setFailureCount(c *edpv1alpha1.Codebase) time.Duration {
 
 func (r ReconcileCodebase) getChain(cr *edpv1alpha1.Codebase) (cHand.CodebaseHandler, error) {
 	log.Info("select correct chain to handle codebase", "name", cr.Name)
+	return r.getStrategyChain(cr)
+}
+
+func (r ReconcileCodebase) getStrategyChain(c *edpv1alpha1.Codebase) (cHand.CodebaseHandler, error) {
 	cs := openshift.CreateOpenshiftClients()
 	cs.Client = r.client
-	if cr.Spec.Strategy == util.ImportStrategy {
-		return chain.CreateThirdPartyVcsProviderDefChain(*cs, r.db), nil
+	if c.Spec.Strategy == util.ImportStrategy {
+		return r.getCiChain(c, cs)
 	}
 	return chain.CreateGerritDefChain(*cs, r.db), nil
+}
+
+func (r ReconcileCodebase) getCiChain(c *edpv1alpha1.Codebase, cs *openshift.ClientSet) (cHand.CodebaseHandler, error) {
+	if strings.ToLower(c.Spec.CiTool) == util.GitlabCi {
+		return chain.CreateGitlabCiDefChain(*cs, r.db), nil
+	}
+	return chain.CreateThirdPartyVcsProviderDefChain(*cs, r.db), nil
 }
 
 func (r *ReconcileCodebase) updateStatus(instance *edpv1alpha1.Codebase) {

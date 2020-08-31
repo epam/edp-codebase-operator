@@ -2,6 +2,7 @@ package adapter
 
 import (
 	"github.com/andygrunwald/go-jira"
+	"github.com/epmd-edp/codebase-operator/v2/pkg/util"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
@@ -45,11 +46,7 @@ func (a GoJiraAdapter) GetProjectId(issue string) (*string, error) {
 		return nil, err
 	}
 	logv.V(2).Info("project id has been fetched.", "id", issueResp.Fields.Project.ID)
-	return getStringP(issueResp.Fields.Project.ID), nil
-}
-
-func getStringP(val string) *string {
-	return &val
+	return util.GetStringP(issueResp.Fields.Project.ID), nil
 }
 
 func (a GoJiraAdapter) CreateFixVersion(projectId int, versionName string) error {

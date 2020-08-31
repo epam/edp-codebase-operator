@@ -4,12 +4,11 @@ import (
 	"context"
 	"fmt"
 	"github.com/bndr/gojenkins"
-	ClientSet "github.com/epmd-edp/codebase-operator/v2/pkg/openshift"
+	"github.com/epmd-edp/codebase-operator/v2/pkg/util"
 	jenkinsApi "github.com/epmd-edp/jenkins-operator/v2/pkg/apis/v2/v1alpha1"
 	jenkinsOperatorSpec "github.com/epmd-edp/jenkins-operator/v2/pkg/service/jenkins/spec"
 	"github.com/pkg/errors"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"net/http"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
@@ -136,10 +135,11 @@ func GetJenkins(c client.Client, namespace string) (*jenkinsApi.Jenkins, error) 
 	return &jenkinsList.Items[0], nil
 }
 
-func GetJenkinsCreds(jenkins jenkinsApi.Jenkins, clientSet ClientSet.ClientSet, namespace string) (string, string, error) {
+func GetJenkinsCreds(client client.Client, jenkins jenkinsApi.Jenkins, namespace string) (string, string, error) {
 	annotationKey := fmt.Sprintf("%v/%v", jenkinsOperatorSpec.EdpAnnotationsPrefix, jenkinsOperatorSpec.JenkinsTokenAnnotationSuffix)
 	jenkinsTokenSecretName := jenkins.Annotations[annotationKey]
-	jenkinsTokenSecret, err := clientSet.CoreClient.Secrets(namespace).Get(jenkinsTokenSecretName, metav1.GetOptions{})
+
+	jenkinsTokenSecret, err := util.GetSecretData(client, jenkinsTokenSecretName, namespace)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
 			return "", "", errors.Wrapf(err, "Secret %v in not found", jenkinsTokenSecretName)

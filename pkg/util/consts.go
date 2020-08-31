@@ -1,11 +1,6 @@
 package util
 
 const (
-	OpenshiftTemplate = "openshift-template"
-
-	OcTemplatesFolder        = "oc-templates"
-	HelmChartTemplatesFolder = "helm-charts"
-
 	HelmChartDeploymentScriptType = "helm-chart"
 
 	ChartTemplate       = "Chart.tmpl"
@@ -25,14 +20,11 @@ const (
 
 	ImportStrategy = "import"
 	Application    = "application"
-	Autotests      = "autotests"
-	Library        = "library"
 	OtherLanguage  = "other"
 	Javascript     = "javascript"
 
 	CodebaseKind = "Codebase"
 
-	ProjectCreatedStatus             = "created"
 	ProjectPushedStatus              = "pushed"
 	ProjectTemplatesPushedStatus     = "templates_pushed"
 	ProjectVersionGoFilePushedStatus = "version_go"
@@ -41,4 +33,8 @@ const (
 	LanguageJava   = "Java"
 	LanguageGo     = "Go"
 	LanguagePython = "Python"
+
+	GitlabCi = "gitlabci"
+
+	VersioningTypeEDP = "edp"
 )

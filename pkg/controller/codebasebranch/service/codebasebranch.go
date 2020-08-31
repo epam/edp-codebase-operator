@@ -7,8 +7,9 @@ import (
 	edpv1alpha1 "github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/jenkins"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/model"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/openshift"
+	"github.com/epmd-edp/codebase-operator/v2/pkg/util"
 	"github.com/pkg/errors"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"time"
 )
@@ -18,7 +19,7 @@ var log = logf.Log.WithName("codebase_branch_service")
 const jenkinsJobSuccessStatus = "blue"
 
 type CodebaseBranchService struct {
-	Cs openshift.ClientSet
+	Client client.Client
 }
 
 func (s *CodebaseBranchService) TriggerReleaseJob(cb *v1alpha1.CodebaseBranch) error {
@@ -34,7 +35,7 @@ func (s *CodebaseBranchService) TriggerReleaseJob(cb *v1alpha1.CodebaseBranch) e
 	if err := s.setIntermediateStatus(cb, edpv1alpha1.AcceptCodebaseBranchRegistration); err != nil {
 		return err
 	}
-	jc, err := initJenkinsClient(s.Cs, cb.Namespace)
+	jc, err := initJenkinsClient(s.Client, cb.Namespace)
 	if err != nil {
 		if err := s.setFailStatus(cb, edpv1alpha1.JenkinsConfiguration, err.Error()); err != nil {
 			return err
@@ -68,12 +69,12 @@ func (s *CodebaseBranchService) TriggerReleaseJob(cb *v1alpha1.CodebaseBranch) e
 	return s.setSuccessStatus(cb, edpv1alpha1.JenkinsConfiguration)
 }
 
-func initJenkinsClient(cs openshift.ClientSet, namespace string) (*jenkins.JenkinsClient, error) {
-	j, err := jenkins.GetJenkins(cs.Client, namespace)
+func initJenkinsClient(client client.Client, namespace string) (*jenkins.JenkinsClient, error) {
+	j, err := jenkins.GetJenkins(client, namespace)
 	if err != nil {
 		return nil, err
 	}
-	jt, ju, err := jenkins.GetJenkinsCreds(*j, cs, namespace)
+	jt, ju, err := jenkins.GetJenkinsCreds(client, *j, namespace)
 	if err != nil {
 		return nil, err
 	}
@@ -128,16 +129,10 @@ func (s *CodebaseBranchService) AppendVersionToTheHistorySlice(b *v1alpha1.Codeb
 }
 
 func (s *CodebaseBranchService) ResetBranchBuildCounter(cb *v1alpha1.CodebaseBranch) error {
-	v := "0"
 	if cb.Status.Build == nil {
 		return nil
 	}
-
-	b := cb.Status.Build
-	if *b != "0" {
-		cb.Status.Build = &v
-	}
-
+	cb.Status.Build = util.GetStringP("0")
 	return s.updateStatus(cb)
 }
 
@@ -167,8 +162,8 @@ func (s *CodebaseBranchService) setSuccessStatus(cb *v1alpha1.CodebaseBranch, ac
 }
 
 func (s *CodebaseBranchService) updateStatus(cb *v1alpha1.CodebaseBranch) error {
-	if err := s.Cs.Client.Status().Update(context.TODO(), cb); err != nil {
-		if err := s.Cs.Client.Update(context.TODO(), cb); err != nil {
+	if err := s.Client.Status().Update(context.TODO(), cb); err != nil {
+		if err := s.Client.Update(context.TODO(), cb); err != nil {
 			return errors.Wrap(err, "couldn't update codebase branch status")
 		}
 	}
