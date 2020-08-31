@@ -35,8 +35,7 @@ func (h TriggerReleaseJob) ServeRequest(cb *v1alpha1.CodebaseBranch) error {
 	if !c.Status.Available && isJenkinsFolderAvailable(jf) {
 		log.Info("couldn't start reconciling for branch. someone of codebase or jenkins folder is unavailable",
 			"codebase", c.Name, "branch", cb.Name)
-		return util.NewCodebaseBranchReconcileError(fmt.Sprintf("%v codebase or %v jenkins folder is unavailable",
-			c.Name, jf.Name))
+		return util.NewCodebaseBranchReconcileError(fmt.Sprintf("%v codebase is unavailable", c.Name))
 	}
 
 	if c.Spec.Versioning.Type == util.VersioningTypeEDP && hasNewVersion(cb) {
