@@ -33,6 +33,7 @@ const (
 	LanguageJava   = "Java"
 	LanguageGo     = "Go"
 	LanguagePython = "Python"
+	LanguageDotnet = "Dotnet"
 
 	GitlabCi = "gitlabci"
 
