@@ -1,7 +1,6 @@
 package bitbucket
 
 import (
-	"fmt"
 	"os"
 	"testing"
 )
@@ -32,36 +31,6 @@ func createBitbucket() bitbucket {
 	}
 }
 
-func TestBitBucket_CheckProjectExist_ValidPass_ExistingProject(t *testing.T) {
-	bitbucket := createBitbucket()
-	client := BitBucket{}
-	_ = client.Init(bitbucket.url, bitbucket.user, bitbucket.pass)
-
-	res, err := client.CheckProjectExist(bitbucket.group, bitbucket.existingProjectInGroup)
-
-	if err != nil {
-		t.Error("Actual: error. Expected: true")
-	}
-	if !*res {
-		t.Error("Actual: false. Expected: true")
-	}
-}
-
-func TestBitBucket_CheckProjectExist_ValidToken_ExistingProject(t *testing.T) {
-	bitbucket := createBitbucket()
-	client := BitBucket{}
-	_ = client.Init(bitbucket.url, bitbucket.user, bitbucket.token)
-
-	res, err := client.CheckProjectExist(bitbucket.group, bitbucket.existingProjectInGroup)
-
-	if err != nil {
-		t.Error("Actual: error. Expected: true")
-	}
-	if !*res {
-		t.Error("Actual: false. Expected: true")
-	}
-}
-
 func TestBitBucket_CheckProjectExist_InvalidPass_ExistingProject(t *testing.T) {
 	bitbucket := createBitbucket()
 	client := BitBucket{}
@@ -72,37 +41,6 @@ func TestBitBucket_CheckProjectExist_InvalidPass_ExistingProject(t *testing.T) {
 	if err == nil {
 		t.Errorf("Actual: %v. Expected: error", &res)
 	}
-}
-
-func TestBitBucket_CheckProjectExist_ValidPass_NonExistingProject(t *testing.T) {
-	bitbucket := createBitbucket()
-	client := BitBucket{}
-	_ = client.Init(bitbucket.url, bitbucket.user, bitbucket.pass)
-
-	res, err := client.CheckProjectExist(bitbucket.group, "invalid")
-
-	if err != nil {
-		t.Error("Actual: error. Expected: false")
-	}
-	if *res {
-		t.Error("Actual: true. Expected: false")
-	}
-}
-
-func TestBitBucket_CreateProject_ValidPass_NonExistingProject_ExistingGroup(t *testing.T) {
-	bitbucket := createBitbucket()
-	client := BitBucket{}
-	_ = client.Init(bitbucket.url, bitbucket.user, bitbucket.pass)
-
-	id, err := client.CreateProject(bitbucket.group, bitbucket.nonExistingProjectInGroup)
-
-	fmt.Println(id)
-
-	if err != nil {
-		t.Errorf("Actual: error. Expected: created project")
-	}
-
-	_ = client.DeleteProject(bitbucket.group, bitbucket.nonExistingProjectInGroup)
 }
 
 func TestBitBucket_CreateProject_ValidPass_ExistingProject_ExistingGroup(t *testing.T) {
@@ -129,22 +67,6 @@ func TestBitBucket_CreateProject_ValidPass_NonExistingProject_NonExistingGroup(t
 	}
 }
 
-func TestBitBucket_CreateProject_ValidToken_NonExistingProject_ExistingGroup(t *testing.T) {
-	bitbucket := createBitbucket()
-	client := BitBucket{}
-	_ = client.Init(bitbucket.url, bitbucket.user, bitbucket.token)
-
-	id, err := client.CreateProject(bitbucket.group, bitbucket.nonExistingProjectInGroup)
-
-	fmt.Println(id)
-
-	if err != nil {
-		t.Errorf("Actual: error. Expected: created project")
-	}
-
-	_ = client.DeleteProject(bitbucket.group, bitbucket.nonExistingProjectInGroup)
-}
-
 func TestBitBucket_CreateProject_InValidToken_NonExistingProject_ExistingGroup(t *testing.T) {
 	bitbucket := createBitbucket()
 	client := BitBucket{}
@@ -154,21 +76,5 @@ func TestBitBucket_CreateProject_InValidToken_NonExistingProject_ExistingGroup(t
 
 	if err == nil {
 		t.Errorf("Actual: %v. Expected: error", id)
-	}
-}
-
-func TestBitBucket_GetRepositorySshUrl(t *testing.T) {
-	bitbucket := createBitbucket()
-	client := BitBucket{}
-	_ = client.Init(bitbucket.url, bitbucket.user, bitbucket.pass)
-
-	ssh, err := client.GetRepositorySshUrl(bitbucket.group, bitbucket.existingProjectInGroup)
-
-	if err != nil {
-		t.Errorf("Actual error. Expected ssh port: %v", bitbucket.sshLink)
-	}
-
-	if ssh != bitbucket.sshLink {
-		t.Errorf("Actual: %v. Expected: %v", ssh, bitbucket.sshLink)
 	}
 }

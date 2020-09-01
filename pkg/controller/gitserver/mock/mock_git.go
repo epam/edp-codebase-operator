@@ -25,3 +25,5 @@ func (m MockGit) CloneRepositoryBySsh(key, user, repoUrl, destination string) er
 }
 
 func (m MockGit) CloneRepository(repo, user, pass, destination string) error { panic("implement me") }
+
+func (m MockGit) CreateRemoteBranch(key, user, path, name string) error { panic("implement me") }
