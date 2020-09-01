@@ -19,7 +19,8 @@ type CodebaseImageStreamSpec struct {
 
 // +k8s:openapi-gen=true
 type Tag struct {
-	Name string `json:"name, omitempty"`
+	Name    string `json:"name"`
+	Created string `json:"created"`
 }
 
 // CodebaseImageStreamStatus defines the observed state of CodebaseImageStream
