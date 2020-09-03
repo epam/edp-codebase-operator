@@ -85,6 +85,14 @@ spec:
               anyOf:
                 - type: null
                 - type: string
+            jenkinsSlave:
+              anyOf:
+                - type: null
+                - type: string
+            jobProvisioning:
+              anyOf:
+                - type: null
+                - type: string
           required:
             - lang
             - type

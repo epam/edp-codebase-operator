@@ -58,8 +58,8 @@ type CodebaseSpec struct {
 	Type                 string      `json:"type"`
 	GitServer            string      `json:"gitServer"`
 	GitUrlPath           *string     `json:"gitUrlPath"`
-	JenkinsSlave         string      `json:"jenkinsSlave"`
-	JobProvisioning      string      `json:"jobProvisioning"`
+	JenkinsSlave         *string     `json:"jenkinsSlave"`
+	JobProvisioning      *string     `json:"jobProvisioning"`
 	DeploymentScript     string      `json:"deploymentScript"`
 	Versioning           Versioning  `json:"versioning"`
 	JiraServer           *string     `json:"jiraServer,omitempty"`
