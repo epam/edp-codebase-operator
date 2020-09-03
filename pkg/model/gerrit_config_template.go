@@ -10,4 +10,5 @@ type GerritConfigGoTemplating struct {
 	Database    *v1alpha1.Database `json:"database"`
 	Name        string
 	DnsWildcard string
+	Platform    string
 }

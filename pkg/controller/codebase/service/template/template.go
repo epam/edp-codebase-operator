@@ -3,6 +3,7 @@ package template
 import (
 	"fmt"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/platform"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/model"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/util"
 	"github.com/pkg/errors"
@@ -56,6 +57,7 @@ func buildTemplateConfig(client *coreV1Client.CoreV1Client, c v1alpha1.Codebase)
 		Name:        c.Name,
 		Lang:        c.Spec.Lang,
 		DnsWildcard: us.DnsWildcard,
+		Platform:    platform.GetPlatformType(),
 	}
 	if c.Spec.Database != nil {
 		cf.Database = c.Spec.Database

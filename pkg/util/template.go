@@ -2,6 +2,7 @@ package util
 
 import (
 	"fmt"
+	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/platform"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/model"
 	"github.com/pkg/errors"
 	"io/ioutil"
@@ -39,10 +40,10 @@ func CopyPipelines(codebaseType, src, dest string) error {
 	return nil
 }
 
-func CopyHelmChartTemplates(deploymentScript, workDir string, config model.GerritConfigGoTemplating) error {
+func CopyHelmChartTemplates(deploymentScript, platform, workDir string, config model.GerritConfigGoTemplating) error {
 	log.Info("start handling Helm Chart templates", "codebase name", config.Name)
 	templatesDest := fmt.Sprintf("%v/%v/%v/deploy-templates", workDir, "templates", config.Name)
-	templateBasePath := fmt.Sprintf("/usr/local/bin/templates/applications/%v", deploymentScript)
+	templateBasePath := fmt.Sprintf("/usr/local/bin/templates/applications/%v/%v", deploymentScript, platform)
 
 	log.Info("Paths", "templatesDest", templatesDest, "templateBasePath", templateBasePath)
 
@@ -124,7 +125,7 @@ func CopyOpenshiftTemplate(framework, deploymentScript, workDir string, config m
 
 func CopyTemplate(framework, deploymentScript, workDir string, cf model.GerritConfigGoTemplating) error {
 	if deploymentScript == HelmChartDeploymentScriptType {
-		return CopyHelmChartTemplates(deploymentScript, workDir, cf)
+		return CopyHelmChartTemplates(deploymentScript, platform.GetPlatformType(), workDir, cf)
 	}
 	return CopyOpenshiftTemplate(framework, deploymentScript, workDir, cf)
 }

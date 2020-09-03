@@ -1,0 +1,29 @@
+name: {{.Name}}
+namespace: ""
+cdPipelineName: ""
+cdPipelineStageName: ""
+dnsWildcard: {{.DnsWildcard}}
+{{if and .Database (ne .Lang "javascript")}}
+{{if eq .Database.Kind "PostgreSQL"}}
+database:
+  required: true
+  version: {{.Database.Version}}
+  storageClass: {{.Database.Storage}}
+  capacity: {{.Database.Capacity}}
+{{end}}
+{{else}}
+database:
+  required: false
+{{end}}
+{{if .Route}}
+ingress:
+  required: true
+  site: {{.Route.Site}}
+  path: {{.Route.Path}}
+{{else}}
+ingress:
+  required: false
+{{end}}
+image:
+  name: {{.Name}}
+  version: latest
