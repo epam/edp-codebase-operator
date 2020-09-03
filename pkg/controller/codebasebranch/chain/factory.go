@@ -28,8 +28,11 @@ func createGitlabCiDefChain(client client.Client) handler.CodebaseBranchHandler 
 	return PutBranchInGit{
 		client: client,
 		git:    gitserver.GitProvider{},
-		next: CleanTempDirectory{
+		next: PutCodebaseImageStream{
 			client: client,
+			next: CleanTempDirectory{
+				client: client,
+			},
 		},
 		service: service.CodebaseBranchService{
 			Client: client,

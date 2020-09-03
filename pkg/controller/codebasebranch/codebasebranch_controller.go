@@ -6,9 +6,12 @@ import (
 	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/codebasebranch/chain"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/model"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/util"
+	"github.com/epmd-edp/edp-component-operator/pkg/apis/v1/v1alpha1"
 	"github.com/pkg/errors"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -35,10 +38,21 @@ func Add(mgr manager.Manager) error {
 }
 
 func newReconciler(mgr manager.Manager) reconcile.Reconciler {
+	scheme := mgr.GetScheme()
+	addKnownTypes(scheme)
 	return &ReconcileCodebaseBranch{
 		client: mgr.GetClient(),
-		scheme: mgr.GetScheme(),
+		scheme: scheme,
 	}
+}
+
+func addKnownTypes(scheme *runtime.Scheme) {
+	schemeGroupVersion := schema.GroupVersion{Group: "v1.edp.epam.com", Version: "v1alpha1"}
+	scheme.AddKnownTypes(schemeGroupVersion,
+		&v1alpha1.EDPComponent{},
+		&v1alpha1.EDPComponentList{},
+	)
+	metav1.AddToGroupVersion(scheme, schemeGroupVersion)
 }
 
 func add(mgr manager.Manager, r reconcile.Reconciler) error {
