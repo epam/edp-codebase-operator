@@ -36,7 +36,7 @@ func (h CloneGitProject) ServeRequest(c *v1alpha1.Codebase) error {
 		return err
 	}
 
-	gs, err := util.GetGitServer(h.clientSet.Client, c.Name, c.Spec.GitServer, c.Namespace)
+	gs, err := util.GetGitServer(h.clientSet.Client, c.Spec.GitServer, c.Namespace)
 	if err != nil {
 		setFailedFields(c, edpv1alpha1.ImportProject, err.Error())
 		return err

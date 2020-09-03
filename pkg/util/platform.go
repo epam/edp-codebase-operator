@@ -63,16 +63,16 @@ func GetVcsBasicAuthConfig(c coreV1Client.CoreV1Client, namespace string, secret
 	return string(vcsCredentialsSecret.Data["username"]), string(vcsCredentialsSecret.Data["password"]), nil
 }
 
-func GetGitServer(c client.Client, codebaseName, gitServerName, namespace string) (*model.GitServer, error) {
-	gitSec, err := getGitServerCR(c, gitServerName, namespace)
+func GetGitServer(c client.Client, name, namespace string) (*model.GitServer, error) {
+	gitReq, err := getGitServerCR(c, name, namespace)
 	if err != nil {
-		return nil, errors.Wrapf(err, "an error has occurred while getting Git Server CR for %v codebase", codebaseName)
+		return nil, errors.Wrapf(err, "an error has occurred while getting %v Git Server CR", name)
 	}
 
-	gs, err := model.ConvertToGitServer(*gitSec)
+	gs, err := model.ConvertToGitServer(*gitReq)
 	if err != nil {
-		return nil, errors.Wrapf(err, "an error has occurred while converting request Git Server to DTO for %v codebase",
-			codebaseName)
+		return nil, errors.Wrapf(err, "an error has occurred while converting request %v Git Server to DTO",
+			name)
 	}
 	return gs, nil
 }

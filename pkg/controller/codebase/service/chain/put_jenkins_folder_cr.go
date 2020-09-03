@@ -29,7 +29,7 @@ type PutJenkinsFolder struct {
 func (h PutJenkinsFolder) ServeRequest(c *v1alpha1.Codebase) error {
 	rLog := log.WithValues("codebase name", c.Name)
 
-	gs, err := util.GetGitServer(h.clientSet.Client, c.Name, c.Spec.GitServer, c.Namespace)
+	gs, err := util.GetGitServer(h.clientSet.Client, c.Spec.GitServer, c.Namespace)
 	if err != nil {
 		return err
 	}

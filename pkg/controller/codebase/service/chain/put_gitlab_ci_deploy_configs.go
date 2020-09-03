@@ -14,14 +14,14 @@ import (
 	"github.com/pkg/errors"
 )
 
-type PutDeployConfigsToGitProvider struct {
+type PutGitlabCiDeployConfigs struct {
 	next      handler.CodebaseHandler
 	clientSet openshift.ClientSet
 	cr        repository.CodebaseRepository
 	git       git.Git
 }
 
-func (h PutDeployConfigsToGitProvider) ServeRequest(c *v1alpha1.Codebase) error {
+func (h PutGitlabCiDeployConfigs) ServeRequest(c *v1alpha1.Codebase) error {
 	rLog := log.WithValues("codebase name", c.Name)
 	rLog.Info("Start pushing configs...")
 
@@ -33,7 +33,7 @@ func (h PutDeployConfigsToGitProvider) ServeRequest(c *v1alpha1.Codebase) error 
 	return nextServeOrNil(h.next, c)
 }
 
-func (h PutDeployConfigsToGitProvider) tryToPushConfigs(c v1alpha1.Codebase) error {
+func (h PutGitlabCiDeployConfigs) tryToPushConfigs(c v1alpha1.Codebase) error {
 	name, err := helper.GetEDPName(h.clientSet.Client, c.Namespace)
 	if err != nil {
 		return errors.Wrap(err, "couldn't get edp name")
@@ -50,7 +50,7 @@ func (h PutDeployConfigsToGitProvider) tryToPushConfigs(c v1alpha1.Codebase) err
 		return nil
 	}
 
-	if err := template.PrepareTemplates(h.clientSet.CoreClient, c); err != nil {
+	if err := template.PrepareGitlabCITemplates(h.clientSet.CoreClient, c); err != nil {
 		return err
 	}
 
@@ -71,7 +71,7 @@ func (h PutDeployConfigsToGitProvider) tryToPushConfigs(c v1alpha1.Codebase) err
 	return nil
 }
 
-func (h PutDeployConfigsToGitProvider) pushChanges(projectPath, gitServerName, namespace string) error {
+func (h PutGitlabCiDeployConfigs) pushChanges(projectPath, gitServerName, namespace string) error {
 	gs, err := util.GetGitServer(h.clientSet.Client, gitServerName, namespace)
 	if err != nil {
 		return err
@@ -91,7 +91,7 @@ func (h PutDeployConfigsToGitProvider) pushChanges(projectPath, gitServerName, n
 	return nil
 }
 
-func (h PutDeployConfigsToGitProvider) skipTemplatePreparing(edpName, codebaseName, namespace string) (bool, error) {
+func (h PutGitlabCiDeployConfigs) skipTemplatePreparing(edpName, codebaseName, namespace string) (bool, error) {
 	ps, err := h.cr.SelectProjectStatusValue(codebaseName, edpName)
 	if err != nil {
 		return true, errors.Wrapf(err, "couldn't get project_status value for %v codebase", codebaseName)

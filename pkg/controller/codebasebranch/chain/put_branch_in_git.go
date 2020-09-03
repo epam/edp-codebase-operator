@@ -38,7 +38,7 @@ func (h PutBranchInGit) ServeRequest(cb *v1alpha1.CodebaseBranch) error {
 		}
 	}
 
-	gs, err := util.GetGitServer(h.client, c.Name, c.Spec.GitServer, c.Namespace)
+	gs, err := util.GetGitServer(h.client, c.Spec.GitServer, c.Namespace)
 	if err != nil {
 		return err
 	}

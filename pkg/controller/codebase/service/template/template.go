@@ -47,14 +47,36 @@ func PrepareTemplates(client *coreV1Client.CoreV1Client, c v1alpha1.Codebase) er
 	return nil
 }
 
-func buildTemplateConfig(client *coreV1Client.CoreV1Client, c v1alpha1.Codebase) (*model.GerritConfigGoTemplating, error) {
+func PrepareGitlabCITemplates(client *coreV1Client.CoreV1Client, c v1alpha1.Codebase) error {
+	log.Info("start preparing deploy templates", "codebase", c.Name)
+
+	if c.Spec.Type != util.Application {
+		log.Info("codebase is not application. skip copying templates", "name", c.Name)
+		return nil
+	}
+
+	cf, err := buildTemplateConfig(client, c)
+	if err != nil {
+		return err
+	}
+
+	wd := fmt.Sprintf("/home/codebase-operator/edp/%v/%v", c.Namespace, c.Name)
+	if err := util.CopyTemplate(*c.Spec.Framework, c.Spec.DeploymentScript, wd, *cf); err != nil {
+		return errors.Wrapf(err, "an error has occurred while copying template for %v codebase", c.Name)
+	}
+
+	log.Info("end preparing deploy templates", "codebase", c.Name)
+	return nil
+}
+
+func buildTemplateConfig(client *coreV1Client.CoreV1Client, c v1alpha1.Codebase) (*model.ConfigGoTemplating, error) {
 	log.Info("start creating template config", "codebase name", c.Name)
 	us, err := util.GetUserSettings(client, c.Namespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable get user settings settings")
 	}
 
-	cf := model.GerritConfigGoTemplating{
+	cf := model.ConfigGoTemplating{
 		Name:         c.Name,
 		PlatformType: platform.GetPlatformType(),
 		Lang:         c.Spec.Lang,
@@ -71,7 +93,7 @@ func buildTemplateConfig(client *coreV1Client.CoreV1Client, c v1alpha1.Codebase)
 	return &cf, nil
 }
 
-func copySonarConfigs(templateDirectory string, config model.GerritConfigGoTemplating) error {
+func copySonarConfigs(templateDirectory string, config model.ConfigGoTemplating) error {
 	sonarConfigPath := fmt.Sprintf("%v/%v/sonar-project.properties", templateDirectory, config.Name)
 	log.Info("start copying sonar configs", "path", sonarConfigPath)
 	if _, err := os.Stat(sonarConfigPath); err == nil {

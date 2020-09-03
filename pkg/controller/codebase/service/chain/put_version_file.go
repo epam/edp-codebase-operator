@@ -98,7 +98,7 @@ func (h PutVersionFile) tryToPutVersionFile(c *v1alpha1.Codebase, projectPath st
 		return errors.Wrapf(err, "couldn't write to file %v", path)
 	}
 
-	gs, err := util.GetGitServer(h.clientSet.Client, c.Name, c.Spec.GitServer, c.Namespace)
+	gs, err := util.GetGitServer(h.clientSet.Client, c.Spec.GitServer, c.Namespace)
 	if err != nil {
 		return err
 	}

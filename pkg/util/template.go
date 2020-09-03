@@ -39,7 +39,7 @@ func CopyPipelines(codebaseType, src, dest string) error {
 	return nil
 }
 
-func CopyHelmChartTemplates(deploymentScript, workDir string, config model.GerritConfigGoTemplating) error {
+func CopyHelmChartTemplates(deploymentScript, workDir string, config model.ConfigGoTemplating) error {
 	log.Info("start handling Helm Chart templates", "codebase name", config.Name)
 	templatesDest := fmt.Sprintf("%v/%v/%v/deploy-templates", workDir, "templates", config.Name)
 	templateBasePath := fmt.Sprintf("/usr/local/bin/templates/applications/%v", deploymentScript)
@@ -92,7 +92,7 @@ func CopyHelmChartTemplates(deploymentScript, workDir string, config model.Gerri
 	return nil
 }
 
-func CopyOpenshiftTemplate(framework, deploymentScript, workDir string, config model.GerritConfigGoTemplating) error {
+func CopyOpenshiftTemplate(framework, deploymentScript, workDir string, config model.ConfigGoTemplating) error {
 	log.Info("start handling Openshift template", "codebase name", config.Name)
 	templatesDest := fmt.Sprintf("%v/%v/%v/deploy-templates", workDir, "templates", config.Name)
 	templateBasePath := fmt.Sprintf("/usr/local/bin/templates/applications/%v/%v",
@@ -122,14 +122,14 @@ func CopyOpenshiftTemplate(framework, deploymentScript, workDir string, config m
 	return nil
 }
 
-func CopyTemplate(framework, deploymentScript, workDir string, cf model.GerritConfigGoTemplating) error {
+func CopyTemplate(framework, deploymentScript, workDir string, cf model.ConfigGoTemplating) error {
 	if deploymentScript == HelmChartDeploymentScriptType {
 		return CopyHelmChartTemplates(deploymentScript, workDir, cf)
 	}
 	return CopyOpenshiftTemplate(framework, deploymentScript, workDir, cf)
 }
 
-func renderTemplate(file *os.File, templateBasePath, templateName string, config model.GerritConfigGoTemplating) error {
+func renderTemplate(file *os.File, templateBasePath, templateName string, config model.ConfigGoTemplating) error {
 	log.Info("start rendering deploy template", "path", templateBasePath)
 
 	tmpl, err := template.New(templateName).ParseFiles(templateBasePath)

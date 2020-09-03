@@ -82,7 +82,7 @@ func CreateGitlabCiDefChain(cs openshift.ClientSet, db *sql.DB) handler.Codebase
 	cr := repository.CodebaseRepository{DB: db}
 	gp := gitserver.GitProvider{}
 	return CloneGitProject{
-		next: PutDeployConfigsToGitProvider{
+		next: PutGitlabCiDeployConfigs{
 			next: PutVersionFile{
 				next: Cleaner{
 					clientSet: cs,
