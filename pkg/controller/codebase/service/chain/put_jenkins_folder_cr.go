@@ -95,7 +95,7 @@ func (h PutJenkinsFolder) putJenkinsFolder(c *v1alpha1.Codebase, jc string) erro
 		},
 		Spec: jenkinsv1alpha1.JenkinsFolderSpec{
 			Job: &jenkinsv1alpha1.Job{
-				Name:   fmt.Sprintf("job-provisions/job/ci/job/%v", c.Spec.JobProvisioning),
+				Name:   fmt.Sprintf("job-provisions/job/ci/job/%v", *c.Spec.JobProvisioning),
 				Config: jc,
 			},
 		},
