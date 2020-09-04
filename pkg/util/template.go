@@ -42,7 +42,7 @@ func CopyPipelines(codebaseType, src, dest string) error {
 func CopyHelmChartTemplates(deploymentScript, workDir string, config model.ConfigGoTemplating) error {
 	log.Info("start handling Helm Chart templates", "codebase name", config.Name)
 	templatesDest := fmt.Sprintf("%v/%v/%v/deploy-templates", workDir, "templates", config.Name)
-	templateBasePath := fmt.Sprintf("/usr/local/bin/templates/applications/%v", deploymentScript)
+	templateBasePath := fmt.Sprintf("/usr/local/bin/templates/applications/%v/%v", deploymentScript, config.PlatformType)
 
 	log.Info("Paths", "templatesDest", templatesDest, "templateBasePath", templateBasePath)
 
