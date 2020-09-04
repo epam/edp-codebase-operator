@@ -1,0 +1,11 @@
+apiVersion: v2.edp.epam.com/v1alpha1
+kind: GitTag
+metadata:
+  name: stub-name-0.0.1
+spec:
+  codebase: "stub-name"
+  branch: "stub-name"
+  tag: "0.0.1"
+status:
+  status: "initialized"
+  lastTimeUpdated: 0001-01-01T00:00:00Z

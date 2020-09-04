@@ -34,6 +34,8 @@ type Git interface {
 	CloneRepositoryBySsh(key, user, repoUrl, destination string) error
 	CloneRepository(repo, user, pass, destination string) error
 	CreateRemoteBranch(key, user, path, name string) error
+	CreateRemoteTag(key, user, path, branchName, name string) error
+	Fetch(key, user, path, branchName string) error
 }
 
 type GitProvider struct {
@@ -289,4 +291,88 @@ func publicKey(key string) ssh.AuthMethod {
 		panic(err)
 	}
 	return ssh.PublicKeys(signer)
+}
+
+func (gp GitProvider) CreateRemoteTag(key, user, path, branchName, name string) error {
+	log.Info("start creating remote tag", "name", name)
+	r, err := git.PlainOpen(path)
+	if err != nil {
+		return err
+	}
+
+	tags, err := r.Tags()
+	if err != nil {
+		return err
+	}
+
+	exists, err := isTagExists(name, tags)
+	if err != nil {
+		return err
+	}
+
+	if exists {
+		log.Info("tag already exists. skip creating", "name", name)
+		return nil
+	}
+
+	ref, err := r.Reference(plumbing.ReferenceName(fmt.Sprintf("refs/heads/%v", branchName)), false)
+	if err != nil {
+		return err
+	}
+
+	newRef := plumbing.NewReferenceFromStrings(fmt.Sprintf("refs/tags/%v", name), ref.Hash().String())
+	if err := r.Storer.SetReference(newRef); err != nil {
+		return err
+	}
+
+	if err := gp.PushChanges(key, user, path); err != nil {
+		return err
+	}
+	log.Info("tag has been created", "name", name)
+	return nil
+}
+
+func isTagExists(name string, tags storer.ReferenceIter) (bool, error) {
+	for {
+		t, err := tags.Next()
+		if err != nil {
+			if err.Error() == "EOF" {
+				return false, nil
+			}
+			return false, err
+		}
+		if t.Name().Short() == name {
+			return true, nil
+		}
+	}
+}
+
+func (gp GitProvider) Fetch(key, user, path, branchName string) error {
+	log.Info("start fetching data", "name", branchName)
+	r, err := git.PlainOpen(path)
+	if err != nil {
+		return err
+	}
+
+	auth, err := initAuth(key, user)
+	if err != nil {
+		return err
+	}
+
+	opts := &git.FetchOptions{
+		RefSpecs: []config.RefSpec{
+			config.RefSpec(fmt.Sprintf("refs/heads/%v:refs/heads/%v", branchName, branchName)),
+		},
+		Auth: auth,
+	}
+
+	if err := r.Fetch(opts); err != nil {
+		if err.Error() == "already up-to-date" {
+			log.Info("repo is already up-to-date")
+			return nil
+		}
+		return err
+	}
+	log.Info("end fetching data", "name", branchName)
+	return nil
 }
