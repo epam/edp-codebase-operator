@@ -1,0 +1,162 @@
+variables:
+  NAMESPACE: {{.Namespace}}
+  PROJECT_NAME: {{.CodebaseName}}
+  VERSIONING_TYPE: {{.VersioningType}}
+  CLUSTER_URL: {{.ClusterUrl}}
+  
+default:
+  image: openshift/jenkins-agent-maven-35-centos7:v3.11
+
+stages:
+  - init
+  - set-version
+  - compile
+  - unit-tests
+  - build
+  - build-image
+  - create-ist
+  - create-tag
+
+.before_script_login_to_cluster:
+  before_script:
+     - oc login $CLUSTER_URL --token=$OPENSHIFT_SA_TOKEN;
+
+init:
+  extends: .before_script_login_to_cluster
+  stage: init
+  script:
+    - >
+      echo $CI_COMMIT_BRANCH
+      buildNumber=$(oc -n $NAMESPACE get codebasebranches.v2 $PROJECT_NAME-$CI_COMMIT_BRANCH -o jsonpath="{.status.build}");
+      buildNumber=$((buildNumber+1));
+      projectVersion=$(mvn org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version | grep -Ev '(^\[|Download\w+:)');
+      if [ "$VERSIONING_TYPE" == "edp" ]; then
+          version=$(oc -n $NAMESPACE get codebasebranches.v2 $PROJECT_NAME-$CI_COMMIT_BRANCH -o jsonpath="{.spec.version}");
+          codebaseImageStreamName=$PROJECT_NAME-edp-$(echo $CI_COMMIT_BRANCH | sed 's/\//-/g;s/\./-/g');
+          isTag=$version.$buildNumber;
+          crName=$codebaseImageStreamName-$(echo $isTag | sed 's/\//-/g;s/\./-/g' | awk '{print tolower($0)}');
+          echo "version=$version" >> build.properties;
+      else
+          codebaseImageStreamName=$PROJECT_NAME-$(echo $CI_COMMIT_BRANCH | sed 's/\//-/g;s/\./-/g');
+          isTag="$CI_COMMIT_BRANCH-$projectVersion-$buildNumber";
+          crName=$codebaseImageStreamName-$(echo $isTag | sed 's/\//-/g;s/\./-/g' | awk '{print tolower($0)}');
+      fi
+    - echo "crName=$crName" >> build.properties;
+    - echo "codebaseImageStreamName=$codebaseImageStreamName" >> build.properties;
+    - echo "isTag=$isTag" >> build.properties;
+    - echo "buildNumber=$buildNumber" >> build.properties;
+  artifacts:
+    paths:
+      - build.properties
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  
+set-version:
+    extends: .before_script_login_to_cluster
+    stage: set-version
+    dependencies:
+      - init
+    script:
+      - >
+        buildNumber=$(grep buildNumber "build.properties" | awk -F= '{print $2}');
+        echo $buildNumber;
+        oc -n $NAMESPACE patch codebasebranches.v2 $PROJECT_NAME-$CI_COMMIT_BRANCH --type=merge -p "{\"status\": {\"build\": "\"$buildNumber\""}}";
+        if [ "$VERSIONING_TYPE" == "edp" ]; then
+            version=$(grep version $"build.properties" | awk -F= '{print $2}')
+            isRelease=$(oc -n $NAMESPACE get codebasebranches.v2 $PROJECT_NAME-$CI_COMMIT_BRANCH -o jsonpath="{.spec.release}");
+            set -eo pipefail;
+        	if $isRelease; then
+        		newProjectVersion=$version-$buildNumber;
+        	else
+            	newProjectVersion=$version;
+        	fi
+            sed -i "s/<version>$projectVersion<\/version>/<version>$newProjectVersion<\/version>/" pom.xml
+         fi
+    rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+
+compile:
+  stage: compile
+  script:
+    - mvn compile -B
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+
+unit-tests:
+  stage: unit-tests
+  script:
+    - mvn test -B
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    
+build:
+  stage: build
+  script:
+    - mvn clean package -B -DskipTests=true
+  artifacts:
+    paths:
+    - target/*.jar
+    expire_in: 2 mins
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+build-image:
+  image: docker:19.03.12
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_TLS_CERTDIR: ""
+    DOCKER_DAEMON_OPTIONS: "--insecure-registry=$DOCKER_REGISTRY_URL"
+  services:
+    - name: docker:19.03.12-dind
+      entrypoint: [ "sh", "-c", "dockerd-entrypoint.sh $DOCKER_DAEMON_OPTIONS" ]
+  stage: build-image
+  dependencies:
+    - init
+    - build
+  script:
+    - isTag=$(grep isTag "build.properties" | awk -F= '{print $2}');
+    - docker login -u $DOCKER_REGISTRY_USER -p $DOCKER_REGISTRY_PASSWORD $DOCKER_REGISTRY_URL
+    - docker build -t $PROJECT_NAME .
+    - docker tag $PROJECT_NAME "$DOCKER_REGISTRY_URL/$NAMESPACE/$PROJECT_NAME-$CI_COMMIT_BRANCH:$isTag"
+    - docker push "$DOCKER_REGISTRY_URL/$NAMESPACE/$PROJECT_NAME-$CI_COMMIT_BRANCH:$isTag"
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+create-ist:
+    extends: .before_script_login_to_cluster
+    stage: create-ist
+    dependencies:
+      - init
+    script:
+      - >
+        crName=$(grep crName "build.properties" | awk -F= '{print $2}');
+        codebaseImageStreamName=$(grep codebaseImageStreamName "build.properties" | awk -F= '{print $2}');
+        isTag=$(grep isTag "build.properties" | awk -F= '{print $2}');
+        oc -n $NAMESPACE get cm ist-template -o jsonpath="{.data.ist\\.json}" 
+        | sed '/\"name\": \"replace\"/c\ \"name\": \"'"$crName"'\"' 
+        | sed '/\"codebaseImageStreamName\": \"replace\"/c\ \"codebaseImageStreamName\": \"'"$codebaseImageStreamName"'\",'  
+        | sed '/\"tag\": \"replace\"/c\ \"tag\": \"'"$isTag"'\"'
+        | oc -n $NAMESPACE apply -f -
+    rules:
+      - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      
+create-tag:
+    extends: .before_script_login_to_cluster
+    stage: create-tag
+    dependencies:
+      - init
+    script:
+      - echo $CI_COMMIT_BRANCH
+      - >
+        codebaseImageStreamName=$(grep codebaseImageStreamName "build.properties" | awk -F= '{print $2}');
+        isTag=$(grep isTag "build.properties" | awk -F= '{print $2}');
+        gtName=$codebaseImageStreamName-$(echo $isTag | sed 's/\//-/g;s/\./-/g' | awk '{print tolower($0)}');
+        oc -n $NAMESPACE get cm gt-template -o jsonpath="{.data.gt\\.json}" 
+        | sed '/\"name\": \"replace\"/c\ \"name\": \"'"$gtName"'\"' 
+        | sed '/\"codebase\": \"replace\"/c\ \"codebase\": \"'"$PROJECT_NAME"'\",'  
+        | sed '/\"branch\": \"replace\"/c\ \"branch\": \"'"$CI_COMMIT_BRANCH"'\",'
+        | sed '/\"tag\": \"replace\"/c\ \"tag\": \"'"$isTag"'\"'
+        | oc -n $NAMESPACE apply -f -
+    rules:
+      - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH

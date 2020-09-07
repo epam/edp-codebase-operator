@@ -83,13 +83,18 @@ func CreateGitlabCiDefChain(cs openshift.ClientSet, db *sql.DB) handler.Codebase
 	gp := gitserver.GitProvider{}
 	return CloneGitProject{
 		next: PutGitlabCiDeployConfigs{
-			next: PutVersionFile{
-				next: Cleaner{
+			next: PutGitlabCiFile{
+				next: PutVersionFile{
+					next: Cleaner{
+						clientSet: cs,
+					},
 					clientSet: cs,
+					cr:        cr,
+					git:       gp,
 				},
-				clientSet: cs,
-				cr:        cr,
-				git:       gp,
+				client: cs.Client,
+				cr:     cr,
+				git:    gp,
 			},
 			clientSet: cs,
 			cr:        cr,
