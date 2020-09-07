@@ -52,6 +52,10 @@ rules:
     - jiraservers/status
     - jirafixversions
     - jirafixversions/status
+    - imagestreamtags
+    - imagestreamtags/status
+    - gittags
+    - gittags/status
   verbs:
     - '*'
 {{ end }}
