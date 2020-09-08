@@ -2,6 +2,7 @@ package codebasebranch
 
 import (
 	"context"
+	"fmt"
 	edpv1alpha1 "github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/codebasebranch/chain"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/model"
@@ -87,6 +88,8 @@ type ReconcileCodebaseBranch struct {
 	scheme *runtime.Scheme
 }
 
+const codebaseBranchOperatorFinalizerName = "codebase.branch.operator.finalizer.name"
+
 func (r *ReconcileCodebaseBranch) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	rl := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
 	rl.Info("Reconciling CodebaseBranch")
@@ -97,6 +100,11 @@ func (r *ReconcileCodebaseBranch) Reconcile(request reconcile.Request) (reconcil
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, err
+	}
+
+	result, err := r.tryToDeleteCodebaseBranch(cb)
+	if err != nil || result != nil {
+		return *result, err
 	}
 
 	c, err := util.GetCodebase(r.client, cb.Spec.CodebaseName, cb.Namespace)
@@ -146,5 +154,38 @@ func (r *ReconcileCodebaseBranch) updateStatus(cb *edpv1alpha1.CodebaseBranch) e
 		}
 	}
 	log.V(2).Info("codebase branch status has been updated", "name", cb.Name)
+	return nil
+}
+
+func (r ReconcileCodebaseBranch) tryToDeleteCodebaseBranch(cb *edpv1alpha1.CodebaseBranch) (*reconcile.Result, error) {
+	if cb.GetDeletionTimestamp().IsZero() {
+		if !util.ContainsString(cb.ObjectMeta.Finalizers, codebaseBranchOperatorFinalizerName) {
+			cb.ObjectMeta.Finalizers = append(cb.ObjectMeta.Finalizers, codebaseBranchOperatorFinalizerName)
+			if err := r.client.Update(context.TODO(), cb); err != nil {
+				return &reconcile.Result{}, err
+			}
+		}
+		return nil, nil
+	}
+
+	if err := removeDirectoryIfExists(cb.Spec.CodebaseName, cb.Name, cb.Namespace); err != nil {
+		return &reconcile.Result{}, err
+	}
+
+	cb.ObjectMeta.Finalizers = util.RemoveString(cb.ObjectMeta.Finalizers, codebaseBranchOperatorFinalizerName)
+	if err := r.client.Update(context.TODO(), cb); err != nil {
+		return &reconcile.Result{}, err
+	}
+	return &reconcile.Result{}, nil
+}
+
+func removeDirectoryIfExists(codebaseName, branchName, namespace string) error {
+	wd := fmt.Sprintf("/home/codebase-operator/edp/%v/%v/%v", namespace, codebaseName, branchName)
+	if !util.DoesDirectoryExist(wd) {
+		return nil
+	}
+	if err := util.RemoveDirectory(wd); err != nil {
+		return err
+	}
 	return nil
 }

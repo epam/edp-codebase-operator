@@ -32,11 +32,13 @@ func (h PutGitlabCiFile) ServeRequest(c *v1alpha1.Codebase) error {
 
 	name, err := helper.GetEDPName(h.client, c.Namespace)
 	if err != nil {
+		setFailedFields(c, v1alpha1.PutGitlabCIFile, err.Error())
 		return err
 	}
 
 	exists, err := h.gitlabCiFileExists(c.Name, *name)
 	if err != nil {
+		setFailedFields(c, v1alpha1.PutGitlabCIFile, err.Error())
 		return err
 	}
 
@@ -46,11 +48,14 @@ func (h PutGitlabCiFile) ServeRequest(c *v1alpha1.Codebase) error {
 	}
 
 	if err := h.tryToPutGitlabCIFile(c); err != nil {
+		setFailedFields(c, v1alpha1.PutGitlabCIFile, err.Error())
 		return err
 	}
 
 	if err := h.cr.UpdateProjectStatusValue(util.GitlabCi, c.Name, *name); err != nil {
-		return errors.Wrapf(err, "couldn't set project_status %v value for %v codebase", util.GitlabCi, c.Name)
+		err = errors.Wrapf(err, "couldn't set project_status %v value for %v codebase", util.GitlabCi, c.Name)
+		setFailedFields(c, v1alpha1.PutGitlabCIFile, err.Error())
+		return err
 	}
 
 	rLog.Info("end creating gitlab ci file...")

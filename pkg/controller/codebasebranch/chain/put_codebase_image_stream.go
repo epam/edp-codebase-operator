@@ -29,17 +29,21 @@ func (h PutCodebaseImageStream) ServeRequest(cb *v1alpha1.CodebaseBranch) error 
 
 	c, err := util.GetCodebase(h.client, cb.Spec.CodebaseName, cb.Namespace)
 	if err != nil {
+		setFailedFields(cb, v1alpha1.PutCodebaseImageStream, err.Error())
 		return err
 	}
 
 	ec, err := h.getDockerRegistryEdpComponent(cb.Namespace)
 	if err != nil {
-		return errors.Wrapf(err, "couldn't get %v EDP component", dockerRegistryName)
+		err = errors.Wrapf(err, "couldn't get %v EDP component", dockerRegistryName)
+		setFailedFields(cb, v1alpha1.PutCodebaseImageStream, err.Error())
+		return err
 	}
 
 	cisName := createCodebaseImageStreamName(c.Name, cb.Spec.BranchName, string(c.Spec.Versioning.Type))
 	imageName := fmt.Sprintf("%v/%v", ec.Spec.Url, cisName)
 	if err := h.createCodebaseImageStreamIfNotExists(cisName, cb.Namespace, imageName); err != nil {
+		setFailedFields(cb, v1alpha1.PutCodebaseImageStream, err.Error())
 		return err
 	}
 	rl.Info("end PutCodebaseImageStream chain...")

@@ -89,19 +89,19 @@ type ActionType string
 type Result string
 
 const (
-	CodebaseRegistration             ActionType = "codebase_registration"
 	AcceptCodebaseRegistration       ActionType = "accept_codebase_registration"
 	GerritRepositoryProvisioning     ActionType = "gerrit_repository_provisioning"
 	JenkinsConfiguration             ActionType = "jenkins_configuration"
-	PergRegistration                 ActionType = "perf_registration"
 	SetupDeploymentTemplates         ActionType = "setup_deployment_templates"
-	CodebaseBranchRegistration       ActionType = "codebase_branch_registration"
 	AcceptCodebaseBranchRegistration ActionType = "accept_codebase_branch_registration"
 	PutS2I                           ActionType = "put_s2i"
 	PutJenkinsFolder                 ActionType = "put_jenkins_folder"
 	CleanData                        ActionType = "clean_data"
 	ImportProject                    ActionType = "import_project"
 	PutVersionFile                   ActionType = "put_version_file"
+	PutGitlabCIFile                  ActionType = "put_gitlab_ci_file"
+	PutBranchForGitlabCiCodebase     ActionType = "put_branch_for_gitlab_ci_codebase"
+	PutCodebaseImageStream           ActionType = "put_codebase_image_stream"
 
 	Success Result = "success"
 	Error   Result = "error"

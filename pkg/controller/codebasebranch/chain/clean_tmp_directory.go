@@ -16,6 +16,7 @@ func (h CleanTempDirectory) ServeRequest(cb *v1alpha1.CodebaseBranch) error {
 
 	wd := fmt.Sprintf("/home/codebase-operator/edp/%v/%v/%v", cb.Namespace, cb.Spec.CodebaseName, cb.Spec.BranchName)
 	if err := deleteWorkDirectory(wd); err != nil {
+		setFailedFields(cb, v1alpha1.CleanData, err.Error())
 		return err
 	}
 

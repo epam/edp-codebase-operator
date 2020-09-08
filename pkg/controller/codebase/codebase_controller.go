@@ -3,6 +3,7 @@ package codebase
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"github.com/epmd-edp/codebase-operator/v2/db"
 	edpv1alpha1 "github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/codebase/service/chain"
@@ -99,7 +100,10 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 
 var _ reconcile.Reconciler = &ReconcileCodebase{}
 
-const ForegroundDeletionFinalizerName = "foregroundDeletion"
+const (
+	foregroundDeletionFinalizerName = "foregroundDeletion"
+	codebaseOperatorFinalizerName   = "codebase.operator.finalizer.name"
+)
 
 // ReconcileCodebase reconciles a codebase object
 type ReconcileCodebase struct {
@@ -136,8 +140,9 @@ func (r *ReconcileCodebase) Reconcile(request reconcile.Request) (reconcile.Resu
 	}
 	defer r.updateStatus(c)
 
-	if err := r.tryToAddFinalizer(c); err != nil {
-		return reconcile.Result{}, err
+	result, err := r.tryToDeleteCodebase(c)
+	if err != nil || result != nil {
+		return *result, err
 	}
 
 	if !validate.IsCodebaseValid(c) {
@@ -215,12 +220,35 @@ func (r *ReconcileCodebase) updateStatus(instance *edpv1alpha1.Codebase) error {
 	return nil
 }
 
-func (r ReconcileCodebase) tryToAddFinalizer(c *edpv1alpha1.Codebase) error {
-	if !util.ContainsString(c.ObjectMeta.Finalizers, ForegroundDeletionFinalizerName) {
-		c.ObjectMeta.Finalizers = append(c.ObjectMeta.Finalizers, ForegroundDeletionFinalizerName)
-		if err := r.client.Update(context.TODO(), c); err != nil {
-			return err
+func (r ReconcileCodebase) tryToDeleteCodebase(c *edpv1alpha1.Codebase) (*reconcile.Result, error) {
+	if c.GetDeletionTimestamp().IsZero() {
+		if !util.ContainsString(c.ObjectMeta.Finalizers, codebaseOperatorFinalizerName) {
+			c.ObjectMeta.Finalizers = append(c.ObjectMeta.Finalizers, codebaseOperatorFinalizerName)
+			if err := r.client.Update(context.TODO(), c); err != nil {
+				return &reconcile.Result{}, err
+			}
 		}
+		return nil, nil
+	}
+
+	if err := removeDirectoryIfExists(c.Name, c.Namespace); err != nil {
+		return &reconcile.Result{}, err
+	}
+
+	c.ObjectMeta.Finalizers = util.RemoveString(c.ObjectMeta.Finalizers, codebaseOperatorFinalizerName)
+	if err := r.client.Update(context.TODO(), c); err != nil {
+		return &reconcile.Result{}, err
+	}
+	return &reconcile.Result{}, nil
+}
+
+func removeDirectoryIfExists(codebaseName, namespace string) error {
+	wd := fmt.Sprintf("/home/codebase-operator/edp/%v/%v", namespace, codebaseName)
+	if !util.DoesDirectoryExist(wd) {
+		return nil
+	}
+	if err := util.RemoveDirectory(wd); err != nil {
+		return err
 	}
 	return nil
 }
