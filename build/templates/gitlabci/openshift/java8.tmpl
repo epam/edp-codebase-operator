@@ -48,7 +48,7 @@ init:
     paths:
       - build.properties
   rules:
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: '$CI_PIPELINE_SOURCE != "merge_request_event"'
   
 set-version:
     extends: .before_script_login_to_cluster
@@ -71,8 +71,7 @@ set-version:
             sed -i "s/<version>$projectVersion<\/version>/<version>$newProjectVersion<\/version>/" pom.xml
          fi
     rules:
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-
+      - if: '$CI_PIPELINE_SOURCE != "merge_request_event"'
 
 compile:
   stage: compile
@@ -97,7 +96,7 @@ build:
     - target/*.jar
     expire_in: 2 mins
   rules:
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: '$CI_PIPELINE_SOURCE != "merge_request_event"'
 
 build-image:
   image: docker:19.03.12
@@ -119,7 +118,7 @@ build-image:
     - docker tag $PROJECT_NAME "$DOCKER_REGISTRY_URL/$NAMESPACE/$PROJECT_NAME-$CI_COMMIT_BRANCH:$isTag"
     - docker push "$DOCKER_REGISTRY_URL/$NAMESPACE/$PROJECT_NAME-$CI_COMMIT_BRANCH:$isTag"
   rules:
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: '$CI_PIPELINE_SOURCE != "merge_request_event"'
 
 create-ist:
     extends: .before_script_login_to_cluster
@@ -137,7 +136,7 @@ create-ist:
         | sed '/\"tag\": \"replace\"/c\ \"tag\": \"'"$isTag"'\"'
         | oc -n $NAMESPACE apply -f -
     rules:
-      - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      - if: '$CI_PIPELINE_SOURCE != "merge_request_event"'
       
 create-tag:
     extends: .before_script_login_to_cluster
@@ -156,4 +155,4 @@ create-tag:
         | sed '/\"tag\": \"replace\"/c\ \"tag\": \"'"$isTag"'\"'
         | oc -n $NAMESPACE apply -f -
     rules:
-      - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      - if: '$CI_PIPELINE_SOURCE != "merge_request_event"'
