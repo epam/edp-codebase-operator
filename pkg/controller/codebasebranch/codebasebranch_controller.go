@@ -69,6 +69,9 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 			if !reflect.DeepEqual(oo.Spec, no.Spec) {
 				return true
 			}
+			if no.DeletionTimestamp != nil {
+				return true
+			}
 			return false
 		},
 	}
