@@ -98,7 +98,7 @@ func (h PutGitlabCiFile) pushChanges(projectPath, privateKey, user string) error
 }
 
 func (h PutGitlabCiFile) parseTemplate(c *v1alpha1.Codebase) error {
-	tp := getTemplatePath(*c.Spec.Framework)
+	tp := getTemplatePath(*c.Spec.Framework, c.Spec.BuildTool)
 
 	wd := fmt.Sprintf("/home/codebase-operator/edp/%v/%v/%v/%v", c.Namespace, c.Name, "templates", c.Name)
 	gitlabCiFile := fmt.Sprintf("%v/%v", wd, ".gitlab-ci.yml")
@@ -139,7 +139,7 @@ func (h PutGitlabCiFile) getCLusterEdpComponent(namespace string) (*edpComponent
 
 func getEdpComponentName() string {
 	if platform.IsK8S() {
-		return platform.K8S
+		return util.KubernetesConsoleEdpComponent
 	}
 	return platform.Openshift
 }
@@ -157,11 +157,9 @@ func (h PutGitlabCiFile) gitlabCiFileExists(codebaseName, edpName string) (bool,
 	return false, nil
 }
 
-func getTemplatePath(framework string) string {
-	if platform.IsK8S() {
-		return fmt.Sprintf("/usr/local/bin/templates/gitlabci/kubernetes/%v.tmpl", framework)
-	}
-	return fmt.Sprintf("/usr/local/bin/templates/gitlabci/openshift/%v.tmpl", framework)
+func getTemplatePath(framework, buildTool string) string {
+	return fmt.Sprintf("/usr/local/bin/templates/gitlabci/%v/%v-%v.tmpl",
+		platform.GetPlatformType(), strings.ToLower(framework), strings.ToLower(buildTool))
 }
 
 func parseTemplate(templatePath, gitlabCiFile string, data interface{}) error {
@@ -182,20 +180,5 @@ func parseTemplate(templatePath, gitlabCiFile string, data interface{}) error {
 		return errors.Wrapf(err, "couldn't parse template %v", templatePath)
 	}
 	log.Info("template has been rendered", "path", gitlabCiFile)
-	return nil
-}
-
-func createTestFile(filePath string) error {
-	if _, err := os.Stat(filePath); os.IsExist(err) {
-		log.Info("File already exists. skip creating.", "name", filePath)
-		return nil
-	}
-
-	var file, err = os.Create(filePath)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-	log.Info("File has been created.", "name", filePath)
 	return nil
 }

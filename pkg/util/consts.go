@@ -39,4 +39,6 @@ const (
 	GitlabCi = "gitlabci"
 
 	VersioningTypeEDP = "edp"
+
+	KubernetesConsoleEdpComponent = "kubernetes-console"
 )
