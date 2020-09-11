@@ -5,7 +5,7 @@ variables:
   CLUSTER_URL: {{.ClusterUrl}}
 
 default:
-  image: epamedp/jenkins-agent-maven-openshift:java11
+  image: openshift/jenkins-agent-maven-35-centos7:v3.11
 
 stages:
   - init
@@ -28,7 +28,8 @@ init:
     - >
       buildNumber=$(oc -n $NAMESPACE get codebasebranches.v2 $PROJECT_NAME-$CI_COMMIT_BRANCH -o jsonpath="{.status.build}");
       buildNumber=$((buildNumber+1));
-      projectVersion=$(mvn org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version | grep -Ev '(^\[|Download\w+:)' | awk 'END{print}' | awk '{print $(NF)}');
+      deployableModule=$(cat pom.xml | grep -Poh '<deployable.module>\K[^<]*' || echo \"\");
+      projectVersion=$(mvn org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version | grep -Ev '(^\[|Download\w+:)');
       if [ "$VERSIONING_TYPE" == "edp" ]; then
           version=$(oc -n $NAMESPACE get codebasebranches.v2 $PROJECT_NAME-$CI_COMMIT_BRANCH -o jsonpath="{.spec.version}");
           codebaseImageStreamName=$PROJECT_NAME-edp-$(echo $CI_COMMIT_BRANCH | sed 's/\//-/g;s/\./-/g');
@@ -39,10 +40,14 @@ init:
           codebaseImageStreamName=$PROJECT_NAME-$(echo $CI_COMMIT_BRANCH | sed 's/\//-/g;s/\./-/g');
           isTag="$CI_COMMIT_BRANCH-$projectVersion-$buildNumber";
           crName=$codebaseImageStreamName-$(echo $isTag | sed 's/\//-/g;s/\./-/g' | awk '{print tolower($0)}');
+      fi;
+      if [ "$deployableModule" == "" ]; then
+          deployableModuleDir=("/target")
+      else
+          deployableModuleDir=("$deployableModule/target")
       fi
-    - echo $CI_COMMIT_BRANCH;
-    - echo $isTag;
-    - echo $projectVersion;
+    - echo "deployableModule=$deployableModule" >> build.properties;
+    - echo "deployableModuleDir=$deployableModuleDir" >> build.properties;
     - echo "crName=$crName" >> build.properties;
     - echo "codebaseImageStreamName=$codebaseImageStreamName" >> build.properties;
     - echo "isTag=$isTag" >> build.properties;
@@ -51,7 +56,7 @@ init:
     paths:
       - build.properties
   rules:
-    - if: $CI_COMMIT_BRANCH && '$CI_PIPELINE_SOURCE != "merge_request_event"'
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
 set-version:
     extends: .before_script_login_to_cluster
@@ -74,7 +79,7 @@ set-version:
             sed -i "s/<version>$projectVersion<\/version>/<version>$newProjectVersion<\/version>/" pom.xml
          fi
     rules:
-      - if: $CI_COMMIT_BRANCH && '$CI_PIPELINE_SOURCE != "merge_request_event"'
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
 
 compile:
@@ -94,13 +99,14 @@ unit-tests:
 build:
   stage: build
   script:
-    - mvn clean package -B -DskipTests=true
+    - >
+      mvn clean package -B -DskipTests=true
   artifacts:
-    paths:
-    - target/*.jar
-    expire_in: 2 mins
+     paths:
+     - java-maven-springboot-multimodule-impl/target/*.jar
+     expire_in: 2 mins
   rules:
-    - if: $CI_COMMIT_BRANCH && '$CI_PIPELINE_SOURCE != "merge_request_event"'
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
 build-image:
   image: docker:19.03.12
@@ -117,14 +123,15 @@ build-image:
     - build
   script:
     - isTag=$(grep isTag "build.properties" | awk -F= '{print $2}');
-    - echo $isTag;
-    - echo $DOCKER_REGISTRY_URL/$NAMESPACE/$PROJECT_NAME-$CI_COMMIT_BRANCH:$isTag;
+    - deployableModule=$(grep deployableModule "build.properties" | awk -F= '{print $2}');
+    - cd $deployableModule/;
+    - cp ../Dockerfile .
     - docker login -u $DOCKER_REGISTRY_USER -p $DOCKER_REGISTRY_PASSWORD $DOCKER_REGISTRY_URL
     - docker build -t $PROJECT_NAME .
     - docker tag $PROJECT_NAME "$DOCKER_REGISTRY_URL/$NAMESPACE/$PROJECT_NAME-$CI_COMMIT_BRANCH:$isTag"
     - docker push "$DOCKER_REGISTRY_URL/$NAMESPACE/$PROJECT_NAME-$CI_COMMIT_BRANCH:$isTag"
   rules:
-    - if: $CI_COMMIT_BRANCH && '$CI_PIPELINE_SOURCE != "merge_request_event"'
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
 create-ist:
     extends: .before_script_login_to_cluster
@@ -142,7 +149,7 @@ create-ist:
         | sed '/\"tag\": \"replace\"/c\ \"tag\": \"'"$isTag"'\"'
         | oc -n $NAMESPACE apply -f -
     rules:
-      - if: $CI_COMMIT_BRANCH && '$CI_PIPELINE_SOURCE != "merge_request_event"'
+      - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
 create-tag:
     extends: .before_script_login_to_cluster
@@ -162,4 +169,4 @@ create-tag:
         | sed '/\"tag\": \"replace\"/c\ \"tag\": \"'"$isTag"'\"'
         | oc -n $NAMESPACE apply -f -
     rules:
-      - if: $CI_COMMIT_BRANCH && '$CI_PIPELINE_SOURCE != "merge_request_event"'
+      - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH

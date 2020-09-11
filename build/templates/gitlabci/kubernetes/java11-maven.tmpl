@@ -102,11 +102,13 @@ build:
     - if: $CI_COMMIT_BRANCH && '$CI_PIPELINE_SOURCE != "merge_request_event"'
 
 build-image:
-  image: docker:19.03.12
+  image: epamedp/dind-aws-cli:latest
   variables:
     DOCKER_HOST: tcp://docker:2375
     DOCKER_TLS_CERTDIR: ""
     DOCKER_DAEMON_OPTIONS: "--insecure-registry=$DOCKER_REGISTRY_URL"
+    AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
+    AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
   services:
     - name: docker:19.03.12-dind
       entrypoint: [ "sh", "-c", "dockerd-entrypoint.sh $DOCKER_DAEMON_OPTIONS" ]
@@ -115,8 +117,12 @@ build-image:
     - init
     - build
   script:
+    - aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
+    - aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
+    - aws configure set default.region eu-central-1
+    - aws ecr get-login-password --region eu-central-1 | docker login --username AWS --password-stdin $DOCKER_REGISTRY_URL
+    - aws ecr describe-repositories --repository-names $NAMESPACE/$PROJECT_NAME-$CI_COMMIT_BRANCH || aws ecr create-repository --repository-name $NAMESPACE/$PROJECT_NAME-$CI_COMMIT_BRANCH
     - isTag=$(grep isTag "build.properties" | awk -F= '{print $2}');
-    - docker login -u $DOCKER_REGISTRY_USER -p $DOCKER_REGISTRY_PASSWORD $DOCKER_REGISTRY_URL
     - docker build -t $PROJECT_NAME .
     - docker tag $PROJECT_NAME "$DOCKER_REGISTRY_URL/$NAMESPACE/$PROJECT_NAME-$CI_COMMIT_BRANCH:$isTag"
     - docker push "$DOCKER_REGISTRY_URL/$NAMESPACE/$PROJECT_NAME-$CI_COMMIT_BRANCH:$isTag"
@@ -150,6 +156,7 @@ create-tag:
       - >
         codebaseImageStreamName=$(grep codebaseImageStreamName "build.properties" | awk -F= '{print $2}');
         isTag=$(grep isTag "build.properties" | awk -F= '{print $2}');
+        isTag=build/$isTag;
         gtName=$codebaseImageStreamName-$(echo $isTag | sed 's/\//-/g;s/\./-/g' | awk '{print tolower($0)}');
         kubectl -n $NAMESPACE get cm gt-template -o jsonpath="{.data.gt\\.json}"
         | sed '/\"name\": \"replace\"/c\ \"name\": \"'"$gtName"'\"' 

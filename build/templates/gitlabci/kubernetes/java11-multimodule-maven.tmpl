@@ -5,7 +5,7 @@ variables:
   CLUSTER_URL: {{.ClusterUrl}}
 
 default:
-  image: epamedp/jenkins-agent-maven-openshift:java11
+  image: openshift/jenkins-agent-maven-35-centos7:v3.11
 
 stages:
   - init
@@ -19,18 +19,22 @@ stages:
 
 .before_script_login_to_cluster:
   before_script:
-     - oc login $CLUSTER_URL --token=$OPENSHIFT_SA_TOKEN;
+    - kubectl config set-cluster default --insecure-skip-tls-verify=true --server=$CLUSTER_URL
+    - kubectl config set-credentials default --token=$K8S_SA_TOKEN
+    - kubectl config set-context default --user=default --cluster=default
+    - kubectl config use-context default
 
 init:
   extends: .before_script_login_to_cluster
   stage: init
   script:
     - >
-      buildNumber=$(oc -n $NAMESPACE get codebasebranches.v2 $PROJECT_NAME-$CI_COMMIT_BRANCH -o jsonpath="{.status.build}");
+      buildNumber=$(kubectl -n $NAMESPACE get codebasebranches.v2 $PROJECT_NAME-$CI_COMMIT_BRANCH -o jsonpath="{.status.build}");
       buildNumber=$((buildNumber+1));
-      projectVersion=$(mvn org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version | grep -Ev '(^\[|Download\w+:)' | awk 'END{print}' | awk '{print $(NF)}');
+      deployableModule=$(cat pom.xml | grep -Poh '<deployable.module>\K[^<]*' || echo \"\");
+      projectVersion=$(mvn org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version | grep -Ev '(^\[|Download\w+:)');
       if [ "$VERSIONING_TYPE" == "edp" ]; then
-          version=$(oc -n $NAMESPACE get codebasebranches.v2 $PROJECT_NAME-$CI_COMMIT_BRANCH -o jsonpath="{.spec.version}");
+          version=$(kubectl -n $NAMESPACE get codebasebranches.v2 $PROJECT_NAME-$CI_COMMIT_BRANCH -o jsonpath="{.spec.version}");
           codebaseImageStreamName=$PROJECT_NAME-edp-$(echo $CI_COMMIT_BRANCH | sed 's/\//-/g;s/\./-/g');
           isTag=$version.$buildNumber;
           crName=$codebaseImageStreamName-$(echo $isTag | sed 's/\//-/g;s/\./-/g' | awk '{print tolower($0)}');
@@ -39,10 +43,14 @@ init:
           codebaseImageStreamName=$PROJECT_NAME-$(echo $CI_COMMIT_BRANCH | sed 's/\//-/g;s/\./-/g');
           isTag="$CI_COMMIT_BRANCH-$projectVersion-$buildNumber";
           crName=$codebaseImageStreamName-$(echo $isTag | sed 's/\//-/g;s/\./-/g' | awk '{print tolower($0)}');
+      fi;
+      if [ "$deployableModule" == "" ]; then
+          deployableModuleDir=("/target")
+      else
+          deployableModuleDir=("$deployableModule/target")
       fi
-    - echo $CI_COMMIT_BRANCH;
-    - echo $isTag;
-    - echo $projectVersion;
+    - echo "deployableModule=$deployableModule" >> build.properties;
+    - echo "deployableModuleDir=$deployableModuleDir" >> build.properties;
     - echo "crName=$crName" >> build.properties;
     - echo "codebaseImageStreamName=$codebaseImageStreamName" >> build.properties;
     - echo "isTag=$isTag" >> build.properties;
@@ -51,7 +59,7 @@ init:
     paths:
       - build.properties
   rules:
-    - if: $CI_COMMIT_BRANCH && '$CI_PIPELINE_SOURCE != "merge_request_event"'
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
 set-version:
     extends: .before_script_login_to_cluster
@@ -61,10 +69,10 @@ set-version:
     script:
       - >
         buildNumber=$(grep buildNumber "build.properties" | awk -F= '{print $2}');
-        oc -n $NAMESPACE patch codebasebranches.v2 $PROJECT_NAME-$CI_COMMIT_BRANCH --type=merge -p "{\"status\": {\"build\": "\"$buildNumber\""}}";
+        kubectl -n $NAMESPACE patch codebasebranches.v2 $PROJECT_NAME-$CI_COMMIT_BRANCH --type=merge -p "{\"status\": {\"build\": "\"$buildNumber\""}}";
         if [ "$VERSIONING_TYPE" == "edp" ]; then
             version=$(grep version $"build.properties" | awk -F= '{print $2}')
-            isRelease=$(oc -n $NAMESPACE get codebasebranches.v2 $PROJECT_NAME-$CI_COMMIT_BRANCH -o jsonpath="{.spec.release}");
+            isRelease=$(kubectl -n $NAMESPACE get codebasebranches.v2 $PROJECT_NAME-$CI_COMMIT_BRANCH -o jsonpath="{.spec.release}");
             set -eo pipefail;
         	if $isRelease; then
         		newProjectVersion=$version-$buildNumber;
@@ -74,7 +82,7 @@ set-version:
             sed -i "s/<version>$projectVersion<\/version>/<version>$newProjectVersion<\/version>/" pom.xml
          fi
     rules:
-      - if: $CI_COMMIT_BRANCH && '$CI_PIPELINE_SOURCE != "merge_request_event"'
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
 
 compile:
@@ -94,13 +102,14 @@ unit-tests:
 build:
   stage: build
   script:
-    - mvn clean package -B -DskipTests=true
+    - >
+      mvn clean package -B -DskipTests=true
   artifacts:
-    paths:
-    - target/*.jar
-    expire_in: 2 mins
+     paths:
+     - java-maven-springboot-multimodule-impl/target/*.jar
+     expire_in: 2 mins
   rules:
-    - if: $CI_COMMIT_BRANCH && '$CI_PIPELINE_SOURCE != "merge_request_event"'
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
 build-image:
   image: docker:19.03.12
@@ -108,6 +117,8 @@ build-image:
     DOCKER_HOST: tcp://docker:2375
     DOCKER_TLS_CERTDIR: ""
     DOCKER_DAEMON_OPTIONS: "--insecure-registry=$DOCKER_REGISTRY_URL"
+    AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
+    AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
   services:
     - name: docker:19.03.12-dind
       entrypoint: [ "sh", "-c", "dockerd-entrypoint.sh $DOCKER_DAEMON_OPTIONS" ]
@@ -116,15 +127,20 @@ build-image:
     - init
     - build
   script:
+    - aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
+    - aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
+    - aws configure set default.region eu-central-1
+    - aws ecr get-login-password --region eu-central-1 | docker login --username AWS --password-stdin $DOCKER_REGISTRY_URL
+    - aws ecr describe-repositories --repository-names $NAMESPACE/$PROJECT_NAME-$CI_COMMIT_BRANCH || aws ecr create-repository --repository-name $NAMESPACE/$PROJECT_NAME-$CI_COMMIT_BRANCH
     - isTag=$(grep isTag "build.properties" | awk -F= '{print $2}');
-    - echo $isTag;
-    - echo $DOCKER_REGISTRY_URL/$NAMESPACE/$PROJECT_NAME-$CI_COMMIT_BRANCH:$isTag;
-    - docker login -u $DOCKER_REGISTRY_USER -p $DOCKER_REGISTRY_PASSWORD $DOCKER_REGISTRY_URL
+    - deployableModule=$(grep deployableModule "build.properties" | awk -F= '{print $2}');
+    - cd $deployableModule/;
+    - cp ../Dockerfile .
     - docker build -t $PROJECT_NAME .
     - docker tag $PROJECT_NAME "$DOCKER_REGISTRY_URL/$NAMESPACE/$PROJECT_NAME-$CI_COMMIT_BRANCH:$isTag"
     - docker push "$DOCKER_REGISTRY_URL/$NAMESPACE/$PROJECT_NAME-$CI_COMMIT_BRANCH:$isTag"
   rules:
-    - if: $CI_COMMIT_BRANCH && '$CI_PIPELINE_SOURCE != "merge_request_event"'
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
 create-ist:
     extends: .before_script_login_to_cluster
@@ -136,13 +152,13 @@ create-ist:
         crName=$(grep crName "build.properties" | awk -F= '{print $2}');
         codebaseImageStreamName=$(grep codebaseImageStreamName "build.properties" | awk -F= '{print $2}');
         isTag=$(grep isTag "build.properties" | awk -F= '{print $2}');
-        oc -n $NAMESPACE get cm ist-template -o jsonpath="{.data.ist\\.json}"
+        kubectl -n $NAMESPACE get cm ist-template -o jsonpath="{.data.ist\\.json}"
         | sed '/\"name\": \"replace\"/c\ \"name\": \"'"$crName"'\"'
         | sed '/\"codebaseImageStreamName\": \"replace\"/c\ \"codebaseImageStreamName\": \"'"$codebaseImageStreamName"'\",'
         | sed '/\"tag\": \"replace\"/c\ \"tag\": \"'"$isTag"'\"'
-        | oc -n $NAMESPACE apply -f -
+        | kubectl -n $NAMESPACE apply -f -
     rules:
-      - if: $CI_COMMIT_BRANCH && '$CI_PIPELINE_SOURCE != "merge_request_event"'
+      - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
 create-tag:
     extends: .before_script_login_to_cluster
@@ -155,11 +171,11 @@ create-tag:
         isTag=$(grep isTag "build.properties" | awk -F= '{print $2}');
         isTag=build/$isTag;
         gtName=$codebaseImageStreamName-$(echo $isTag | sed 's/\//-/g;s/\./-/g' | awk '{print tolower($0)}');
-        oc -n $NAMESPACE get cm gt-template -o jsonpath="{.data.gt\\.json}"
+        kubectl -n $NAMESPACE get cm gt-template -o jsonpath="{.data.gt\\.json}"
         | sed '/\"name\": \"replace\"/c\ \"name\": \"'"$gtName"'\"'
         | sed '/\"codebase\": \"replace\"/c\ \"codebase\": \"'"$PROJECT_NAME"'\",'
         | sed '/\"branch\": \"replace\"/c\ \"branch\": \"'"$CI_COMMIT_BRANCH"'\",'
         | sed '/\"tag\": \"replace\"/c\ \"tag\": \"'"$isTag"'\"'
-        | oc -n $NAMESPACE apply -f -
+        | kubectl -n $NAMESPACE apply -f -
     rules:
-      - if: $CI_COMMIT_BRANCH && '$CI_PIPELINE_SOURCE != "merge_request_event"'
+      - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH

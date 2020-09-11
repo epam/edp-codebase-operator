@@ -147,6 +147,7 @@ create-tag:
       - >
         codebaseImageStreamName=$(grep codebaseImageStreamName "build.properties" | awk -F= '{print $2}');
         isTag=$(grep isTag "build.properties" | awk -F= '{print $2}');
+        isTag=build/$isTag;
         gtName=$codebaseImageStreamName-$(echo $isTag | sed 's/\//-/g;s/\./-/g' | awk '{print tolower($0)}');
         oc -n $NAMESPACE get cm gt-template -o jsonpath="{.data.gt\\.json}"
         | sed '/\"name\": \"replace\"/c\ \"name\": \"'"$gtName"'\"'

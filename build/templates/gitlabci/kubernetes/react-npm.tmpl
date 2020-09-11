@@ -5,7 +5,7 @@ variables:
   CLUSTER_URL: {{.ClusterUrl}}
 
 default:
-  image: epamedp/jenkins-agent-maven-openshift:java11
+  image: openshift/jenkins-agent-nodejs-8-centos7:v3.10
 
 stages:
   - init
@@ -19,7 +19,10 @@ stages:
 
 .before_script_login_to_cluster:
   before_script:
-     - oc login $CLUSTER_URL --token=$OPENSHIFT_SA_TOKEN;
+    - kubectl config set-cluster default --insecure-skip-tls-verify=true --server=$CLUSTER_URL
+    - kubectl config set-credentials default --token=$K8S_SA_TOKEN
+    - kubectl config set-context default --user=default --cluster=default
+    - kubectl config use-context default
 
 init:
   extends: .before_script_login_to_cluster
@@ -28,7 +31,7 @@ init:
     - >
       buildNumber=$(oc -n $NAMESPACE get codebasebranches.v2 $PROJECT_NAME-$CI_COMMIT_BRANCH -o jsonpath="{.status.build}");
       buildNumber=$((buildNumber+1));
-      projectVersion=$(mvn org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version | grep -Ev '(^\[|Download\w+:)' | awk 'END{print}' | awk '{print $(NF)}');
+      projectVersion=$(node -p "require('./package.json').version");
       if [ "$VERSIONING_TYPE" == "edp" ]; then
           version=$(oc -n $NAMESPACE get codebasebranches.v2 $PROJECT_NAME-$CI_COMMIT_BRANCH -o jsonpath="{.spec.version}");
           codebaseImageStreamName=$PROJECT_NAME-edp-$(echo $CI_COMMIT_BRANCH | sed 's/\//-/g;s/\./-/g');
@@ -40,9 +43,6 @@ init:
           isTag="$CI_COMMIT_BRANCH-$projectVersion-$buildNumber";
           crName=$codebaseImageStreamName-$(echo $isTag | sed 's/\//-/g;s/\./-/g' | awk '{print tolower($0)}');
       fi
-    - echo $CI_COMMIT_BRANCH;
-    - echo $isTag;
-    - echo $projectVersion;
     - echo "crName=$crName" >> build.properties;
     - echo "codebaseImageStreamName=$codebaseImageStreamName" >> build.properties;
     - echo "isTag=$isTag" >> build.properties;
@@ -71,43 +71,44 @@ set-version:
         	else
             	newProjectVersion=$version;
         	fi
-            sed -i "s/<version>$projectVersion<\/version>/<version>$newProjectVersion<\/version>/" pom.xml
+            sed -i "s/<version>$projectVersion<\/version>/<version>$newProjectVersion<\/version>/" package.json
          fi
     rules:
       - if: $CI_COMMIT_BRANCH && '$CI_PIPELINE_SOURCE != "merge_request_event"'
 
-
 compile:
   stage: compile
   script:
-    - mvn compile -B
+    - npm install && npm run build:clean
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
 
 unit-tests:
   stage: unit-tests
   script:
-    - mvn test -B
+    - npm run test:coverage
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
 
 build:
   stage: build
   script:
-    - mvn clean package -B -DskipTests=true
+    - npm install && npm run build:prod
   artifacts:
     paths:
-    - target/*.jar
+    - node_modules/
     expire_in: 2 mins
   rules:
     - if: $CI_COMMIT_BRANCH && '$CI_PIPELINE_SOURCE != "merge_request_event"'
 
 build-image:
-  image: docker:19.03.12
+  image: epamedp/dind-aws-cli:latest
   variables:
     DOCKER_HOST: tcp://docker:2375
     DOCKER_TLS_CERTDIR: ""
     DOCKER_DAEMON_OPTIONS: "--insecure-registry=$DOCKER_REGISTRY_URL"
+    AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
+    AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
   services:
     - name: docker:19.03.12-dind
       entrypoint: [ "sh", "-c", "dockerd-entrypoint.sh $DOCKER_DAEMON_OPTIONS" ]
@@ -116,10 +117,12 @@ build-image:
     - init
     - build
   script:
+    - aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
+    - aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
+    - aws configure set default.region eu-central-1
+    - aws ecr get-login-password --region eu-central-1 | docker login --username AWS --password-stdin $DOCKER_REGISTRY_URL
+    - aws ecr describe-repositories --repository-names $NAMESPACE/$PROJECT_NAME-$CI_COMMIT_BRANCH || aws ecr create-repository --repository-name $NAMESPACE/$PROJECT_NAME-$CI_COMMIT_BRANCH
     - isTag=$(grep isTag "build.properties" | awk -F= '{print $2}');
-    - echo $isTag;
-    - echo $DOCKER_REGISTRY_URL/$NAMESPACE/$PROJECT_NAME-$CI_COMMIT_BRANCH:$isTag;
-    - docker login -u $DOCKER_REGISTRY_USER -p $DOCKER_REGISTRY_PASSWORD $DOCKER_REGISTRY_URL
     - docker build -t $PROJECT_NAME .
     - docker tag $PROJECT_NAME "$DOCKER_REGISTRY_URL/$NAMESPACE/$PROJECT_NAME-$CI_COMMIT_BRANCH:$isTag"
     - docker push "$DOCKER_REGISTRY_URL/$NAMESPACE/$PROJECT_NAME-$CI_COMMIT_BRANCH:$isTag"

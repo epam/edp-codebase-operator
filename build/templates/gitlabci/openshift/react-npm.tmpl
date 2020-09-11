@@ -5,7 +5,7 @@ variables:
   CLUSTER_URL: {{.ClusterUrl}}
 
 default:
-  image: epamedp/jenkins-agent-maven-openshift:java11
+  image: openshift/jenkins-agent-nodejs-8-centos7:v3.10
 
 stages:
   - init
@@ -28,7 +28,7 @@ init:
     - >
       buildNumber=$(oc -n $NAMESPACE get codebasebranches.v2 $PROJECT_NAME-$CI_COMMIT_BRANCH -o jsonpath="{.status.build}");
       buildNumber=$((buildNumber+1));
-      projectVersion=$(mvn org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version | grep -Ev '(^\[|Download\w+:)' | awk 'END{print}' | awk '{print $(NF)}');
+      projectVersion=$(node -p "require('./package.json').version");
       if [ "$VERSIONING_TYPE" == "edp" ]; then
           version=$(oc -n $NAMESPACE get codebasebranches.v2 $PROJECT_NAME-$CI_COMMIT_BRANCH -o jsonpath="{.spec.version}");
           codebaseImageStreamName=$PROJECT_NAME-edp-$(echo $CI_COMMIT_BRANCH | sed 's/\//-/g;s/\./-/g');
@@ -40,9 +40,6 @@ init:
           isTag="$CI_COMMIT_BRANCH-$projectVersion-$buildNumber";
           crName=$codebaseImageStreamName-$(echo $isTag | sed 's/\//-/g;s/\./-/g' | awk '{print tolower($0)}');
       fi
-    - echo $CI_COMMIT_BRANCH;
-    - echo $isTag;
-    - echo $projectVersion;
     - echo "crName=$crName" >> build.properties;
     - echo "codebaseImageStreamName=$codebaseImageStreamName" >> build.properties;
     - echo "isTag=$isTag" >> build.properties;
@@ -71,33 +68,32 @@ set-version:
         	else
             	newProjectVersion=$version;
         	fi
-            sed -i "s/<version>$projectVersion<\/version>/<version>$newProjectVersion<\/version>/" pom.xml
+            sed -i "s/<version>$projectVersion<\/version>/<version>$newProjectVersion<\/version>/" package.json
          fi
     rules:
       - if: $CI_COMMIT_BRANCH && '$CI_PIPELINE_SOURCE != "merge_request_event"'
 
-
 compile:
   stage: compile
   script:
-    - mvn compile -B
+    - npm install && npm run build:clean
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
 
 unit-tests:
   stage: unit-tests
   script:
-    - mvn test -B
+    - npm run test:coverage
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
 
 build:
   stage: build
   script:
-    - mvn clean package -B -DskipTests=true
+    - npm install && npm run build:prod
   artifacts:
     paths:
-    - target/*.jar
+    - node_modules/
     expire_in: 2 mins
   rules:
     - if: $CI_COMMIT_BRANCH && '$CI_PIPELINE_SOURCE != "merge_request_event"'
@@ -117,8 +113,6 @@ build-image:
     - build
   script:
     - isTag=$(grep isTag "build.properties" | awk -F= '{print $2}');
-    - echo $isTag;
-    - echo $DOCKER_REGISTRY_URL/$NAMESPACE/$PROJECT_NAME-$CI_COMMIT_BRANCH:$isTag;
     - docker login -u $DOCKER_REGISTRY_USER -p $DOCKER_REGISTRY_PASSWORD $DOCKER_REGISTRY_URL
     - docker build -t $PROJECT_NAME .
     - docker tag $PROJECT_NAME "$DOCKER_REGISTRY_URL/$NAMESPACE/$PROJECT_NAME-$CI_COMMIT_BRANCH:$isTag"

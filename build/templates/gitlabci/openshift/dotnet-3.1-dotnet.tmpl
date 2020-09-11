@@ -5,7 +5,7 @@ variables:
   CLUSTER_URL: {{.ClusterUrl}}
 
 default:
-  image: epamedp/jenkins-agent-maven-openshift:java11
+  image: epamedp/edp-jenkins-dotnet-31-agent:1.0.0
 
 stages:
   - init
@@ -26,9 +26,11 @@ init:
   stage: init
   script:
     - >
+      echo $CI_COMMIT_BRANCH
       buildNumber=$(oc -n $NAMESPACE get codebasebranches.v2 $PROJECT_NAME-$CI_COMMIT_BRANCH -o jsonpath="{.status.build}");
       buildNumber=$((buildNumber+1));
-      projectVersion=$(mvn org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version | grep -Ev '(^\[|Download\w+:)' | awk 'END{print}' | awk '{print $(NF)}');
+      deployableModule=$(find ./ -name *.csproj | xargs grep -Poh '<DeployableModule>\K[^<]*');
+      projectVersion=$(find ${deployableModule} -name *.csproj | xargs grep -Po '<Version>\K[^<]*');
       if [ "$VERSIONING_TYPE" == "edp" ]; then
           version=$(oc -n $NAMESPACE get codebasebranches.v2 $PROJECT_NAME-$CI_COMMIT_BRANCH -o jsonpath="{.spec.version}");
           codebaseImageStreamName=$PROJECT_NAME-edp-$(echo $CI_COMMIT_BRANCH | sed 's/\//-/g;s/\./-/g');
@@ -40,9 +42,9 @@ init:
           isTag="$CI_COMMIT_BRANCH-$projectVersion-$buildNumber";
           crName=$codebaseImageStreamName-$(echo $isTag | sed 's/\//-/g;s/\./-/g' | awk '{print tolower($0)}');
       fi
-    - echo $CI_COMMIT_BRANCH;
-    - echo $isTag;
+    - echo $deployableModule;
     - echo $projectVersion;
+    - echo $isTag;
     - echo "crName=$crName" >> build.properties;
     - echo "codebaseImageStreamName=$codebaseImageStreamName" >> build.properties;
     - echo "isTag=$isTag" >> build.properties;
@@ -61,6 +63,7 @@ set-version:
     script:
       - >
         buildNumber=$(grep buildNumber "build.properties" | awk -F= '{print $2}');
+        echo $buildNumber;
         oc -n $NAMESPACE patch codebasebranches.v2 $PROJECT_NAME-$CI_COMMIT_BRANCH --type=merge -p "{\"status\": {\"build\": "\"$buildNumber\""}}";
         if [ "$VERSIONING_TYPE" == "edp" ]; then
             version=$(grep version $"build.properties" | awk -F= '{print $2}')
@@ -71,33 +74,41 @@ set-version:
         	else
             	newProjectVersion=$version;
         	fi
-            sed -i "s/<version>$projectVersion<\/version>/<version>$newProjectVersion<\/version>/" pom.xml
+            sed -i "s/<version>$projectVersion<\/version>/<version>$newProjectVersion<\/version>/" aspnetapp/aspnetapp.csproj
          fi
     rules:
       - if: $CI_COMMIT_BRANCH && '$CI_PIPELINE_SOURCE != "merge_request_event"'
 
-
 compile:
   stage: compile
   script:
-    - mvn compile -B
+    - export TMPDIR=/tmp/NuGetScratch/;
+    - mkdir -p $TMPDIR;
+    - sln_filename=$(ls *.sln);
+    - dotnet build ${sln_filename};
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
 
 unit-tests:
   stage: unit-tests
   script:
-    - mvn test -B
+    - >
+      export TMPDIR=/tmp/NuGetScratch/;
+      mkdir -p $TMPDIR;
+      ls *Tests*/*.csproj | xargs -L1 dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=opencover
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
 
 build:
   stage: build
   script:
-    - mvn clean package -B -DskipTests=true
+    - export TMPDIR=/tmp/NuGetScratch/;
+    - mkdir -p $TMPDIR;
+    - sln_filename=$(ls *.sln);
+    - dotnet build ${sln_filename};
   artifacts:
     paths:
-    - target/*.jar
+    - aspnetapp/bin/Debug/netcoreapp3.1/*
     expire_in: 2 mins
   rules:
     - if: $CI_COMMIT_BRANCH && '$CI_PIPELINE_SOURCE != "merge_request_event"'
@@ -117,8 +128,6 @@ build-image:
     - build
   script:
     - isTag=$(grep isTag "build.properties" | awk -F= '{print $2}');
-    - echo $isTag;
-    - echo $DOCKER_REGISTRY_URL/$NAMESPACE/$PROJECT_NAME-$CI_COMMIT_BRANCH:$isTag;
     - docker login -u $DOCKER_REGISTRY_USER -p $DOCKER_REGISTRY_PASSWORD $DOCKER_REGISTRY_URL
     - docker build -t $PROJECT_NAME .
     - docker tag $PROJECT_NAME "$DOCKER_REGISTRY_URL/$NAMESPACE/$PROJECT_NAME-$CI_COMMIT_BRANCH:$isTag"
