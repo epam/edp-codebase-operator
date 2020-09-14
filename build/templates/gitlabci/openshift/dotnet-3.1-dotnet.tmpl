@@ -164,6 +164,7 @@ create-git-tag:
         if [ "$VERSIONING_TYPE" == "edp" ]; then
           isTag=build/$isTag;
         fi
+      - >
         codebaseImageStreamName=$(grep codebaseImageStreamName "build.properties" | awk -F= '{print $2}');
         gtName=$codebaseImageStreamName-$(echo $isTag | sed 's/\//-/g;s/\./-/g' | awk '{print tolower($0)}');
         oc -n $NAMESPACE get cm gt-template -o jsonpath="{.data.gt\\.json}"
