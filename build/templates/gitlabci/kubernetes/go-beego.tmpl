@@ -5,12 +5,11 @@ variables:
   CLUSTER_URL: {{.ClusterUrl}}
 
 default:
-  image: epamedp/edp-jenkins-dotnet-31-agent:1.0.0
+  image: epamedp/jenkins-agent-go:go1.14.3
 
 stages:
   - init
   - set-version
-  - compile
   - unit-tests
   - build
   - create-docker-image
@@ -29,11 +28,9 @@ init:
   stage: init
   script:
     - >
-      echo $CI_COMMIT_BRANCH
       buildNumber=$(kubectl -n $NAMESPACE get codebasebranches.v2 $PROJECT_NAME-$CI_COMMIT_BRANCH -o jsonpath="{.status.build}");
       buildNumber=$((buildNumber+1));
-      deployableModule=$(find ./ -name *.csproj | xargs grep -Poh '<DeployableModule>\K[^<]*');
-      projectVersion=$(find ${deployableModule} -name *.csproj | xargs grep -Po '<Version>\K[^<]*');
+      projectVersion=$(cat VERSION);
       if [ "$VERSIONING_TYPE" == "edp" ]; then
           version=$(kubectl -n $NAMESPACE get codebasebranches.v2 $PROJECT_NAME-$CI_COMMIT_BRANCH -o jsonpath="{.spec.version}");
           codebaseImageStreamName=$PROJECT_NAME-edp-$(echo $CI_COMMIT_BRANCH | sed 's/\//-/g;s/\./-/g');
@@ -45,9 +42,6 @@ init:
           isTag="$CI_COMMIT_BRANCH-$projectVersion-$buildNumber";
           crName=$codebaseImageStreamName-$(echo $isTag | sed 's/\//-/g;s/\./-/g' | awk '{print tolower($0)}');
       fi
-    - echo $deployableModule;
-    - echo $projectVersion;
-    - echo $isTag;
     - echo "crName=$crName" >> build.properties;
     - echo "codebaseImageStreamName=$codebaseImageStreamName" >> build.properties;
     - echo "isTag=$isTag" >> build.properties;
@@ -66,7 +60,6 @@ set-version:
     script:
       - >
         buildNumber=$(grep buildNumber "build.properties" | awk -F= '{print $2}');
-        echo $buildNumber;
         kubectl -n $NAMESPACE patch codebasebranches.v2 $PROJECT_NAME-$CI_COMMIT_BRANCH --type=merge -p "{\"status\": {\"build\": "\"$buildNumber\""}}";
         if [ "$VERSIONING_TYPE" == "edp" ]; then
             version=$(grep version $"build.properties" | awk -F= '{print $2}')
@@ -77,44 +70,33 @@ set-version:
         	else
             	newProjectVersion=$version;
         	fi
-            sed -i "s/<version>$projectVersion<\/version>/<version>$newProjectVersion<\/version>/" aspnetapp/aspnetapp.csproj
+            sed -i "s/<version>$projectVersion<\/version>/<version>$newProjectVersion<\/version>/" VERSION
          fi
     rules:
       - if: $CI_COMMIT_BRANCH && '$CI_PIPELINE_SOURCE != "merge_request_event"'
 
-compile:
-  stage: compile
-  script:
-    - export TMPDIR=/tmp/NuGetScratch/;
-    - mkdir -p $TMPDIR;
-    - sln_filename=$(ls *.sln);
-    - dotnet build ${sln_filename};
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-
 unit-tests:
   stage: unit-tests
   script:
-    - >
-      export TMPDIR=/tmp/NuGetScratch/;
-      mkdir -p $TMPDIR;
-      ls *Tests*/*.csproj | xargs -L1 dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=opencover
+    - export GOPATH=$HOME/go;
+    - export PATH=$PATH:$GOROOT/bin:$GOPATH/bin;
+    - export CGO_ENABLED=0;
+    - go test -v ./... -coverprofile=coverage.out main.go
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
 
 build:
   stage: build
   script:
-    - export TMPDIR=/tmp/NuGetScratch/;
-    - mkdir -p $TMPDIR;
-    - sln_filename=$(ls *.sln);
-    - dotnet build ${sln_filename};
+    - export GOPATH=$HOME/go;
+    - export PATH=$PATH:$GOROOT/bin:$GOPATH/bin;
+    - go build -o entrypoint main.go
   artifacts:
     paths:
-    - aspnetapp/bin/Debug/netcoreapp3.1/*
+    - entrypoint
     expire_in: 2 mins
   rules:
-    - if: $CI_COMMIT_BRANCH && '$CI_PIPELINE_SOURCE != "merge_request_event"'
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
 create-docker-image:
   image: docker:19.03.12

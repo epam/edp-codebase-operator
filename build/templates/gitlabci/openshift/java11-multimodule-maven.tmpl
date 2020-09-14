@@ -13,9 +13,9 @@ stages:
   - compile
   - unit-tests
   - build
-  - build-image
-  - create-ist
-  - create-tag
+  - create-docker-image
+  - create-image-stream-tag
+  - create-git-tag
 
 .before_script_login_to_cluster:
   before_script:
@@ -108,7 +108,7 @@ build:
   rules:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
-build-image:
+create-docker-image:
   image: docker:19.03.12
   variables:
     DOCKER_HOST: tcp://docker:2375
@@ -117,7 +117,7 @@ build-image:
   services:
     - name: docker:19.03.12-dind
       entrypoint: [ "sh", "-c", "dockerd-entrypoint.sh $DOCKER_DAEMON_OPTIONS" ]
-  stage: build-image
+  stage: create-docker-image
   dependencies:
     - init
     - build
@@ -133,9 +133,9 @@ build-image:
   rules:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
-create-ist:
+create-image-stream-tag:
     extends: .before_script_login_to_cluster
-    stage: create-ist
+    stage: create-image-stream-tag
     dependencies:
       - init
     script:
@@ -151,16 +151,18 @@ create-ist:
     rules:
       - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
-create-tag:
+create-git-tag:
     extends: .before_script_login_to_cluster
-    stage: create-tag
+    stage: create-git-tag
     dependencies:
       - init
     script:
       - >
-        codebaseImageStreamName=$(grep codebaseImageStreamName "build.properties" | awk -F= '{print $2}');
         isTag=$(grep isTag "build.properties" | awk -F= '{print $2}');
-        isTag=build/$isTag;
+        if [ "$VERSIONING_TYPE" == "edp" ]; then
+          isTag=build/$isTag;
+        fi
+        codebaseImageStreamName=$(grep codebaseImageStreamName "build.properties" | awk -F= '{print $2}');
         gtName=$codebaseImageStreamName-$(echo $isTag | sed 's/\//-/g;s/\./-/g' | awk '{print tolower($0)}');
         oc -n $NAMESPACE get cm gt-template -o jsonpath="{.data.gt\\.json}"
         | sed '/\"name\": \"replace\"/c\ \"name\": \"'"$gtName"'\"'
