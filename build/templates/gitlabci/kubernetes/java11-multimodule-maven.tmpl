@@ -59,7 +59,7 @@ init:
     paths:
       - build.properties
   rules:
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_COMMIT_BRANCH && '$CI_PIPELINE_SOURCE != "merge_request_event"'
 
 set-version:
     extends: .before_script_login_to_cluster
@@ -82,8 +82,7 @@ set-version:
             sed -i "s/<version>$projectVersion<\/version>/<version>$newProjectVersion<\/version>/" pom.xml
          fi
     rules:
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-
+      - if: $CI_COMMIT_BRANCH && '$CI_PIPELINE_SOURCE != "merge_request_event"'
 
 compile:
   stage: compile
@@ -109,7 +108,7 @@ build:
      - java-maven-springboot-multimodule-impl/target/*.jar
      expire_in: 2 mins
   rules:
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_COMMIT_BRANCH && '$CI_PIPELINE_SOURCE != "merge_request_event"'
 
 create-docker-image:
   image: docker:19.03.12
@@ -140,7 +139,7 @@ create-docker-image:
     - docker tag $PROJECT_NAME "$DOCKER_REGISTRY_URL/$NAMESPACE/$PROJECT_NAME-$CI_COMMIT_BRANCH:$isTag"
     - docker push "$DOCKER_REGISTRY_URL/$NAMESPACE/$PROJECT_NAME-$CI_COMMIT_BRANCH:$isTag"
   rules:
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_COMMIT_BRANCH && '$CI_PIPELINE_SOURCE != "merge_request_event"'
 
 create-image-stream-tag:
     extends: .before_script_login_to_cluster
@@ -158,7 +157,7 @@ create-image-stream-tag:
         | sed '/\"tag\": \"replace\"/c\ \"tag\": \"'"$isTag"'\"'
         | kubectl -n $NAMESPACE apply -f -
     rules:
-      - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      - if: $CI_COMMIT_BRANCH && '$CI_PIPELINE_SOURCE != "merge_request_event"'
 
 create-git-tag:
     extends: .before_script_login_to_cluster
@@ -181,4 +180,4 @@ create-git-tag:
         | sed '/\"tag\": \"replace\"/c\ \"tag\": \"'"$isTag"'\"'
         | kubectl -n $NAMESPACE apply -f -
     rules:
-      - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      - if: $CI_COMMIT_BRANCH && '$CI_PIPELINE_SOURCE != "merge_request_event"'
