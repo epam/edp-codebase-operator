@@ -25,11 +25,11 @@ init:
   stage: init
   script:
     - >
-      buildNumber=$(oc -n $NAMESPACE get codebasebranches.v2 $PROJECT_NAME-$CI_COMMIT_BRANCH -o jsonpath="{.status.build}");
+      buildNumber=$(oc -n $NAMESPACE get codebasebranches.v2 $PROJECT_NAME-$(echo $CI_COMMIT_BRANCH | sed 's/\//-/g') -o jsonpath="{.status.build}");
       buildNumber=$((buildNumber+1));
       projectVersion=$(cat VERSION);
       if [ "$VERSIONING_TYPE" == "edp" ]; then
-          version=$(oc -n $NAMESPACE get codebasebranches.v2 $PROJECT_NAME-$CI_COMMIT_BRANCH -o jsonpath="{.spec.version}");
+          version=$(oc -n $NAMESPACE get codebasebranches.v2 $PROJECT_NAME-$(echo $CI_COMMIT_BRANCH | sed 's/\//-/g') -o jsonpath="{.spec.version}");
           codebaseImageStreamName=$PROJECT_NAME-edp-$(echo $CI_COMMIT_BRANCH | sed 's/\//-/g;s/\./-/g');
           isTag=$version.$buildNumber;
           crName=$codebaseImageStreamName-$(echo $isTag | sed 's/\//-/g;s/\./-/g' | awk '{print tolower($0)}');
@@ -39,7 +39,6 @@ init:
           isTag="$CI_COMMIT_BRANCH-$projectVersion-$buildNumber";
           crName=$codebaseImageStreamName-$(echo $isTag | sed 's/\//-/g;s/\./-/g' | awk '{print tolower($0)}');
       fi
-    - echo $projectVersion;
     - echo "crName=$crName" >> build.properties;
     - echo "codebaseImageStreamName=$codebaseImageStreamName" >> build.properties;
     - echo "isTag=$isTag" >> build.properties;
@@ -58,10 +57,10 @@ set-version:
     script:
       - >
         buildNumber=$(grep buildNumber "build.properties" | awk -F= '{print $2}');
-        oc -n $NAMESPACE patch codebasebranches.v2 $PROJECT_NAME-$CI_COMMIT_BRANCH --type=merge -p "{\"status\": {\"build\": "\"$buildNumber\""}}";
+        oc -n $NAMESPACE patch codebasebranches.v2 $PROJECT_NAME-$(echo $CI_COMMIT_BRANCH | sed 's/\//-/g') --type=merge -p "{\"status\": {\"build\": "\"$buildNumber\""}}";
         if [ "$VERSIONING_TYPE" == "edp" ]; then
             version=$(grep version $"build.properties" | awk -F= '{print $2}')
-            isRelease=$(oc -n $NAMESPACE get codebasebranches.v2 $PROJECT_NAME-$CI_COMMIT_BRANCH -o jsonpath="{.spec.release}");
+            isRelease=$(oc -n $NAMESPACE get codebasebranches.v2 $PROJECT_NAME-$(echo $CI_COMMIT_BRANCH | sed 's/\//-/g') -o jsonpath="{.spec.release}");
             set -eo pipefail;
         	if $isRelease; then
         		newProjectVersion=$version-$buildNumber;
@@ -113,8 +112,8 @@ create-docker-image:
     - isTag=$(grep isTag "build.properties" | awk -F= '{print $2}');
     - docker login -u $DOCKER_REGISTRY_USER -p $DOCKER_REGISTRY_PASSWORD $DOCKER_REGISTRY_URL
     - docker build -t $PROJECT_NAME .
-    - docker tag $PROJECT_NAME "$DOCKER_REGISTRY_URL/$NAMESPACE/$PROJECT_NAME-$CI_COMMIT_BRANCH:$isTag"
-    - docker push "$DOCKER_REGISTRY_URL/$NAMESPACE/$PROJECT_NAME-$CI_COMMIT_BRANCH:$isTag"
+    - docker tag $PROJECT_NAME "$DOCKER_REGISTRY_URL/$NAMESPACE/$PROJECT_NAME-$(echo $CI_COMMIT_BRANCH | sed 's/\//-/g;s/\./-/g'):$isTag"
+    - docker push "$DOCKER_REGISTRY_URL/$NAMESPACE/$PROJECT_NAME-$(echo $CI_COMMIT_BRANCH | sed 's/\//-/g;s/\./-/g'):$isTag"
   rules:
     - if: $CI_COMMIT_BRANCH && '$CI_PIPELINE_SOURCE != "merge_request_event"'
 

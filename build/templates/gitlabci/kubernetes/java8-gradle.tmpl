@@ -29,11 +29,11 @@ init:
   stage: init
   script:
     - >
-      buildNumber=$(kubectl -n $NAMESPACE get codebasebranches.v2 $PROJECT_NAME-$CI_COMMIT_BRANCH -o jsonpath="{.status.build}");
+      buildNumber=$(kubectl -n $NAMESPACE get codebasebranches.v2 $PROJECT_NAME-$(echo $CI_COMMIT_BRANCH | sed 's/\//-/g') -o jsonpath="{.status.build}");
       buildNumber=$((buildNumber+1));
       projectVersion=$(gradle -PnexusLogin=$NEXUS_LOGIN -PnexusPassword=$NEXUS_PASSWORD properties -q | grep "version:" | awk '{print $2}');
       if [ "$VERSIONING_TYPE" == "edp" ]; then
-          version=$(kubectl -n $NAMESPACE get codebasebranches.v2 $PROJECT_NAME-$CI_COMMIT_BRANCH -o jsonpath="{.spec.version}");
+          version=$(kubectl -n $NAMESPACE get codebasebranches.v2 $PROJECT_NAME-$(echo $CI_COMMIT_BRANCH | sed 's/\//-/g') -o jsonpath="{.spec.version}");
           codebaseImageStreamName=$PROJECT_NAME-edp-$(echo $CI_COMMIT_BRANCH | sed 's/\//-/g;s/\./-/g');
           isTag=$version.$buildNumber;
           crName=$codebaseImageStreamName-$(echo $isTag | sed 's/\//-/g;s/\./-/g' | awk '{print tolower($0)}');
@@ -61,10 +61,10 @@ set-version:
     script:
       - >
         buildNumber=$(grep buildNumber "build.properties" | awk -F= '{print $2}');
-        kubectl -n $NAMESPACE patch codebasebranches.v2 $PROJECT_NAME-$CI_COMMIT_BRANCH --type=merge -p "{\"status\": {\"build\": "\"$buildNumber\""}}";
+        kubectl -n $NAMESPACE patch codebasebranches.v2 $PROJECT_NAME-$(echo $CI_COMMIT_BRANCH | sed 's/\//-/g') --type=merge -p "{\"status\": {\"build\": "\"$buildNumber\""}}";
         if [ "$VERSIONING_TYPE" == "edp" ]; then
             version=$(grep version $"build.properties" | awk -F= '{print $2}')
-            isRelease=$(kubectl -n $NAMESPACE get codebasebranches.v2 $PROJECT_NAME-$CI_COMMIT_BRANCH -o jsonpath="{.spec.release}");
+            isRelease=$(kubectl -n $NAMESPACE get codebasebranches.v2 $PROJECT_NAME-$(echo $CI_COMMIT_BRANCH | sed 's/\//-/g') -o jsonpath="{.spec.release}");
             set -eo pipefail;
         	if $isRelease; then
         		newProjectVersion=$version-$buildNumber;
@@ -121,11 +121,11 @@ create-docker-image:
     - aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
     - aws configure set default.region eu-central-1
     - aws ecr get-login-password --region eu-central-1 | docker login --username AWS --password-stdin $DOCKER_REGISTRY_URL
-    - aws ecr describe-repositories --repository-names $NAMESPACE/$PROJECT_NAME-$CI_COMMIT_BRANCH || aws ecr create-repository --repository-name $NAMESPACE/$PROJECT_NAME-$CI_COMMIT_BRANCH
+    - aws ecr describe-repositories --repository-names $NAMESPACE/$PROJECT_NAME-$(echo $CI_COMMIT_BRANCH | sed 's/\//-/g;s/\./-/g') || aws ecr create-repository --repository-name $NAMESPACE/$PROJECT_NAME-$(echo $CI_COMMIT_BRANCH | sed 's/\//-/g;s/\./-/g')
     - isTag=$(grep isTag "build.properties" | awk -F= '{print $2}');
     - docker build -t $PROJECT_NAME .
-    - docker tag $PROJECT_NAME "$DOCKER_REGISTRY_URL/$NAMESPACE/$PROJECT_NAME-$CI_COMMIT_BRANCH:$isTag"
-    - docker push "$DOCKER_REGISTRY_URL/$NAMESPACE/$PROJECT_NAME-$CI_COMMIT_BRANCH:$isTag"
+    - docker tag $PROJECT_NAME "$DOCKER_REGISTRY_URL/$NAMESPACE/$PROJECT_NAME-$(echo $CI_COMMIT_BRANCH | sed 's/\//-/g;s/\./-/g'):$isTag"
+    - docker push "$DOCKER_REGISTRY_URL/$NAMESPACE/$PROJECT_NAME-$(echo $CI_COMMIT_BRANCH | sed 's/\//-/g;s/\./-/g'):$isTag"
   rules:
     - if: $CI_COMMIT_BRANCH && '$CI_PIPELINE_SOURCE != "merge_request_event"'
 
