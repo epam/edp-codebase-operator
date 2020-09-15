@@ -91,7 +91,7 @@ unit-tests:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
 
 create-docker-image:
-  image: docker:19.03.12
+  image: epamedp/dind-aws-cli:latest
   variables:
     DOCKER_HOST: tcp://docker:2375
     DOCKER_TLS_CERTDIR: ""

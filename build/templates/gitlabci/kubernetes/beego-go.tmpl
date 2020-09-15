@@ -99,7 +99,7 @@ build:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
 create-docker-image:
-  image: docker:19.03.12
+  image: epamedp/dind-aws-cli:latest
   variables:
     DOCKER_HOST: tcp://docker:2375
     DOCKER_TLS_CERTDIR: ""
