@@ -2,11 +2,18 @@
 start
 :Codebase CR;
 if (Import Strategy) then (yes)
-    #lightgreen:Clone Git Project;
-    #lightgreen:Ensure Deploy Config in Git;
-    #pink:Ensure S2I Image Stream;
-    #lightblue:Ensure Jenkins Folder CR;
-    #lightgrey:Cleaner;
+    if (GitLabCI Tool) then (yes)
+        #lightgreen:Clone Git Project;
+        #lightgreen:Ensure Deploy Config in Git;
+        #lightgreen:Ensure GitLab CI Template in Git;
+        #lightgrey:Cleaner;
+    else (no (Jenkins))
+        #lightgreen:Clone Git Project;
+        #lightgreen:Ensure Deploy Config in Git;
+        #pink:Ensure S2I Image Stream;
+        #lightblue:Ensure Jenkins Folder CR;
+        #lightgrey:Cleaner;
+    endif
 else (no (clone or create))
     #olive:Ensure Project in Gerrit;
     #olive:Ensure Gerrit Replication;

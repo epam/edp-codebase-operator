@@ -27,6 +27,7 @@ package com.epam.edp.codebase {
         String jenkinsSlave
         String jobProvisioning
         String deploymentScript
+        String ciTool
         Versioning versioning
     -- status --
         Boolean available
@@ -201,6 +202,22 @@ package com.epam.edp.codebase {
   }
 }
 
+class ImageStreamTag {
+    -- metadata --
+    String name
+    -- spec --
+    String codebaseImageStreamName
+    String tag
+}
+
+class GitTag {
+    -- metadata --
+    String name
+    -- spec --
+    String codebase
+    String branch
+    String tag
+}
 class EdpComponent <<tbd>> {
 }
 
