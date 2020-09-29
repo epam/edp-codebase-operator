@@ -1,0 +1,12 @@
+apiVersion: v2.edp.epam.com/v1alpha1
+kind: Service
+metadata:
+  name: stub-name
+spec:
+  version: "stub-version"
+  description: "stub-description"
+  url: "stub-url"
+  icon: "stub-icon"
+status:
+  status: "initialized"
+  lastTimeUpdated: 0001-01-01T00:00:00Z
