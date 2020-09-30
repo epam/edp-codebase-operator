@@ -81,7 +81,9 @@ func buildTemplateConfig(client *coreV1Client.CoreV1Client, c v1alpha1.Codebase)
 		PlatformType: platform.GetPlatformType(),
 		Lang:         c.Spec.Lang,
 		DnsWildcard:  us.DnsWildcard,
-		Framework:    *c.Spec.Framework,
+	}
+	if c.Spec.Framework != nil {
+		cf.Framework = *c.Spec.Framework
 	}
 	if c.Spec.Database != nil {
 		cf.Database = c.Spec.Database
