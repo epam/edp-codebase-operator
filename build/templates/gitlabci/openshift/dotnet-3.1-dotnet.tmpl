@@ -100,7 +100,7 @@ build:
     - export TMPDIR=/tmp/NuGetScratch/;
     - mkdir -p $TMPDIR;
     - sln_filename=$(ls *.sln);
-    - dotnet build ${sln_filename};
+    - dotnet publish ${sln_filename};
   artifacts:
     paths:
     - aspnetapp/bin/Debug/netcoreapp3.1/*

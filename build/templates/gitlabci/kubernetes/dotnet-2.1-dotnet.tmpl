@@ -5,7 +5,7 @@ variables:
   CLUSTER_URL: {{.ClusterUrl}}
 
 default:
-  image: epamedp/edp-jenkins-dotnet-31-agent:1.0.0
+  image: epamedp/edp-jenkins-dotnet-21-agent:1.0.0
 
 stages:
   - init
@@ -107,7 +107,7 @@ build:
     - dotnet publish ${sln_filename};
   artifacts:
     paths:
-    - aspnetapp/bin/Debug/netcoreapp3.1/*
+    - aspnetapp/bin/Debug/netcoreapp2.1/*
     expire_in: 2 mins
   rules:
     - if: $CI_COMMIT_BRANCH && '$CI_PIPELINE_SOURCE != "merge_request_event"'

@@ -5,7 +5,7 @@ variables:
   CLUSTER_URL: {{.ClusterUrl}}
 
 default:
-  image: epamedp/edp-jenkins-dotnet-31-agent:1.0.0
+  image: epamedp/edp-jenkins-dotnet-21-agent:1.0.0
 
 stages:
   - init
@@ -19,22 +19,19 @@ stages:
 
 .before_script_login_to_cluster:
   before_script:
-    - kubectl config set-cluster default --insecure-skip-tls-verify=true --server=$CLUSTER_URL
-    - kubectl config set-credentials default --token=$K8S_SA_TOKEN
-    - kubectl config set-context default --user=default --cluster=default
-    - kubectl config use-context default
+     - oc login $CLUSTER_URL --token=$OPENSHIFT_SA_TOKEN;
 
 init:
   extends: .before_script_login_to_cluster
   stage: init
   script:
     - >
-      buildNumber=$(kubectl -n $NAMESPACE get codebasebranches.v2 $PROJECT_NAME-$(echo $CI_COMMIT_BRANCH | sed 's/\//-/g') -o jsonpath="{.status.build}");
+      buildNumber=$(oc -n $NAMESPACE get codebasebranches.v2 $PROJECT_NAME-$(echo $CI_COMMIT_BRANCH | sed 's/\//-/g') -o jsonpath="{.status.build}");
       buildNumber=$((buildNumber+1));
       deployableModule=$(find ./ -name *.csproj | xargs grep -Poh '<DeployableModule>\K[^<]*');
       projectVersion=$(find ${deployableModule} -name *.csproj | xargs grep -Po '<Version>\K[^<]*');
       if [ "$VERSIONING_TYPE" == "edp" ]; then
-          version=$(kubectl -n $NAMESPACE get codebasebranches.v2 $PROJECT_NAME-$(echo $CI_COMMIT_BRANCH | sed 's/\//-/g') -o jsonpath="{.spec.version}");
+          version=$(oc -n $NAMESPACE get codebasebranches.v2 $PROJECT_NAME-$(echo $CI_COMMIT_BRANCH | sed 's/\//-/g') -o jsonpath="{.spec.version}");
           codebaseImageStreamName=$PROJECT_NAME-edp-$(echo $CI_COMMIT_BRANCH | sed 's/\//-/g;s/\./-/g');
           isTag=$version.$buildNumber;
           crName=$codebaseImageStreamName-$(echo $isTag | sed 's/\//-/g;s/\./-/g' | awk '{print tolower($0)}');
@@ -62,11 +59,10 @@ set-version:
     script:
       - >
         buildNumber=$(grep buildNumber "build.properties" | awk -F= '{print $2}');
-        echo $buildNumber;
-        kubectl -n $NAMESPACE patch codebasebranches.v2 $PROJECT_NAME-$(echo $CI_COMMIT_BRANCH | sed 's/\//-/g') --type=merge -p "{\"status\": {\"build\": "\"$buildNumber\""}}";
+        oc -n $NAMESPACE patch codebasebranches.v2 $PROJECT_NAME-$(echo $CI_COMMIT_BRANCH | sed 's/\//-/g') --type=merge -p "{\"status\": {\"build\": "\"$buildNumber\""}}";
         if [ "$VERSIONING_TYPE" == "edp" ]; then
             version=$(grep version $"build.properties" | awk -F= '{print $2}')
-            isRelease=$(kubectl -n $NAMESPACE get codebasebranches.v2 $PROJECT_NAME-$(echo $CI_COMMIT_BRANCH | sed 's/\//-/g') -o jsonpath="{.spec.release}");
+            isRelease=$(oc -n $NAMESPACE get codebasebranches.v2 $PROJECT_NAME-$(echo $CI_COMMIT_BRANCH | sed 's/\//-/g') -o jsonpath="{.spec.release}");
             set -eo pipefail;
         	if $isRelease; then
         		newProjectVersion=$version-$buildNumber;
@@ -107,19 +103,17 @@ build:
     - dotnet publish ${sln_filename};
   artifacts:
     paths:
-    - aspnetapp/bin/Debug/netcoreapp3.1/*
+    - aspnetapp/bin/Debug/netcoreapp2.1/*
     expire_in: 2 mins
   rules:
     - if: $CI_COMMIT_BRANCH && '$CI_PIPELINE_SOURCE != "merge_request_event"'
 
 create-docker-image:
-  image: epamedp/dind-aws-cli:latest
+  image: docker:19.03.12
   variables:
     DOCKER_HOST: tcp://docker:2375
     DOCKER_TLS_CERTDIR: ""
     DOCKER_DAEMON_OPTIONS: "--insecure-registry=$DOCKER_REGISTRY_URL"
-    AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
-    AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
   services:
     - name: docker:19.03.12-dind
       entrypoint: [ "sh", "-c", "dockerd-entrypoint.sh $DOCKER_DAEMON_OPTIONS" ]
@@ -128,12 +122,8 @@ create-docker-image:
     - init
     - build
   script:
-    - aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
-    - aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
-    - aws configure set default.region eu-central-1
-    - aws ecr get-login-password --region eu-central-1 | docker login --username AWS --password-stdin $DOCKER_REGISTRY_URL
-    - aws ecr describe-repositories --repository-names $NAMESPACE/$PROJECT_NAME-$(echo $CI_COMMIT_BRANCH | sed 's/\//-/g;s/\./-/g') || aws ecr create-repository --repository-name $NAMESPACE/$PROJECT_NAME-$(echo $CI_COMMIT_BRANCH | sed 's/\//-/g;s/\./-/g')
     - isTag=$(grep isTag "build.properties" | awk -F= '{print $2}');
+    - docker login -u $DOCKER_REGISTRY_USER -p $DOCKER_REGISTRY_PASSWORD $DOCKER_REGISTRY_URL
     - docker build -t $PROJECT_NAME .
     - docker tag $PROJECT_NAME "$DOCKER_REGISTRY_URL/$NAMESPACE/$PROJECT_NAME-$(echo $CI_COMMIT_BRANCH | sed 's/\//-/g;s/\./-/g'):$isTag"
     - docker push "$DOCKER_REGISTRY_URL/$NAMESPACE/$PROJECT_NAME-$(echo $CI_COMMIT_BRANCH | sed 's/\//-/g;s/\./-/g'):$isTag"
@@ -150,11 +140,11 @@ create-image-stream-tag:
         crName=$(grep crName "build.properties" | awk -F= '{print $2}');
         codebaseImageStreamName=$(grep codebaseImageStreamName "build.properties" | awk -F= '{print $2}');
         isTag=$(grep isTag "build.properties" | awk -F= '{print $2}');
-        kubectl -n $NAMESPACE get cm ist-template -o jsonpath="{.data.ist\\.json}"
+        oc -n $NAMESPACE get cm ist-template -o jsonpath="{.data.ist\\.json}"
         | sed '/\"name\": \"replace\"/c\ \"name\": \"'"$crName"'\"'
         | sed '/\"codebaseImageStreamName\": \"replace\"/c\ \"codebaseImageStreamName\": \"'"$codebaseImageStreamName"'\",'
         | sed '/\"tag\": \"replace\"/c\ \"tag\": \"'"$isTag"'\"'
-        | kubectl -n $NAMESPACE apply -f -
+        | oc -n $NAMESPACE apply -f -
     rules:
       - if: $CI_COMMIT_BRANCH && '$CI_PIPELINE_SOURCE != "merge_request_event"'
 
@@ -172,11 +162,11 @@ create-git-tag:
       - >
         codebaseImageStreamName=$(grep codebaseImageStreamName "build.properties" | awk -F= '{print $2}');
         gtName=$codebaseImageStreamName-$(echo $isTag | sed 's/\//-/g;s/\./-/g' | awk '{print tolower($0)}');
-        kubectl -n $NAMESPACE get cm gt-template -o jsonpath="{.data.gt\\.json}"
+        oc -n $NAMESPACE get cm gt-template -o jsonpath="{.data.gt\\.json}"
         | sed '/\"name\": \"replace\"/c\ \"name\": \"'"$gtName"'\"'
         | sed '/\"codebase\": \"replace\"/c\ \"codebase\": \"'"$PROJECT_NAME"'\",'
         | sed '/\"branch\": \"replace\"/c\ \"branch\": \"'"$CI_COMMIT_BRANCH"'\",'
         | sed '/\"tag\": \"replace\"/c\ \"tag\": \"'"$isTag"'\"'
-        | kubectl -n $NAMESPACE apply -f -
+        | oc -n $NAMESPACE apply -f -
     rules:
       - if: $CI_COMMIT_BRANCH && '$CI_PIPELINE_SOURCE != "merge_request_event"'
