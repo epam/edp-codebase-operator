@@ -28,7 +28,7 @@ const (
 	ProjectPushedStatus              = "pushed"
 	ProjectTemplatesPushedStatus     = "templates_pushed"
 	ProjectVersionGoFilePushedStatus = "version_go"
-	GitlabCiFilePushedStatus         = "gitlabci"
+	GitlabCiFilePushedStatus         = "gitlab ci"
 
 	GithubDomain   = "https://github.com/epmd-edp"
 	LanguageJava   = "Java"
@@ -36,7 +36,7 @@ const (
 	LanguagePython = "Python"
 	LanguageDotnet = "Dotnet"
 
-	GitlabCi = "gitlabci"
+	GitlabCi = "gitlab ci"
 
 	VersioningTypeEDP = "edp"
 
