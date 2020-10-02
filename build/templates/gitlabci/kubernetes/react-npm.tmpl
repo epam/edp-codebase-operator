@@ -97,6 +97,7 @@ build:
   artifacts:
     paths:
     - node_modules/
+    - build/
     expire_in: 2 mins
   rules:
     - if: $CI_COMMIT_BRANCH && '$CI_PIPELINE_SOURCE != "merge_request_event"'
