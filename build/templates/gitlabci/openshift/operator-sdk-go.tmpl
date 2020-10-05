@@ -87,7 +87,7 @@ build:
   script:
     - export GOPATH=$HOME/go;
     - export PATH=$PATH:$GOROOT/bin:$GOPATH/bin;
-    - go build -o entrypoint cmd/manager/main.go
+    - GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o entrypoint cmd/manager/main.go
   artifacts:
     paths:
     - entrypoint
