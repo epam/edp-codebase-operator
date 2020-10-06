@@ -218,6 +218,17 @@ class GitTag {
     String branch
     String tag
 }
+
+class Service {
+    -- metadata --
+    String name
+    -- spec --
+    String version
+    String description
+    String url
+    String icon
+}
+
 class EdpComponent <<tbd>> {
 }
 
