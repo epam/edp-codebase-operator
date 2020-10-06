@@ -8,7 +8,7 @@ The main purpose of a Jira Server controller is to watch changes in the respecti
  
 Inspect the main steps performed in the reconcile loop on the diagram below:
 
-![arch](http://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/epmd-edp/codebase-operator/master/documentation/puml/jira_server_chain.puml&raw=true)
+![arch](http://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/epmd-edp/codebase-operator/release/2.5/documentation/puml/jira_server_chain.puml&raw=true)
 
 The diagram above displays the following steps:
 

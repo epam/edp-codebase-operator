@@ -7,7 +7,7 @@ The main purpose of a codebase branch controller is to watch changes in the resp
  
 Explore the main steps performed in the reconcile loop on the diagram below:
 
-![arch](http://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/epmd-edp/codebase-operator/master/documentation/puml/codebase_branch_chain.puml&raw=true)
+![arch](http://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/epmd-edp/codebase-operator/release/2.5/documentation/puml/codebase_branch_chain.puml&raw=true)
 
 There are two versioning types presented in the **spec.versioning.type** field of a codebase:
 

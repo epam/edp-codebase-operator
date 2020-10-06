@@ -8,7 +8,7 @@ and to ensure that the state in that resource is applied in EPAM Delivery Platfo
  
 Inspect the main steps performed in the reconcile loop on the diagram below:
 
-![arch](http://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/epmd-edp/codebase-operator/master/documentation/puml/git_server_chain.puml&raw=true)
+![arch](http://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/epmd-edp/codebase-operator/release/2.5/documentation/puml/git_server_chain.puml&raw=true)
 
 The diagram above displays the following steps:
 
