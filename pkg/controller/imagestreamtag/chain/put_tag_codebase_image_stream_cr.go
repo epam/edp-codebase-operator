@@ -34,6 +34,13 @@ func (h PutTagCodebaseImageStreamCr) addTagToCodebaseImageStream(cisName, tag, n
 		return err
 	}
 
+	for _, t := range cis.Spec.Tags {
+		if tag == t.Name {
+			log.Info("tag already exists in CodebaseImageStream CR", "name", tag)
+			return nil
+		}
+	}
+
 	t, err := getCurrentTimeInUTC()
 	if err != nil {
 		return errors.Wrap(err, "couldn't get current time")
