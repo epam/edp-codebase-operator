@@ -42,8 +42,8 @@ type Database struct {
 }
 
 type Perf struct {
-	Name        string `json:"name"`
-	DataSources string `json:"dataSources"`
+	Name        string   `json:"name"`
+	DataSources []string `json:"dataSources"`
 }
 
 type CodebaseSpec struct {
