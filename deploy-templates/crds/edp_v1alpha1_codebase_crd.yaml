@@ -102,7 +102,7 @@ spec:
                 name:
                   type: string
                 dataSources:
-                  type: string
+                  type: array
           required:
             - lang
             - type
