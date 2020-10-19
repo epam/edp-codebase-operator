@@ -13,7 +13,6 @@ import (
 const (
 	Create  Strategy       = "create"
 	Clone   Strategy       = "clone"
-	Edp     VersioningType = "edp"
 	Default VersioningType = "default"
 )
 
@@ -42,6 +41,11 @@ type Database struct {
 	Storage  string `json:"storage"`
 }
 
+type Perf struct {
+	Name        string `json:"name"`
+	DataSources string `json:"dataSources"`
+}
+
 type CodebaseSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
@@ -66,6 +70,7 @@ type CodebaseSpec struct {
 	CommitMessagePattern *string     `json:"commitMessagePattern"`
 	TicketNamePattern    *string     `json:"ticketNamePattern"`
 	CiTool               string      `json:"ciTool"`
+	Perf                 *Perf       `json:"perf"`
 }
 
 // CodebaseStatus defines the observed state of Codebase

@@ -93,6 +93,12 @@ spec:
               anyOf:
                 - type: null
                 - type: string
+            perf:
+              properties:
+                name:
+                  type: string
+                dataSources:
+                  type: string
           required:
             - lang
             - type
