@@ -1,7 +1,6 @@
 package chain
 
 import (
-	"context"
 	"fmt"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/codebase/helper"
@@ -10,9 +9,7 @@ import (
 	git "github.com/epmd-edp/codebase-operator/v2/pkg/controller/gitserver"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/platform"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/util"
-	edpComponentV1alpha1 "github.com/epmd-edp/edp-component-operator/pkg/apis/v1/v1alpha1"
 	"github.com/pkg/errors"
-	"k8s.io/apimachinery/pkg/types"
 	"os"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
@@ -103,7 +100,7 @@ func (h PutGitlabCiFile) parseTemplate(c *v1alpha1.Codebase) error {
 	wd := fmt.Sprintf("/home/codebase-operator/edp/%v/%v/%v/%v", c.Namespace, c.Name, "templates", c.Name)
 	gitlabCiFile := fmt.Sprintf("%v/%v", wd, ".gitlab-ci.yml")
 
-	component, err := h.getCLusterEdpComponent(c.Namespace)
+	component, err := util.GetEdpComponent(h.client, getEdpComponentName(), c.Namespace)
 	if err != nil {
 		return err
 	}
@@ -123,18 +120,6 @@ func (h PutGitlabCiFile) parseTemplate(c *v1alpha1.Codebase) error {
 		return err
 	}
 	return nil
-}
-
-func (h PutGitlabCiFile) getCLusterEdpComponent(namespace string) (*edpComponentV1alpha1.EDPComponent, error) {
-	ec := &edpComponentV1alpha1.EDPComponent{}
-	err := h.client.Get(context.TODO(), types.NamespacedName{
-		Name:      getEdpComponentName(),
-		Namespace: namespace,
-	}, ec)
-	if err != nil {
-		return nil, err
-	}
-	return ec, nil
 }
 
 func getEdpComponentName() string {

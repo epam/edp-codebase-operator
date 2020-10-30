@@ -4,6 +4,7 @@ import (
 	"context"
 	edpv1alpha1 "github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/model"
+	"github.com/epmd-edp/edp-component-operator/pkg/apis/v1/v1alpha1"
 	"github.com/pkg/errors"
 	coreV1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
@@ -126,4 +127,16 @@ func GetSecretData(client client.Client, name, namespace string) (*coreV1.Secret
 		return nil, err
 	}
 	return s, nil
+}
+
+func GetEdpComponent(c client.Client, name, namespace string) (*v1alpha1.EDPComponent, error) {
+	ec := &v1alpha1.EDPComponent{}
+	err := c.Get(context.TODO(), types.NamespacedName{
+		Name:      name,
+		Namespace: namespace,
+	}, ec)
+	if err != nil {
+		return nil, err
+	}
+	return ec, nil
 }

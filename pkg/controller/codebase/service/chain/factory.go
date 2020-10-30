@@ -18,7 +18,7 @@ func CreateGerritDefChain(cs openshift.ClientSet, db *sql.DB) handler.CodebaseHa
 	gp := gitserver.GitProvider{}
 	return PutProjectGerrit{
 		next: PutGerritReplication{
-			next: SetupPerf{
+			next: PutPerfDataSources{
 				next: PutDeployConfigs{
 					next: PutVersionFile{
 						next: PutJenkinsFolder{
@@ -35,7 +35,7 @@ func CreateGerritDefChain(cs openshift.ClientSet, db *sql.DB) handler.CodebaseHa
 					cr:        cr,
 					git:       gp,
 				},
-				clientSet: cs,
+				client: cs.Client,
 			},
 			clientSet: cs,
 		},
@@ -50,21 +50,24 @@ func CreateThirdPartyVcsProviderDefChain(cs openshift.ClientSet, db *sql.DB) han
 	cr := repository.CodebaseRepository{DB: db}
 	gp := gitserver.GitProvider{}
 	return CloneGitProject{
-		next: PutDeployConfigsToGitProvider{
-			next: PutVersionFile{
-				next: PutJenkinsFolder{
-					next: Cleaner{
+		next: PutPerfDataSources{
+			next: PutDeployConfigsToGitProvider{
+				next: PutVersionFile{
+					next: PutJenkinsFolder{
+						next: Cleaner{
+							clientSet: cs,
+						},
 						clientSet: cs,
 					},
 					clientSet: cs,
+					cr:        cr,
+					git:       gp,
 				},
 				clientSet: cs,
 				cr:        cr,
 				git:       gp,
 			},
-			clientSet: cs,
-			cr:        cr,
-			git:       gp,
+			client: cs.Client,
 		},
 		clientSet: cs,
 		git:       gp,
@@ -76,23 +79,26 @@ func CreateGitlabCiDefChain(cs openshift.ClientSet, db *sql.DB) handler.Codebase
 	cr := repository.CodebaseRepository{DB: db}
 	gp := gitserver.GitProvider{}
 	return CloneGitProject{
-		next: PutGitlabCiDeployConfigs{
-			next: PutGitlabCiFile{
-				next: PutVersionFile{
-					next: Cleaner{
+		next: PutPerfDataSources{
+			next: PutGitlabCiDeployConfigs{
+				next: PutGitlabCiFile{
+					next: PutVersionFile{
+						next: Cleaner{
+							clientSet: cs,
+						},
 						clientSet: cs,
+						cr:        cr,
+						git:       gp,
 					},
-					clientSet: cs,
-					cr:        cr,
-					git:       gp,
+					client: cs.Client,
+					cr:     cr,
+					git:    gp,
 				},
-				client: cs.Client,
-				cr:     cr,
-				git:    gp,
+				clientSet: cs,
+				cr:        cr,
+				git:       gp,
 			},
-			clientSet: cs,
-			cr:        cr,
-			git:       gp,
+			client: cs.Client,
 		},
 		clientSet: cs,
 		git:       gp,

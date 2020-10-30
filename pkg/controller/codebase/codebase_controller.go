@@ -12,6 +12,7 @@ import (
 	"github.com/epmd-edp/codebase-operator/v2/pkg/openshift"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/util"
 	"github.com/epmd-edp/edp-component-operator/pkg/apis/v1/v1alpha1"
+	perfApi "github.com/epmd-edp/perf-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/pkg/errors"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -62,12 +63,19 @@ func newReconciler(mgr manager.Manager) reconcile.Reconciler {
 }
 
 func addKnownTypes(scheme *runtime.Scheme) {
-	schemeGroupVersion := schema.GroupVersion{Group: "v1.edp.epam.com", Version: "v1alpha1"}
-	scheme.AddKnownTypes(schemeGroupVersion,
+	schemeGroupVersionV1 := schema.GroupVersion{Group: "v1.edp.epam.com", Version: "v1alpha1"}
+	scheme.AddKnownTypes(schemeGroupVersionV1,
 		&v1alpha1.EDPComponent{},
 		&v1alpha1.EDPComponentList{},
 	)
-	metav1.AddToGroupVersion(scheme, schemeGroupVersion)
+	metav1.AddToGroupVersion(scheme, schemeGroupVersionV1)
+
+	schemeGroupVersionV2 := schema.GroupVersion{Group: "v2.edp.epam.com", Version: "v1alpha1"}
+	scheme.AddKnownTypes(schemeGroupVersionV2,
+		&perfApi.PerfDataSource{},
+		&perfApi.PerfDataSourceList{},
+	)
+	metav1.AddToGroupVersion(scheme, schemeGroupVersionV2)
 }
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
