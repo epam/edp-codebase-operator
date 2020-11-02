@@ -3,7 +3,7 @@ apiVersion: authorization.openshift.io/v1
 kind: ClusterRole
 metadata:
   annotations:
-    openshift.io/description: Role for cd-pipeline-operator-edp service account
+    openshift.io/description: Role for codebase-operator-edp service account
     openshift.io/reconcile-protect: "false"
   name: {{ .Values.name }}-{{ .Values.global.edpName }}-clusterrole
 rules:
@@ -56,6 +56,9 @@ rules:
     - imagestreamtags/status
     - gittags
     - gittags/status
+    - perfdatasources
+    - perfdatasources/finalizers
+    - perfdatasources/status
   verbs:
     - '*'
 {{ end }}

@@ -79,6 +79,8 @@ github.com/epmd-edp/keycloak-operator v1.0.18-alpha-39/go.mod h1:n78SGdVQhCkr29S
 github.com/epmd-edp/keycloak-operator v1.0.31-alpha-56/go.mod h1:uXEmg98UyXkMVe9deHTkz0wF7fb47geazmAoiQAb/Zw=
 github.com/epmd-edp/perf-operator/v2 v2.0.0-20201028094858-f3e9f1e831b1 h1:FGi/MrdIHG2NpxW8Z0lYu1Cg0NbotDrfSqXvjCzwH3E=
 github.com/epmd-edp/perf-operator/v2 v2.0.0-20201028094858-f3e9f1e831b1/go.mod h1:4xAIU35PlzybP24XW9AK2z1Ym66ZITg2P5nc6SYdtVI=
+github.com/epmd-edp/perf-operator/v2 v2.0.0-20201102140540-c5092c5a11af h1:26DU0RiFoBsNWcblyreJsg/OUQQKsa/2zQffTvq0Khk=
+github.com/epmd-edp/perf-operator/v2 v2.0.0-20201102140540-c5092c5a11af/go.mod h1:4xAIU35PlzybP24XW9AK2z1Ym66ZITg2P5nc6SYdtVI=
 github.com/evanphx/json-patch v4.0.0+incompatible/go.mod h1:50XU6AFN0ol/bzJsmQLiYLvXMP4fmwYFNcr97nuDLSk=
 github.com/evanphx/json-patch v4.5.0+incompatible h1:ouOWdg56aJriqS0huScTkVXPC5IcNrDCXZ6OoTAWu7M=
 github.com/evanphx/json-patch v4.5.0+incompatible/go.mod h1:50XU6AFN0ol/bzJsmQLiYLvXMP4fmwYFNcr97nuDLSk=
