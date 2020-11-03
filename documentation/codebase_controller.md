@@ -46,4 +46,4 @@ enabled if the vcs_integration_enabled field in the edp-config config map is set
 
 ### Related Articles
 
-- [Codebase Branch Controller](documentation/codebase_branch_controller.md)
+- [Codebase Branch Controller](../documentation/codebase_branch_controller.md)
