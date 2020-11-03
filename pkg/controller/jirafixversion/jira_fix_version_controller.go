@@ -10,7 +10,6 @@ import (
 	"github.com/epmd-edp/codebase-operator/v2/pkg/util"
 	"github.com/pkg/errors"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"os"
@@ -187,7 +186,7 @@ func (r *ReconcileJiraFixVersion) initJiraClient(version edpv1alpha1.JiraFixVers
 }
 
 func (r *ReconcileJiraFixVersion) getJiraServer(version edpv1alpha1.JiraFixVersion) (*edpv1alpha1.JiraServer, error) {
-	ref, err := getOwnerReference(codebaseKind, version.GetOwnerReferences())
+	ref, err := util.GetOwnerReference(codebaseKind, version.GetOwnerReferences())
 	if err != nil {
 		return nil, err
 	}
@@ -211,17 +210,4 @@ func (r *ReconcileJiraFixVersion) getJiraServer(version edpv1alpha1.JiraFixVersi
 	}
 
 	return server, nil
-}
-
-func getOwnerReference(ownerKind string, ors []metav1.OwnerReference) (*metav1.OwnerReference, error) {
-	log.V(2).Info("finding owner", "kind", ownerKind)
-	if len(ors) == 0 {
-		return nil, errors.New("JiraFixVersion CR doesnt have owner reference")
-	}
-	for _, o := range ors {
-		if o.Kind == ownerKind {
-			return &o, nil
-		}
-	}
-	return nil, errors.New("JiraFixVersion CR doesnt have owner reference")
 }

@@ -39,7 +39,8 @@ func (h PutPerfDataSources) ServeRequest(c *v1alpha1.Codebase) error {
 
 func (h PutPerfDataSources) tryToCreateDataSourceCr(c *v1alpha1.Codebase) error {
 	if c.Spec.Perf == nil {
-		log.Info("PERF server wasn't selected. skip creating PERF data source cr...")
+		log.Info("PERF server wasn't selected. skip creating PERF data source cr...",
+			"codebase name", c.Name)
 		return nil
 	}
 

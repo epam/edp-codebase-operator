@@ -20,6 +20,9 @@ func createJenkinsDefChain(client client.Client) handler.CodebaseBranchHandler {
 		service: service.CodebaseBranchService{
 			Client: client,
 		},
+		next: UpdatePerfDataSources{
+			client: client,
+		},
 	}
 }
 
@@ -28,9 +31,12 @@ func createGitlabCiDefChain(client client.Client) handler.CodebaseBranchHandler 
 	return PutBranchInGit{
 		client: client,
 		git:    gitserver.GitProvider{},
-		next: PutCodebaseImageStream{
+		next: UpdatePerfDataSources{
+			next: PutCodebaseImageStream{
+				client: client,
+				next:   CleanTempDirectory{},
+			},
 			client: client,
-			next:   CleanTempDirectory{},
 		},
 		service: service.CodebaseBranchService{
 			Client: client,
