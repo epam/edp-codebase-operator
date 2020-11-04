@@ -6,6 +6,9 @@ import (
 	"fmt"
 	"github.com/epmd-edp/codebase-operator/v2/db"
 	edpv1alpha1 "github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/codebase/repository"
+	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/codebase/repository/k8s"
+	reposql "github.com/epmd-edp/codebase-operator/v2/pkg/controller/codebase/repository/sql"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/codebase/service/chain"
 	cHand "github.com/epmd-edp/codebase-operator/v2/pkg/controller/codebase/service/chain/handler"
 	validate "github.com/epmd-edp/codebase-operator/v2/pkg/controller/codebase/validation"
@@ -181,6 +184,7 @@ func (r ReconcileCodebase) updateFinishStatus(c *edpv1alpha1.Codebase) error {
 		Result:          edpv1alpha1.Success,
 		Value:           "active",
 		FailureCount:    0,
+		Git:             c.Status.Git,
 	}
 	return r.updateStatus(c)
 }
@@ -201,17 +205,26 @@ func (r ReconcileCodebase) getChain(cr *edpv1alpha1.Codebase) (cHand.CodebaseHan
 func (r ReconcileCodebase) getStrategyChain(c *edpv1alpha1.Codebase) (cHand.CodebaseHandler, error) {
 	cs := openshift.CreateOpenshiftClients()
 	cs.Client = r.client
+	repo := r.createCodebaseRepo(c)
 	if c.Spec.Strategy == util.ImportStrategy {
-		return r.getCiChain(c, cs)
+		return r.getCiChain(c, cs, repo)
 	}
-	return chain.CreateGerritDefChain(*cs, r.db), nil
+	return chain.CreateGerritDefChain(*cs, repo), nil
 }
 
-func (r ReconcileCodebase) getCiChain(c *edpv1alpha1.Codebase, cs *openshift.ClientSet) (cHand.CodebaseHandler, error) {
-	if strings.ToLower(c.Spec.CiTool) == util.GitlabCi {
-		return chain.CreateGitlabCiDefChain(*cs, r.db), nil
+func (r ReconcileCodebase) createCodebaseRepo(c *edpv1alpha1.Codebase) repository.CodebaseRepository {
+	if r.db == nil {
+		return k8s.NewK8SCodebaseRepository(r.client, c)
 	}
-	return chain.CreateThirdPartyVcsProviderDefChain(*cs, r.db), nil
+	return reposql.CodebaseRepository{DB: r.db}
+}
+
+func (r ReconcileCodebase) getCiChain(c *edpv1alpha1.Codebase, cs *openshift.ClientSet,
+	repo repository.CodebaseRepository) (cHand.CodebaseHandler, error) {
+	if strings.ToLower(c.Spec.CiTool) == util.GitlabCi {
+		return chain.CreateGitlabCiDefChain(*cs, repo), nil
+	}
+	return chain.CreateThirdPartyVcsProviderDefChain(*cs, repo), nil
 }
 
 func (r *ReconcileCodebase) updateStatus(instance *edpv1alpha1.Codebase) error {

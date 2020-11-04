@@ -2,6 +2,7 @@ global:
   edpName: ""
   platform: "openshift"
   database:
+    enabled: true
     port: 5432
     host:
     name: "edp-install-wizard-db"

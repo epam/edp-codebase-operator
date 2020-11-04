@@ -7,7 +7,7 @@ replace git.apache.org/thrift.git => github.com/apache/thrift v0.12.0
 replace github.com/openshift/api => github.com/openshift/api v0.0.0-20180801171038-322a19404e37
 
 require (
-	github.com/DATA-DOG/go-sqlmock v1.4.1
+	github.com/DATA-DOG/go-sqlmock v1.5.0
 	github.com/andygrunwald/go-jira v1.12.0
 	github.com/bndr/gojenkins v0.2.1-0.20181125150310-de43c03cf849
 	github.com/dchest/uniuri v0.0.0-20160212164326-8902c56451e9

@@ -6,7 +6,7 @@ import (
 	"github.com/dchest/uniuri"
 	edpV1alpha1 "github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/codebase/helper"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/codebase/repository"
+	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/codebase/repository/sql"
 	mock2 "github.com/epmd-edp/codebase-operator/v2/pkg/controller/gitserver/mock"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/openshift"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/util"
@@ -43,7 +43,7 @@ func TestVersionFileExists_VersionFileMustExist(t *testing.T) {
 	h := PutVersionFile{
 		next:      nil,
 		clientSet: openshift.ClientSet{},
-		cr: repository.CodebaseRepository{
+		cr: sql.CodebaseRepository{
 			DB: db,
 		},
 	}
@@ -70,7 +70,7 @@ func TestVersionFileExists_AnErrorOccursDueToInvalidInputParameter(t *testing.T)
 	h := PutVersionFile{
 		next:      nil,
 		clientSet: openshift.ClientSet{},
-		cr: repository.CodebaseRepository{
+		cr: sql.CodebaseRepository{
 			DB: db,
 		},
 	}

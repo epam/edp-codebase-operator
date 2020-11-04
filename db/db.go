@@ -13,6 +13,11 @@ var log = logf.Log.WithName("db-connector")
 
 func GetConnection() *sql.DB {
 	log.V(2).Info("start creating connection to DB")
+	dbUse := getEnvOrDefault("DB_ENABLED", "true")
+	if dbUse != "true" {
+		log.V(2).Info("usage of database is disabled")
+		return nil
+	}
 	host := getEnvOrFatal("DB_HOST")
 	port := getEnvOrFatal("DB_PORT")
 	name := getEnvOrFatal("DB_NAME")
