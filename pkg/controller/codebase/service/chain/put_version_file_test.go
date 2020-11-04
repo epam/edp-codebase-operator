@@ -43,7 +43,7 @@ func TestVersionFileExists_VersionFileMustExist(t *testing.T) {
 	h := PutVersionFile{
 		next:      nil,
 		clientSet: openshift.ClientSet{},
-		cr: repository.CodebaseRepository{
+		cr: repository.SqlCodebaseRepository{
 			DB: db,
 		},
 	}
@@ -70,7 +70,7 @@ func TestVersionFileExists_AnErrorOccursDueToInvalidInputParameter(t *testing.T)
 	h := PutVersionFile{
 		next:      nil,
 		clientSet: openshift.ClientSet{},
-		cr: repository.CodebaseRepository{
+		cr: repository.SqlCodebaseRepository{
 			DB: db,
 		},
 	}

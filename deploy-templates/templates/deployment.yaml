@@ -36,6 +36,8 @@ spec:
               value: {{ .Values.name }}
             - name: PLATFORM_TYPE
               value: "{{ .Values.global.platform }}"
+            - name: DB_ENABLED
+              value: "{{ .Values.global.database.enabled }}"
             - name: DB_HOST
               value: "{{ .Values.global.database.host }}"
             - name: DB_PORT

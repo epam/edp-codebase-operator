@@ -88,6 +88,7 @@ type CodebaseStatus struct {
 	DetailedMessage string     `json:"detailedMessage"`
 	Value           string     `json:"value"`
 	FailureCount    int64      `json:"failureCount"`
+	Git             string     `json:"git"`
 }
 
 type ActionType string

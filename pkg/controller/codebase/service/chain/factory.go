@@ -1,7 +1,6 @@
 package chain
 
 import (
-	"database/sql"
 	edpv1alpha1 "github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/codebase/repository"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/codebase/service/chain/handler"
@@ -12,9 +11,8 @@ import (
 
 var log = logf.Log.WithName("codebase_handler")
 
-func CreateGerritDefChain(cs openshift.ClientSet, db *sql.DB) handler.CodebaseHandler {
+func CreateGerritDefChain(cs openshift.ClientSet, cr repository.CodebaseRepository) handler.CodebaseHandler {
 	log.Info("chain is selected", "type", "gerrit")
-	cr := repository.CodebaseRepository{DB: db}
 	gp := gitserver.GitProvider{}
 	return PutProjectGerrit{
 		next: PutGerritReplication{
@@ -45,9 +43,8 @@ func CreateGerritDefChain(cs openshift.ClientSet, db *sql.DB) handler.CodebaseHa
 	}
 }
 
-func CreateThirdPartyVcsProviderDefChain(cs openshift.ClientSet, db *sql.DB) handler.CodebaseHandler {
+func CreateThirdPartyVcsProviderDefChain(cs openshift.ClientSet, cr repository.CodebaseRepository) handler.CodebaseHandler {
 	log.Info("chain is selected", "type", "third party VCS provider")
-	cr := repository.CodebaseRepository{DB: db}
 	gp := gitserver.GitProvider{}
 	return CloneGitProject{
 		next: PutPerfDataSources{
@@ -74,9 +71,8 @@ func CreateThirdPartyVcsProviderDefChain(cs openshift.ClientSet, db *sql.DB) han
 	}
 }
 
-func CreateGitlabCiDefChain(cs openshift.ClientSet, db *sql.DB) handler.CodebaseHandler {
+func CreateGitlabCiDefChain(cs openshift.ClientSet, cr repository.CodebaseRepository) handler.CodebaseHandler {
 	log.Info("chain is selected", "type", "gitlab ci")
-	cr := repository.CodebaseRepository{DB: db}
 	gp := gitserver.GitProvider{}
 	return CloneGitProject{
 		next: PutPerfDataSources{
