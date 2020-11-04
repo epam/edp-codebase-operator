@@ -37,19 +37,19 @@ func (h PutProjectGerrit) ServeRequest(c *v1alpha1.Codebase) error {
 		return errors.Wrapf(err, "an error has been occurred while updating %v Codebase status", c.Name)
 	}
 
-	wd := fmt.Sprintf("/home/codebase-operator/edp/%v/%v/templates", c.Namespace, c.Name)
-	if err := util.CreateDirectory(wd); err != nil {
-		setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
-		return err
-	}
+	/*	wd := fmt.Sprintf("/home/codebase-operator/edp/%v/%v/templates", c.Namespace, c.Name)
+		if err := util.CreateDirectory(wd); err != nil {
+			setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
+			return err
+		}*/
 
-	port, err := util.GetGerritPort(h.clientSet.Client, c.Namespace)
+	_, err := util.GetGerritPort(h.clientSet.Client, c.Namespace)
 	if err != nil {
 		setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
 		return errors.Wrap(err, "unable get gerrit port")
 	}
 
-	us, err := util.GetUserSettings(h.clientSet.CoreClient, c.Namespace)
+	_, err = util.GetUserSettings(h.clientSet.CoreClient, c.Namespace)
 	if err != nil {
 		setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
 		return errors.Wrap(err, "unable get user settings settings")
@@ -80,27 +80,27 @@ func (h PutProjectGerrit) ServeRequest(c *v1alpha1.Codebase) error {
 		return nextServeOrNil(h.next, c)
 	}
 
-	repu, repp, err := h.tryToGetRepositoryCredentials(c)
-	if !h.git.CheckPermissions(*ru, repu, repp) {
-		msg := fmt.Errorf("user %v cannot get access to the repository %v", repu, *ru)
-		setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, msg.Error())
-		return msg
-	}
+	/*	repu, repp, err := h.tryToGetRepositoryCredentials(c)
+		if !h.git.CheckPermissions(*ru, repu, repp) {
+			msg := fmt.Errorf("user %v cannot get access to the repository %v", repu, *ru)
+			setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, msg.Error())
+			return msg
+		}
 
-	if err := h.tryToCreateProjectInVcs(us, c.Name, c.Namespace); err != nil {
-		setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
-		return errors.Wrap(err, "unable to create project in VCS")
-	}
+		if err := h.tryToCreateProjectInVcs(us, c.Name, c.Namespace); err != nil {
+			setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
+			return errors.Wrap(err, "unable to create project in VCS")
+		}
 
-	if err := h.tryToCloneRepo(*ru, repu, repp, wd, c.Name); err != nil {
-		setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
-		return errors.Wrap(err, "cloning project hsa been failed")
-	}
+		if err := h.tryToCloneRepo(*ru, repu, repp, wd, c.Name); err != nil {
+			setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
+			return errors.Wrap(err, "cloning project hsa been failed")
+		}
 
-	if err := h.tryToPushProjectToGerrit(*port, c.Name, wd, c.Namespace); err != nil {
-		setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
-		return errors.Wrapf(err, "push to gerrit for codebase %v has been failed", c.Name)
-	}
+		if err := h.tryToPushProjectToGerrit(*port, c.Name, wd, c.Namespace); err != nil {
+			setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
+			return errors.Wrapf(err, "push to gerrit for codebase %v has been failed", c.Name)
+		}*/
 
 	if err := h.cr.UpdateProjectStatusValue(util.ProjectPushedStatus, c.Name, *edpN); err != nil {
 		setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
@@ -213,6 +213,7 @@ func (h PutProjectGerrit) setIntermediateSuccessFields(c *edpv1alpha1.Codebase, 
 		Username:        "system",
 		Value:           "inactive",
 		FailureCount:    c.Status.FailureCount,
+		Git:             c.Status.Git,
 	}
 
 	if err := h.clientSet.Client.Status().Update(context.TODO(), c); err != nil {
@@ -234,5 +235,6 @@ func setFailedFields(c *edpv1alpha1.Codebase, a edpv1alpha1.ActionType, message 
 		DetailedMessage: message,
 		Value:           "failed",
 		FailureCount:    c.Status.FailureCount,
+		Git:             c.Status.Git,
 	}
 }

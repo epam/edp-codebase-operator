@@ -190,6 +190,7 @@ func (r ReconcileCodebase) updateFinishStatus(c *edpv1alpha1.Codebase) error {
 		Result:          edpv1alpha1.Success,
 		Value:           "active",
 		FailureCount:    0,
+		Git:             c.Status.Git,
 	}
 	return r.updateStatus(c)
 }
