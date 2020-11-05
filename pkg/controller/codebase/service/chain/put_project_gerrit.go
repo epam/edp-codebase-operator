@@ -213,6 +213,7 @@ func (h PutProjectGerrit) setIntermediateSuccessFields(c *edpv1alpha1.Codebase, 
 		Username:        "system",
 		Value:           "inactive",
 		FailureCount:    c.Status.FailureCount,
+		Git:             c.Status.Git,
 	}
 
 	if err := h.clientSet.Client.Status().Update(context.TODO(), c); err != nil {
@@ -234,5 +235,6 @@ func setFailedFields(c *edpv1alpha1.Codebase, a edpv1alpha1.ActionType, message 
 		DetailedMessage: message,
 		Value:           "failed",
 		FailureCount:    c.Status.FailureCount,
+		Git:             c.Status.Git,
 	}
 }
