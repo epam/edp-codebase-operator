@@ -24,7 +24,7 @@ import (
 	"testing"
 )
 
-var (
+const (
 	fakeNamespace     = "fake_namespace"
 	fakeEdpName       = "fake_edp_name"
 	fakeGitServerName = "fake_git_server_name"
@@ -33,8 +33,9 @@ var (
 	fakePrivateKey = "fake_private_key"
 	fakeUser       = "fake_user"
 	fakeInputParam = "fake_input_param"
-	path           = getExecutableFilePath()
 )
+
+var path = getExecutableFilePath()
 
 func TestVersionFileExists_VersionFileMustExist(t *testing.T) {
 	db, mock, _ := sqlmock.New()

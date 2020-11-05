@@ -1,4 +1,4 @@
-package chain
+package put_codebase_image_stream
 
 import (
 	"github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
@@ -57,7 +57,7 @@ func TestPutCodebaseImageStream_ShouldCreateCisWithDefaultVersioningType(t *test
 	scheme.Scheme.AddKnownTypes(schema.GroupVersion{Group: "v2.edp.epam.com", Version: "v1alpha1"}, cis)
 	client := fake.NewFakeClient(objs...)
 	cisChain := PutCodebaseImageStream{
-		client: client,
+		Client: client,
 	}
 
 	err := cisChain.ServeRequest(cb)
@@ -116,7 +116,7 @@ func TestPutCodebaseImageStream_ShouldCreateCisWithEdpVersioningType(t *testing.
 	scheme.Scheme.AddKnownTypes(schema.GroupVersion{Group: "v2.edp.epam.com", Version: "v1alpha1"}, cis)
 	client := fake.NewFakeClient(objs...)
 	cisChain := PutCodebaseImageStream{
-		client: client,
+		Client: client,
 	}
 
 	err := cisChain.ServeRequest(cb)
@@ -162,7 +162,7 @@ func TestPutCodebaseImageStream_ShouldNotFindCodebase(t *testing.T) {
 	scheme.Scheme.AddKnownTypes(v1.SchemeGroupVersion, c)
 	client := fake.NewFakeClient(objs...)
 	cisChain := PutCodebaseImageStream{
-		client: client,
+		Client: client,
 	}
 
 	err := cisChain.ServeRequest(cb)
@@ -209,7 +209,7 @@ func TestPutCodebaseImageStream_ShouldNotFindEdpComponent(t *testing.T) {
 	scheme.Scheme.AddKnownTypes(v1.SchemeGroupVersion, c, ec)
 	client := fake.NewFakeClient(objs...)
 	cisChain := PutCodebaseImageStream{
-		client: client,
+		Client: client,
 	}
 
 	err := cisChain.ServeRequest(cb)

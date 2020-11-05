@@ -1,4 +1,4 @@
-package chain
+package trigger_release_job
 
 import (
 	"context"
@@ -12,16 +12,19 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
 type TriggerReleaseJob struct {
-	next    handler.CodebaseBranchHandler
-	client  client.Client
-	service service.CodebaseBranchService
+	Next    handler.CodebaseBranchHandler
+	Client  client.Client
+	Service service.CodebaseBranchService
 }
 
+var log = logf.Log.WithName("trigger-release-job-chain")
+
 func (h TriggerReleaseJob) ServeRequest(cb *v1alpha1.CodebaseBranch) error {
-	c, err := util.GetCodebase(h.client, cb.Spec.CodebaseName, cb.Namespace)
+	c, err := util.GetCodebase(h.Client, cb.Spec.CodebaseName, cb.Namespace)
 	if err != nil {
 		return err
 	}
@@ -44,11 +47,11 @@ func (h TriggerReleaseJob) ServeRequest(cb *v1alpha1.CodebaseBranch) error {
 		}
 	}
 
-	if err := h.service.TriggerReleaseJob(cb); err != nil {
+	if err := h.Service.TriggerReleaseJob(cb); err != nil {
 		return err
 	}
 
-	return nextServeOrNil(h.next, cb)
+	return handler.NextServeOrNil(h.Next, cb)
 }
 
 func hasNewVersion(b *v1alpha1.CodebaseBranch) bool {
@@ -56,15 +59,15 @@ func hasNewVersion(b *v1alpha1.CodebaseBranch) bool {
 }
 
 func (h TriggerReleaseJob) processNewVersion(b *v1alpha1.CodebaseBranch) error {
-	if err := h.service.ResetBranchBuildCounter(b); err != nil {
+	if err := h.Service.ResetBranchBuildCounter(b); err != nil {
 		return err
 	}
 
-	if err := h.service.ResetBranchSuccessBuildCounter(b); err != nil {
+	if err := h.Service.ResetBranchSuccessBuildCounter(b); err != nil {
 		return err
 	}
 
-	return h.service.AppendVersionToTheHistorySlice(b)
+	return h.Service.AppendVersionToTheHistorySlice(b)
 }
 
 func isJenkinsFolderAvailable(jf *jfv1alpha1.JenkinsFolder) bool {
@@ -73,7 +76,7 @@ func isJenkinsFolderAvailable(jf *jfv1alpha1.JenkinsFolder) bool {
 
 func (h TriggerReleaseJob) getJenkinsFolder(name, namespace string) (*jfv1alpha1.JenkinsFolder, error) {
 	i := &jfv1alpha1.JenkinsFolder{}
-	err := h.client.Get(context.TODO(), types.NamespacedName{
+	err := h.Client.Get(context.TODO(), types.NamespacedName{
 		Namespace: namespace,
 		Name:      name,
 	}, i)

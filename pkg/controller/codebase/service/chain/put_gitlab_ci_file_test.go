@@ -13,7 +13,7 @@ import (
 	"testing"
 )
 
-func TestParseTemplateMethod_1(t *testing.T) {
+func TestParseTemplateMethod_ShouldBeExecutedSuccessfully(t *testing.T) {
 	ec := &v1alpha1.EDPComponent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "fake-name",

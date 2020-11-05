@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	edpv1alpha1 "github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/codebasebranch/chain"
+	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/codebasebranch/chain/factory"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/model"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/util"
 	"github.com/epmd-edp/edp-component-operator/pkg/apis/v1/v1alpha1"
@@ -115,7 +115,7 @@ func (r *ReconcileCodebaseBranch) Reconcile(request reconcile.Request) (reconcil
 		return reconcile.Result{}, err
 	}
 
-	cbChain := chain.GetChain(c.Spec.CiTool, r.client)
+	cbChain := factory.GetChain(c.Spec.CiTool, r.client)
 	if err := cbChain.ServeRequest(cb); err != nil {
 		log.Error(err, "an error has occurred while handling codebase branch", "name", cb.Name)
 		switch err.(type) {

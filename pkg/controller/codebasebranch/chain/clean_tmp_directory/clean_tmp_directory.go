@@ -1,14 +1,19 @@
-package chain
+package clean_tmp_directory
 
 import (
 	"fmt"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	edpv1alpha1 "github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/util"
 	"github.com/pkg/errors"
+	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
+	"time"
 )
 
 type CleanTempDirectory struct {
 }
+
+var log = logf.Log.WithName("clean-temp-directory-chain")
 
 func (h CleanTempDirectory) ServeRequest(cb *v1alpha1.CodebaseBranch) error {
 	rl := log.WithValues("namespace", cb.Namespace, "codebase branch", cb.Name)
@@ -30,4 +35,16 @@ func deleteWorkDirectory(dir string) error {
 	}
 	log.Info("directory was cleaned", "path", dir)
 	return nil
+}
+
+func setFailedFields(cb *v1alpha1.CodebaseBranch, a v1alpha1.ActionType, message string) {
+	cb.Status = v1alpha1.CodebaseBranchStatus{
+		Status:          util.StatusFailed,
+		LastTimeUpdated: time.Now(),
+		Username:        "system",
+		Action:          a,
+		Result:          edpv1alpha1.Error,
+		DetailedMessage: message,
+		Value:           "failed",
+	}
 }

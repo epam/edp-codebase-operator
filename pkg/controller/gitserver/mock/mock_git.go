@@ -21,12 +21,16 @@ func (m MockGit) CheckPermissions(repo string, user string, pass string) (access
 }
 
 func (m MockGit) CloneRepositoryBySsh(key, user, repoUrl, destination string) error {
-	panic("implement me")
+	args := m.Called(key, user, repoUrl, destination)
+	return args.Error(0)
 }
 
 func (m MockGit) CloneRepository(repo, user, pass, destination string) error { panic("implement me") }
 
-func (m MockGit) CreateRemoteBranch(key, user, path, name string) error { panic("implement me") }
+func (m MockGit) CreateRemoteBranch(key, user, path, name string) error {
+	args := m.Called(key, user, path, name)
+	return args.Error(0)
+}
 
 func (m MockGit) CreateRemoteTag(key, user, path, branchName, name string) error {
 	panic("implement me")

@@ -1,4 +1,4 @@
-package chain
+package update_perf_data_sources
 
 import (
 	"context"
@@ -11,17 +11,20 @@ import (
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"strings"
 )
 
 type UpdatePerfDataSources struct {
-	next   handler.CodebaseBranchHandler
-	client client.Client
+	Next   handler.CodebaseBranchHandler
+	Client client.Client
 }
 
 const (
 	codebaseKind = "Codebase"
 )
+
+var log = logf.Log.WithName("update-perf-data-source-chain")
 
 func (h UpdatePerfDataSources) ServeRequest(cb *v1alpha1.CodebaseBranch) error {
 	rLog := log.WithValues("codebase", cb.Spec.CodebaseName, "branch", cb.Name)
@@ -30,12 +33,12 @@ func (h UpdatePerfDataSources) ServeRequest(cb *v1alpha1.CodebaseBranch) error {
 		return errors.Wrap(err, "couldn't update PerfDataSource CR")
 	}
 	rLog.Info("data source has been updated")
-	return nextServeOrNil(h.next, cb)
+	return handler.NextServeOrNil(h.Next, cb)
 }
 
 func (h UpdatePerfDataSources) tryToUpdateDataSourceCr(cb *v1alpha1.CodebaseBranch) error {
 	owr := cluster.GetOwnerReference(codebaseKind, cb.GetOwnerReferences())
-	c, err := cluster.GetCodebase(h.client, owr.Name, cb.Namespace)
+	c, err := cluster.GetCodebase(h.Client, owr.Name, cb.Namespace)
 	if err != nil {
 		return err
 	}
@@ -64,7 +67,7 @@ func (h UpdatePerfDataSources) tryToUpdateDataSourceCr(cb *v1alpha1.CodebaseBran
 
 		ds.Spec.Config.JobNames = append(ds.Spec.Config.JobNames, jn)
 
-		if err := h.client.Update(context.TODO(), ds); err != nil {
+		if err := h.Client.Update(context.TODO(), ds); err != nil {
 			return err
 		}
 	}
@@ -73,7 +76,7 @@ func (h UpdatePerfDataSources) tryToUpdateDataSourceCr(cb *v1alpha1.CodebaseBran
 
 func (h UpdatePerfDataSources) getPerfDataSourceCr(name, namespace string) (*perfApi.PerfDataSource, error) {
 	instance := &perfApi.PerfDataSource{}
-	err := h.client.Get(context.TODO(), types.NamespacedName{
+	err := h.Client.Get(context.TODO(), types.NamespacedName{
 		Namespace: namespace,
 		Name:      name,
 	}, instance)
