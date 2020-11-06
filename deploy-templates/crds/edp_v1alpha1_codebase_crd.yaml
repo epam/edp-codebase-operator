@@ -103,12 +103,15 @@ spec:
                   type: string
                 dataSources:
                   type: array
+            defaultBranch:
+              type: string
           required:
             - lang
             - type
             - buildTool
             - strategy
             - versioning
+            - defaultBranch
           type: object
         status:
           type: object
