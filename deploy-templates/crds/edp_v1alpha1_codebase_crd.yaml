@@ -97,12 +97,15 @@ spec:
               anyOf:
                 - type: null
                 - type: string
+            defaultBranch:
+              type: string
           required:
             - lang
             - type
             - buildTool
             - strategy
             - versioning
+            - defaultBranch
           type: object
         status:
           type: object

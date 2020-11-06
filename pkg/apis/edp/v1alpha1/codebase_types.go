@@ -57,15 +57,16 @@ type CodebaseSpec struct {
 	TestReportFramework  *string     `json:"testReportFramework"`
 	Type                 string      `json:"type"`
 	GitServer            string      `json:"gitServer"`
-	GitUrlPath           *string     `json:"gitUrlPath"`
-	JenkinsSlave         *string     `json:"jenkinsSlave"`
-	JobProvisioning      *string     `json:"jobProvisioning"`
-	DeploymentScript     string      `json:"deploymentScript"`
-	Versioning           Versioning  `json:"versioning"`
-	JiraServer           *string     `json:"jiraServer,omitempty"`
-	CommitMessagePattern *string     `json:"commitMessagePattern"`
-	TicketNamePattern    *string     `json:"ticketNamePattern"`
-	CiTool               string      `json:"ciTool"`
+	GitUrlPath           *string    `json:"gitUrlPath"`
+	JenkinsSlave         *string    `json:"jenkinsSlave"`
+	JobProvisioning      *string    `json:"jobProvisioning"`
+	DeploymentScript     string     `json:"deploymentScript"`
+	Versioning           Versioning `json:"versioning"`
+	JiraServer           *string    `json:"jiraServer,omitempty"`
+	CommitMessagePattern *string    `json:"commitMessagePattern"`
+	TicketNamePattern    *string    `json:"ticketNamePattern"`
+	CiTool               string     `json:"ciTool"`
+	DefaultBranch        string     `json:"defaultBranch"`
 }
 
 // CodebaseStatus defines the observed state of Codebase
