@@ -161,15 +161,22 @@ func (GitProvider) CheckPermissions(repo string, user string, pass string) (acce
 		URLs: []string{repo},
 	})
 	rfs, err := remote.List(&git.ListOptions{
-		Auth: &http.BasicAuth{
-			Username: user,
-			Password: pass,
-		}})
+		Auth: basicAuth(user, pass)})
 	if err != nil {
 		log.Error(err, fmt.Sprintf("User %v do not have access to %v repository", user, repo))
 		return false
 	}
 	return len(rfs) != 0
+}
+
+func basicAuth(user, pass string) *http.BasicAuth {
+	if len(user) != 0 {
+		return &http.BasicAuth{
+			Username: user,
+			Password: pass,
+		}
+	}
+	return nil
 }
 
 func (GitProvider) CloneRepositoryBySsh(key, user, repoUrl, destination string) error {
