@@ -24,3 +24,9 @@ func TestBasicAuthFilledUser(t *testing.T) {
 	assert.Equal(t, "some", ba.Username)
 	assert.Equal(t, "some", ba.Password)
 }
+
+func TestCloneRepository(t *testing.T) {
+	gp := GitProvider{}
+	err := gp.CloneRepository(edpGerrit, "", "", "tmp")
+	assert.NoError(t, err)
+}

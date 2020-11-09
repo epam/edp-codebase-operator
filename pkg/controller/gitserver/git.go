@@ -200,11 +200,8 @@ func (GitProvider) CloneRepositoryBySsh(key, user, repoUrl, destination string) 
 func (GitProvider) CloneRepository(repo, user, pass, destination string) error {
 	log.Info("Start cloning", "repository", repo)
 	_, err := git.PlainClone(destination, false, &git.CloneOptions{
-		URL: repo,
-		Auth: &http.BasicAuth{
-			Username: user,
-			Password: pass,
-		}})
+		URL:  repo,
+		Auth: basicAuth(user, pass)})
 	if err != nil {
 		return err
 	}
