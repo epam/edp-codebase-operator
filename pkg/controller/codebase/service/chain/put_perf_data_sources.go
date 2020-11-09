@@ -65,9 +65,8 @@ func (h PutPerfDataSources) getDataSourceConfig(dsType, branch, codebase, namesp
 		}
 
 		return &perfAPi.DataSourceConfig{
-			JobNames:       []string{fmt.Sprintf("/%v/%v-Build-%v", codebase, strings.ToUpper(branch), codebase)},
-			Url:            c.Spec.Url,
-			CredentialName: jenkinsDataSourceSecretName,
+			JobNames: []string{fmt.Sprintf("/%v/%v-Build-%v", codebase, strings.ToUpper(branch), codebase)},
+			Url:      c.Spec.Url,
 		}, nil
 	}
 	c, err := util.GetEdpComponent(h.client, sonarEdpComponentName, namespace)
@@ -76,9 +75,8 @@ func (h PutPerfDataSources) getDataSourceConfig(dsType, branch, codebase, namesp
 	}
 
 	return &perfAPi.DataSourceConfig{
-		ProjectKeys:    []string{fmt.Sprintf("%v", codebase)},
-		Url:            c.Spec.Url,
-		CredentialName: sonarDataSourceSecretName,
+		ProjectKeys: []string{fmt.Sprintf("%v", codebase)},
+		Url:         c.Spec.Url,
 	}, nil
 }
 
