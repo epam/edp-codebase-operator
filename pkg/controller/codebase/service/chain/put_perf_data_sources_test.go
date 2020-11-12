@@ -88,34 +88,3 @@ func TestPutPerfDataSourcesChain_ShouldNotFoundEdpComponent(t *testing.T) {
 	}
 	assert.Error(t, PutPerfDataSources{client: fake.NewFakeClient([]runtime.Object{}...)}.ServeRequest(c))
 }
-
-/*
-func TestPutPerfDataSourcesChain_ShouldThrowErrorDuringCreateRequest(t *testing.T) {
-	ecSonar := &edpCompApi.EDPComponent{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "sonar",
-			Namespace: fakeNamespace,
-		},
-		Spec: edpCompApi.EDPComponentSpec{},
-	}
-
-	objs := []runtime.Object{
-		ecSonar,
-	}
-	s := scheme.Scheme
-	s.AddKnownTypes(v1.SchemeGroupVersion, ecSonar)
-
-	c := &v1alpha1.Codebase{
-		ObjectMeta: v12.ObjectMeta{
-			Name:      fakeName,
-			Namespace: fakeNamespace,
-		},
-		Spec: v1alpha1.CodebaseSpec{
-			Perf: &v1alpha1.Perf{
-				Name:        fakeName,
-				DataSources: []string{"Sonar"},
-			},
-		},
-	}
-	assert.Error(t, PutPerfDataSources{client: fake.NewFakeClient(objs...)}.ServeRequest(c))
-}*/

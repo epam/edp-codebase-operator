@@ -8,7 +8,9 @@ import (
 	"github.com/epmd-edp/codebase-operator/v2/pkg/util"
 	perfAPi "github.com/epmd-edp/perf-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/pkg/errors"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
 )
@@ -21,10 +23,6 @@ type PutPerfDataSources struct {
 const (
 	jenkinsEdpComponentName = "jenkins"
 	sonarEdpComponentName   = "sonar"
-	defaultBranch           = "master"
-
-	jenkinsDataSourceSecretName = "jenkins-admin-token"
-	sonarDataSourceSecretName   = "sonar-admin-password"
 )
 
 func (h PutPerfDataSources) ServeRequest(c *v1alpha1.Codebase) error {
@@ -45,12 +43,7 @@ func (h PutPerfDataSources) tryToCreateDataSourceCr(c *v1alpha1.Codebase) error 
 	}
 
 	for _, name := range c.Spec.Perf.DataSources {
-		config, err := h.getDataSourceConfig(name, defaultBranch, c.Name, c.Namespace)
-		if err != nil {
-			return err
-		}
-
-		if err := h.createDataSource(c, name, *config); err != nil {
+		if err := h.tryToCreateDataSource(c, name); err != nil {
 			return err
 		}
 	}
@@ -80,6 +73,25 @@ func (h PutPerfDataSources) getDataSourceConfig(dsType, branch, codebase, namesp
 	}, nil
 }
 
+func (h PutPerfDataSources) tryToCreateDataSource(c *v1alpha1.Codebase, dataSourceType string) error {
+	ds := &perfAPi.PerfDataSource{}
+	err := h.client.Get(context.TODO(), types.NamespacedName{
+		Name:      getDataSourceName(c.Name, dataSourceType),
+		Namespace: c.Namespace,
+	}, ds)
+	if err != nil {
+		if k8serrors.IsNotFound(err) {
+			config, err := h.getDataSourceConfig(dataSourceType, c.Spec.DefaultBranch, c.Name, c.Namespace)
+			if err != nil {
+				return err
+			}
+			return h.createDataSource(c, dataSourceType, *config)
+		}
+		return err
+	}
+	return nil
+}
+
 func (h PutPerfDataSources) createDataSource(c *v1alpha1.Codebase, dataSourceType string, config perfAPi.DataSourceConfig) error {
 	ds := &perfAPi.PerfDataSource{
 		TypeMeta: v1.TypeMeta{
@@ -87,7 +99,7 @@ func (h PutPerfDataSources) createDataSource(c *v1alpha1.Codebase, dataSourceTyp
 			Kind:       "PerfDataSource",
 		},
 		ObjectMeta: v1.ObjectMeta{
-			Name:      strings.ToLower(fmt.Sprintf("%v-%v", c.Name, dataSourceType)),
+			Name:      getDataSourceName(c.Name, dataSourceType),
 			Namespace: c.Namespace,
 		},
 		Spec: perfAPi.PerfDataSourceSpec{
@@ -102,4 +114,8 @@ func (h PutPerfDataSources) createDataSource(c *v1alpha1.Codebase, dataSourceTyp
 		return errors.Wrapf(err, "couldn't create PERF data source %v-%v", c.Name, dataSourceType)
 	}
 	return nil
+}
+
+func getDataSourceName(codebase, dataSourceType string) string {
+	return strings.ToLower(fmt.Sprintf("%v-%v", codebase, dataSourceType))
 }
