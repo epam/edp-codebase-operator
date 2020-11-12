@@ -22,6 +22,8 @@ type UpdatePerfDataSources struct {
 
 const (
 	codebaseKind = "Codebase"
+
+	jenkinsDataSourceType = "Jenkins"
 )
 
 var log = logf.Log.WithName("update-perf-data-source-chain")
@@ -49,33 +51,45 @@ func (h UpdatePerfDataSources) tryToUpdateDataSourceCr(cb *v1alpha1.CodebaseBran
 		return nil
 	}
 
+	createFactory := h.getCreateFactory()
 	for _, name := range c.Spec.Perf.DataSources {
-		if name != "Jenkins" {
+		f := createFactory[name]
+		if f == nil {
 			continue
 		}
 
-		ds, err := h.getPerfDataSourceCr(fmt.Sprintf("%v-%v", cb.Spec.CodebaseName, strings.ToLower(name)), cb.Namespace)
-		if err != nil {
-			return err
-		}
-
-		jn := fmt.Sprintf("/%v/%v-Build-%v", cb.Spec.CodebaseName, strings.ToUpper(cb.Spec.BranchName), cb.Spec.CodebaseName)
-		if util.ContainsString(ds.Spec.Config.JobNames, jn) {
-			log.Info("perf data source already contains job", "job", jn)
-			return nil
-		}
-
-		ds.Spec.Config.JobNames = append(ds.Spec.Config.JobNames, jn)
-
-		if err := h.Client.Update(context.TODO(), ds); err != nil {
+		if err := f(cb, name); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (h UpdatePerfDataSources) getPerfDataSourceCr(name, namespace string) (*perfApi.PerfDataSource, error) {
-	instance := &perfApi.PerfDataSource{}
+func (h UpdatePerfDataSources) getCreateFactory() map[string]func(cb *v1alpha1.CodebaseBranch, dataSourceType string) error {
+	return map[string]func(cb *v1alpha1.CodebaseBranch, dataSourceType string) error{
+		jenkinsDataSourceType: h.tryToUpdateJenkinsDataSource,
+	}
+}
+
+func (h UpdatePerfDataSources) tryToUpdateJenkinsDataSource(cb *v1alpha1.CodebaseBranch, dataSourceType string) error {
+	ds, err := h.getPerfDataSourceCr(fmt.Sprintf("%v-%v", cb.Spec.CodebaseName, strings.ToLower(dataSourceType)), cb.Namespace)
+	if err != nil {
+		return err
+	}
+
+	jn := fmt.Sprintf("/%v/%v-Build-%v", cb.Spec.CodebaseName, strings.ToUpper(cb.Spec.BranchName), cb.Spec.CodebaseName)
+	if util.ContainsString(ds.Spec.Config.JobNames, jn) {
+		log.Info("perf data source already contains job", "job", jn)
+		return nil
+	}
+
+	ds.Spec.Config.JobNames = append(ds.Spec.Config.JobNames, jn)
+
+	return h.Client.Update(context.TODO(), ds)
+}
+
+func (h UpdatePerfDataSources) getPerfDataSourceCr(name, namespace string) (*perfApi.PerfDataSourceJenkins, error) {
+	instance := &perfApi.PerfDataSourceJenkins{}
 	err := h.Client.Get(context.TODO(), types.NamespacedName{
 		Namespace: namespace,
 		Name:      name,

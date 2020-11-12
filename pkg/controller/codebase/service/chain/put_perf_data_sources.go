@@ -6,10 +6,12 @@ import (
 	"github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/codebase/service/chain/handler"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/util"
+	"github.com/epmd-edp/jenkins-operator/v2/pkg/util/consts"
 	perfAPi "github.com/epmd-edp/perf-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/pkg/errors"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
@@ -25,6 +27,9 @@ const (
 	sonarEdpComponentName   = "sonar"
 
 	defaultBranch = "master"
+
+	jenkinsDataSourceType = "Jenkins"
+	sonarDataSourceType   = "Sonar"
 )
 
 func (h PutPerfDataSources) ServeRequest(c *v1alpha1.Codebase) error {
@@ -44,78 +49,150 @@ func (h PutPerfDataSources) tryToCreateDataSourceCr(c *v1alpha1.Codebase) error 
 		return nil
 	}
 
+	createFactory := h.getCreateFactory()
 	for _, name := range c.Spec.Perf.DataSources {
-		if err := h.tryToCreateDataSource(c, name); err != nil {
+		if err := createFactory[name](c, name); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (h PutPerfDataSources) getDataSourceConfig(dsType, branch, codebase, namespace string) (*perfAPi.DataSourceConfig, error) {
-	if dsType == "Jenkins" {
-		c, err := util.GetEdpComponent(h.client, jenkinsEdpComponentName, namespace)
-		if err != nil {
-			return nil, err
-		}
-
-		return &perfAPi.DataSourceConfig{
-			JobNames: []string{fmt.Sprintf("/%v/%v-Build-%v", codebase, strings.ToUpper(branch), codebase)},
-			Url:      c.Spec.Url,
-		}, nil
+func (h PutPerfDataSources) getCreateFactory() map[string]func(c *v1alpha1.Codebase, dataSourceType string) error {
+	return map[string]func(c *v1alpha1.Codebase, dataSourceType string) error{
+		jenkinsDataSourceType: h.tryToCreateJenkinsDataSource,
+		sonarDataSourceType:   h.tryToCreateSonarDataSource,
 	}
-	c, err := util.GetEdpComponent(h.client, sonarEdpComponentName, namespace)
-	if err != nil {
-		return nil, err
-	}
-
-	return &perfAPi.DataSourceConfig{
-		ProjectKeys: []string{fmt.Sprintf("%v", codebase)},
-		Url:         c.Spec.Url,
-	}, nil
 }
 
-func (h PutPerfDataSources) tryToCreateDataSource(c *v1alpha1.Codebase, dataSourceType string) error {
-	ds := &perfAPi.PerfDataSource{}
+func (h PutPerfDataSources) tryToCreateJenkinsDataSource(c *v1alpha1.Codebase, dataSourceType string) error {
+	ds := &perfAPi.PerfDataSourceJenkins{}
 	err := h.client.Get(context.TODO(), types.NamespacedName{
 		Name:      getDataSourceName(c.Name, dataSourceType),
 		Namespace: c.Namespace,
 	}, ds)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
-			config, err := h.getDataSourceConfig(dataSourceType, defaultBranch, c.Name, c.Namespace)
-			if err != nil {
-				return err
-			}
-			return h.createDataSource(c, dataSourceType, *config)
+			return h.createJenkinsDataSource(c, dataSourceType)
 		}
 		return err
 	}
 	return nil
 }
 
-func (h PutPerfDataSources) createDataSource(c *v1alpha1.Codebase, dataSourceType string, config perfAPi.DataSourceConfig) error {
-	ds := &perfAPi.PerfDataSource{
+func (h PutPerfDataSources) tryToCreateSonarDataSource(c *v1alpha1.Codebase, dataSourceType string) error {
+	ds := &perfAPi.PerfDataSourceSonar{}
+	err := h.client.Get(context.TODO(), types.NamespacedName{
+		Name:      getDataSourceName(c.Name, dataSourceType),
+		Namespace: c.Namespace,
+	}, ds)
+	if err != nil {
+		if k8serrors.IsNotFound(err) {
+			return h.createSonarDataSource(c, dataSourceType)
+		}
+		return err
+	}
+	return nil
+}
+
+func (h PutPerfDataSources) createJenkinsDataSource(c *v1alpha1.Codebase, dataSourceType string) error {
+	config, err := h.getJenkinsDataSourceConfig(defaultBranch, c.Name, c.Namespace)
+	if err != nil {
+		return err
+	}
+
+	ds := &perfAPi.PerfDataSourceJenkins{
 		TypeMeta: v1.TypeMeta{
 			APIVersion: "v2.edp.epam.com/v1alpha1",
-			Kind:       "PerfDataSource",
+			Kind:       "PerfDataSourceJenkins",
 		},
 		ObjectMeta: v1.ObjectMeta{
 			Name:      getDataSourceName(c.Name, dataSourceType),
 			Namespace: c.Namespace,
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion:         "v2.edp.epam.com/v1alpha1",
+					Kind:               consts.CodebaseKind,
+					Name:               c.Name,
+					UID:                c.UID,
+					BlockOwnerDeletion: newTrue(),
+				},
+			},
 		},
-		Spec: perfAPi.PerfDataSourceSpec{
+		Spec: perfAPi.PerfDataSourceJenkinsSpec{
 			Name:           dataSourceType,
 			Type:           strings.ToUpper(dataSourceType),
-			Config:         config,
+			Config:         *config,
 			PerfServerName: c.Spec.Perf.Name,
 		},
 	}
 
 	if err := h.client.Create(context.TODO(), ds); err != nil {
-		return errors.Wrapf(err, "couldn't create PERF data source %v-%v", c.Name, dataSourceType)
+		return errors.Wrapf(err, "couldn't create PERF Jenkins data source %v-%v", c.Name, dataSourceType)
 	}
 	return nil
+}
+
+func (h PutPerfDataSources) createSonarDataSource(c *v1alpha1.Codebase, dataSourceType string) error {
+	config, err := h.getSonarDataSourceConfig(defaultBranch, c.Name, c.Namespace)
+	if err != nil {
+		return err
+	}
+
+	ds := &perfAPi.PerfDataSourceSonar{
+		TypeMeta: v1.TypeMeta{
+			APIVersion: "v2.edp.epam.com/v1alpha1",
+			Kind:       "PerfDataSourceSonar",
+		},
+		ObjectMeta: v1.ObjectMeta{
+			Name:      getDataSourceName(c.Name, dataSourceType),
+			Namespace: c.Namespace,
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion:         "v2.edp.epam.com/v1alpha1",
+					Kind:               consts.CodebaseKind,
+					Name:               c.Name,
+					UID:                c.UID,
+					BlockOwnerDeletion: newTrue(),
+				},
+			},
+		},
+		Spec: perfAPi.PerfDataSourceSonarSpec{
+			Name:           dataSourceType,
+			Type:           strings.ToUpper(dataSourceType),
+			Config:         *config,
+			PerfServerName: c.Spec.Perf.Name,
+		},
+	}
+
+	if err := h.client.Create(context.TODO(), ds); err != nil {
+		return errors.Wrapf(err, "couldn't create PERF Sonar data source %v-%v", c.Name, dataSourceType)
+	}
+	return nil
+}
+
+func (h PutPerfDataSources) getJenkinsDataSourceConfig(branch, codebase, namespace string) (*perfAPi.DataSourceJenkinsConfig, error) {
+	c, err := util.GetEdpComponent(h.client, jenkinsEdpComponentName, namespace)
+	if err != nil {
+		return nil, err
+	}
+
+	return &perfAPi.DataSourceJenkinsConfig{
+		JobNames: []string{fmt.Sprintf("/%v/%v-Build-%v", codebase, strings.ToUpper(branch), codebase)},
+		Url:      c.Spec.Url,
+	}, nil
+}
+
+func (h PutPerfDataSources) getSonarDataSourceConfig(branch, codebase, namespace string) (*perfAPi.DataSourceSonarConfig, error) {
+	c, err := util.GetEdpComponent(h.client, sonarEdpComponentName, namespace)
+	if err != nil {
+		return nil, err
+	}
+
+	return &perfAPi.DataSourceSonarConfig{
+		ProjectKeys: []string{fmt.Sprintf("%v", codebase)},
+		Url:         c.Spec.Url,
+	}, nil
 }
 
 func getDataSourceName(codebase, dataSourceType string) string {

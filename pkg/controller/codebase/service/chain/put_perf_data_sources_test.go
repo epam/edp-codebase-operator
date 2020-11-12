@@ -31,7 +31,7 @@ func TestPutPerfDataSourcesChain_SkipCreatingPerfDataSource(t *testing.T) {
 	assert.NoError(t, sources.ServeRequest(c))
 }
 
-func TestPutPerfDataSourcesChain_ShouldDsBeCreated(t *testing.T) {
+func TestPutPerfDataSourcesChain_JenkinsAndSonarDataSourcesShouldBeCreated(t *testing.T) {
 	ecJenkins := &edpCompApi.EDPComponent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "jenkins",
@@ -53,7 +53,8 @@ func TestPutPerfDataSourcesChain_ShouldDsBeCreated(t *testing.T) {
 	}
 	s := scheme.Scheme
 	s.AddKnownTypes(v1.SchemeGroupVersion, ecJenkins, ecSonar,
-		&perfApi.PerfDataSource{}, &perfApi.PerfDataSourceList{})
+		&perfApi.PerfDataSourceJenkins{}, &perfApi.PerfDataSourceJenkinsList{},
+		&perfApi.PerfDataSourceSonar{}, &perfApi.PerfDataSourceSonarList{})
 
 	c := &v1alpha1.Codebase{
 		ObjectMeta: v12.ObjectMeta{
@@ -72,7 +73,9 @@ func TestPutPerfDataSourcesChain_ShouldDsBeCreated(t *testing.T) {
 
 func TestPutPerfDataSourcesChain_ShouldNotFoundEdpComponent(t *testing.T) {
 	s := scheme.Scheme
-	s.AddKnownTypes(v1.SchemeGroupVersion, &perfApi.PerfDataSource{}, &perfApi.PerfDataSourceList{})
+	s.AddKnownTypes(v1.SchemeGroupVersion,
+		&perfApi.PerfDataSourceJenkins{}, &perfApi.PerfDataSourceJenkinsList{},
+		&perfApi.PerfDataSourceSonar{}, &perfApi.PerfDataSourceSonarList{})
 
 	c := &v1alpha1.Codebase{
 		ObjectMeta: v12.ObjectMeta{

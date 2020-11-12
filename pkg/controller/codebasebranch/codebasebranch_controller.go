@@ -8,6 +8,7 @@ import (
 	"github.com/epmd-edp/codebase-operator/v2/pkg/model"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/util"
 	"github.com/epmd-edp/edp-component-operator/pkg/apis/v1/v1alpha1"
+	perfApi "github.com/epmd-edp/perf-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/pkg/errors"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -54,6 +55,15 @@ func addKnownTypes(scheme *runtime.Scheme) {
 		&v1alpha1.EDPComponentList{},
 	)
 	metav1.AddToGroupVersion(scheme, schemeGroupVersion)
+
+	schemeGroupVersionV2 := schema.GroupVersion{Group: "v2.edp.epam.com", Version: "v1alpha1"}
+	scheme.AddKnownTypes(schemeGroupVersionV2,
+		&perfApi.PerfDataSourceJenkins{},
+		&perfApi.PerfDataSourceJenkinsList{},
+		&perfApi.PerfDataSourceSonar{},
+		&perfApi.PerfDataSourceSonarList{},
+	)
+	metav1.AddToGroupVersion(scheme, schemeGroupVersionV2)
 }
 
 func add(mgr manager.Manager, r reconcile.Reconciler) error {

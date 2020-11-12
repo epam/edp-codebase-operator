@@ -73,8 +73,10 @@ func addKnownTypes(scheme *runtime.Scheme) {
 
 	schemeGroupVersionV2 := schema.GroupVersion{Group: "v2.edp.epam.com", Version: "v1alpha1"}
 	scheme.AddKnownTypes(schemeGroupVersionV2,
-		&perfApi.PerfDataSource{},
-		&perfApi.PerfDataSourceList{},
+		&perfApi.PerfDataSourceJenkins{},
+		&perfApi.PerfDataSourceJenkinsList{},
+		&perfApi.PerfDataSourceSonar{},
+		&perfApi.PerfDataSourceSonarList{},
 	)
 	metav1.AddToGroupVersion(scheme, schemeGroupVersionV2)
 }
