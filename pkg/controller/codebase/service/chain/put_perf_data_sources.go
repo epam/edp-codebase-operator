@@ -23,6 +23,8 @@ type PutPerfDataSources struct {
 const (
 	jenkinsEdpComponentName = "jenkins"
 	sonarEdpComponentName   = "sonar"
+
+	defaultBranch = "master"
 )
 
 func (h PutPerfDataSources) ServeRequest(c *v1alpha1.Codebase) error {
@@ -81,7 +83,7 @@ func (h PutPerfDataSources) tryToCreateDataSource(c *v1alpha1.Codebase, dataSour
 	}, ds)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
-			config, err := h.getDataSourceConfig(dataSourceType, c.Spec.DefaultBranch, c.Name, c.Namespace)
+			config, err := h.getDataSourceConfig(dataSourceType, defaultBranch, c.Name, c.Namespace)
 			if err != nil {
 				return err
 			}
