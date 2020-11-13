@@ -56,9 +56,12 @@ rules:
     - imagestreamtags/status
     - gittags
     - gittags/status
-    - perfdatasources
-    - perfdatasources/finalizers
-    - perfdatasources/status
+    - perfdatasourcejenkinses
+    - perfdatasourcejenkinses/finalizers
+    - perfdatasourcejenkinses/status
+    - perfdatasourcesonars
+    - perfdatasourcesonars/finalizers
+    - perfdatasourcesonars/status
   verbs:
     - '*'
 {{ end }}
