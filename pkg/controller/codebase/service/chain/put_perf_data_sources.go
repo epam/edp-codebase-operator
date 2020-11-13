@@ -113,6 +113,7 @@ func (h PutPerfDataSources) createJenkinsDataSource(c *v1alpha1.Codebase, dataSo
 			Type:           strings.ToUpper(dataSourceType),
 			Config:         *config,
 			PerfServerName: c.Spec.Perf.Name,
+			CodebaseName:   c.Name,
 		},
 	}
 
@@ -142,6 +143,7 @@ func (h PutPerfDataSources) createSonarDataSource(c *v1alpha1.Codebase, dataSour
 			Type:           strings.ToUpper(dataSourceType),
 			Config:         *config,
 			PerfServerName: c.Spec.Perf.Name,
+			CodebaseName:   c.Name,
 		},
 	}
 
