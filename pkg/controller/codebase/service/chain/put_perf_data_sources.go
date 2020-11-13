@@ -6,12 +6,10 @@ import (
 	"github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/codebase/service/chain/handler"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/util"
-	"github.com/epmd-edp/jenkins-operator/v2/pkg/util/consts"
 	perfAPi "github.com/epmd-edp/perf-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/pkg/errors"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
@@ -109,15 +107,6 @@ func (h PutPerfDataSources) createJenkinsDataSource(c *v1alpha1.Codebase, dataSo
 		ObjectMeta: v1.ObjectMeta{
 			Name:      getDataSourceName(c.Name, dataSourceType),
 			Namespace: c.Namespace,
-			OwnerReferences: []metav1.OwnerReference{
-				{
-					APIVersion:         "v2.edp.epam.com/v1alpha1",
-					Kind:               consts.CodebaseKind,
-					Name:               c.Name,
-					UID:                c.UID,
-					BlockOwnerDeletion: newTrue(),
-				},
-			},
 		},
 		Spec: perfAPi.PerfDataSourceJenkinsSpec{
 			Name:           dataSourceType,
@@ -147,15 +136,6 @@ func (h PutPerfDataSources) createSonarDataSource(c *v1alpha1.Codebase, dataSour
 		ObjectMeta: v1.ObjectMeta{
 			Name:      getDataSourceName(c.Name, dataSourceType),
 			Namespace: c.Namespace,
-			OwnerReferences: []metav1.OwnerReference{
-				{
-					APIVersion:         "v2.edp.epam.com/v1alpha1",
-					Kind:               consts.CodebaseKind,
-					Name:               c.Name,
-					UID:                c.UID,
-					BlockOwnerDeletion: newTrue(),
-				},
-			},
 		},
 		Spec: perfAPi.PerfDataSourceSonarSpec{
 			Name:           dataSourceType,
