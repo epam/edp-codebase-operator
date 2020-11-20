@@ -11,6 +11,7 @@ var lf = map[string]string{
 	"javascript":      "react",
 	"groovy-pipeline": "groovy",
 	"dotnet":          "netcore",
+	"python":          "python-3.8",
 }
 
 func GetRepoUrl(c *v1alpha1.Codebase) (*string, error) {
