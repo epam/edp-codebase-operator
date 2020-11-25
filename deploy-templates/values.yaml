@@ -5,7 +5,7 @@ global:
     enabled: true
     port: 5432
     host:
-    name: "edp-install-wizard-db"
+    name: "edp-db"
 
 name: codebase-operator
 image:
