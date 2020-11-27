@@ -171,11 +171,18 @@ func (r *ReconcileJiraFixVersion) initJiraClient(version edpv1alpha1.JiraFixVers
 	if err != nil {
 		return nil, err
 	}
-
 	s, err := util.GetSecretData(r.client, server.Spec.CredentialName, server.Namespace)
 	if err != nil {
 		return nil, errors.Wrapf(err, "couldn't get secret %v", server.Spec.CredentialName)
 	}
+
+	// Check Jira server availability status:
+	status := server.Status.Available
+	if status == false {
+		log.Info("Waiting for Jira server become available. Sleeping for 60 seconds...")
+		time.Sleep(60 * time.Second)
+	}
+
 	user := string(s.Data["username"])
 	pwd := string(s.Data["password"])
 	c, err := new(adapter.GoJiraAdapterFactory).New(dto.ConvertSpecToJiraServer(server.Spec.ApiUrl, user, pwd))
