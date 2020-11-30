@@ -62,6 +62,9 @@ rules:
     - perfdatasourcesonars
     - perfdatasourcesonars/finalizers
     - perfdatasourcesonars/status
+    - perfdatasourcegitlabs
+    - perfdatasourcegitlabs/finalizers
+    - perfdatasourcegitlabs/status
   verbs:
     - '*'
 {{ end }}
