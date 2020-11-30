@@ -2,6 +2,7 @@ package chain
 
 import (
 	"github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	"github.com/epmd-edp/codebase-operator/v2/pkg/util"
 	edpCompApi "github.com/epmd-edp/edp-component-operator/pkg/apis/v1/v1alpha1"
 	perfApi "github.com/epmd-edp/perf-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/stretchr/testify/assert"
@@ -48,13 +49,24 @@ func TestPutPerfDataSourcesChain_JenkinsAndSonarDataSourcesShouldBeCreated(t *te
 		Spec: edpCompApi.EDPComponentSpec{},
 	}
 
+	gs := &v1alpha1.GitServer{
+		ObjectMeta: v12.ObjectMeta{
+			Name:      fakeName,
+			Namespace: fakeNamespace,
+		},
+		Spec: v1alpha1.GitServerSpec{
+			GitHost: fakeName,
+		},
+	}
+
 	objs := []runtime.Object{
-		ecJenkins, ecSonar,
+		ecJenkins, ecSonar, gs,
 	}
 	s := scheme.Scheme
-	s.AddKnownTypes(v1.SchemeGroupVersion, ecJenkins, ecSonar,
+	s.AddKnownTypes(v1.SchemeGroupVersion, ecJenkins, ecSonar, gs,
 		&perfApi.PerfDataSourceJenkins{}, &perfApi.PerfDataSourceJenkinsList{},
-		&perfApi.PerfDataSourceSonar{}, &perfApi.PerfDataSourceSonarList{})
+		&perfApi.PerfDataSourceSonar{}, &perfApi.PerfDataSourceSonarList{},
+		&perfApi.PerfDataSourceGitLab{}, &perfApi.PerfDataSourceGitLabList{})
 
 	c := &v1alpha1.Codebase{
 		ObjectMeta: v12.ObjectMeta{
@@ -62,9 +74,12 @@ func TestPutPerfDataSourcesChain_JenkinsAndSonarDataSourcesShouldBeCreated(t *te
 			Namespace: fakeNamespace,
 		},
 		Spec: v1alpha1.CodebaseSpec{
+			DefaultBranch: fakeName,
+			GitUrlPath:    util.GetStringP("/fake"),
+			GitServer:     fakeName,
 			Perf: &v1alpha1.Perf{
 				Name:        fakeName,
-				DataSources: []string{"Jenkins", "Sonar"},
+				DataSources: []string{"Jenkins", "Sonar", "GitLab"},
 			},
 		},
 	}

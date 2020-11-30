@@ -77,6 +77,8 @@ func addKnownTypes(scheme *runtime.Scheme) {
 		&perfApi.PerfDataSourceJenkinsList{},
 		&perfApi.PerfDataSourceSonar{},
 		&perfApi.PerfDataSourceSonarList{},
+		&perfApi.PerfDataSourceGitLab{},
+		&perfApi.PerfDataSourceGitLabList{},
 	)
 	metav1.AddToGroupVersion(scheme, schemeGroupVersionV2)
 }

@@ -24,6 +24,7 @@ const (
 	codebaseKind = "Codebase"
 
 	jenkinsDataSourceType = "Jenkins"
+	gitLabDataSourceType  = "GitLab"
 )
 
 var log = logf.Log.WithName("update-perf-data-source-chain")
@@ -68,11 +69,12 @@ func (h UpdatePerfDataSources) tryToUpdateDataSourceCr(cb *v1alpha1.CodebaseBran
 func (h UpdatePerfDataSources) getCreateFactory() map[string]func(cb *v1alpha1.CodebaseBranch, dataSourceType string) error {
 	return map[string]func(cb *v1alpha1.CodebaseBranch, dataSourceType string) error{
 		jenkinsDataSourceType: h.tryToUpdateJenkinsDataSource,
+		gitLabDataSourceType:  h.tryToUpdateGitLabDataSource,
 	}
 }
 
 func (h UpdatePerfDataSources) tryToUpdateJenkinsDataSource(cb *v1alpha1.CodebaseBranch, dataSourceType string) error {
-	ds, err := h.getPerfDataSourceCr(fmt.Sprintf("%v-%v", cb.Spec.CodebaseName, strings.ToLower(dataSourceType)), cb.Namespace)
+	ds, err := h.getPerfDataSourceJenkinsCr(fmt.Sprintf("%v-%v", cb.Spec.CodebaseName, strings.ToLower(dataSourceType)), cb.Namespace)
 	if err != nil {
 		return err
 	}
@@ -88,8 +90,36 @@ func (h UpdatePerfDataSources) tryToUpdateJenkinsDataSource(cb *v1alpha1.Codebas
 	return h.Client.Update(context.TODO(), ds)
 }
 
-func (h UpdatePerfDataSources) getPerfDataSourceCr(name, namespace string) (*perfApi.PerfDataSourceJenkins, error) {
+func (h UpdatePerfDataSources) tryToUpdateGitLabDataSource(cb *v1alpha1.CodebaseBranch, dataSourceType string) error {
+	ds, err := h.getPerfDataSourceGitLabCr(fmt.Sprintf("%v-%v", cb.Spec.CodebaseName, strings.ToLower(dataSourceType)), cb.Namespace)
+	if err != nil {
+		return err
+	}
+
+	if util.ContainsString(ds.Spec.Config.Branches, cb.Spec.BranchName) {
+		log.Info("perf data source already contains branch", "branch", cb.Spec.BranchName)
+		return nil
+	}
+
+	ds.Spec.Config.Branches = append(ds.Spec.Config.Branches, cb.Spec.BranchName)
+
+	return h.Client.Update(context.TODO(), ds)
+}
+
+func (h UpdatePerfDataSources) getPerfDataSourceJenkinsCr(name, namespace string) (*perfApi.PerfDataSourceJenkins, error) {
 	instance := &perfApi.PerfDataSourceJenkins{}
+	err := h.Client.Get(context.TODO(), types.NamespacedName{
+		Namespace: namespace,
+		Name:      name,
+	}, instance)
+	if err != nil {
+		return nil, err
+	}
+	return instance, nil
+}
+
+func (h UpdatePerfDataSources) getPerfDataSourceGitLabCr(name, namespace string) (*perfApi.PerfDataSourceGitLab, error) {
+	instance := &perfApi.PerfDataSourceGitLab{}
 	err := h.Client.Get(context.TODO(), types.NamespacedName{
 		Namespace: namespace,
 		Name:      name,
