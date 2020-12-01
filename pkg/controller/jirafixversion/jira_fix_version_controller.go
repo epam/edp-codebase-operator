@@ -102,7 +102,17 @@ func (r *ReconcileJiraFixVersion) Reconcile(request reconcile.Request) (reconcil
 		return reconcile.Result{}, err
 	}
 
-	jc, err := r.initJiraClient(*i)
+	js, err := r.getJiraServer(*i)
+	if err != nil {
+		setErrorStatus(i, err.Error())
+		return reconcile.Result{}, err
+	}
+	if !js.Status.Available {
+		log.Info("Waiting for Jira server become available.", "name", js.Name )
+		return reconcile.Result{RequeueAfter: setFailureCount(i)}, nil
+	}
+
+	jc, err := r.initJiraClient(*js)
 	if err != nil {
 		setErrorStatus(i, err.Error())
 		return reconcile.Result{}, err
@@ -166,26 +176,16 @@ func (r *ReconcileJiraFixVersion) updateStatus(instance *edpv1alpha1.JiraFixVers
 	}
 }
 
-func (r *ReconcileJiraFixVersion) initJiraClient(version edpv1alpha1.JiraFixVersion) (*jira.Client, error) {
-	server, err := r.getJiraServer(version)
+func (r *ReconcileJiraFixVersion) initJiraClient(js edpv1alpha1.JiraServer) (*jira.Client, error) {
+	s, err := util.GetSecretData(r.client, js.Spec.CredentialName, js.Namespace)
 	if err != nil {
-		return nil, err
-	}
-	s, err := util.GetSecretData(r.client, server.Spec.CredentialName, server.Namespace)
-	if err != nil {
-		return nil, errors.Wrapf(err, "couldn't get secret %v", server.Spec.CredentialName)
+		return nil, errors.Wrapf(err, "couldn't get secret %v", js.Spec.CredentialName)
 	}
 
-	// Check Jira server availability status:
-	status := server.Status.Available
-	if status == false {
-		log.Info("Waiting for Jira server become available. Sleeping for 60 seconds...")
-		time.Sleep(60 * time.Second)
-	}
 
 	user := string(s.Data["username"])
 	pwd := string(s.Data["password"])
-	c, err := new(adapter.GoJiraAdapterFactory).New(dto.ConvertSpecToJiraServer(server.Spec.ApiUrl, user, pwd))
+	c, err := new(adapter.GoJiraAdapterFactory).New(dto.ConvertSpecToJiraServer(js.Spec.ApiUrl, user, pwd))
 	if err != nil {
 		return nil, errors.Wrap(err, "couldn't create Jira client")
 	}
