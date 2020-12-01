@@ -11,6 +11,7 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"regexp"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
 )
@@ -231,8 +232,15 @@ func (h PutPerfDataSources) getGitLabDataSourceConfig(codebase *v1alpha1.Codebas
 	return &perfAPi.DataSourceGitLabConfig{
 		Repositories: []string{(*codebase.Spec.GitUrlPath)[1:]},
 		Branches:     []string{codebase.Spec.DefaultBranch},
-		Url:          gs.GitHost,
+		Url:          modifyGitLink(gs.GitHost),
 	}, nil
+}
+
+func modifyGitLink(host string) string {
+	if regexp.MustCompile(`^(https:\/\/)|^(http:\/\/)`).MatchString(host) {
+		return host
+	}
+	return fmt.Sprintf("https://%v", host)
 }
 
 func getDataSourceName(codebase, dataSourceType string) string {
