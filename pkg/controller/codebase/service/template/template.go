@@ -26,7 +26,7 @@ func PrepareTemplates(client *coreV1Client.CoreV1Client, c v1alpha1.Codebase) er
 	}
 
 	if c.Spec.Type == util.Application {
-		if err := util.CopyTemplate(*c.Spec.Framework, c.Spec.DeploymentScript, wd, *cf); err != nil {
+		if err := util.CopyTemplate(c.Spec.DeploymentScript, wd, *cf); err != nil {
 			return errors.Wrapf(err, "an error has occurred while copying template for %v codebase", c.Name)
 		}
 	}
@@ -61,7 +61,7 @@ func PrepareGitlabCITemplates(client *coreV1Client.CoreV1Client, c v1alpha1.Code
 	}
 
 	wd := fmt.Sprintf("/home/codebase-operator/edp/%v/%v", c.Namespace, c.Name)
-	if err := util.CopyTemplate(*c.Spec.Framework, c.Spec.DeploymentScript, wd, *cf); err != nil {
+	if err := util.CopyTemplate(c.Spec.DeploymentScript, wd, *cf); err != nil {
 		return errors.Wrapf(err, "an error has occurred while copying template for %v codebase", c.Name)
 	}
 

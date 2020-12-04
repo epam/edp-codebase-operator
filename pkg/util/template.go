@@ -42,6 +42,11 @@ func CopyPipelines(codebaseType, src, dest string) error {
 func CopyHelmChartTemplates(deploymentScript, workDir string, config model.ConfigGoTemplating) error {
 	log.Info("start handling Helm Chart templates", "codebase name", config.Name)
 	templatesDest := fmt.Sprintf("%v/%v/%v/deploy-templates", workDir, "templates", config.Name)
+	if DoesDirectoryExist(templatesDest) && !IsDirectoryEmpty(templatesDest) {
+		log.Info("deploy-templates folder already exists")
+		return nil
+	}
+
 	templateBasePath := fmt.Sprintf("/usr/local/bin/templates/applications/%v/%v", deploymentScript, config.PlatformType)
 
 	log.Info("Paths", "templatesDest", templatesDest, "templateBasePath", templateBasePath)
@@ -92,9 +97,14 @@ func CopyHelmChartTemplates(deploymentScript, workDir string, config model.Confi
 	return nil
 }
 
-func CopyOpenshiftTemplate(framework, deploymentScript, workDir string, config model.ConfigGoTemplating) error {
+func CopyOpenshiftTemplate(deploymentScript, workDir string, config model.ConfigGoTemplating) error {
 	log.Info("start handling Openshift template", "codebase name", config.Name)
 	templatesDest := fmt.Sprintf("%v/%v/%v/deploy-templates", workDir, "templates", config.Name)
+	if DoesDirectoryExist(templatesDest) && !IsDirectoryEmpty(templatesDest) {
+		log.Info("deploy-templates folder already exists")
+		return nil
+	}
+
 	templateBasePath := fmt.Sprintf("/usr/local/bin/templates/applications/%v/%v",
 		deploymentScript, strings.ToLower(config.Lang))
 	templateName := fmt.Sprintf("%v.tmpl", strings.ToLower(config.Lang))
@@ -122,11 +132,11 @@ func CopyOpenshiftTemplate(framework, deploymentScript, workDir string, config m
 	return nil
 }
 
-func CopyTemplate(framework, deploymentScript, workDir string, cf model.ConfigGoTemplating) error {
+func CopyTemplate(deploymentScript, workDir string, cf model.ConfigGoTemplating) error {
 	if deploymentScript == HelmChartDeploymentScriptType {
 		return CopyHelmChartTemplates(deploymentScript, workDir, cf)
 	}
-	return CopyOpenshiftTemplate(framework, deploymentScript, workDir, cf)
+	return CopyOpenshiftTemplate(deploymentScript, workDir, cf)
 }
 
 func renderTemplate(file *os.File, templateBasePath, templateName string, config model.ConfigGoTemplating) error {
