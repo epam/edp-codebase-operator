@@ -41,6 +41,7 @@ func (h PutJenkinsFolder) ServeRequest(c *v1alpha1.Codebase) error {
 		"PARAM":                    "true",
 		"NAME":                     c.Name,
 		"BUILD_TOOL":               strings.ToLower(c.Spec.BuildTool),
+		"DEFAULT_BRANCH":           c.Spec.DefaultBranch,
 		"GIT_SERVER_CR_NAME":       gs.Name,
 		"GIT_SERVER_CR_VERSION":    "v2",
 		"GIT_CREDENTIALS_ID":       gs.NameSshKeySecret,
