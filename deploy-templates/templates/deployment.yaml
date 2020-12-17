@@ -58,3 +58,5 @@ spec:
               value: "disable"
             - name: RECONCILATION_PERIOD
               value: "360" # The value should be typed in minutes.
+          resources:
+{{ toYaml .Values.resources | indent 12 }}

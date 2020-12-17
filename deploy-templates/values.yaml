@@ -12,6 +12,14 @@ image:
   name: epamedp/codebase-operator
   version: v2.4.0
 
+resources:
+  limits:
+    cpu: 200m
+    memory: 192Mi
+  requests:
+    cpu: 50m
+    memory: 64Mi
+
 jira:
   integration: true
   name: "epam-jira"
