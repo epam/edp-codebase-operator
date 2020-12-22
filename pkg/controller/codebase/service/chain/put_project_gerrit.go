@@ -97,7 +97,7 @@ func (h PutProjectGerrit) ServeRequest(c *v1alpha1.Codebase) error {
 		return errors.Wrap(err, "cloning project hsa been failed")
 	}
 
-	if err := h.tryToPushProjectToGerrit(*port, c.Name, wd, c.Namespace); err != nil {
+	if err := h.tryToPushProjectToGerrit(*port, c.Name, wd, c.Namespace, c.Spec.DefaultBranch); err != nil {
 		setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
 		return errors.Wrapf(err, "push to gerrit for codebase %v has been failed", c.Name)
 	}
@@ -112,7 +112,7 @@ func (h PutProjectGerrit) ServeRequest(c *v1alpha1.Codebase) error {
 	return nextServeOrNil(h.next, c)
 }
 
-func (h PutProjectGerrit) tryToPushProjectToGerrit(sshPort int32, codebaseName, workDir, namespace string) error {
+func (h PutProjectGerrit) tryToPushProjectToGerrit(sshPort int32, codebaseName, workDir, namespace, branchName string) error {
 	s, err := util.GetSecret(*h.clientSet.CoreClient, "gerrit-project-creator", namespace)
 	if err != nil {
 		return errors.Wrap(err, "unable to get gerrit-project-creator secret")
@@ -125,6 +125,15 @@ func (h PutProjectGerrit) tryToPushProjectToGerrit(sshPort int32, codebaseName, 
 	}
 
 	d := fmt.Sprintf("%v/%v", workDir, codebaseName)
+
+	if err := h.git.CreateLocalBranch(d, branchName); err != nil {
+		return errors.Wrapf(err, "creation default branch %v in Gerrit has been failed", branchName)
+	}
+
+	if err := h.git.Checkout(d, branchName); err != nil {
+		return errors.Wrapf(err, "checkout default branch %v in Gerrit has been failed", branchName)
+	}
+
 	if err := h.pushToGerrit(sshPort, idrsa, host, codebaseName, d); err != nil {
 		return err
 	}

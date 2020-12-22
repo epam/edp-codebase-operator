@@ -37,3 +37,10 @@ func (m MockGit) CreateRemoteTag(key, user, path, branchName, name string) error
 }
 
 func (m MockGit) Fetch(key, user, path, branchName string) error { panic("implement me") }
+
+func (m MockGit) Checkout(directory, branchName string) error {
+	args := m.Called(directory, branchName)
+	return args.Error(0)
+}
+
+func (m MockGit) CreateLocalBranch(path, name string) error { panic("implement me") }

@@ -36,6 +36,8 @@ type Git interface {
 	CreateRemoteBranch(key, user, path, name string) error
 	CreateRemoteTag(key, user, path, branchName, name string) error
 	Fetch(key, user, path, branchName string) error
+	Checkout(directory, branchName string) error
+	CreateLocalBranch(path, name string) error
 }
 
 type GitProvider struct {
@@ -374,5 +376,59 @@ func (gp GitProvider) Fetch(key, user, path, branchName string) error {
 		return err
 	}
 	log.Info("end fetching data", "name", branchName)
+	return nil
+}
+
+func (gp GitProvider) Checkout(directory, branchName string) error {
+	log.Info("start checkout branch", "name", branchName)
+	r, err := git.PlainOpen(directory)
+	if err != nil {
+		return err
+	}
+
+	w, err := r.Worktree()
+	if err != nil {
+		return err
+	}
+
+	err = w.Checkout(&git.CheckoutOptions{Branch: plumbing.ReferenceName(fmt.Sprintf("refs/heads/%v", branchName))})
+	if err != nil{
+		return err
+	}
+	return nil
+}
+
+func (gp GitProvider) CreateLocalBranch(path, name string) error {
+	log.Info("start creating local branch", "name", name)
+	r, err := git.PlainOpen(path)
+	if err != nil {
+		return err
+	}
+
+	branches, err := r.Branches()
+	if err != nil {
+		return err
+	}
+
+	exists, err := isBranchExists(name, branches)
+	if err != nil {
+		return err
+	}
+
+	if exists {
+		log.Info("branch already exists. skip creating", "name", name)
+		return nil
+	}
+
+	ref, err := r.Head()
+	if err != nil {
+		return err
+	}
+
+	newRef := plumbing.NewReferenceFromStrings(fmt.Sprintf("refs/heads/%v", name), ref.Hash().String())
+	if err := r.Storer.SetReference(newRef); err != nil {
+		return err
+	}
+	log.Info("local branch has been created", "name", name)
 	return nil
 }
