@@ -101,6 +101,10 @@ spec:
                   type: array
             defaultBranch:
               type: string
+            jiraIssueMetadataPayload:
+              anyOf:
+                - type: null
+                - type: string
           required:
             - lang
             - type
