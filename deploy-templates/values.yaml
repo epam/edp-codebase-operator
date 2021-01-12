@@ -10,7 +10,8 @@ global:
 name: codebase-operator
 image:
   name: epamedp/codebase-operator
-  version: v2.4.0
+  # if not defined then .Chart.AppVersion is used
+  version:
 
 resources:
   limits:
