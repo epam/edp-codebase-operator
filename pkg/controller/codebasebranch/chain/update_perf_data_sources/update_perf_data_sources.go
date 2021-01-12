@@ -3,9 +3,9 @@ package update_perf_data_sources
 import (
 	"context"
 	"fmt"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/codebasebranch/chain/handler"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/util"
+	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebasebranch/chain/handler"
+	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	perfApi "github.com/epmd-edp/perf-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epmd-edp/perf-operator/v2/pkg/util/cluster"
 	"github.com/pkg/errors"
@@ -41,7 +41,7 @@ func (h UpdatePerfDataSources) ServeRequest(cb *v1alpha1.CodebaseBranch) error {
 
 func (h UpdatePerfDataSources) tryToUpdateDataSourceCr(cb *v1alpha1.CodebaseBranch) error {
 	owr := cluster.GetOwnerReference(codebaseKind, cb.GetOwnerReferences())
-	c, err := cluster.GetCodebase(h.Client, owr.Name, cb.Namespace)
+	c, err := util.GetCodebase(h.Client, owr.Name, cb.Namespace)
 	if err != nil {
 		return err
 	}

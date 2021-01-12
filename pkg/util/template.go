@@ -2,7 +2,7 @@ package util
 
 import (
 	"fmt"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/model"
+	"github.com/epam/edp-codebase-operator/v2/pkg/model"
 	"github.com/pkg/errors"
 	"io/ioutil"
 	"os"

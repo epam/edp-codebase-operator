@@ -2,13 +2,13 @@ package chain
 
 import (
 	"fmt"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	edpv1alpha1 "github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/codebase/service/chain/handler"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/gerrit"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/openshift"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/util"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/vcs"
+	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	edpv1alpha1 "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/service/chain/handler"
+	"github.com/epam/edp-codebase-operator/v2/pkg/gerrit"
+	"github.com/epam/edp-codebase-operator/v2/pkg/openshift"
+	"github.com/epam/edp-codebase-operator/v2/pkg/util"
+	"github.com/epam/edp-codebase-operator/v2/pkg/vcs"
 	"github.com/pkg/errors"
 )
 

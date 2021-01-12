@@ -2,12 +2,12 @@ package jirafixversion
 
 import (
 	"context"
-	edpv1alpha1 "github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/client/jira"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/client/jira/adapter"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/client/jira/dto"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/jirafixversion/chain"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/util"
+	edpv1alpha1 "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	"github.com/epam/edp-codebase-operator/v2/pkg/client/jira"
+	"github.com/epam/edp-codebase-operator/v2/pkg/client/jira/adapter"
+	"github.com/epam/edp-codebase-operator/v2/pkg/client/jira/dto"
+	"github.com/epam/edp-codebase-operator/v2/pkg/controller/jirafixversion/chain"
+	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	"github.com/pkg/errors"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -108,7 +108,7 @@ func (r *ReconcileJiraFixVersion) Reconcile(request reconcile.Request) (reconcil
 		return reconcile.Result{}, err
 	}
 	if !js.Status.Available {
-		log.Info("Waiting for Jira server become available.", "name", js.Name )
+		log.Info("Waiting for Jira server become available.", "name", js.Name)
 		return reconcile.Result{RequeueAfter: setFailureCount(i)}, nil
 	}
 
@@ -181,7 +181,6 @@ func (r *ReconcileJiraFixVersion) initJiraClient(js edpv1alpha1.JiraServer) (*ji
 	if err != nil {
 		return nil, errors.Wrapf(err, "couldn't get secret %v", js.Spec.CredentialName)
 	}
-
 
 	user := string(s.Data["username"])
 	pwd := string(s.Data["password"])

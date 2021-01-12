@@ -2,9 +2,9 @@ package put_branch_in_git
 
 import (
 	"fmt"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/codebasebranch/service"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/gitserver/mock"
+	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebasebranch/service"
+	"github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver/mock"
 	"github.com/epmd-edp/perf-operator/v2/pkg/util/common"
 	"github.com/stretchr/testify/assert"
 	coreV1 "k8s.io/api/core/v1"

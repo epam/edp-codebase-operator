@@ -1,9 +1,9 @@
 package chain
 
 import (
-	"github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/client/jira"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/jirafixversion/chain/handler"
+	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	"github.com/epam/edp-codebase-operator/v2/pkg/client/jira"
+	"github.com/epam/edp-codebase-operator/v2/pkg/controller/jirafixversion/chain/handler"
 	"github.com/pkg/errors"
 	"strconv"
 )

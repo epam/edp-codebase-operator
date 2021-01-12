@@ -2,9 +2,9 @@ package gitserver
 
 import (
 	"fmt"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/gerrit"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/model"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/util"
+	"github.com/epam/edp-codebase-operator/v2/pkg/gerrit"
+	"github.com/epam/edp-codebase-operator/v2/pkg/model"
+	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/ssh"
 	"gopkg.in/src-d/go-git.v4"
@@ -392,7 +392,7 @@ func (gp GitProvider) Checkout(directory, branchName string) error {
 	}
 
 	err = w.Checkout(&git.CheckoutOptions{Branch: plumbing.ReferenceName(fmt.Sprintf("refs/heads/%v", branchName))})
-	if err != nil{
+	if err != nil {
 		return err
 	}
 	return nil

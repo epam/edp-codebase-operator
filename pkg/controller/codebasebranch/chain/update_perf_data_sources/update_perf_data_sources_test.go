@@ -2,14 +2,13 @@ package update_perf_data_sources
 
 import (
 	"fmt"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	perfApi "github.com/epmd-edp/perf-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/stretchr/testify/assert"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
-
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"testing"
 )
@@ -34,8 +33,8 @@ func TestUpdatePerfDataSources_ShouldSkipUpdating(t *testing.T) {
 	s.AddKnownTypes(v1.SchemeGroupVersion, c)
 
 	cb := &v1alpha1.CodebaseBranch{
-		ObjectMeta: v1.ObjectMeta{
-			OwnerReferences: []v1.OwnerReference{{
+		ObjectMeta: metav1.ObjectMeta{
+			OwnerReferences: []metav1.OwnerReference{{
 				Kind: "Codebase",
 				Name: fakeName,
 			}},
@@ -71,8 +70,8 @@ func TestUpdatePerfDataSources_DsShouldBeUpdated(t *testing.T) {
 	}
 
 	cb := &v1alpha1.CodebaseBranch{
-		ObjectMeta: v1.ObjectMeta{
-			OwnerReferences: []v1.OwnerReference{{
+		ObjectMeta: metav1.ObjectMeta{
+			OwnerReferences: []metav1.OwnerReference{{
 				Kind: "Codebase",
 				Name: fakeName,
 			}},
@@ -102,8 +101,8 @@ func TestUpdatePerfDataSources_CodebaseShouldNotBeFound(t *testing.T) {
 	}
 
 	cb := &v1alpha1.CodebaseBranch{
-		ObjectMeta: v1.ObjectMeta{
-			OwnerReferences: []v1.OwnerReference{{
+		ObjectMeta: metav1.ObjectMeta{
+			OwnerReferences: []metav1.OwnerReference{{
 				Kind: "Codebase",
 				Name: fakeName,
 			}},
@@ -146,8 +145,8 @@ func TestUpdatePerfDataSources_PerfDataSourceShouldNotBeFound(t *testing.T) {
 	}
 
 	cb := &v1alpha1.CodebaseBranch{
-		ObjectMeta: v1.ObjectMeta{
-			OwnerReferences: []v1.OwnerReference{{
+		ObjectMeta: metav1.ObjectMeta{
+			OwnerReferences: []metav1.OwnerReference{{
 				Kind: "Codebase",
 				Name: fakeName,
 			}},
@@ -195,8 +194,8 @@ func TestUpdatePerfDataSources_JenkinsDsShouldBeUpdated(t *testing.T) {
 	}
 
 	cb := &v1alpha1.CodebaseBranch{
-		ObjectMeta: v1.ObjectMeta{
-			OwnerReferences: []v1.OwnerReference{{
+		ObjectMeta: metav1.ObjectMeta{
+			OwnerReferences: []metav1.OwnerReference{{
 				Kind: "Codebase",
 				Name: fakeName,
 			}},
@@ -246,8 +245,8 @@ func TestUpdatePerfDataSources_GitLabDsShouldBeUpdated(t *testing.T) {
 	}
 
 	cb := &v1alpha1.CodebaseBranch{
-		ObjectMeta: v1.ObjectMeta{
-			OwnerReferences: []v1.OwnerReference{{
+		ObjectMeta: metav1.ObjectMeta{
+			OwnerReferences: []metav1.OwnerReference{{
 				Kind: "Codebase",
 				Name: fakeName,
 			}},

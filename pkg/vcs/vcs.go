@@ -2,10 +2,10 @@ package vcs
 
 import (
 	"fmt"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/model"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/util"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/vcs/impl/bitbucket"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/vcs/impl/gitlab"
+	"github.com/epam/edp-codebase-operator/v2/pkg/model"
+	"github.com/epam/edp-codebase-operator/v2/pkg/util"
+	"github.com/epam/edp-codebase-operator/v2/pkg/vcs/impl/bitbucket"
+	"github.com/epam/edp-codebase-operator/v2/pkg/vcs/impl/gitlab"
 	"github.com/pkg/errors"
 	coreV1Client "k8s.io/client-go/kubernetes/typed/core/v1"
 	"log"
