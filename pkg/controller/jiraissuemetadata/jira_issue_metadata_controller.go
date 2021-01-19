@@ -1,4 +1,4 @@
-package jirafixversion
+package jiraissuemetadata
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/pkg/client/jira"
 	"github.com/epam/edp-codebase-operator/v2/pkg/client/jira/adapter"
 	"github.com/epam/edp-codebase-operator/v2/pkg/client/jira/dto"
-	"github.com/epam/edp-codebase-operator/v2/pkg/controller/jirafixversion/chain"
+	"github.com/epam/edp-codebase-operator/v2/pkg/controller/jiraissuemetadata/chain"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	"github.com/pkg/errors"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -27,7 +27,7 @@ import (
 	"time"
 )
 
-var log = logf.Log.WithName("controller_jira_fix_version")
+var log = logf.Log.WithName("controller_jira_issue_metadata")
 
 const (
 	reconcilationPeriod        = "RECONCILATION_PERIOD"
@@ -39,7 +39,7 @@ func Add(mgr manager.Manager) error {
 }
 
 func newReconciler(mgr manager.Manager) reconcile.Reconciler {
-	return &ReconcileJiraFixVersion{
+	return &ReconcileJiraIssueMetadata{
 		client: mgr.GetClient(),
 		scheme: mgr.GetScheme(),
 	}
@@ -47,15 +47,15 @@ func newReconciler(mgr manager.Manager) reconcile.Reconciler {
 
 func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	// Create a new controller
-	c, err := controller.New("jira-fix-version-controller", mgr, controller.Options{Reconciler: r})
+	c, err := controller.New("jira-issue-metadata-controller", mgr, controller.Options{Reconciler: r})
 	if err != nil {
 		return err
 	}
 
 	pred := predicate.Funcs{
 		UpdateFunc: func(e event.UpdateEvent) bool {
-			oo := e.ObjectOld.(*edpv1alpha1.JiraFixVersion)
-			no := e.ObjectNew.(*edpv1alpha1.JiraFixVersion)
+			oo := e.ObjectOld.(*edpv1alpha1.JiraIssueMetadata)
+			no := e.ObjectNew.(*edpv1alpha1.JiraIssueMetadata)
 			if !reflect.DeepEqual(oo.Spec, no.Spec) {
 				return true
 			}
@@ -64,7 +64,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	}
 
 	// Watch for changes to primary resource GitServer
-	err = c.Watch(&source.Kind{Type: &edpv1alpha1.JiraFixVersion{}}, &handler.EnqueueRequestForObject{}, pred)
+	err = c.Watch(&source.Kind{Type: &edpv1alpha1.JiraIssueMetadata{}}, &handler.EnqueueRequestForObject{}, pred)
 	if err != nil {
 		return err
 	}
@@ -72,23 +72,23 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	return nil
 }
 
-var _ reconcile.Reconciler = &ReconcileJiraFixVersion{}
+var _ reconcile.Reconciler = &ReconcileJiraIssueMetadata{}
 
 const (
 	codebaseKind = "Codebase"
 	errorStatus  = "error"
 )
 
-type ReconcileJiraFixVersion struct {
+type ReconcileJiraIssueMetadata struct {
 	client client.Client
 	scheme *runtime.Scheme
 }
 
-func (r *ReconcileJiraFixVersion) Reconcile(request reconcile.Request) (reconcile.Result, error) {
+func (r *ReconcileJiraIssueMetadata) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	reqLogger := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
-	reqLogger.Info("Reconciling JiraFixVersion")
+	reqLogger.Info("Reconciling JiraIssueMetadata")
 
-	i := &edpv1alpha1.JiraFixVersion{}
+	i := &edpv1alpha1.JiraIssueMetadata{}
 	if err := r.client.Get(context.TODO(), request.NamespacedName, i); err != nil {
 		if k8serrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
@@ -118,11 +118,16 @@ func (r *ReconcileJiraFixVersion) Reconcile(request reconcile.Request) (reconcil
 		return reconcile.Result{}, err
 	}
 
-	ch := chain.CreateDefChain(jc, r.client)
+	ch, err := chain.CreateChain(i.Spec.Payload, jc, r.client)
+	if err != nil {
+		setErrorStatus(i, err.Error())
+		return reconcile.Result{}, err
+	}
+
 	if err := ch.ServeRequest(i); err != nil {
 		setErrorStatus(i, err.Error())
 		timeout := setFailureCount(i)
-		log.Error(err, "couldn't set fix version", "name", i.Name)
+		log.Error(err, "couldn't set jira issue metadata", "name", i.Name)
 		return reconcile.Result{RequeueAfter: timeout}, nil
 	}
 
@@ -141,34 +146,34 @@ func lookup() string {
 }
 
 // setFailureCount increments failure count and returns delay for next reconciliation
-func setFailureCount(version *edpv1alpha1.JiraFixVersion) time.Duration {
-	timeout := util.GetTimeout(version.Status.FailureCount)
+func setFailureCount(metadata *edpv1alpha1.JiraIssueMetadata) time.Duration {
+	timeout := util.GetTimeout(metadata.Status.FailureCount)
 	log.V(2).Info("wait for next reconcilation", "next reconcilation in", timeout)
-	version.Status.FailureCount += 1
+	metadata.Status.FailureCount += 1
 	return timeout
 }
 
-func (r *ReconcileJiraFixVersion) setOwnerRef(version *edpv1alpha1.JiraFixVersion) error {
+func (r *ReconcileJiraIssueMetadata) setOwnerRef(metadata *edpv1alpha1.JiraIssueMetadata) error {
 	c := &edpv1alpha1.Codebase{}
 	err := r.client.Get(context.TODO(), types.NamespacedName{
-		Namespace: version.Namespace,
-		Name:      version.Spec.CodebaseName,
+		Namespace: metadata.Namespace,
+		Name:      metadata.Spec.CodebaseName,
 	}, c)
 	if err != nil {
 		return err
 	}
 
-	if err := controllerutil.SetControllerReference(c, version, r.scheme); err != nil {
-		return errors.Wrap(err, "cannot set owner ref for JiraFixVersion CR")
+	if err := controllerutil.SetControllerReference(c, metadata, r.scheme); err != nil {
+		return errors.Wrap(err, "cannot set owner ref for JiraIssueMetadata CR")
 	}
 	return nil
 }
 
-func setErrorStatus(version *edpv1alpha1.JiraFixVersion, msg string) {
-	version.Status.Status = errorStatus
-	version.Status.DetailedMessage = msg
+func setErrorStatus(metadata *edpv1alpha1.JiraIssueMetadata, msg string) {
+	metadata.Status.Status = errorStatus
+	metadata.Status.DetailedMessage = msg
 }
-func (r *ReconcileJiraFixVersion) updateStatus(instance *edpv1alpha1.JiraFixVersion) {
+func (r *ReconcileJiraIssueMetadata) updateStatus(instance *edpv1alpha1.JiraIssueMetadata) {
 	instance.Status.LastTimeUpdated = time.Now()
 	err := r.client.Status().Update(context.TODO(), instance)
 	if err != nil {
@@ -176,7 +181,7 @@ func (r *ReconcileJiraFixVersion) updateStatus(instance *edpv1alpha1.JiraFixVers
 	}
 }
 
-func (r *ReconcileJiraFixVersion) initJiraClient(js edpv1alpha1.JiraServer) (*jira.Client, error) {
+func (r *ReconcileJiraIssueMetadata) initJiraClient(js edpv1alpha1.JiraServer) (*jira.Client, error) {
 	s, err := util.GetSecretData(r.client, js.Spec.CredentialName, js.Namespace)
 	if err != nil {
 		return nil, errors.Wrapf(err, "couldn't get secret %v", js.Spec.CredentialName)
@@ -191,15 +196,15 @@ func (r *ReconcileJiraFixVersion) initJiraClient(js edpv1alpha1.JiraServer) (*ji
 	return &c, nil
 }
 
-func (r *ReconcileJiraFixVersion) getJiraServer(version edpv1alpha1.JiraFixVersion) (*edpv1alpha1.JiraServer, error) {
-	ref, err := util.GetOwnerReference(codebaseKind, version.GetOwnerReferences())
+func (r *ReconcileJiraIssueMetadata) getJiraServer(metadata edpv1alpha1.JiraIssueMetadata) (*edpv1alpha1.JiraServer, error) {
+	ref, err := util.GetOwnerReference(codebaseKind, metadata.GetOwnerReferences())
 	if err != nil {
 		return nil, err
 	}
 
 	c := &edpv1alpha1.Codebase{}
 	err = r.client.Get(context.TODO(), types.NamespacedName{
-		Namespace: version.Namespace,
+		Namespace: metadata.Namespace,
 		Name:      ref.Name,
 	}, c)
 	if err != nil {
@@ -208,7 +213,7 @@ func (r *ReconcileJiraFixVersion) getJiraServer(version edpv1alpha1.JiraFixVersi
 
 	server := &edpv1alpha1.JiraServer{}
 	err = r.client.Get(context.TODO(), types.NamespacedName{
-		Namespace: version.Namespace,
+		Namespace: metadata.Namespace,
 		Name:      *c.Spec.JiraServer,
 	}, server)
 	if err != nil {

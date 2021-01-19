@@ -22,6 +22,7 @@ require (
 	github.com/pkg/errors v0.8.1
 	github.com/spf13/pflag v1.0.3
 	github.com/stretchr/testify v1.4.0
+	github.com/trivago/tgo v1.0.1
 	golang.org/x/crypto v0.0.0-20190829043050-9756ffdc2472
 	gopkg.in/resty.v1 v1.12.0
 	gopkg.in/src-d/go-git.v4 v4.10.0
