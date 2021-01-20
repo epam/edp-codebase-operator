@@ -65,6 +65,9 @@ rules:
     - perfdatasourcegitlabs
     - perfdatasourcegitlabs/finalizers
     - perfdatasourcegitlabs/status
+    - jiraissuemetadatas
+    - jiraissuemetadatas/finalizers
+    - jiraissuemetadatas/status
   verbs:
     - '*'
 {{ end }}
