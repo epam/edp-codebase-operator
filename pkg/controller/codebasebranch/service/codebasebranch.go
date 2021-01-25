@@ -23,7 +23,7 @@ type CodebaseBranchService struct {
 
 func (s *CodebaseBranchService) TriggerReleaseJob(cb *v1alpha1.CodebaseBranch) error {
 	if cb.Status.Status != model.StatusInit {
-		log.V(2).Info("Release for codebase is not in init status. Skipped.",
+		log.Info("Release for codebase is not in init status. Skipped.",
 			"release", cb.Spec.BranchName, "codebase", cb.Spec.CodebaseName)
 		return nil
 	}

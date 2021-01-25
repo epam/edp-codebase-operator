@@ -6,6 +6,7 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	edpv1alpha1 "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebasebranch/chain/handler"
+	"github.com/epam/edp-codebase-operator/v2/pkg/model"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	edpComponentV1alpha1 "github.com/epmd-edp/edp-component-operator/pkg/apis/v1/v1alpha1"
 	"github.com/pkg/errors"
@@ -122,7 +123,7 @@ func setFailedFields(cb *v1alpha1.CodebaseBranch, a v1alpha1.ActionType, message
 
 func (h PutCodebaseImageStream) setIntermediateSuccessFields(cb *v1alpha1.CodebaseBranch, action v1alpha1.ActionType) error {
 	cb.Status = v1alpha1.CodebaseBranchStatus{
-		Status:              util.StatusInProgress,
+		Status:              model.StatusInit,
 		LastTimeUpdated:     time.Now(),
 		Action:              action,
 		Result:              v1alpha1.Success,

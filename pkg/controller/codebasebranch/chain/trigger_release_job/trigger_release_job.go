@@ -7,6 +7,7 @@ import (
 	edpv1alpha1 "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebasebranch/chain/handler"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebasebranch/service"
+	"github.com/epam/edp-codebase-operator/v2/pkg/model"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	jfv1alpha1 "github.com/epmd-edp/jenkins-operator/v2/pkg/apis/v2/v1alpha1"
 	"github.com/pkg/errors"
@@ -66,7 +67,7 @@ func (h TriggerReleaseJob) ServeRequest(cb *v1alpha1.CodebaseBranch) error {
 
 func (h TriggerReleaseJob) setIntermediateSuccessFields(cb *v1alpha1.CodebaseBranch, action edpv1alpha1.ActionType) error {
 	cb.Status = v1alpha1.CodebaseBranchStatus{
-		Status:              util.StatusInProgress,
+		Status:              model.StatusInit,
 		LastTimeUpdated:     time.Now(),
 		Action:              action,
 		Result:              edpv1alpha1.Success,
