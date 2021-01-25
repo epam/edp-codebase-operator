@@ -110,6 +110,8 @@ const (
 	PutGitlabCIFile                  ActionType = "put_gitlab_ci_file"
 	PutBranchForGitlabCiCodebase     ActionType = "put_branch_for_gitlab_ci_codebase"
 	PutCodebaseImageStream           ActionType = "put_codebase_image_stream"
+	TriggerReleaseJob                ActionType = "trigger_release_job"
+	PerfDataSourceCrUpdate           ActionType = "perf_data_source_cr_update"
 
 	Success Result = "success"
 	Error   Result = "error"

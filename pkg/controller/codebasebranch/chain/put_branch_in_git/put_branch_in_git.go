@@ -1,9 +1,9 @@
 package put_branch_in_git
 
 import (
+	"context"
 	"fmt"
 	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	edpv1alpha1 "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebasebranch/chain/handler"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebasebranch/service"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver"
@@ -26,6 +26,10 @@ var log = logf.Log.WithName("put-branch-in-git-chain")
 func (h PutBranchInGit) ServeRequest(cb *v1alpha1.CodebaseBranch) error {
 	rl := log.WithValues("namespace", cb.Namespace, "codebase branch", cb.Name)
 	rl.Info("start PutBranchInGit method...")
+
+	if err := h.setIntermediateSuccessFields(cb, v1alpha1.AcceptCodebaseBranchRegistration); err != nil {
+		return err
+	}
 
 	c, err := util.GetCodebase(h.Client, cb.Spec.CodebaseName, cb.Namespace)
 	if err != nil {
@@ -76,6 +80,42 @@ func (h PutBranchInGit) ServeRequest(cb *v1alpha1.CodebaseBranch) error {
 	return handler.NextServeOrNil(h.Next, cb)
 }
 
+func (h PutBranchInGit) setIntermediateSuccessFields(cb *v1alpha1.CodebaseBranch, action v1alpha1.ActionType) error {
+	cb.Status = v1alpha1.CodebaseBranchStatus{
+		Status:              util.StatusInProgress,
+		LastTimeUpdated:     time.Now(),
+		Action:              action,
+		Result:              v1alpha1.Success,
+		Username:            "system",
+		Value:               "inactive",
+		VersionHistory:      cb.Status.VersionHistory,
+		LastSuccessfulBuild: cb.Status.LastSuccessfulBuild,
+		Build:               cb.Status.Build,
+	}
+
+	if err := h.Client.Status().Update(context.TODO(), cb); err != nil {
+		if err := h.Client.Update(context.TODO(), cb); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func setFailedFields(cb *v1alpha1.CodebaseBranch, a v1alpha1.ActionType, message string) {
+	cb.Status = v1alpha1.CodebaseBranchStatus{
+		Status:              util.StatusFailed,
+		LastTimeUpdated:     time.Now(),
+		Username:            "system",
+		Action:              a,
+		Result:              v1alpha1.Error,
+		DetailedMessage:     message,
+		Value:               "failed",
+		VersionHistory:      cb.Status.VersionHistory,
+		LastSuccessfulBuild: cb.Status.LastSuccessfulBuild,
+		Build:               cb.Status.Build,
+	}
+}
+
 func checkDirectory(path string) bool {
 	return util.DoesDirectoryExist(path) && !util.IsDirectoryEmpty(path)
 }
@@ -90,18 +130,6 @@ func (h PutBranchInGit) processNewVersion(b *v1alpha1.CodebaseBranch) error {
 	}
 
 	return h.Service.AppendVersionToTheHistorySlice(b)
-}
-
-func setFailedFields(cb *v1alpha1.CodebaseBranch, a v1alpha1.ActionType, message string) {
-	cb.Status = v1alpha1.CodebaseBranchStatus{
-		Status:          util.StatusFailed,
-		LastTimeUpdated: time.Now(),
-		Username:        "system",
-		Action:          a,
-		Result:          edpv1alpha1.Error,
-		DetailedMessage: message,
-		Value:           "failed",
-	}
 }
 
 func hasNewVersion(b *v1alpha1.CodebaseBranch) bool {

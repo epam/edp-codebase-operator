@@ -116,6 +116,7 @@ func (r *ReconcileCodebaseBranch) Reconcile(request reconcile.Request) (reconcil
 		}
 		return reconcile.Result{}, err
 	}
+	defer r.updateStatus(cb)
 
 	result, err := r.tryToDeleteCodebaseBranch(cb)
 	if err != nil || result != nil {

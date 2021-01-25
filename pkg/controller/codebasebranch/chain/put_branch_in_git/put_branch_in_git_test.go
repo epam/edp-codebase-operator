@@ -58,10 +58,6 @@ func TestPutBranchInGit_ShouldBeExecutedSuccessfullyWithDefaultVersioning(t *tes
 			"keyName": []byte("fake"),
 		},
 	}
-	objs := []runtime.Object{
-		c, gs, s,
-	}
-	scheme.Scheme.AddKnownTypes(v1.SchemeGroupVersion, c, gs)
 
 	cb := &v1alpha1.CodebaseBranch{
 		ObjectMeta: v1.ObjectMeta{
@@ -72,6 +68,11 @@ func TestPutBranchInGit_ShouldBeExecutedSuccessfullyWithDefaultVersioning(t *tes
 			CodebaseName: fakeName,
 		},
 	}
+
+	objs := []runtime.Object{
+		c, cb, gs, s,
+	}
+	scheme.Scheme.AddKnownTypes(v1.SchemeGroupVersion, c, gs, cb)
 
 	mGit := new(mock.MockGit)
 
@@ -108,7 +109,7 @@ func TestPutBranchInGit_CodebaseShouldNotBeFound(t *testing.T) {
 	}.ServeRequest(cb)
 
 	assert.Error(t, err)
-	assert.Equal(t, v1alpha1.PutBranchForGitlabCiCodebase, cb.Status.Action)
+	assert.Equal(t, v1alpha1.AcceptCodebaseBranchRegistration, cb.Status.Action)
 }
 
 func TestPutBranchInGit_ShouldThrowNCodebaseBranchReconcileError(t *testing.T) {

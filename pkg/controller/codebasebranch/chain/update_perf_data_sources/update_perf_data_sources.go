@@ -13,6 +13,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"strings"
+	"time"
 )
 
 type UpdatePerfDataSources struct {
@@ -32,11 +33,51 @@ var log = logf.Log.WithName("update-perf-data-source-chain")
 func (h UpdatePerfDataSources) ServeRequest(cb *v1alpha1.CodebaseBranch) error {
 	rLog := log.WithValues("codebase", cb.Spec.CodebaseName, "branch", cb.Name)
 	rLog.Info("start updating PERF data source cr...")
+	if err := h.setIntermediateSuccessFields(cb, v1alpha1.PerfDataSourceCrUpdate); err != nil {
+		return err
+	}
 	if err := h.tryToUpdateDataSourceCr(cb); err != nil {
+		setFailedFields(cb, v1alpha1.PerfDataSourceCrUpdate, err.Error())
 		return errors.Wrap(err, "couldn't update PerfDataSource CR")
 	}
 	rLog.Info("data source has been updated")
 	return handler.NextServeOrNil(h.Next, cb)
+}
+
+func (h UpdatePerfDataSources) setIntermediateSuccessFields(cb *v1alpha1.CodebaseBranch, action v1alpha1.ActionType) error {
+	cb.Status = v1alpha1.CodebaseBranchStatus{
+		Status:              util.StatusInProgress,
+		LastTimeUpdated:     time.Now(),
+		Action:              action,
+		Result:              v1alpha1.Success,
+		Username:            "system",
+		Value:               "inactive",
+		VersionHistory:      cb.Status.VersionHistory,
+		LastSuccessfulBuild: cb.Status.LastSuccessfulBuild,
+		Build:               cb.Status.Build,
+	}
+
+	if err := h.Client.Status().Update(context.TODO(), cb); err != nil {
+		if err := h.Client.Update(context.TODO(), cb); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func setFailedFields(cb *v1alpha1.CodebaseBranch, a v1alpha1.ActionType, message string) {
+	cb.Status = v1alpha1.CodebaseBranchStatus{
+		Status:              util.StatusFailed,
+		LastTimeUpdated:     time.Now(),
+		Username:            "system",
+		Action:              a,
+		Result:              v1alpha1.Error,
+		DetailedMessage:     message,
+		Value:               "failed",
+		VersionHistory:      cb.Status.VersionHistory,
+		LastSuccessfulBuild: cb.Status.LastSuccessfulBuild,
+		Build:               cb.Status.Build,
+	}
 }
 
 func (h UpdatePerfDataSources) tryToUpdateDataSourceCr(cb *v1alpha1.CodebaseBranch) error {

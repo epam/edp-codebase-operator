@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	edpv1alpha1 "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/jenkins"
 	"github.com/epam/edp-codebase-operator/v2/pkg/model"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
@@ -32,22 +31,13 @@ func (s *CodebaseBranchService) TriggerReleaseJob(cb *v1alpha1.CodebaseBranch) e
 	rLog := log.WithValues("codebase branch", cb.Name, "codebase", cb.Spec.CodebaseName)
 	rLog.V(2).Info("start triggering release job")
 
-	if err := s.setIntermediateStatus(cb, edpv1alpha1.AcceptCodebaseBranchRegistration); err != nil {
-		return err
-	}
 	jc, err := initJenkinsClient(s.Client, cb.Namespace)
 	if err != nil {
-		if err := s.setFailStatus(cb, edpv1alpha1.JenkinsConfiguration, err.Error()); err != nil {
-			return err
-		}
 		return errors.Wrap(err, "couldn't create jenkins client")
 	}
 	rLog.V(2).Info("start creating release for codebase")
 
 	if err = jc.TriggerReleaseJob(cb.Spec.BranchName, cb.Spec.FromCommit, cb.Spec.CodebaseName); err != nil {
-		if err := s.setFailStatus(cb, edpv1alpha1.JenkinsConfiguration, err.Error()); err != nil {
-			return err
-		}
 		return err
 	}
 	rLog.Info("Release job has been triggered")
@@ -55,9 +45,6 @@ func (s *CodebaseBranchService) TriggerReleaseJob(cb *v1alpha1.CodebaseBranch) e
 	rj := fmt.Sprintf("%v/job/Create-release-%v", cb.Spec.CodebaseName, cb.Spec.CodebaseName)
 	js, err := jc.GetJobStatus(rj, 10*time.Second, 50)
 	if err != nil {
-		if err := s.setFailStatus(cb, edpv1alpha1.JenkinsConfiguration, err.Error()); err != nil {
-			return err
-		}
 		return err
 	}
 
@@ -85,38 +72,6 @@ func initJenkinsClient(client client.Client, namespace string) (*jenkins.Jenkins
 	}
 	log.V(2).Info("jenkins client has been created", "url", jurl, "user", ju)
 	return jc, nil
-}
-
-func (s *CodebaseBranchService) setIntermediateStatus(cb *v1alpha1.CodebaseBranch, action v1alpha1.ActionType) error {
-	cb.Status = v1alpha1.CodebaseBranchStatus{
-		LastTimeUpdated:     time.Now(),
-		Username:            "system",
-		Action:              action,
-		Result:              "success",
-		Value:               "inactive",
-		Status:              model.StatusInit,
-		VersionHistory:      cb.Status.VersionHistory,
-		LastSuccessfulBuild: cb.Status.LastSuccessfulBuild,
-		Build:               cb.Status.Build,
-	}
-	return s.updateStatus(cb)
-}
-
-func (s *CodebaseBranchService) setFailStatus(cb *v1alpha1.CodebaseBranch, action v1alpha1.ActionType, msg string) error {
-	cb.Status = v1alpha1.CodebaseBranchStatus{
-		LastTimeUpdated:     time.Now(),
-		Status:              model.StatusInit,
-		Username:            "system",
-		Action:              action,
-		Result:              edpv1alpha1.Error,
-		DetailedMessage:     msg,
-		Value:               "failed",
-		VersionHistory:      cb.Status.VersionHistory,
-		LastSuccessfulBuild: cb.Status.LastSuccessfulBuild,
-		Build:               cb.Status.Build,
-	}
-	return s.updateStatus(cb)
-
 }
 
 func (s *CodebaseBranchService) AppendVersionToTheHistorySlice(b *v1alpha1.CodebaseBranch) error {
