@@ -61,17 +61,17 @@ type CodebaseSpec struct {
 	TestReportFramework  *string     `json:"testReportFramework"`
 	Type                 string      `json:"type"`
 	GitServer            string      `json:"gitServer"`
-	GitUrlPath           *string    `json:"gitUrlPath"`
-	JenkinsSlave         *string    `json:"jenkinsSlave"`
-	JobProvisioning      *string    `json:"jobProvisioning"`
-	DeploymentScript     string     `json:"deploymentScript"`
-	Versioning           Versioning `json:"versioning"`
-	JiraServer           *string    `json:"jiraServer,omitempty"`
-	CommitMessagePattern *string    `json:"commitMessagePattern"`
-	TicketNamePattern    *string    `json:"ticketNamePattern"`
-	CiTool               string     `json:"ciTool"`
-	Perf                 *Perf      `json:"perf"`
-	DefaultBranch        string     `json:"defaultBranch"`
+	GitUrlPath           *string     `json:"gitUrlPath"`
+	JenkinsSlave         *string     `json:"jenkinsSlave"`
+	JobProvisioning      *string     `json:"jobProvisioning"`
+	DeploymentScript     string      `json:"deploymentScript"`
+	Versioning           Versioning  `json:"versioning"`
+	JiraServer           *string     `json:"jiraServer,omitempty"`
+	CommitMessagePattern *string     `json:"commitMessagePattern"`
+	TicketNamePattern    *string     `json:"ticketNamePattern"`
+	CiTool               string      `json:"ciTool"`
+	Perf                 *Perf       `json:"perf"`
+	DefaultBranch        string      `json:"defaultBranch"`
 }
 
 // CodebaseStatus defines the observed state of Codebase
@@ -109,6 +109,8 @@ const (
 	PutGitlabCIFile                  ActionType = "put_gitlab_ci_file"
 	PutBranchForGitlabCiCodebase     ActionType = "put_branch_for_gitlab_ci_codebase"
 	PutCodebaseImageStream           ActionType = "put_codebase_image_stream"
+	TriggerReleaseJob                ActionType = "trigger_release_job"
+	PerfDataSourceCrUpdate           ActionType = "perf_data_source_cr_update"
 
 	Success Result = "success"
 	Error   Result = "error"

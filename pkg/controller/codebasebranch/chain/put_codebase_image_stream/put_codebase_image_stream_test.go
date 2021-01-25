@@ -51,9 +51,9 @@ func TestPutCodebaseImageStream_ShouldCreateCisWithDefaultVersioningType(t *test
 	cis := &v1alpha1.CodebaseImageStream{}
 
 	objs := []runtime.Object{
-		c, ec, cis,
+		c, cb, ec, cis,
 	}
-	scheme.Scheme.AddKnownTypes(v1.SchemeGroupVersion, c, ec)
+	scheme.Scheme.AddKnownTypes(v1.SchemeGroupVersion, c, ec, cb)
 	scheme.Scheme.AddKnownTypes(schema.GroupVersion{Group: "v2.edp.epam.com", Version: "v1alpha1"}, cis)
 	client := fake.NewFakeClient(objs...)
 	cisChain := PutCodebaseImageStream{
@@ -110,9 +110,9 @@ func TestPutCodebaseImageStream_ShouldCreateCisWithEdpVersioningType(t *testing.
 	cis := &v1alpha1.CodebaseImageStream{}
 
 	objs := []runtime.Object{
-		c, ec, cis,
+		c, cb, ec, cis,
 	}
-	scheme.Scheme.AddKnownTypes(v1.SchemeGroupVersion, c, ec)
+	scheme.Scheme.AddKnownTypes(v1.SchemeGroupVersion, c, ec, cb)
 	scheme.Scheme.AddKnownTypes(schema.GroupVersion{Group: "v2.edp.epam.com", Version: "v1alpha1"}, cis)
 	client := fake.NewFakeClient(objs...)
 	cisChain := PutCodebaseImageStream{

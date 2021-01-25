@@ -6,6 +6,7 @@ import (
 	"github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	edpv1alpha1 "github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/codebasebranch/chain/handler"
+	"github.com/epmd-edp/codebase-operator/v2/pkg/model"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/util"
 	edpComponentV1alpha1 "github.com/epmd-edp/edp-component-operator/pkg/apis/v1/v1alpha1"
 	"github.com/pkg/errors"
@@ -31,6 +32,10 @@ var log = logf.Log.WithName("put-codebase-image-stream-chain")
 func (h PutCodebaseImageStream) ServeRequest(cb *v1alpha1.CodebaseBranch) error {
 	rl := log.WithValues("namespace", cb.Namespace, "codebase branch", cb.Name)
 	rl.Info("start PutCodebaseImageStream chain...")
+
+	if err := h.setIntermediateSuccessFields(cb, v1alpha1.PutCodebaseImageStream); err != nil {
+		return err
+	}
 
 	c, err := util.GetCodebase(h.Client, cb.Spec.CodebaseName, cb.Namespace)
 	if err != nil {
@@ -114,4 +119,25 @@ func setFailedFields(cb *v1alpha1.CodebaseBranch, a v1alpha1.ActionType, message
 		DetailedMessage: message,
 		Value:           "failed",
 	}
+}
+
+func (h PutCodebaseImageStream) setIntermediateSuccessFields(cb *v1alpha1.CodebaseBranch, action v1alpha1.ActionType) error {
+	cb.Status = v1alpha1.CodebaseBranchStatus{
+		Status:              model.StatusInit,
+		LastTimeUpdated:     time.Now(),
+		Action:              action,
+		Result:              v1alpha1.Success,
+		Username:            "system",
+		Value:               "inactive",
+		VersionHistory:      cb.Status.VersionHistory,
+		LastSuccessfulBuild: cb.Status.LastSuccessfulBuild,
+		Build:               cb.Status.Build,
+	}
+
+	if err := h.Client.Status().Update(context.TODO(), cb); err != nil {
+		if err := h.Client.Update(context.TODO(), cb); err != nil {
+			return err
+		}
+	}
+	return nil
 }

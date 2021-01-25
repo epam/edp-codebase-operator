@@ -27,12 +27,6 @@ func TestUpdatePerfDataSources_ShouldSkipUpdating(t *testing.T) {
 		},
 	}
 
-	objs := []runtime.Object{
-		c,
-	}
-	s := scheme.Scheme
-	s.AddKnownTypes(v1.SchemeGroupVersion, c)
-
 	cb := &v1alpha1.CodebaseBranch{
 		ObjectMeta: v1.ObjectMeta{
 			OwnerReferences: []v1.OwnerReference{{
@@ -46,6 +40,13 @@ func TestUpdatePerfDataSources_ShouldSkipUpdating(t *testing.T) {
 			CodebaseName: fakeName,
 		},
 	}
+
+	objs := []runtime.Object{
+		c, cb,
+	}
+	s := scheme.Scheme
+	s.AddKnownTypes(v1.SchemeGroupVersion, c, cb)
+
 	assert.NoError(t, UpdatePerfDataSources{Client: fake.NewFakeClient(objs...)}.ServeRequest(cb))
 }
 
