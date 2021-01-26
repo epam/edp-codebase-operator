@@ -8,6 +8,10 @@ global:
     name: "edp-db"
 
 name: codebase-operator
+annotations: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}
 image:
   name: epamedp/codebase-operator
   # if not defined then .Chart.AppVersion is used

@@ -2,9 +2,8 @@
 apiVersion: authorization.openshift.io/v1
 kind: ClusterRole
 metadata:
-  annotations:
-    openshift.io/description: Role for codebase-operator-edp service account
-    openshift.io/reconcile-protect: "false"
+  labels:
+    {{- include "codebase-operator.labels" . | nindent 4 }}
   name: {{ .Values.name }}-{{ .Values.global.edpName }}-clusterrole
 rules:
 - apiGroups:
