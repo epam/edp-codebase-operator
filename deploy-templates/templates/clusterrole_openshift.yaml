@@ -4,7 +4,7 @@ kind: ClusterRole
 metadata:
   labels:
     {{- include "codebase-operator.labels" . | nindent 4 }}
-  name: {{ .Values.name }}-{{ .Values.global.edpName }}-clusterrole
+  name: edp-{{ .Values.name }}-{{ .Values.global.edpName }}
 rules:
 - apiGroups:
     - '*'
