@@ -146,7 +146,7 @@ func TestTryToPutVersionFileMethod_MustBeFinishedSuccessfully(t *testing.T) {
 		nil)
 	mGit.On("PushChanges", fakePrivateKey, fakeUser, path).Return(
 		nil)
-	mGit.On("Checkout", fmt.Sprintf("%v/%v/templates/%v", path, versionFileName, versionFileName), "").Return(
+	mGit.On("Checkout", path, "").Return(
 		nil)
 	h := PutVersionFile{
 		next: nil,
