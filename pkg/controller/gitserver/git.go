@@ -17,6 +17,7 @@ import (
 	"gopkg.in/src-d/go-git.v4/storage/memory"
 	v1 "k8s.io/api/core/v1"
 	coreV1Client "k8s.io/client-go/kubernetes/typed/core/v1"
+	"strings"
 	"time"
 )
 
@@ -38,6 +39,7 @@ type Git interface {
 	Fetch(key, user, path, branchName string) error
 	Checkout(directory, branchName string) error
 	CreateLocalBranch(path, name string) error
+	GetCurrentBranchName(directory string) (string, error)
 }
 
 type GitProvider struct {
@@ -431,4 +433,19 @@ func (gp GitProvider) CreateLocalBranch(path, name string) error {
 	}
 	log.Info("local branch has been created", "name", name)
 	return nil
+}
+
+func (gp GitProvider) GetCurrentBranchName(directory string) (string, error) {
+	log.Info("start getting branch name")
+	r, err := git.PlainOpen(directory)
+	if err != nil {
+		return "", err
+	}
+
+	ref, err := r.Head()
+	if err != nil {
+		return "", err
+	}
+	branchName := strings.ReplaceAll(ref.Name().String(), "refs/heads/", "")
+	return branchName, nil
 }

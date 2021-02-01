@@ -44,3 +44,8 @@ func (m MockGit) Checkout(directory, branchName string) error {
 }
 
 func (m MockGit) CreateLocalBranch(path, name string) error { panic("implement me") }
+
+func (m MockGit) GetCurrentBranchName(directory string) (string, error) {
+	args := m.Called(directory)
+	return args.String(), args.Error(1)
+}

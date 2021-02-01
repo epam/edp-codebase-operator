@@ -96,7 +96,7 @@ func (h PutDeployConfigs) tryToPushConfigs(c edpv1alpha1.Codebase, sshPort int32
 		return err
 	}
 
-	if err := h.git.Checkout(d, c.Spec.DefaultBranch); err != nil {
+	if err := CheckoutBranch(d, c.Spec.DefaultBranch, h.git); err != nil {
 		return errors.Wrapf(err, "checkout default branch %v in Gerrit has been failed", c.Spec.DefaultBranch)
 	}
 

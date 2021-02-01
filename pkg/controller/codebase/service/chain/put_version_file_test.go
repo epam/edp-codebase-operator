@@ -148,6 +148,8 @@ func TestTryToPutVersionFileMethod_MustBeFinishedSuccessfully(t *testing.T) {
 		nil)
 	mGit.On("Checkout", path, "").Return(
 		nil)
+	mGit.On("GetCurrentBranchName", path).Return(
+		"", nil)
 	h := PutVersionFile{
 		next: nil,
 		clientSet: openshift.ClientSet{
