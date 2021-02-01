@@ -15,6 +15,7 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	"github.com/epam/edp-codebase-operator/v2/pkg/vcs"
 	"github.com/pkg/errors"
+	"os"
 	"time"
 )
 
@@ -95,6 +96,11 @@ func (h PutProjectGerrit) ServeRequest(c *v1alpha1.Codebase) error {
 	if err := h.tryToCloneRepo(*ru, repu, repp, wd, c.Name); err != nil {
 		setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
 		return errors.Wrap(err, "cloning project hsa been failed")
+	}
+
+	if err := h.tryToSquashCommits(wd, c.Name, c.Spec.Strategy); err != nil {
+		setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
+		return errors.Wrap(err, "squash commits been failed")
 	}
 
 	if err := h.tryToPushProjectToGerrit(*port, c.Name, wd, c.Namespace, c.Spec.DefaultBranch); err != nil {
@@ -246,4 +252,25 @@ func setFailedFields(c *edpv1alpha1.Codebase, a edpv1alpha1.ActionType, message 
 		FailureCount:    c.Status.FailureCount,
 		Git:             c.Status.Git,
 	}
+}
+
+func (h PutProjectGerrit) tryToSquashCommits(workDir, codebaseName string, strategy v1alpha1.Strategy) error {
+	if strategy != v1alpha1.Create {
+		return nil
+	}
+	destination := fmt.Sprintf("%v/%v", workDir, codebaseName)
+
+	err := os.RemoveAll(destination + "/.git")
+	if err != nil {
+		return errors.Wrapf(err, "an error has occurred while removing .git folder")
+	}
+
+	if err := h.git.Init(destination); err != nil {
+		return errors.Wrapf(err, "an error has occurred while creating git repository")
+	}
+
+	if err := h.git.CommitChanges(destination, "Init commit"); err != nil {
+		return errors.Wrapf(err, "an error has occurred while committing all default content")
+	}
+	return nil
 }

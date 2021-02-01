@@ -49,3 +49,5 @@ func (m MockGit) GetCurrentBranchName(directory string) (string, error) {
 	args := m.Called(directory)
 	return args.String(), args.Error(1)
 }
+
+func (m MockGit) Init(directory string) error { panic("implement me") }

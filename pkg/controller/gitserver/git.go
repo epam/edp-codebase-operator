@@ -40,6 +40,7 @@ type Git interface {
 	Checkout(directory, branchName string) error
 	CreateLocalBranch(path, name string) error
 	GetCurrentBranchName(directory string) (string, error)
+	Init(directory string) error
 }
 
 type GitProvider struct {
@@ -448,4 +449,14 @@ func (gp GitProvider) GetCurrentBranchName(directory string) (string, error) {
 	}
 	branchName := strings.ReplaceAll(ref.Name().String(), "refs/heads/", "")
 	return branchName, nil
+}
+
+func (gp GitProvider) Init(directory string) error {
+	log.Info("start creating git repository")
+	_, err := git.PlainInit(directory, false)
+	if err != nil {
+		return err
+	}
+	log.Info("git repository has been created")
+	return nil
 }
