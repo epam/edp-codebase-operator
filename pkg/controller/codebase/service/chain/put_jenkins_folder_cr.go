@@ -4,6 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/service/chain/handler"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/platform"
@@ -16,9 +20,6 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"strconv"
-	"strings"
-	"time"
 )
 
 type PutJenkinsFolder struct {
@@ -78,20 +79,14 @@ func (h PutJenkinsFolder) putJenkinsFolder(c *v1alpha1.Codebase, jc string) erro
 
 	jf := &jenkinsv1alpha1.JenkinsFolder{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "v2.edp.epam.com/v1alpha1",
-			Kind:       "JenkinsFolder",
+			APIVersion: util.V2APIVersion,
+			Kind:       util.JenkinsFolderKind,
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      jfn,
 			Namespace: c.Namespace,
-			OwnerReferences: []metav1.OwnerReference{
-				{
-					APIVersion:         "v2.edp.epam.com/v1alpha1",
-					Kind:               util.CodebaseKind,
-					Name:               c.Name,
-					UID:                c.UID,
-					BlockOwnerDeletion: newTrue(),
-				},
+			Labels: map[string]string{
+				util.CodebaseLabelKey: c.Name,
 			},
 		},
 		Spec: jenkinsv1alpha1.JenkinsFolderSpec{

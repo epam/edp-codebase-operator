@@ -4,6 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"reflect"
+	"strings"
+	"time"
+
 	"github.com/epam/edp-codebase-operator/v2/db"
 	edpv1alpha1 "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/repository"
@@ -19,7 +23,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -29,8 +32,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/source"
-	"strings"
-	"time"
 )
 
 /**
@@ -154,17 +155,23 @@ func (r *ReconcileCodebase) Reconcile(request reconcile.Request) (reconcile.Resu
 		// Error reading the object - requeue the request.
 		return reconcile.Result{}, err
 	}
-	defer r.updateStatus(c)
+	defer func() {
+		if err := r.updateStatus(c); err != nil {
+			reqLogger.Error(err, "error during status updating")
+		}
+	}()
 
 	result, err := r.tryToDeleteCodebase(c)
-	if err != nil || result != nil {
-		return *result, err
+	if err != nil {
+		return reconcile.Result{}, errors.Wrap(err, "an error has occurred while trying to delete codebase")
+	}
+	if result != nil {
+		return *result, nil
 	}
 
 	if !validate.IsCodebaseValid(c) {
 		return reconcile.Result{}, nil
 	}
-
 	ch, err := r.getChain(c)
 	if err != nil {
 		return reconcile.Result{}, errors.Wrap(err, "an error has occurred while selecting chain")
@@ -258,7 +265,11 @@ func (r ReconcileCodebase) tryToDeleteCodebase(c *edpv1alpha1.Codebase) (*reconc
 	}
 
 	if err := removeDirectoryIfExists(c.Name, c.Namespace); err != nil {
-		return &reconcile.Result{}, err
+		return nil, err
+	}
+
+	if err := chain.CreateDeletionChain(r.client).ServeRequest(c); err != nil {
+		return nil, errors.Wrap(err, "errors during deletion chain")
 	}
 
 	c.ObjectMeta.Finalizers = util.RemoveString(c.ObjectMeta.Finalizers, codebaseOperatorFinalizerName)

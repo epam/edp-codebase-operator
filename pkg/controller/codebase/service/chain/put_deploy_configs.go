@@ -2,6 +2,7 @@ package chain
 
 import (
 	"fmt"
+
 	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	edpv1alpha1 "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/helper"
@@ -54,7 +55,7 @@ func (h PutDeployConfigs) tryToPushConfigs(c edpv1alpha1.Codebase, sshPort int32
 
 	var status = []string{util.ProjectTemplatesPushedStatus, util.ProjectVersionGoFilePushedStatus}
 	if util.ContainsString(status, *ps) {
-		log.V(2).Info("skip pushing templates to gerrit. teplates already pushed", "name", c.Name)
+		log.V(2).Info("skip pushing templates to gerrit. templates already pushed", "name", c.Name)
 		return nil
 	}
 

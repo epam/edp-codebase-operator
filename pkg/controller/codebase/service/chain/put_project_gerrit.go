@@ -3,6 +3,9 @@ package chain
 import (
 	"context"
 	"fmt"
+	"os"
+	"time"
+
 	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	edpv1alpha1 "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/helper"
@@ -15,8 +18,6 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	"github.com/epam/edp-codebase-operator/v2/pkg/vcs"
 	"github.com/pkg/errors"
-	"os"
-	"time"
 )
 
 type PutProjectGerrit struct {
@@ -158,7 +159,7 @@ func (h PutProjectGerrit) pushToGerrit(sshPost int32, idrsa, host, codebaseName,
 }
 
 func (h PutProjectGerrit) tryToCreateProjectInGerrit(sshPort int32, idrsa, host, codebaseName string) error {
-	log.Info("Start creating project in Gerrit", "codebase name")
+	log.Info("Start creating project in Gerrit", "codebase name", codebaseName)
 	projectExist, err := gerrit.CheckProjectExist(sshPort, idrsa, host, codebaseName)
 	if err != nil {
 		return errors.Wrap(err, "couldn't versionFileExists project")

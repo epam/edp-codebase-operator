@@ -1,8 +1,10 @@
-package trigger_release_job
+package trigger_job
 
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	edpv1alpha1 "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebasebranch/chain/handler"
@@ -15,32 +17,32 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
-	"time"
 )
 
-type TriggerReleaseJob struct {
-	Next    handler.CodebaseBranchHandler
+var log = logf.Log.WithName("trigger-job-chain")
+
+type TriggerJob struct {
 	Client  client.Client
 	Service service.CodebaseBranchService
+	Next    handler.CodebaseBranchHandler
 }
 
-var log = logf.Log.WithName("trigger-release-job-chain")
-
-func (h TriggerReleaseJob) ServeRequest(cb *v1alpha1.CodebaseBranch) error {
-	if err := h.setIntermediateSuccessFields(cb, edpv1alpha1.AcceptCodebaseBranchRegistration); err != nil {
+func (h TriggerJob) Trigger(cb *v1alpha1.CodebaseBranch, actionType edpv1alpha1.ActionType,
+	triggerFunc func(cb *v1alpha1.CodebaseBranch) error) error {
+	if err := h.SetIntermediateSuccessFields(cb, edpv1alpha1.AcceptCodebaseBranchRegistration); err != nil {
 		return err
 	}
 
 	c, err := util.GetCodebase(h.Client, cb.Spec.CodebaseName, cb.Namespace)
 	if err != nil {
-		setFailedFields(cb, v1alpha1.TriggerReleaseJob, err.Error())
+		h.SetFailedFields(cb, actionType, err.Error())
 		return err
 	}
 
 	jfn := fmt.Sprintf("%v-%v", c.Name, "codebase")
-	jf, err := h.getJenkinsFolder(jfn, c.Namespace)
+	jf, err := h.GetJenkinsFolder(jfn, c.Namespace)
 	if err != nil {
-		setFailedFields(cb, v1alpha1.TriggerReleaseJob, err.Error())
+		h.SetFailedFields(cb, actionType, err.Error())
 		return err
 	}
 
@@ -51,21 +53,21 @@ func (h TriggerReleaseJob) ServeRequest(cb *v1alpha1.CodebaseBranch) error {
 	}
 
 	if c.Spec.Versioning.Type == util.VersioningTypeEDP && hasNewVersion(cb) {
-		if err := h.processNewVersion(cb); err != nil {
-			setFailedFields(cb, v1alpha1.TriggerReleaseJob, err.Error())
+		if err := h.ProcessNewVersion(cb); err != nil {
+			h.SetFailedFields(cb, actionType, err.Error())
 			return errors.Wrapf(err, "couldn't process new version for %v branch", cb.Name)
 		}
 	}
 
-	if err := h.Service.TriggerReleaseJob(cb); err != nil {
-		setFailedFields(cb, v1alpha1.TriggerReleaseJob, err.Error())
+	if err := triggerFunc(cb); err != nil {
+		h.SetFailedFields(cb, actionType, err.Error())
 		return err
 	}
 
 	return handler.NextServeOrNil(h.Next, cb)
 }
 
-func (h TriggerReleaseJob) setIntermediateSuccessFields(cb *v1alpha1.CodebaseBranch, action edpv1alpha1.ActionType) error {
+func (h TriggerJob) SetIntermediateSuccessFields(cb *v1alpha1.CodebaseBranch, action edpv1alpha1.ActionType) error {
 	cb.Status = v1alpha1.CodebaseBranchStatus{
 		Status:              model.StatusInit,
 		LastTimeUpdated:     time.Now(),
@@ -86,7 +88,7 @@ func (h TriggerReleaseJob) setIntermediateSuccessFields(cb *v1alpha1.CodebaseBra
 	return nil
 }
 
-func setFailedFields(cb *edpv1alpha1.CodebaseBranch, a edpv1alpha1.ActionType, message string) {
+func (h TriggerJob) SetFailedFields(cb *edpv1alpha1.CodebaseBranch, a edpv1alpha1.ActionType, message string) {
 	cb.Status = edpv1alpha1.CodebaseBranchStatus{
 		Status:              util.StatusFailed,
 		LastTimeUpdated:     time.Now(),
@@ -101,27 +103,7 @@ func setFailedFields(cb *edpv1alpha1.CodebaseBranch, a edpv1alpha1.ActionType, m
 	}
 }
 
-func hasNewVersion(b *v1alpha1.CodebaseBranch) bool {
-	return !util.SearchVersion(b.Status.VersionHistory, *b.Spec.Version)
-}
-
-func (h TriggerReleaseJob) processNewVersion(b *v1alpha1.CodebaseBranch) error {
-	if err := h.Service.ResetBranchBuildCounter(b); err != nil {
-		return err
-	}
-
-	if err := h.Service.ResetBranchSuccessBuildCounter(b); err != nil {
-		return err
-	}
-
-	return h.Service.AppendVersionToTheHistorySlice(b)
-}
-
-func isJenkinsFolderAvailable(jf *jfv1alpha1.JenkinsFolder) bool {
-	return jf == nil || !jf.Status.Available
-}
-
-func (h TriggerReleaseJob) getJenkinsFolder(name, namespace string) (*jfv1alpha1.JenkinsFolder, error) {
+func (h TriggerJob) GetJenkinsFolder(name, namespace string) (*jfv1alpha1.JenkinsFolder, error) {
 	i := &jfv1alpha1.JenkinsFolder{}
 	err := h.Client.Get(context.TODO(), types.NamespacedName{
 		Namespace: namespace,
@@ -134,4 +116,24 @@ func (h TriggerReleaseJob) getJenkinsFolder(name, namespace string) (*jfv1alpha1
 		return nil, errors.Wrapf(err, "failed to get jenkins folder %v", name)
 	}
 	return i, nil
+}
+
+func (h TriggerJob) ProcessNewVersion(b *v1alpha1.CodebaseBranch) error {
+	if err := h.Service.ResetBranchBuildCounter(b); err != nil {
+		return err
+	}
+
+	if err := h.Service.ResetBranchSuccessBuildCounter(b); err != nil {
+		return err
+	}
+
+	return h.Service.AppendVersionToTheHistorySlice(b)
+}
+
+func hasNewVersion(b *v1alpha1.CodebaseBranch) bool {
+	return !util.SearchVersion(b.Status.VersionHistory, *b.Spec.Version)
+}
+
+func isJenkinsFolderAvailable(jf *jfv1alpha1.JenkinsFolder) bool {
+	return jf == nil || !jf.Status.Available
 }

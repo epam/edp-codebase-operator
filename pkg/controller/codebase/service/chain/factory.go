@@ -6,6 +6,7 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/service/chain/handler"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver"
 	"github.com/epam/edp-codebase-operator/v2/pkg/openshift"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
@@ -68,6 +69,12 @@ func CreateThirdPartyVcsProviderDefChain(cs openshift.ClientSet, cr repository.C
 		},
 		clientSet: cs,
 		git:       gp,
+	}
+}
+
+func CreateDeletionChain(k8sClient client.Client) handler.CodebaseHandler {
+	return DropJenkinsFolders{
+		k8sClient: k8sClient,
 	}
 }
 
