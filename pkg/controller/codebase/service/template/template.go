@@ -2,10 +2,10 @@ package template
 
 import (
 	"fmt"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/platform"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/model"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/util"
+	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	"github.com/epam/edp-codebase-operator/v2/pkg/controller/platform"
+	"github.com/epam/edp-codebase-operator/v2/pkg/model"
+	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	"github.com/pkg/errors"
 	coreV1Client "k8s.io/client-go/kubernetes/typed/core/v1"
 	"os"

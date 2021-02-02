@@ -2,16 +2,17 @@ package chain
 
 import (
 	"fmt"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	edpv1alpha1 "github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/codebase/helper"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/codebase/repository"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/codebase/service/chain/handler"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/codebase/service/template"
-	git "github.com/epmd-edp/codebase-operator/v2/pkg/controller/gitserver"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/gerrit"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/openshift"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/util"
+
+	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	edpv1alpha1 "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/helper"
+	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/repository"
+	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/service/chain/handler"
+	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/service/template"
+	git "github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver"
+	"github.com/epam/edp-codebase-operator/v2/pkg/gerrit"
+	"github.com/epam/edp-codebase-operator/v2/pkg/openshift"
+	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/ssh"
 )
@@ -54,7 +55,7 @@ func (h PutDeployConfigs) tryToPushConfigs(c edpv1alpha1.Codebase, sshPort int32
 
 	var status = []string{util.ProjectTemplatesPushedStatus, util.ProjectVersionGoFilePushedStatus}
 	if util.ContainsString(status, *ps) {
-		log.V(2).Info("skip pushing templates to gerrit. teplates already pushed", "name", c.Name)
+		log.V(2).Info("skip pushing templates to gerrit. templates already pushed", "name", c.Name)
 		return nil
 	}
 

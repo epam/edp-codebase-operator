@@ -2,7 +2,7 @@ package adapter
 
 import (
 	"github.com/andygrunwald/go-jira"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/util"
+	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 

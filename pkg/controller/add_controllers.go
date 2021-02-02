@@ -1,13 +1,13 @@
 package controller
 
 import (
-	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/codebase"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/codebasebranch"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/gitserver"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/gittag"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/imagestreamtag"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/jirafixversion"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/jiraserver"
+	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase"
+	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebasebranch"
+	"github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver"
+	"github.com/epam/edp-codebase-operator/v2/pkg/controller/gittag"
+	"github.com/epam/edp-codebase-operator/v2/pkg/controller/imagestreamtag"
+	"github.com/epam/edp-codebase-operator/v2/pkg/controller/jirafixversion"
+	"github.com/epam/edp-codebase-operator/v2/pkg/controller/jiraserver"
 )
 
 func init() {

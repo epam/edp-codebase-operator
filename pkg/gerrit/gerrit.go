@@ -4,19 +4,21 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/util"
-	"golang.org/x/crypto/ssh"
-	"gopkg.in/src-d/go-git.v4"
-	"gopkg.in/src-d/go-git.v4/config"
 	"html/template"
 	"io"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	coreV1Client "k8s.io/client-go/kubernetes/typed/core/v1"
 	"log"
 	"net"
 	"os"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"time"
+
+	"github.com/epam/edp-codebase-operator/v2/pkg/util"
+	"github.com/pkg/errors"
+	"golang.org/x/crypto/ssh"
+	"gopkg.in/src-d/go-git.v4"
+	"gopkg.in/src-d/go-git.v4/config"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	coreV1Client "k8s.io/client-go/kubernetes/typed/core/v1"
+	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
 var logger = logf.Log.WithName("git-server-service")
@@ -125,17 +127,17 @@ func CheckProjectExist(port int32, idrsa, host, appName string) (*bool, error) {
 
 	client, err := SshInit(port, idrsa, host)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "unable to init ssh")
 	}
 
 	outputCmd, err := client.RunCommand(cmd)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "unable to run ssh command")
 	}
 
 	err = json.Unmarshal(outputCmd, &raw)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "unable to decode json")
 	}
 
 	raw["count"] = 1

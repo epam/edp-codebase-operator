@@ -3,10 +3,14 @@ package codebasebranch
 import (
 	"context"
 	"fmt"
-	edpv1alpha1 "github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/codebasebranch/chain/factory"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/model"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/util"
+	"reflect"
+	"time"
+
+	edpv1alpha1 "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebasebranch/chain/factory"
+	cbHandler "github.com/epam/edp-codebase-operator/v2/pkg/controller/codebasebranch/chain/handler"
+	"github.com/epam/edp-codebase-operator/v2/pkg/model"
+	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	"github.com/epmd-edp/edp-component-operator/pkg/apis/v1/v1alpha1"
 	perfApi "github.com/epmd-edp/perf-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/pkg/errors"
@@ -14,7 +18,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -24,7 +27,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/source"
-	"time"
 )
 
 var log = logf.Log.WithName("codebase-branch-controller")
@@ -116,16 +118,23 @@ func (r *ReconcileCodebaseBranch) Reconcile(request reconcile.Request) (reconcil
 		}
 		return reconcile.Result{}, err
 	}
-	defer r.updateStatus(cb)
-
-	result, err := r.tryToDeleteCodebaseBranch(cb)
-	if err != nil || result != nil {
-		return *result, err
-	}
+	defer func() {
+		if err := r.updateStatus(cb); err != nil {
+			rl.Error(err, "error on codebase branch update status")
+		}
+	}()
 
 	c, err := util.GetCodebase(r.client, cb.Spec.CodebaseName, cb.Namespace)
 	if err != nil {
 		return reconcile.Result{}, err
+	}
+
+	result, err := r.tryToDeleteCodebaseBranch(cb, factory.GetDeletionChain(c.Spec.CiTool, r.client))
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+	if result != nil {
+		return *result, nil
 	}
 
 	cbChain := factory.GetChain(c.Spec.CiTool, r.client)
@@ -173,7 +182,8 @@ func (r *ReconcileCodebaseBranch) updateStatus(cb *edpv1alpha1.CodebaseBranch) e
 	return nil
 }
 
-func (r ReconcileCodebaseBranch) tryToDeleteCodebaseBranch(cb *edpv1alpha1.CodebaseBranch) (*reconcile.Result, error) {
+func (r ReconcileCodebaseBranch) tryToDeleteCodebaseBranch(cb *edpv1alpha1.CodebaseBranch,
+	deletionChain cbHandler.CodebaseBranchHandler) (*reconcile.Result, error) {
 	if cb.GetDeletionTimestamp().IsZero() {
 		if !util.ContainsString(cb.ObjectMeta.Finalizers, codebaseBranchOperatorFinalizerName) {
 			cb.ObjectMeta.Finalizers = append(cb.ObjectMeta.Finalizers, codebaseBranchOperatorFinalizerName)
@@ -184,8 +194,12 @@ func (r ReconcileCodebaseBranch) tryToDeleteCodebaseBranch(cb *edpv1alpha1.Codeb
 		return nil, nil
 	}
 
+	if err := deletionChain.ServeRequest(cb); err != nil {
+		return nil, errors.Wrap(err, "unable to run deletion chain")
+	}
+
 	if err := removeDirectoryIfExists(cb.Spec.CodebaseName, cb.Name, cb.Namespace); err != nil {
-		return &reconcile.Result{}, err
+		return &reconcile.Result{}, errors.Wrap(err, "unable to remove codebase branch directory")
 	}
 
 	cb.ObjectMeta.Finalizers = util.RemoveString(cb.ObjectMeta.Finalizers, codebaseBranchOperatorFinalizerName)

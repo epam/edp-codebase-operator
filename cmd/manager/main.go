@@ -3,8 +3,8 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/apis"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/controller"
+	"github.com/epam/edp-codebase-operator/v2/pkg/apis"
+	"github.com/epam/edp-codebase-operator/v2/pkg/controller"
 	jenkinsApis "github.com/epmd-edp/jenkins-operator/v2/pkg/apis"
 	appsv1 "github.com/openshift/api/apps/v1"
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"

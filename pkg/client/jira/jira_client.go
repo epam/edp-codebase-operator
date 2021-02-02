@@ -1,7 +1,7 @@
 package jira
 
 import (
-	"github.com/epmd-edp/codebase-operator/v2/pkg/client/jira/dto"
+	"github.com/epam/edp-codebase-operator/v2/pkg/client/jira/dto"
 )
 
 type Client interface {

@@ -2,8 +2,8 @@ package util
 
 import (
 	"context"
-	edpv1alpha1 "github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/model"
+	edpv1alpha1 "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	"github.com/epam/edp-codebase-operator/v2/pkg/model"
 	"github.com/epmd-edp/edp-component-operator/pkg/apis/v1/v1alpha1"
 	"github.com/pkg/errors"
 	coreV1 "k8s.io/api/core/v1"

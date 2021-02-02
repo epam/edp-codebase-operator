@@ -11,6 +11,7 @@ const (
 	StatusFailed     = "failed"
 	StatusFinished   = "created"
 	StatusInProgress = "in progress"
+	CodebaseLabelKey = "codebase"
 
 	PrivateSShKeyName = "id_rsa"
 
@@ -23,7 +24,9 @@ const (
 	OtherLanguage  = "other"
 	Javascript     = "javascript"
 
-	CodebaseKind = "Codebase"
+	CodebaseKind      = "Codebase"
+	JenkinsFolderKind = "JenkinsFolder"
+	V2APIVersion      = "v2.edp.epam.com/v1alpha1"
 
 	ProjectPushedStatus              = "pushed"
 	ProjectTemplatesPushedStatus     = "templates_pushed"

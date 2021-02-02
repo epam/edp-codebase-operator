@@ -3,22 +3,29 @@ package jenkins
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"time"
+
 	"github.com/bndr/gojenkins"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/util"
+	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	jenkinsApi "github.com/epmd-edp/jenkins-operator/v2/pkg/apis/v2/v1alpha1"
 	jenkinsOperatorSpec "github.com/epmd-edp/jenkins-operator/v2/pkg/service/jenkins/spec"
 	"github.com/pkg/errors"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	"net/http"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
-	"time"
 )
 
 var log = logf.Log.WithName("jenkins-client")
 
 type JenkinsClient struct {
 	Jenkins *gojenkins.Jenkins
+}
+
+type JobNotFoundError string
+
+func (j JobNotFoundError) Error() string {
+	return string(j)
 }
 
 func Init(url string, username string, token string) (*JenkinsClient, error) {
@@ -44,6 +51,25 @@ func (c JenkinsClient) GetJob(name string, delay time.Duration, retryCount int) 
 	return false
 }
 
+func (c JenkinsClient) TriggerDeletionJob(branchName string, fromCommit string, appName string) error {
+	jobName := fmt.Sprintf("%v/job/Delete-release-%v", appName, appName)
+	log.Info("Trying to trigger jenkins job", "name", jobName)
+
+	if c.GetJob(jobName, time.Second, 1) {
+		_, err := c.Jenkins.BuildJob(jobName, map[string]string{
+			"RELEASE_NAME": branchName,
+			"COMMIT_ID":    fromCommit,
+		})
+		if err != nil {
+			return errors.Wrap(err, "unable to build job")
+		}
+
+		return nil
+	}
+
+	return JobNotFoundError("deletion job not found")
+}
+
 func (c JenkinsClient) TriggerReleaseJob(branchName string, fromCommit string, appName string) error {
 	jobName := fmt.Sprintf("%v/job/Create-release-%v", appName, appName)
 	log.Info("Trying to trigger jenkins job", "name", jobName)
@@ -61,21 +87,20 @@ func (c JenkinsClient) TriggerReleaseJob(branchName string, fromCommit string, a
 func (c JenkinsClient) GetJobStatus(name string, delay time.Duration, retryCount int) (string, error) {
 	time.Sleep(delay)
 	for i := 0; i < retryCount; i++ {
-		isQueued, err := c.IsJobQueued(name)
-		isRunning, err := c.IsJobRunning(name)
-		if err != nil {
+		isQueued, qErr := c.IsJobQueued(name)
+		isRunning, rErr := c.IsJobRunning(name)
+		if qErr != nil || rErr != nil {
 			job, err := c.Jenkins.GetJob(name)
+			if err != nil {
+				return "", errors.Wrap(err, "job not found")
+			}
 			if job.Raw.Color == "notbuilt" {
 				log.Info("Job didn't start yet", "name", name, "delay", delay, "attempts lasts", retryCount-i)
 				time.Sleep(delay)
 				continue
 			}
-
-			if err != nil {
-				return "", err
-			}
 		}
-		if *isRunning || *isQueued {
+		if (isRunning != nil && *isRunning) || (isQueued != nil && *isQueued) {
 			log.Info("Job is running", "name", name, "delay", delay, "attempts lasts", retryCount-i)
 			time.Sleep(delay)
 		} else {

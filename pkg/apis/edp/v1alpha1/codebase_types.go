@@ -1,8 +1,9 @@
 package v1alpha1
 
 import (
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"time"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -110,6 +111,7 @@ const (
 	PutBranchForGitlabCiCodebase     ActionType = "put_branch_for_gitlab_ci_codebase"
 	PutCodebaseImageStream           ActionType = "put_codebase_image_stream"
 	TriggerReleaseJob                ActionType = "trigger_release_job"
+	TriggerDeletionJob               ActionType = "trigger_deletion_job"
 	PerfDataSourceCrUpdate           ActionType = "perf_data_source_cr_update"
 
 	Success Result = "success"

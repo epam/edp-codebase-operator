@@ -1,8 +1,8 @@
 package chain
 
 import (
-	"github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/util"
+	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	edpCompApi "github.com/epmd-edp/edp-component-operator/pkg/apis/v1/v1alpha1"
 	perfApi "github.com/epmd-edp/perf-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/stretchr/testify/assert"

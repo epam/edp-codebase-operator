@@ -3,18 +3,19 @@ package update_perf_data_sources
 import (
 	"context"
 	"fmt"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/codebasebranch/chain/handler"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/model"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/util"
+	"strings"
+	"time"
+
+	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebasebranch/chain/handler"
+	"github.com/epam/edp-codebase-operator/v2/pkg/model"
+	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	perfApi "github.com/epmd-edp/perf-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epmd-edp/perf-operator/v2/pkg/util/cluster"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
-	"strings"
-	"time"
 )
 
 type UpdatePerfDataSources struct {
@@ -83,7 +84,10 @@ func setFailedFields(cb *v1alpha1.CodebaseBranch, a v1alpha1.ActionType, message
 
 func (h UpdatePerfDataSources) tryToUpdateDataSourceCr(cb *v1alpha1.CodebaseBranch) error {
 	owr := cluster.GetOwnerReference(codebaseKind, cb.GetOwnerReferences())
-	c, err := cluster.GetCodebase(h.Client, owr.Name, cb.Namespace)
+	if owr == nil {
+		return errors.New("unable to get owner reference")
+	}
+	c, err := util.GetCodebase(h.Client, owr.Name, cb.Namespace)
 	if err != nil {
 		return err
 	}

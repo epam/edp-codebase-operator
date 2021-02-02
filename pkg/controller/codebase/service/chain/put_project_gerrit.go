@@ -3,19 +3,20 @@ package chain
 import (
 	"context"
 	"fmt"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	edpv1alpha1 "github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/codebase/helper"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/codebase/repository"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/codebase/service/chain/handler"
-	git "github.com/epmd-edp/codebase-operator/v2/pkg/controller/gitserver"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/gerrit"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/model"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/openshift"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/util"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/vcs"
-	"github.com/pkg/errors"
 	"time"
+
+	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	edpv1alpha1 "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/helper"
+	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/repository"
+	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/service/chain/handler"
+	git "github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver"
+	"github.com/epam/edp-codebase-operator/v2/pkg/gerrit"
+	"github.com/epam/edp-codebase-operator/v2/pkg/model"
+	"github.com/epam/edp-codebase-operator/v2/pkg/openshift"
+	"github.com/epam/edp-codebase-operator/v2/pkg/util"
+	"github.com/epam/edp-codebase-operator/v2/pkg/vcs"
+	"github.com/pkg/errors"
 )
 
 type PutProjectGerrit struct {
@@ -152,7 +153,7 @@ func (h PutProjectGerrit) pushToGerrit(sshPost int32, idrsa, host, codebaseName,
 }
 
 func (h PutProjectGerrit) tryToCreateProjectInGerrit(sshPort int32, idrsa, host, codebaseName string) error {
-	log.Info("Start creating project in Gerrit", "codebase name")
+	log.Info("Start creating project in Gerrit", "codebase name", codebaseName)
 	projectExist, err := gerrit.CheckProjectExist(sshPort, idrsa, host, codebaseName)
 	if err != nil {
 		return errors.Wrap(err, "couldn't versionFileExists project")
