@@ -5,9 +5,8 @@ import (
 )
 
 type ConfigGoTemplating struct {
-	Lang         string             `json:"lang"`
-	Route        *v1alpha1.Route    `json:"route"`
-	Database     *v1alpha1.Database `json:"database"`
+	Lang         string          `json:"lang"`
+	Route        *v1alpha1.Route `json:"route"`
 	Name         string
 	PlatformType string
 	DnsWildcard  string

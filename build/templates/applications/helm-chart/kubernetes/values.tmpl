@@ -4,18 +4,6 @@ cdPipelineName: ""
 cdPipelineStageName: ""
 dnsWildcard: {{.DnsWildcard}}
 framework: {{.Framework}}
-{{if and .Database (ne .Lang "javascript")}}
-{{if eq .Database.Kind "PostgreSQL"}}
-database:
-  required: true
-  version: {{.Database.Version}}
-  storageClass: {{.Database.Storage}}
-  capacity: {{.Database.Capacity}}
-{{end}}
-{{else}}
-database:
-  required: false
-{{end}}
 {{if .Route}}
 ingress:
   required: true

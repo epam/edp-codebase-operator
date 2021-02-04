@@ -37,15 +37,8 @@ func tryGetRepoUrl(spec v1alpha1.CodebaseSpec) (*string, error) {
 
 func buildRepoUrl(spec v1alpha1.CodebaseSpec) string {
 	log.Info("Start building repo url", "base url", GithubDomain, "spec", spec)
-	return strings.ToLower(fmt.Sprintf("%v/%v-%v-%v%v.git", GithubDomain, spec.Lang, spec.BuildTool,
-		getFrameworkOrEmpty(spec), getDatabaseOrEmpty(spec.Database)))
-}
-
-func getDatabaseOrEmpty(db *v1alpha1.Database) string {
-	if db != nil {
-		return fmt.Sprintf("-%v", db.Kind)
-	}
-	return ""
+	return strings.ToLower(fmt.Sprintf("%v/%v-%v-%v.git", GithubDomain, spec.Lang, spec.BuildTool,
+		getFrameworkOrEmpty(spec)))
 }
 
 func getFrameworkOrEmpty(spec v1alpha1.CodebaseSpec) string {

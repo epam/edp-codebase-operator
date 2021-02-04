@@ -35,13 +35,6 @@ type Route struct {
 	Path string `json:"path"`
 }
 
-type Database struct {
-	Kind     string `json:"kind"`
-	Version  string `json:"version"`
-	Capacity string `json:"capacity"`
-	Storage  string `json:"storage"`
-}
-
 type Perf struct {
 	Name        string   `json:"name"`
 	DataSources []string `json:"dataSources"`
@@ -58,7 +51,6 @@ type CodebaseSpec struct {
 	Strategy                 Strategy    `json:"strategy"`
 	Repository               *Repository `json:"repository"`
 	Route                    *Route      `json:"route"`
-	Database                 *Database   `json:"database"`
 	TestReportFramework      *string     `json:"testReportFramework"`
 	Type                     string      `json:"type"`
 	GitServer                string      `json:"gitServer"`

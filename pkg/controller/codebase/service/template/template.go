@@ -85,9 +85,6 @@ func buildTemplateConfig(client *coreV1Client.CoreV1Client, c v1alpha1.Codebase)
 	if c.Spec.Framework != nil {
 		cf.Framework = *c.Spec.Framework
 	}
-	if c.Spec.Database != nil {
-		cf.Database = c.Spec.Database
-	}
 	if c.Spec.Route != nil {
 		cf.Route = c.Spec.Route
 	}

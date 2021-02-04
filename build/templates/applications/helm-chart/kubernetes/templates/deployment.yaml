@@ -16,12 +16,6 @@ spec:
             labels:
                 app: {{ .Values.name }}
         spec:
-{{- if .Values.database.required }}
-            initContainers:
-                - name: init-{{ .Values.name }}-db
-                  image: busybox
-                  command: ["sh", "-c", "while ! nc -w 1 {{ .Values.name }}-db 5432 </dev/null; do echo waiting for {{ .Values.name }}-db; sleep 10; done;"]
-{{- end }}
             serviceAccountName: {{ .Values.name }}
             containers:
                 - name: {{ .Values.name }}
@@ -49,32 +43,7 @@ spec:
                   resources:
                       requests:
                           memory: 500Mi
-{{- if .Values.database.required }}
-                  env:
-                      - name: POSTGRES_DATABASE
-                        value: {{ .Values.name }}-db
-                      - name: POSTGRES_USER
-                        value: "admin"
-                      - name: POSTGRES_PASSWORD
-                        value: "admin"
-                      {{if eq .Values.framework "operator-sdk"}}
-                      - name: WATCH_NAMESPACE
-                        valueFrom:
-                          fieldRef:
-                            apiVersion: v1
-                            fieldPath: metadata.namespace
-                      - name: POD_NAME
-                        valueFrom:
-                          fieldRef:
-                            apiVersion: v1
-                            fieldPath: metadata.name
-                      - name: OPERATOR_NAME
-                        value: {{.Name}}
-                      - name: PLATFORM_TYPE
-                        value: {{.PlatformType}}
-                      {{end}}
-{{- end }}
-                        {{if and (eq .Values.framework "operator-sdk") (not .Values.database.required)}}
+                        {{if eq .Values.framework "operator-sdk"}}
                   env:
                       - name: WATCH_NAMESPACE
                         valueFrom:
