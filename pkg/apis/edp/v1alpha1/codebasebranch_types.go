@@ -1,8 +1,9 @@
 package v1alpha1
 
 import (
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"time"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -37,6 +38,7 @@ type CodebaseBranchStatus struct {
 	Result              Result     `json:"result"`
 	DetailedMessage     string     `json:"detailedMessage"`
 	Value               string     `json:"value"`
+	FailureCount        int64      `json:"failureCount"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

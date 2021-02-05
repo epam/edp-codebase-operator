@@ -22,6 +22,12 @@ type CodebaseBranchService struct {
 	Client client.Client
 }
 
+type JobFailedError string
+
+func (j JobFailedError) Error() string {
+	return string(j)
+}
+
 func (s *CodebaseBranchService) TriggerDeletionJob(cb *v1alpha1.CodebaseBranch) error {
 	rLog := log.WithValues("codebase branch", cb.Name, "codebase", cb.Spec.CodebaseName)
 	rLog.V(2).Info("start triggering deletion job")
@@ -31,7 +37,7 @@ func (s *CodebaseBranchService) TriggerDeletionJob(cb *v1alpha1.CodebaseBranch) 
 		return errors.Wrap(err, "couldn't create jenkins client")
 	}
 
-	if err = jc.TriggerDeletionJob(cb.Spec.BranchName, cb.Spec.FromCommit, cb.Spec.CodebaseName); err != nil {
+	if err = jc.TriggerDeletionJob(cb.Spec.BranchName, cb.Spec.CodebaseName); err != nil {
 		switch err.(type) {
 		case jenkins.JobNotFoundError:
 			rLog.Info("deletion job not found")
@@ -51,7 +57,7 @@ func (s *CodebaseBranchService) TriggerDeletionJob(cb *v1alpha1.CodebaseBranch) 
 
 	if js != jenkinsJobSuccessStatus {
 		rLog.Info("failed to delete release", "deletion release job status", js)
-		return nil
+		return JobFailedError("deletion job failed")
 	}
 
 	rLog.Info("release has been deleted. Status: %v", model.StatusFinished)
