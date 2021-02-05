@@ -6,6 +6,8 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebasebranch/service"
+
 	edpv1alpha1 "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebasebranch/chain/factory"
 	cbHandler "github.com/epam/edp-codebase-operator/v2/pkg/controller/codebasebranch/chain/handler"
@@ -188,14 +190,20 @@ func (r ReconcileCodebaseBranch) tryToDeleteCodebaseBranch(cb *edpv1alpha1.Codeb
 		if !util.ContainsString(cb.ObjectMeta.Finalizers, codebaseBranchOperatorFinalizerName) {
 			cb.ObjectMeta.Finalizers = append(cb.ObjectMeta.Finalizers, codebaseBranchOperatorFinalizerName)
 			if err := r.client.Update(context.TODO(), cb); err != nil {
-				return &reconcile.Result{}, err
+				return &reconcile.Result{}, errors.Wrap(err, "unable to update codebase branch")
 			}
 		}
 		return nil, nil
 	}
 
 	if err := deletionChain.ServeRequest(cb); err != nil {
-		return nil, errors.Wrap(err, "unable to run deletion chain")
+		switch errors.Cause(err).(type) {
+		case service.JobFailedError:
+			log.Error(err, "deletion job failed")
+			return &reconcile.Result{RequeueAfter: setFailureCount(cb)}, nil
+		default:
+			return nil, errors.Wrap(err, "error during deletion chain")
+		}
 	}
 
 	if err := removeDirectoryIfExists(cb.Spec.CodebaseName, cb.Name, cb.Namespace); err != nil {
@@ -218,4 +226,12 @@ func removeDirectoryIfExists(codebaseName, branchName, namespace string) error {
 		return err
 	}
 	return nil
+}
+
+// setFailureCount increments failure count and returns delay for next reconciliation
+func setFailureCount(c *edpv1alpha1.CodebaseBranch) time.Duration {
+	timeout := util.GetTimeout(c.Status.FailureCount, 10*time.Second)
+	log.V(2).Info("wait for next reconcilation", "next reconcilation in", timeout)
+	c.Status.FailureCount += 1
+	return timeout
 }

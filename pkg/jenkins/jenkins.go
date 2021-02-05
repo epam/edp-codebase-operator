@@ -51,14 +51,13 @@ func (c JenkinsClient) GetJob(name string, delay time.Duration, retryCount int) 
 	return false
 }
 
-func (c JenkinsClient) TriggerDeletionJob(branchName string, fromCommit string, appName string) error {
+func (c JenkinsClient) TriggerDeletionJob(branchName string, appName string) error {
 	jobName := fmt.Sprintf("%v/job/Delete-release-%v", appName, appName)
 	log.Info("Trying to trigger jenkins job", "name", jobName)
 
 	if c.GetJob(jobName, time.Second, 1) {
 		_, err := c.Jenkins.BuildJob(jobName, map[string]string{
 			"RELEASE_NAME": branchName,
-			"COMMIT_ID":    fromCommit,
 		})
 		if err != nil {
 			return errors.Wrap(err, "unable to build job")

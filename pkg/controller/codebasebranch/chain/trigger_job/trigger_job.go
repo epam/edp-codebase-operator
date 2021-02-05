@@ -29,7 +29,7 @@ type TriggerJob struct {
 
 func (h TriggerJob) Trigger(cb *v1alpha1.CodebaseBranch, actionType edpv1alpha1.ActionType,
 	triggerFunc func(cb *v1alpha1.CodebaseBranch) error) error {
-	if err := h.SetIntermediateSuccessFields(cb, edpv1alpha1.AcceptCodebaseBranchRegistration); err != nil {
+	if err := h.SetIntermediateSuccessFields(cb, actionType); err != nil {
 		return err
 	}
 
@@ -78,6 +78,7 @@ func (h TriggerJob) SetIntermediateSuccessFields(cb *v1alpha1.CodebaseBranch, ac
 		VersionHistory:      cb.Status.VersionHistory,
 		LastSuccessfulBuild: cb.Status.LastSuccessfulBuild,
 		Build:               cb.Status.Build,
+		FailureCount:        cb.Status.FailureCount,
 	}
 
 	if err := h.Client.Status().Update(context.TODO(), cb); err != nil {
@@ -100,6 +101,7 @@ func (h TriggerJob) SetFailedFields(cb *edpv1alpha1.CodebaseBranch, a edpv1alpha
 		VersionHistory:      cb.Status.VersionHistory,
 		LastSuccessfulBuild: cb.Status.LastSuccessfulBuild,
 		Build:               cb.Status.Build,
+		FailureCount:        cb.Status.FailureCount,
 	}
 }
 
