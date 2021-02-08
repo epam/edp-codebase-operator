@@ -12,8 +12,6 @@ spec:
     shortNames:
       - cb
   scope: Namespaced
-  subresources:
-    status: {}
   validation:
     openAPIV3Schema:
       properties:
