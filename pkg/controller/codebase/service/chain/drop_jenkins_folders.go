@@ -3,7 +3,6 @@ package chain
 import (
 	"context"
 	"fmt"
-
 	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/service/chain/handler"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
@@ -34,8 +33,12 @@ func (h DropJenkinsFolders) ServeRequest(c *v1alpha1.Codebase) error {
 		return errors.Wrap(err, "unable to list codebase branches")
 	}
 
-	if len(branchList.Items) > 0 {
-		return ErrorBranchesExists("can not delete jenkins folder while any codebase branches exists")
+	for _, branch := range branchList.Items {
+		for _, owner := range branch.OwnerReferences {
+			if owner.Kind == c.Kind && owner.UID == c.UID {
+				return ErrorBranchesExists("can not delete jenkins folder while any codebase branches exists")
+			}
+		}
 	}
 
 	var (
