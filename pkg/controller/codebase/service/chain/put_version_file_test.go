@@ -11,6 +11,7 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/pkg/openshift"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	"github.com/stretchr/testify/assert"
+	"gopkg.in/src-d/go-git.v4/config"
 	"k8s.io/api/apps/v1"
 	v1K8s "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -144,7 +145,7 @@ func TestTryToPutVersionFileMethod_MustBeFinishedSuccessfully(t *testing.T) {
 	mGit := new(mock2.MockGit)
 	mGit.On("CommitChanges", path, fmt.Sprintf("Add %v file", versionFileName)).Return(
 		nil)
-	mGit.On("PushChanges", fakePrivateKey, fakeUser, path).Return(
+	mGit.On("PushChanges", fakePrivateKey, fakeUser, path, []config.RefSpec{util.HeadBranchesRefSpec, util.TagsRefSpec}).Return(
 		nil)
 	mGit.On("Checkout", path, "").Return(
 		nil)

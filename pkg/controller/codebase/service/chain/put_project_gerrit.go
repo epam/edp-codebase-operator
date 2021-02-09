@@ -3,6 +3,7 @@ package chain
 import (
 	"context"
 	"fmt"
+	"gopkg.in/src-d/go-git.v4/config"
 	"os"
 	"time"
 
@@ -104,7 +105,7 @@ func (h PutProjectGerrit) ServeRequest(c *v1alpha1.Codebase) error {
 		return errors.Wrap(err, "squash commits been failed")
 	}
 
-	if err := h.tryToPushProjectToGerrit(*port, c.Name, wd, c.Namespace, c.Spec.DefaultBranch); err != nil {
+	if err := h.tryToPushProjectToGerrit(*port, c.Name, wd, c.Namespace, c.Spec.DefaultBranch, c.Spec.Strategy); err != nil {
 		setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
 		return errors.Wrapf(err, "push to gerrit for codebase %v has been failed", c.Name)
 	}
@@ -119,7 +120,7 @@ func (h PutProjectGerrit) ServeRequest(c *v1alpha1.Codebase) error {
 	return nextServeOrNil(h.next, c)
 }
 
-func (h PutProjectGerrit) tryToPushProjectToGerrit(sshPort int32, codebaseName, workDir, namespace, branchName string) error {
+func (h PutProjectGerrit) tryToPushProjectToGerrit(sshPort int32, codebaseName, workDir, namespace, branchName string, strategy v1alpha1.Strategy) error {
 	s, err := util.GetSecret(*h.clientSet.CoreClient, "gerrit-project-creator", namespace)
 	if err != nil {
 		return errors.Wrap(err, "unable to get gerrit-project-creator secret")
@@ -141,18 +142,24 @@ func (h PutProjectGerrit) tryToPushProjectToGerrit(sshPort int32, codebaseName, 
 		return errors.Wrapf(err, "checkout default branch %v in Gerrit has been failed", branchName)
 	}
 
-	if err := h.pushToGerrit(sshPort, idrsa, host, codebaseName, d); err != nil {
+	if err := h.pushToGerrit(sshPort, idrsa, host, codebaseName, d, strategy); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (h PutProjectGerrit) pushToGerrit(sshPost int32, idrsa, host, codebaseName, directory string) error {
+func (h PutProjectGerrit) pushToGerrit(sshPost int32, idrsa, host, codebaseName, directory string, strategy v1alpha1.Strategy) error {
 	log.Info("Start pushing project to Gerrit ", "codebase name", codebaseName)
 	if err := gerrit.AddRemoteLinkToGerrit(directory, host, sshPost, codebaseName); err != nil {
 		return errors.Wrap(err, "couldn't add remote link to Gerrit")
 	}
-	if err := h.git.PushChanges(idrsa, "project-creator", directory); err != nil {
+	var refSpecs []config.RefSpec
+	if strategy == v1alpha1.Clone {
+		refSpecs = []config.RefSpec{util.RemoteBranchesRefSpec, util.TagsRefSpec}
+	} else {
+		refSpecs = []config.RefSpec{util.HeadBranchesRefSpec, util.TagsRefSpec}
+	}
+	if err := h.git.PushChanges(idrsa, "project-creator", directory, refSpecs); err != nil {
 		return err
 	}
 	return nil

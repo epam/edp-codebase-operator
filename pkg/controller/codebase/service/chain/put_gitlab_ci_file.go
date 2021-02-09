@@ -10,6 +10,7 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/platform"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	"github.com/pkg/errors"
+	"gopkg.in/src-d/go-git.v4/config"
 	"os"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
@@ -87,7 +88,7 @@ func (h PutGitlabCiFile) pushChanges(projectPath, privateKey, user string) error
 		return err
 	}
 
-	if err := h.git.PushChanges(privateKey, user, projectPath); err != nil {
+	if err := h.git.PushChanges(privateKey, user, projectPath, []config.RefSpec{util.HeadBranchesRefSpec, util.TagsRefSpec}); err != nil {
 		return errors.Wrapf(err, "an error has occurred while pushing changes for %v project", projectPath)
 	}
 

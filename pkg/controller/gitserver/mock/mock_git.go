@@ -1,6 +1,9 @@
 package mock
 
-import "github.com/stretchr/testify/mock"
+import (
+	"github.com/stretchr/testify/mock"
+	"gopkg.in/src-d/go-git.v4/config"
+)
 
 type MockGit struct {
 	mock.Mock
@@ -11,8 +14,8 @@ func (m MockGit) CommitChanges(directory, commitMsg string) error {
 	return args.Error(0)
 }
 
-func (m MockGit) PushChanges(key, user, directory string) error {
-	args := m.Called(key, user, directory)
+func (m MockGit) PushChanges(key, user, directory string, refSpecs []config.RefSpec) error {
+	args := m.Called(key, user, directory, refSpecs)
 	return args.Error(0)
 }
 

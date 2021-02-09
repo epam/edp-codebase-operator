@@ -2,6 +2,7 @@ package chain
 
 import (
 	"fmt"
+	"gopkg.in/src-d/go-git.v4/config"
 
 	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	edpv1alpha1 "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
@@ -101,7 +102,7 @@ func (h PutDeployConfigs) tryToPushConfigs(c edpv1alpha1.Codebase, sshPort int32
 		return errors.Wrapf(err, "checkout default branch %v in Gerrit has been failed", c.Spec.DefaultBranch)
 	}
 
-	if err := h.git.PushChanges(idrsa, u, d); err != nil {
+	if err := h.git.PushChanges(idrsa, u, d, []config.RefSpec{util.HeadBranchesRefSpec, util.TagsRefSpec}); err != nil {
 		return err
 	}
 

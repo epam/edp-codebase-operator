@@ -12,6 +12,7 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/pkg/openshift"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	"github.com/pkg/errors"
+	"gopkg.in/src-d/go-git.v4/config"
 )
 
 type PutGitlabCiDeployConfigs struct {
@@ -84,7 +85,7 @@ func (h PutGitlabCiDeployConfigs) pushChanges(projectPath, gitServerName, namesp
 
 	k := string(secret.Data[util.PrivateSShKeyName])
 	u := gs.GitUser
-	if err := h.git.PushChanges(k, u, projectPath); err != nil {
+	if err := h.git.PushChanges(k, u, projectPath, []config.RefSpec{util.HeadBranchesRefSpec, util.TagsRefSpec}); err != nil {
 		return errors.Wrapf(err, "an error has occurred while pushing changes for %v repo", projectPath)
 	}
 	log.Info("templates have been pushed")

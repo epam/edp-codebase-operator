@@ -30,7 +30,7 @@ type GitSshData struct {
 
 type Git interface {
 	CommitChanges(directory, commitMsg string) error
-	PushChanges(key, user, directory string) error
+	PushChanges(key, user, directory string, refSpecs []config.RefSpec) error
 	CheckPermissions(repo string, user string, pass string) (accessible bool)
 	CloneRepositoryBySsh(key, user, repoUrl, destination string) error
 	CloneRepository(repo, user, pass, destination string) error
@@ -78,7 +78,7 @@ func (gp GitProvider) CreateRemoteBranch(key, user, path, name string) error {
 		return err
 	}
 
-	if err := gp.PushChanges(key, user, path); err != nil {
+	if err := gp.PushChanges(key, user, path, []config.RefSpec{util.HeadBranchesRefSpec, util.TagsRefSpec}); err != nil {
 		return err
 	}
 	log.Info("branch has been created", "name", name)
@@ -131,7 +131,7 @@ func (GitProvider) CommitChanges(directory, commitMsg string) error {
 	return nil
 }
 
-func (GitProvider) PushChanges(key, user, directory string) error {
+func (GitProvider) PushChanges(key, user, directory string, refSpecs []config.RefSpec) error {
 	log.Info("Start pushing changes", "directory", directory)
 	auth, err := initAuth(key, user)
 	if err != nil {
@@ -145,10 +145,7 @@ func (GitProvider) PushChanges(key, user, directory string) error {
 
 	err = r.Push(&git.PushOptions{
 		RemoteName: "origin",
-		RefSpecs: []config.RefSpec{
-			"refs/heads/*:refs/heads/*",
-			"refs/tags/*:refs/tags/*",
-		},
+		RefSpecs: refSpecs,
 		Auth: auth,
 	})
 	if err != nil {
@@ -330,7 +327,7 @@ func (gp GitProvider) CreateRemoteTag(key, user, path, branchName, name string) 
 		return err
 	}
 
-	if err := gp.PushChanges(key, user, path); err != nil {
+	if err := gp.PushChanges(key, user, path, []config.RefSpec{util.HeadBranchesRefSpec, util.TagsRefSpec}); err != nil {
 		return err
 	}
 	log.Info("tag has been created", "name", name)
