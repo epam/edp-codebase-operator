@@ -3,6 +3,8 @@ package service
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	edpv1alpha1 "github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/jenkins"
@@ -11,7 +13,6 @@ import (
 	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
-	"time"
 )
 
 var log = logf.Log.WithName("codebase_branch_service")
@@ -20,6 +21,48 @@ const jenkinsJobSuccessStatus = "blue"
 
 type CodebaseBranchService struct {
 	Client client.Client
+}
+
+type JobFailedError string
+
+func (j JobFailedError) Error() string {
+	return string(j)
+}
+
+func (s *CodebaseBranchService) TriggerDeletionJob(cb *v1alpha1.CodebaseBranch) error {
+	rLog := log.WithValues("codebase branch", cb.Name, "codebase", cb.Spec.CodebaseName)
+	rLog.V(2).Info("start triggering deletion job")
+
+	jc, err := initJenkinsClient(s.Client, cb.Namespace)
+	if err != nil {
+		return errors.Wrap(err, "couldn't create jenkins client")
+	}
+
+	if err = jc.TriggerDeletionJob(cb.Spec.BranchName, cb.Spec.CodebaseName); err != nil {
+		switch err.(type) {
+		case jenkins.JobNotFoundError:
+			rLog.Info("deletion job not found")
+			return nil
+		default:
+			return errors.Wrap(err, "unable to trigger deletion job")
+		}
+	}
+
+	rLog.Info("Deletion job has been triggered")
+
+	rj := fmt.Sprintf("%v/job/Delete-release-%v", cb.Spec.CodebaseName, cb.Spec.CodebaseName)
+	js, err := jc.GetJobStatus(rj, 10*time.Second, 50)
+	if err != nil {
+		return errors.Wrap(err, "unable to get deletion job status")
+	}
+
+	if js != jenkinsJobSuccessStatus {
+		rLog.Info("failed to delete release", "deletion release job status", js)
+		return JobFailedError("deletion job failed")
+	}
+
+	rLog.Info("release has been deleted. Status: %v", model.StatusFinished)
+	return nil
 }
 
 func (s *CodebaseBranchService) TriggerReleaseJob(cb *v1alpha1.CodebaseBranch) error {
@@ -98,6 +141,7 @@ func (s *CodebaseBranchService) setIntermediateStatus(cb *v1alpha1.CodebaseBranc
 		VersionHistory:      cb.Status.VersionHistory,
 		LastSuccessfulBuild: cb.Status.LastSuccessfulBuild,
 		Build:               cb.Status.Build,
+		FailureCount:        cb.Status.FailureCount,
 	}
 	return s.updateStatus(cb)
 }
@@ -114,6 +158,7 @@ func (s *CodebaseBranchService) setFailStatus(cb *v1alpha1.CodebaseBranch, actio
 		VersionHistory:      cb.Status.VersionHistory,
 		LastSuccessfulBuild: cb.Status.LastSuccessfulBuild,
 		Build:               cb.Status.Build,
+		FailureCount:        cb.Status.FailureCount,
 	}
 	return s.updateStatus(cb)
 

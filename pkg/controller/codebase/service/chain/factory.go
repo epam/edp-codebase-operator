@@ -6,6 +6,7 @@ import (
 	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/codebase/service/chain/handler"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/gitserver"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/openshift"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
@@ -92,6 +93,12 @@ func CreateGitlabCiDefChain(cs openshift.ClientSet, cr repository.CodebaseReposi
 		},
 		clientSet: cs,
 		git:       gp,
+	}
+}
+
+func CreateDeletionChain(k8sClient client.Client) handler.CodebaseHandler {
+	return DropJenkinsFolders{
+		k8sClient: k8sClient,
 	}
 }
 

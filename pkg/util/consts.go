@@ -11,6 +11,7 @@ const (
 	StatusFailed     = "failed"
 	StatusFinished   = "created"
 	StatusInProgress = "in progress"
+	CodebaseLabelKey = "codebase"
 
 	PrivateSShKeyName = "id_rsa"
 

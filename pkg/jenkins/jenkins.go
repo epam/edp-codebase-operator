@@ -44,6 +44,30 @@ func (c JenkinsClient) GetJob(name string, delay time.Duration, retryCount int) 
 	return false
 }
 
+type JobNotFoundError string
+
+func (j JobNotFoundError) Error() string {
+	return string(j)
+}
+
+func (c JenkinsClient) TriggerDeletionJob(branchName string, appName string) error {
+	jobName := fmt.Sprintf("%v/job/Delete-release-%v", appName, appName)
+	log.Info("Trying to trigger jenkins job", "name", jobName)
+
+	if c.GetJob(jobName, time.Second, 1) {
+		_, err := c.Jenkins.BuildJob(jobName, map[string]string{
+			"RELEASE_NAME": branchName,
+		})
+		if err != nil {
+			return errors.Wrap(err, "unable to build job")
+		}
+
+		return nil
+	}
+
+	return JobNotFoundError("deletion job not found")
+}
+
 func (c JenkinsClient) TriggerReleaseJob(branchName string, fromCommit string, appName string) error {
 	jobName := fmt.Sprintf("%v/job/Create-release-%v", appName, appName)
 	log.Info("Trying to trigger jenkins job", "name", jobName)

@@ -1,6 +1,8 @@
 package chain
 
 import (
+	"strings"
+
 	"github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/codebasebranch/chain/handler"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/codebasebranch/service"
@@ -8,7 +10,6 @@ import (
 	"github.com/epmd-edp/codebase-operator/v2/pkg/util"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
-	"strings"
 )
 
 var log = logf.Log.WithName("codebase_branch_handler")
@@ -16,9 +17,11 @@ var log = logf.Log.WithName("codebase_branch_handler")
 func createJenkinsDefChain(client client.Client) handler.CodebaseBranchHandler {
 	log.Info("chain is selected", "type", "jenkins chain")
 	return TriggerReleaseJob{
-		client: client,
-		service: service.CodebaseBranchService{
-			Client: client,
+		TriggerJob: TriggerJob{
+			client: client,
+			service: service.CodebaseBranchService{
+				Client: client,
+			},
 		},
 	}
 }
@@ -34,6 +37,21 @@ func createGitlabCiDefChain(client client.Client) handler.CodebaseBranchHandler 
 		},
 		service: service.CodebaseBranchService{
 			Client: client,
+		},
+	}
+}
+
+func GetDeletionChain(ciType string, client client.Client) handler.CodebaseBranchHandler {
+	if strings.ToLower(ciType) == util.GitlabCi {
+		return MakeEmptyChain("no deletion chain for gitlab ci", false)
+	}
+
+	return TriggerDeletionJob{
+		TriggerJob: TriggerJob{
+			client: client,
+			service: service.CodebaseBranchService{
+				Client: client,
+			},
 		},
 	}
 }

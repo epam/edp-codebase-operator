@@ -3,8 +3,14 @@ package codebasebranch
 import (
 	"context"
 	"fmt"
+	"reflect"
+	"time"
+
+	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/codebasebranch/service"
+
 	edpv1alpha1 "github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/codebasebranch/chain"
+	cbHandler "github.com/epmd-edp/codebase-operator/v2/pkg/controller/codebasebranch/chain/handler"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/model"
 	"github.com/epmd-edp/codebase-operator/v2/pkg/util"
 	"github.com/epmd-edp/edp-component-operator/pkg/apis/v1/v1alpha1"
@@ -13,7 +19,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -23,7 +28,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/source"
-	"time"
 )
 
 var log = logf.Log.WithName("codebase-branch-controller")
@@ -105,14 +109,23 @@ func (r *ReconcileCodebaseBranch) Reconcile(request reconcile.Request) (reconcil
 		return reconcile.Result{}, err
 	}
 
-	result, err := r.tryToDeleteCodebaseBranch(cb)
-	if err != nil || result != nil {
-		return *result, err
-	}
+	defer func() {
+		if err := r.updateStatus(cb); err != nil {
+			rl.Error(err, "error on codebase branch update status")
+		}
+	}()
 
 	c, err := util.GetCodebase(r.client, cb.Spec.CodebaseName, cb.Namespace)
 	if err != nil {
 		return reconcile.Result{}, err
+	}
+
+	result, err := r.tryToDeleteCodebaseBranch(cb, chain.GetDeletionChain(c.Spec.CiTool, r.client))
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+	if result != nil {
+		return *result, err
 	}
 
 	cbChain := chain.GetChain(c.Spec.CiTool, r.client)
@@ -146,8 +159,10 @@ func (r *ReconcileCodebaseBranch) setSuccessStatus(cb *edpv1alpha1.CodebaseBranc
 		VersionHistory:      cb.Status.VersionHistory,
 		LastSuccessfulBuild: cb.Status.LastSuccessfulBuild,
 		Build:               cb.Status.Build,
+		FailureCount:        cb.Status.FailureCount,
 	}
-	return r.updateStatus(cb)
+	//return r.updateStatus(cb)
+	return nil
 }
 
 func (r *ReconcileCodebaseBranch) updateStatus(cb *edpv1alpha1.CodebaseBranch) error {
@@ -160,7 +175,7 @@ func (r *ReconcileCodebaseBranch) updateStatus(cb *edpv1alpha1.CodebaseBranch) e
 	return nil
 }
 
-func (r ReconcileCodebaseBranch) tryToDeleteCodebaseBranch(cb *edpv1alpha1.CodebaseBranch) (*reconcile.Result, error) {
+func (r ReconcileCodebaseBranch) tryToDeleteCodebaseBranch(cb *edpv1alpha1.CodebaseBranch, deletionChain cbHandler.CodebaseBranchHandler) (*reconcile.Result, error) {
 	if cb.GetDeletionTimestamp().IsZero() {
 		if !util.ContainsString(cb.ObjectMeta.Finalizers, codebaseBranchOperatorFinalizerName) {
 			cb.ObjectMeta.Finalizers = append(cb.ObjectMeta.Finalizers, codebaseBranchOperatorFinalizerName)
@@ -169,6 +184,16 @@ func (r ReconcileCodebaseBranch) tryToDeleteCodebaseBranch(cb *edpv1alpha1.Codeb
 			}
 		}
 		return nil, nil
+	}
+
+	if err := deletionChain.ServeRequest(cb); err != nil {
+		switch errors.Cause(err).(type) {
+		case service.JobFailedError:
+			log.Error(err, "deletion job failed")
+			return &reconcile.Result{RequeueAfter: setFailureCount(cb)}, nil
+		default:
+			return nil, errors.Wrap(err, "error during deletion chain")
+		}
 	}
 
 	if err := removeDirectoryIfExists(cb.Spec.CodebaseName, cb.Name, cb.Namespace); err != nil {
@@ -191,4 +216,12 @@ func removeDirectoryIfExists(codebaseName, branchName, namespace string) error {
 		return err
 	}
 	return nil
+}
+
+// setFailureCount increments failure count and returns delay for next reconciliation
+func setFailureCount(c *edpv1alpha1.CodebaseBranch) time.Duration {
+	timeout := util.GetTimeout(c.Status.FailureCount)
+	log.V(2).Info("wait for next reconcilation", "next reconcilation in", timeout)
+	c.Status.FailureCount += 1
+	return timeout
 }
