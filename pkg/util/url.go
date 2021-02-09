@@ -12,6 +12,7 @@ var lf = map[string]string{
 	"groovy-pipeline": "groovy",
 	"dotnet":          "netcore",
 	"python":          "python-3.8",
+	"terraform":       "terraform",
 }
 
 func GetRepoUrl(c *v1alpha1.Codebase) (*string, error) {

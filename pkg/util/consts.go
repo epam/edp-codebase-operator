@@ -33,11 +33,12 @@ const (
 	ProjectVersionGoFilePushedStatus = "version_go"
 	GitlabCiFilePushedStatus         = "gitlab ci"
 
-	GithubDomain   = "https://github.com/epmd-edp"
-	LanguageJava   = "Java"
-	LanguageGo     = "Go"
-	LanguagePython = "Python"
-	LanguageDotnet = "Dotnet"
+	GithubDomain      = "https://github.com/epmd-edp"
+	LanguageJava      = "Java"
+	LanguageGo        = "Go"
+	LanguagePython    = "Python"
+	LanguageDotnet    = "Dotnet"
+	LanguageTerraform = "Terraform"
 
 	GitlabCi = "gitlab ci"
 
