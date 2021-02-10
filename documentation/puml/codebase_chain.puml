@@ -10,16 +10,13 @@ if (Import Strategy) then (yes)
     else (no (Jenkins))
         #lightgreen:Clone Git Project;
         #lightgreen:Ensure Deploy Config in Git;
-        #pink:Ensure S2I Image Stream;
         #lightblue:Ensure Jenkins Folder CR;
         #lightgrey:Cleaner;
     endif
 else (no (clone or create))
     #olive:Ensure Project in Gerrit;
     #olive:Ensure Gerrit Replication;
-    #pink:Ensure Perf integration;
     #olive:Ensure Deploy Config in Gerrit;
-    #pink:Ensure S2I Image Stream;
     #lightblue:Ensure Jenkins Folder CR;
     #lightgrey:Cleaner;
 endif
