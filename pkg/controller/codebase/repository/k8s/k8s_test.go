@@ -1,13 +1,14 @@
 package k8s
 
 import (
-	"github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	"testing"
+
+	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
-	"testing"
 )
 
 func TestK8SCodebaseRepository_SelectProjectStatusValue(t *testing.T) {

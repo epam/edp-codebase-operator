@@ -2,19 +2,21 @@ package jirafixversion
 
 import (
 	"context"
-	edpv1alpha1 "github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/client/jira"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/client/jira/adapter"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/client/jira/dto"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/jirafixversion/chain"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/util"
+	"os"
+	"reflect"
+	"time"
+
+	edpv1alpha1 "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	"github.com/epam/edp-codebase-operator/v2/pkg/client/jira"
+	"github.com/epam/edp-codebase-operator/v2/pkg/client/jira/adapter"
+	"github.com/epam/edp-codebase-operator/v2/pkg/client/jira/dto"
+	"github.com/epam/edp-codebase-operator/v2/pkg/controller/jirafixversion/chain"
+	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	"github.com/pkg/errors"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"os"
-	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -25,7 +27,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/source"
-	"time"
 )
 
 var log = logf.Log.WithName("controller_jira_fix_version")

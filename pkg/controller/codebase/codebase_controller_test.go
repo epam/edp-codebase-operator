@@ -2,19 +2,20 @@ package codebase
 
 import (
 	"context"
+	"testing"
+
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/codebase/repository/k8s"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/codebase/repository/sql"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/openshift"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/util"
+	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/repository/k8s"
+	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/repository/sql"
+	"github.com/epam/edp-codebase-operator/v2/pkg/openshift"
+	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
-	"testing"
 )
 
 func TestUpdateFinishStatusUpdatesGitStatus(t *testing.T) {

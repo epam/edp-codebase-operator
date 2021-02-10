@@ -3,12 +3,13 @@ package perf
 import (
 	"errors"
 	"fmt"
-	ClientSet "github.com/epmd-edp/codebase-operator/v2/pkg/openshift"
-	"gopkg.in/resty.v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"log"
 	"reflect"
 	"strconv"
+
+	ClientSet "github.com/epam/edp-codebase-operator/v2/pkg/openshift"
+	"gopkg.in/resty.v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type Client struct {

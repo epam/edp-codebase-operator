@@ -2,12 +2,13 @@ package util
 
 import (
 	"fmt"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/model"
-	"github.com/pkg/errors"
 	"io/ioutil"
 	"os"
 	"strings"
 	"text/template"
+
+	"github.com/epam/edp-codebase-operator/v2/pkg/model"
+	"github.com/pkg/errors"
 )
 
 func CopyPipelines(codebaseType, src, dest string) error {

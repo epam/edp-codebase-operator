@@ -2,26 +2,27 @@ package chain
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
+	"regexp"
+	"testing"
+
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/dchest/uniuri"
-	edpV1alpha1 "github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/codebase/helper"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/codebase/repository/sql"
-	mock2 "github.com/epmd-edp/codebase-operator/v2/pkg/controller/gitserver/mock"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/openshift"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/util"
+	edpV1alpha1 "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/helper"
+	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/repository/sql"
+	mock2 "github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver/mock"
+	"github.com/epam/edp-codebase-operator/v2/pkg/openshift"
+	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	"github.com/stretchr/testify/assert"
-	"k8s.io/api/apps/v1"
+	v1 "k8s.io/api/apps/v1"
 	v1K8s "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
-	"os"
-	"path/filepath"
-	"regexp"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
-	"testing"
 )
 
 var (

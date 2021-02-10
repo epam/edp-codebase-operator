@@ -2,8 +2,9 @@ package util
 
 import (
 	"fmt"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"testing"
+
+	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 )
 
 func TestBuildRepoUrl_DatabaseIsNil(t *testing.T) {

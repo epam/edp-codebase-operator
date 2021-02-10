@@ -1,6 +1,6 @@
 package chain
 
-import "github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
+import "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 
 type TriggerDeletionJob struct {
 	TriggerJob

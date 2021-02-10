@@ -2,9 +2,11 @@ package gitserver
 
 import (
 	"fmt"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/gerrit"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/model"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/util"
+	"time"
+
+	"github.com/epam/edp-codebase-operator/v2/pkg/gerrit"
+	"github.com/epam/edp-codebase-operator/v2/pkg/model"
+	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/ssh"
 	"gopkg.in/src-d/go-git.v4"
@@ -17,7 +19,6 @@ import (
 	"gopkg.in/src-d/go-git.v4/storage/memory"
 	v1 "k8s.io/api/core/v1"
 	coreV1Client "k8s.io/client-go/kubernetes/typed/core/v1"
-	"time"
 )
 
 type GitSshData struct {

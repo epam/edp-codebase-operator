@@ -1,13 +1,14 @@
 package util
 
 import (
-	"github.com/epmd-edp/codebase-operator/v2/pkg/model"
+	"strings"
+
+	"github.com/epam/edp-codebase-operator/v2/pkg/model"
 	imageV1 "github.com/openshift/api/image/v1"
 	imageV1Client "github.com/openshift/client-go/image/clientset/versioned/typed/image/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"strings"
 )
 
 func GetAppImageStream(lang string) (*imageV1.ImageStream, error) {

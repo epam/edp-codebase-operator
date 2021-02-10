@@ -2,12 +2,14 @@ package jiraserver
 
 import (
 	"context"
-	edpv1alpha1 "github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/client/jira"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/client/jira/adapter"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/client/jira/dto"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/jiraserver/chain"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/util"
+	"time"
+
+	edpv1alpha1 "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	"github.com/epam/edp-codebase-operator/v2/pkg/client/jira"
+	"github.com/epam/edp-codebase-operator/v2/pkg/client/jira/adapter"
+	"github.com/epam/edp-codebase-operator/v2/pkg/client/jira/dto"
+	"github.com/epam/edp-codebase-operator/v2/pkg/controller/jiraserver/chain"
+	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	"github.com/epmd-edp/edp-component-operator/pkg/apis/v1/v1alpha1"
 	"github.com/pkg/errors"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -23,7 +25,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/source"
-	"time"
 )
 
 var (

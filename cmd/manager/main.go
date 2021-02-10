@@ -3,8 +3,11 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/apis"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/controller"
+	"os"
+	"runtime"
+
+	"github.com/epam/edp-codebase-operator/v2/pkg/apis"
+	"github.com/epam/edp-codebase-operator/v2/pkg/controller"
 	jenkinsApis "github.com/epmd-edp/jenkins-operator/v2/pkg/apis"
 	appsv1 "github.com/openshift/api/apps/v1"
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
@@ -12,8 +15,6 @@ import (
 	sdkVersion "github.com/operator-framework/operator-sdk/version"
 	"github.com/spf13/pflag"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
-	"os"
-	"runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"

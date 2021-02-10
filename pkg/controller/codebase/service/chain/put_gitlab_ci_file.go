@@ -3,20 +3,21 @@ package chain
 import (
 	"context"
 	"fmt"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/codebase/helper"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/codebase/repository"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/codebase/service/chain/handler"
-	git "github.com/epmd-edp/codebase-operator/v2/pkg/controller/gitserver"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/controller/platform"
-	"github.com/epmd-edp/codebase-operator/v2/pkg/util"
+	"os"
+	"strings"
+	"text/template"
+
+	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/helper"
+	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/repository"
+	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/service/chain/handler"
+	git "github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver"
+	"github.com/epam/edp-codebase-operator/v2/pkg/controller/platform"
+	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	edpComponentV1alpha1 "github.com/epmd-edp/edp-component-operator/pkg/apis/v1/v1alpha1"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/types"
-	"os"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strings"
-	"text/template"
 )
 
 type PutGitlabCiFile struct {
