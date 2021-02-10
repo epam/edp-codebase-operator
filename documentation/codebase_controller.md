@@ -6,8 +6,8 @@ The main purpose of a codebase controller is to watch changes in the respective 
  
 Explore the main steps performed in the reconcile loop on the diagram below:
 
-![arch](http://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/epam/codebase-operator/master/documentation/puml/codebase_chain.puml&raw=true)
-
+![arch](http://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/epam/edp-codebase-operator/master/documentation/puml/codebase_chain.puml)
+                                                   
 There are three strategies: import, create and clone. Selecting the strategy depends on the project needs. 
 The diagram above displays two branches (flows) that represents the difference between the strategies:
 
