@@ -28,7 +28,6 @@ The **import** strategy can be realized by using the GitLab CI tool or by using 
     - *Clone Git Repository*. The existence of the repository from Codebase CR is checked and the repository is pulled
     in to the temporary workspace.
     - *Ensure Deploy Config in Git*. Instructions on how to deploy this codebase in Kubernetes are added (represented as Helm charts).
-    - *Ensure S2i Image Stream*. The deprecated step that should be deleted in https://jiraeu.epam.com/browse/EPMDEDP-4116.
     - *Ensure Jenkins Folder CR*. Custom resource for Jenkins folder is added to hold CI/CD pipelines related to this codebase.
     - *Cleaner*. The technical step, it ensures that all workspaces are wiped out.
 
@@ -38,9 +37,7 @@ The **clone** and **create** strategy flow includes the following steps:
 of the source code from the specified repository are performed.
 - *Ensure Gerrit Replication*. The replication configuration of a newly created Gerrit project is set up. The replication is
 enabled if the vcs_integration_enabled field in the edp-config config map is set to true.
-- *Ensure Perf Integration*. The deprecated step.
 - *Ensure Deploy Config in Git*. Instructions on how to deploy this codebase in Kubernetes are added.
-- *Ensure S2i Image Stream*. The deprecated step that should be deleted in https://jiraeu.epam.com/browse/EPMDEDP-4116.
 - *Ensure Jenkins Folder CR*. Custom resource for Jenkins folder is added to hold CI/CD pipelines related to this codebase.
 - *Cleaner*. The technical step, it ensures that all workspaces are wiped out.
 
