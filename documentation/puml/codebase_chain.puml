@@ -28,7 +28,6 @@ legend
 |<back:#lightgreen>   </back>| Git Server |
 |<back:#lightblue>   </back>| Jenkins |
 |<back:#olive>   </back>| Gerrit |
-|<back:#pink>   </back>| Deprecated |
 |<back:#lightgrey>   </back>| Technical  |
 endlegend
 @enduml
