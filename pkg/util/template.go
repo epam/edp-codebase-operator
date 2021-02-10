@@ -19,6 +19,11 @@ func CopyPipelines(codebaseType, src, dest string) error {
 	}
 
 	for _, f := range files {
+		if _, err := os.Stat(fmt.Sprintf("%v/%v", dest, f.Name())); err == nil {
+			log.Info("pipeline file already exists", "fileName", f.Name())
+			continue
+		}
+
 		if codebaseType == "autotests" && f.Name() == "build.groovy" {
 			continue
 		}
@@ -42,7 +47,7 @@ func CopyPipelines(codebaseType, src, dest string) error {
 func CopyHelmChartTemplates(deploymentScript, workDir string, config model.ConfigGoTemplating) error {
 	log.Info("start handling Helm Chart templates", "codebase name", config.Name)
 	templatesDest := fmt.Sprintf("%v/%v/%v/deploy-templates", workDir, "templates", config.Name)
-	if DoesDirectoryExist(templatesDest) && !IsDirectoryEmpty(templatesDest) {
+	if DoesDirectoryExist(templatesDest) {
 		log.Info("deploy-templates folder already exists")
 		return nil
 	}
@@ -100,7 +105,7 @@ func CopyHelmChartTemplates(deploymentScript, workDir string, config model.Confi
 func CopyOpenshiftTemplate(deploymentScript, workDir string, config model.ConfigGoTemplating) error {
 	log.Info("start handling Openshift template", "codebase name", config.Name)
 	templatesDest := fmt.Sprintf("%v/%v/%v/deploy-templates", workDir, "templates", config.Name)
-	if DoesDirectoryExist(templatesDest) && !IsDirectoryEmpty(templatesDest) {
+	if DoesDirectoryExist(templatesDest) {
 		log.Info("deploy-templates folder already exists")
 		return nil
 	}
