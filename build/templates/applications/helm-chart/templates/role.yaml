@@ -6,7 +6,6 @@ metadata:
 rules:
     - apiGroups:
           - ""
-      attributeRestrictions: null
       resources:
           - configmaps
           - pods
