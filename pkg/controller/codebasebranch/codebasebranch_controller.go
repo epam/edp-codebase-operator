@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"time"
 
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebasebranch/service"
@@ -32,6 +33,10 @@ import (
 )
 
 var log = logf.Log.WithName("codebase-branch-controller")
+
+const (
+	errorStatus  = "error"
+)
 
 type CodebaseBranchService interface {
 	Create(cr *edpv1alpha1.CodebaseBranch)
@@ -128,6 +133,11 @@ func (r *ReconcileCodebaseBranch) Reconcile(request reconcile.Request) (reconcil
 
 	c, err := util.GetCodebase(r.client, cb.Spec.CodebaseName, cb.Namespace)
 	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	if err := r.setOwnerRef(cb,c); err != nil {
+		setErrorStatus(cb, err.Error())
 		return reconcile.Result{}, err
 	}
 
@@ -234,4 +244,16 @@ func setFailureCount(c *edpv1alpha1.CodebaseBranch) time.Duration {
 	log.V(2).Info("wait for next reconcilation", "next reconcilation in", timeout)
 	c.Status.FailureCount += 1
 	return timeout
+}
+
+func (r *ReconcileCodebaseBranch) setOwnerRef(cb *edpv1alpha1.CodebaseBranch, c *edpv1alpha1.Codebase) error {
+	if err := controllerutil.SetControllerReference(c, cb, r.scheme); err != nil {
+		return errors.Wrap(err, "cannot set owner ref for CodebaseBranch CR")
+	}
+	return nil
+}
+
+func setErrorStatus(metadata *edpv1alpha1.CodebaseBranch, msg string) {
+	metadata.Status.Status = errorStatus
+	metadata.Status.DetailedMessage = msg
 }
