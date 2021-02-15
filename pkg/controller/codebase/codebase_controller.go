@@ -199,7 +199,7 @@ func (r ReconcileCodebase) updateFinishStatus(c *edpv1alpha1.Codebase) error {
 
 // setFailureCount increments failure count and returns delay for next reconciliation
 func setFailureCount(c *edpv1alpha1.Codebase) time.Duration {
-	timeout := util.GetTimeout(c.Status.FailureCount)
+	timeout := util.GetTimeout(c.Status.FailureCount, 500*time.Millisecond)
 	log.V(2).Info("wait for next reconcilation", "next reconcilation in", timeout)
 	c.Status.FailureCount += 1
 	return timeout

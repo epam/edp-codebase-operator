@@ -220,7 +220,7 @@ func removeDirectoryIfExists(codebaseName, branchName, namespace string) error {
 
 // setFailureCount increments failure count and returns delay for next reconciliation
 func setFailureCount(c *edpv1alpha1.CodebaseBranch) time.Duration {
-	timeout := util.GetTimeout(c.Status.FailureCount)
+	timeout := util.GetTimeout(c.Status.FailureCount, 10*time.Second)
 	log.V(2).Info("wait for next reconcilation", "next reconcilation in", timeout)
 	c.Status.FailureCount += 1
 	return timeout

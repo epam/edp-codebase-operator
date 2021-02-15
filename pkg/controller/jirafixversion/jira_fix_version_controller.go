@@ -134,7 +134,7 @@ func lookup() string {
 
 // setFailureCount increments failure count and returns delay for next reconciliation
 func setFailureCount(version *edpv1alpha1.JiraFixVersion) time.Duration {
-	timeout := util.GetTimeout(version.Status.FailureCount)
+	timeout := util.GetTimeout(version.Status.FailureCount, 500*time.Millisecond)
 	log.V(2).Info("wait for next reconcilation", "next reconcilation in", timeout)
 	version.Status.FailureCount += 1
 	return timeout
