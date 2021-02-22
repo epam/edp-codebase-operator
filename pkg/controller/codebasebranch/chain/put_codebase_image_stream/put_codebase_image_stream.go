@@ -50,21 +50,14 @@ func (h PutCodebaseImageStream) ServeRequest(cb *v1alpha1.CodebaseBranch) error 
 		return err
 	}
 
-	cisName := createCodebaseImageStreamName(c.Name, cb.Spec.BranchName, string(c.Spec.Versioning.Type))
+	cisName := fmt.Sprintf("%v-%v", c.Name, processNameToK8sConvention(cb.Spec.BranchName))
 	imageName := fmt.Sprintf("%v/%v", ec.Spec.Url, cisName)
-	if err := h.createCodebaseImageStreamIfNotExists(cisName, cb.Namespace, imageName); err != nil {
+	if err := h.createCodebaseImageStreamIfNotExists(cisName, imageName, cb.Namespace); err != nil {
 		setFailedFields(cb, v1alpha1.PutCodebaseImageStream, err.Error())
 		return err
 	}
 	rl.Info("end PutCodebaseImageStream chain...")
-	return nil
-}
-
-func createCodebaseImageStreamName(codebaseName, branchName, versioningType string) string {
-	if versioningType == util.VersioningTypeEDP {
-		return fmt.Sprintf("%v-edp-%v", codebaseName, processNameToK8sConvention(branchName))
-	}
-	return fmt.Sprintf("%v-%v", codebaseName, processNameToK8sConvention(branchName))
+	return handler.NextServeOrNil(h.Next, cb)
 }
 
 func processNameToK8sConvention(name string) string {
@@ -83,7 +76,7 @@ func (h PutCodebaseImageStream) getDockerRegistryEdpComponent(namespace string) 
 	return ec, nil
 }
 
-func (h PutCodebaseImageStream) createCodebaseImageStreamIfNotExists(name, namespace, imageName string) error {
+func (h PutCodebaseImageStream) createCodebaseImageStreamIfNotExists(name, imageName, namespace string) error {
 	cis := &v1alpha1.CodebaseImageStream{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v2.edp.epam.com/v1alpha1",

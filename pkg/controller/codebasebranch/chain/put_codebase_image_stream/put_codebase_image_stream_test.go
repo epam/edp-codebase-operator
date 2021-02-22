@@ -73,65 +73,6 @@ func TestPutCodebaseImageStream_ShouldCreateCisWithDefaultVersioningType(t *test
 	assert.NoError(t, err)
 }
 
-func TestPutCodebaseImageStream_ShouldCreateCisWithEdpVersioningType(t *testing.T) {
-	c := &v1alpha1.Codebase{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "stub-name",
-			Namespace: "stub-namespace",
-		},
-		Spec: v1alpha1.CodebaseSpec{
-			Versioning: v1alpha1.Versioning{
-				Type: "edp",
-			},
-		},
-	}
-
-	cb := &v1alpha1.CodebaseBranch{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "stub-name",
-			Namespace: "stub-namespace",
-		},
-		Spec: v1alpha1.CodebaseBranchSpec{
-			BranchName:   "stub-name",
-			CodebaseName: "stub-name",
-		},
-	}
-
-	ec := &edpV1alpha1.EDPComponent{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      dockerRegistryName,
-			Namespace: "stub-namespace",
-		},
-		Spec: edpV1alpha1.EDPComponentSpec{
-			Url: "stub-url",
-		},
-	}
-
-	cis := &v1alpha1.CodebaseImageStream{}
-
-	objs := []runtime.Object{
-		c, cb, ec, cis,
-	}
-	scheme.Scheme.AddKnownTypes(v1.SchemeGroupVersion, c, ec, cb)
-	scheme.Scheme.AddKnownTypes(schema.GroupVersion{Group: "v2.edp.epam.com", Version: "v1alpha1"}, cis)
-	client := fake.NewFakeClient(objs...)
-	cisChain := PutCodebaseImageStream{
-		Client: client,
-	}
-
-	err := cisChain.ServeRequest(cb)
-	assert.NoError(t, err)
-
-	cisResp := &v1alpha1.CodebaseImageStream{}
-	err = client.Get(nil,
-		types.NamespacedName{
-			Name:      "stub-name-edp-stub-name",
-			Namespace: "stub-namespace",
-		},
-		cisResp)
-	assert.NoError(t, err)
-}
-
 func TestPutCodebaseImageStream_ShouldNotFindCodebase(t *testing.T) {
 	c := &v1alpha1.Codebase{
 		ObjectMeta: metav1.ObjectMeta{

@@ -29,6 +29,10 @@ func createJenkinsDefChain(client client.Client) handler.CodebaseBranchHandler {
 			},
 			Next: update_perf_data_sources.UpdatePerfDataSources{
 				Client: client,
+				Next: put_codebase_image_stream.PutCodebaseImageStream{
+					Client: client,
+					Next:   clean_tmp_directory.CleanTempDirectory{},
+				},
 			},
 		},
 	}
