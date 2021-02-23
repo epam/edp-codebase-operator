@@ -22,6 +22,9 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"./pkg/apis/edp/v1alpha1.GitServer":                 schema_pkg_apis_edp_v1alpha1_GitServer(ref),
 		"./pkg/apis/edp/v1alpha1.GitServerSpec":             schema_pkg_apis_edp_v1alpha1_GitServerSpec(ref),
 		"./pkg/apis/edp/v1alpha1.Tag":                       schema_pkg_apis_edp_v1alpha1_Tag(ref),
+		"./pkg/apis/edp/v1alpha1.CDStageDeploy":             schema_pkg_apis_edp_v1alpha1_CDStageDeploy(ref),
+		"./pkg/apis/edp/v1alpha1.CDStageDeploySpec":         schema_pkg_apis_edp_v1alpha1_CDStageDeploySpec(ref),
+		"./pkg/apis/edp/v1alpha1.CDStageDeployStatus":       schema_pkg_apis_edp_v1alpha1_CDStageDeployStatus(ref),
 	}
 }
 
@@ -464,6 +467,102 @@ func schema_pkg_apis_edp_v1alpha1_Tag(ref common.ReferenceCallback) common.OpenA
 						},
 					},
 				},
+			},
+		},
+	}
+}
+
+func schema_pkg_apis_edp_v1alpha1_CDStageDeploy(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "CDStageDeploy is the Schema for the cdstagedeploys API",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
+						},
+					},
+					"spec": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("./pkg/apis/edp/v1alpha1.CDStageDeploySpec"),
+						},
+					},
+					"status": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("./pkg/apis/edp/v1alpha1.CDStageDeployStatus"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"./pkg/apis/edp/v1alpha1.CDStageDeploySpec", "./pkg/apis/edp/v1alpha1.CDStageDeployStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+	}
+}
+
+func schema_pkg_apis_edp_v1alpha1_CDStageDeploySpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "CDStageDeploySpec defines the desired state of CDStageDeploy",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"pipeline": {
+						SchemaProps: spec.SchemaProps{
+							Description: "INSERT ADDITIONAL SPEC FIELDS - desired state of cluster Important: Run \"operator-sdk generate k8s\" to regenerate code after modifying this file Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"stage": {
+						SchemaProps: spec.SchemaProps{
+							Description: "INSERT ADDITIONAL SPEC FIELDS - desired state of cluster Important: Run \"operator-sdk generate k8s\" to regenerate code after modifying this file Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"tags": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("./pkg/apis/edp/v1alpha1.CodebaseTag"),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"./pkg/apis/edp/v1alpha1.CodebaseTag"},
+	}
+}
+
+func schema_pkg_apis_edp_v1alpha1_CDStageDeployStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "CDStageDeployStatus defines the observed state of CDStageDeploy",
+				Type:        []string{"object"},
 			},
 		},
 	}
