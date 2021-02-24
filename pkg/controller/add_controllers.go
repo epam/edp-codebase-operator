@@ -3,6 +3,7 @@ package controller
 import (
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebasebranch"
+	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebaseimagestream"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/gittag"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/imagestreamtag"
@@ -18,4 +19,5 @@ func init() {
 	AddToManagerFuncs = append(AddToManagerFuncs, jiraserver.Add)
 	AddToManagerFuncs = append(AddToManagerFuncs, imagestreamtag.Add)
 	AddToManagerFuncs = append(AddToManagerFuncs, gittag.Add)
+	AddToManagerFuncs = append(AddToManagerFuncs, codebaseimagestream.Add)
 }

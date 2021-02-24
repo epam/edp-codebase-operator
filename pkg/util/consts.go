@@ -21,11 +21,10 @@ const (
 
 	ImportStrategy = "import"
 	Application    = "application"
-	OtherLanguage  = "other"
 	Javascript     = "javascript"
 
-	CodebaseKind      = "Codebase"
 	JenkinsFolderKind = "JenkinsFolder"
+	CDStageDeployKind = "CDStageDeploy"
 	V2APIVersion      = "v2.edp.epam.com/v1alpha1"
 
 	ProjectPushedStatus              = "pushed"
@@ -33,12 +32,8 @@ const (
 	ProjectVersionGoFilePushedStatus = "version_go"
 	GitlabCiFilePushedStatus         = "gitlab ci"
 
-	GithubDomain      = "https://github.com/epmd-edp"
-	LanguageJava      = "Java"
-	LanguageGo        = "Go"
-	LanguagePython    = "Python"
-	LanguageDotnet    = "Dotnet"
-	LanguageTerraform = "Terraform"
+	GithubDomain = "https://github.com/epmd-edp"
+	LanguageGo   = "Go"
 
 	GitlabCi = "gitlab ci"
 
