@@ -8,8 +8,8 @@ import (
 
 	"github.com/bndr/gojenkins"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
-	jenkinsApi "github.com/epmd-edp/jenkins-operator/v2/pkg/apis/v2/v1alpha1"
-	jenkinsOperatorSpec "github.com/epmd-edp/jenkins-operator/v2/pkg/service/jenkins/spec"
+	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
+	jenkinsOperatorSpec "github.com/epam/edp-jenkins-operator/v2/pkg/service/jenkins/spec"
 	"github.com/pkg/errors"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"

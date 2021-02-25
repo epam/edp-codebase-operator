@@ -23,9 +23,10 @@ const (
 	Application    = "application"
 	Javascript     = "javascript"
 
-	JenkinsFolderKind = "JenkinsFolder"
-	CDStageDeployKind = "CDStageDeploy"
-	V2APIVersion      = "v2.edp.epam.com/v1alpha1"
+	JenkinsFolderKind            = "JenkinsFolder"
+	CDStageDeployKind            = "CDStageDeploy"
+	CDStageJenkinsDeploymentKind = "CDStageJenkinsDeployment"
+	V2APIVersion                 = "v2.edp.epam.com/v1alpha1"
 
 	ProjectPushedStatus              = "pushed"
 	ProjectTemplatesPushedStatus     = "templates_pushed"

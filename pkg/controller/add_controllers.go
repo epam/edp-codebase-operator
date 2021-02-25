@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"github.com/epam/edp-codebase-operator/v2/pkg/controller/cdstagedeploy"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebasebranch"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebaseimagestream"
@@ -20,4 +21,5 @@ func init() {
 	AddToManagerFuncs = append(AddToManagerFuncs, imagestreamtag.Add)
 	AddToManagerFuncs = append(AddToManagerFuncs, gittag.Add)
 	AddToManagerFuncs = append(AddToManagerFuncs, codebaseimagestream.Add)
+	AddToManagerFuncs = append(AddToManagerFuncs, cdstagedeploy.Add)
 }

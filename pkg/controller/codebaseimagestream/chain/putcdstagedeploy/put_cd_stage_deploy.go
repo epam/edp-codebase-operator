@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
+	v1alpha1Jenkins "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
 	"github.com/pkg/errors"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -23,7 +24,7 @@ type PutCDStageDeploy struct {
 type cdStageDeployDTO struct {
 	Pipeline string
 	Stage    string
-	Tags     []v1alpha1.CodebaseTag
+	Tags     []v1alpha1Jenkins.Tag
 }
 
 const dateLayout = "2006-01-02T15:04:05"
@@ -68,7 +69,7 @@ func (h PutCDStageDeploy) putCDStageDeploy(envLabel, namespace string, spec v1al
 		}
 		return nil
 	}
-	if err := h.update(stageDeploy, v1alpha1.CodebaseTag{
+	if err := h.update(stageDeploy, v1alpha1Jenkins.Tag{
 		Codebase: spec.Codebase,
 		Tag:      getLastTag(spec.Tags).Name,
 	}); err != nil {
@@ -98,7 +99,7 @@ func getCreateCommand(envLabel, codebase string, tags []v1alpha1.Tag) cdStageDep
 	return cdStageDeployDTO{
 		Pipeline: env[0],
 		Stage:    env[1],
-		Tags: []v1alpha1.CodebaseTag{
+		Tags: []v1alpha1Jenkins.Tag{
 			{
 				Codebase: codebase,
 				Tag:      getLastTag(tags).Name,
@@ -158,7 +159,7 @@ func (h PutCDStageDeploy) create(name, namespace string, stageDeploy cdStageDepl
 	return nil
 }
 
-func (h PutCDStageDeploy) update(stageDeploy *v1alpha1.CDStageDeploy, latestTag v1alpha1.CodebaseTag) error {
+func (h PutCDStageDeploy) update(stageDeploy *v1alpha1.CDStageDeploy, latestTag v1alpha1Jenkins.Tag) error {
 	vLog := log.WithValues("name", stageDeploy.Name)
 	vLog.Info("cd stage deploy is present in cluster. start updating...")
 	for i, targetTag := range stageDeploy.Spec.Tags {
