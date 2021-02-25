@@ -66,6 +66,9 @@ rules:
     - jiraissuemetadatas
     - jiraissuemetadatas/finalizers
     - jiraissuemetadatas/status
+    - cdstagedeployments
+    - cdstagedeployments/finalizers
+    - cdstagedeployments/status
   verbs:
     - '*'
 {{ end }}

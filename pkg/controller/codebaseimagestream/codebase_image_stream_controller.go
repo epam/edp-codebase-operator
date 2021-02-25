@@ -7,8 +7,10 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/source"
@@ -32,7 +34,20 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
-	if err := c.Watch(&source.Kind{Type: &edpv1alpha1.CodebaseImageStream{}}, &handler.EnqueueRequestForObject{}); err != nil {
+	pred := predicate.Funcs{
+		CreateFunc: func(e event.CreateEvent) bool {
+			return false
+		},
+		UpdateFunc: func(e event.UpdateEvent) bool {
+			no := e.ObjectNew.(*edpv1alpha1.CodebaseImageStream)
+			if no.Spec.Tags != nil && no.ObjectMeta.Labels != nil {
+				return true
+			}
+			return false
+		},
+	}
+
+	if err := c.Watch(&source.Kind{Type: &edpv1alpha1.CodebaseImageStream{}}, &handler.EnqueueRequestForObject{}, pred); err != nil {
 		return err
 	}
 
