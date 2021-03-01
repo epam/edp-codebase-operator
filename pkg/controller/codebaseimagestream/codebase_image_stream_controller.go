@@ -5,6 +5,7 @@ import (
 	edpv1alpha1 "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	chain "github.com/epam/edp-codebase-operator/v2/pkg/controller/codebaseimagestream/chain/factory"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -39,8 +40,9 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 			return false
 		},
 		UpdateFunc: func(e event.UpdateEvent) bool {
-			no := e.ObjectNew.(*edpv1alpha1.CodebaseImageStream)
-			if no.Spec.Tags != nil && no.ObjectMeta.Labels != nil {
+			oo := e.ObjectOld.(*edpv1alpha1.CodebaseImageStream)
+			on := e.ObjectNew.(*edpv1alpha1.CodebaseImageStream)
+			if !reflect.DeepEqual(oo.Spec.Tags, on.Spec.Tags) && on.ObjectMeta.Labels != nil {
 				return true
 			}
 			return false
