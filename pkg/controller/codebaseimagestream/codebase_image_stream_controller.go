@@ -45,6 +45,9 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 			if !reflect.DeepEqual(oo.ObjectMeta.Labels, on.ObjectMeta.Labels) && on.Spec.Tags != nil {
 				return true
 			}
+			if !reflect.DeepEqual(oo.Spec.Tags, on.Spec.Tags) && on.ObjectMeta.Labels != nil {
+				return true
+			}
 			return false
 		},
 	}
