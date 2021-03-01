@@ -42,7 +42,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		UpdateFunc: func(e event.UpdateEvent) bool {
 			oo := e.ObjectOld.(*edpv1alpha1.CodebaseImageStream)
 			on := e.ObjectNew.(*edpv1alpha1.CodebaseImageStream)
-			if !reflect.DeepEqual(oo.Spec.Tags, on.Spec.Tags) && on.ObjectMeta.Labels != nil {
+			if !reflect.DeepEqual(oo.ObjectMeta.Labels, on.ObjectMeta.Labels) && on.Spec.Tags != nil {
 				return true
 			}
 			return false
