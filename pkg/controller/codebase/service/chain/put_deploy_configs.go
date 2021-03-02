@@ -78,6 +78,10 @@ func (h PutDeployConfigs) tryToPushConfigs(c edpv1alpha1.Codebase, sshPort int32
 		}
 	}
 
+	if err := CheckoutBranch(d, c.Spec.DefaultBranch, h.git); err != nil {
+		return errors.Wrapf(err, "checkout default branch %v in Gerrit has been failed", c.Spec.DefaultBranch)
+	}
+
 	cf := fmt.Sprintf("%v/%v/config-files", td, c.Name)
 	if err := util.CreateDirectory(cf); err != nil {
 		return err
@@ -96,10 +100,6 @@ func (h PutDeployConfigs) tryToPushConfigs(c edpv1alpha1.Codebase, sshPort int32
 
 	if err := h.git.CommitChanges(d, fmt.Sprintf("Add template for %v", c.Name)); err != nil {
 		return err
-	}
-
-	if err := CheckoutBranch(d, c.Spec.DefaultBranch, h.git); err != nil {
-		return errors.Wrapf(err, "checkout default branch %v in Gerrit has been failed", c.Spec.DefaultBranch)
 	}
 
 	if err := h.git.PushChanges(idrsa, u, d, []config.RefSpec{util.HeadBranchesRefSpec, util.TagsRefSpec}); err != nil {
