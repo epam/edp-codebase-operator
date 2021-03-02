@@ -13,7 +13,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
-	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -60,12 +59,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 
 	pred := predicate.Funcs{
 		UpdateFunc: func(e event.UpdateEvent) bool {
-			oo := e.ObjectOld.(*edpv1alpha1.CDStageDeploy)
-			on := e.ObjectNew.(*edpv1alpha1.CDStageDeploy)
-			if !reflect.DeepEqual(oo.Spec.Tags, on.Spec.Tags) {
-				return true
-			}
-			return false
+			return true
 		},
 	}
 
