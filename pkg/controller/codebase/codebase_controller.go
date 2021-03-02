@@ -118,8 +118,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 var _ reconcile.Reconciler = &ReconcileCodebase{}
 
 const (
-	foregroundDeletionFinalizerName = "foregroundDeletion"
-	codebaseOperatorFinalizerName   = "codebase.operator.finalizer.name"
+	codebaseOperatorFinalizerName = "codebase.operator.finalizer.name"
 )
 
 // ReconcileCodebase reconciles a codebase object

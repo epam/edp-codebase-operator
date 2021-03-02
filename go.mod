@@ -12,6 +12,7 @@ require (
 	github.com/bndr/gojenkins v0.2.1-0.20181125150310-de43c03cf849
 	github.com/dchest/uniuri v0.0.0-20160212164326-8902c56451e9
 	github.com/epmd-edp/edp-component-operator v0.1.1-0.20200827122548-e87429a916e0
+	github.com/epmd-edp/cd-pipeline-operator/v2 v2.3.0-58.0.20201217130859-a9d5aeca1889
 	github.com/epam/edp-jenkins-operator/v2 v2.3.0-130.0.20210225152826-bea603cbdb79
 	github.com/epmd-edp/perf-operator/v2 v2.0.0-20201130105408-ffc11d6fdd20
 	github.com/go-openapi/spec v0.19.3

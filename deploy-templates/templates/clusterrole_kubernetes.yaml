@@ -72,6 +72,9 @@ rules:
     - cdstagejenkinsdeployments
     - cdstagejenkinsdeployments/finalizers
     - cdstagejenkinsdeployments/status
+    - stages
+    - stages/finalizers
+    - stages/status
   verbs:
     - '*'
 {{ end }}
