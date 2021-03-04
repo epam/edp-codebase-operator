@@ -82,18 +82,6 @@ func (h PutDeployConfigs) tryToPushConfigs(c edpv1alpha1.Codebase, sshPort int32
 		return errors.Wrapf(err, "checkout default branch %v in Gerrit has been failed", c.Spec.DefaultBranch)
 	}
 
-	cf := fmt.Sprintf("%v/%v/config-files", td, c.Name)
-	if err := util.CreateDirectory(cf); err != nil {
-		return err
-	}
-
-	fn := "Readme.md"
-	src := fmt.Sprintf("%v/%v", util.GerritTemplates, fn)
-	dest := fmt.Sprintf("%v/%v", cf, fn)
-	if err := util.CopyFile(src, dest); err != nil {
-		return err
-	}
-
 	if err := template.PrepareTemplates(h.clientSet.CoreClient, c); err != nil {
 		return err
 	}
