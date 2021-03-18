@@ -1,4 +1,4 @@
-FROM golang:1.14.3-alpine3.11
+FROM alpine:3.11.8
 
 ENV OPERATOR=/usr/local/bin/codebase-operator \
     USER_UID=1001 \
@@ -10,7 +10,9 @@ ENV OPERATOR=/usr/local/bin/codebase-operator \
 # install operator binary
 COPY codebase-operator ${OPERATOR}
 
-RUN apk add --no-cache ca-certificates==20191127-r2 openssh-client==8.1_p1-r0 git==2.24.3-r0
+RUN apk add --no-cache ca-certificates==20191127-r2 \
+                       openssh-client==8.1_p1-r0 \
+                       git==2.24.3-r0
 
 COPY build/bin /usr/local/bin
 COPY build/templates /usr/local/bin/templates
