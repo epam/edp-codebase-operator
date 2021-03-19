@@ -51,7 +51,7 @@ func (h PutCodebaseImageStream) ServeRequest(cb *v1alpha1.CodebaseBranch) error 
 	}
 
 	cisName := fmt.Sprintf("%v-%v", c.Name, processNameToK8sConvention(cb.Spec.BranchName))
-	imageName := fmt.Sprintf("%v/%v", ec.Spec.Url, cisName)
+	imageName := fmt.Sprintf("%v/%v/%v", ec.Spec.Url, cb.Namespace, cisName)
 	if err := h.createCodebaseImageStreamIfNotExists(cisName, imageName, cb.Spec.CodebaseName, cb.Namespace); err != nil {
 		setFailedFields(cb, v1alpha1.PutCodebaseImageStream, err.Error())
 		return err
