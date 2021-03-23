@@ -40,8 +40,6 @@ const (
 
 	VersioningTypeEDP = "edp"
 
-	KubernetesConsoleEdpComponent = "kubernetes-console"
-
 	HeadBranchesRefSpec   = "refs/heads/*:refs/heads/*"
 	RemoteBranchesRefSpec = "refs/remotes/origin/*:refs/heads/*"
 	TagsRefSpec           = "refs/tags/*:refs/tags/*"

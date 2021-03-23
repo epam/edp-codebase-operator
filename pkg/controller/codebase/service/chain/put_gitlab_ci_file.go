@@ -2,6 +2,10 @@ package chain
 
 import (
 	"fmt"
+	"os"
+	"strings"
+	"text/template"
+
 	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/helper"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/repository"
@@ -11,10 +15,7 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	"github.com/pkg/errors"
 	"gopkg.in/src-d/go-git.v4/config"
-	"os"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strings"
-	"text/template"
 )
 
 type PutGitlabCiFile struct {
@@ -125,7 +126,7 @@ func (h PutGitlabCiFile) parseTemplate(c *v1alpha1.Codebase) error {
 
 func getEdpComponentName() string {
 	if platform.IsK8S() {
-		return util.KubernetesConsoleEdpComponent
+		return platform.K8S
 	}
 	return platform.Openshift
 }
