@@ -62,42 +62,68 @@ func CopyHelmChartTemplates(deploymentScript, workDir string, config model.Confi
 	}
 	log.Info("directory is created", "path", templateBasePath)
 
-	vf := fmt.Sprintf("%v/%v.yaml", templatesDest, "values")
-	fv, err := os.Create(vf)
+	valuesFileName := fmt.Sprintf("%v/%v.yaml", templatesDest, "values")
+	valuesFile, err := os.Create(valuesFileName)
 	if err != nil {
 		return err
 	}
-	log.Info("file is created", "file", vf)
+	log.Info("file is created", "file", valuesFileName)
 
-	cf := fmt.Sprintf("%v/%v.yaml", templatesDest, "Chart")
-	fc, err := os.Create(cf)
+	chartFileName := fmt.Sprintf("%v/%v.yaml", templatesDest, "Chart")
+	chartFile, err := os.Create(chartFileName)
 	if err != nil {
 		return err
 	}
-	log.Info("file is created", "file", cf)
+	log.Info("file is created", "file", chartFileName)
 
-	tf := fmt.Sprintf("%v/%v", templatesDest, TemplateFolder)
-	err = CreateDirectory(tf)
+	templateFolder := fmt.Sprintf("%v/%v", templatesDest, TemplateFolder)
+	err = CreateDirectory(templateFolder)
 	if err != nil {
 		return err
 	}
-	log.Info("directory is created", "path", tf)
+	log.Info("directory is created", "path", templateFolder)
 
-	tsf := fmt.Sprintf("%v/%v", templateBasePath, TemplateFolder)
-	err = CopyFiles(tsf, tf)
+	testFolder := fmt.Sprintf("%v/%v/%v", templatesDest, TemplateFolder, TestFolder)
+	err = CreateDirectory(testFolder)
 	if err != nil {
 		return err
 	}
-	log.Info("files were copied", "from", tsf, "to", tf)
+	log.Info("directory is created", "path", testFolder)
 
-	if err := renderTemplate(fv, fmt.Sprintf("%v/%v", templateBasePath, ChartValuesTemplate),
-		ChartValuesTemplate, config); err != nil {
+	templateSourceFolder := fmt.Sprintf("%v/%v", templateBasePath, TemplateFolder)
+	err = CopyFiles(templateSourceFolder, templateFolder)
+	if err != nil {
+		return err
+	}
+	log.Info("files were copied", "from", templateSourceFolder, "to", templateFolder)
+
+	testsSourceFolder := fmt.Sprintf("%v/%v/%v", templateBasePath, TemplateFolder, TestFolder)
+	err = CopyFiles(testsSourceFolder, testFolder)
+	if err != nil {
+		return err
+	}
+	log.Info("files were copied", "from", testsSourceFolder, "to", testFolder)
+
+	helmIgnoreSource := fmt.Sprintf("%v/%v", templateBasePath, HelmIgnoreFile)
+	helmIgnoreFile := fmt.Sprintf("%v/%v", templatesDest, HelmIgnoreFile)
+	err = CopyFile(helmIgnoreSource, helmIgnoreFile)
+	if err != nil {
+		return err
+	}
+	log.Info("file were copied", "from", helmIgnoreFile, "to", templatesDest)
+
+	if err := renderTemplate(valuesFile, fmt.Sprintf("%v/%v", templateBasePath, ChartValuesTemplate), ChartValuesTemplate, config); err != nil {
 		return err
 	}
 
-	if err := renderTemplate(fc, fmt.Sprintf("%v/%v", templateBasePath, ChartTemplate), ChartTemplate, config); err != nil {
+	if err := renderTemplate(chartFile, fmt.Sprintf("%v/%v", templateBasePath, ChartTemplate), ChartTemplate, config); err != nil {
 		return err
 	}
+
+	if err := ReplaceStringInFile(fmt.Sprintf("%v/%v/%v", templatesDest, TemplateFolder, HelpersFile),"REPLACE_IT", config.Name); err != nil {
+		return err
+	}
+
 	log.Info("end handling Helm Chart templates", "codebase name", config.Name)
 	return nil
 }

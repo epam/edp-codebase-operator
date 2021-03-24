@@ -1,6 +1,7 @@
 package util
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/pkg/errors"
 	"io/ioutil"
@@ -30,6 +31,9 @@ func CopyFiles(src, dest string) error {
 	}
 
 	for _, f := range files {
+		if f.IsDir() {
+			continue
+		}
 		input, err := ioutil.ReadFile(src + "/" + f.Name())
 		if err != nil {
 			return err
@@ -87,4 +91,18 @@ func IsDirectoryEmpty(path string) bool {
 		return false
 	}
 	return len(files) == 0
+}
+
+func ReplaceStringInFile(file, oldLine, newLine string) error {
+	input, err := ioutil.ReadFile(file)
+	if err != nil {
+		return err
+	}
+
+	output := bytes.Replace(input, []byte(oldLine), []byte(newLine), -1)
+
+	if err = ioutil.WriteFile(file, output, 0666); err != nil {
+		return err
+	}
+	return nil
 }

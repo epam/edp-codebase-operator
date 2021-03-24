@@ -1,27 +1,41 @@
-{{- if .Values.ingress.required }}
-apiVersion: route.openshift.io/v1
-kind: Route
+{{- if .Values.ingress.enabled -}}
+{{- $fullName := .Values.fullnameOverride -}}
+{{- $svcPort := .Values.service.port -}}
+{{- if semverCompare ">=1.14-0" .Capabilities.KubeVersion.GitVersion -}}
+apiVersion: networking.k8s.io/v1beta1
+{{- else -}}
+apiVersion: extensions/v1beta1
+{{- end }}
+kind: Ingress
 metadata:
-    name: {{ .Values.name }}
-    annotations:
-        description: "Route for {{ .Values.name }} application"
-    labels:
-        app: {{ .Values.name }}
+  name: {{ $fullName }}
+  labels:
+    {{ .Values.fullnameOverride }}
+  {{- with .Values.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
-    tls:
-        insecureEdgeTerminationPolicy: Redirect
-        termination: edge
-{{- if .Values.ingress.site }}
-    host: {{ .Values.ingress.site }}-{{ .Values.namespace }}.{{ .Values.dnsWildcard }}
-{{end}}
-    path: {{ .Values.ingress.path }}
-    port:
-      targetPort: 8080
-    to:
-      kind: Service
-      name: {{ .Values.name }}
-      weight: 100
-    wildcardPolicy: None
-status:
-  ingress: []
-{{end}}
+  {{- if .Values.ingress.tls }}
+  tls:
+    {{- range .Values.ingress.tls }}
+    - hosts:
+        {{- range .hosts }}
+        - {{ . | quote }}
+        {{- end }}
+      secretName: {{ .secretName }}
+    {{- end }}
+  {{- end }}
+  rules:
+    {{- range .Values.ingress.hosts }}
+    - host: {{ .host | quote }}
+      http:
+        paths:
+          {{- range .paths }}
+          - path: {{ . }}
+            backend:
+              serviceName: {{ $fullName }}
+              servicePort: {{ $svcPort }}
+          {{- end }}
+    {{- end }}
+  {{- end }}

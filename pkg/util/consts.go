@@ -6,6 +6,9 @@ const (
 	ChartTemplate       = "Chart.tmpl"
 	ChartValuesTemplate = "values.tmpl"
 	TemplateFolder      = "templates"
+	TestFolder          = "tests"
+	HelmIgnoreFile      = ".helmignore"
+	HelpersFile         = "_helpers.tpl"
 
 	//statuses
 	StatusFailed     = "failed"
