@@ -106,3 +106,11 @@ func ReplaceStringInFile(file, oldLine, newLine string) error {
 	}
 	return nil
 }
+
+func GetListFilesInDirectory(src string) ([]os.FileInfo, error) {
+	files, err := ioutil.ReadDir(src)
+	if err != nil {
+		return nil, err
+	}
+	return files, nil
+}

@@ -1,9 +1,9 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: "{{ .Values.fullnameOverride }}-test-connection"
+  name: "{{ include "REPLACE_IT.fullname" . }}-test-connection"
   labels:
-    {{ .Values.fullnameOverride }}
+    {{- include "REPLACE_IT.labels" . | nindent 4 }}
   annotations:
     "helm.sh/hook": test-success
 spec:
@@ -11,5 +11,5 @@ spec:
     - name: wget
       image: busybox
       command: ['wget']
-      args: ['{{ .Values.fullnameOverride }}:{{ .Values.service.port }}']
+      args: ['{{ include "REPLACE_IT.fullname" . }}:{{ .Values.service.port }}']
   restartPolicy: Never

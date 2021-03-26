@@ -120,7 +120,17 @@ func CopyHelmChartTemplates(deploymentScript, workDir string, config model.Confi
 		return err
 	}
 
-	if err := ReplaceStringInFile(fmt.Sprintf("%v/%v/%v", templatesDest, TemplateFolder, HelpersFile),"REPLACE_IT", config.Name); err != nil {
+	templateFolderFilesList, err := GetListFilesInDirectory(fmt.Sprintf("%v/%v", templatesDest, TemplateFolder))
+	for _, file := range templateFolderFilesList {
+		if file.IsDir() {
+			continue
+		}
+		if err := ReplaceStringInFile(fmt.Sprintf("%v/%v/%v", templatesDest, TemplateFolder, file.Name()),"REPLACE_IT", config.Name); err != nil {
+			return err
+		}
+	}
+
+	if err := ReplaceStringInFile(fmt.Sprintf("%v/%v/%v/%v", templatesDest, TemplateFolder, TestFolder, TestFile),"REPLACE_IT", config.Name); err != nil {
 		return err
 	}
 

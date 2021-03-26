@@ -8,7 +8,7 @@ const (
 	TemplateFolder      = "templates"
 	TestFolder          = "tests"
 	HelmIgnoreFile      = ".helmignore"
-	HelpersFile         = "_helpers.tpl"
+	TestFile            = "test-connection.yaml"
 
 	//statuses
 	StatusFailed     = "failed"
