@@ -1,7 +1,7 @@
 # Jira Server Controller
 
 **Jira Server** is the representation of Jira that is used to communicate with Jira API to manage different entities 
-(tickets, fix version, etc.)
+(tickets, fix version, jira metadata etc.)
 
 The main purpose of a Jira Server controller is to watch changes in the respective Kubernetes Custom Resource (JiraServer CR)
  and to ensure that the state in that resource is applied in EPAM Delivery Platform.

@@ -61,5 +61,5 @@ In order to install the Codebase Operator, follow the steps below:
 - [Codebase Controller Overview](documentation/codebase_controller.md)
 - [Codebase Branch Controller](documentation/codebase_branch_controller.md)
 - [Jira Server Controller](documentation/jira_server_controller.md)
-- [Jira Fix Version Controller](documentation/jira_fix_version_controller.md)
+- [Jira Issue Metadata Controller](documentation/jira_issue_metadata_controller.md)
 - [Git Server Controller](documentation/git_server_controller.md)
