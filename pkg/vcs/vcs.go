@@ -90,8 +90,7 @@ func СreateProjectInVcs(c coreV1Client.CoreV1Client, us *model.UserSettings, co
 	}
 
 	if *e {
-		log.Printf("couldn't copy project to your VCS group. Repository %s is already exists in " +
-			codebaseName + "" + vcsConf.ProjectVcsGroupPath)
+		log.Printf("couldn't copy project to your VCS group. Repository %v is already exists in %v", codebaseName, vcsConf.ProjectVcsGroupPath)
 		return nil
 	}
 	_, err = vcsTool.CreateProject(vcsConf.ProjectVcsGroupPath, codebaseName)
