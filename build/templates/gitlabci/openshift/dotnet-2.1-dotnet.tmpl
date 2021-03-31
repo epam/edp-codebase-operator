@@ -125,8 +125,8 @@ create-docker-image:
     - isTag=$(grep isTag "build.properties" | awk -F= '{print $2}');
     - docker login -u $DOCKER_REGISTRY_USER -p $DOCKER_REGISTRY_PASSWORD $DOCKER_REGISTRY_URL
     - docker build -t $PROJECT_NAME .
-    - docker tag $PROJECT_NAME "$DOCKER_REGISTRY_URL/$NAMESPACE/$PROJECT_NAME-$(echo $CI_COMMIT_BRANCH | sed 's/\//-/g;s/\./-/g'):$isTag"
-    - docker push "$DOCKER_REGISTRY_URL/$NAMESPACE/$PROJECT_NAME-$(echo $CI_COMMIT_BRANCH | sed 's/\//-/g;s/\./-/g'):$isTag"
+    - docker tag $PROJECT_NAME "$DOCKER_REGISTRY_URL/$NAMESPACE/$PROJECT_NAME:$isTag"
+    - docker push "$DOCKER_REGISTRY_URL/$NAMESPACE/$PROJECT_NAME:$isTag"
   rules:
     - if: $CI_COMMIT_BRANCH && '$CI_PIPELINE_SOURCE != "merge_request_event"'
 
