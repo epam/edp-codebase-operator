@@ -10,7 +10,8 @@ ENV OPERATOR=/usr/local/bin/codebase-operator \
 # install operator binary
 COPY codebase-operator ${OPERATOR}
 
-RUN apk add --no-cache ca-certificates openssh-client git
+
+RUN apk add --no-cache ca-certificates==20191127-r1 openssh-client==8.1_p1-r0 git==2.24.4-r0
 
 COPY build/bin /usr/local/bin
 COPY build/templates /usr/local/bin/templates

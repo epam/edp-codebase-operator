@@ -61,7 +61,7 @@ func (s *CodebaseBranchService) TriggerDeletionJob(cb *v1alpha1.CodebaseBranch) 
 		return JobFailedError("deletion job failed")
 	}
 
-	rLog.Info("release has been deleted. Status: %v", model.StatusFinished)
+	rLog.Info("release has been deleted.", "Status", model.StatusFinished)
 	return nil
 }
 
@@ -108,7 +108,7 @@ func (s *CodebaseBranchService) TriggerReleaseJob(cb *v1alpha1.CodebaseBranch) e
 		rLog.Info("failed to create release", "release job status", js)
 		return nil
 	}
-	rLog.Info("release has been created. Status: %v", model.StatusFinished)
+	rLog.Info("release has been created.", "Status", model.StatusFinished)
 	return nil
 }
 

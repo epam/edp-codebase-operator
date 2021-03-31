@@ -33,16 +33,18 @@ func Init(url string, username string, token string) (*JenkinsClient, error) {
 	}, nil
 }
 
-func (c JenkinsClient) GetJob(name string, delay time.Duration, retryCount int) bool {
+func (c JenkinsClient) GetJob(name string, delay time.Duration, retryCount int) (*gojenkins.Job, error) {
+	var resultErr error
 	for i := 0; i < retryCount; i++ {
-		_, err := c.Jenkins.GetJob(name)
+		job, err := c.Jenkins.GetJob(name)
 		if err == nil {
-			return true
+			return job, nil
 		}
+		resultErr = err
 		log.Info("Job is currently doesn't exist", "name", name, "delay", delay, "attempts lasts", retryCount-i)
 		time.Sleep(delay)
 	}
-	return false
+	return nil, resultErr
 }
 
 type JobNotFoundError string
@@ -55,32 +57,49 @@ func (c JenkinsClient) TriggerDeletionJob(branchName string, appName string) err
 	jobName := fmt.Sprintf("%v/job/Delete-release-%v", appName, appName)
 	log.Info("Trying to trigger jenkins job", "name", jobName)
 
-	if c.GetJob(jobName, time.Second, 1) {
-		_, err := c.Jenkins.BuildJob(jobName, map[string]string{
-			"RELEASE_NAME": branchName,
-		})
-		if err != nil {
-			return errors.Wrap(err, "unable to build job")
-		}
+	job, err := c.GetJob(jobName, time.Second, 1)
+	if err != nil {
+		return JobNotFoundError(err.Error())
+	}
 
+	lastBuild, err := job.GetLastBuild()
+	if err != nil && err.Error() != "404" {
+		return err
+	}
+
+	if (lastBuild != nil && lastBuild.IsRunning()) || job.Raw.InQueue {
 		return nil
 	}
 
-	return JobNotFoundError("deletion job not found")
+	_, err = c.Jenkins.BuildJob(jobName, map[string]string{
+		"RELEASE_NAME": branchName,
+	})
+	if err != nil {
+		return errors.Wrap(err, "unable to build job")
+	}
+
+	return nil
 }
 
 func (c JenkinsClient) TriggerReleaseJob(branchName string, fromCommit string, appName string) error {
 	jobName := fmt.Sprintf("%v/job/Create-release-%v", appName, appName)
 	log.Info("Trying to trigger jenkins job", "name", jobName)
 
-	if c.GetJob(jobName, time.Second, 60) {
-		_, err := c.Jenkins.BuildJob(jobName, map[string]string{
-			"RELEASE_NAME": branchName,
-			"COMMIT_ID":    fromCommit,
-		})
-		return err
+	_, err := c.GetJob(jobName, time.Second, 60)
+	if err != nil {
+		return errors.Wrapf(err, "unable to get job %s", jobName)
 	}
-	return errors.New(fmt.Sprintf("Couldn't trigger %v job", jobName))
+
+	_, err = c.Jenkins.BuildJob(jobName, map[string]string{
+		"RELEASE_NAME": branchName,
+		"COMMIT_ID":    fromCommit,
+	})
+
+	if err != nil {
+		return errors.Wrapf(err, "Couldn't trigger %v job", jobName)
+	}
+
+	return nil
 }
 
 func (c JenkinsClient) GetJobStatus(name string, delay time.Duration, retryCount int) (string, error) {
