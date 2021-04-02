@@ -66,6 +66,7 @@ type CodebaseSpec struct {
 	Perf                     *Perf       `json:"perf"`
 	DefaultBranch            string      `json:"defaultBranch"`
 	JiraIssueMetadataPayload *string     `json:"jiraIssueMetadataPayload"`
+	EmptyProject             bool        `json:"emptyProject"`
 }
 
 // CodebaseStatus defines the observed state of Codebase

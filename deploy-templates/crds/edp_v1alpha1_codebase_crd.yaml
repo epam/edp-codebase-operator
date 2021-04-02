@@ -109,6 +109,8 @@ spec:
               anyOf:
                 - type: null
                 - type: string
+            emptyProject:
+              type: bool
           required:
             - lang
             - type
@@ -116,6 +118,7 @@ spec:
             - strategy
             - versioning
             - defaultBranch
+            - emptyProject
           type: object
         status:
           type: object
