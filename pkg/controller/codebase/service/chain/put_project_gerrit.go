@@ -3,6 +3,7 @@ package chain
 import (
 	"context"
 	"fmt"
+	"github.com/go-logr/logr"
 	"gopkg.in/src-d/go-git.v4/config"
 	"os"
 	"time"
@@ -58,13 +59,6 @@ func (h PutProjectGerrit) ServeRequest(c *v1alpha1.Codebase) error {
 		return errors.Wrap(err, "unable get user settings settings")
 	}
 
-	ru, err := util.GetRepoUrl(c)
-	if err != nil {
-		setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
-		return errors.Wrap(err, "couldn't build repo url")
-	}
-	rLog.Info("Repository URL to clone sources has been retrieved", "url", *ru)
-
 	edpN, err := helper.GetEDPName(h.clientSet.Client, c.Namespace)
 	if err != nil {
 		setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
@@ -83,26 +77,14 @@ func (h PutProjectGerrit) ServeRequest(c *v1alpha1.Codebase) error {
 		return nextServeOrNil(h.next, c)
 	}
 
-	repu, repp, err := h.tryToGetRepositoryCredentials(c)
-	if !h.git.CheckPermissions(*ru, repu, repp) {
-		msg := fmt.Errorf("user %v cannot get access to the repository %v", repu, *ru)
-		setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, msg.Error())
-		return msg
-	}
-
 	if err := h.tryToCreateProjectInVcs(us, c.Name, c.Namespace); err != nil {
 		setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
 		return errors.Wrap(err, "unable to create project in VCS")
 	}
 
-	if err := h.tryToCloneRepo(*ru, repu, repp, wd, c.Name); err != nil {
+	if err := h.initialProjectProvisioning(c, rLog, wd); err != nil {
 		setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
-		return errors.Wrap(err, "cloning project hsa been failed")
-	}
-
-	if err := h.tryToSquashCommits(wd, c.Name, c.Spec.Strategy); err != nil {
-		setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
-		return errors.Wrap(err, "squash commits been failed")
+		return errors.Wrapf(err, "initial provisioning of codebase %v has been failed", c.Name)
 	}
 
 	if err := h.tryToPushProjectToGerrit(*port, c.Name, wd, c.Namespace, c.Spec.DefaultBranch, c.Spec.Strategy); err != nil {
@@ -279,6 +261,55 @@ func (h PutProjectGerrit) tryToSquashCommits(workDir, codebaseName string, strat
 
 	if err := h.git.CommitChanges(destination, "Init commit"); err != nil {
 		return errors.Wrapf(err, "an error has occurred while committing all default content")
+	}
+	return nil
+}
+
+func (h PutProjectGerrit) initialProjectProvisioning(c *v1alpha1.Codebase, rLog logr.Logger, wd string) error {
+	if c.Spec.EmptyProject {
+		return h.emptyProjectProvisioning(wd, c.Name)
+	}
+	return h.notEmptyProjectProvisioning(c, rLog, wd)
+}
+
+func (h PutProjectGerrit) emptyProjectProvisioning(wd, codebaseName string) error {
+	log.Info("Start initial provisioning for empty project", "codebase name", codebaseName)
+	destination := fmt.Sprintf("%v/%v", wd, codebaseName)
+	if err := h.git.Init(destination); err != nil {
+		return errors.Wrapf(err, "an error has occurred while creating empty git repository")
+	}
+
+	if err := h.git.CommitChanges(destination, "Init commit"); err != nil {
+		return errors.Wrapf(err, "an error has occurred while committing empty default content")
+	}
+
+	return nil
+}
+
+func (h PutProjectGerrit) notEmptyProjectProvisioning(c *v1alpha1.Codebase, rLog logr.Logger, wd string) error {
+	log.Info("Start initial provisioning for not empty project", "codebase name", c.Name)
+	ru, err := util.GetRepoUrl(c)
+	if err != nil {
+		setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
+		return errors.Wrap(err, "couldn't build repo url")
+	}
+	rLog.Info("Repository URL to clone sources has been retrieved", "url", *ru)
+
+	repu, repp, err := h.tryToGetRepositoryCredentials(c)
+	if !h.git.CheckPermissions(*ru, repu, repp) {
+		msg := fmt.Errorf("user %v cannot get access to the repository %v", repu, *ru)
+		setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, msg.Error())
+		return msg
+	}
+
+	if err := h.tryToCloneRepo(*ru, repu, repp, wd, c.Name); err != nil {
+		setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
+		return errors.Wrap(err, "cloning project hsa been failed")
+	}
+
+	if err := h.tryToSquashCommits(wd, c.Name, c.Spec.Strategy); err != nil {
+		setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
+		return errors.Wrap(err, "squash commits been failed")
 	}
 	return nil
 }
