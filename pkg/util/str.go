@@ -30,3 +30,12 @@ func GetFieldsMap(payload string, keysToDelete []string) (map[string]interface{}
 	}
 	return requestPayload, nil
 }
+
+func CheckElementInArray(array []string, element string) bool {
+	for _, elementCandidate := range array {
+		if elementCandidate == element {
+			return true
+		}
+	}
+	return false
+}

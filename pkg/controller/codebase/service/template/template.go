@@ -35,9 +35,7 @@ func PrepareTemplates(client *coreV1Client.CoreV1Client, c v1alpha1.Codebase) er
 		return errors.Wrapf(err, "an error has occurred while copying pipelines for %v codebase", c.Name)
 	}
 
-	if (strings.ToLower(c.Spec.Lang) == util.Javascript ||
-		strings.ToLower(c.Spec.Lang) == strings.ToLower(util.LanguageGo)) &&
-		c.Spec.Strategy != util.ImportStrategy {
+	if c.Spec.Strategy != util.ImportStrategy {
 		td := fmt.Sprintf("%v/%v", wd, "templates")
 		if err := copySonarConfigs(td, *cf); err != nil {
 			return err
@@ -93,6 +91,11 @@ func buildTemplateConfig(client *coreV1Client.CoreV1Client, c v1alpha1.Codebase)
 }
 
 func copySonarConfigs(templateDirectory string, config model.ConfigGoTemplating) error {
+	languagesForSonarTemplates := []string{util.LanguageJavascript, util.LanguagePython, util.LanguageGo}
+	if !util.CheckElementInArray(languagesForSonarTemplates, strings.ToLower(config.Lang)) {
+		return nil
+	}
+
 	sonarConfigPath := fmt.Sprintf("%v/%v/sonar-project.properties", templateDirectory, config.Name)
 	log.Info("start copying sonar configs", "path", sonarConfigPath)
 	if _, err := os.Stat(sonarConfigPath); err == nil {
@@ -105,8 +108,10 @@ func copySonarConfigs(templateDirectory string, config model.ConfigGoTemplating)
 	}
 	defer f.Close()
 
-	tmpl, err := template.New("sonar-project.properties.tmpl").
-		ParseFiles("/usr/local/bin/templates/sonar/sonar-project.properties.tmpl")
+	sonarTemplateName := fmt.Sprintf("%v-sonar-project.properties.tmpl", strings.ToLower(config.Lang))
+	sonarTemplateFile := fmt.Sprintf("/usr/local/bin/templates/sonar/%v", sonarTemplateName)
+
+	tmpl, err := template.New(sonarTemplateName).ParseFiles(sonarTemplateFile)
 	if err != nil {
 		return err
 	}

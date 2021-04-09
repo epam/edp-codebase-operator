@@ -24,7 +24,9 @@ const (
 
 	ImportStrategy = "import"
 	Application    = "application"
-	Javascript     = "javascript"
+	LanguageJavascript     = "javascript"
+	LanguagePython         = "python"
+	LanguageGo             = "go"
 
 	JenkinsFolderKind            = "JenkinsFolder"
 	CDStageDeployKind            = "CDStageDeploy"
@@ -37,7 +39,6 @@ const (
 	GitlabCiFilePushedStatus         = "gitlab ci"
 
 	GithubDomain = "https://github.com/epmd-edp"
-	LanguageGo   = "Go"
 
 	GitlabCi = "gitlab ci"
 
