@@ -13,6 +13,7 @@ var lf = map[string]string{
 	"dotnet":          "netcore",
 	"python":          "python-3.8",
 	"terraform":       "terraform",
+	"rego":            "opa",
 }
 
 func GetRepoUrl(c *v1alpha1.Codebase) (*string, error) {
@@ -39,10 +40,10 @@ func tryGetRepoUrl(spec v1alpha1.CodebaseSpec) (*string, error) {
 func buildRepoUrl(spec v1alpha1.CodebaseSpec) string {
 	log.Info("Start building repo url", "base url", GithubDomain, "spec", spec)
 	return strings.ToLower(fmt.Sprintf("%v/%v-%v-%v.git", GithubDomain, spec.Lang, spec.BuildTool,
-		getFrameworkOrEmpty(spec)))
+		getFrameworkOrDefault(spec)))
 }
 
-func getFrameworkOrEmpty(spec v1alpha1.CodebaseSpec) string {
+func getFrameworkOrDefault(spec v1alpha1.CodebaseSpec) string {
 	if spec.Framework != nil && *spec.Framework != "" {
 		return *spec.Framework
 	}
