@@ -2,6 +2,7 @@ package jiraissuemetadata
 
 import (
 	"context"
+	"fmt"
 	edpv1alpha1 "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/client/jira"
 	"github.com/epam/edp-codebase-operator/v2/pkg/client/jira/adapter"
@@ -209,6 +210,11 @@ func (r *ReconcileJiraIssueMetadata) getJiraServer(metadata edpv1alpha1.JiraIssu
 	}, c)
 	if err != nil {
 		return nil, err
+	}
+
+	if c.Spec.JiraServer == nil {
+		return nil, fmt.Errorf("codebase %v has disabled jira integration. skip JiraIssueMetadata %v reconcilation",
+			c.Name, metadata.Name)
 	}
 
 	server := &edpv1alpha1.JiraServer{}
