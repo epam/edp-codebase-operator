@@ -6,10 +6,10 @@ import (
 	"github.com/pkg/errors"
 	"io/ioutil"
 	"os"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
+	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-var log = logf.Log.WithName("util")
+var log = ctrl.Log.WithName("util")
 
 func CreateDirectory(path string) error {
 	log.Info("Creating directory for oc templates", "path", path)

@@ -7,19 +7,16 @@ import (
 	edpv1alpha1 "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/service/chain/handler"
 	git "github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver"
-	"github.com/epam/edp-codebase-operator/v2/pkg/openshift"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	"github.com/pkg/errors"
-	v1 "k8s.io/api/core/v1"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"time"
 )
 
 type CloneGitProject struct {
-	next      handler.CodebaseHandler
-	clientSet openshift.ClientSet
-	git       git.Git
+	next   handler.CodebaseHandler
+	client client.Client
+	git    git.Git
 }
 
 func (h CloneGitProject) ServeRequest(c *v1alpha1.Codebase) error {
@@ -36,13 +33,13 @@ func (h CloneGitProject) ServeRequest(c *v1alpha1.Codebase) error {
 		return err
 	}
 
-	gs, err := util.GetGitServer(h.clientSet.Client, c.Spec.GitServer, c.Namespace)
+	gs, err := util.GetGitServer(h.client, c.Spec.GitServer, c.Namespace)
 	if err != nil {
 		setFailedFields(c, edpv1alpha1.ImportProject, err.Error())
 		return err
 	}
 
-	secret, err := util.GetSecret(*h.clientSet.CoreClient, gs.NameSshKeySecret, c.Namespace)
+	secret, err := util.GetSecret(h.client, gs.NameSshKeySecret, c.Namespace)
 	if err != nil {
 		setFailedFields(c, edpv1alpha1.ImportProject, err.Error())
 		return errors.Wrapf(err, "an error has occurred while getting %v secret", gs.NameSshKeySecret)
@@ -70,18 +67,6 @@ func (h CloneGitProject) ServeRequest(c *v1alpha1.Codebase) error {
 	return nextServeOrNil(h.next, c)
 }
 
-func (h CloneGitProject) getSecret(secretName, namespace string) (*v1.Secret, error) {
-	log.Info("Start fetching Secret resource from k8s", "secret name", secretName, "namespace", namespace)
-	secret, err := h.clientSet.CoreClient.
-		Secrets(namespace).
-		Get(secretName, metav1.GetOptions{})
-	if k8serrors.IsNotFound(err) || k8serrors.IsForbidden(err) {
-		return nil, err
-	}
-	log.Info("Secret has been fetched", "secret name", secretName, "namespace", namespace)
-	return secret, nil
-}
-
 func (h CloneGitProject) setIntermediateSuccessFields(c *edpv1alpha1.Codebase, action edpv1alpha1.ActionType) error {
 	c.Status = edpv1alpha1.CodebaseStatus{
 		Status:          util.StatusInProgress,
@@ -95,8 +80,8 @@ func (h CloneGitProject) setIntermediateSuccessFields(c *edpv1alpha1.Codebase, a
 		Git:             c.Status.Git,
 	}
 
-	if err := h.clientSet.Client.Status().Update(context.TODO(), c); err != nil {
-		if err := h.clientSet.Client.Update(context.TODO(), c); err != nil {
+	if err := h.client.Status().Update(context.TODO(), c); err != nil {
+		if err := h.client.Update(context.TODO(), c); err != nil {
 			return err
 		}
 	}

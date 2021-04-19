@@ -3,6 +3,7 @@ package chain
 import (
 	"fmt"
 	"gopkg.in/src-d/go-git.v4/config"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	edpv1alpha1 "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
@@ -12,24 +13,23 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/service/template"
 	git "github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver"
 	"github.com/epam/edp-codebase-operator/v2/pkg/gerrit"
-	"github.com/epam/edp-codebase-operator/v2/pkg/openshift"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/ssh"
 )
 
 type PutDeployConfigs struct {
-	next      handler.CodebaseHandler
-	clientSet openshift.ClientSet
-	cr        repository.CodebaseRepository
-	git       git.Git
+	next   handler.CodebaseHandler
+	client client.Client
+	cr     repository.CodebaseRepository
+	git    git.Git
 }
 
 func (h PutDeployConfigs) ServeRequest(c *v1alpha1.Codebase) error {
 	rLog := log.WithValues("codebase name", c.Name)
 	rLog.Info("Start pushing configs...")
 
-	port, err := util.GetGerritPort(h.clientSet.Client, c.Namespace)
+	port, err := util.GetGerritPort(h.client, c.Namespace)
 	if err != nil {
 		setFailedFields(c, edpv1alpha1.SetupDeploymentTemplates, err.Error())
 		return errors.Wrap(err, "unable get gerrit port")
@@ -44,7 +44,7 @@ func (h PutDeployConfigs) ServeRequest(c *v1alpha1.Codebase) error {
 }
 
 func (h PutDeployConfigs) tryToPushConfigs(c edpv1alpha1.Codebase, sshPort int32) error {
-	edpN, err := helper.GetEDPName(h.clientSet.Client, c.Namespace)
+	edpN, err := helper.GetEDPName(h.client, c.Namespace)
 	if err != nil {
 		return errors.Wrap(err, "couldn't get edp name")
 	}
@@ -60,7 +60,7 @@ func (h PutDeployConfigs) tryToPushConfigs(c edpv1alpha1.Codebase, sshPort int32
 		return nil
 	}
 
-	s, err := util.GetSecret(*h.clientSet.CoreClient, "gerrit-project-creator", c.Namespace)
+	s, err := util.GetSecret(h.client, "gerrit-project-creator", c.Namespace)
 	if err != nil {
 		return errors.Wrap(err, "unable to get gerrit-project-creator secret")
 	}
@@ -82,7 +82,7 @@ func (h PutDeployConfigs) tryToPushConfigs(c edpv1alpha1.Codebase, sshPort int32
 		return errors.Wrapf(err, "checkout default branch %v in Gerrit has been failed", c.Spec.DefaultBranch)
 	}
 
-	if err := template.PrepareTemplates(h.clientSet.CoreClient, c); err != nil {
+	if err := template.PrepareTemplates(h.client, c); err != nil {
 		return err
 	}
 

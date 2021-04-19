@@ -6,6 +6,7 @@ import (
 	"github.com/go-logr/logr"
 	"gopkg.in/src-d/go-git.v4/config"
 	"os"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"time"
 
 	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
@@ -16,17 +17,16 @@ import (
 	git "github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver"
 	"github.com/epam/edp-codebase-operator/v2/pkg/gerrit"
 	"github.com/epam/edp-codebase-operator/v2/pkg/model"
-	"github.com/epam/edp-codebase-operator/v2/pkg/openshift"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	"github.com/epam/edp-codebase-operator/v2/pkg/vcs"
 	"github.com/pkg/errors"
 )
 
 type PutProjectGerrit struct {
-	next      handler.CodebaseHandler
-	clientSet openshift.ClientSet
-	cr        repository.CodebaseRepository
-	git       git.Git
+	next   handler.CodebaseHandler
+	client client.Client
+	cr     repository.CodebaseRepository
+	git    git.Git
 }
 
 func (h PutProjectGerrit) ServeRequest(c *v1alpha1.Codebase) error {
@@ -47,19 +47,19 @@ func (h PutProjectGerrit) ServeRequest(c *v1alpha1.Codebase) error {
 		return err
 	}
 
-	port, err := util.GetGerritPort(h.clientSet.Client, c.Namespace)
+	port, err := util.GetGerritPort(h.client, c.Namespace)
 	if err != nil {
 		setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
 		return errors.Wrap(err, "unable get gerrit port")
 	}
 
-	us, err := util.GetUserSettings(h.clientSet.CoreClient, c.Namespace)
+	us, err := util.GetUserSettings(h.client, c.Namespace)
 	if err != nil {
 		setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
 		return errors.Wrap(err, "unable get user settings settings")
 	}
 
-	edpN, err := helper.GetEDPName(h.clientSet.Client, c.Namespace)
+	edpN, err := helper.GetEDPName(h.client, c.Namespace)
 	if err != nil {
 		setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
 		return errors.Wrap(err, "couldn't get edp name")
@@ -103,7 +103,7 @@ func (h PutProjectGerrit) ServeRequest(c *v1alpha1.Codebase) error {
 }
 
 func (h PutProjectGerrit) tryToPushProjectToGerrit(sshPort int32, codebaseName, workDir, namespace, branchName string, strategy v1alpha1.Strategy) error {
-	s, err := util.GetSecret(*h.clientSet.CoreClient, "gerrit-project-creator", namespace)
+	s, err := util.GetSecret(h.client, "gerrit-project-creator", namespace)
 	if err != nil {
 		return errors.Wrap(err, "unable to get gerrit-project-creator secret")
 	}
@@ -183,7 +183,7 @@ func (h PutProjectGerrit) tryToCloneRepo(repoUrl string, repositoryUsername stri
 func (h PutProjectGerrit) tryToCreateProjectInVcs(us *model.UserSettings, codebaseName, namespace string) error {
 	log.Info("Start creation project in VCS", "codebase name", codebaseName)
 	if us.VcsIntegrationEnabled {
-		if err := vcs.СreateProjectInVcs(*h.clientSet.CoreClient, us, codebaseName, namespace); err != nil {
+		if err := vcs.СreateProjectInVcs(h.client, us, codebaseName, namespace); err != nil {
 			return err
 		}
 		return nil
@@ -201,7 +201,7 @@ func (h PutProjectGerrit) tryToGetRepositoryCredentials(c *v1alpha1.Codebase) (s
 
 func (h PutProjectGerrit) getRepoCreds(codebaseName, namespace string) (string, string, error) {
 	secret := fmt.Sprintf("repository-codebase-%v-temp", codebaseName)
-	repositoryUsername, repositoryPassword, err := util.GetVcsBasicAuthConfig(*h.clientSet.CoreClient, namespace, secret)
+	repositoryUsername, repositoryPassword, err := util.GetVcsBasicAuthConfig(h.client, namespace, secret)
 	if err != nil {
 		return "", "", err
 	}
@@ -221,8 +221,8 @@ func (h PutProjectGerrit) setIntermediateSuccessFields(c *edpv1alpha1.Codebase, 
 		Git:             c.Status.Git,
 	}
 
-	if err := h.clientSet.Client.Status().Update(context.TODO(), c); err != nil {
-		if err := h.clientSet.Client.Update(context.TODO(), c); err != nil {
+	if err := h.client.Status().Update(context.TODO(), c); err != nil {
+		if err := h.client.Update(context.TODO(), c); err != nil {
 			return err
 		}
 	}

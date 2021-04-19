@@ -3,11 +3,11 @@ package chain
 import (
 	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/imagestreamtag/chain/handler"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
-var log = logf.Log.WithName("image_stream_tag_handler")
+var log = ctrl.Log.WithName("image_stream_tag_handler")
 
 func CreateDefChain(client client.Client) handler.ImageStreamTagHandler {
 	return PutTagCodebaseImageStreamCr{

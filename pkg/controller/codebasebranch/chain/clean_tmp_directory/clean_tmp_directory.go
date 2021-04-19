@@ -6,14 +6,14 @@ import (
 	edpv1alpha1 "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	"github.com/pkg/errors"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"time"
 )
 
 type CleanTempDirectory struct {
 }
 
-var log = logf.Log.WithName("clean-temp-directory-chain")
+var log = ctrl.Log.WithName("clean-temp-directory-chain")
 
 func (h CleanTempDirectory) ServeRequest(cb *v1alpha1.CodebaseBranch) error {
 	rl := log.WithValues("namespace", cb.Namespace, "codebase branch", cb.Name)

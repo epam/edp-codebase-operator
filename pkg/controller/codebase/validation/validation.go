@@ -2,11 +2,11 @@ package validation
 
 import (
 	edpv1alpha1 "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"strings"
 )
 
-var log = logf.Log.WithName("codebase_validator")
+var log = ctrl.Log.WithName("codebase_validator")
 
 var allowedCodebaseSettings = map[string][]string{
 	"add_repo_strategy": {"create", "clone", "import"},

@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"time"
 
 	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
@@ -11,10 +12,9 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
-var log = logf.Log.WithName("codebase_branch_service")
+var log = ctrl.Log.WithName("codebase_branch_service")
 
 const jenkinsJobSuccessStatus = "blue"
 

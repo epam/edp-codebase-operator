@@ -5,11 +5,11 @@ import (
 	"fmt"
 	_ "github.com/lib/pq"
 	"os"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"strconv"
 )
 
-var log = logf.Log.WithName("db-connector")
+var log = ctrl.Log.WithName("db-connector")
 
 func GetConnection() *sql.DB {
 	log.V(2).Info("start creating connection to DB")

@@ -6,7 +6,7 @@ import (
 	"encoding/base64"
 	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/jiraserver/chain/handler"
-	edpApi "github.com/epmd-edp/edp-component-operator/pkg/apis/v1/v1alpha1"
+	edpApi "github.com/epam/edp-component-operator/pkg/apis/v1/v1alpha1"
 	"github.com/pkg/errors"
 	"io/ioutil"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"

@@ -3,114 +3,84 @@ package jiraissuemetadata
 import (
 	"context"
 	"fmt"
-	edpv1alpha1 "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/client/jira"
 	"github.com/epam/edp-codebase-operator/v2/pkg/client/jira/adapter"
 	"github.com/epam/edp-codebase-operator/v2/pkg/client/jira/dto"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/jiraissuemetadata/chain"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
+	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"os"
 	"reflect"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/event"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 	"time"
 )
 
-var log = logf.Log.WithName("controller_jira_issue_metadata")
-
 const (
-	reconcilationPeriod        = "RECONCILATION_PERIOD"
-	defaultReconcilationPeriod = "360"
+	reconcilePeriod        = "RECONCILATION_PERIOD"
+	defaultReconcilePeriod = "360"
+	codebaseKind           = "Codebase"
+	errorStatus            = "error"
 )
 
-func Add(mgr manager.Manager) error {
-	return add(mgr, newReconciler(mgr))
+type ReconcileJiraIssueMetadata struct {
+	Client client.Client
+	Scheme *runtime.Scheme
+	Log    logr.Logger
 }
 
-func newReconciler(mgr manager.Manager) reconcile.Reconciler {
-	return &ReconcileJiraIssueMetadata{
-		client: mgr.GetClient(),
-		scheme: mgr.GetScheme(),
-	}
-}
-
-func add(mgr manager.Manager, r reconcile.Reconciler) error {
-	// Create a new controller
-	c, err := controller.New("jira-issue-metadata-controller", mgr, controller.Options{Reconciler: r})
-	if err != nil {
-		return err
-	}
-
-	pred := predicate.Funcs{
+func (r *ReconcileJiraIssueMetadata) SetupWithManager(mgr ctrl.Manager) error {
+	p := predicate.Funcs{
 		UpdateFunc: func(e event.UpdateEvent) bool {
-			oo := e.ObjectOld.(*edpv1alpha1.JiraIssueMetadata)
-			no := e.ObjectNew.(*edpv1alpha1.JiraIssueMetadata)
+			oo := e.ObjectOld.(*codebaseApi.JiraIssueMetadata)
+			no := e.ObjectNew.(*codebaseApi.JiraIssueMetadata)
 			if !reflect.DeepEqual(oo.Spec, no.Spec) {
 				return true
 			}
 			return false
 		},
 	}
-
-	// Watch for changes to primary resource GitServer
-	err = c.Watch(&source.Kind{Type: &edpv1alpha1.JiraIssueMetadata{}}, &handler.EnqueueRequestForObject{}, pred)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return ctrl.NewControllerManagedBy(mgr).
+		For(&codebaseApi.JiraIssueMetadata{}, builder.WithPredicates(p)).
+		Complete(r)
 }
 
-var _ reconcile.Reconciler = &ReconcileJiraIssueMetadata{}
+func (r *ReconcileJiraIssueMetadata) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+	log := r.Log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
+	log.Info("Reconciling JiraIssueMetadata")
 
-const (
-	codebaseKind = "Codebase"
-	errorStatus  = "error"
-)
-
-type ReconcileJiraIssueMetadata struct {
-	client client.Client
-	scheme *runtime.Scheme
-}
-
-func (r *ReconcileJiraIssueMetadata) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	reqLogger := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
-	reqLogger.Info("Reconciling JiraIssueMetadata")
-
-	i := &edpv1alpha1.JiraIssueMetadata{}
-	if err := r.client.Get(context.TODO(), request.NamespacedName, i); err != nil {
+	i := &codebaseApi.JiraIssueMetadata{}
+	if err := r.Client.Get(ctx, request.NamespacedName, i); err != nil {
 		if k8serrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, err
 	}
-	defer r.updateStatus(i)
+	defer r.updateStatus(ctx, i)
 
-	if err := r.setOwnerRef(i); err != nil {
+	if err := r.setOwnerRef(ctx, i); err != nil {
 		setErrorStatus(i, err.Error())
 		return reconcile.Result{}, err
 	}
 
-	js, err := r.getJiraServer(*i)
+	js, err := r.getJiraServer(ctx, *i)
 	if err != nil {
 		setErrorStatus(i, err.Error())
 		return reconcile.Result{}, err
 	}
 	if !js.Status.Available {
 		log.Info("Waiting for Jira server become available.", "name", js.Name)
-		return reconcile.Result{RequeueAfter: setFailureCount(i)}, nil
+		return reconcile.Result{RequeueAfter: r.setFailureCount(i)}, nil
 	}
 
 	jc, err := r.initJiraClient(*js)
@@ -119,7 +89,7 @@ func (r *ReconcileJiraIssueMetadata) Reconcile(request reconcile.Request) (recon
 		return reconcile.Result{}, err
 	}
 
-	ch, err := chain.CreateChain(i.Spec.Payload, jc, r.client)
+	ch, err := chain.CreateChain(i.Spec.Payload, jc, r.Client)
 	if err != nil {
 		setErrorStatus(i, err.Error())
 		return reconcile.Result{}, err
@@ -127,7 +97,7 @@ func (r *ReconcileJiraIssueMetadata) Reconcile(request reconcile.Request) (recon
 
 	if err := ch.ServeRequest(i); err != nil {
 		setErrorStatus(i, err.Error())
-		timeout := setFailureCount(i)
+		timeout := r.setFailureCount(i)
 		log.Error(err, "couldn't set jira issue metadata", "name", i.Name)
 		return reconcile.Result{RequeueAfter: timeout}, nil
 	}
@@ -140,23 +110,23 @@ func (r *ReconcileJiraIssueMetadata) Reconcile(request reconcile.Request) (recon
 }
 
 func lookup() string {
-	if value, ok := os.LookupEnv(reconcilationPeriod); ok {
+	if value, ok := os.LookupEnv(reconcilePeriod); ok {
 		return value
 	}
-	return defaultReconcilationPeriod
+	return defaultReconcilePeriod
 }
 
 // setFailureCount increments failure count and returns delay for next reconciliation
-func setFailureCount(metadata *edpv1alpha1.JiraIssueMetadata) time.Duration {
+func (r *ReconcileJiraIssueMetadata) setFailureCount(metadata *codebaseApi.JiraIssueMetadata) time.Duration {
 	timeout := util.GetTimeout(metadata.Status.FailureCount, 500*time.Millisecond)
-	log.V(2).Info("wait for next reconcilation", "next reconcilation in", timeout)
+	r.Log.V(2).Info("wait for next reconcilation", "next reconcilation in", timeout)
 	metadata.Status.FailureCount += 1
 	return timeout
 }
 
-func (r *ReconcileJiraIssueMetadata) setOwnerRef(metadata *edpv1alpha1.JiraIssueMetadata) error {
-	c := &edpv1alpha1.Codebase{}
-	err := r.client.Get(context.TODO(), types.NamespacedName{
+func (r *ReconcileJiraIssueMetadata) setOwnerRef(ctx context.Context, metadata *codebaseApi.JiraIssueMetadata) error {
+	c := &codebaseApi.Codebase{}
+	err := r.Client.Get(ctx, types.NamespacedName{
 		Namespace: metadata.Namespace,
 		Name:      metadata.Spec.CodebaseName,
 	}, c)
@@ -164,26 +134,26 @@ func (r *ReconcileJiraIssueMetadata) setOwnerRef(metadata *edpv1alpha1.JiraIssue
 		return err
 	}
 
-	if err := controllerutil.SetControllerReference(c, metadata, r.scheme); err != nil {
+	if err := controllerutil.SetControllerReference(c, metadata, r.Scheme); err != nil {
 		return errors.Wrap(err, "cannot set owner ref for JiraIssueMetadata CR")
 	}
 	return nil
 }
 
-func setErrorStatus(metadata *edpv1alpha1.JiraIssueMetadata, msg string) {
+func setErrorStatus(metadata *codebaseApi.JiraIssueMetadata, msg string) {
 	metadata.Status.Status = errorStatus
 	metadata.Status.DetailedMessage = msg
 }
-func (r *ReconcileJiraIssueMetadata) updateStatus(instance *edpv1alpha1.JiraIssueMetadata) {
+func (r *ReconcileJiraIssueMetadata) updateStatus(ctx context.Context, instance *codebaseApi.JiraIssueMetadata) {
 	instance.Status.LastTimeUpdated = time.Now()
-	err := r.client.Status().Update(context.TODO(), instance)
+	err := r.Client.Status().Update(ctx, instance)
 	if err != nil {
-		_ = r.client.Update(context.TODO(), instance)
+		_ = r.Client.Update(ctx, instance)
 	}
 }
 
-func (r *ReconcileJiraIssueMetadata) initJiraClient(js edpv1alpha1.JiraServer) (*jira.Client, error) {
-	s, err := util.GetSecretData(r.client, js.Spec.CredentialName, js.Namespace)
+func (r *ReconcileJiraIssueMetadata) initJiraClient(js codebaseApi.JiraServer) (*jira.Client, error) {
+	s, err := util.GetSecretData(r.Client, js.Spec.CredentialName, js.Namespace)
 	if err != nil {
 		return nil, errors.Wrapf(err, "couldn't get secret %v", js.Spec.CredentialName)
 	}
@@ -197,14 +167,14 @@ func (r *ReconcileJiraIssueMetadata) initJiraClient(js edpv1alpha1.JiraServer) (
 	return &c, nil
 }
 
-func (r *ReconcileJiraIssueMetadata) getJiraServer(metadata edpv1alpha1.JiraIssueMetadata) (*edpv1alpha1.JiraServer, error) {
+func (r *ReconcileJiraIssueMetadata) getJiraServer(ctx context.Context, metadata codebaseApi.JiraIssueMetadata) (*codebaseApi.JiraServer, error) {
 	ref, err := util.GetOwnerReference(codebaseKind, metadata.GetOwnerReferences())
 	if err != nil {
 		return nil, err
 	}
 
-	c := &edpv1alpha1.Codebase{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{
+	c := &codebaseApi.Codebase{}
+	err = r.Client.Get(ctx, types.NamespacedName{
 		Namespace: metadata.Namespace,
 		Name:      ref.Name,
 	}, c)
@@ -217,8 +187,8 @@ func (r *ReconcileJiraIssueMetadata) getJiraServer(metadata edpv1alpha1.JiraIssu
 			c.Name, metadata.Name)
 	}
 
-	server := &edpv1alpha1.JiraServer{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{
+	server := &codebaseApi.JiraServer{}
+	err = r.Client.Get(ctx, types.NamespacedName{
 		Namespace: metadata.Namespace,
 		Name:      *c.Spec.JiraServer,
 	}, server)

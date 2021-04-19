@@ -8,6 +8,7 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	jenkinsV1alpha1 "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
 	"github.com/pkg/errors"
+	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -27,9 +28,9 @@ func (h DropJenkinsFolders) ServeRequest(c *v1alpha1.Codebase) error {
 	rLog.Info("starting to delete related jenkins folders")
 
 	var branchList v1alpha1.CodebaseBranchList
-	if err := h.k8sClient.List(context.TODO(), &client.ListOptions{
+	if err := h.k8sClient.List(context.TODO(), &branchList, &client.ListOptions{
 		Namespace: c.Namespace,
-	}, &branchList); err != nil {
+	}); err != nil {
 		return errors.Wrap(err, "unable to list codebase branches")
 	}
 
@@ -41,15 +42,16 @@ func (h DropJenkinsFolders) ServeRequest(c *v1alpha1.Codebase) error {
 		}
 	}
 
-	var (
-		jenkinsFolderList jenkinsV1alpha1.JenkinsFolderList
-		listOptions       client.ListOptions
-	)
-	if err := listOptions.SetLabelSelector(fmt.Sprintf("%s=%s", util.CodebaseLabelKey, c.Name)); err != nil {
-		return errors.Wrap(err, "error during set label selector")
+	selector, err := labels.Parse(fmt.Sprintf("%s=%s", util.CodebaseLabelKey, c.Name))
+	if err != nil {
+		return errors.Wrap(err, "couldn't parse label selector")
+	}
+	options := &client.ListOptions{
+		LabelSelector: selector,
 	}
 
-	if err := h.k8sClient.List(context.TODO(), &listOptions, &jenkinsFolderList); err != nil {
+	var jenkinsFolderList jenkinsV1alpha1.JenkinsFolderList
+	if err := h.k8sClient.List(context.TODO(), &jenkinsFolderList, options); err != nil {
 		return errors.Wrap(err, "unable to list jenkins folders")
 	}
 
