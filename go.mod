@@ -3,13 +3,6 @@ module github.com/epam/edp-codebase-operator/v2
 go 1.14
 
 replace (
-	github.com/epam/edp-cd-pipeline-operator/v2 => ../cd-pipeline-operator
-	github.com/epam/edp-gerrit-operator/v2 => ../gerrit-operator
-	github.com/epam/edp-jenkins-operator/v2 => ../jenkins-operator
-	github.com/epam/edp-keycloak-operator => ../keycloak-operator
-	github.com/epam/edp-perf-operator/v2 => ../perf-operator
-	github.com/epam/edp-codebase-operator/v2 => ../codebase-operator
-
 	git.apache.org/thrift.git => github.com/apache/thrift v0.12.0
 	github.com/openshift/api => github.com/openshift/api v0.0.0-20210416130433-86964261530c
 	github.com/openshift/client-go => github.com/openshift/client-go v0.0.0-20210112165513-ebc401615f47
@@ -17,13 +10,10 @@ replace (
 )
 
 require (
-	//EPMDEDP dependencies on operators
 	github.com/epam/edp-cd-pipeline-operator/v2 v2.3.0-58.0.20201217130859-a9d5aeca1889
 	github.com/epam/edp-component-operator v0.1.1-0.20210413101042-1d8f823f27cc
-	github.com/epam/edp-jenkins-operator/v2 v2.3.0-130
+	github.com/epam/edp-jenkins-operator/v2 v2.3.0-130.0.20210420112927-982a6a14c348
 	github.com/epam/edp-perf-operator/v2 v2.0.0-20201130105408-ffc11d6fdd20
-
-	//third party dependencies
 	github.com/DATA-DOG/go-sqlmock v1.5.0
 	github.com/andygrunwald/go-jira v1.12.0
 	github.com/bndr/gojenkins v0.2.1-0.20181125150310-de43c03cf849
