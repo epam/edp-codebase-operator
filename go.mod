@@ -10,10 +10,10 @@ replace (
 )
 
 require (
-	github.com/epam/edp-cd-pipeline-operator/v2 v2.3.0-58.0.20201217130859-a9d5aeca1889
+	github.com/epam/edp-cd-pipeline-operator/v2 v2.3.0-58.0.20210420114604-3313fd47e0f5
 	github.com/epam/edp-component-operator v0.1.1-0.20210413101042-1d8f823f27cc
 	github.com/epam/edp-jenkins-operator/v2 v2.3.0-130.0.20210420112927-982a6a14c348
-	github.com/epam/edp-perf-operator/v2 v2.0.0-20201130105408-ffc11d6fdd20
+	github.com/epam/edp-perf-operator/v2 v2.0.0-20210420114802-68b165377c57
 	github.com/DATA-DOG/go-sqlmock v1.5.0
 	github.com/andygrunwald/go-jira v1.12.0
 	github.com/bndr/gojenkins v0.2.1-0.20181125150310-de43c03cf849
