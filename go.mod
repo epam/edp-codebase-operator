@@ -12,7 +12,7 @@ replace (
 require (
 	//github.com/epam/edp-cd-pipeline-operator/v2 v2.3.0-58.0.20210420123336-01337085eb1c
 	github.com/epam/edp-component-operator v0.1.1-0.20210413101042-1d8f823f27cc
-	//github.com/epam/edp-jenkins-operator/v2 v2.3.0-130.0.20210420124419-6510b85e082f
+	github.com/epam/edp-jenkins-operator/v2 v2.3.0-130.0.20210420131617-d87232c5a586
 	//github.com/epam/edp-perf-operator/v2 v2.0.0-20210420122554-387908662f52
 	github.com/DATA-DOG/go-sqlmock v1.5.0
 	github.com/andygrunwald/go-jira v1.12.0
