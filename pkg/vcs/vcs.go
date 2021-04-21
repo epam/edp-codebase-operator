@@ -7,9 +7,9 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/pkg/vcs/impl/bitbucket"
 	"github.com/epam/edp-codebase-operator/v2/pkg/vcs/impl/gitlab"
 	"github.com/pkg/errors"
-	coreV1Client "k8s.io/client-go/kubernetes/typed/core/v1"
 	"log"
 	"net/url"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type VCS interface {
@@ -41,7 +41,7 @@ func CreateVCSClient(vcsToolName model.VCSTool, url string, username string, pas
 	}
 }
 
-func GetVcsConfig(c coreV1Client.CoreV1Client, us *model.UserSettings, codebaseName, namespace string) (*model.Vcs, error) {
+func GetVcsConfig(client client.Client, us *model.UserSettings, codebaseName, namespace string) (*model.Vcs, error) {
 	vcsGroupNameUrl, err := url.Parse(us.VcsGroupNameUrl)
 	if err != nil {
 		return nil, err
@@ -49,7 +49,7 @@ func GetVcsConfig(c coreV1Client.CoreV1Client, us *model.UserSettings, codebaseN
 
 	projectVcsHostnameUrl := fmt.Sprintf("%v://%v", vcsGroupNameUrl.Scheme, vcsGroupNameUrl.Host)
 	VcsCredentialsSecretName := fmt.Sprintf("vcs-autouser-codebase-%v-temp", codebaseName)
-	vcsAutoUserLogin, vcsAutoUserPassword, err := util.GetVcsBasicAuthConfig(c, namespace, VcsCredentialsSecretName)
+	vcsAutoUserLogin, vcsAutoUserPassword, err := util.GetVcsBasicAuthConfig(client, namespace, VcsCredentialsSecretName)
 
 	vcsTool, err := CreateVCSClient(us.VcsToolName, projectVcsHostnameUrl, vcsAutoUserLogin, vcsAutoUserPassword)
 	if err != nil {
@@ -70,14 +70,14 @@ func GetVcsConfig(c coreV1Client.CoreV1Client, us *model.UserSettings, codebaseN
 	}, nil
 }
 
-func СreateProjectInVcs(c coreV1Client.CoreV1Client, us *model.UserSettings, codebaseName, namespace string) error {
-	vcsConf, err := GetVcsConfig(c, us, codebaseName, namespace)
+func СreateProjectInVcs(client client.Client, us *model.UserSettings, codebaseName, namespace string) error {
+	vcsConf, err := GetVcsConfig(client, us, codebaseName, namespace)
 	if err != nil {
 		return err
 	}
 
 	vcscn := fmt.Sprintf("vcs-autouser-codebase-%v-temp", codebaseName)
-	vcsAutoUserLogin, vcsAutoUserPassword, err := util.GetVcsBasicAuthConfig(c, namespace, vcscn)
+	vcsAutoUserLogin, vcsAutoUserPassword, err := util.GetVcsBasicAuthConfig(client, namespace, vcscn)
 	vcsTool, err := CreateVCSClient(model.VCSTool(vcsConf.VcsToolName),
 		vcsConf.ProjectVcsHostnameUrl, vcsAutoUserLogin, vcsAutoUserPassword)
 	if err != nil {

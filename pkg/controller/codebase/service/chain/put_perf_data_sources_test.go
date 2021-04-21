@@ -3,8 +3,8 @@ package chain
 import (
 	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
-	edpCompApi "github.com/epmd-edp/edp-component-operator/pkg/apis/v1/v1alpha1"
-	perfApi "github.com/epmd-edp/perf-operator/v2/pkg/apis/edp/v1alpha1"
+	edpCompApi "github.com/epam/edp-component-operator/pkg/apis/v1/v1alpha1"
+	perfApi "github.com/epam/edp-perf-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -62,11 +62,6 @@ func TestPutPerfDataSourcesChain_JenkinsAndSonarDataSourcesShouldBeCreated(t *te
 	objs := []runtime.Object{
 		ecJenkins, ecSonar, gs,
 	}
-	s := scheme.Scheme
-	s.AddKnownTypes(v1.SchemeGroupVersion, ecJenkins, ecSonar, gs,
-		&perfApi.PerfDataSourceJenkins{}, &perfApi.PerfDataSourceJenkinsList{},
-		&perfApi.PerfDataSourceSonar{}, &perfApi.PerfDataSourceSonarList{},
-		&perfApi.PerfDataSourceGitLab{}, &perfApi.PerfDataSourceGitLabList{})
 
 	c := &v1alpha1.Codebase{
 		ObjectMeta: v12.ObjectMeta{

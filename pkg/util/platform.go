@@ -2,22 +2,32 @@ package util
 
 import (
 	"context"
+	"fmt"
 	edpv1alpha1 "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/model"
-	"github.com/epmd-edp/edp-component-operator/pkg/apis/v1/v1alpha1"
+	"github.com/epam/edp-component-operator/pkg/apis/v1/v1alpha1"
 	"github.com/pkg/errors"
 	coreV1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	coreV1Client "k8s.io/client-go/kubernetes/typed/core/v1"
+	"os"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strconv"
 )
 
-func GetUserSettings(client *coreV1Client.CoreV1Client, namespace string) (*model.UserSettings, error) {
-	us, err := client.ConfigMaps(namespace).Get("edp-config", metav1.GetOptions{})
+const (
+	watchNamespaceEnvVar   = "WATCH_NAMESPACE"
+	debugModeEnvVar        = "DEBUG_MODE"
+	inClusterNamespacePath = "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
+)
+
+func GetUserSettings(client client.Client, namespace string) (*model.UserSettings, error) {
+	us := &v1.ConfigMap{}
+	err := client.Get(context.TODO(), types.NamespacedName{
+		Namespace: namespace,
+		Name:      "edp-config",
+	}, us)
 	if err != nil {
 		return nil, err
 	}
@@ -53,15 +63,17 @@ func getInt32P(val int32) *int32 {
 	return &val
 }
 
-func GetVcsBasicAuthConfig(c coreV1Client.CoreV1Client, namespace string, secretName string) (string, string, error) {
+func GetVcsBasicAuthConfig(c client.Client, namespace string, secretName string) (string, string, error) {
 	log.Info("Start getting secret", "name", secretName)
-	vcsCredentialsSecret, err := c.
-		Secrets(namespace).
-		Get(secretName, metav1.GetOptions{})
+	secret := &coreV1.Secret{}
+	err := c.Get(context.TODO(), types.NamespacedName{
+		Namespace: namespace,
+		Name:      secretName,
+	}, secret)
 	if k8serrors.IsNotFound(err) || k8serrors.IsForbidden(err) {
 		return "", "", err
 	}
-	return string(vcsCredentialsSecret.Data["username"]), string(vcsCredentialsSecret.Data["password"]), nil
+	return string(secret.Data["username"]), string(secret.Data["password"]), nil
 }
 
 func GetGitServer(c client.Client, name, namespace string) (*model.GitServer, error) {
@@ -91,11 +103,13 @@ func getGitServerCR(c client.Client, name, namespace string) (*edpv1alpha1.GitSe
 	return instance, nil
 }
 
-func GetSecret(c coreV1Client.CoreV1Client, secretName, namespace string) (*v1.Secret, error) {
+func GetSecret(c client.Client, secretName, namespace string) (*v1.Secret, error) {
 	log.Info("Start fetching Secret resource from k8s", "secret name", secretName, "namespace", namespace)
-	secret, err := c.
-		Secrets(namespace).
-		Get(secretName, metav1.GetOptions{})
+	secret := &coreV1.Secret{}
+	err := c.Get(context.TODO(), types.NamespacedName{
+		Namespace: namespace,
+		Name:      secretName,
+	}, secret)
 	if k8serrors.IsNotFound(err) || k8serrors.IsForbidden(err) {
 		return nil, err
 	}
@@ -139,4 +153,36 @@ func GetEdpComponent(c client.Client, name, namespace string) (*v1alpha1.EDPComp
 		return nil, err
 	}
 	return ec, nil
+}
+
+// GetWatchNamespace returns the namespace the operator should be watching for changes
+func GetWatchNamespace() (string, error) {
+	ns, found := os.LookupEnv(watchNamespaceEnvVar)
+	if !found {
+		return "", fmt.Errorf("%s must be set", watchNamespaceEnvVar)
+	}
+	return ns, nil
+}
+
+// GetDebugMode returns the debug mode value
+func GetDebugMode() (bool, error) {
+	mode, found := os.LookupEnv(debugModeEnvVar)
+	if !found {
+		return false, nil
+	}
+
+	b, err := strconv.ParseBool(mode)
+	if err != nil {
+		return false, err
+	}
+	return b, nil
+}
+
+// Check whether the operator is running in cluster or locally
+func RunningInCluster() bool {
+	_, err := os.Stat(inClusterNamespacePath)
+	if os.IsNotExist(err) {
+		return false
+	}
+	return true
 }

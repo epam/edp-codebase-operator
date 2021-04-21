@@ -4,96 +4,54 @@ import (
 	"context"
 	"fmt"
 	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	edpv1alpha1 "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/model"
-	"github.com/epam/edp-codebase-operator/v2/pkg/openshift"
+	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	coreV1Client "k8s.io/client-go/kubernetes/typed/core/v1"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 	"time"
 )
 
-var log = logf.Log.WithName("controller_git_server")
-
-/**
-* USER ACTION REQUIRED: This is a scaffold file intended for the user to modify with their own Controller
-* business logic.  Delete these comments after modifying this file.*
- */
-
-// Add creates a new GitServer Controller and adds it to the Manager. The Manager will set fields on the Controller
-// and Start it when the Manager is Started.
-func Add(mgr manager.Manager) error {
-	return add(mgr, newReconciler(mgr))
-}
-
-// newReconciler returns a new reconcile.Reconciler
-func newReconciler(mgr manager.Manager) reconcile.Reconciler {
+func NewReconcileGitServer(client client.Client, log logr.Logger) *ReconcileGitServer {
 	return &ReconcileGitServer{
-		Client:     mgr.GetClient(),
-		CoreClient: openshift.CreateOpenshiftClients().CoreClient,
+		client: client,
+		log:    log.WithName("git-server"),
 	}
 }
 
-// add adds a new Controller to mgr with r as the reconcile.Reconciler
-func add(mgr manager.Manager, r reconcile.Reconciler) error {
-	// Create a new controller
-	c, err := controller.New("gitserver-controller", mgr, controller.Options{Reconciler: r})
-	if err != nil {
-		return err
-	}
+type ReconcileGitServer struct {
+	client client.Client
+	log    logr.Logger
+}
 
+func (r *ReconcileGitServer) SetupWithManager(mgr ctrl.Manager) error {
 	p := predicate.Funcs{
 		UpdateFunc: func(e event.UpdateEvent) bool {
-			oldObject := e.ObjectOld.(*v1alpha1.GitServer)
-			newObject := e.ObjectNew.(*v1alpha1.GitServer)
+			oldObject := e.ObjectOld.(*codebaseApi.GitServer)
+			newObject := e.ObjectNew.(*codebaseApi.GitServer)
 			if oldObject.Status != newObject.Status {
 				return false
 			}
 			return true
 		},
 	}
-
-	// Watch for changes to primary resource GitServer
-	err = c.Watch(&source.Kind{Type: &edpv1alpha1.GitServer{}}, &handler.EnqueueRequestForObject{}, p)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return ctrl.NewControllerManagedBy(mgr).
+		For(&codebaseApi.GitServer{}, builder.WithPredicates(p)).
+		Complete(r)
 }
 
-var _ reconcile.Reconciler = &ReconcileGitServer{}
+func (r *ReconcileGitServer) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+	log := r.log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
+	log.Info("Reconciling GitServer")
 
-// ReconcileGitServer reconciles a codebase object
-type ReconcileGitServer struct {
-	// This client, initialized using mgr.Client() above, is a split client
-	// that reads objects from the cache and writes to the apiserver
-	Client     client.Client
-	CoreClient *coreV1Client.CoreV1Client
-}
-
-// Reconcile reads that state of the cluster for a GitServer object and makes changes based on the state read
-// and what is in the GitServer.Spec
-// TODO(user): Modify this Reconcile function to implement your Controller logic.  This example creates
-// Note:
-// The Controller will requeue the Request to be processed again if the returned error is non-nil or
-// Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
-func (r *ReconcileGitServer) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	reqLogger := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
-	reqLogger.Info("Reconciling GitServer")
-
-	// Fetch the GitServer instance
-	instance := &edpv1alpha1.GitServer{}
-	err := r.Client.Get(context.TODO(), request.NamespacedName, instance)
+	instance := &codebaseApi.GitServer{}
+	err := r.client.Get(ctx, request.NamespacedName, instance)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
@@ -101,19 +59,17 @@ func (r *ReconcileGitServer) Reconcile(request reconcile.Request) (reconcile.Res
 			// Return and don't requeue
 			return reconcile.Result{}, nil
 		}
-		// Error reading the object - requeue the request.
 		return reconcile.Result{}, err
 	}
 
 	gitServer, _ := model.ConvertToGitServer(*instance)
 
-	hasConnection, err := checkConnectionToGitServer(*r.CoreClient, *gitServer)
+	hasConnection, err := checkConnectionToGitServer(r.client, *gitServer)
 	if err != nil {
 		return reconcile.Result{}, errors.Wrap(err, fmt.Sprintf("an error has occurred while checking connection to Git Server %v", gitServer.GitHost))
 	}
 
-	err = updateStatus(r.Client, instance, hasConnection)
-	if err != nil {
+	if err := r.updateStatus(ctx, r.client, instance, hasConnection); err != nil {
 		return reconcile.Result{}, errors.Wrap(err, fmt.Sprintf("an error has occurred while updating GitServer status %v", gitServer.GitHost))
 	}
 
@@ -122,15 +78,15 @@ func (r *ReconcileGitServer) Reconcile(request reconcile.Request) (reconcile.Res
 	return reconcile.Result{}, nil
 }
 
-func updateStatus(client client.Client, instance *edpv1alpha1.GitServer, hasConnection bool) error {
+func (r *ReconcileGitServer) updateStatus(ctx context.Context, client client.Client, instance *codebaseApi.GitServer, hasConnection bool) error {
 	instance.Status = generateStatus(hasConnection)
 
-	err := client.Status().Update(context.TODO(), instance)
+	err := client.Status().Update(ctx, instance)
 	if err != nil {
-		_ = client.Update(context.TODO(), instance)
+		_ = client.Update(ctx, instance)
 	}
 
-	log.Info("Status for GitServer is set up.")
+	r.log.Info("Status for GitServer is set up.")
 
 	return nil
 }

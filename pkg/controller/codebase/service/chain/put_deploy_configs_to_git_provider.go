@@ -9,17 +9,17 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/service/chain/handler"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/service/template"
 	git "github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver"
-	"github.com/epam/edp-codebase-operator/v2/pkg/openshift"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	"github.com/pkg/errors"
 	"gopkg.in/src-d/go-git.v4/config"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type PutDeployConfigsToGitProvider struct {
-	next      handler.CodebaseHandler
-	clientSet openshift.ClientSet
-	cr        repository.CodebaseRepository
-	git       git.Git
+	next   handler.CodebaseHandler
+	client client.Client
+	cr     repository.CodebaseRepository
+	git    git.Git
 }
 
 func (h PutDeployConfigsToGitProvider) ServeRequest(c *v1alpha1.Codebase) error {
@@ -35,7 +35,7 @@ func (h PutDeployConfigsToGitProvider) ServeRequest(c *v1alpha1.Codebase) error 
 }
 
 func (h PutDeployConfigsToGitProvider) tryToPushConfigs(c v1alpha1.Codebase) error {
-	name, err := helper.GetEDPName(h.clientSet.Client, c.Namespace)
+	name, err := helper.GetEDPName(h.client, c.Namespace)
 	if err != nil {
 		return errors.Wrap(err, "couldn't get edp name")
 	}
@@ -51,7 +51,7 @@ func (h PutDeployConfigsToGitProvider) tryToPushConfigs(c v1alpha1.Codebase) err
 		return nil
 	}
 
-	if err := template.PrepareTemplates(h.clientSet.CoreClient, c); err != nil {
+	if err := template.PrepareTemplates(h.client, c); err != nil {
 		return err
 	}
 
@@ -73,12 +73,12 @@ func (h PutDeployConfigsToGitProvider) tryToPushConfigs(c v1alpha1.Codebase) err
 }
 
 func (h PutDeployConfigsToGitProvider) pushChanges(projectPath, gitServerName, namespace string) error {
-	gs, err := util.GetGitServer(h.clientSet.Client, gitServerName, namespace)
+	gs, err := util.GetGitServer(h.client, gitServerName, namespace)
 	if err != nil {
 		return err
 	}
 
-	secret, err := util.GetSecret(*h.clientSet.CoreClient, gs.NameSshKeySecret, namespace)
+	secret, err := util.GetSecret(h.client, gs.NameSshKeySecret, namespace)
 	if err != nil {
 		return errors.Wrapf(err, "an error has occurred while getting %v secret", gs.NameSshKeySecret)
 	}

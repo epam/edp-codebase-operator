@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"time"
 
 	"github.com/bndr/gojenkins"
@@ -13,10 +14,9 @@ import (
 	"github.com/pkg/errors"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
-var log = logf.Log.WithName("jenkins-client")
+var log = ctrl.Log.WithName("jenkins-client")
 
 type JenkinsClient struct {
 	Jenkins *gojenkins.Jenkins
@@ -168,7 +168,7 @@ func GetJenkins(c client.Client, namespace string) (*jenkinsApi.Jenkins, error) 
 	options := client.ListOptions{Namespace: namespace}
 	jenkinsList := &jenkinsApi.JenkinsList{}
 
-	err := c.List(context.TODO(), &options, jenkinsList)
+	err := c.List(context.TODO(), jenkinsList, &options)
 	if err != nil {
 		return nil, errors.Wrapf(err, "Unable to get Jenkins CRs in namespace %v", namespace)
 	}

@@ -1,6 +1,7 @@
 package factory
 
 import (
+	ctrl "sigs.k8s.io/controller-runtime"
 	"strings"
 
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebasebranch/chain/clean_tmp_directory"
@@ -14,10 +15,9 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
-var log = logf.Log.WithName("codebase_branch_factory")
+var log = ctrl.Log.WithName("codebase_branch_factory")
 
 func createJenkinsDefChain(client client.Client) handler.CodebaseBranchHandler {
 	log.Info("chain is selected", "type", "jenkins chain")

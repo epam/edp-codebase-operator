@@ -10,8 +10,8 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sort"
 	"strings"
 	"time"
@@ -29,7 +29,7 @@ type cdStageDeployDTO struct {
 
 const dateLayout = "2006-01-02T15:04:05"
 
-var log = logf.Log.WithName("put-cd-stage-deploy-controller")
+var log = ctrl.Log.WithName("put-cd-stage-deploy-controller")
 
 func (h PutCDStageDeploy) ServeRequest(imageStream *v1alpha1.CodebaseImageStream) error {
 	vLog := log.WithValues("name", imageStream.Name)

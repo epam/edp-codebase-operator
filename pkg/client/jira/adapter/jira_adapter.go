@@ -5,11 +5,11 @@ import (
 	"github.com/andygrunwald/go-jira"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	"regexp"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"strconv"
 )
 
-var log = logf.Log.WithName("gojira_adapter")
+var log = ctrl.Log.WithName("gojira_adapter")
 
 type GoJiraAdapter struct {
 	client jira.Client

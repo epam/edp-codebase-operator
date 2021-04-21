@@ -3,6 +3,7 @@ package update_perf_data_sources
 import (
 	"context"
 	"fmt"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"strings"
 	"time"
 
@@ -10,12 +11,11 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebasebranch/chain/handler"
 	"github.com/epam/edp-codebase-operator/v2/pkg/model"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
-	perfApi "github.com/epmd-edp/perf-operator/v2/pkg/apis/edp/v1alpha1"
-	"github.com/epmd-edp/perf-operator/v2/pkg/util/cluster"
+	perfApi "github.com/epam/edp-perf-operator/v2/pkg/apis/edp/v1alpha1"
+	"github.com/epam/edp-perf-operator/v2/pkg/util/cluster"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
 type UpdatePerfDataSources struct {
@@ -30,7 +30,7 @@ const (
 	gitLabDataSourceType  = "GitLab"
 )
 
-var log = logf.Log.WithName("update-perf-data-source-chain")
+var log = ctrl.Log.WithName("update-perf-data-source-chain")
 
 func (h UpdatePerfDataSources) ServeRequest(cb *v1alpha1.CodebaseBranch) error {
 	rLog := log.WithValues("codebase", cb.Spec.CodebaseName, "branch", cb.Name)

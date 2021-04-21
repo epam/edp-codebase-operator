@@ -2,46 +2,39 @@ package codebaseimagestream
 
 import (
 	"context"
-	edpv1alpha1 "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	chain "github.com/epam/edp-codebase-operator/v2/pkg/controller/codebaseimagestream/chain/factory"
+	"github.com/go-logr/logr"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"reflect"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
-var log = logf.Log.WithName("codebase-image-stream-controller")
-
-func Add(mgr manager.Manager) error {
-	return add(mgr, newReconciler(mgr))
-}
-
-func newReconciler(mgr manager.Manager) reconcile.Reconciler {
+func NewReconcileCodebaseImageStream(client client.Client, log logr.Logger) *ReconcileCodebaseImageStream {
 	return &ReconcileCodebaseImageStream{
-		client: mgr.GetClient(),
+		client: client,
+		log:    log.WithName("codebase-image-stream"),
 	}
 }
 
-func add(mgr manager.Manager, r reconcile.Reconciler) error {
-	c, err := controller.New("codebase-image-stream-controller", mgr, controller.Options{Reconciler: r})
-	if err != nil {
-		return err
-	}
+type ReconcileCodebaseImageStream struct {
+	client client.Client
+	log    logr.Logger
+}
 
-	pred := predicate.Funcs{
+func (r *ReconcileCodebaseImageStream) SetupWithManager(mgr ctrl.Manager) error {
+	p := predicate.Funcs{
 		CreateFunc: func(e event.CreateEvent) bool {
 			return false
 		},
 		UpdateFunc: func(e event.UpdateEvent) bool {
-			oo := e.ObjectOld.(*edpv1alpha1.CodebaseImageStream)
-			on := e.ObjectNew.(*edpv1alpha1.CodebaseImageStream)
+			oo := e.ObjectOld.(*codebaseApi.CodebaseImageStream)
+			on := e.ObjectNew.(*codebaseApi.CodebaseImageStream)
 			if !reflect.DeepEqual(oo.ObjectMeta.Labels, on.ObjectMeta.Labels) && on.Spec.Tags != nil {
 				return true
 			}
@@ -51,27 +44,18 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 			return false
 		},
 	}
-
-	if err := c.Watch(&source.Kind{Type: &edpv1alpha1.CodebaseImageStream{}}, &handler.EnqueueRequestForObject{}, pred); err != nil {
-		return err
-	}
-
-	return nil
+	return ctrl.NewControllerManagedBy(mgr).
+		For(&codebaseApi.CodebaseImageStream{}, builder.WithPredicates(p)).
+		Complete(r)
 }
 
-var _ reconcile.Reconciler = &ReconcileCodebaseImageStream{}
-
-type ReconcileCodebaseImageStream struct {
-	client client.Client
-}
-
-func (r *ReconcileCodebaseImageStream) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	vLog := log.WithValues("type", "CodebaseImageStream", "Request.Namespace", request.Namespace,
+func (r *ReconcileCodebaseImageStream) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+	log := r.log.WithValues("type", "CodebaseImageStream", "Request.Namespace", request.Namespace,
 		"Request.Name", request.Name)
-	vLog.Info("Reconciling has been started.")
+	log.Info("Reconciling has been started.")
 
-	i := &edpv1alpha1.CodebaseImageStream{}
-	if err := r.client.Get(context.TODO(), request.NamespacedName, i); err != nil {
+	i := &codebaseApi.CodebaseImageStream{}
+	if err := r.client.Get(ctx, request.NamespacedName, i); err != nil {
 		if k8serrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
 		}
