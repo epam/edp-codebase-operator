@@ -4,11 +4,11 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/gittag/chain/handler"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
-var log = logf.Log.WithName("git_tag_handler")
+var log = ctrl.Log.WithName("git_tag_handler")
 
 func CreateDefChain(client client.Client) handler.GitTagHandler {
 	return PushGitTag{

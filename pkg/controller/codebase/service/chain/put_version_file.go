@@ -8,7 +8,6 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/repository"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/service/chain/handler"
 	git "github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver"
-	"github.com/epam/edp-codebase-operator/v2/pkg/openshift"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	"github.com/pkg/errors"
 	"gopkg.in/src-d/go-git.v4/config"
@@ -21,10 +20,10 @@ import (
 )
 
 type PutVersionFile struct {
-	next      handler.CodebaseHandler
-	clientSet openshift.ClientSet
-	cr        repository.CodebaseRepository
-	git       git.Git
+	next   handler.CodebaseHandler
+	client client.Client
+	cr     repository.CodebaseRepository
+	git    git.Git
 }
 
 const (
@@ -42,7 +41,7 @@ func (h PutVersionFile) ServeRequest(c *v1alpha1.Codebase) error {
 	rLog := log.WithValues("codebase name", c.Name)
 	rLog.Info("start putting VERSION file...")
 
-	name, err := helper.GetEDPName(h.clientSet.Client, c.Namespace)
+	name, err := helper.GetEDPName(h.client, c.Namespace)
 	if err != nil {
 		setFailedFields(c, v1alpha1.PutVersionFile, err.Error())
 		return err
@@ -99,12 +98,12 @@ func (h PutVersionFile) tryToPutVersionFile(c *v1alpha1.Codebase, projectPath st
 		return errors.Wrapf(err, "couldn't write to file %v", path)
 	}
 
-	gs, err := util.GetGitServer(h.clientSet.Client, c.Spec.GitServer, c.Namespace)
+	gs, err := util.GetGitServer(h.client, c.Spec.GitServer, c.Namespace)
 	if err != nil {
 		return err
 	}
 
-	secret, err := getSecret(h.clientSet.Client, gs.NameSshKeySecret, c.Namespace)
+	secret, err := getSecret(h.client, gs.NameSshKeySecret, c.Namespace)
 	if err != nil {
 		return errors.Wrapf(err, "an error has occurred while getting %v secret", gs.NameSshKeySecret)
 	}

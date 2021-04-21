@@ -16,7 +16,8 @@ import (
 	goGit "gopkg.in/src-d/go-git.v4/plumbing/transport/ssh"
 	"gopkg.in/src-d/go-git.v4/storage/memory"
 	v1 "k8s.io/api/core/v1"
-	coreV1Client "k8s.io/client-go/kubernetes/typed/core/v1"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
 	"time"
 )
@@ -45,6 +46,8 @@ type Git interface {
 
 type GitProvider struct {
 }
+
+var log = ctrl.Log.WithName("git-provider")
 
 func (gp GitProvider) CreateRemoteBranch(key, user, path, name string) error {
 	log.Info("start creating remote branch", "name", name)
@@ -145,8 +148,8 @@ func (GitProvider) PushChanges(key, user, directory string, refSpecs []config.Re
 
 	err = r.Push(&git.PushOptions{
 		RemoteName: "origin",
-		RefSpecs: refSpecs,
-		Auth: auth,
+		RefSpecs:   refSpecs,
+		Auth:       auth,
 	})
 	if err != nil {
 		return err
@@ -223,7 +226,7 @@ func initAuth(key, user string) (*goGit.PublicKeys, error) {
 	}, nil
 }
 
-func checkConnectionToGitServer(c coreV1Client.CoreV1Client, gitServer model.GitServer) (bool, error) {
+func checkConnectionToGitServer(c client.Client, gitServer model.GitServer) (bool, error) {
 	log.Info("Start CheckConnectionToGitServer method", "Git host", gitServer.GitHost)
 
 	sshSecret, err := util.GetSecret(c, gitServer.NameSshKeySecret, gitServer.Namespace)

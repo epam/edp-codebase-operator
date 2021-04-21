@@ -10,8 +10,8 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/pkg/model"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	"github.com/pkg/errors"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"time"
 )
 
@@ -22,7 +22,7 @@ type PutBranchInGit struct {
 	Service service.CodebaseBranchService
 }
 
-var log = logf.Log.WithName("put-branch-in-git-chain")
+var log = ctrl.Log.WithName("put-branch-in-git-chain")
 
 func (h PutBranchInGit) ServeRequest(cb *v1alpha1.CodebaseBranch) error {
 	rl := log.WithValues("namespace", cb.Namespace, "codebase branch", cb.Name)

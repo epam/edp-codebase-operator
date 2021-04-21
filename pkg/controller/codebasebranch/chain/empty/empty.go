@@ -2,12 +2,12 @@ package empty
 
 import (
 	"errors"
+	ctrl "sigs.k8s.io/controller-runtime"
 
 	edpv1alpha1 "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
-var log = logf.Log.WithName("empty_chain")
+var log = ctrl.Log.WithName("empty_chain")
 
 type Chain struct {
 	logMessage  string

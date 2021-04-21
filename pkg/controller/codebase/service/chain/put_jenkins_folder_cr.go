@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strconv"
 	"strings"
 	"time"
@@ -12,7 +13,6 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/service/chain/handler"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/platform"
 	"github.com/epam/edp-codebase-operator/v2/pkg/model"
-	"github.com/epam/edp-codebase-operator/v2/pkg/openshift"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	jenkinsv1alpha1 "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
 	"github.com/epam/edp-jenkins-operator/v2/pkg/util/consts"
@@ -23,14 +23,14 @@ import (
 )
 
 type PutJenkinsFolder struct {
-	next      handler.CodebaseHandler
-	clientSet openshift.ClientSet
+	next   handler.CodebaseHandler
+	client client.Client
 }
 
 func (h PutJenkinsFolder) ServeRequest(c *v1alpha1.Codebase) error {
 	rLog := log.WithValues("codebase name", c.Name)
 
-	gs, err := util.GetGitServer(h.clientSet.Client, c.Spec.GitServer, c.Namespace)
+	gs, err := util.GetGitServer(h.client, c.Spec.GitServer, c.Namespace)
 	if err != nil {
 		return err
 	}
@@ -101,7 +101,7 @@ func (h PutJenkinsFolder) putJenkinsFolder(c *v1alpha1.Codebase, jc string) erro
 			Status:          util.StatusInProgress,
 		},
 	}
-	if err := h.clientSet.Client.Create(context.TODO(), jf); err != nil {
+	if err := h.client.Create(context.TODO(), jf); err != nil {
 		return errors.Wrapf(err, "couldn't create jenkins folder %v", "name")
 	}
 	return nil
@@ -113,7 +113,7 @@ func (h PutJenkinsFolder) getJenkinsFolder(name, namespace string) (*jenkinsv1al
 		Name:      name,
 	}
 	i := &jenkinsv1alpha1.JenkinsFolder{}
-	if err := h.clientSet.Client.Get(context.TODO(), nsn, i); err != nil {
+	if err := h.client.Get(context.TODO(), nsn, i); err != nil {
 		if k8serrors.IsNotFound(err) {
 			return nil, nil
 		}

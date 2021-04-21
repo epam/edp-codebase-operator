@@ -6,7 +6,7 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/service/chain/handler"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
-	perfAPi "github.com/epmd-edp/perf-operator/v2/pkg/apis/edp/v1alpha1"
+	perfAPi "github.com/epam/edp-perf-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/pkg/errors"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"

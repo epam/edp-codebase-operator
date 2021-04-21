@@ -8,14 +8,14 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebasebranch/chain/handler"
 	"github.com/epam/edp-codebase-operator/v2/pkg/model"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
-	edpComponentV1alpha1 "github.com/epmd-edp/edp-component-operator/pkg/apis/v1/v1alpha1"
+	edpComponentV1alpha1 "github.com/epam/edp-component-operator/pkg/apis/v1/v1alpha1"
 	"github.com/pkg/errors"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"strings"
 	"time"
 )
@@ -27,7 +27,7 @@ type PutCodebaseImageStream struct {
 
 const dockerRegistryName = "docker-registry"
 
-var log = logf.Log.WithName("put-codebase-image-stream-chain")
+var log = ctrl.Log.WithName("put-codebase-image-stream-chain")
 
 func (h PutCodebaseImageStream) ServeRequest(cb *v1alpha1.CodebaseBranch) error {
 	rl := log.WithValues("namespace", cb.Namespace, "codebase branch", cb.Name)

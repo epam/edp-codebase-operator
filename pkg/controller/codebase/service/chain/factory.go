@@ -5,14 +5,13 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/repository"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/service/chain/handler"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver"
-	"github.com/epam/edp-codebase-operator/v2/pkg/openshift"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
-var log = logf.Log.WithName("codebase_handler")
+var log = ctrl.Log.WithName("codebase_handler")
 
-func CreateGerritDefChain(cs openshift.ClientSet, cr repository.CodebaseRepository) handler.CodebaseHandler {
+func CreateGerritDefChain(client client.Client, cr repository.CodebaseRepository) handler.CodebaseHandler {
 	log.Info("chain is selected", "type", "gerrit")
 	gp := gitserver.GitProvider{}
 	return PutProjectGerrit{
@@ -22,29 +21,29 @@ func CreateGerritDefChain(cs openshift.ClientSet, cr repository.CodebaseReposito
 					next: PutVersionFile{
 						next: PutJenkinsFolder{
 							next: Cleaner{
-								clientSet: cs,
+								client: client,
 							},
-							clientSet: cs,
+							client: client,
 						},
-						clientSet: cs,
-						cr:        cr,
-						git:       gp,
+						client: client,
+						cr:     cr,
+						git:    gp,
 					},
-					clientSet: cs,
-					cr:        cr,
-					git:       gp,
+					client: client,
+					cr:     cr,
+					git:    gp,
 				},
-				client: cs.Client,
+				client: client,
 			},
-			clientSet: cs,
+			client: client,
 		},
-		clientSet: cs,
-		cr:        cr,
-		git:       gp,
+		client: client,
+		cr:     cr,
+		git:    gp,
 	}
 }
 
-func CreateThirdPartyVcsProviderDefChain(cs openshift.ClientSet, cr repository.CodebaseRepository) handler.CodebaseHandler {
+func CreateThirdPartyVcsProviderDefChain(client client.Client, cr repository.CodebaseRepository) handler.CodebaseHandler {
 	log.Info("chain is selected", "type", "third party VCS provider")
 	gp := gitserver.GitProvider{}
 	return CloneGitProject{
@@ -53,22 +52,22 @@ func CreateThirdPartyVcsProviderDefChain(cs openshift.ClientSet, cr repository.C
 				next: PutVersionFile{
 					next: PutJenkinsFolder{
 						next: Cleaner{
-							clientSet: cs,
+							client: client,
 						},
-						clientSet: cs,
+						client: client,
 					},
-					clientSet: cs,
-					cr:        cr,
-					git:       gp,
+					client: client,
+					cr:     cr,
+					git:    gp,
 				},
-				clientSet: cs,
-				cr:        cr,
-				git:       gp,
+				client: client,
+				cr:     cr,
+				git:    gp,
 			},
-			client: cs.Client,
+			client: client,
 		},
-		clientSet: cs,
-		git:       gp,
+		git:    gp,
+		client: client,
 	}
 }
 
@@ -78,7 +77,7 @@ func CreateDeletionChain(k8sClient client.Client) handler.CodebaseHandler {
 	}
 }
 
-func CreateGitlabCiDefChain(cs openshift.ClientSet, cr repository.CodebaseRepository) handler.CodebaseHandler {
+func CreateGitlabCiDefChain(client client.Client, cr repository.CodebaseRepository) handler.CodebaseHandler {
 	log.Info("chain is selected", "type", "gitlab ci")
 	gp := gitserver.GitProvider{}
 	return CloneGitProject{
@@ -87,24 +86,24 @@ func CreateGitlabCiDefChain(cs openshift.ClientSet, cr repository.CodebaseReposi
 				next: PutGitlabCiFile{
 					next: PutVersionFile{
 						next: Cleaner{
-							clientSet: cs,
+							client: client,
 						},
-						clientSet: cs,
-						cr:        cr,
-						git:       gp,
+						client: client,
+						cr:     cr,
+						git:    gp,
 					},
-					client: cs.Client,
+					client: client,
 					cr:     cr,
 					git:    gp,
 				},
-				clientSet: cs,
-				cr:        cr,
-				git:       gp,
+				client: client,
+				cr:     cr,
+				git:    gp,
 			},
-			client: cs.Client,
+			client: client,
 		},
-		clientSet: cs,
-		git:       gp,
+		git:    gp,
+		client: client,
 	}
 }
 

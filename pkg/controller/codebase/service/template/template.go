@@ -7,16 +7,16 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/pkg/model"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	"github.com/pkg/errors"
-	coreV1Client "k8s.io/client-go/kubernetes/typed/core/v1"
 	"os"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
 	"text/template"
 )
 
-var log = logf.Log.WithName("template")
+var log = ctrl.Log.WithName("template")
 
-func PrepareTemplates(client *coreV1Client.CoreV1Client, c v1alpha1.Codebase) error {
+func PrepareTemplates(client client.Client, c v1alpha1.Codebase) error {
 	log.Info("start preparing deploy templates", "codebase", c.Name)
 	wd := fmt.Sprintf("/home/codebase-operator/edp/%v/%v", c.Namespace, c.Name)
 
@@ -45,7 +45,7 @@ func PrepareTemplates(client *coreV1Client.CoreV1Client, c v1alpha1.Codebase) er
 	return nil
 }
 
-func PrepareGitlabCITemplates(client *coreV1Client.CoreV1Client, c v1alpha1.Codebase) error {
+func PrepareGitlabCITemplates(client client.Client, c v1alpha1.Codebase) error {
 	log.Info("start preparing deploy templates", "codebase", c.Name)
 
 	if c.Spec.Type != util.Application {
@@ -67,7 +67,7 @@ func PrepareGitlabCITemplates(client *coreV1Client.CoreV1Client, c v1alpha1.Code
 	return nil
 }
 
-func buildTemplateConfig(client *coreV1Client.CoreV1Client, c v1alpha1.Codebase) (*model.ConfigGoTemplating, error) {
+func buildTemplateConfig(client client.Client, c v1alpha1.Codebase) (*model.ConfigGoTemplating, error) {
 	log.Info("start creating template config", "codebase name", c.Name)
 	us, err := util.GetUserSettings(client, c.Namespace)
 	if err != nil {

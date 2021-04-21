@@ -1,19 +1,21 @@
 package chain
 
 import (
+	"context"
 	"fmt"
 	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/service/chain/handler"
-	"github.com/epam/edp-codebase-operator/v2/pkg/openshift"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	"github.com/pkg/errors"
+	v1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type Cleaner struct {
-	next      handler.CodebaseHandler
-	clientSet openshift.ClientSet
+	next   handler.CodebaseHandler
+	client client.Client
 }
 
 func (h Cleaner) ServeRequest(c *v1alpha1.Codebase) error {
@@ -41,10 +43,12 @@ func (h Cleaner) tryToClean(c *v1alpha1.Codebase) error {
 
 func (h Cleaner) deleteSecret(secretName, namespace string) error {
 	log.Info("start deleting secret", "name", secretName)
-	err := h.clientSet.CoreClient.
-		Secrets(namespace).
-		Delete(secretName, &metav1.DeleteOptions{})
-	if err != nil {
+	if err := h.client.Delete(context.TODO(), &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      secretName,
+			Namespace: namespace,
+		},
+	}); err != nil {
 		if k8serrors.IsNotFound(err) {
 			log.Info("secret doesn't exist. skip deleting", "name", secretName)
 			return nil

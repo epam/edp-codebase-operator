@@ -11,8 +11,8 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
 type PutCDStageJenkinsDeployment struct {
@@ -25,7 +25,7 @@ const (
 	cdStageDeployKey  = "cdStageDeployName"
 )
 
-var log = logf.Log.WithName("put-cd-stage-jenkins-deployment-controller")
+var log = ctrl.Log.WithName("put-cd-stage-jenkins-deployment-controller")
 
 func (h PutCDStageJenkinsDeployment) ServeRequest(stageDeploy *v1alpha1.CDStageDeploy) error {
 	vLog := log.WithValues("name", stageDeploy.Name)

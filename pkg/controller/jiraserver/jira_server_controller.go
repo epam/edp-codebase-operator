@@ -2,101 +2,69 @@ package jiraserver
 
 import (
 	"context"
-	edpv1alpha1 "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/client/jira"
 	"github.com/epam/edp-codebase-operator/v2/pkg/client/jira/adapter"
 	"github.com/epam/edp-codebase-operator/v2/pkg/client/jira/dto"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/jiraserver/chain"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
-	"github.com/epmd-edp/edp-component-operator/pkg/apis/v1/v1alpha1"
+	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 	"time"
 )
 
-var (
-	log                = logf.Log.WithName("controller_jira_server")
-	schemeGroupVersion = schema.GroupVersion{Group: "v1.edp.epam.com", Version: "v1alpha1"}
-)
+const statusError = "error"
 
-func Add(mgr manager.Manager) error {
-	return add(mgr, newReconciler(mgr))
-}
-
-func newReconciler(mgr manager.Manager) reconcile.Reconciler {
-	scheme := mgr.GetScheme()
-	addKnownTypes(scheme)
+func NewReconcileJiraServer(client client.Client, scheme *runtime.Scheme, log logr.Logger) *ReconcileJiraServer {
 	return &ReconcileJiraServer{
-		client: mgr.GetClient(),
+		client: client,
 		scheme: scheme,
+		log:    log.WithName("jira-server"),
 	}
 }
 
-func addKnownTypes(scheme *runtime.Scheme) {
-	scheme.AddKnownTypes(schemeGroupVersion,
-		&v1alpha1.EDPComponent{},
-		&v1alpha1.EDPComponentList{},
-	)
-	metav1.AddToGroupVersion(scheme, schemeGroupVersion)
+type ReconcileJiraServer struct {
+	client client.Client
+	scheme *runtime.Scheme
+	log    logr.Logger
 }
 
-func add(mgr manager.Manager, r reconcile.Reconciler) error {
-	c, err := controller.New("jiraserver-controller", mgr, controller.Options{Reconciler: r})
-	if err != nil {
-		return err
-	}
-
+func (r *ReconcileJiraServer) SetupWithManager(mgr ctrl.Manager) error {
 	p := predicate.Funcs{
 		UpdateFunc: func(e event.UpdateEvent) bool {
-			oldObject := e.ObjectOld.(*edpv1alpha1.JiraServer)
-			newObject := e.ObjectNew.(*edpv1alpha1.JiraServer)
+			oldObject := e.ObjectOld.(*codebaseApi.JiraServer)
+			newObject := e.ObjectNew.(*codebaseApi.JiraServer)
 			if oldObject.Status != newObject.Status {
 				return false
 			}
 			return true
 		},
 	}
-
-	if err = c.Watch(&source.Kind{Type: &edpv1alpha1.JiraServer{}}, &handler.EnqueueRequestForObject{}, p); err != nil {
-		return err
-	}
-
-	return nil
+	return ctrl.NewControllerManagedBy(mgr).
+		For(&codebaseApi.JiraServer{}, builder.WithPredicates(p)).
+		Complete(r)
 }
 
-var _ reconcile.Reconciler = &ReconcileJiraServer{}
+func (r *ReconcileJiraServer) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+	log := r.log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
+	log.V(2).Info("Reconciling JiraServer")
 
-const statusError = "error"
-
-type ReconcileJiraServer struct {
-	client client.Client
-	scheme *runtime.Scheme
-}
-
-func (r *ReconcileJiraServer) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	rl := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
-	rl.V(2).Info("Reconciling JiraServer")
-
-	i := &edpv1alpha1.JiraServer{}
-	if err := r.client.Get(context.TODO(), request.NamespacedName, i); err != nil {
+	i := &codebaseApi.JiraServer{}
+	if err := r.client.Get(ctx, request.NamespacedName, i); err != nil {
 		if k8serrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, err
 	}
-	defer r.updateStatus(i)
+	defer r.updateStatus(ctx, i)
 
 	c, err := r.initJiraClient(*i)
 	if err != nil {
@@ -110,19 +78,19 @@ func (r *ReconcileJiraServer) Reconcile(request reconcile.Request) (reconcile.Re
 		i.Status.DetailedMessage = err.Error()
 		return reconcile.Result{}, err
 	}
-	rl.Info("Reconciling JiraServer has been finished")
+	log.Info("Reconciling JiraServer has been finished")
 	return reconcile.Result{}, nil
 }
 
-func (r *ReconcileJiraServer) updateStatus(instance *edpv1alpha1.JiraServer) {
+func (r *ReconcileJiraServer) updateStatus(ctx context.Context, instance *codebaseApi.JiraServer) {
 	instance.Status.LastTimeUpdated = time.Now()
-	err := r.client.Status().Update(context.TODO(), instance)
+	err := r.client.Status().Update(ctx, instance)
 	if err != nil {
-		_ = r.client.Update(context.TODO(), instance)
+		_ = r.client.Update(ctx, instance)
 	}
 }
 
-func (r *ReconcileJiraServer) initJiraClient(jira edpv1alpha1.JiraServer) (jira.Client, error) {
+func (r *ReconcileJiraServer) initJiraClient(jira codebaseApi.JiraServer) (jira.Client, error) {
 	s, err := util.GetSecretData(r.client, jira.Spec.CredentialName, jira.Namespace)
 	if err != nil {
 		return nil, errors.Wrapf(err, "couldn't get secret %v", jira.Spec.CredentialName)

@@ -2,13 +2,17 @@ package gerrit
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"html/template"
 	"io"
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"log"
 	"net"
 	"os"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"time"
 
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
@@ -16,12 +20,7 @@ import (
 	"golang.org/x/crypto/ssh"
 	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/config"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	coreV1Client "k8s.io/client-go/kubernetes/typed/core/v1"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
-
-var logger = logf.Log.WithName("git-server-service")
 
 type SSHCommand struct {
 	Path   string
@@ -214,7 +213,7 @@ func generateReplicationConfig(templatePath, templateName string, params Replica
 	return renderedTemplate.String(), nil
 }
 
-func SetupProjectReplication(client coreV1Client.CoreV1Client, sshPort int32, host, idrsa, codebaseName, namespace, vcsSshUrl string) error {
+func SetupProjectReplication(client client.Client, sshPort int32, host, idrsa, codebaseName, namespace, vcsSshUrl string) error {
 
 	log.Printf("Start setup project replication for app: %v", codebaseName)
 	replicaConfigNew, err := generateReplicationConfig(
@@ -223,15 +222,21 @@ func SetupProjectReplication(client coreV1Client.CoreV1Client, sshPort int32, ho
 			VcsSshUrl: vcsSshUrl,
 		})
 
-	gerritSettings, err := client.ConfigMaps(namespace).Get("gerrit", metav1.GetOptions{})
+	gerritSettings := &v1.ConfigMap{}
+	err = client.Get(context.TODO(), types.NamespacedName{
+		Namespace: namespace,
+		Name:      "gerrit",
+	}, gerritSettings)
+	if err != nil {
+		return errors.Wrapf(err, "couldn't get %v config map", "gerrit")
+	}
 	replicaConfig := gerritSettings.Data["replication.config"]
 	gerritSettings.Data["replication.config"] = fmt.Sprintf("%v\n%v", replicaConfig, replicaConfigNew)
-	result, err := client.ConfigMaps(namespace).Update(gerritSettings)
-	if err != nil {
+
+	if err := client.Update(context.TODO(), gerritSettings); err != nil {
 		log.Printf("Unable to update config map with replication config: %v", err)
 		return err
 	}
-	log.Println(result)
 
 	log.Println("Waiting for gerrit replication config map appears in gerrit pod. Sleeping for 90 seconds...")
 	time.Sleep(90 * time.Second)

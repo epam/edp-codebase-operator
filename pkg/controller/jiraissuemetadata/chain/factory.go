@@ -5,11 +5,11 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/pkg/client/jira"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/jiraissuemetadata/chain/handler"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
-var log = logf.Log.WithName("jira_issue_metadata_handler")
+var log = ctrl.Log.WithName("jira_issue_metadata_handler")
 
 const issuesLinks = "issuesLinks"
 
