@@ -11,4 +11,5 @@ type ConfigGoTemplating struct {
 	PlatformType string
 	DnsWildcard  string
 	Framework    string
+	GitURL       string
 }

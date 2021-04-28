@@ -86,8 +86,35 @@ func buildTemplateConfig(client client.Client, c v1alpha1.Codebase) (*model.Conf
 	if c.Spec.Route != nil {
 		cf.Route = c.Spec.Route
 	}
+	cf.GitURL, err = getProjectUrl(client, c.Spec, c.Namespace)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable get project url")
+	}
+
 	log.Info("end creating template config", "codebase name", c.Name)
 	return &cf, nil
+}
+
+func getProjectUrl (c client.Client, s v1alpha1.CodebaseSpec, n string) (string, error) {
+	switch s.Strategy {
+	case "create":
+		p := util.BuildRepoUrl(s)
+		return p, nil
+
+	case "clone":
+		p := s.Repository.Url
+		return p, nil
+
+	case "import":
+		gs, err := util.GetGitServer(c, s.GitServer, n)
+		if err != nil {
+			return "", errors.Wrap(err, "unable get git server")
+		}
+		return fmt.Sprintf("https://%v%v", gs.GitHost, *s.GitUrlPath), nil
+
+	default:
+		return "", errors.New("unable get project url, caused by the unsupported strategy")
+	}
 }
 
 func copySonarConfigs(templateDirectory string, config model.ConfigGoTemplating) error {

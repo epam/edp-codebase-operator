@@ -7,7 +7,7 @@ import (
 )
 
 func TestBuildRepoUrl_DatabaseIsNil(t *testing.T) {
-	expectedUrl := "https://github.com/epmd-edp/java-maven-java11.git"
+	expectedURL := "https://github.com/epmd-edp/java-maven-java11.git"
 	framework := "java11"
 	spec := v1alpha1.CodebaseSpec{
 		Lang:      "Java",
@@ -15,17 +15,17 @@ func TestBuildRepoUrl_DatabaseIsNil(t *testing.T) {
 		Type:      "application",
 		Framework: &framework,
 	}
-	url := buildRepoUrl(spec)
-	assert.Equal(t, expectedUrl, url)
+	u := BuildRepoUrl(spec)
+	assert.Equal(t, expectedURL, u)
 }
 
 func TestBuildRepoUrl_FrameworkIsNil(t *testing.T) {
-	expectedUrl := "https://github.com/epmd-edp/javascript-npm-react.git"
+	expectedURL := "https://github.com/epmd-edp/javascript-npm-react.git"
 	spec := v1alpha1.CodebaseSpec{
 		Lang:      "javascript",
 		BuildTool: "npm",
 		Type:      "library",
 	}
-	url := buildRepoUrl(spec)
-	assert.Equal(t, expectedUrl, url)
+	u := BuildRepoUrl(spec)
+	assert.Equal(t, expectedURL, u)
 }

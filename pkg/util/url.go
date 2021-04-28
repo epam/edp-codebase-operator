@@ -24,9 +24,9 @@ func GetRepoUrl(c *v1alpha1.Codebase) (*string, error) {
 	}
 
 	log.Info("Strategy is not clone. Start build url...", "codebase name", c.Name)
-	url := buildRepoUrl(c.Spec)
-	log.Info("ApiUrl has been generated", "url", url, "codebase name", c.Name)
-	return &url, nil
+	u := BuildRepoUrl(c.Spec)
+	log.Info("ApiUrl has been generated", "url", u, "codebase name", c.Name)
+	return &u, nil
 
 }
 
@@ -37,7 +37,7 @@ func tryGetRepoUrl(spec v1alpha1.CodebaseSpec) (*string, error) {
 	return &spec.Repository.Url, nil
 }
 
-func buildRepoUrl(spec v1alpha1.CodebaseSpec) string {
+func BuildRepoUrl(spec v1alpha1.CodebaseSpec) string {
 	log.Info("Start building repo url", "base url", GithubDomain, "spec", spec)
 	return strings.ToLower(fmt.Sprintf("%v/%v-%v-%v.git", GithubDomain, spec.Lang, spec.BuildTool,
 		getFrameworkOrDefault(spec)))
