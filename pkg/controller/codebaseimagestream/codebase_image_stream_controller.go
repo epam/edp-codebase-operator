@@ -3,7 +3,9 @@ package codebaseimagestream
 import (
 	"context"
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	chain "github.com/epam/edp-codebase-operator/v2/pkg/controller/codebaseimagestream/chain/factory"
+	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebaseimagestream/chain"
+	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebaseimagestream/chain/handler"
+	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	"github.com/go-logr/logr"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"reflect"
@@ -35,6 +37,9 @@ func (r *ReconcileCodebaseImageStream) SetupWithManager(mgr ctrl.Manager) error 
 		UpdateFunc: func(e event.UpdateEvent) bool {
 			oo := e.ObjectOld.(*codebaseApi.CodebaseImageStream)
 			on := e.ObjectNew.(*codebaseApi.CodebaseImageStream)
+			if len(on.Annotations[util.LastDeletedEnvsAnnotationKey]) != 0 {
+				return true
+			}
 			if !reflect.DeepEqual(oo.ObjectMeta.Labels, on.ObjectMeta.Labels) && on.Spec.Tags != nil {
 				return true
 			}
@@ -62,10 +67,17 @@ func (r *ReconcileCodebaseImageStream) Reconcile(ctx context.Context, request re
 		return reconcile.Result{}, err
 	}
 
-	if err := chain.CreateDefChain(r.client).ServeRequest(i); err != nil {
+	if err := r.getChain(i.GetAnnotations()[util.LastDeletedEnvsAnnotationKey]).ServeRequest(i); err != nil {
 		return reconcile.Result{}, err
 	}
 
 	log.Info("reconciling has been finished.")
 	return reconcile.Result{}, nil
+}
+
+func (r *ReconcileCodebaseImageStream) getChain(lastDeletedEnvs string) handler.CodebaseImageStreamHandler {
+	if len(lastDeletedEnvs) == 0 {
+		return chain.CreateDefChain(r.client)
+	}
+	return chain.CreateDeleteChain(r.client)
 }
