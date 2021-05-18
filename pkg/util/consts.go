@@ -22,11 +22,11 @@ const (
 	GerritTemplates   = "/usr/local/bin/templates/gerrit"
 	PipelineTemplates = "/usr/local/bin/pipelines"
 
-	ImportStrategy = "import"
-	Application    = "application"
-	LanguageJavascript     = "javascript"
-	LanguagePython         = "python"
-	LanguageGo             = "go"
+	ImportStrategy     = "import"
+	Application        = "application"
+	LanguageJavascript = "javascript"
+	LanguagePython     = "python"
+	LanguageGo         = "go"
 
 	JenkinsFolderKind            = "JenkinsFolder"
 	CDStageDeployKind            = "CDStageDeploy"
@@ -47,4 +47,6 @@ const (
 	HeadBranchesRefSpec   = "refs/heads/*:refs/heads/*"
 	RemoteBranchesRefSpec = "refs/remotes/origin/*:refs/heads/*"
 	TagsRefSpec           = "refs/tags/*:refs/tags/*"
+
+	LastDeletedEnvsAnnotationKey = "deploy.edp.epam.com/last-deleted-envs"
 )

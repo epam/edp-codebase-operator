@@ -1,4 +1,4 @@
-package putcdstagedeploy
+package chain
 
 import (
 	"context"
@@ -6,11 +6,11 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	v1alpha1Jenkins "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
+	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sort"
 	"strings"
@@ -18,7 +18,8 @@ import (
 )
 
 type PutCDStageDeploy struct {
-	Client client.Client
+	client client.Client
+	log    logr.Logger
 }
 
 type cdStageDeployDTO struct {
@@ -29,21 +30,19 @@ type cdStageDeployDTO struct {
 
 const dateLayout = "2006-01-02T15:04:05"
 
-var log = ctrl.Log.WithName("put-cd-stage-deploy-controller")
-
 func (h PutCDStageDeploy) ServeRequest(imageStream *v1alpha1.CodebaseImageStream) error {
-	vLog := log.WithValues("name", imageStream.Name)
-	vLog.Info("creating/updating CDStageDeploy.")
+	log := h.log.WithValues("name", imageStream.Name)
+	log.Info("creating/updating CDStageDeploy.")
 	if err := h.handleCodebaseImageStreamEnvLabels(imageStream); err != nil {
 		return errors.Wrapf(err, "couldn't handle %v codebase image stream", imageStream.Name)
 	}
-	vLog.Info("creating/updating CDStageDeploy has been finished.")
+	log.Info("creating/updating CDStageDeploy has been finished.")
 	return nil
 }
 
 func (h PutCDStageDeploy) handleCodebaseImageStreamEnvLabels(imageStream *v1alpha1.CodebaseImageStream) error {
 	if imageStream.ObjectMeta.Labels == nil || len(imageStream.ObjectMeta.Labels) == 0 {
-		log.Info("codebase image stream doesnt contain env labels. skip CDStageDeploy creating...")
+		h.log.Info("codebase image stream doesnt contain env labels. skip CDStageDeploy creating...")
 		return nil
 	}
 
@@ -63,7 +62,7 @@ func (h PutCDStageDeploy) putCDStageDeploy(envLabel, namespace string, spec v1al
 	}
 
 	if stageDeploy == nil {
-		createCommand := getCreateCommand(envLabel, spec.Codebase, spec.Tags)
+		createCommand := h.getCreateCommand(envLabel, spec.Codebase, spec.Tags)
 		if err := h.create(name, namespace, createCommand); err != nil {
 			return errors.Wrapf(err, "couldn't create %v cd stage deploy", name)
 		}
@@ -71,7 +70,7 @@ func (h PutCDStageDeploy) putCDStageDeploy(envLabel, namespace string, spec v1al
 	}
 	if err := h.update(stageDeploy, v1alpha1Jenkins.Tag{
 		Codebase: spec.Codebase,
-		Tag:      getLastTag(spec.Tags).Name,
+		Tag:      h.getLastTag(spec.Tags).Name,
 	}); err != nil {
 		return errors.Wrapf(err, "couldn't update %v cd stage deploy", name)
 	}
@@ -79,13 +78,13 @@ func (h PutCDStageDeploy) putCDStageDeploy(envLabel, namespace string, spec v1al
 }
 
 func (h PutCDStageDeploy) getCDStageDeploy(name, namespace string) (*v1alpha1.CDStageDeploy, error) {
-	log.Info("getting cd stage deploy", "name", name)
+	h.log.Info("getting cd stage deploy", "name", name)
 	i := &v1alpha1.CDStageDeploy{}
 	nn := types.NamespacedName{
 		Namespace: namespace,
 		Name:      name,
 	}
-	if err := h.Client.Get(context.TODO(), nn, i); err != nil {
+	if err := h.client.Get(context.TODO(), nn, i); err != nil {
 		if k8serrors.IsNotFound(err) {
 			return nil, nil
 		}
@@ -94,7 +93,7 @@ func (h PutCDStageDeploy) getCDStageDeploy(name, namespace string) (*v1alpha1.CD
 	return i, nil
 }
 
-func getCreateCommand(envLabel, codebase string, tags []v1alpha1.Tag) cdStageDeployDTO {
+func (h PutCDStageDeploy) getCreateCommand(envLabel, codebase string, tags []v1alpha1.Tag) cdStageDeployDTO {
 	env := strings.Split(envLabel, "/")
 	return cdStageDeployDTO{
 		Pipeline: env[0],
@@ -102,22 +101,22 @@ func getCreateCommand(envLabel, codebase string, tags []v1alpha1.Tag) cdStageDep
 		Tags: []v1alpha1Jenkins.Tag{
 			{
 				Codebase: codebase,
-				Tag:      getLastTag(tags).Name,
+				Tag:      h.getLastTag(tags).Name,
 			},
 		},
 	}
 }
 
-func getLastTag(tags []v1alpha1.Tag) v1alpha1.Tag {
+func (h PutCDStageDeploy) getLastTag(tags []v1alpha1.Tag) v1alpha1.Tag {
 	sort.Slice(tags, func(i, j int) bool {
 		prev, err := parseTime(tags[i].Created)
 		if err != nil {
-			log.Error(fmt.Errorf("couldn't parse time"), "time", tags[i].Created)
+			h.log.Error(fmt.Errorf("couldn't parse time"), "time", tags[i].Created)
 			return false
 		}
 		next, err := parseTime(tags[j].Created)
 		if err != nil {
-			log.Error(fmt.Errorf("couldn't parse time"), "time", tags[j].Created)
+			h.log.Error(fmt.Errorf("couldn't parse time"), "time", tags[j].Created)
 			return false
 		}
 		return (*prev).Before(*next)
@@ -134,8 +133,8 @@ func parseTime(date string) (*time.Time, error) {
 }
 
 func (h PutCDStageDeploy) create(name, namespace string, stageDeploy cdStageDeployDTO) error {
-	vLog := log.WithValues("name", name)
-	vLog.Info("cd stage deploy is not present in cluster. start creating...")
+	log := h.log.WithValues("name", name)
+	log.Info("cd stage deploy is not present in cluster. start creating...")
 
 	stageDeployCommand := &v1alpha1.CDStageDeploy{
 		TypeMeta: metav1.TypeMeta{
@@ -152,30 +151,30 @@ func (h PutCDStageDeploy) create(name, namespace string, stageDeploy cdStageDepl
 			Tags:     stageDeploy.Tags,
 		},
 	}
-	if err := h.Client.Create(context.TODO(), stageDeployCommand); err != nil {
+	if err := h.client.Create(context.TODO(), stageDeployCommand); err != nil {
 		return err
 	}
-	vLog.Info("cd stage deploy has been created.")
+	log.Info("cd stage deploy has been created.")
 	return nil
 }
 
 func (h PutCDStageDeploy) update(stageDeploy *v1alpha1.CDStageDeploy, latestTag v1alpha1Jenkins.Tag) error {
-	vLog := log.WithValues("name", stageDeploy.Name)
-	vLog.Info("cd stage deploy is present in cluster. start updating...")
+	log := h.log.WithValues("name", stageDeploy.Name)
+	log.Info("cd stage deploy is present in cluster. start updating...")
 	for i, targetTag := range stageDeploy.Spec.Tags {
 		if targetTag.Codebase == latestTag.Codebase {
 			stageDeploy.Spec.Tags[i].Tag = latestTag.Tag
-			if err := h.Client.Update(context.TODO(), stageDeploy); err != nil {
+			if err := h.client.Update(context.TODO(), stageDeploy); err != nil {
 				return err
 			}
-			vLog.Info("cd stage deploy has been updated.")
+			log.Info("cd stage deploy has been updated.")
 			return nil
 		}
 	}
 	stageDeploy.Spec.Tags = append(stageDeploy.Spec.Tags, latestTag)
-	if err := h.Client.Update(context.TODO(), stageDeploy); err != nil {
+	if err := h.client.Update(context.TODO(), stageDeploy); err != nil {
 		return err
 	}
-	vLog.Info("cd stage deploy has been updated.")
+	log.Info("cd stage deploy has been updated.")
 	return nil
 }
