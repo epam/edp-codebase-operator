@@ -9,7 +9,7 @@ replace (
 	github.com/openshift/api => github.com/openshift/api v0.0.0-20210416130433-86964261530c
 	github.com/openshift/client-go => github.com/openshift/client-go v0.0.0-20210112165513-ebc401615f47
 	k8s.io/api => k8s.io/api v0.20.7-rc.0
-	github.com/epam/edp-cd-pipeline-operator/v2 => github.com/epam/edp-cd-pipeline-operator/v2 v2.3.0-58.0.20210519064332-021c2b1539f2
+	github.com/epam/edp-cd-pipeline-operator/v2 => github.com/epam/edp-cd-pipeline-operator/v2 v2.3.0-58.0.20210520183515-25293a93e603
 	github.com/epam/edp-jenkins-operator/v2 => github.com/epam/edp-jenkins-operator/v2 v2.3.0-130.0.20210520181332-d15199eed95d
 	github.com/epam/edp-perf-operator/v2 => github.com/epam/edp-perf-operator/v2 v2.0.0-20210427075221-451577e1e5f2
 )
@@ -19,7 +19,7 @@ require (
 	github.com/andygrunwald/go-jira v1.12.0
 	github.com/bndr/gojenkins v0.2.1-0.20181125150310-de43c03cf849
 	github.com/dchest/uniuri v0.0.0-20160212164326-8902c56451e9
-	github.com/epam/edp-cd-pipeline-operator/v2 v2.3.0-58.0.20210519064332-021c2b1539f2
+	github.com/epam/edp-cd-pipeline-operator/v2 v2.3.0-58.0.20210520183515-25293a93e603
 	github.com/epam/edp-component-operator v0.1.1-0.20210427065236-c7dce7f4ea2b
 	github.com/epam/edp-jenkins-operator/v2 v2.3.0-130.0.20210520181332-d15199eed95d
 	github.com/epam/edp-perf-operator/v2 v2.0.0-20210427075221-451577e1e5f2

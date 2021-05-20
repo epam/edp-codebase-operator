@@ -288,12 +288,15 @@ github.com/epam/edp-cd-pipeline-operator/v2 v2.3.0-58.0.20210427081757-d4e86349a
 github.com/epam/edp-cd-pipeline-operator/v2 v2.3.0-58.0.20210427081757-d4e86349ad18/go.mod h1:OTGGFuUA2fH/nO0qTdG1OKAdqA+mUXqwVzesT1TIGOE=
 github.com/epam/edp-cd-pipeline-operator/v2 v2.3.0-58.0.20210519064332-021c2b1539f2 h1:Rd7/G/VFBVbP0wWk23uYKpFjgVZxXjRzKTf2jiSwM9s=
 github.com/epam/edp-cd-pipeline-operator/v2 v2.3.0-58.0.20210519064332-021c2b1539f2/go.mod h1:dzVhXZnwff/NRcFZOI4Me5serzE7zruZyLdXYOAnihQ=
+github.com/epam/edp-cd-pipeline-operator/v2 v2.3.0-58.0.20210520183515-25293a93e603 h1:1K2zxr9/c4XNQPzREtQi4t/ge2GeZsX3Ka4mjS4kNM8=
+github.com/epam/edp-cd-pipeline-operator/v2 v2.3.0-58.0.20210520183515-25293a93e603/go.mod h1:zDUDckL2sIc1vX8A6lbYHnMAv0XnlzaMs2S3wlrj3aA=
 github.com/epam/edp-codebase-operator/v2 v2.3.0-95.0.20210420131411-dbb514cb011d/go.mod h1:Ozq8Z94gk9nvhgxp+IKXPo9czWK2q30o0FTq6wz+apk=
 github.com/epam/edp-codebase-operator/v2 v2.3.0-95.0.20210420131738-685e2b4e0def/go.mod h1:edif/4FJioi9L2sod/ZX32XsoAxWR6EndX3amHKZGx0=
 github.com/epam/edp-codebase-operator/v2 v2.3.0-95.0.20210420132318-496bccd39817/go.mod h1:fvwn3ewURl1kV9ipzlC4G2nHWAnzIFROla6USJMfdYk=
 github.com/epam/edp-codebase-operator/v2 v2.3.0-95.0.20210420132935-d94e26c595a4/go.mod h1:6bhnuG7CHMvSxnHG9/gUTlCA/GsY/CIciBvsIvPAl3E=
 github.com/epam/edp-codebase-operator/v2 v2.3.0-95.0.20210426125026-571bd859bdf0/go.mod h1:6bhnuG7CHMvSxnHG9/gUTlCA/GsY/CIciBvsIvPAl3E=
 github.com/epam/edp-codebase-operator/v2 v2.3.0-95.0.20210520145849-0e47a9089ef6/go.mod h1:o9ac4JiP5OGBaMx8tK1ORYPxLwNlgMgh+sNPVu8Q4Xg=
+github.com/epam/edp-codebase-operator/v2 v2.3.0-95.0.20210520182756-7a216ea8871c/go.mod h1:lz88E17t1r0uYgpAAym275qriAQm7XCVqrBnSP5V+ZA=
 github.com/epam/edp-component-operator v0.0.0-20191029131047-d87b7a6d3bb0/go.mod h1:k4OqvjIznqyXgdpp1iuuSdSk4BdjiJ3j3eesPIIqO+s=
 github.com/epam/edp-component-operator v0.1.0/go.mod h1:k4OqvjIznqyXgdpp1iuuSdSk4BdjiJ3j3eesPIIqO+s=
 github.com/epam/edp-component-operator v0.1.1-0.20200827122548-e87429a916e0 h1:ekaBXgIYMD9GdNsZ11l1nNt8sDCLqqE5TYsUJhkrUxk=
