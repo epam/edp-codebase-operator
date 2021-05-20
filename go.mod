@@ -11,7 +11,7 @@ replace (
 	k8s.io/api => k8s.io/api v0.20.7-rc.0
 	github.com/epam/edp-cd-pipeline-operator/v2 => github.com/epam/edp-cd-pipeline-operator/v2 v2.3.0-58.0.20210520183515-25293a93e603
 	github.com/epam/edp-jenkins-operator/v2 => github.com/epam/edp-jenkins-operator/v2 v2.3.0-130.0.20210520181332-d15199eed95d
-	github.com/epam/edp-perf-operator/v2 => github.com/epam/edp-perf-operator/v2 v2.0.0-20210427075221-451577e1e5f2
+	github.com/epam/edp-perf-operator/v2 => github.com/epam/edp-perf-operator/v2 v2.0.0-20210520184654-9732018da977
 )
 
 require (
@@ -22,7 +22,7 @@ require (
 	github.com/epam/edp-cd-pipeline-operator/v2 v2.3.0-58.0.20210520183515-25293a93e603
 	github.com/epam/edp-component-operator v0.1.1-0.20210427065236-c7dce7f4ea2b
 	github.com/epam/edp-jenkins-operator/v2 v2.3.0-130.0.20210520181332-d15199eed95d
-	github.com/epam/edp-perf-operator/v2 v2.0.0-20210427075221-451577e1e5f2
+	github.com/epam/edp-perf-operator/v2 v2.0.0-20210520184654-9732018da977
 	github.com/go-logr/logr v0.4.0
 	github.com/go-openapi/spec v0.19.5
 	github.com/lib/pq v1.8.0

@@ -297,6 +297,7 @@ github.com/epam/edp-codebase-operator/v2 v2.3.0-95.0.20210420132935-d94e26c595a4
 github.com/epam/edp-codebase-operator/v2 v2.3.0-95.0.20210426125026-571bd859bdf0/go.mod h1:6bhnuG7CHMvSxnHG9/gUTlCA/GsY/CIciBvsIvPAl3E=
 github.com/epam/edp-codebase-operator/v2 v2.3.0-95.0.20210520145849-0e47a9089ef6/go.mod h1:o9ac4JiP5OGBaMx8tK1ORYPxLwNlgMgh+sNPVu8Q4Xg=
 github.com/epam/edp-codebase-operator/v2 v2.3.0-95.0.20210520182756-7a216ea8871c/go.mod h1:lz88E17t1r0uYgpAAym275qriAQm7XCVqrBnSP5V+ZA=
+github.com/epam/edp-codebase-operator/v2 v2.3.0-95.0.20210520184419-f2c38dd13fee/go.mod h1:UDtibdj/4rYYGbgIq1dR6Ve5ROtfwQ7fXRHss4tOmmo=
 github.com/epam/edp-component-operator v0.0.0-20191029131047-d87b7a6d3bb0/go.mod h1:k4OqvjIznqyXgdpp1iuuSdSk4BdjiJ3j3eesPIIqO+s=
 github.com/epam/edp-component-operator v0.1.0/go.mod h1:k4OqvjIznqyXgdpp1iuuSdSk4BdjiJ3j3eesPIIqO+s=
 github.com/epam/edp-component-operator v0.1.1-0.20200827122548-e87429a916e0 h1:ekaBXgIYMD9GdNsZ11l1nNt8sDCLqqE5TYsUJhkrUxk=
@@ -342,6 +343,8 @@ github.com/epam/edp-perf-operator/v2 v2.0.0-20210420132104-20958a66482a h1:cwTZb
 github.com/epam/edp-perf-operator/v2 v2.0.0-20210420132104-20958a66482a/go.mod h1:KyEAF7OCx/5rPZ29BAeCFV1mez66sxFMf94cZ/IeyVc=
 github.com/epam/edp-perf-operator/v2 v2.0.0-20210427075221-451577e1e5f2 h1:9Wn3T3HaOrwHh8oh5JPP0vYBLFbDB7YM/U7HgCWlL6o=
 github.com/epam/edp-perf-operator/v2 v2.0.0-20210427075221-451577e1e5f2/go.mod h1:buOpUkjbWkwJe449ZLRJR8choZ9cGFamIdCaOO8VBy4=
+github.com/epam/edp-perf-operator/v2 v2.0.0-20210520184654-9732018da977 h1:olrheyYPj4Z+rcIwkifh5xk+ShSmFnYHv6OH5XEeGfI=
+github.com/epam/edp-perf-operator/v2 v2.0.0-20210520184654-9732018da977/go.mod h1:sUnbjjjHTGjIzZIHj49OgZleruOmmsTdtmwd2Gj/g2M=
 github.com/epmd-edp/cd-pipeline-operator/v2 v2.2.0-50/go.mod h1:ygALtMzvxjLfbXLfGqZ+eGjsARgBdyf6IvoTl5NF5Kk=
 github.com/epmd-edp/codebase-operator/v2 v2.3.0-88/go.mod h1:MqnZsWXSdziAmOYznnMW+C3M160So5AMuJoCSL84t8M=
 github.com/epmd-edp/codebase-operator/v2 v2.3.0-95.0.20200514095748-92497054f7da/go.mod h1:2joXoCeTqQ1MjTHfp5yoMfnWy/3zuznNOxGioCvyVDY=
