@@ -61,7 +61,8 @@ func (h PutCodebaseImageStream) ServeRequest(cb *v1alpha1.CodebaseBranch) error 
 }
 
 func processNameToK8sConvention(name string) string {
-	return strings.Replace(name, "/", "-", -1)
+	r := strings.NewReplacer("/", "-", ".", "-")
+	return r.Replace(name)
 }
 
 func (h PutCodebaseImageStream) getDockerRegistryEdpComponent(namespace string) (*edpComponentV1alpha1.EDPComponent, error) {
