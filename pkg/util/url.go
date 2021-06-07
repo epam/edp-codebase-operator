@@ -9,7 +9,7 @@ import (
 
 var lf = map[string]string{
 	"javascript":      "react",
-	"groovy-pipeline": "groovy",
+	"groovy-pipeline": "codenarc",
 	"dotnet":          "netcore",
 	"python":          "python-3.8",
 	"terraform":       "terraform",
