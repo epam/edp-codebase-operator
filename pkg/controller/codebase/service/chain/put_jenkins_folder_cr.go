@@ -41,6 +41,7 @@ func (h PutJenkinsFolder) ServeRequest(c *v1alpha1.Codebase) error {
 	jpm := map[string]string{
 		"PARAM":                    "true",
 		"NAME":                     c.Name,
+		"LANGUAGE":                 c.Spec.Lang,
 		"BUILD_TOOL":               strings.ToLower(c.Spec.BuildTool),
 		"DEFAULT_BRANCH":           c.Spec.DefaultBranch,
 		"GIT_SERVER_CR_NAME":       gs.Name,
