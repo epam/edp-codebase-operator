@@ -49,4 +49,7 @@ const (
 	TagsRefSpec           = "refs/tags/*:refs/tags/*"
 
 	LastDeletedEnvsAnnotationKey = "deploy.edp.epam.com/last-deleted-envs"
+
+	//finalizers
+	ForegroundDeletionFinalizerName = "foregroundDeletion"
 )

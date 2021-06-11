@@ -69,12 +69,8 @@ func (r *ReconcileCodebase) Reconcile(ctx context.Context, request reconcile.Req
 	log.Info("Reconciling Codebase")
 
 	c := &codebaseApi.Codebase{}
-	err := r.client.Get(ctx, request.NamespacedName, c)
-	if err != nil {
+	if err := r.client.Get(ctx, request.NamespacedName, c); err != nil {
 		if k8serrors.IsNotFound(err) {
-			// Request object not found, could have been deleted after reconcile request.
-			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
-			// Return and don't requeue
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, err
@@ -84,6 +80,10 @@ func (r *ReconcileCodebase) Reconcile(ctx context.Context, request reconcile.Req
 			log.Error(err, "error during status updating")
 		}
 	}()
+
+	if err := r.setFinalizers(ctx, c); err != nil {
+		return reconcile.Result{}, errors.Wrap(err, "unable to set finalizers")
+	}
 
 	result, err := r.tryToDeleteCodebase(ctx, c)
 	if err != nil {
@@ -176,12 +176,6 @@ func (r *ReconcileCodebase) updateStatus(ctx context.Context, instance *codebase
 
 func (r ReconcileCodebase) tryToDeleteCodebase(ctx context.Context, c *codebaseApi.Codebase) (*reconcile.Result, error) {
 	if c.GetDeletionTimestamp().IsZero() {
-		if !util.ContainsString(c.ObjectMeta.Finalizers, codebaseOperatorFinalizerName) {
-			c.ObjectMeta.Finalizers = append(c.ObjectMeta.Finalizers, codebaseOperatorFinalizerName)
-			if err := r.client.Update(ctx, c); err != nil {
-				return &reconcile.Result{}, err
-			}
-		}
 		return nil, nil
 	}
 
@@ -209,4 +203,20 @@ func removeDirectoryIfExists(codebaseName, namespace string) error {
 		return err
 	}
 	return nil
+}
+
+func (r ReconcileCodebase) setFinalizers(ctx context.Context, c *codebaseApi.Codebase) error {
+	if !c.GetDeletionTimestamp().IsZero() {
+		return nil
+	}
+
+	if !util.ContainsString(c.ObjectMeta.Finalizers, codebaseOperatorFinalizerName) {
+		c.ObjectMeta.Finalizers = append(c.ObjectMeta.Finalizers, codebaseOperatorFinalizerName)
+	}
+
+	if !util.ContainsString(c.ObjectMeta.Finalizers, util.ForegroundDeletionFinalizerName) {
+		c.ObjectMeta.Finalizers = append(c.ObjectMeta.Finalizers, util.ForegroundDeletionFinalizerName)
+	}
+
+	return r.client.Update(ctx, c)
 }

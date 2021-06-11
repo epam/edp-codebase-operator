@@ -21,8 +21,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-const foregroundDeletionFinalizerName = "foregroundDeletion"
-
 func NewReconcileCDStageDeploy(client client.Client, scheme *runtime.Scheme, log logr.Logger) *ReconcileCDStageDeploy {
 	return &ReconcileCDStageDeploy{
 		client: client,
@@ -68,7 +66,7 @@ func (r *ReconcileCDStageDeploy) Reconcile(ctx context.Context, request reconcil
 	}()
 
 	if err := r.setFinalizer(ctx, i); err != nil {
-		err := errors.Wrapf(err, "cannot set %v finalizer", foregroundDeletionFinalizerName)
+		err := errors.Wrapf(err, "cannot set %v finalizer", util.ForegroundDeletionFinalizerName)
 		i.SetFailedStatus(err)
 		return reconcile.Result{}, err
 	}
@@ -102,8 +100,8 @@ func (r *ReconcileCDStageDeploy) setFinalizer(ctx context.Context, stageDeploy *
 	if !stageDeploy.GetDeletionTimestamp().IsZero() {
 		return nil
 	}
-	if !util.ContainsString(stageDeploy.ObjectMeta.Finalizers, foregroundDeletionFinalizerName) {
-		stageDeploy.ObjectMeta.Finalizers = append(stageDeploy.ObjectMeta.Finalizers, foregroundDeletionFinalizerName)
+	if !util.ContainsString(stageDeploy.ObjectMeta.Finalizers, util.ForegroundDeletionFinalizerName) {
+		stageDeploy.ObjectMeta.Finalizers = append(stageDeploy.ObjectMeta.Finalizers, util.ForegroundDeletionFinalizerName)
 	}
 	return r.client.Update(ctx, stageDeploy)
 }
