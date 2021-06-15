@@ -30,11 +30,6 @@ type Repository struct {
 	Url string `json:"url"`
 }
 
-type Route struct {
-	Site string `json:"site"`
-	Path string `json:"path"`
-}
-
 type Perf struct {
 	Name        string   `json:"name"`
 	DataSources []string `json:"dataSources"`
@@ -50,7 +45,6 @@ type CodebaseSpec struct {
 	BuildTool                string      `json:"buildTool"`
 	Strategy                 Strategy    `json:"strategy"`
 	Repository               *Repository `json:"repository"`
-	Route                    *Route      `json:"route"`
 	TestReportFramework      *string     `json:"testReportFramework"`
 	Type                     string      `json:"type"`
 	GitServer                string      `json:"gitServer"`

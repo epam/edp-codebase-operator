@@ -67,12 +67,6 @@ spec:
                   type: string
               required:
                 - url
-            route:
-              properties:
-                site:
-                  type: string
-                path:
-                  type: string
             jiraServer:
               anyOf:
                 - type: null

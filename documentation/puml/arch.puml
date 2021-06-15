@@ -70,20 +70,6 @@ package com.epam.edp.codebase {
      String startFrom
   }
 
-  Codebase "1" --* "0..1" Route : internal structure
-  class Route {
-    String site
-    String path
-  }
-
-  Codebase "1" --* "0..1" Database : internal structure
-  class Database {
-    String kind
-    String version
-    String capacity
-    String storage
-  }
-
   Codebase "1" --* "1..*" CodebaseBranch : codebaseName, owner ref
   class CodebaseBranch {
     -- metadata --

@@ -83,9 +83,6 @@ func buildTemplateConfig(client client.Client, c v1alpha1.Codebase) (*model.Conf
 	if c.Spec.Framework != nil {
 		cf.Framework = *c.Spec.Framework
 	}
-	if c.Spec.Route != nil {
-		cf.Route = c.Spec.Route
-	}
 	cf.GitURL, err = getProjectUrl(client, c.Spec, c.Namespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable get project url")
