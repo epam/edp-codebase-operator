@@ -110,7 +110,7 @@ spec:
                 - type: null
                 - type: string
             emptyProject:
-              type: bool
+              type: boolean
           required:
             - lang
             - type
