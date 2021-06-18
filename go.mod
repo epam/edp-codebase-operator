@@ -10,14 +10,14 @@ replace (
 )
 
 require (
-	github.com/epam/edp-cd-pipeline-operator/v2 v2.3.0-58.0.20210427081757-d4e86349ad18
-	github.com/epam/edp-component-operator v0.1.1-0.20210427065236-c7dce7f4ea2b
-	github.com/epam/edp-jenkins-operator/v2 v2.3.0-130.0.20210427082830-e7849a9d1254
-	github.com/epam/edp-perf-operator/v2 v2.0.0-20210615084859-4e4202d10e93
 	github.com/DATA-DOG/go-sqlmock v1.5.0
 	github.com/andygrunwald/go-jira v1.12.0
 	github.com/bndr/gojenkins v0.2.1-0.20181125150310-de43c03cf849
 	github.com/dchest/uniuri v0.0.0-20160212164326-8902c56451e9
+	github.com/epam/edp-cd-pipeline-operator/v2 v2.3.0-58.0.20210427081757-d4e86349ad18
+	github.com/epam/edp-component-operator v0.1.1-0.20210427065236-c7dce7f4ea2b
+	github.com/epam/edp-jenkins-operator/v2 v2.3.0-130.0.20210618082119-d397894f98e0
+	github.com/epam/edp-perf-operator/v2 v2.0.0-20210615084859-4e4202d10e93
 	github.com/go-logr/logr v0.4.0
 	github.com/go-openapi/spec v0.19.5
 	github.com/lib/pq v1.8.0

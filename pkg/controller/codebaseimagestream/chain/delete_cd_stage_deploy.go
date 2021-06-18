@@ -34,7 +34,7 @@ func (h DeleteCDStageDeploy) ServeRequest(is *codebaseApi.CodebaseImageStream) e
 	envs := strings.Split(val, commaSplitSeparator)
 	for _, env := range envs {
 		tmp := strings.Split(env, slashSplitSeparator)
-		stageDeployName := fmt.Sprintf("%v-%v", tmp[0], tmp[1])
+		stageDeployName := fmt.Sprintf("%v-%v-%v", tmp[0], tmp[1], is.Spec.Codebase)
 		if err := h.deleteCdStageDeploy(stageDeployName, is.Namespace); err != nil {
 			return errors.Wrapf(err, "unable to delete %v CdStageDeploy resource", stageDeployName)
 		}

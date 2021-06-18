@@ -19,9 +19,9 @@ type CDStageDeploySpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html
-	Pipeline string         `json:"pipeline"`
-	Stage    string         `json:"stage"`
-	Tags     []v1alpha1.Tag `json:"tags"`
+	Pipeline string       `json:"pipeline"`
+	Stage    string       `json:"stage"`
+	Tag      v1alpha1.Tag `json:"tag"`
 }
 
 // CDStageDeployStatus defines the observed state of CDStageDeploy
@@ -31,8 +31,9 @@ type CDStageDeployStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html
-	Status  string `json:"status"`
-	Message string `json:"message"`
+	Status       string `json:"status"`
+	Message      string `json:"message"`
+	FailureCount int64  `json:"failureCount"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -50,10 +51,6 @@ type CDStageDeploy struct {
 func (in *CDStageDeploy) SetFailedStatus(err error) {
 	in.Status.Status = failed
 	in.Status.Message = err.Error()
-}
-
-func (in *CDStageDeploy) SetSuccessStatus() {
-	in.Status.Status = success
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

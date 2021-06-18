@@ -3,9 +3,9 @@ package chain
 import (
 	"context"
 	"fmt"
-	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
-	v1alpha1Jenkins "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
+	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -22,15 +22,17 @@ type PutCDStageDeploy struct {
 	log    logr.Logger
 }
 
-type cdStageDeployDTO struct {
-	Pipeline string
-	Stage    string
-	Tags     []v1alpha1Jenkins.Tag
+type cdStageDeployCommand struct {
+	Name      string
+	Namespace string
+	Pipeline  string
+	Stage     string
+	Tag       jenkinsApi.Tag
 }
 
 const dateLayout = "2006-01-02T15:04:05"
 
-func (h PutCDStageDeploy) ServeRequest(imageStream *v1alpha1.CodebaseImageStream) error {
+func (h PutCDStageDeploy) ServeRequest(imageStream *codebaseApi.CodebaseImageStream) error {
 	log := h.log.WithValues("name", imageStream.Name)
 	log.Info("creating/updating CDStageDeploy.")
 	if err := h.handleCodebaseImageStreamEnvLabels(imageStream); err != nil {
@@ -40,46 +42,49 @@ func (h PutCDStageDeploy) ServeRequest(imageStream *v1alpha1.CodebaseImageStream
 	return nil
 }
 
-func (h PutCDStageDeploy) handleCodebaseImageStreamEnvLabels(imageStream *v1alpha1.CodebaseImageStream) error {
+func (h PutCDStageDeploy) handleCodebaseImageStreamEnvLabels(imageStream *codebaseApi.CodebaseImageStream) error {
 	if imageStream.ObjectMeta.Labels == nil || len(imageStream.ObjectMeta.Labels) == 0 {
 		h.log.Info("codebase image stream doesnt contain env labels. skip CDStageDeploy creating...")
 		return nil
 	}
 
-	for key := range imageStream.ObjectMeta.Labels {
-		if err := h.putCDStageDeploy(key, imageStream.Namespace, imageStream.Spec); err != nil {
+	for envLabel := range imageStream.ObjectMeta.Labels {
+		if err := h.putCDStageDeploy(envLabel, imageStream.Namespace, imageStream.Spec); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (h PutCDStageDeploy) putCDStageDeploy(envLabel, namespace string, spec v1alpha1.CodebaseImageStreamSpec) error {
-	name := strings.Replace(envLabel, "/", "-", -1)
+func (h PutCDStageDeploy) putCDStageDeploy(envLabel, namespace string, spec codebaseApi.CodebaseImageStreamSpec) error {
+	name := generateCdStageDeployName(envLabel, spec.Codebase)
 	stageDeploy, err := h.getCDStageDeploy(name, namespace)
 	if err != nil {
 		return errors.Wrapf(err, "couldn't get %v cd stage deploy", name)
 	}
 
-	if stageDeploy == nil {
-		createCommand := h.getCreateCommand(envLabel, spec.Codebase, spec.Tags)
-		if err := h.create(name, namespace, createCommand); err != nil {
-			return errors.Wrapf(err, "couldn't create %v cd stage deploy", name)
+	if stageDeploy != nil {
+		h.log.Info("CDStageDeploy already exists. skip creating.", "name", stageDeploy.Name)
+		return &util.CDStageDeployHasNotBeenProcessed{
+			Message: fmt.Sprintf("%v has not been processed for previous version of application yet", name),
 		}
-		return nil
 	}
-	if err := h.update(stageDeploy, v1alpha1Jenkins.Tag{
-		Codebase: spec.Codebase,
-		Tag:      h.getLastTag(spec.Tags).Name,
-	}); err != nil {
-		return errors.Wrapf(err, "couldn't update %v cd stage deploy", name)
+
+	command := h.getCreateCommand(envLabel, name, namespace, spec.Codebase, spec.Tags)
+	if err := h.create(command); err != nil {
+		return errors.Wrapf(err, "couldn't create %v cd stage deploy", name)
 	}
 	return nil
 }
 
-func (h PutCDStageDeploy) getCDStageDeploy(name, namespace string) (*v1alpha1.CDStageDeploy, error) {
+func generateCdStageDeployName(env, codebase string) string {
+	env = strings.Replace(env, "/", "-", -1)
+	return fmt.Sprintf("%v-%v", env, codebase)
+}
+
+func (h PutCDStageDeploy) getCDStageDeploy(name, namespace string) (*codebaseApi.CDStageDeploy, error) {
 	h.log.Info("getting cd stage deploy", "name", name)
-	i := &v1alpha1.CDStageDeploy{}
+	i := &codebaseApi.CDStageDeploy{}
 	nn := types.NamespacedName{
 		Namespace: namespace,
 		Name:      name,
@@ -93,21 +98,21 @@ func (h PutCDStageDeploy) getCDStageDeploy(name, namespace string) (*v1alpha1.CD
 	return i, nil
 }
 
-func (h PutCDStageDeploy) getCreateCommand(envLabel, codebase string, tags []v1alpha1.Tag) cdStageDeployDTO {
+func (h PutCDStageDeploy) getCreateCommand(envLabel, name, namespace, codebase string, tags []codebaseApi.Tag) cdStageDeployCommand {
 	env := strings.Split(envLabel, "/")
-	return cdStageDeployDTO{
-		Pipeline: env[0],
-		Stage:    env[1],
-		Tags: []v1alpha1Jenkins.Tag{
-			{
-				Codebase: codebase,
-				Tag:      h.getLastTag(tags).Name,
-			},
+	return cdStageDeployCommand{
+		Name:      name,
+		Namespace: namespace,
+		Pipeline:  env[0],
+		Stage:     env[1],
+		Tag: jenkinsApi.Tag{
+			Codebase: codebase,
+			Tag:      h.getLastTag(tags).Name,
 		},
 	}
 }
 
-func (h PutCDStageDeploy) getLastTag(tags []v1alpha1.Tag) v1alpha1.Tag {
+func (h PutCDStageDeploy) getLastTag(tags []codebaseApi.Tag) codebaseApi.Tag {
 	sort.Slice(tags, func(i, j int) bool {
 		prev, err := parseTime(tags[i].Created)
 		if err != nil {
@@ -132,49 +137,28 @@ func parseTime(date string) (*time.Time, error) {
 	return &t, nil
 }
 
-func (h PutCDStageDeploy) create(name, namespace string, stageDeploy cdStageDeployDTO) error {
-	log := h.log.WithValues("name", name)
+func (h PutCDStageDeploy) create(command cdStageDeployCommand) error {
+	log := h.log.WithValues("name", command.Name)
 	log.Info("cd stage deploy is not present in cluster. start creating...")
 
-	stageDeployCommand := &v1alpha1.CDStageDeploy{
+	stageDeploy := &codebaseApi.CDStageDeploy{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: util.V2APIVersion,
 			Kind:       util.CDStageDeployKind,
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
+			Name:      command.Name,
+			Namespace: command.Namespace,
 		},
-		Spec: v1alpha1.CDStageDeploySpec{
-			Pipeline: stageDeploy.Pipeline,
-			Stage:    stageDeploy.Stage,
-			Tags:     stageDeploy.Tags,
+		Spec: codebaseApi.CDStageDeploySpec{
+			Pipeline: command.Pipeline,
+			Stage:    command.Stage,
+			Tag:      command.Tag,
 		},
 	}
-	if err := h.client.Create(context.TODO(), stageDeployCommand); err != nil {
+	if err := h.client.Create(context.TODO(), stageDeploy); err != nil {
 		return err
 	}
 	log.Info("cd stage deploy has been created.")
-	return nil
-}
-
-func (h PutCDStageDeploy) update(stageDeploy *v1alpha1.CDStageDeploy, latestTag v1alpha1Jenkins.Tag) error {
-	log := h.log.WithValues("name", stageDeploy.Name)
-	log.Info("cd stage deploy is present in cluster. start updating...")
-	for i, targetTag := range stageDeploy.Spec.Tags {
-		if targetTag.Codebase == latestTag.Codebase {
-			stageDeploy.Spec.Tags[i].Tag = latestTag.Tag
-			if err := h.client.Update(context.TODO(), stageDeploy); err != nil {
-				return err
-			}
-			log.Info("cd stage deploy has been updated.")
-			return nil
-		}
-	}
-	stageDeploy.Spec.Tags = append(stageDeploy.Spec.Tags, latestTag)
-	if err := h.client.Update(context.TODO(), stageDeploy); err != nil {
-		return err
-	}
-	log.Info("cd stage deploy has been updated.")
 	return nil
 }
