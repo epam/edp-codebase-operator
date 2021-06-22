@@ -7,7 +7,6 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/cdstagedeploy"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebasebranch"
-	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebaseimagestream"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/gittag"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/imagestreamtag"
@@ -123,12 +122,6 @@ func main() {
 	cbCtrl := codebasebranch.NewReconcileCodebaseBranch(mgr.GetClient(), mgr.GetScheme(), ctrlLog)
 	if err := cbCtrl.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "codebase-branch")
-		os.Exit(1)
-	}
-
-	cisCtrl := codebaseimagestream.NewReconcileCodebaseImageStream(mgr.GetClient(), ctrlLog)
-	if err := cisCtrl.SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "codebase-image-stream")
 		os.Exit(1)
 	}
 
