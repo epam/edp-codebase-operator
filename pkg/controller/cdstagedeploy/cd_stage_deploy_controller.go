@@ -2,6 +2,7 @@ package cdstagedeploy
 
 import (
 	"context"
+	"fmt"
 	v1alpha1Stage "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/cdstagedeploy/chain"
@@ -14,6 +15,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -70,6 +72,11 @@ func (r *ReconcileCDStageDeploy) Reconcile(ctx context.Context, request reconcil
 		return reconcile.Result{}, err
 	}
 
+	if err := r.setOwnerRef(ctx, i); err != nil {
+		i.SetFailedStatus(err)
+		return reconcile.Result{}, err
+	}
+
 	if err := chain.CreateDefChain(r.client).ServeRequest(i); err != nil {
 		i.SetFailedStatus(err)
 		switch err.(type) {
@@ -101,6 +108,17 @@ func (r *ReconcileCDStageDeploy) updateStatus(ctx context.Context, stageDeploy *
 		}
 	}
 	return nil
+}
+
+func (r *ReconcileCDStageDeploy) setOwnerRef(ctx context.Context, stageDeploy *codebaseApi.CDStageDeploy) error {
+	s, err := r.getCDStage(ctx, fmt.Sprintf("%v-%v", stageDeploy.Spec.Pipeline, stageDeploy.Spec.Stage), stageDeploy.Namespace)
+	if err != nil {
+		return err
+	}
+	if err := controllerutil.SetControllerReference(s, stageDeploy, r.scheme); err != nil {
+		return err
+	}
+	return r.client.Update(context.TODO(), stageDeploy)
 }
 
 func (r *ReconcileCDStageDeploy) setFinalizer(ctx context.Context, stageDeploy *codebaseApi.CDStageDeploy) error {

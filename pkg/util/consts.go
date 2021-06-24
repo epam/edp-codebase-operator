@@ -48,8 +48,6 @@ const (
 	RemoteBranchesRefSpec = "refs/remotes/origin/*:refs/heads/*"
 	TagsRefSpec           = "refs/tags/*:refs/tags/*"
 
-	LastDeletedEnvsAnnotationKey = "deploy.edp.epam.com/last-deleted-envs"
-
 	//finalizers
 	ForegroundDeletionFinalizerName = "foregroundDeletion"
 )

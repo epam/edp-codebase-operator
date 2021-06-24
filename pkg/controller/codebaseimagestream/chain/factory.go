@@ -14,10 +14,3 @@ func CreateDefChain(client client.Client) handler.CodebaseImageStreamHandler {
 		log:    log.WithName("create-chain").WithName("put-cd-stage-deploy"),
 	}
 }
-
-func CreateDeleteChain(client client.Client) handler.CodebaseImageStreamHandler {
-	return DeleteCDStageDeploy{
-		client: client,
-		log:    log.WithName("delete-chain").WithName("delete-cd-stage-deploy"),
-	}
-}
