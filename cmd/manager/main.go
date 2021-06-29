@@ -20,6 +20,8 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/client-go/rest"
 	"os"
+	"strconv"
+
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
@@ -39,7 +41,10 @@ var (
 	setupLog = ctrl.Log.WithName("setup")
 )
 
-const codebaseOperatorLock = "edp-codebase-operator-lock"
+const (
+	codebaseOperatorLock = "edp-codebase-operator-lock"
+	codebaseBranchMaxConcurrentReconcilesEnv = "CODEBASE_BRANCH_MAX_CONCURRENT_RECONCILES"
+)
 
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
@@ -121,7 +126,8 @@ func main() {
 	}
 
 	cbCtrl := codebasebranch.NewReconcileCodebaseBranch(mgr.GetClient(), mgr.GetScheme(), ctrlLog)
-	if err := cbCtrl.SetupWithManager(mgr); err != nil {
+	if err := cbCtrl.SetupWithManager(mgr,
+		getMaxConcurrentReconciles(codebaseBranchMaxConcurrentReconcilesEnv)); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "codebase-branch")
 		os.Exit(1)
 	}
@@ -177,4 +183,18 @@ func main() {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
+}
+
+func getMaxConcurrentReconciles(envVar string) int {
+	val, exists := os.LookupEnv(envVar)
+	if !exists {
+		return 1
+	}
+
+	n, err := strconv.ParseInt(val, 10, 32)
+	if err != nil {
+		return 1
+	}
+
+	return int(n)
 }

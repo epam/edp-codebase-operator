@@ -7,6 +7,7 @@ import (
 	"reflect"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"time"
 
@@ -45,7 +46,7 @@ const (
 	errorStatus                         = "error"
 )
 
-func (r *ReconcileCodebaseBranch) SetupWithManager(mgr ctrl.Manager) error {
+func (r *ReconcileCodebaseBranch) SetupWithManager(mgr ctrl.Manager, maxConcurrentReconciles int) error {
 	p := predicate.Funcs{
 		UpdateFunc: func(e event.UpdateEvent) bool {
 			oo := e.ObjectOld.(*codebaseApi.CodebaseBranch)
@@ -60,7 +61,9 @@ func (r *ReconcileCodebaseBranch) SetupWithManager(mgr ctrl.Manager) error {
 		},
 	}
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&codebaseApi.CodebaseBranch{}, builder.WithPredicates(p)).
+		For(&codebaseApi.CodebaseBranch{}, builder.WithPredicates(p)).WithOptions(controller.Options{
+			MaxConcurrentReconciles: maxConcurrentReconciles,
+	}).
 		Complete(r)
 }
 
