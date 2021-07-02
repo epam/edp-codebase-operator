@@ -116,10 +116,6 @@ func (h PutProjectGerrit) tryToPushProjectToGerrit(sshPort int32, codebaseName, 
 
 	d := fmt.Sprintf("%v/%v", workDir, codebaseName)
 
-	if err := h.git.CreateLocalBranch(d, branchName); err != nil {
-		return errors.Wrapf(err, "creation default branch %v in Gerrit has been failed", branchName)
-	}
-
 	if err := CheckoutBranch(d, branchName, h.git); err != nil {
 		return errors.Wrapf(err, "checkout default branch %v in Gerrit has been failed", branchName)
 	}

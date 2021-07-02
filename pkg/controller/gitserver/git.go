@@ -39,7 +39,6 @@ type Git interface {
 	CreateRemoteTag(key, user, path, branchName, name string) error
 	Fetch(key, user, path, branchName string) error
 	Checkout(directory, branchName string) error
-	CreateLocalBranch(path, name string) error
 	GetCurrentBranchName(directory string) (string, error)
 	Init(directory string) error
 }
@@ -394,45 +393,25 @@ func (gp GitProvider) Checkout(directory, branchName string) error {
 		return err
 	}
 
-	err = w.Checkout(&git.CheckoutOptions{Branch: plumbing.ReferenceName(fmt.Sprintf("refs/heads/%v", branchName))})
+	err = r.Fetch(&git.FetchOptions{
+		RefSpecs: []config.RefSpec{"refs/*:refs/*"},
+	})
+	if err != nil && err.Error() != "already up-to-date" {
+		return err
+	}
+
+	createBranchOrNot, err := checkBranchExistence(branchName, *r); if err != nil {
+		return err
+	}
+
+	err = w.Checkout(&git.CheckoutOptions{
+		Branch: plumbing.ReferenceName(fmt.Sprintf("refs/heads/%s",branchName)),
+		Force: true,
+		Create: createBranchOrNot,
+	})
 	if err != nil {
 		return err
 	}
-	return nil
-}
-
-func (gp GitProvider) CreateLocalBranch(path, name string) error {
-	log.Info("start creating local branch", "name", name)
-	r, err := git.PlainOpen(path)
-	if err != nil {
-		return err
-	}
-
-	branches, err := r.Branches()
-	if err != nil {
-		return err
-	}
-
-	exists, err := isBranchExists(name, branches)
-	if err != nil {
-		return err
-	}
-
-	if exists {
-		log.Info("branch already exists. skip creating", "name", name)
-		return nil
-	}
-
-	ref, err := r.Head()
-	if err != nil {
-		return err
-	}
-
-	newRef := plumbing.NewReferenceFromStrings(fmt.Sprintf("refs/heads/%v", name), ref.Hash().String())
-	if err := r.Storer.SetReference(newRef); err != nil {
-		return err
-	}
-	log.Info("local branch has been created", "name", name)
 	return nil
 }
 
@@ -459,4 +438,31 @@ func (gp GitProvider) Init(directory string) error {
 	}
 	log.Info("git repository has been created")
 	return nil
+}
+
+func checkBranchExistence(branchName string, r git.Repository) (bool, error) {
+	log.Info("checking if branch exist", "branchName", branchName)
+	remote, err := r.Remote("origin")
+	if err != nil {
+		return false, err
+	}
+	refList, err := remote.List(&git.ListOptions{})
+	if err != nil {
+		return false, err
+	}
+	existBranchOrNot := true
+	refPrefix := "refs/heads/"
+	for _, ref := range refList {
+		refName := ref.Name().String()
+		if !strings.HasPrefix(refName, refPrefix) {
+			continue
+		}
+		b := refName[len(refPrefix):]
+		if b == branchName {
+			existBranchOrNot = false
+			break
+		}
+	}
+	log.Info("branch existence status", "branchName", branchName, "existBranchOrNot", existBranchOrNot)
+	return existBranchOrNot, nil
 }
