@@ -1,8 +1,9 @@
-{{if eq .Values.framework "operator-sdk"}}
+{{ if .Values.framework }}
+{{ if eq .Values.framework "operator-sdk" }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-    name: edp-{{ .Values.name }}-role-{{.Values.namespace}}
+    name: edp-{{ include "REPLACE_IT.serviceAccountName" . }}-role
 rules:
     - apiGroups:
           - ""
@@ -14,4 +15,5 @@ rules:
           - get
           - list
           - delete
+{{ end}}
 {{ end}}
