@@ -14,6 +14,10 @@ imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
 
+{{- if .Framework}}
+framework: {{.Framework}}
+{{- end}}
+
 serviceAccount:
   # Specifies whether a service account should be created
   create: true
