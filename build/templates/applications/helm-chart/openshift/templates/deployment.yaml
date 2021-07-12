@@ -52,12 +52,16 @@ spec:
             - name: http
               containerPort: 8080
               protocol: TCP
+{{- if .Values.framework }}
+{{- if ne .Values.framework "operator-sdk" }}
           livenessProbe:
             tcpSocket:
               port: http
           readinessProbe:
             tcpSocket:
               port: http
+{{- end}}
+{{- end}}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       {{- with .Values.nodeSelector }}
