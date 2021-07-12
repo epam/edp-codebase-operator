@@ -6,12 +6,14 @@ metadata:
     name: edp-{{ include "REPLACE_IT.serviceAccountName" . }}-role
 rules:
     - apiGroups:
-          - "*"
+          - ""
       resources:
           - configmaps
           - pods
-          - helloworlds
       verbs:
-          - '*'
+          - create
+          - get
+          - list
+          - delete
 {{ end}}
 {{ end}}
