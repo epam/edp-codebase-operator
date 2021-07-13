@@ -150,10 +150,12 @@ func TestTryToPutVersionFileMethod_MustBeFinishedSuccessfully(t *testing.T) {
 		nil)
 	mGit.On("PushChanges", fakePrivateKey, fakeUser, path, []config.RefSpec{util.HeadBranchesRefSpec, util.TagsRefSpec}).Return(
 		nil)
-	mGit.On("Checkout", path, "").Return(
+	mGit.On("Checkout", util.GetPointerStringP(nil), util.GetPointerStringP(nil), path, "").Return(
 		nil)
 	mGit.On("GetCurrentBranchName", path).Return(
 		"", nil)
+	mGit.On("CheckPermissions", "https://github.com/epmd-edp/go-go-go.git", util.GetPointerStringP(nil), util.GetPointerStringP(nil)).Return(
+		true)
 	h := PutVersionFile{
 		next:   nil,
 		client: initMockedClient(),
@@ -168,6 +170,8 @@ func TestTryToPutVersionFileMethod_MustBeFinishedSuccessfully(t *testing.T) {
 		Spec: codebaseApi.CodebaseSpec{
 			GitServer: fakeGitServerName,
 			Lang:      goLang,
+			BuildTool: goLang,
+			Framework: util.GetStringP(goLang),
 			Versioning: codebaseApi.Versioning{
 				Type: codebaseApi.Default,
 			},

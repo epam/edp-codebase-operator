@@ -87,7 +87,7 @@ func (h PutProjectGerrit) ServeRequest(c *v1alpha1.Codebase) error {
 		return errors.Wrapf(err, "initial provisioning of codebase %v has been failed", c.Name)
 	}
 
-	if err := h.tryToPushProjectToGerrit(*port, c.Name, wd, c.Namespace, c.Spec.DefaultBranch, c.Spec.Strategy); err != nil {
+	if err := h.tryToPushProjectToGerrit(c, *port, c.Name, wd, c.Namespace, c.Spec.DefaultBranch, c.Spec.Strategy); err != nil {
 		setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
 		return errors.Wrapf(err, "push to gerrit for codebase %v has been failed", c.Name)
 	}
@@ -102,7 +102,7 @@ func (h PutProjectGerrit) ServeRequest(c *v1alpha1.Codebase) error {
 	return nextServeOrNil(h.next, c)
 }
 
-func (h PutProjectGerrit) tryToPushProjectToGerrit(sshPort int32, codebaseName, workDir, namespace, branchName string, strategy v1alpha1.Strategy) error {
+func (h PutProjectGerrit) tryToPushProjectToGerrit(c *v1alpha1.Codebase, sshPort int32, codebaseName, workDir, namespace, branchName string, strategy v1alpha1.Strategy) error {
 	s, err := util.GetSecret(h.client, "gerrit-project-creator", namespace)
 	if err != nil {
 		return errors.Wrap(err, "unable to get gerrit-project-creator secret")
@@ -116,7 +116,12 @@ func (h PutProjectGerrit) tryToPushProjectToGerrit(sshPort int32, codebaseName, 
 
 	d := fmt.Sprintf("%v/%v", workDir, codebaseName)
 
-	if err := CheckoutBranch(d, branchName, h.git); err != nil {
+	ru, err := util.GetRepoUrl(c)
+	if err != nil {
+		return errors.Wrap(err, "couldn't build repo url")
+	}
+
+	if err := CheckoutBranch(ru, d, branchName, h.git, c, h.client); err != nil {
 		return errors.Wrapf(err, "checkout default branch %v in Gerrit has been failed", branchName)
 	}
 
@@ -160,7 +165,7 @@ func (h PutProjectGerrit) tryToCreateProjectInGerrit(sshPort int32, idrsa, host,
 	return nil
 }
 
-func (h PutProjectGerrit) tryToCloneRepo(repoUrl string, repositoryUsername string, repositoryPassword, workDir, codebaseName string) error {
+func (h PutProjectGerrit) tryToCloneRepo(repoUrl string, repositoryUsername *string, repositoryPassword  *string, workDir, codebaseName string) error {
 	destination := fmt.Sprintf("%v/%v", workDir, codebaseName)
 	log.Info("Start cloning repository", "src", repoUrl, "dest", destination)
 
@@ -186,22 +191,6 @@ func (h PutProjectGerrit) tryToCreateProjectInVcs(us *model.UserSettings, codeba
 	}
 	log.Info("VCS integration isn't enabled. Skip creation project in VCS")
 	return nil
-}
-
-func (h PutProjectGerrit) tryToGetRepositoryCredentials(c *v1alpha1.Codebase) (string, string, error) {
-	if c.Spec.Repository != nil {
-		return h.getRepoCreds(c.Name, c.Namespace)
-	}
-	return "", "", nil
-}
-
-func (h PutProjectGerrit) getRepoCreds(codebaseName, namespace string) (string, string, error) {
-	secret := fmt.Sprintf("repository-codebase-%v-temp", codebaseName)
-	repositoryUsername, repositoryPassword, err := util.GetVcsBasicAuthConfig(h.client, namespace, secret)
-	if err != nil {
-		return "", "", err
-	}
-	return repositoryUsername, repositoryPassword, nil
 }
 
 func (h PutProjectGerrit) setIntermediateSuccessFields(c *edpv1alpha1.Codebase, action edpv1alpha1.ActionType) error {
@@ -291,7 +280,7 @@ func (h PutProjectGerrit) notEmptyProjectProvisioning(c *v1alpha1.Codebase, rLog
 	}
 	rLog.Info("Repository URL to clone sources has been retrieved", "url", *ru)
 
-	repu, repp, err := h.tryToGetRepositoryCredentials(c)
+	repu, repp, err := GetRepositoryCredentialsIfExists(c, h.client)
 	if !h.git.CheckPermissions(*ru, repu, repp) {
 		msg := fmt.Errorf("user %v cannot get access to the repository %v", repu, *ru)
 		setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, msg.Error())
