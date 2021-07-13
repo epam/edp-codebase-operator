@@ -19,8 +19,9 @@ func (m MockGit) PushChanges(key, user, directory string, refSpecs []config.RefS
 	return args.Error(0)
 }
 
-func (m MockGit) CheckPermissions(repo string, user string, pass string) (accessible bool) {
-	panic("implement me")
+func (m MockGit) CheckPermissions(repo string, user, pass *string) (accessible bool) {
+	args := m.Called(repo, user, pass)
+	return args.Bool(0)
 }
 
 func (m MockGit) CloneRepositoryBySsh(key, user, repoUrl, destination string) error {
@@ -28,7 +29,7 @@ func (m MockGit) CloneRepositoryBySsh(key, user, repoUrl, destination string) er
 	return args.Error(0)
 }
 
-func (m MockGit) CloneRepository(repo, user, pass, destination string) error { panic("implement me") }
+func (m MockGit) CloneRepository(repo string, user *string, pass *string, destination string) error { panic("implement me") }
 
 func (m MockGit) CreateRemoteBranch(key, user, path, name string) error {
 	args := m.Called(key, user, path, name)
@@ -41,8 +42,8 @@ func (m MockGit) CreateRemoteTag(key, user, path, branchName, name string) error
 
 func (m MockGit) Fetch(key, user, path, branchName string) error { panic("implement me") }
 
-func (m MockGit) Checkout(directory, branchName string) error {
-	args := m.Called(directory, branchName)
+func (m MockGit) Checkout(user, pass *string, directory, branchName string) error {
+	args := m.Called(user, pass, directory, branchName)
 	return args.Error(0)
 }
 

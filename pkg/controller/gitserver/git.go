@@ -32,13 +32,13 @@ type GitSshData struct {
 type Git interface {
 	CommitChanges(directory, commitMsg string) error
 	PushChanges(key, user, directory string, refSpecs []config.RefSpec) error
-	CheckPermissions(repo string, user string, pass string) (accessible bool)
+	CheckPermissions(repo string, user, pass *string) (accessible bool)
 	CloneRepositoryBySsh(key, user, repoUrl, destination string) error
-	CloneRepository(repo, user, pass, destination string) error
+	CloneRepository(repo string, user *string, pass *string, destination string) error
 	CreateRemoteBranch(key, user, path, name string) error
 	CreateRemoteTag(key, user, path, branchName, name string) error
 	Fetch(key, user, path, branchName string) error
-	Checkout(directory, branchName string) error
+	Checkout(user, pass *string, directory, branchName string) error
 	GetCurrentBranchName(directory string) (string, error)
 	Init(directory string) error
 }
@@ -157,8 +157,11 @@ func (GitProvider) PushChanges(key, user, directory string, refSpecs []config.Re
 	return nil
 }
 
-func (GitProvider) CheckPermissions(repo string, user string, pass string) (accessible bool) {
+func (GitProvider) CheckPermissions(repo string, user, pass *string) (accessible bool) {
 	log.Info("checking permissions", "user", user, "repository", repo)
+	if user == nil || pass == nil {
+		return true
+	}
 	r, _ := git.Init(memory.NewStorage(), nil)
 	remote, _ := r.CreateRemote(&config.RemoteConfig{
 		Name: "origin",
@@ -166,8 +169,8 @@ func (GitProvider) CheckPermissions(repo string, user string, pass string) (acce
 	})
 	rfs, err := remote.List(&git.ListOptions{
 		Auth: &http.BasicAuth{
-			Username: user,
-			Password: pass,
+			Username: *user,
+			Password: *pass,
 		}})
 	if err != nil {
 		log.Error(err, fmt.Sprintf("User %v do not have access to %v repository", user, repo))
@@ -194,14 +197,19 @@ func (GitProvider) CloneRepositoryBySsh(key, user, repoUrl, destination string) 
 	return nil
 }
 
-func (GitProvider) CloneRepository(repo, user, pass, destination string) error {
+func (GitProvider) CloneRepository(repo string, user *string, pass *string, destination string) error {
 	log.Info("Start cloning", "repository", repo)
-	_, err := git.PlainClone(destination, false, &git.CloneOptions{
-		URL: repo,
-		Auth: &http.BasicAuth{
-			Username: user,
-			Password: pass,
-		}})
+	gco := &git.CloneOptions{URL: repo}
+	if user != nil && pass != nil {
+		gco = &git.CloneOptions{
+			URL: repo,
+			Auth: &http.BasicAuth{
+				Username: *user,
+				Password: *pass,
+			},
+		}
+	}
+	_, err := git.PlainClone(destination, false, gco)
 	if err != nil {
 		return err
 	}
@@ -381,7 +389,7 @@ func (gp GitProvider) Fetch(key, user, path, branchName string) error {
 	return nil
 }
 
-func (gp GitProvider) Checkout(directory, branchName string) error {
+func (gp GitProvider) Checkout(user, pass *string, directory, branchName string) error {
 	log.Info("start checkout branch", "name", branchName)
 	r, err := git.PlainOpen(directory)
 	if err != nil {
@@ -393,14 +401,25 @@ func (gp GitProvider) Checkout(directory, branchName string) error {
 		return err
 	}
 
-	err = r.Fetch(&git.FetchOptions{
-		RefSpecs: []config.RefSpec{"refs/*:refs/*"},
-	})
-	if err != nil && err.Error() != "already up-to-date" {
-		return err
+	gfo := &git.FetchOptions{RefSpecs: []config.RefSpec{"refs/*:refs/*"}}
+	if user != nil && pass != nil {
+		gfo = &git.FetchOptions{
+			RefSpecs: []config.RefSpec{"refs/*:refs/*"},
+			Auth: &http.BasicAuth{
+				Username: *user,
+				Password: *pass,
+			},
+		}
 	}
 
-	createBranchOrNot, err := checkBranchExistence(branchName, *r); if err != nil {
+	err = r.Fetch(gfo)
+	if err != nil {
+		if err.Error() != "already up-to-date" {
+			return err
+		}
+	}
+
+	createBranchOrNot, err := checkBranchExistence(user, pass, branchName, *r); if err != nil {
 		return err
 	}
 
@@ -440,13 +459,23 @@ func (gp GitProvider) Init(directory string) error {
 	return nil
 }
 
-func checkBranchExistence(branchName string, r git.Repository) (bool, error) {
+func checkBranchExistence(user, pass *string, branchName string, r git.Repository) (bool, error) {
 	log.Info("checking if branch exist", "branchName", branchName)
 	remote, err := r.Remote("origin")
 	if err != nil {
 		return false, err
 	}
-	refList, err := remote.List(&git.ListOptions{})
+	glo := &git.ListOptions{}
+	if user != nil && pass != nil {
+		glo = &git.ListOptions{Auth:
+		&http.BasicAuth{
+			Username: *user,
+			Password: *pass,
+		},
+		}
+	}
+
+	refList, err := remote.List(glo)
 	if err != nil {
 		return false, err
 	}

@@ -108,7 +108,12 @@ func (h PutVersionFile) tryToPutVersionFile(c *v1alpha1.Codebase, projectPath st
 		return errors.Wrapf(err, "an error has occurred while getting %v secret", gs.NameSshKeySecret)
 	}
 
-	if err := CheckoutBranch(projectPath, c.Spec.DefaultBranch, h.git); err != nil {
+	ru, err := util.GetRepoUrl(c)
+	if err != nil {
+		return errors.Wrap(err, "couldn't build repo url")
+	}
+
+	if err := CheckoutBranch(ru, projectPath, c.Spec.DefaultBranch, h.git, c, h.client); err != nil {
 		return errors.Wrapf(err, "checkout default branch %v in Gerrit has been failed", c.Spec.DefaultBranch)
 	}
 
