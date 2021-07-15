@@ -6,6 +6,7 @@ import (
 	git "github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	"github.com/pkg/errors"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -23,7 +24,7 @@ func GetRepositoryCredentialsIfExists(c *v1alpha1.Codebase, client client.Client
 
 func CheckoutBranch(repository *string, projectPath, branchName string, git git.Git, c *v1alpha1.Codebase, client client.Client) error {
 	user, password, err := GetRepositoryCredentialsIfExists(c, client)
-	if err != nil {
+	if err != nil && !k8serrors.IsNotFound(err) {
 		return err
 	}
 	if !git.CheckPermissions(*repository, user, password) {
