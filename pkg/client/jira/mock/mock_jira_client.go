@@ -1,5 +1,6 @@
 package mock
 
+/*
 import (
 	"github.com/andygrunwald/go-jira"
 	"github.com/stretchr/testify/mock"
@@ -57,3 +58,4 @@ func (m MockClient) CreateIssueLink(issueId, title, url string) error {
 	args := m.Called(issueId, title, url)
 	return args.Error(0)
 }
+*/

@@ -1,19 +1,15 @@
 package jenkins
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"time"
 
 	"github.com/bndr/gojenkins"
-	"github.com/epam/edp-codebase-operator/v2/pkg/util"
-	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
-	jenkinsOperatorSpec "github.com/epam/edp-jenkins-operator/v2/pkg/service/jenkins/spec"
+	//jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
+	//jenkinsOperatorSpec "github.com/epam/edp-jenkins-operator/v2/pkg/service/jenkins/spec"
 	"github.com/pkg/errors"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var log = ctrl.Log.WithName("jenkins-client")
@@ -164,6 +160,7 @@ func (c JenkinsClient) IsJobRunning(name string) (*bool, error) {
 	return &isRunning, nil
 }
 
+/*
 func GetJenkins(c client.Client, namespace string) (*jenkinsApi.Jenkins, error) {
 	options := client.ListOptions{Namespace: namespace}
 	jenkinsList := &jenkinsApi.JenkinsList{}
@@ -206,4 +203,4 @@ func GetJenkinsUrl(jenkins jenkinsApi.Jenkins, namespace string) string {
 		return fmt.Sprintf("http://jenkins.%s:8080%v", namespace, basePath)
 	}
 	return url
-}
+}*/
