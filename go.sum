@@ -285,6 +285,7 @@ github.com/epam/edp-codebase-operator/v2 v2.3.0-95.0.20210611080055-9f3a3a271e99
 github.com/epam/edp-codebase-operator/v2 v2.3.0-95.0.20210615090821-27e73211c5f4/go.mod h1:H/1y6WzQimeVsRQ6uUs0gp5IWYQ20Y4aTEubwUuzLqQ=
 github.com/epam/edp-codebase-operator/v2 v2.3.0-95.0.20210719094151-e8e2f2e673ee/go.mod h1:RrlWmvSGjklimKquYTmaZ5RZbqTp77Y6aRzMKrH1oLU=
 github.com/epam/edp-codebase-operator/v2 v2.3.0-95.0.20210719101613-f5c6cff5e79e/go.mod h1:wvrxou1GI0jSEHAn4W35sqeWdNrFAcTxpR84BzKeiZs=
+github.com/epam/edp-codebase-operator/v2 v2.3.0-95.0.20210719112602-046af47ad1c0/go.mod h1:6lrvH9ratDh1CxYZRQu5XoESAPAZXvhNO3gTkNv9ihA=
 github.com/epam/edp-component-operator v0.1.1-0.20210413101042-1d8f823f27cc/go.mod h1:fxiH4grhavez0q1vBcDleIcQ5mXiIrtSK34TRtgQ4Ec=
 github.com/epam/edp-component-operator v0.1.1-0.20210427065236-c7dce7f4ea2b h1:wFz1XBg83O7C5WrvwPsQJh37gG8yP2jzozM1ntG4Fhw=
 github.com/epam/edp-component-operator v0.1.1-0.20210427065236-c7dce7f4ea2b/go.mod h1:fxiH4grhavez0q1vBcDleIcQ5mXiIrtSK34TRtgQ4Ec=
@@ -314,6 +315,8 @@ github.com/epam/edp-perf-operator/v2 v2.0.0-20210615084859-4e4202d10e93 h1:W7Syh
 github.com/epam/edp-perf-operator/v2 v2.0.0-20210615084859-4e4202d10e93/go.mod h1:V04hAXIN/w/bO4tW0Dy5DJV0Y3ZvbnNPvuSLu95Nk00=
 github.com/epam/edp-perf-operator/v2 v2.0.0-20210719095243-1b625310ce5f h1:SbUwCnyv6xjTTQjbAK8lJCRrqxlDNiD+56g/qFEOgfs=
 github.com/epam/edp-perf-operator/v2 v2.0.0-20210719095243-1b625310ce5f/go.mod h1:hRenkvzAytTCy2vCGew+TsrnfLO3mNwZp13CQwUw2MQ=
+github.com/epam/edp-perf-operator/v2 v2.0.0-20210719113600-816c452ccbb0 h1:BROpNruN9c2WP4kyHaS6LuCgRMBnmf5rxZJh38Z128E=
+github.com/epam/edp-perf-operator/v2 v2.0.0-20210719113600-816c452ccbb0/go.mod h1:0l24t5TZ1YGsOjDchNnNgI1axIdgr9Yre73uf9LU7JU=
 github.com/evanphx/json-patch v4.0.0+incompatible/go.mod h1:50XU6AFN0ol/bzJsmQLiYLvXMP4fmwYFNcr97nuDLSk=
 github.com/evanphx/json-patch v4.2.0+incompatible/go.mod h1:50XU6AFN0ol/bzJsmQLiYLvXMP4fmwYFNcr97nuDLSk=
 github.com/evanphx/json-patch v4.5.0+incompatible/go.mod h1:50XU6AFN0ol/bzJsmQLiYLvXMP4fmwYFNcr97nuDLSk=

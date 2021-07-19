@@ -19,7 +19,7 @@ require (
 	github.com/epam/edp-cd-pipeline-operator/v2 v2.3.0-58.0.20210719102353-5b2c321433a2
 	github.com/epam/edp-component-operator v0.1.1-0.20210712140516-09b8bb3a4cff
 	github.com/epam/edp-jenkins-operator/v2 v2.3.0-130.0.20210719110425-d2d190f7bff9
-	github.com/epam/edp-perf-operator/v2 v2.0.0-20210719095243-1b625310ce5f
+	github.com/epam/edp-perf-operator/v2 v2.0.0-20210719113600-816c452ccbb0
 	github.com/go-logr/logr v0.4.0
 	github.com/go-openapi/spec v0.19.5
 	github.com/lib/pq v1.8.0
