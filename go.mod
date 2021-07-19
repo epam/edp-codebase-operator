@@ -4,11 +4,11 @@ go 1.14
 
 replace (
 	git.apache.org/thrift.git => github.com/apache/thrift v0.12.0
+	github.com/kubernetes-incubator/reference-docs => github.com/kubernetes-sigs/reference-docs v0.0.0-20170929004150-fcf65347b256
+	github.com/markbates/inflect => github.com/markbates/inflect v1.0.4
 	github.com/openshift/api => github.com/openshift/api v0.0.0-20210416130433-86964261530c
 	github.com/openshift/client-go => github.com/openshift/client-go v0.0.0-20210112165513-ebc401615f47
 	k8s.io/api => k8s.io/api v0.20.7-rc.0
-	github.com/kubernetes-incubator/reference-docs => github.com/kubernetes-sigs/reference-docs v0.0.0-20170929004150-fcf65347b256
-	github.com/markbates/inflect => github.com/markbates/inflect v1.0.4
 )
 
 require (
@@ -16,7 +16,9 @@ require (
 	github.com/andygrunwald/go-jira v1.12.0
 	github.com/bndr/gojenkins v0.2.1-0.20181125150310-de43c03cf849
 	github.com/dchest/uniuri v0.0.0-20160212164326-8902c56451e9
-	github.com/epam/edp-component-operator v0.1.1-0.20210712133513-acb35d96931c
+	github.com/epam/edp-component-operator v0.1.1-0.20210712140516-09b8bb3a4cff
+	github.com/epam/edp-jenkins-operator/v2 v2.3.0-130.0.20210719100914-5207ab4d883c
+	github.com/epam/edp-perf-operator/v2 v2.0.0-20210719095243-1b625310ce5f
 	github.com/go-logr/logr v0.4.0
 	github.com/go-openapi/spec v0.19.5
 	github.com/lib/pq v1.8.0
