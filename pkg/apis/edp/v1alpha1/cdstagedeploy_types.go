@@ -1,7 +1,6 @@
 package v1alpha1
 
 import (
-	"github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -19,9 +18,8 @@ type CDStageDeploySpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html
-	Pipeline string       `json:"pipeline"`
-	Stage    string       `json:"stage"`
-	Tag      v1alpha1.Tag `json:"tag"`
+	Pipeline string `json:"pipeline"`
+	Stage    string `json:"stage"`
 }
 
 // CDStageDeployStatus defines the observed state of CDStageDeploy

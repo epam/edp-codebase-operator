@@ -2,21 +2,9 @@ package main
 
 import (
 	"flag"
-	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	"github.com/epam/edp-codebase-operator/v2/pkg/controller/cdstagedeploy"
-	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase"
-	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebasebranch"
-	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebaseimagestream"
-	"github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver"
-	"github.com/epam/edp-codebase-operator/v2/pkg/controller/gittag"
-	"github.com/epam/edp-codebase-operator/v2/pkg/controller/imagestreamtag"
-	"github.com/epam/edp-codebase-operator/v2/pkg/controller/jiraissuemetadata"
-	"github.com/epam/edp-codebase-operator/v2/pkg/controller/jiraserver"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	edpCompApi "github.com/epam/edp-component-operator/pkg/apis/v1/v1alpha1"
-	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
-	perfAPi "github.com/epam/edp-perf-operator/v2/pkg/apis/edp/v1alpha1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/client-go/rest"
 	"os"
@@ -46,13 +34,7 @@ func init() {
 
 	utilruntime.Must(codebaseApi.AddToScheme(scheme))
 
-	utilruntime.Must(cdPipeApi.AddToScheme(scheme))
-
 	utilruntime.Must(edpCompApi.AddToScheme(scheme))
-
-	utilruntime.Must(jenkinsApi.AddToScheme(scheme))
-
-	utilruntime.Must(perfAPi.AddToScheme(scheme))
 }
 
 func main() {
@@ -103,62 +85,6 @@ func main() {
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
-		os.Exit(1)
-	}
-
-	ctrlLog := ctrl.Log.WithName("controllers")
-
-	cdStageDeployCtrl := cdstagedeploy.NewReconcileCDStageDeploy(mgr.GetClient(), mgr.GetScheme(), ctrlLog)
-	if err := cdStageDeployCtrl.SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "cd-stage-deploy")
-		os.Exit(1)
-	}
-
-	codebaseCtrl := codebase.NewReconcileCodebase(mgr.GetClient(), mgr.GetScheme(), ctrlLog)
-	if err := codebaseCtrl.SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "codebase")
-		os.Exit(1)
-	}
-
-	cbCtrl := codebasebranch.NewReconcileCodebaseBranch(mgr.GetClient(), mgr.GetScheme(), ctrlLog)
-	if err := cbCtrl.SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "codebase-branch")
-		os.Exit(1)
-	}
-
-	cisCtrl := codebaseimagestream.NewReconcileCodebaseImageStream(mgr.GetClient(), ctrlLog)
-	if err := cisCtrl.SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "codebase-image-stream")
-		os.Exit(1)
-	}
-
-	gitServerCtrl := gitserver.NewReconcileGitServer(mgr.GetClient(), ctrlLog)
-	if err := gitServerCtrl.SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "git-server")
-		os.Exit(1)
-	}
-
-	gitTagCtrl := gittag.NewReconcileGitTag(mgr.GetClient(), ctrlLog)
-	if err := gitTagCtrl.SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "git-tag")
-		os.Exit(1)
-	}
-
-	istCtrl := imagestreamtag.NewReconcileImageStreamTag(mgr.GetClient(), ctrlLog)
-	if err := istCtrl.SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "image-stream-tag")
-		os.Exit(1)
-	}
-
-	jimCtrl := jiraissuemetadata.NewReconcileJiraIssueMetadata(mgr.GetClient(), mgr.GetScheme(), ctrlLog)
-	if err := jimCtrl.SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "jira-issue-metadata")
-		os.Exit(1)
-	}
-
-	jsCtrl := jiraserver.NewReconcileJiraServer(mgr.GetClient(), mgr.GetScheme(), ctrlLog)
-	if err := jsCtrl.SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "jira-server")
 		os.Exit(1)
 	}
 
