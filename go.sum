@@ -276,6 +276,8 @@ github.com/epam/edp-cd-pipeline-operator/v2 v2.3.0-58.0.20210629111323-ae188c4ba
 github.com/epam/edp-cd-pipeline-operator/v2 v2.3.0-58.0.20210629111323-ae188c4baac7/go.mod h1:ilpmzf1sN+TWqEtKBXX+1E3kVPNERWZa5+fwfMNJo8g=
 github.com/epam/edp-cd-pipeline-operator/v2 v2.3.0-58.0.20210719102353-5b2c321433a2 h1:JUvJjUu7TTdsGbEmGNoLvAek9qp7Ji3bxhvDMrsA1nc=
 github.com/epam/edp-cd-pipeline-operator/v2 v2.3.0-58.0.20210719102353-5b2c321433a2/go.mod h1:Pf+GV1xiGM3o3HY2kxhRvKQJaS3WZ+l1b/FbwAzeyV8=
+github.com/epam/edp-cd-pipeline-operator/v2 v2.3.0-58.0.20210723121127-8ebba1c38950 h1:EUDAmBZIKGUQbN1HOhbcnsKy5ZQVKi5Tei3JbQn5VYc=
+github.com/epam/edp-cd-pipeline-operator/v2 v2.3.0-58.0.20210723121127-8ebba1c38950/go.mod h1:Pf+GV1xiGM3o3HY2kxhRvKQJaS3WZ+l1b/FbwAzeyV8=
 github.com/epam/edp-codebase-operator/v2 v2.3.0-95.0.20210420131411-dbb514cb011d/go.mod h1:Ozq8Z94gk9nvhgxp+IKXPo9czWK2q30o0FTq6wz+apk=
 github.com/epam/edp-codebase-operator/v2 v2.3.0-95.0.20210420131738-685e2b4e0def/go.mod h1:edif/4FJioi9L2sod/ZX32XsoAxWR6EndX3amHKZGx0=
 github.com/epam/edp-codebase-operator/v2 v2.3.0-95.0.20210420132318-496bccd39817/go.mod h1:fvwn3ewURl1kV9ipzlC4G2nHWAnzIFROla6USJMfdYk=
