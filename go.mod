@@ -16,7 +16,7 @@ require (
 	github.com/andygrunwald/go-jira v1.12.0
 	github.com/bndr/gojenkins v0.2.1-0.20181125150310-de43c03cf849
 	github.com/dchest/uniuri v0.0.0-20160212164326-8902c56451e9
-	github.com/epam/edp-cd-pipeline-operator/v2 v2.3.0-58.0.20210723121127-8ebba1c38950
+	github.com/epam/edp-cd-pipeline-operator/v2 v2.3.0-58.0.20210726142624-e26cea43163f
 	github.com/epam/edp-component-operator v0.1.1-0.20210712140516-09b8bb3a4cff
 	github.com/epam/edp-jenkins-operator/v2 v2.3.0-130.0.20210719110425-d2d190f7bff9
 	github.com/epam/edp-perf-operator/v2 v2.0.0-20210719113600-816c452ccbb0
