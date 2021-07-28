@@ -40,9 +40,9 @@ func CheckoutBranch(repository *string, projectPath, branchName string, git git.
 		return nil
 	}
 
-	remote := true
-	if c.Spec.Strategy != "Create" {
-		remote = false
+	remote := false
+	if c.Spec.Strategy != "create" {
+		remote = true
 	}
 
 	if err := git.Checkout(user, password, projectPath, branchName, remote); err != nil {

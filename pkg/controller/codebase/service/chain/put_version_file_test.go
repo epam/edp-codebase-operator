@@ -150,7 +150,7 @@ func TestTryToPutVersionFileMethod_MustBeFinishedSuccessfully(t *testing.T) {
 		nil)
 	mGit.On("PushChanges", fakePrivateKey, fakeUser, path, []config.RefSpec{util.HeadBranchesRefSpec, util.TagsRefSpec}).Return(
 		nil)
-	mGit.On("Checkout", util.GetPointerStringP(nil), util.GetPointerStringP(nil), path, "", false).Return(
+	mGit.On("Checkout", util.GetPointerStringP(nil), util.GetPointerStringP(nil), path, "", true).Return(
 		nil)
 	mGit.On("GetCurrentBranchName", path).Return(
 		"", nil)
