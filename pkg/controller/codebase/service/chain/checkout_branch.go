@@ -40,7 +40,12 @@ func CheckoutBranch(repository *string, projectPath, branchName string, git git.
 		return nil
 	}
 
-	if err := git.Checkout(user, password, projectPath, branchName); err != nil {
+	remote := true
+	if c.Spec.Strategy != "Create" {
+		remote = false
+	}
+
+	if err := git.Checkout(user, password, projectPath, branchName, remote); err != nil {
 		return errors.Wrapf(err, "checkout default branch %v has been failed", branchName)
 	}
 	return nil

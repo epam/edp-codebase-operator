@@ -38,7 +38,7 @@ type Git interface {
 	CreateRemoteBranch(key, user, path, name string) error
 	CreateRemoteTag(key, user, path, branchName, name string) error
 	Fetch(key, user, path, branchName string) error
-	Checkout(user, pass *string, directory, branchName string) error
+	Checkout(user, pass *string, directory, branchName string, remote bool) error
 	GetCurrentBranchName(directory string) (string, error)
 	Init(directory string) error
 }
@@ -389,7 +389,7 @@ func (gp GitProvider) Fetch(key, user, path, branchName string) error {
 	return nil
 }
 
-func (gp GitProvider) Checkout(user, pass *string, directory, branchName string) error {
+func (gp GitProvider) Checkout(user, pass *string, directory, branchName string, remote bool) error {
 	log.Info("start checkout branch", "name", branchName)
 	r, err := git.PlainOpen(directory)
 	if err != nil {
@@ -401,27 +401,30 @@ func (gp GitProvider) Checkout(user, pass *string, directory, branchName string)
 		return err
 	}
 
-	gfo := &git.FetchOptions{RefSpecs: []config.RefSpec{"refs/*:refs/*"}}
-	if user != nil && pass != nil {
-		gfo = &git.FetchOptions{
-			RefSpecs: []config.RefSpec{"refs/*:refs/*"},
-			Auth: &http.BasicAuth{
-				Username: *user,
-				Password: *pass,
-			},
+	createBranchOrNot := true
+	if remote {
+		gfo := &git.FetchOptions{RefSpecs: []config.RefSpec{"refs/*:refs/*"}}
+		if user != nil && pass != nil {
+			gfo = &git.FetchOptions{
+				RefSpecs: []config.RefSpec{"refs/*:refs/*"},
+				Auth: &http.BasicAuth{
+					Username: *user,
+					Password: *pass,
+				},
+			}
 		}
-	}
 
-	err = r.Fetch(gfo)
-	if err != nil {
-		if err.Error() != "already up-to-date" {
+		err = r.Fetch(gfo)
+		if err != nil {
+			if err.Error() != "already up-to-date" {
+				return err
+			}
+		}
+
+		createBranchOrNot, err = checkBranchExistence(user, pass, branchName, *r)
+		if err != nil {
 			return err
 		}
-	}
-
-	createBranchOrNot, err := checkBranchExistence(user, pass, branchName, *r)
-	if err != nil {
-		return err
 	}
 
 	err = w.Checkout(&git.CheckoutOptions{
