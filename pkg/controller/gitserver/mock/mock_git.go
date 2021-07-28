@@ -42,8 +42,8 @@ func (m MockGit) CreateRemoteTag(key, user, path, branchName, name string) error
 
 func (m MockGit) Fetch(key, user, path, branchName string) error { panic("implement me") }
 
-func (m MockGit) Checkout(user, pass *string, directory, branchName string) error {
-	args := m.Called(user, pass, directory, branchName)
+func (m MockGit) Checkout(user, pass *string, directory, branchName string, remote bool) error {
+	args := m.Called(user, pass, directory, branchName, remote)
 	return args.Error(0)
 }
 
