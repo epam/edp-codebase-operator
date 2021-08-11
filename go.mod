@@ -22,6 +22,7 @@ require (
 	github.com/epam/edp-perf-operator/v2 v2.0.0-20210719113600-816c452ccbb0
 	github.com/go-logr/logr v0.4.0
 	github.com/go-openapi/spec v0.19.5
+	github.com/jarcoal/httpmock v1.0.8
 	github.com/lib/pq v1.8.0
 	github.com/openshift/client-go v3.9.0+incompatible
 	github.com/pkg/errors v0.9.1

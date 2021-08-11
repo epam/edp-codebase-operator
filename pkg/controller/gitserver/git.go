@@ -176,7 +176,13 @@ func (GitProvider) CheckPermissions(repo string, user, pass *string) (accessible
 		log.Error(err, fmt.Sprintf("User %v do not have access to %v repository", user, repo))
 		return false
 	}
-	return len(rfs) != 0
+
+	if len(rfs) == 0 {
+		log.Error(errors.New("there are not refs in repository"), "no refs in repository")
+		return false
+	}
+
+	return true
 }
 
 func (GitProvider) CloneRepositoryBySsh(key, user, repoUrl, destination string) error {
