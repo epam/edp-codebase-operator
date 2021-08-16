@@ -8,7 +8,7 @@ ENV OPERATOR=/usr/local/bin/codebase-operator \
 
 
 # install operator binary
-COPY codebase-operator ${OPERATOR}
+COPY go-binary ${OPERATOR}
 
 RUN apk add --no-cache ca-certificates==20191127-r5 \
                        openssh-client==8.4_p1-r3 \
