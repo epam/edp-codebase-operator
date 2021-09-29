@@ -2,6 +2,7 @@ package chain
 
 import (
 	"fmt"
+
 	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	edpv1alpha1 "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/service/chain/handler"
@@ -55,7 +56,8 @@ func (h PutGerritReplication) tryToSetupGerritReplication(codebaseName, namespac
 
 		idrsa := string(s.Data[util.PrivateSShKeyName])
 		host := fmt.Sprintf("gerrit.%v", namespace)
-		return gerrit.SetupProjectReplication(h.client, *port, host, idrsa, codebaseName, vcsConf.VcsSshUrl, namespace)
+		return gerrit.SetupProjectReplication(h.client, *port, host, idrsa, codebaseName, vcsConf.VcsSshUrl, namespace,
+			log)
 	}
 	log.Info("Skipped Gerrit replication configuration. VCS integration isn't enabled")
 	return nil

@@ -7,19 +7,20 @@ import (
 	"fmt"
 	"html/template"
 	"io"
-	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"log"
 	"net"
 	"os"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"time"
 
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
+	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/config"
+	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/ssh"
-	"gopkg.in/src-d/go-git.v4"
-	"gopkg.in/src-d/go-git.v4/config"
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type SSHCommand struct {
@@ -92,7 +93,7 @@ func PublicKeyFile(idrsa string) ssh.AuthMethod {
 	return ssh.PublicKeys(key)
 }
 
-func SshInit(port int32, idrsa, host string) (SSHClient, error) {
+func SshInit(port int32, idrsa, host string, logger logr.Logger) (SSHClient, error) {
 	sshConfig := &ssh.ClientConfig{
 		User: "project-creator",
 		Auth: []ssh.AuthMethod{
@@ -101,17 +102,18 @@ func SshInit(port int32, idrsa, host string) (SSHClient, error) {
 		HostKeyCallback: ssh.HostKeyCallback(func(hostname string, remote net.Addr, key ssh.PublicKey) error { return nil }),
 	}
 
-	client := &SSHClient{
+	cl := SSHClient{
 		Config: sshConfig,
 		Host:   host,
 		Port:   port,
 	}
-	log.Printf("SSH Client has been initialized: Host: %v Port: %v", host, port)
 
-	return *client, nil
+	logger.Info("SSH Client has been initialized", "host", host, "port", port)
+
+	return cl, nil
 }
 
-func CheckProjectExist(port int32, idrsa, host, appName string) (*bool, error) {
+func CheckProjectExist(port int32, idrsa, host, appName string, logger logr.Logger) (*bool, error) {
 	var raw map[string]interface{}
 
 	command := "gerrit ls-projects --format json"
@@ -124,12 +126,12 @@ func CheckProjectExist(port int32, idrsa, host, appName string) (*bool, error) {
 		Stderr: os.Stderr,
 	}
 
-	client, err := SshInit(port, idrsa, host)
+	cl, err := SshInit(port, idrsa, host, logger)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to init ssh")
 	}
 
-	outputCmd, err := client.RunCommand(cmd)
+	outputCmd, err := cl.RunCommand(cmd)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to run ssh command")
 	}
@@ -145,7 +147,7 @@ func CheckProjectExist(port int32, idrsa, host, appName string) (*bool, error) {
 	return &isExist, nil
 }
 
-func CreateProject(port int32, idrsa, host, appName string) error {
+func CreateProject(port int32, idrsa, host, appName string, logger logr.Logger) error {
 	command := fmt.Sprintf("gerrit create-project %v", appName)
 	cmd := &SSHCommand{
 		Path:   command,
@@ -155,20 +157,21 @@ func CreateProject(port int32, idrsa, host, appName string) error {
 		Stderr: os.Stderr,
 	}
 
-	client, err := SshInit(port, idrsa, host)
+	cl, err := SshInit(port, idrsa, host, logger)
 	if err != nil {
 		return err
 	}
 
-	_, err = client.RunCommand(cmd)
+	_, err = cl.RunCommand(cmd)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func AddRemoteLinkToGerrit(repoPath string, host string, port int32, appName string) error {
-	remoteUrl := fmt.Sprintf("ssh://project-creator@%v:%v/%v", host, port, appName)
+func AddRemoteLinkToGerrit(repoPath string, host string, port int32, appName string, logger logr.Logger) error {
+	remoteUrl := fmt.Sprintf("ssh://%v:%v/%v", host, port, appName)
+
 	r, err := git.PlainOpen(repoPath)
 	if err != nil {
 		log.Println(err)
@@ -187,8 +190,10 @@ func AddRemoteLinkToGerrit(repoPath string, host string, port int32, appName str
 		log.Println(err)
 		return err
 	}
-	log.Printf("Remote link has been added: repoPath: %v Host: %v Port: %v AppName: %v",
-		repoPath, host, port, appName)
+
+	logger.Info("Remote link has been added", "repoPath", repoPath, "host", host, "port", port,
+		"appName", appName)
+
 	return nil
 }
 
@@ -213,9 +218,10 @@ func generateReplicationConfig(templatePath, templateName string, params Replica
 	return renderedTemplate.String(), nil
 }
 
-func SetupProjectReplication(client client.Client, sshPort int32, host, idrsa, codebaseName, namespace, vcsSshUrl string) error {
+func SetupProjectReplication(client client.Client, sshPort int32, host, idrsa, codebaseName, namespace,
+	vcsSshUrl string, logger logr.Logger) error {
+	logger.Info("Start setup project replication for app", "codebase", codebaseName)
 
-	log.Printf("Start setup project replication for app: %v", codebaseName)
 	replicaConfigNew, err := generateReplicationConfig(
 		util.GerritTemplates, ReplicationConfigTemplateName, ReplicationConfigParams{
 			Name:      codebaseName,
@@ -241,7 +247,7 @@ func SetupProjectReplication(client client.Client, sshPort int32, host, idrsa, c
 	log.Println("Waiting for gerrit replication config map appears in gerrit pod. Sleeping for 90 seconds...")
 	time.Sleep(90 * time.Second)
 
-	err = reloadReplicationPlugin(sshPort, idrsa, host)
+	err = reloadReplicationPlugin(sshPort, idrsa, host, logger)
 	if err != nil {
 		log.Printf("Unable to reload replication plugin: %v", err)
 		return err
@@ -251,7 +257,7 @@ func SetupProjectReplication(client client.Client, sshPort int32, host, idrsa, c
 	return nil
 }
 
-func reloadReplicationPlugin(port int32, idrsa, host string) error {
+func reloadReplicationPlugin(port int32, idrsa, host string, logger logr.Logger) error {
 	command := "gerrit plugin reload replication"
 
 	cmd := &SSHCommand{
@@ -262,16 +268,17 @@ func reloadReplicationPlugin(port int32, idrsa, host string) error {
 		Stderr: os.Stderr,
 	}
 
-	client, err := SshInit(port, idrsa, host)
+	cl, err := SshInit(port, idrsa, host, logger)
 	if err != nil {
 		return err
 	}
 
-	_, err = client.RunCommand(cmd)
+	_, err = cl.RunCommand(cmd)
 	if err != nil {
 		return err
 	}
 
-	log.Printf("Gerrit replication plugin has been reloaded Host: %v Port: %v", host, port)
+	logger.Info("Gerrit replication plugin has been reloaded", "Host", host, "Port", port)
+
 	return nil
 }

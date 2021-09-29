@@ -2,25 +2,32 @@ package gitserver
 
 import (
 	"fmt"
+	"io/ioutil"
+	"net/url"
+	"os"
+	"os/exec"
+	"strings"
+	"time"
+
 	"github.com/epam/edp-codebase-operator/v2/pkg/gerrit"
 	"github.com/epam/edp-codebase-operator/v2/pkg/model"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
+	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/config"
+	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/object"
+	"github.com/go-git/go-git/v5/plumbing/storer"
+	"github.com/go-git/go-git/v5/plumbing/transport/http"
+	"github.com/go-git/go-git/v5/storage/memory"
+	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/ssh"
-	"gopkg.in/src-d/go-git.v4"
-	"gopkg.in/src-d/go-git.v4/config"
-	"gopkg.in/src-d/go-git.v4/plumbing"
-	"gopkg.in/src-d/go-git.v4/plumbing/object"
-	"gopkg.in/src-d/go-git.v4/plumbing/storer"
-	"gopkg.in/src-d/go-git.v4/plumbing/transport/http"
-	goGit "gopkg.in/src-d/go-git.v4/plumbing/transport/ssh"
-	"gopkg.in/src-d/go-git.v4/storage/memory"
 	v1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strings"
-	"time"
 )
+
+const tempDir = "/tmp"
 
 type GitSshData struct {
 	Host string
@@ -31,7 +38,7 @@ type GitSshData struct {
 
 type Git interface {
 	CommitChanges(directory, commitMsg string) error
-	PushChanges(key, user, directory string, refSpecs []config.RefSpec) error
+	PushChanges(key, user, directory string) error
 	CheckPermissions(repo string, user, pass *string) (accessible bool)
 	CloneRepositoryBySsh(key, user, repoUrl, destination string) error
 	CloneRepository(repo string, user *string, pass *string, destination string) error
@@ -80,7 +87,7 @@ func (gp GitProvider) CreateRemoteBranch(key, user, path, name string) error {
 		return err
 	}
 
-	if err := gp.PushChanges(key, user, path, []config.RefSpec{util.HeadBranchesRefSpec, util.TagsRefSpec}); err != nil {
+	if err := gp.PushChanges(key, user, path); err != nil {
 		return err
 	}
 	log.Info("branch has been created", "name", name)
@@ -133,26 +140,23 @@ func (GitProvider) CommitChanges(directory, commitMsg string) error {
 	return nil
 }
 
-func (GitProvider) PushChanges(key, user, directory string, refSpecs []config.RefSpec) error {
+func (GitProvider) PushChanges(key, user, directory string) error {
 	log.Info("Start pushing changes", "directory", directory)
-	auth, err := initAuth(key, user)
+	keyPath, err := initAuth(key, user)
 	if err != nil {
 		return err
+	}
+	defer os.Remove(keyPath)
+
+	pushCMD := exec.Command("git", "--git-dir", fmt.Sprintf("%s/.git", directory),
+		"push", "origin", "--all")
+	pushCMD.Env = []string{fmt.Sprintf(`GIT_SSH_COMMAND=ssh -i %s -l %s -o StrictHostKeyChecking=no`, keyPath,
+		user), "GIT_SSH_VARIANT=ssh"}
+	pushCMD.Dir = directory
+	if bts, err := pushCMD.CombinedOutput(); err != nil {
+		return errors.Wrapf(err, "unable to push changes, err: %s", string(bts))
 	}
 
-	r, err := git.PlainOpen(directory)
-	if err != nil {
-		return err
-	}
-
-	err = r.Push(&git.PushOptions{
-		RemoteName: "origin",
-		RefSpecs:   refSpecs,
-		Auth:       auth,
-	})
-	if err != nil {
-		return err
-	}
 	log.Info("Changes has been pushed", "directory", directory)
 	return nil
 }
@@ -162,6 +166,7 @@ func (GitProvider) CheckPermissions(repo string, user, pass *string) (accessible
 	if user == nil || pass == nil {
 		return true
 	}
+
 	r, _ := git.Init(memory.NewStorage(), nil)
 	remote, _ := r.CreateRemote(&config.RemoteConfig{
 		Name: "origin",
@@ -185,58 +190,125 @@ func (GitProvider) CheckPermissions(repo string, user, pass *string) (accessible
 	return true
 }
 
-func (GitProvider) CloneRepositoryBySsh(key, user, repoUrl, destination string) error {
-	log.Info("Start cloning", "repository", repoUrl)
-	auth, err := initAuth(key, user)
-	if err != nil {
-		return err
+func (GitProvider) BareToNormal(path string) error {
+	if err := os.MkdirAll(fmt.Sprintf("%s/.git", path), 0777); err != nil {
+		return errors.Wrap(err, "unable to create .git folder")
 	}
 
-	_, err = git.PlainClone(destination, false, &git.CloneOptions{
-		URL:  repoUrl,
-		Auth: auth,
-	})
+	files, err := ioutil.ReadDir(path)
+	if err != nil {
+		return errors.Wrap(err, "unable to list dir")
+	}
+
+	for _, f := range files {
+		if f.Name() == ".git" {
+			continue
+		}
+
+		if err := os.Rename(fmt.Sprintf("%s/%s", path, f.Name()),
+			fmt.Sprintf("%s/.git/%s", path, f.Name())); err != nil {
+			return errors.Wrap(err, "unable to rename file")
+		}
+	}
+
+	gitDir := fmt.Sprintf("%s/.git", path)
+	cmd := exec.Command("git", "--git-dir", gitDir, "config", "--local",
+		"--bool", "core.bare", "false")
+	if bts, err := cmd.CombinedOutput(); err != nil {
+		return errors.Wrapf(err, string(bts))
+	}
+
+	cmd = exec.Command("git", "--git-dir", gitDir, "reset", "--hard")
+	cmd.Dir = path
+	if bts, err := cmd.CombinedOutput(); err != nil {
+		return errors.Wrapf(err, string(bts))
+	}
+
+	return nil
+}
+
+func (g GitProvider) CloneRepositoryBySsh(key, user, repoUrl, destination string) error {
+	log.Info("Start cloning", "repository", repoUrl)
+	keyPath, err := initAuth(key, user)
 	if err != nil {
 		return err
 	}
+	defer os.Remove(keyPath)
+
+	cloneCMD := exec.Command("git", "clone", "--mirror", "--depth", "1", repoUrl, destination)
+	cloneCMD.Env = []string{fmt.Sprintf(`GIT_SSH_COMMAND=ssh -i %s -l %s -o StrictHostKeyChecking=no`, keyPath,
+		user), "GIT_SSH_VARIANT=ssh"}
+	if bytes, err := cloneCMD.CombinedOutput(); err != nil {
+		return errors.Wrapf(err, "unable to clone repo by ssh, err: %s", string(bytes))
+	}
+
+	fetchCMD := exec.Command("git", "--git-dir", destination, "fetch",
+		"--unshallow")
+	if bts, err := fetchCMD.CombinedOutput(); err != nil {
+		return errors.Wrapf(err, "unable to clone repo: %s", string(bts))
+	}
+
+	if err := g.BareToNormal(destination); err != nil {
+		return errors.Wrap(err, "unable to covert bare repo to normal")
+	}
+
 	log.Info("End cloning", "repository", repoUrl)
 	return nil
 }
 
-func (GitProvider) CloneRepository(repo string, user *string, pass *string, destination string) error {
+func (g GitProvider) CloneRepository(repo string, user *string, pass *string, destination string) error {
 	log.Info("Start cloning", "repository", repo)
-	gco := &git.CloneOptions{URL: repo}
+
 	if user != nil && pass != nil {
-		gco = &git.CloneOptions{
-			URL: repo,
-			Auth: &http.BasicAuth{
-				Username: *user,
-				Password: *pass,
-			},
+		u, err := url.Parse(repo)
+		if err != nil {
+			return errors.Wrap(err, "unable to parse repo url")
 		}
+		u.User = url.UserPassword(*user, *pass)
+		repo = fmt.Sprint(u)
 	}
-	_, err := git.PlainClone(destination, false, gco)
-	if err != nil {
-		return err
+
+	cloneCMD := exec.Command("git", "clone", "--mirror", "--depth", "1", repo, destination)
+	if bts, err := cloneCMD.CombinedOutput(); err != nil {
+		return errors.Wrapf(err, "unable to clone repo: %s", string(bts))
 	}
+
+	fetchCMD := exec.Command("git", "--git-dir", destination, "fetch",
+		"--unshallow")
+	if bts, err := fetchCMD.CombinedOutput(); err != nil {
+		return errors.Wrapf(err, "unable to clone repo: %s", string(bts))
+	}
+
+	if err := g.BareToNormal(destination); err != nil {
+		return errors.Wrap(err, "unable to covert bare repo to normal")
+	}
+
 	log.Info("End cloning", "repository", repo)
 	return nil
 }
 
-func initAuth(key, user string) (*goGit.PublicKeys, error) {
+func initAuth(key, user string) (string, error) {
 	log.Info("Initializing auth", "user", user)
-	signer, err := ssh.ParsePrivateKey([]byte(key))
+	keyFile, err := os.Create(fmt.Sprintf("%s/sshkey_%d", tempDir, time.Now().Unix()))
 	if err != nil {
-		return nil, err
+		return "", errors.Wrap(err, "unable to create temp file for ssh key")
+	}
+	keyFileInfo, _ := keyFile.Stat()
+	keyFilePath := fmt.Sprintf("%s/%s", tempDir, keyFileInfo.Name())
+
+	if _, err = keyFile.WriteString(key); err != nil {
+		return "", errors.Wrap(err, "unable to write ssh key")
 	}
 
-	return &goGit.PublicKeys{
-		User:   user,
-		Signer: signer,
-		HostKeyCallbackHelper: goGit.HostKeyCallbackHelper{
-			HostKeyCallback: ssh.InsecureIgnoreHostKey(),
-		},
-	}, nil
+	if err = keyFile.Close(); err != nil {
+		return "", errors.Wrap(err, "unable to close file")
+	}
+
+	if err := os.Chmod(keyFilePath, 0400); err != nil {
+		return "", errors.Wrap(err, "unable to chmod ssh key file")
+	}
+
+	return keyFilePath, nil
 }
 
 func checkConnectionToGitServer(c client.Client, gitServer model.GitServer) (bool, error) {
@@ -258,7 +330,7 @@ func checkConnectionToGitServer(c client.Client, gitServer model.GitServer) (boo
 
 func isGitServerAccessible(data GitSshData) bool {
 	log.Info("Start executing IsGitServerAccessible method to check connection to server", "host", data.Host)
-	sshClient, err := sshInitFromSecret(data)
+	sshClient, err := sshInitFromSecret(data, log)
 	if err != nil {
 		log.Info(fmt.Sprintf("An error has occurred while initing SSH client. Check data in Git Server resource and secret: %v", err))
 		return false
@@ -285,7 +357,7 @@ func extractSshData(gitServer model.GitServer, secret *v1.Secret) GitSshData {
 	}
 }
 
-func sshInitFromSecret(data GitSshData) (gerrit.SSHClient, error) {
+func sshInitFromSecret(data GitSshData, logger logr.Logger) (gerrit.SSHClient, error) {
 	sshConfig := &ssh.ClientConfig{
 		User: data.User,
 		Auth: []ssh.AuthMethod{
@@ -294,13 +366,15 @@ func sshInitFromSecret(data GitSshData) (gerrit.SSHClient, error) {
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
 
-	client := &gerrit.SSHClient{
+	cl := gerrit.SSHClient{
 		Config: sshConfig,
 		Host:   data.Host,
 		Port:   data.Port,
 	}
-	log.Info("SSH Client has been initialized: Host: %v Port: %v", data.Host, data.Port)
-	return *client, nil
+
+	logger.Info("SSH Client has been initialized", "host", data.Host, "port", data.Port)
+
+	return cl, nil
 }
 
 func publicKey(key string) ssh.AuthMethod {
@@ -343,7 +417,7 @@ func (gp GitProvider) CreateRemoteTag(key, user, path, branchName, name string) 
 		return err
 	}
 
-	if err := gp.PushChanges(key, user, path, []config.RefSpec{util.HeadBranchesRefSpec, util.TagsRefSpec}); err != nil {
+	if err := gp.PushChanges(key, user, path); err != nil {
 		return err
 	}
 	log.Info("tag has been created", "name", name)
@@ -367,30 +441,22 @@ func isTagExists(name string, tags storer.ReferenceIter) (bool, error) {
 
 func (gp GitProvider) Fetch(key, user, path, branchName string) error {
 	log.Info("start fetching data", "name", branchName)
-	r, err := git.PlainOpen(path)
+
+	keyPath, err := initAuth(key, user)
 	if err != nil {
 		return err
 	}
+	defer os.Remove(keyPath)
 
-	auth, err := initAuth(key, user)
-	if err != nil {
-		return err
+	cmd := exec.Command("git", "--git-dir", fmt.Sprintf("%s/.git", path), "fetch",
+		fmt.Sprintf("refs/heads/%v:refs/heads/%v", branchName, branchName))
+	cmd.Env = []string{fmt.Sprintf(`GIT_SSH_COMMAND=ssh -i %s -l %s -o StrictHostKeyChecking=no`, keyPath, user),
+		"GIT_SSH_VARIANT=ssh"}
+	cmd.Dir = path
+	if bts, err := cmd.CombinedOutput(); err != nil {
+		return errors.Wrapf(err, "unable to push changes, err: %s", string(bts))
 	}
 
-	opts := &git.FetchOptions{
-		RefSpecs: []config.RefSpec{
-			config.RefSpec(fmt.Sprintf("refs/heads/%v:refs/heads/%v", branchName, branchName)),
-		},
-		Auth: auth,
-	}
-
-	if err := r.Fetch(opts); err != nil {
-		if err.Error() == "already up-to-date" {
-			log.Info("repo is already up-to-date")
-			return nil
-		}
-		return err
-	}
 	log.Info("end fetching data", "name", branchName)
 	return nil
 }

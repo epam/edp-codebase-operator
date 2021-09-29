@@ -3,6 +3,9 @@ package chain
 import (
 	"context"
 	"fmt"
+	"os"
+	"strings"
+
 	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/helper"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/repository"
@@ -10,13 +13,10 @@ import (
 	git "github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	"github.com/pkg/errors"
-	"gopkg.in/src-d/go-git.v4/config"
 	v1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
-	"os"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strings"
 )
 
 type PutVersionFile struct {
@@ -144,7 +144,7 @@ func (h PutVersionFile) pushChanges(projectPath, privateKey, user string) error 
 		return err
 	}
 
-	if err := h.git.PushChanges(privateKey, user, projectPath, []config.RefSpec{util.HeadBranchesRefSpec, util.TagsRefSpec}); err != nil {
+	if err := h.git.PushChanges(privateKey, user, projectPath); err != nil {
 		return errors.Wrapf(err, "an error has occurred while pushing changes for %v project", projectPath)
 	}
 

@@ -2,6 +2,11 @@ package chain
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
+	"regexp"
+	"testing"
+
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/dchest/uniuri"
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
@@ -11,18 +16,13 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	perfApi "github.com/epam/edp-perf-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/stretchr/testify/assert"
-	"gopkg.in/src-d/go-git.v4/config"
 	v1K8s "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
-	"os"
-	"path/filepath"
-	"regexp"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
-	"testing"
 )
 
 const (
@@ -148,7 +148,7 @@ func TestTryToPutVersionFileMethod_MustBeFinishedSuccessfully(t *testing.T) {
 	mGit := new(mock2.MockGit)
 	mGit.On("CommitChanges", path, fmt.Sprintf("Add %v file", versionFileName)).Return(
 		nil)
-	mGit.On("PushChanges", fakePrivateKey, fakeUser, path, []config.RefSpec{util.HeadBranchesRefSpec, util.TagsRefSpec}).Return(
+	mGit.On("PushChanges", fakePrivateKey, fakeUser, path).Return(
 		nil)
 	mGit.On("Checkout", util.GetPointerStringP(nil), util.GetPointerStringP(nil), path, "", true).Return(
 		nil)

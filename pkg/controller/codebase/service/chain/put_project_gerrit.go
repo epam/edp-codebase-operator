@@ -3,11 +3,11 @@ package chain
 import (
 	"context"
 	"fmt"
-	"github.com/go-logr/logr"
-	"gopkg.in/src-d/go-git.v4/config"
 	"os"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"time"
+
+	"github.com/go-logr/logr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	edpv1alpha1 "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
@@ -133,16 +133,10 @@ func (h PutProjectGerrit) tryToPushProjectToGerrit(c *v1alpha1.Codebase, sshPort
 
 func (h PutProjectGerrit) pushToGerrit(sshPost int32, idrsa, host, codebaseName, directory string, strategy v1alpha1.Strategy) error {
 	log.Info("Start pushing project to Gerrit ", "codebase name", codebaseName)
-	if err := gerrit.AddRemoteLinkToGerrit(directory, host, sshPost, codebaseName); err != nil {
+	if err := gerrit.AddRemoteLinkToGerrit(directory, host, sshPost, codebaseName, log); err != nil {
 		return errors.Wrap(err, "couldn't add remote link to Gerrit")
 	}
-	var refSpecs []config.RefSpec
-	if strategy == v1alpha1.Clone {
-		refSpecs = []config.RefSpec{util.RemoteBranchesRefSpec, util.TagsRefSpec}
-	} else {
-		refSpecs = []config.RefSpec{util.HeadBranchesRefSpec, util.TagsRefSpec}
-	}
-	if err := h.git.PushChanges(idrsa, "project-creator", directory, refSpecs); err != nil {
+	if err := h.git.PushChanges(idrsa, "project-creator", directory); err != nil {
 		return err
 	}
 	return nil
@@ -150,7 +144,7 @@ func (h PutProjectGerrit) pushToGerrit(sshPost int32, idrsa, host, codebaseName,
 
 func (h PutProjectGerrit) tryToCreateProjectInGerrit(sshPort int32, idrsa, host, codebaseName string) error {
 	log.Info("Start creating project in Gerrit", "codebase name", codebaseName)
-	projectExist, err := gerrit.CheckProjectExist(sshPort, idrsa, host, codebaseName)
+	projectExist, err := gerrit.CheckProjectExist(sshPort, idrsa, host, codebaseName, log)
 	if err != nil {
 		return errors.Wrap(err, "couldn't versionFileExists project")
 	}
@@ -159,7 +153,7 @@ func (h PutProjectGerrit) tryToCreateProjectInGerrit(sshPort int32, idrsa, host,
 		return nil
 	}
 
-	if err := gerrit.CreateProject(sshPort, idrsa, host, codebaseName); err != nil {
+	if err := gerrit.CreateProject(sshPort, idrsa, host, codebaseName, log); err != nil {
 		return err
 	}
 	return nil
@@ -281,6 +275,7 @@ func (h PutProjectGerrit) notEmptyProjectProvisioning(c *v1alpha1.Codebase, rLog
 	rLog.Info("Repository URL to clone sources has been retrieved", "url", *ru)
 
 	repu, repp, err := GetRepositoryCredentialsIfExists(c, h.client)
+
 	if !h.git.CheckPermissions(*ru, repu, repp) {
 		msg := fmt.Errorf("user %v cannot get access to the repository %v", repu, *ru)
 		setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, msg.Error())

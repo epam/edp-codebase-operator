@@ -2,6 +2,7 @@ package chain
 
 import (
 	"fmt"
+
 	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	edpv1alpha1 "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/helper"
@@ -11,7 +12,6 @@ import (
 	git "github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	"github.com/pkg/errors"
-	"gopkg.in/src-d/go-git.v4/config"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -85,7 +85,7 @@ func (h PutGitlabCiDeployConfigs) pushChanges(projectPath, gitServerName, namesp
 
 	k := string(secret.Data[util.PrivateSShKeyName])
 	u := gs.GitUser
-	if err := h.git.PushChanges(k, u, projectPath, []config.RefSpec{util.HeadBranchesRefSpec, util.TagsRefSpec}); err != nil {
+	if err := h.git.PushChanges(k, u, projectPath); err != nil {
 		return errors.Wrapf(err, "an error has occurred while pushing changes for %v repo", projectPath)
 	}
 	log.Info("templates have been pushed")

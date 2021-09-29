@@ -6,12 +6,8 @@ ENV OPERATOR=/usr/local/bin/codebase-operator \
     HOME=/home/codebase-operator \
     SSH_KNOWN_HOSTS=/home/codebase-operator/.ssh/known_hosts
 
-
-# install operator binary
-COPY go-binary ${OPERATOR}
-
 RUN apk add --no-cache ca-certificates==20191127-r5 \
-                       openssh-client==8.4_p1-r3 \
+                       openssh-client==8.4_p1-r4 \
                        git==2.30.2-r0
 
 COPY build/bin /usr/local/bin
@@ -26,6 +22,9 @@ RUN chgrp -R 0 /usr/local/bin/templates /usr/local/bin/pipelines && \
 RUN  chmod u+x /usr/local/bin/user_setup && \
      chmod ugo+x /usr/local/bin/entrypoint && \
      /usr/local/bin/user_setup
+
+# install operator binary
+COPY go-binary ${OPERATOR}
 
 ENTRYPOINT ["/usr/local/bin/entrypoint"]
 

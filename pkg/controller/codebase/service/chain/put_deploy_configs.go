@@ -2,7 +2,7 @@ package chain
 
 import (
 	"fmt"
-	"gopkg.in/src-d/go-git.v4/config"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
@@ -67,7 +67,7 @@ func (h PutDeployConfigs) tryToPushConfigs(c edpv1alpha1.Codebase, sshPort int32
 	idrsa := string(s.Data[util.PrivateSShKeyName])
 
 	u := "project-creator"
-	url := fmt.Sprintf("ssh://%v@gerrit.%v:%v/%v", u, c.Namespace, sshPort, c.Name)
+	url := fmt.Sprintf("ssh://gerrit.%v:%v/%v", c.Namespace, sshPort, c.Name)
 	wd := fmt.Sprintf("/home/codebase-operator/edp/%v/%v", c.Namespace, c.Name)
 	td := fmt.Sprintf("%v/%v", wd, "templates")
 	d := fmt.Sprintf("%v/%v", td, c.Name)
@@ -95,7 +95,7 @@ func (h PutDeployConfigs) tryToPushConfigs(c edpv1alpha1.Codebase, sshPort int32
 		return err
 	}
 
-	if err := h.git.PushChanges(idrsa, u, d, []config.RefSpec{util.HeadBranchesRefSpec, util.TagsRefSpec}); err != nil {
+	if err := h.git.PushChanges(idrsa, u, d); err != nil {
 		return err
 	}
 
@@ -117,7 +117,7 @@ func (h PutDeployConfigs) cloneProjectRepoFromGerrit(sshPort int32, idrsa, name,
 		host = fmt.Sprintf("gerrit.%v", namespace)
 	)
 
-	sshcl, err := gerrit.SshInit(sshPort, idrsa, host)
+	sshcl, err := gerrit.SshInit(sshPort, idrsa, host, log)
 	if err != nil {
 		return errors.Wrap(err, "couldn't initialize SSH client")
 	}
