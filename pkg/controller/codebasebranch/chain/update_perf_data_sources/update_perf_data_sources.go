@@ -3,9 +3,10 @@ package update_perf_data_sources
 import (
 	"context"
 	"fmt"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"strings"
 	"time"
+
+	ctrl "sigs.k8s.io/controller-runtime"
 
 	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebasebranch/chain/handler"
@@ -94,7 +95,7 @@ func (h UpdatePerfDataSources) tryToUpdateDataSourceCr(cb *v1alpha1.CodebaseBran
 
 	if c.Spec.Perf == nil {
 		log.Info("PERF server wasn't selected. skip creating PERF data source cr...",
-			"codebase name", c.Name)
+			"codebase_name", c.Name)
 		return nil
 	}
 

@@ -3,6 +3,7 @@ package gitserver
 import (
 	"fmt"
 	"io/ioutil"
+	netHttp "net/http"
 	"net/url"
 	"os"
 	"os/exec"
@@ -38,9 +39,9 @@ type GitSshData struct {
 
 type Git interface {
 	CommitChanges(directory, commitMsg string) error
-	PushChanges(key, user, directory string) error
+	PushChanges(key, user, directory string, pushParams ...string) error
 	CheckPermissions(repo string, user, pass *string) (accessible bool)
-	CloneRepositoryBySsh(key, user, repoUrl, destination string) error
+	CloneRepositoryBySsh(key, user, repoUrl, destination string, port int32) error
 	CloneRepository(repo string, user *string, pass *string, destination string) error
 	CreateRemoteBranch(key, user, path, name string) error
 	CreateRemoteTag(key, user, path, branchName, name string) error
@@ -128,8 +129,8 @@ func (GitProvider) CommitChanges(directory, commitMsg string) error {
 
 	_, err = w.Commit(commitMsg, &git.CommitOptions{
 		Author: &object.Signature{
-			Name:  "admin",
-			Email: "admin@epam-edp.com",
+			Name:  "codebase",
+			Email: "codebase@edp.local",
 			When:  time.Now(),
 		},
 	})
@@ -140,7 +141,7 @@ func (GitProvider) CommitChanges(directory, commitMsg string) error {
 	return nil
 }
 
-func (GitProvider) PushChanges(key, user, directory string) error {
+func (GitProvider) PushChanges(key, user, directory string, pushParams ...string) error {
 	log.Info("Start pushing changes", "directory", directory)
 	keyPath, err := initAuth(key, user)
 	if err != nil {
@@ -148,11 +149,15 @@ func (GitProvider) PushChanges(key, user, directory string) error {
 	}
 	defer os.Remove(keyPath)
 
-	pushCMD := exec.Command("git", "--git-dir", fmt.Sprintf("%s/.git", directory),
-		"push", "origin", "--all")
+	basePushParams := []string{"--git-dir", fmt.Sprintf("%s/.git", directory),
+		"push", "origin"}
+	basePushParams = append(basePushParams, pushParams...)
+
+	pushCMD := exec.Command("git", basePushParams...)
 	pushCMD.Env = []string{fmt.Sprintf(`GIT_SSH_COMMAND=ssh -i %s -l %s -o StrictHostKeyChecking=no`, keyPath,
 		user), "GIT_SSH_VARIANT=ssh"}
 	pushCMD.Dir = directory
+	log.Info("pushCMD:", "is: ", basePushParams)
 	if bts, err := pushCMD.CombinedOutput(); err != nil {
 		return errors.Wrapf(err, "unable to push changes, err: %s", string(bts))
 	}
@@ -218,6 +223,12 @@ func (GitProvider) BareToNormal(path string) error {
 		return errors.Wrapf(err, string(bts))
 	}
 
+	cmd = exec.Command("git", "--git-dir", gitDir, "config", "--local",
+		"--bool", "remote.origin.mirror", "false")
+	if bts, err := cmd.CombinedOutput(); err != nil {
+		return errors.Wrapf(err, string(bts))
+	}
+
 	cmd = exec.Command("git", "--git-dir", gitDir, "reset", "--hard")
 	cmd.Dir = path
 	if bts, err := cmd.CombinedOutput(); err != nil {
@@ -227,7 +238,7 @@ func (GitProvider) BareToNormal(path string) error {
 	return nil
 }
 
-func (g GitProvider) CloneRepositoryBySsh(key, user, repoUrl, destination string) error {
+func (g GitProvider) CloneRepositoryBySsh(key, user, repoUrl, destination string, port int32) error {
 	log.Info("Start cloning", "repository", repoUrl)
 	keyPath, err := initAuth(key, user)
 	if err != nil {
@@ -236,14 +247,15 @@ func (g GitProvider) CloneRepositoryBySsh(key, user, repoUrl, destination string
 	defer os.Remove(keyPath)
 
 	cloneCMD := exec.Command("git", "clone", "--mirror", "--depth", "1", repoUrl, destination)
-	cloneCMD.Env = []string{fmt.Sprintf(`GIT_SSH_COMMAND=ssh -i %s -l %s -o StrictHostKeyChecking=no`, keyPath,
-		user), "GIT_SSH_VARIANT=ssh"}
+	cloneCMD.Env = []string{fmt.Sprintf(`GIT_SSH_COMMAND=ssh -i %s -l %s -o StrictHostKeyChecking=no -p %d`,
+		keyPath, user, port), "GIT_SSH_VARIANT=ssh"}
 	if bytes, err := cloneCMD.CombinedOutput(); err != nil {
 		return errors.Wrapf(err, "unable to clone repo by ssh, err: %s", string(bytes))
 	}
 
 	fetchCMD := exec.Command("git", "--git-dir", destination, "fetch",
 		"--unshallow")
+	fetchCMD.Env = cloneCMD.Env
 	if bts, err := fetchCMD.CombinedOutput(); err != nil {
 		return errors.Wrapf(err, "unable to clone repo: %s", string(bts))
 	}
@@ -266,9 +278,18 @@ func (g GitProvider) CloneRepository(repo string, user *string, pass *string, de
 		}
 		u.User = url.UserPassword(*user, *pass)
 		repo = fmt.Sprint(u)
+	} else {
+		rsp, err := netHttp.Get(repo)
+		if err != nil {
+			return errors.Wrap(err, "unable to get repo")
+		}
+		if rsp.StatusCode >= 400 {
+			return errors.Wrapf(err, "repo access denied, response code: %d", rsp.StatusCode)
+		}
 	}
 
 	cloneCMD := exec.Command("git", "clone", "--mirror", "--depth", "1", repo, destination)
+
 	if bts, err := cloneCMD.CombinedOutput(); err != nil {
 		return errors.Wrapf(err, "unable to clone repo: %s", string(bts))
 	}

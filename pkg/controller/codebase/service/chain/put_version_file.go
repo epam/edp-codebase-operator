@@ -38,7 +38,7 @@ func (h PutVersionFile) ServeRequest(c *v1alpha1.Codebase) error {
 		return nextServeOrNil(h.next, c)
 	}
 
-	rLog := log.WithValues("codebase name", c.Name)
+	rLog := log.WithValues("codebase_name", c.Name)
 	rLog.Info("start putting VERSION file...")
 
 	name, err := helper.GetEDPName(h.client, c.Namespace)
@@ -54,7 +54,7 @@ func (h PutVersionFile) ServeRequest(c *v1alpha1.Codebase) error {
 	}
 
 	if exists {
-		log.V(2).Info("skip pushing VERSION file to Git provider. file already exists",
+		log.Info("skip pushing VERSION file to Git provider. file already exists",
 			"name", c.Name)
 		return nextServeOrNil(h.next, c)
 	}
@@ -144,7 +144,7 @@ func (h PutVersionFile) pushChanges(projectPath, privateKey, user string) error 
 		return err
 	}
 
-	if err := h.git.PushChanges(privateKey, user, projectPath); err != nil {
+	if err := h.git.PushChanges(privateKey, user, projectPath, "--all"); err != nil {
 		return errors.Wrapf(err, "an error has occurred while pushing changes for %v project", projectPath)
 	}
 

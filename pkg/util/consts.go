@@ -44,10 +44,6 @@ const (
 
 	VersioningTypeEDP = "edp"
 
-	HeadBranchesRefSpec   = "refs/heads/*:refs/heads/*"
-	RemoteBranchesRefSpec = "refs/remotes/origin/*:refs/heads/*"
-	TagsRefSpec           = "refs/tags/*:refs/tags/*"
-
 	//finalizers
 	ForegroundDeletionFinalizerName = "foregroundDeletion"
 )

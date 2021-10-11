@@ -3,6 +3,8 @@ package chain
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	edpv1alpha1 "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/service/chain/handler"
@@ -10,7 +12,6 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"time"
 )
 
 type CloneGitProject struct {
@@ -20,14 +21,15 @@ type CloneGitProject struct {
 }
 
 func (h CloneGitProject) ServeRequest(c *v1alpha1.Codebase) error {
-	rLog := log.WithValues("codebase name", c.Name)
+	rLog := log.WithValues("codebase_name", c.Name)
 	rLog.Info("Start cloning project...")
 	rLog.Info("codebase data", "spec", c.Spec)
 	if err := h.setIntermediateSuccessFields(c, edpv1alpha1.AcceptCodebaseRegistration); err != nil {
 		return errors.Wrapf(err, "an error has been occurred while updating %v Codebase status", c.Name)
 	}
 
-	wd := fmt.Sprintf("/home/codebase-operator/edp/%v/%v", c.Namespace, c.Name)
+	wd := util.GetWorkDir(c.Name, c.Namespace)
+	log.Info("Setting path for local Git folder", "path", wd)
 	if err := util.CreateDirectory(wd); err != nil {
 		setFailedFields(c, edpv1alpha1.ImportProject, err.Error())
 		return err
@@ -36,7 +38,7 @@ func (h CloneGitProject) ServeRequest(c *v1alpha1.Codebase) error {
 	gs, err := util.GetGitServer(h.client, c.Spec.GitServer, c.Namespace)
 	if err != nil {
 		setFailedFields(c, edpv1alpha1.ImportProject, err.Error())
-		return err
+		return errors.Wrapf(err, "an error has occurred while getting %v GitServer", c.Spec.GitServer)
 	}
 
 	secret, err := util.GetSecret(h.client, gs.NameSshKeySecret, c.Namespace)
@@ -45,20 +47,12 @@ func (h CloneGitProject) ServeRequest(c *v1alpha1.Codebase) error {
 		return errors.Wrapf(err, "an error has occurred while getting %v secret", gs.NameSshKeySecret)
 	}
 
-	td := fmt.Sprintf("%v/%v", wd, "templates")
-	if err := util.CreateDirectory(td); err != nil {
-		setFailedFields(c, edpv1alpha1.ImportProject, err.Error())
-		return errors.Wrapf(err, "an error has occurred while creating folder %v", td)
-	}
-
-	gf := fmt.Sprintf("%v/%v", td, c.Name)
-	log.Info("path to local Git folder", "path", gf)
-
 	k := string(secret.Data[util.PrivateSShKeyName])
 	u := gs.GitUser
-	ru := fmt.Sprintf("%v:%v%v", gs.GitHost, gs.SshPort, *c.Spec.GitUrlPath)
-	if !util.DoesDirectoryExist(gf) || util.IsDirectoryEmpty(gf) {
-		if err := h.git.CloneRepositoryBySsh(k, u, ru, gf); err != nil {
+	ru := fmt.Sprintf("%v:%v", gs.GitHost, *c.Spec.GitUrlPath)
+
+	if !util.DoesDirectoryExist(wd) || util.IsDirectoryEmpty(wd) {
+		if err := h.git.CloneRepositoryBySsh(k, u, ru, wd, gs.SshPort); err != nil {
 			setFailedFields(c, edpv1alpha1.ImportProject, err.Error())
 			return errors.Wrapf(err, "an error has occurred while cloning repository %v", ru)
 		}

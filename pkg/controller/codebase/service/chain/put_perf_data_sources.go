@@ -3,17 +3,18 @@ package chain
 import (
 	"context"
 	"fmt"
+	"regexp"
+	"strings"
+
 	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/service/chain/handler"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	perfAPi "github.com/epam/edp-perf-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/pkg/errors"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"regexp"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strings"
 )
 
 type PutPerfDataSources struct {
@@ -31,7 +32,7 @@ const (
 )
 
 func (h PutPerfDataSources) ServeRequest(c *v1alpha1.Codebase) error {
-	rLog := log.WithValues("codebase name", c.Name)
+	rLog := log.WithValues("codebase_name", c.Name)
 	rLog.Info("start creating PERF data source cr...")
 	if err := h.tryToCreateDataSourceCr(c); err != nil {
 		return errors.Wrap(err, "couldn't create PerfDataSource CR")
@@ -43,7 +44,7 @@ func (h PutPerfDataSources) ServeRequest(c *v1alpha1.Codebase) error {
 func (h PutPerfDataSources) tryToCreateDataSourceCr(c *v1alpha1.Codebase) error {
 	if c.Spec.Perf == nil {
 		log.Info("PERF server wasn't selected. skip creating PERF data source cr...",
-			"codebase name", c.Name)
+			"codebase_name", c.Name)
 		return nil
 	}
 

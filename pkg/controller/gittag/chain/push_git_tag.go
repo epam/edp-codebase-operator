@@ -2,6 +2,7 @@ package chain
 
 import (
 	"fmt"
+
 	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/gittag/chain/handler"
@@ -44,8 +45,9 @@ func (h PushGitTag) tryToPushTag(gt *v1alpha1.GitTag) error {
 
 	wd := util.GetWorkDir(c.Name, c.Namespace)
 	if !checkDirectory(wd) {
-		ru := fmt.Sprintf("%v:%v%v", gs.GitHost, gs.SshPort, *c.Spec.GitUrlPath)
-		if err := h.git.CloneRepositoryBySsh(string(secret.Data[util.PrivateSShKeyName]), gs.GitUser, ru, wd); err != nil {
+		ru := fmt.Sprintf("%v:%v", gs.GitHost, *c.Spec.GitUrlPath)
+		if err := h.git.CloneRepositoryBySsh(string(secret.Data[util.PrivateSShKeyName]), gs.GitUser, ru, wd,
+			gs.SshPort); err != nil {
 			return err
 		}
 	}

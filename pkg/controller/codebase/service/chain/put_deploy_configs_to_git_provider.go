@@ -23,7 +23,7 @@ type PutDeployConfigsToGitProvider struct {
 }
 
 func (h PutDeployConfigsToGitProvider) ServeRequest(c *v1alpha1.Codebase) error {
-	rLog := log.WithValues("codebase name", c.Name)
+	rLog := log.WithValues("codebase_name", c.Name)
 	rLog.Info("Start pushing configs...")
 
 	if err := h.tryToPushConfigs(*c); err != nil {
@@ -46,21 +46,29 @@ func (h PutDeployConfigsToGitProvider) tryToPushConfigs(c v1alpha1.Codebase) err
 	}
 
 	if skip {
-		log.V(2).Info("skip pushing templates to git project. templates already pushed",
-			"name", c.Name)
+		log.Info("skip pushing templates. templates already pushed", "name", c.Name)
 		return nil
+	}
+
+	wd := util.GetWorkDir(c.Name, c.Namespace)
+	ru, err := util.GetRepoUrl(&c)
+	if err != nil {
+		return errors.Wrap(err, "couldn't build repo url")
+	}
+
+	if err := CheckoutBranch(ru, wd, c.Spec.DefaultBranch, h.git, &c, h.client); err != nil {
+		return errors.Wrapf(err, "checkout default branch %v in Git put_deploy_config has been failed", c.Spec.DefaultBranch)
 	}
 
 	if err := template.PrepareTemplates(h.client, c); err != nil {
 		return err
 	}
 
-	gf := fmt.Sprintf("/home/codebase-operator/edp/%v/%v/%v/%v", c.Namespace, c.Name, "templates", c.Name)
-	if err := h.git.CommitChanges(gf, fmt.Sprintf("Add template for %v", c.Name)); err != nil {
+	if err := h.git.CommitChanges(wd, fmt.Sprintf("Add deployment templates for %v", c.Name)); err != nil {
 		return err
 	}
 
-	if err := h.pushChanges(gf, c.Spec.GitServer, c.Namespace); err != nil {
+	if err := h.pushChanges(wd, c.Spec.GitServer, c.Namespace, c.Spec.DefaultBranch); err != nil {
 		return err
 	}
 
@@ -72,7 +80,7 @@ func (h PutDeployConfigsToGitProvider) tryToPushConfigs(c v1alpha1.Codebase) err
 	return nil
 }
 
-func (h PutDeployConfigsToGitProvider) pushChanges(projectPath, gitServerName, namespace string) error {
+func (h PutDeployConfigsToGitProvider) pushChanges(projectPath, gitServerName, namespace, defaultBranch string) error {
 	gs, err := util.GetGitServer(h.client, gitServerName, namespace)
 	if err != nil {
 		return err
@@ -85,7 +93,7 @@ func (h PutDeployConfigsToGitProvider) pushChanges(projectPath, gitServerName, n
 
 	k := string(secret.Data[util.PrivateSShKeyName])
 	u := gs.GitUser
-	if err := h.git.PushChanges(k, u, projectPath); err != nil {
+	if err := h.git.PushChanges(k, u, projectPath, defaultBranch); err != nil {
 		return errors.Wrapf(err, "an error has occurred while pushing changes for %v repo", projectPath)
 	}
 	log.Info("templates have been pushed")

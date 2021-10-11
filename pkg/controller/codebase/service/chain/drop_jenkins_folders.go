@@ -3,6 +3,7 @@ package chain
 import (
 	"context"
 	"fmt"
+
 	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/service/chain/handler"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
@@ -24,7 +25,7 @@ func (e ErrorBranchesExists) Error() string {
 }
 
 func (h DropJenkinsFolders) ServeRequest(c *v1alpha1.Codebase) error {
-	rLog := log.WithValues("codebase name", c.Name)
+	rLog := log.WithValues("codebase_name", c.Name)
 	rLog.Info("starting to delete related jenkins folders")
 
 	var branchList v1alpha1.CodebaseBranchList

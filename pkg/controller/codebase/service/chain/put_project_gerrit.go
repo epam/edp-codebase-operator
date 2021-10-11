@@ -30,34 +30,9 @@ type PutProjectGerrit struct {
 }
 
 func (h PutProjectGerrit) ServeRequest(c *v1alpha1.Codebase) error {
-	rLog := log.WithValues("codebase name", c.Name)
+	rLog := log.WithValues("codebase_name", c.Name)
 	rLog.Info("Start putting Codebase...")
 	rLog.Info("codebase data", "spec", c.Spec)
-	if err := h.setIntermediateSuccessFields(c, edpv1alpha1.AcceptCodebaseRegistration); err != nil {
-		return errors.Wrapf(err, "an error has been occurred while updating %v Codebase status", c.Name)
-	}
-
-	if err := h.setIntermediateSuccessFields(c, edpv1alpha1.GerritRepositoryProvisioning); err != nil {
-		return errors.Wrapf(err, "an error has been occurred while updating %v Codebase status", c.Name)
-	}
-
-	wd := fmt.Sprintf("/home/codebase-operator/edp/%v/%v/templates", c.Namespace, c.Name)
-	if err := util.CreateDirectory(wd); err != nil {
-		setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
-		return err
-	}
-
-	port, err := util.GetGerritPort(h.client, c.Namespace)
-	if err != nil {
-		setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
-		return errors.Wrap(err, "unable get gerrit port")
-	}
-
-	us, err := util.GetUserSettings(h.client, c.Namespace)
-	if err != nil {
-		setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
-		return errors.Wrap(err, "unable get user settings settings")
-	}
 
 	edpN, err := helper.GetEDPName(h.client, c.Namespace)
 	if err != nil {
@@ -73,8 +48,34 @@ func (h PutProjectGerrit) ServeRequest(c *v1alpha1.Codebase) error {
 
 	var status = []string{util.ProjectPushedStatus, util.ProjectTemplatesPushedStatus, util.ProjectVersionGoFilePushedStatus}
 	if util.ContainsString(status, *ps) {
-		log.V(2).Info("skip pushing to gerrit. project already pushed", "name", c.Name)
+		log.Info("skip pushing to gerrit. project already pushed", "name", c.Name)
 		return nextServeOrNil(h.next, c)
+	}
+
+	if err := h.setIntermediateSuccessFields(c, edpv1alpha1.AcceptCodebaseRegistration); err != nil {
+		return errors.Wrapf(err, "an error has been occurred while updating %v Codebase status", c.Name)
+	}
+
+	if err := h.setIntermediateSuccessFields(c, edpv1alpha1.GerritRepositoryProvisioning); err != nil {
+		return errors.Wrapf(err, "an error has been occurred while updating %v Codebase status", c.Name)
+	}
+
+	wd := util.GetWorkDir(c.Name, c.Namespace)
+	if err := util.CreateDirectory(wd); err != nil {
+		setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
+		return err
+	}
+
+	port, err := util.GetGerritPort(h.client, c.Namespace)
+	if err != nil {
+		setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
+		return errors.Wrap(err, "unable get gerrit port")
+	}
+
+	us, err := util.GetUserSettings(h.client, c.Namespace)
+	if err != nil {
+		setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
+		return errors.Wrap(err, "unable get user settings settings")
 	}
 
 	if err := h.tryToCreateProjectInVcs(us, c.Name, c.Namespace); err != nil {
@@ -114,36 +115,39 @@ func (h PutProjectGerrit) tryToPushProjectToGerrit(c *v1alpha1.Codebase, sshPort
 		return errors.Wrapf(err, "creation project in Gerrit for codebase %v has been failed", codebaseName)
 	}
 
-	d := fmt.Sprintf("%v/%v", workDir, codebaseName)
-
 	ru, err := util.GetRepoUrl(c)
 	if err != nil {
 		return errors.Wrap(err, "couldn't build repo url")
 	}
 
-	if err := CheckoutBranch(ru, d, branchName, h.git, c, h.client); err != nil {
+	if err := CheckoutBranch(ru, workDir, branchName, h.git, c, h.client); err != nil {
 		return errors.Wrapf(err, "checkout default branch %v in Gerrit has been failed", branchName)
 	}
 
-	if err := h.pushToGerrit(sshPort, idrsa, host, codebaseName, d, strategy); err != nil {
+	if err := h.pushToGerrit(sshPort, idrsa, host, codebaseName, workDir, strategy); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (h PutProjectGerrit) pushToGerrit(sshPost int32, idrsa, host, codebaseName, directory string, strategy v1alpha1.Strategy) error {
-	log.Info("Start pushing project to Gerrit ", "codebase name", codebaseName)
+	log.Info("Start pushing project to Gerrit ", "codebase_name", codebaseName)
 	if err := gerrit.AddRemoteLinkToGerrit(directory, host, sshPost, codebaseName, log); err != nil {
 		return errors.Wrap(err, "couldn't add remote link to Gerrit")
 	}
-	if err := h.git.PushChanges(idrsa, "project-creator", directory); err != nil {
+	// push branches
+	if err := h.git.PushChanges(idrsa, "project-creator", directory, "--all"); err != nil {
+		return err
+	}
+	// push tags as well
+	if err := h.git.PushChanges(idrsa, "project-creator", directory, "--tags"); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (h PutProjectGerrit) tryToCreateProjectInGerrit(sshPort int32, idrsa, host, codebaseName string) error {
-	log.Info("Start creating project in Gerrit", "codebase name", codebaseName)
+	log.Info("Start creating project in Gerrit", "codebase_name", codebaseName)
 	projectExist, err := gerrit.CheckProjectExist(sshPort, idrsa, host, codebaseName, log)
 	if err != nil {
 		return errors.Wrap(err, "couldn't versionFileExists project")
@@ -160,23 +164,23 @@ func (h PutProjectGerrit) tryToCreateProjectInGerrit(sshPort int32, idrsa, host,
 }
 
 func (h PutProjectGerrit) tryToCloneRepo(repoUrl string, repositoryUsername *string, repositoryPassword *string, workDir, codebaseName string) error {
-	destination := fmt.Sprintf("%v/%v", workDir, codebaseName)
-	log.Info("Start cloning repository", "src", repoUrl, "dest", destination)
 
-	if util.DoesDirectoryExist(destination) {
-		log.Info("project already exists", "name", codebaseName)
+	log.Info("Start cloning repository", "src", repoUrl, "dest", workDir)
+
+	if util.DoesDirectoryExist(workDir + "/.git") {
+		log.Info("repository already exists", "codebase_name", codebaseName)
 		return nil
 	}
 
-	if err := h.git.CloneRepository(repoUrl, repositoryUsername, repositoryPassword, destination); err != nil {
+	if err := h.git.CloneRepository(repoUrl, repositoryUsername, repositoryPassword, workDir); err != nil {
 		return err
 	}
-	log.Info("Repository has been cloned", "src", repoUrl, "dest", destination)
+	log.Info("Repository has been cloned", "src", repoUrl, "dest", workDir)
 	return nil
 }
 
 func (h PutProjectGerrit) tryToCreateProjectInVcs(us *model.UserSettings, codebaseName, namespace string) error {
-	log.Info("Start creation project in VCS", "codebase name", codebaseName)
+	log.Info("Start project creation in VCS", "codebase_name", codebaseName)
 	if us.VcsIntegrationEnabled {
 		if err := vcs.СreateProjectInVcs(h.client, us, codebaseName, namespace); err != nil {
 			return err
@@ -227,18 +231,18 @@ func (h PutProjectGerrit) tryToSquashCommits(workDir, codebaseName string, strat
 	if strategy != v1alpha1.Create {
 		return nil
 	}
-	destination := fmt.Sprintf("%v/%v", workDir, codebaseName)
 
-	err := os.RemoveAll(destination + "/.git")
+	log.Info("Start squashing commits", "codebase_name", codebaseName)
+	err := os.RemoveAll(workDir + "/.git")
 	if err != nil {
 		return errors.Wrapf(err, "an error has occurred while removing .git folder")
 	}
 
-	if err := h.git.Init(destination); err != nil {
+	if err := h.git.Init(workDir); err != nil {
 		return errors.Wrapf(err, "an error has occurred while creating git repository")
 	}
 
-	if err := h.git.CommitChanges(destination, "Init commit"); err != nil {
+	if err := h.git.CommitChanges(workDir, "Initial commit"); err != nil {
 		return errors.Wrapf(err, "an error has occurred while committing all default content")
 	}
 	return nil
@@ -252,27 +256,27 @@ func (h PutProjectGerrit) initialProjectProvisioning(c *v1alpha1.Codebase, rLog 
 }
 
 func (h PutProjectGerrit) emptyProjectProvisioning(wd, codebaseName string) error {
-	log.Info("Start initial provisioning for empty project", "codebase name", codebaseName)
-	destination := fmt.Sprintf("%v/%v", wd, codebaseName)
-	if err := h.git.Init(destination); err != nil {
+	log.Info("Start initial provisioning for empty project", "codebase_name", codebaseName)
+
+	if err := h.git.Init(wd); err != nil {
 		return errors.Wrapf(err, "an error has occurred while creating empty git repository")
 	}
 
-	if err := h.git.CommitChanges(destination, "Init commit"); err != nil {
-		return errors.Wrapf(err, "an error has occurred while committing empty default content")
+	if err := h.git.CommitChanges(wd, "Initial commit"); err != nil {
+		return errors.Wrapf(err, "an error has occurred while creating Initial commit")
 	}
 
 	return nil
 }
 
 func (h PutProjectGerrit) notEmptyProjectProvisioning(c *v1alpha1.Codebase, rLog logr.Logger, wd string) error {
-	log.Info("Start initial provisioning for not empty project", "codebase name", c.Name)
+	log.Info("Start initial provisioning for non-empty project", "codebase_name", c.Name)
 	ru, err := util.GetRepoUrl(c)
 	if err != nil {
 		setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
 		return errors.Wrap(err, "couldn't build repo url")
 	}
-	rLog.Info("Repository URL to clone sources has been retrieved", "url", *ru)
+	rLog.Info("Repository URL with template has been retrieved", "url", *ru)
 
 	repu, repp, err := GetRepositoryCredentialsIfExists(c, h.client)
 
@@ -284,12 +288,12 @@ func (h PutProjectGerrit) notEmptyProjectProvisioning(c *v1alpha1.Codebase, rLog
 
 	if err := h.tryToCloneRepo(*ru, repu, repp, wd, c.Name); err != nil {
 		setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
-		return errors.Wrap(err, "cloning project hsa been failed")
+		return errors.Wrap(err, "cloning template project has been failed")
 	}
 
 	if err := h.tryToSquashCommits(wd, c.Name, c.Spec.Strategy); err != nil {
 		setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
-		return errors.Wrap(err, "squash commits been failed")
+		return errors.Wrap(err, "squash commits in a template repo has been failed")
 	}
 	return nil
 }

@@ -25,7 +25,7 @@ type PutGitlabCiFile struct {
 }
 
 func (h PutGitlabCiFile) ServeRequest(c *v1alpha1.Codebase) error {
-	rLog := log.WithValues("codebase name", c.Name)
+	rLog := log.WithValues("codebase_name", c.Name)
 	rLog.Info("start creating gitlab ci file...")
 
 	name, err := helper.GetEDPName(h.client, c.Namespace)

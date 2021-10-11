@@ -23,7 +23,7 @@ type PutGitlabCiDeployConfigs struct {
 }
 
 func (h PutGitlabCiDeployConfigs) ServeRequest(c *v1alpha1.Codebase) error {
-	rLog := log.WithValues("codebase name", c.Name)
+	rLog := log.WithValues("codebase_name", c.Name)
 	rLog.Info("Start pushing configs...")
 
 	if err := h.tryToPushConfigs(*c); err != nil {

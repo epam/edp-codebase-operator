@@ -4,10 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strconv"
 	"strings"
 	"time"
+
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/service/chain/handler"
@@ -28,14 +29,13 @@ type PutJenkinsFolder struct {
 }
 
 func (h PutJenkinsFolder) ServeRequest(c *v1alpha1.Codebase) error {
-	rLog := log.WithValues("codebase name", c.Name)
+	rLog := log.WithValues("codebase_name", c.Name)
 
 	gs, err := util.GetGitServer(h.client, c.Spec.GitServer, c.Namespace)
 	if err != nil {
 		return err
 	}
 
-	log.Info("GIT server has been retrieved", "name", gs.Name)
 	path := getRepositoryPath(c.Name, string(c.Spec.Strategy), c.Spec.GitUrlPath)
 	sshLink := generateSshLink(path, gs)
 	jpm := map[string]string{
@@ -123,11 +123,6 @@ func (h PutJenkinsFolder) getJenkinsFolder(name, namespace string) (*jenkinsv1al
 	return i, nil
 }
 
-func newTrue() *bool {
-	b := true
-	return &b
-}
-
 func getRepositoryPath(codebaseName, strategy string, gitUrlPath *string) string {
 	if strategy == consts.ImportStrategy {
 		return *gitUrlPath
@@ -142,8 +137,5 @@ func generateSshLink(repoPath string, gs *model.GitServer) string {
 }
 
 func isJiraIntegrationEnabled(server *string) bool {
-	if server != nil {
-		return true
-	}
-	return false
+	return server != nil
 }

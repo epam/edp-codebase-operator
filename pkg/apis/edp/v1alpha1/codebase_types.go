@@ -23,7 +23,7 @@ type Strategy string
 
 type Versioning struct {
 	Type      VersioningType `json:"type"`
-	StartFrom *string        `json:"startFrom, omitempty"`
+	StartFrom *string        `json:"startFrom,omitempty"`
 }
 
 type Repository struct {

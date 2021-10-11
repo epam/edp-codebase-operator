@@ -2,16 +2,17 @@ package template
 
 import (
 	"fmt"
+	"os"
+	"strings"
+	"text/template"
+
 	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/platform"
 	"github.com/epam/edp-codebase-operator/v2/pkg/model"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	"github.com/pkg/errors"
-	"os"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strings"
-	"text/template"
 )
 
 var log = ctrl.Log.WithName("template")
@@ -68,7 +69,7 @@ func PrepareGitlabCITemplates(client client.Client, c v1alpha1.Codebase) error {
 }
 
 func buildTemplateConfig(client client.Client, c v1alpha1.Codebase) (*model.ConfigGoTemplating, error) {
-	log.Info("start creating template config", "codebase name", c.Name)
+	log.Info("start creating template config", "codebase_name", c.Name)
 	us, err := util.GetUserSettings(client, c.Namespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable get user settings settings")
@@ -88,7 +89,7 @@ func buildTemplateConfig(client client.Client, c v1alpha1.Codebase) (*model.Conf
 		return nil, errors.Wrap(err, "unable get project url")
 	}
 
-	log.Info("end creating template config", "codebase name", c.Name)
+	log.Info("end creating template config", "codebase_name", c.Name)
 	return &cf, nil
 }
 
@@ -143,6 +144,6 @@ func copySonarConfigs(templateDirectory string, config model.ConfigGoTemplating)
 	if err := tmpl.Execute(f, config); err != nil {
 		return errors.Wrapf(err, "couldn't render Sonar configs fo %v app: %v", config.Lang, config.Name)
 	}
-	log.Info("Sonar configs has been copied", "codebase name", config.Name)
+	log.Info("Sonar configs has been copied", "codebase_name", config.Name)
 	return nil
 }

@@ -2,6 +2,8 @@ package put_branch_in_git
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebasebranch/service"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver/mock"
@@ -12,7 +14,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
-	"testing"
 )
 
 const (
@@ -75,11 +76,11 @@ func TestPutBranchInGit_ShouldBeExecutedSuccessfullyWithDefaultVersioning(t *tes
 	scheme.Scheme.AddKnownTypes(v1.SchemeGroupVersion, c, gs, cb)
 
 	mGit := new(mock.MockGit)
-
+	var port int32 = 22
 	wd := fmt.Sprintf("/home/codebase-operator/edp/%v/%v/", fakeNamespace, fakeName)
 	mGit.On("CloneRepositoryBySsh", "",
-		fakeName, fmt.Sprintf("%v:%v%v", fakeName, 22, fakeName),
-		wd).Return(
+		fakeName, fmt.Sprintf("%v:%v", fakeName, fakeName),
+		wd, port).Return(
 		nil)
 
 	mGit.On("CreateRemoteBranch", "", fakeName, wd, "").Return(
@@ -211,11 +212,11 @@ func TestPutBranchInGit_ShouldBeExecutedSuccessfullyWithEdpVersioning(t *testing
 	scheme.Scheme.AddKnownTypes(v1.SchemeGroupVersion, c, gs, cb)
 
 	mGit := new(mock.MockGit)
-
+	var port int32 = 22
 	wd := fmt.Sprintf("/home/codebase-operator/edp/%v/%v/", fakeNamespace, fakeName)
 	mGit.On("CloneRepositoryBySsh", "",
-		fakeName, fmt.Sprintf("%v:%v%v", fakeName, 22, fakeName),
-		wd).Return(
+		fakeName, fmt.Sprintf("%v:%v", fakeName, fakeName),
+		wd, port).Return(
 		nil)
 
 	mGit.On("CreateRemoteBranch", "", fakeName, wd, "").Return(

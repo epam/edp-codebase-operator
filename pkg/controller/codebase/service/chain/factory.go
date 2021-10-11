@@ -111,6 +111,6 @@ func nextServeOrNil(next handler.CodebaseHandler, codebase *edpv1alpha1.Codebase
 	if next != nil {
 		return next.ServeRequest(codebase)
 	}
-	log.Info("handling of codebase has been finished", "codebase name", codebase.Name)
+	log.Info("handling of codebase has been finished", "codebase_name", codebase.Name)
 	return nil
 }

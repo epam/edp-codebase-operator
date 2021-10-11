@@ -13,7 +13,7 @@ func (m *MockGit) CommitChanges(directory, commitMsg string) error {
 	return args.Error(0)
 }
 
-func (m *MockGit) PushChanges(key, user, directory string) error {
+func (m *MockGit) PushChanges(key, user, directory string, pushArgs ...string) error {
 	args := m.Called(key, user, directory)
 	return args.Error(0)
 }
@@ -23,8 +23,8 @@ func (m *MockGit) CheckPermissions(repo string, user, pass *string) (accessible 
 	return args.Bool(0)
 }
 
-func (m *MockGit) CloneRepositoryBySsh(key, user, repoUrl, destination string) error {
-	args := m.Called(key, user, repoUrl, destination)
+func (m *MockGit) CloneRepositoryBySsh(key, user, repoUrl, destination string, port int32) error {
+	args := m.Called(key, user, repoUrl, destination, port)
 	return args.Error(0)
 }
 

@@ -12,10 +12,8 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/service/chain/handler"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/service/template"
 	git "github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver"
-	"github.com/epam/edp-codebase-operator/v2/pkg/gerrit"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	"github.com/pkg/errors"
-	"golang.org/x/crypto/ssh"
 )
 
 type PutDeployConfigs struct {
@@ -26,7 +24,7 @@ type PutDeployConfigs struct {
 }
 
 func (h PutDeployConfigs) ServeRequest(c *v1alpha1.Codebase) error {
-	rLog := log.WithValues("codebase name", c.Name)
+	rLog := log.WithValues("codebase_name", c.Name)
 	rLog.Info("Start pushing configs...")
 
 	port, err := util.GetGerritPort(h.client, c.Namespace)
@@ -44,6 +42,7 @@ func (h PutDeployConfigs) ServeRequest(c *v1alpha1.Codebase) error {
 }
 
 func (h PutDeployConfigs) tryToPushConfigs(c edpv1alpha1.Codebase, sshPort int32) error {
+
 	edpN, err := helper.GetEDPName(h.client, c.Namespace)
 	if err != nil {
 		return errors.Wrap(err, "couldn't get edp name")
@@ -56,7 +55,7 @@ func (h PutDeployConfigs) tryToPushConfigs(c edpv1alpha1.Codebase, sshPort int32
 
 	var status = []string{util.ProjectTemplatesPushedStatus, util.ProjectVersionGoFilePushedStatus}
 	if util.ContainsString(status, *ps) {
-		log.V(2).Info("skip pushing templates to gerrit. templates already pushed", "name", c.Name)
+		log.Info("skip pushing templates to gerrit. templates already pushed", "name", c.Name)
 		return nil
 	}
 
@@ -67,13 +66,11 @@ func (h PutDeployConfigs) tryToPushConfigs(c edpv1alpha1.Codebase, sshPort int32
 	idrsa := string(s.Data[util.PrivateSShKeyName])
 
 	u := "project-creator"
-	url := fmt.Sprintf("ssh://gerrit.%v:%v/%v", c.Namespace, sshPort, c.Name)
-	wd := fmt.Sprintf("/home/codebase-operator/edp/%v/%v", c.Namespace, c.Name)
-	td := fmt.Sprintf("%v/%v", wd, "templates")
-	d := fmt.Sprintf("%v/%v", td, c.Name)
+	url := fmt.Sprintf("ssh://gerrit.%v:%v", c.Namespace, c.Name)
+	wd := util.GetWorkDir(c.Name, c.Namespace)
 
-	if !util.DoesDirectoryExist(d) || util.IsDirectoryEmpty(d) {
-		if err := h.cloneProjectRepoFromGerrit(sshPort, idrsa, c.Name, c.Namespace, url, td); err != nil {
+	if !util.DoesDirectoryExist(wd) || util.IsDirectoryEmpty(wd) {
+		if err := h.cloneProjectRepoFromGerrit(sshPort, idrsa, url, wd); err != nil {
 			return err
 		}
 	}
@@ -83,19 +80,19 @@ func (h PutDeployConfigs) tryToPushConfigs(c edpv1alpha1.Codebase, sshPort int32
 		return errors.Wrap(err, "couldn't build repo url")
 	}
 
-	if err := CheckoutBranch(ru, d, c.Spec.DefaultBranch, h.git, &c, h.client); err != nil {
-		return errors.Wrapf(err, "checkout default branch %v in Gerrit has been failed", c.Spec.DefaultBranch)
+	if err := CheckoutBranch(ru, wd, c.Spec.DefaultBranch, h.git, &c, h.client); err != nil {
+		return errors.Wrapf(err, "checkout default branch %v in Gerrit put_deploy_config has been failed", c.Spec.DefaultBranch)
 	}
 
 	if err := template.PrepareTemplates(h.client, c); err != nil {
 		return err
 	}
 
-	if err := h.git.CommitChanges(d, fmt.Sprintf("Add template for %v", c.Name)); err != nil {
+	if err := h.git.CommitChanges(wd, fmt.Sprintf("Add deployment templates for %v", c.Name)); err != nil {
 		return err
 	}
 
-	if err := h.git.PushChanges(idrsa, u, d); err != nil {
+	if err := h.git.PushChanges(idrsa, u, wd, "--all"); err != nil {
 		return err
 	}
 
@@ -107,40 +104,14 @@ func (h PutDeployConfigs) tryToPushConfigs(c edpv1alpha1.Codebase, sshPort int32
 	return nil
 }
 
-func (h PutDeployConfigs) cloneProjectRepoFromGerrit(sshPort int32, idrsa, name, namespace, cloneSshUrl, td string) error {
+func (h PutDeployConfigs) cloneProjectRepoFromGerrit(sshPort int32, idrsa, cloneSshUrl, wd string) error {
 	log.Info("start cloning repository from Gerrit", "ssh url", cloneSshUrl)
 
-	var (
-		s *ssh.Session
-		c *ssh.Client
-
-		host = fmt.Sprintf("gerrit.%v", namespace)
-	)
-
-	sshcl, err := gerrit.SshInit(sshPort, idrsa, host, log)
-	if err != nil {
-		return errors.Wrap(err, "couldn't initialize SSH client")
-	}
-
-	if s, c, err = sshcl.NewSession(); err != nil {
-		return errors.Wrap(err, "couldn't initialize SSH session")
-	}
-
-	defer func() {
-		if deferErr := s.Close(); deferErr != nil {
-			err = deferErr
-		}
-		if deferErr := c.Close(); deferErr != nil {
-			err = deferErr
-		}
-	}()
-
-	d := fmt.Sprintf("%v/%v", td, name)
-	if err := h.git.CloneRepositoryBySsh(idrsa, "project-creator", cloneSshUrl, d); err != nil {
+	if err := h.git.CloneRepositoryBySsh(idrsa, "project-creator", cloneSshUrl, wd, sshPort); err != nil {
 		return err
 	}
 
-	destinationPath := fmt.Sprintf("%v/%v/.git/hooks", td, name)
+	destinationPath := fmt.Sprintf("%v/.git/hooks", wd)
 	if err := util.CreateDirectory(destinationPath); err != nil {
 		return errors.Wrapf(err, "couldn't create folder %v", destinationPath)
 	}

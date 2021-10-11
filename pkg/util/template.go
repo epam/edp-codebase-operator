@@ -2,12 +2,13 @@ package util
 
 import (
 	"fmt"
-	"github.com/epam/edp-codebase-operator/v2/pkg/model"
-	"github.com/pkg/errors"
 	"io/ioutil"
 	"os"
 	"strings"
 	"text/template"
+
+	"github.com/epam/edp-codebase-operator/v2/pkg/model"
+	"github.com/pkg/errors"
 )
 
 func CopyPipelines(codebaseType, src, dest string) error {
@@ -45,7 +46,7 @@ func CopyPipelines(codebaseType, src, dest string) error {
 }
 
 func CopyHelmChartTemplates(deploymentScript, workDir string, config model.ConfigGoTemplating) error {
-	log.Info("start handling Helm Chart templates", "codebase name", config.Name)
+	log.Info("start handling Helm Chart templates", "codebase_name", config.Name)
 	templatesDest := fmt.Sprintf("%v/%v/%v/deploy-templates", workDir, "templates", config.Name)
 	if DoesDirectoryExist(templatesDest) {
 		log.Info("deploy-templates folder already exists")
@@ -125,21 +126,21 @@ func CopyHelmChartTemplates(deploymentScript, workDir string, config model.Confi
 		if file.IsDir() {
 			continue
 		}
-		if err := ReplaceStringInFile(fmt.Sprintf("%v/%v/%v", templatesDest, TemplateFolder, file.Name()),"REPLACE_IT", config.Name); err != nil {
+		if err := ReplaceStringInFile(fmt.Sprintf("%v/%v/%v", templatesDest, TemplateFolder, file.Name()), "REPLACE_IT", config.Name); err != nil {
 			return err
 		}
 	}
 
-	if err := ReplaceStringInFile(fmt.Sprintf("%v/%v/%v/%v", templatesDest, TemplateFolder, TestFolder, TestFile),"REPLACE_IT", config.Name); err != nil {
+	if err := ReplaceStringInFile(fmt.Sprintf("%v/%v/%v/%v", templatesDest, TemplateFolder, TestFolder, TestFile), "REPLACE_IT", config.Name); err != nil {
 		return err
 	}
 
-	log.Info("end handling Helm Chart templates", "codebase name", config.Name)
+	log.Info("end handling Helm Chart templates", "codebase_name", config.Name)
 	return nil
 }
 
 func CopyOpenshiftTemplate(deploymentScript, workDir string, config model.ConfigGoTemplating) error {
-	log.Info("start handling Openshift template", "codebase name", config.Name)
+	log.Info("start handling Openshift template", "codebase_name", config.Name)
 	templatesDest := fmt.Sprintf("%v/%v/%v/deploy-templates", workDir, "templates", config.Name)
 	if DoesDirectoryExist(templatesDest) {
 		log.Info("deploy-templates folder already exists")
@@ -169,7 +170,7 @@ func CopyOpenshiftTemplate(deploymentScript, workDir string, config model.Config
 	if err := renderTemplate(f, fmt.Sprintf("%v/%v", templateBasePath, templateName), templateName, config); err != nil {
 		return err
 	}
-	log.Info("end handling Openshift template", "codebase name", config.Name)
+	log.Info("end handling Openshift template", "codebase_name", config.Name)
 	return nil
 }
 

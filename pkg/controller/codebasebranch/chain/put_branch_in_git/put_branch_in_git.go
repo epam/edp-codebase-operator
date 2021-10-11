@@ -3,6 +3,8 @@ package put_branch_in_git
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebasebranch/chain/handler"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebasebranch/service"
@@ -12,7 +14,6 @@ import (
 	"github.com/pkg/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"time"
 )
 
 type PutBranchInGit struct {
@@ -66,8 +67,8 @@ func (h PutBranchInGit) ServeRequest(cb *v1alpha1.CodebaseBranch) error {
 
 	wd := fmt.Sprintf("/home/codebase-operator/edp/%v/%v/%v", cb.Namespace, cb.Spec.CodebaseName, cb.Spec.BranchName)
 	if !checkDirectory(wd) {
-		ru := fmt.Sprintf("%v:%v%v", gs.GitHost, gs.SshPort, *c.Spec.GitUrlPath)
-		if err := h.Git.CloneRepositoryBySsh(string(secret.Data[util.PrivateSShKeyName]), gs.GitUser, ru, wd); err != nil {
+		ru := fmt.Sprintf("%v:%v", gs.GitHost, *c.Spec.GitUrlPath)
+		if err := h.Git.CloneRepositoryBySsh(string(secret.Data[util.PrivateSShKeyName]), gs.GitUser, ru, wd, gs.SshPort); err != nil {
 			setFailedFields(cb, v1alpha1.PutBranchForGitlabCiCodebase, err.Error())
 			return err
 		}

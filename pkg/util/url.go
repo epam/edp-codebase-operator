@@ -3,8 +3,9 @@ package util
 import (
 	"errors"
 	"fmt"
-	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"strings"
+
+	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 )
 
 var lf = map[string]string{
@@ -17,15 +18,15 @@ var lf = map[string]string{
 }
 
 func GetRepoUrl(c *v1alpha1.Codebase) (*string, error) {
-	log.Info("Setup repo url", "codebase name", c.Name)
+	log.Info("Setup repo url", "codebase_name", c.Name)
 	if c.Spec.Strategy == v1alpha1.Clone {
-		log.Info("strategy is clone. Try to use default value...", "codebase name", c.Name)
+		log.Info("strategy is clone. Try to use default value...", "codebase_name", c.Name)
 		return tryGetRepoUrl(c.Spec)
 	}
 
-	log.Info("Strategy is not clone. Start build url...", "codebase name", c.Name)
+	log.Info("Strategy is not clone. Start build url...", "codebase_name", c.Name)
 	u := BuildRepoUrl(c.Spec)
-	log.Info("ApiUrl has been generated", "url", u, "codebase name", c.Name)
+	log.Info("ApiUrl has been generated", "url", u, "codebase_name", c.Name)
 	return &u, nil
 
 }
