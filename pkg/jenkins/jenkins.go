@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"time"
 
 	"github.com/bndr/gojenkins"
@@ -13,13 +12,15 @@ import (
 	jenkinsOperatorSpec "github.com/epam/edp-jenkins-operator/v2/pkg/service/jenkins/spec"
 	"github.com/pkg/errors"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var log = ctrl.Log.WithName("jenkins-client")
 
 type JenkinsClient struct {
-	Jenkins *gojenkins.Jenkins
+	Jenkins                  *gojenkins.Jenkins
+	triggerReleaseRetryCount int
 }
 
 type JobNotFoundError string
@@ -30,12 +31,13 @@ func (j JobNotFoundError) Error() string {
 
 func Init(url string, username string, token string) (*JenkinsClient, error) {
 	log.Info("initializing new Jenkins client", "url", url, "username", username)
-	jenkins, err := gojenkins.CreateJenkins(&http.Client{}, url, username, token).Init()
+	jenkins, err := gojenkins.CreateJenkins(http.DefaultClient, url, username, token).Init()
 	if err != nil {
 		return nil, err
 	}
 	return &JenkinsClient{
-		Jenkins: jenkins,
+		Jenkins:                  jenkins,
+		triggerReleaseRetryCount: 60,
 	}, nil
 }
 
@@ -83,21 +85,15 @@ func (c JenkinsClient) TriggerDeletionJob(branchName string, appName string) err
 	return nil
 }
 
-func (c JenkinsClient) TriggerReleaseJob(branchName string, fromCommit string, appName string) error {
+func (c JenkinsClient) TriggerReleaseJob(appName string, params map[string]string) error {
 	jobName := fmt.Sprintf("%v/job/Create-release-%v", appName, appName)
 	log.Info("Trying to trigger jenkins job", "name", jobName)
 
-	_, err := c.GetJob(jobName, time.Second, 60)
-	if err != nil {
+	if _, err := c.GetJob(jobName, time.Second, c.triggerReleaseRetryCount); err != nil {
 		return errors.Wrapf(err, "unable to get job %s", jobName)
 	}
 
-	_, err = c.Jenkins.BuildJob(jobName, map[string]string{
-		"RELEASE_NAME": branchName,
-		"COMMIT_ID":    fromCommit,
-	})
-
-	if err != nil {
+	if _, err := c.Jenkins.BuildJob(jobName, params); err != nil {
 		return errors.Wrapf(err, "Couldn't trigger %v job", jobName)
 	}
 
@@ -195,6 +191,7 @@ func GetJenkinsCreds(client client.Client, jenkins jenkinsApi.Jenkins, namespace
 }
 
 func GetJenkinsUrl(jenkins jenkinsApi.Jenkins, namespace string) string {
+
 	log.Info("creating Jenkins url")
 	key := fmt.Sprintf("%v/%v", jenkinsOperatorSpec.EdpAnnotationsPrefix, "externalUrl")
 	url := jenkins.Annotations[key]

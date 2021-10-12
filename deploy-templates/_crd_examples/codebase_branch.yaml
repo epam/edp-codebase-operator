@@ -1,0 +1,14 @@
+kind: CodebaseBranch
+apiVersion: v2.edp.epam.com/v1alpha1
+metadata:
+  name: bar-70-main
+  namespace: delivery-dev
+spec:
+  branchName: main
+  codebaseName: bar-70
+  fromCommit: ''
+  release: false
+  releaseJobParams:
+    codebaseName: RELEASE_NAME
+    fromCommit: COMMIT_ID
+    gitServer: GIT_SERVER

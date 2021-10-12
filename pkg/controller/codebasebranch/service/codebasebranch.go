@@ -2,8 +2,8 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"time"
 
 	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
@@ -11,6 +11,7 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/pkg/model"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	"github.com/pkg/errors"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -80,8 +81,20 @@ func (s *CodebaseBranchService) TriggerReleaseJob(cb *v1alpha1.CodebaseBranch) e
 	}
 	rLog.V(2).Info("start creating release for codebase")
 
-	if err = jc.TriggerReleaseJob(cb.Spec.BranchName, cb.Spec.FromCommit, cb.Spec.CodebaseName); err != nil {
-		return err
+	params := map[string]string{
+		"RELEASE_NAME": cb.Spec.CodebaseName,
+		"COMMIT_ID":    cb.Spec.FromCommit,
+	}
+	if cb.Spec.ReleaseJobParams != nil && len(cb.Spec.ReleaseJobParams) > 0 {
+		var err error
+		params, err = s.convertCodebaseBranchSpecToParams(cb)
+		if err != nil {
+			return errors.Wrap(err, "unable to convert codebase branch spec to params map")
+		}
+	}
+
+	if err = jc.TriggerReleaseJob(cb.Spec.CodebaseName, params); err != nil {
+		return errors.Wrap(err, "unable to trigger release job")
 	}
 	rLog.Info("Release job has been triggered")
 
@@ -97,6 +110,49 @@ func (s *CodebaseBranchService) TriggerReleaseJob(cb *v1alpha1.CodebaseBranch) e
 	}
 	rLog.Info("release has been created", "status", model.StatusFinished)
 	return nil
+}
+
+func (s *CodebaseBranchService) convertCodebaseBranchSpecToParams(cb *v1alpha1.CodebaseBranch) (map[string]string, error) {
+	bts, err := json.Marshal(cb.Spec)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to encode codebase branch spec")
+	}
+
+	var branchSpecMap map[string]interface{}
+	if err := json.Unmarshal(bts, &branchSpecMap); err != nil {
+		return nil, errors.Wrap(err, "unable to decode codebase branch spec to map")
+	}
+
+	c, err := util.GetCodebase(s.Client, cb.Spec.CodebaseName, cb.Namespace)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get codebase")
+	}
+	bts, err = json.Marshal(c.Spec)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to encode codebase spec")
+	}
+
+	var codebaseSpecMap map[string]interface{}
+	if err := json.Unmarshal(bts, &codebaseSpecMap); err != nil {
+		return nil, errors.Wrap(err, "unable to decode codebase spec to map")
+	}
+
+	for k, v := range branchSpecMap {
+		codebaseSpecMap[k] = v
+	}
+
+	//example -> fromCommit: COMMIT_ID
+	result := make(map[string]string)
+	for k, v := range cb.Spec.ReleaseJobParams {
+		strVal, ok := codebaseSpecMap[k].(string)
+		if !ok {
+			return nil, errors.New("wrong trigger release field type")
+		}
+
+		result[v] = strVal
+	}
+
+	return result, nil
 }
 
 func initJenkinsClient(client client.Client, namespace string) (*jenkins.JenkinsClient, error) {
