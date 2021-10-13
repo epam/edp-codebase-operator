@@ -77,18 +77,18 @@ func (h PutGitlabCiFile) tryToPutGitlabCIFile(c *v1alpha1.Codebase) error {
 
 	k := string(secret.Data[util.PrivateSShKeyName])
 	u := gs.GitUser
-	if err := h.pushChanges(util.GetWorkDir(c.Name, c.Namespace), k, u); err != nil {
+	if err := h.pushChanges(util.GetWorkDir(c.Name, c.Namespace), k, u, c.Spec.DefaultBranch); err != nil {
 		return errors.Wrapf(err, "an error has occurred while pushing %v for %v codebase", versionFileName, c.Name)
 	}
 	return nil
 }
 
-func (h PutGitlabCiFile) pushChanges(projectPath, privateKey, user string) error {
+func (h PutGitlabCiFile) pushChanges(projectPath, privateKey, user, defaultBranch string) error {
 	if err := h.git.CommitChanges(projectPath, fmt.Sprintf("Add %v file", util.GitlabCi)); err != nil {
 		return err
 	}
 
-	if err := h.git.PushChanges(privateKey, user, projectPath); err != nil {
+	if err := h.git.PushChanges(privateKey, user, projectPath, defaultBranch); err != nil {
 		return errors.Wrapf(err, "an error has occurred while pushing changes for %v project", projectPath)
 	}
 

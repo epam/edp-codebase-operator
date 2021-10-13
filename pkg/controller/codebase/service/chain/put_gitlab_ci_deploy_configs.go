@@ -46,7 +46,7 @@ func (h PutGitlabCiDeployConfigs) tryToPushConfigs(c v1alpha1.Codebase) error {
 	}
 
 	if skip {
-		log.V(2).Info("skip pushing templates to git project. templates already pushed",
+		log.Info("skip pushing templates to git project. templates already pushed",
 			"name", c.Name)
 		return nil
 	}
@@ -60,7 +60,7 @@ func (h PutGitlabCiDeployConfigs) tryToPushConfigs(c v1alpha1.Codebase) error {
 		return err
 	}
 
-	if err := h.pushChanges(gf, c.Spec.GitServer, c.Namespace); err != nil {
+	if err := h.pushChanges(gf, c.Spec.GitServer, c.Namespace, c.Spec.DefaultBranch); err != nil {
 		return err
 	}
 
@@ -72,7 +72,7 @@ func (h PutGitlabCiDeployConfigs) tryToPushConfigs(c v1alpha1.Codebase) error {
 	return nil
 }
 
-func (h PutGitlabCiDeployConfigs) pushChanges(projectPath, gitServerName, namespace string) error {
+func (h PutGitlabCiDeployConfigs) pushChanges(projectPath, gitServerName, namespace, defaultBranch string) error {
 	gs, err := util.GetGitServer(h.client, gitServerName, namespace)
 	if err != nil {
 		return err
@@ -85,7 +85,7 @@ func (h PutGitlabCiDeployConfigs) pushChanges(projectPath, gitServerName, namesp
 
 	k := string(secret.Data[util.PrivateSShKeyName])
 	u := gs.GitUser
-	if err := h.git.PushChanges(k, u, projectPath); err != nil {
+	if err := h.git.PushChanges(k, u, projectPath, defaultBranch); err != nil {
 		return errors.Wrapf(err, "an error has occurred while pushing changes for %v repo", projectPath)
 	}
 	log.Info("templates have been pushed")
