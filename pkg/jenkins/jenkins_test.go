@@ -6,8 +6,20 @@ import (
 	"testing"
 
 	"github.com/bndr/gojenkins"
+	"github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
+	coreV1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/kubernetes/scheme"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+)
+
+const (
+	fakeName      = "fake-name"
+	fakeNamespace = "fake-namespace"
 )
 
 func TestJenkinsClient_TriggerReleaseJob_JobNotFound(t *testing.T) {
@@ -184,4 +196,252 @@ func TestJenkinsClient_IsJobQueued_JobNotFound(t *testing.T) {
 	}
 
 	assert.Nil(t, isQueued)
+}
+
+func TestJenkinsClient_IsJobRunning_True(t *testing.T) {
+	httpClient := http.Client{}
+	httpmock.ActivateNonDefault(&httpClient)
+	httpmock.RegisterResponder("GET", "j-url/api/json", httpmock.NewStringResponder(200, ""))
+	jenkins, err := gojenkins.CreateJenkins(&httpClient, "j-url", "j-username", "j-token").Init()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	jc := JenkinsClient{
+		Jenkins: jenkins,
+	}
+
+	httpmock.RegisterResponder("GET", "j-url/job/running-job/api/json",
+		httpmock.NewStringResponder(200, ""))
+
+	brsp := gojenkins.BuildResponse{Building: true}
+
+	httpmock.RegisterResponder("GET", "j-url/job/running-job/0/api/json?depth=1",
+		httpmock.NewJsonResponderOrPanic(200, &brsp))
+
+	isRunning, err := jc.IsJobRunning("running-job")
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.True(t, *isRunning)
+}
+
+func TestJenkinsClient_IsJobRunning_False(t *testing.T) {
+	httpClient := http.Client{}
+	httpmock.ActivateNonDefault(&httpClient)
+	httpmock.RegisterResponder("GET", "j-url/api/json", httpmock.NewStringResponder(200, ""))
+	jenkins, err := gojenkins.CreateJenkins(&httpClient, "j-url", "j-username", "j-token").Init()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	jc := JenkinsClient{
+		Jenkins: jenkins,
+	}
+
+	httpmock.RegisterResponder("GET", "j-url/job/not-running-job/api/json",
+		httpmock.NewStringResponder(200, ""))
+
+	brsp := gojenkins.BuildResponse{Building: false}
+
+	httpmock.RegisterResponder("GET", "j-url/job/not-running-job/0/api/json?depth=1",
+		httpmock.NewJsonResponderOrPanic(200, &brsp))
+
+	isRunning, err := jc.IsJobRunning("not-running-job")
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.False(t, *isRunning)
+}
+
+func TestJenkinsClient_IsJobRunning_JobNotFound(t *testing.T) {
+	httpClient := http.Client{}
+	httpmock.ActivateNonDefault(&httpClient)
+	httpmock.RegisterResponder("GET", "j-url/api/json", httpmock.NewStringResponder(200, ""))
+	jenkins, err := gojenkins.CreateJenkins(&httpClient, "j-url", "j-username", "j-token").Init()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	jc := JenkinsClient{
+		Jenkins: jenkins,
+	}
+
+	httpmock.RegisterResponder("GET", "j-url/job/not-found-job/api/json",
+		httpmock.NewStringResponder(404, ""))
+
+	isRunning, err := jc.IsJobRunning("not-found-job")
+	if err == nil {
+		t.Fatal("no error returned")
+	}
+
+	if !strings.Contains(err.Error(), "404") {
+		t.Fatalf("wrong error returned: %s", err.Error())
+	}
+
+	assert.Nil(t, isRunning)
+}
+
+func TestJenkinsClient_IsJobRunning_JobFoundButError(t *testing.T) {
+	httpClient := http.Client{}
+	httpmock.ActivateNonDefault(&httpClient)
+	httpmock.RegisterResponder("GET", "j-url/api/json", httpmock.NewStringResponder(200, ""))
+	jenkins, err := gojenkins.CreateJenkins(&httpClient, "j-url", "j-username", "j-token").Init()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	jc := JenkinsClient{
+		Jenkins: jenkins,
+	}
+
+	httpmock.RegisterResponder("GET", "j-url/job/found-job/api/json",
+		httpmock.NewStringResponder(200, ""))
+
+	isRunning, err := jc.IsJobRunning("found-job")
+
+	if !strings.Contains(err.Error(), "no responder found") {
+		t.Fatalf("wrong error returned: %s", err.Error())
+	}
+
+	assert.Error(t, err)
+	assert.Nil(t, isRunning)
+}
+
+func TestGetJenkinsUrl_UrlOnly(t *testing.T) {
+
+	jspec := v1alpha1.Jenkins{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      fakeName,
+			Namespace: fakeNamespace,
+			Annotations: map[string]string{
+				"edp.epam.com/externalUrl": "external-jenkins",
+			},
+		},
+		Spec: v1alpha1.JenkinsSpec{},
+	}
+
+	jurl := GetJenkinsUrl(jspec, "namespace")
+
+	assert.Equal(t, "external-jenkins", jurl)
+}
+
+func TestGetJenkinsUrl_BasepathOnly(t *testing.T) {
+
+	jspec := v1alpha1.Jenkins{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      fakeName,
+			Namespace: fakeNamespace,
+		},
+		Spec: v1alpha1.JenkinsSpec{
+			BasePath: "basepath",
+		},
+	}
+
+	jurl := GetJenkinsUrl(jspec, "namespace")
+
+	assert.Equal(t, "http://jenkins.namespace:8080/basepath", jurl)
+}
+
+func TestGetJenkinsUrl_WithUrlAndBasepath(t *testing.T) {
+
+	jspec := v1alpha1.Jenkins{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      fakeName,
+			Namespace: fakeNamespace,
+			Annotations: map[string]string{
+				"edp.epam.com/externalUrl": "external-jenkins",
+			},
+		},
+		Spec: v1alpha1.JenkinsSpec{
+			BasePath: "basepath",
+		},
+	}
+
+	jurl := GetJenkinsUrl(jspec, "namespace")
+
+	assert.Equal(t, "external-jenkins", jurl)
+}
+
+func TestGetJenkinsUrl_NoUrlNoBasepath(t *testing.T) {
+
+	jspec := v1alpha1.Jenkins{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      fakeName,
+			Namespace: fakeNamespace,
+		},
+	}
+
+	jurl := GetJenkinsUrl(jspec, "namespace")
+
+	assert.Equal(t, "http://jenkins.namespace:8080", jurl)
+}
+
+func TestGetJenkinsCreds_SecretExists(t *testing.T) {
+
+	s := &coreV1.Secret{
+		ObjectMeta: v1.ObjectMeta{
+			Name:      "fake-admin-token",
+			Namespace: fakeNamespace,
+		},
+		Data: map[string][]byte{
+			"username": []byte("j-user"),
+			"password": []byte("j-token"),
+		},
+	}
+
+	jspec := &v1alpha1.Jenkins{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      fakeName,
+			Namespace: fakeNamespace,
+			Annotations: map[string]string{
+				"edp.epam.com/admin-token": "fake-admin-token",
+			},
+		},
+		Spec: v1alpha1.JenkinsSpec{},
+	}
+
+	objs := []runtime.Object{
+		s, jspec,
+	}
+	scheme.Scheme.AddKnownTypes(v1.SchemeGroupVersion, jspec)
+	client := fake.NewFakeClient(objs...)
+
+	jt, ju, err := GetJenkinsCreds(client, *jspec, fakeNamespace)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, "j-token", jt)
+	assert.Equal(t, "j-user", ju)
+}
+
+func TestGetJenkinsCreds_NoSecretExists(t *testing.T) {
+
+	jspec := &v1alpha1.Jenkins{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      fakeName,
+			Namespace: fakeNamespace,
+			Annotations: map[string]string{
+				"edp.epam.com/admin-token": "non-existing-secret",
+			},
+		},
+		Spec: v1alpha1.JenkinsSpec{},
+	}
+
+	objs := []runtime.Object{
+		jspec,
+	}
+	scheme.Scheme.AddKnownTypes(v1.SchemeGroupVersion, jspec)
+	client := fake.NewFakeClient(objs...)
+
+	jt, ju, err := GetJenkinsCreds(client, *jspec, fakeNamespace)
+	if err == nil {
+		t.Fatal("no error returned")
+	}
+
+	if !strings.Contains(err.Error(), "Secret non-existing-secret in not found") {
+		t.Fatalf("wrong error returned: %s", err.Error())
+	}
+	assert.Empty(t, jt)
+	assert.Empty(t, ju)
 }
