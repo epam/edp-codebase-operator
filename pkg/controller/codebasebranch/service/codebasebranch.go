@@ -82,7 +82,7 @@ func (s *CodebaseBranchService) TriggerReleaseJob(cb *v1alpha1.CodebaseBranch) e
 	rLog.V(2).Info("start creating release for codebase")
 
 	params := map[string]string{
-		"RELEASE_NAME": cb.Spec.CodebaseName,
+		"RELEASE_NAME": cb.Spec.BranchName,
 		"COMMIT_ID":    cb.Spec.FromCommit,
 	}
 	if cb.Spec.ReleaseJobParams != nil && len(cb.Spec.ReleaseJobParams) > 0 {
