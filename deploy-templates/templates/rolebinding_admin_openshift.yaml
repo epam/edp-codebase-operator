@@ -4,7 +4,7 @@ kind: RoleBinding
 metadata:
   labels:
     {{- include "codebase-operator.labels" . | nindent 4 }}
-  name: edp-{{ .Values.name }}-{{ .Values.global.edpName }}-admin
+  name: edp-{{ .Values.name }}-admin
 roleRef:
   name: admin
 subjects:
