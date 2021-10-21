@@ -76,6 +76,7 @@ rules:
     - stages
     - stages/finalizers
     - stages/status
+    - events
   verbs:
     - '*'
 - apiGroups:
