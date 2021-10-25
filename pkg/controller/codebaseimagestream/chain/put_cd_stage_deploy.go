@@ -3,6 +3,10 @@ package chain
 import (
 	"context"
 	"fmt"
+	"regexp"
+	"strings"
+	"time"
+
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
@@ -12,9 +16,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sort"
-	"strings"
-	"time"
 )
 
 type PutCDStageDeploy struct {
@@ -48,12 +49,33 @@ func (h PutCDStageDeploy) handleCodebaseImageStreamEnvLabels(imageStream *codeba
 		return nil
 	}
 
+	var labelValueRegexp = regexp.MustCompile("^[-A-Za-z0-9_.]+/[-A-Za-z0-9_.]+$")
+
 	for envLabel := range imageStream.ObjectMeta.Labels {
+		if errs := validateCbis(imageStream, envLabel, labelValueRegexp); len(errs) != 0 {
+			return errors.New(strings.Join(errs, "; "))
+		}
 		if err := h.putCDStageDeploy(envLabel, imageStream.Namespace, imageStream.Spec); err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+func validateCbis(imageStream *codebaseApi.CodebaseImageStream, envLabel string, labelValueRegexp *regexp.Regexp) []string {
+	var errs []string
+
+	if len(imageStream.Spec.Codebase) == 0 {
+		errs = append(errs, "codebase is not defined in spec ")
+	}
+	if len(imageStream.Spec.Tags) == 0 {
+		errs = append(errs, "tags are not defined in spec ")
+	}
+
+	if !labelValueRegexp.MatchString(envLabel) {
+		errs = append(errs, "Label must be in format cd-pipeline-name/stage-name")
+	}
+	return errs
 }
 
 func (h PutCDStageDeploy) putCDStageDeploy(envLabel, namespace string, spec codebaseApi.CodebaseImageStreamSpec) error {
@@ -70,8 +92,11 @@ func (h PutCDStageDeploy) putCDStageDeploy(envLabel, namespace string, spec code
 		}
 	}
 
-	command := h.getCreateCommand(envLabel, name, namespace, spec.Codebase, spec.Tags)
-	if err := h.create(command); err != nil {
+	cdsd, err := getCreateCommand(envLabel, name, namespace, spec.Codebase, spec.Tags)
+	if err != nil {
+		return errors.Wrapf(err, "couldn't construct command to create %v cd stage deploy", name)
+	}
+	if err := h.create(cdsd); err != nil {
 		return errors.Wrapf(err, "couldn't create %v cd stage deploy", name)
 	}
 	return nil
@@ -98,46 +123,46 @@ func (h PutCDStageDeploy) getCDStageDeploy(name, namespace string) (*codebaseApi
 	return i, nil
 }
 
-func (h PutCDStageDeploy) getCreateCommand(envLabel, name, namespace, codebase string, tags []codebaseApi.Tag) cdStageDeployCommand {
+func getCreateCommand(envLabel, name, namespace, codebase string, tags []codebaseApi.Tag) (*cdStageDeployCommand, error) {
 	env := strings.Split(envLabel, "/")
-	return cdStageDeployCommand{
+
+	lastTag, err := getLastTag(tags)
+	if err != nil {
+		return nil, errors.Wrapf(err, "couldn't create cdStageDeployCommand with name %v", name)
+	}
+
+	return &cdStageDeployCommand{
 		Name:      name,
 		Namespace: namespace,
 		Pipeline:  env[0],
 		Stage:     env[1],
 		Tag: jenkinsApi.Tag{
 			Codebase: codebase,
-			Tag:      h.getLastTag(tags).Name,
+			Tag:      lastTag.Name,
 		},
-	}
+	}, nil
 }
 
-func (h PutCDStageDeploy) getLastTag(tags []codebaseApi.Tag) codebaseApi.Tag {
-	sort.Slice(tags, func(i, j int) bool {
-		prev, err := parseTime(tags[i].Created)
-		if err != nil {
-			h.log.Error(fmt.Errorf("couldn't parse time"), "time", tags[i].Created)
-			return false
+func getLastTag(tags []codebaseApi.Tag) (codebaseApi.Tag, error) {
+	var (
+		latestTag     codebaseApi.Tag
+		latestTagTime = time.Time{}
+	)
+	for i, s := range tags {
+		if current, err := time.Parse(dateLayout, tags[i].Created); err == nil {
+			if current.After(latestTagTime) {
+				latestTagTime = current
+				latestTag = s
+			}
 		}
-		next, err := parseTime(tags[j].Created)
-		if err != nil {
-			h.log.Error(fmt.Errorf("couldn't parse time"), "time", tags[j].Created)
-			return false
-		}
-		return (*prev).Before(*next)
-	})
-	return tags[len(tags)-1]
-}
-
-func parseTime(date string) (*time.Time, error) {
-	t, err := time.Parse(dateLayout, date)
-	if err != nil {
-		return nil, err
 	}
-	return &t, nil
+	if latestTag.Name == "" {
+		return latestTag, errors.New("There are no valid tags")
+	}
+	return latestTag, nil
 }
 
-func (h PutCDStageDeploy) create(command cdStageDeployCommand) error {
+func (h PutCDStageDeploy) create(command *cdStageDeployCommand) error {
 	log := h.log.WithValues("name", command.Name)
 	log.Info("cd stage deploy is not present in cluster. start creating...")
 
