@@ -3,6 +3,10 @@ package jiraissuemetadata
 import (
 	"context"
 	"fmt"
+	"os"
+	"reflect"
+	"time"
+
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/client/jira"
 	"github.com/epam/edp-codebase-operator/v2/pkg/client/jira/adapter"
@@ -14,8 +18,6 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"os"
-	"reflect"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -23,7 +25,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"time"
 )
 
 const (
@@ -161,7 +162,7 @@ func (r *ReconcileJiraIssueMetadata) updateStatus(ctx context.Context, instance 
 }
 
 func (r *ReconcileJiraIssueMetadata) initJiraClient(js codebaseApi.JiraServer) (*jira.Client, error) {
-	s, err := util.GetSecretData(r.client, js.Spec.CredentialName, js.Namespace)
+	s, err := util.GetSecret(r.client, js.Spec.CredentialName, js.Namespace)
 	if err != nil {
 		return nil, errors.Wrapf(err, "couldn't get secret %v", js.Spec.CredentialName)
 	}

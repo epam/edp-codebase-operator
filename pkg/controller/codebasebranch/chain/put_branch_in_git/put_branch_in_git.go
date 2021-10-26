@@ -58,7 +58,7 @@ func (h PutBranchInGit) ServeRequest(cb *v1alpha1.CodebaseBranch) error {
 		return err
 	}
 
-	secret, err := util.GetSecretData(h.Client, gs.NameSshKeySecret, c.Namespace)
+	secret, err := util.GetSecret(h.Client, gs.NameSshKeySecret, c.Namespace)
 	if err != nil {
 		err = errors.Wrapf(err, "an error has occurred while getting %v secret", gs.NameSshKeySecret)
 		setFailedFields(cb, v1alpha1.PutBranchForGitlabCiCodebase, err.Error())

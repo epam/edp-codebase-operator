@@ -2,6 +2,8 @@ package jiraserver
 
 import (
 	"context"
+	"time"
+
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/client/jira"
 	"github.com/epam/edp-codebase-operator/v2/pkg/client/jira/adapter"
@@ -18,7 +20,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"time"
 )
 
 const statusError = "error"
@@ -91,7 +92,7 @@ func (r *ReconcileJiraServer) updateStatus(ctx context.Context, instance *codeba
 }
 
 func (r *ReconcileJiraServer) initJiraClient(jira codebaseApi.JiraServer) (jira.Client, error) {
-	s, err := util.GetSecretData(r.client, jira.Spec.CredentialName, jira.Namespace)
+	s, err := util.GetSecret(r.client, jira.Spec.CredentialName, jira.Namespace)
 	if err != nil {
 		return nil, errors.Wrapf(err, "couldn't get secret %v", jira.Spec.CredentialName)
 	}

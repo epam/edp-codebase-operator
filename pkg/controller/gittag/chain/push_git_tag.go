@@ -38,7 +38,7 @@ func (h PushGitTag) tryToPushTag(gt *v1alpha1.GitTag) error {
 		return err
 	}
 
-	secret, err := util.GetSecretData(h.client, gs.NameSshKeySecret, c.Namespace)
+	secret, err := util.GetSecret(h.client, gs.NameSshKeySecret, c.Namespace)
 	if err != nil {
 		return errors.Wrapf(err, "an error has occurred while getting %v secret", gs.NameSshKeySecret)
 	}

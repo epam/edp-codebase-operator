@@ -180,7 +180,7 @@ func GetJenkinsCreds(client client.Client, jenkins jenkinsApi.Jenkins, namespace
 	annotationKey := fmt.Sprintf("%v/%v", jenkinsOperatorSpec.EdpAnnotationsPrefix, jenkinsOperatorSpec.JenkinsTokenAnnotationSuffix)
 	jenkinsTokenSecretName := jenkins.Annotations[annotationKey]
 
-	jenkinsTokenSecret, err := util.GetSecretData(client, jenkinsTokenSecretName, namespace)
+	jenkinsTokenSecret, err := util.GetSecret(client, jenkinsTokenSecretName, namespace)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
 			return "", "", errors.Wrapf(err, "Secret %v in not found", jenkinsTokenSecretName)

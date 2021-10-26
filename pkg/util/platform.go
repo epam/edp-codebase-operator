@@ -3,17 +3,17 @@ package util
 import (
 	"context"
 	"fmt"
+	"os"
+	"strconv"
+
 	edpv1alpha1 "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/model"
 	"github.com/epam/edp-component-operator/pkg/apis/v1/v1alpha1"
 	"github.com/pkg/errors"
 	coreV1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
-	"os"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strconv"
 )
 
 const (
@@ -23,7 +23,7 @@ const (
 )
 
 func GetUserSettings(client client.Client, namespace string) (*model.UserSettings, error) {
-	us := &v1.ConfigMap{}
+	us := &coreV1.ConfigMap{}
 	err := client.Get(context.TODO(), types.NamespacedName{
 		Namespace: namespace,
 		Name:      "edp-config",
@@ -70,8 +70,11 @@ func GetVcsBasicAuthConfig(c client.Client, namespace string, secretName string)
 		Namespace: namespace,
 		Name:      secretName,
 	}, secret)
-	if k8serrors.IsNotFound(err) || k8serrors.IsForbidden(err) {
-		return "", "", err
+	if err != nil {
+		return "", "", errors.Wrapf(err, "Unable to get secret %v", secretName)
+	}
+	if string(secret.Data["username"]) == "" || string(secret.Data["password"]) == "" {
+		return "", "", errors.Errorf("username/password keys are not defined in Secret %v ", secretName)
 	}
 	return string(secret.Data["username"]), string(secret.Data["password"]), nil
 }
@@ -95,23 +98,23 @@ func getGitServerCR(c client.Client, name, namespace string) (*edpv1alpha1.GitSe
 	instance := &edpv1alpha1.GitServer{}
 	if err := c.Get(context.TODO(), types.NamespacedName{Namespace: namespace, Name: name}, instance); err != nil {
 		if k8serrors.IsNotFound(err) {
-			return nil, errors.Wrapf(err, "Git Server %v doesn't exist in k8s.", name)
+			return nil, errors.Wrapf(err, "GitServer %v doesn't exist in k8s.", name)
 		}
-		return nil, err
+		return nil, errors.Wrapf(err, "Unable to get GitServer %v", name)
 	}
 	log.Info("Git Server instance has been received", "name", name)
 	return instance, nil
 }
 
-func GetSecret(c client.Client, secretName, namespace string) (*v1.Secret, error) {
+func GetSecret(c client.Client, secretName, namespace string) (*coreV1.Secret, error) {
 	log.Info("Start fetching Secret resource from k8s", "secret name", secretName, "namespace", namespace)
 	secret := &coreV1.Secret{}
 	err := c.Get(context.TODO(), types.NamespacedName{
 		Namespace: namespace,
 		Name:      secretName,
 	}, secret)
-	if k8serrors.IsNotFound(err) || k8serrors.IsForbidden(err) {
-		return nil, err
+	if err != nil {
+		return nil, errors.Wrapf(err, "Unable to get secret %v", secretName)
 	}
 	log.Info("Secret has been fetched", "secret name", secretName, "namespace", namespace)
 	return secret, nil
@@ -125,22 +128,10 @@ func GetCodebase(client client.Client, name, namespace string) (*edpv1alpha1.Cod
 	}, instance)
 
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "Unable to get Codebase %v", name)
 	}
 
 	return instance, nil
-}
-
-func GetSecretData(client client.Client, name, namespace string) (*coreV1.Secret, error) {
-	s := &coreV1.Secret{}
-	err := client.Get(context.TODO(), types.NamespacedName{
-		Name:      name,
-		Namespace: namespace,
-	}, s)
-	if err != nil {
-		return nil, err
-	}
-	return s, nil
 }
 
 func GetEdpComponent(c client.Client, name, namespace string) (*v1alpha1.EDPComponent, error) {
@@ -150,7 +141,7 @@ func GetEdpComponent(c client.Client, name, namespace string) (*v1alpha1.EDPComp
 		Namespace: namespace,
 	}, ec)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "Unable to get EDPComponent %v", name)
 	}
 	return ec, nil
 }
