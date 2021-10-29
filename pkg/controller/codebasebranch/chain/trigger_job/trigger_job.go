@@ -3,8 +3,9 @@ package trigger_job
 import (
 	"context"
 	"fmt"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"time"
+
+	ctrl "sigs.k8s.io/controller-runtime"
 
 	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	edpv1alpha1 "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
@@ -29,6 +30,7 @@ type TriggerJob struct {
 
 func (h TriggerJob) Trigger(cb *v1alpha1.CodebaseBranch, actionType edpv1alpha1.ActionType,
 	triggerFunc func(cb *v1alpha1.CodebaseBranch) error) error {
+
 	if err := h.SetIntermediateSuccessFields(cb, actionType); err != nil {
 		return err
 	}
@@ -46,10 +48,10 @@ func (h TriggerJob) Trigger(cb *v1alpha1.CodebaseBranch, actionType edpv1alpha1.
 		return err
 	}
 
-	if !c.Status.Available && isJenkinsFolderAvailable(jf) {
+	if !c.Status.Available || !isJenkinsFolderAvailable(jf) {
 		log.Info("couldn't start reconciling for branch. someone of codebase or jenkins folder is unavailable",
 			"codebase", c.Name, "branch", cb.Name)
-		return util.NewCodebaseBranchReconcileError(fmt.Sprintf("%v codebase is unavailable", c.Name))
+		return util.NewCodebaseBranchReconcileError(fmt.Sprintf("%v codebase and/or jenkinsfolder %v are/is unavailable", c.Name, jfn))
 	}
 
 	if c.Spec.Versioning.Type == util.VersioningTypeEDP && hasNewVersion(cb) {
@@ -83,7 +85,7 @@ func (h TriggerJob) SetIntermediateSuccessFields(cb *v1alpha1.CodebaseBranch, ac
 
 	if err := h.Client.Status().Update(context.TODO(), cb); err != nil {
 		if err := h.Client.Update(context.TODO(), cb); err != nil {
-			return err
+			return errors.Wrapf(err, "SetIntermediateSuccessFields failed for %v branch", cb.Name)
 		}
 	}
 	return nil
@@ -137,5 +139,8 @@ func hasNewVersion(b *v1alpha1.CodebaseBranch) bool {
 }
 
 func isJenkinsFolderAvailable(jf *jfv1alpha1.JenkinsFolder) bool {
-	return jf == nil || !jf.Status.Available
+	if jf == nil {
+		return false
+	}
+	return jf.Status.Available
 }

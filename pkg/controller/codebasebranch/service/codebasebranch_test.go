@@ -40,7 +40,7 @@ func TestCodebaseBranchService_TriggerReleaseJob(t *testing.T) {
 	js := jenkinsApi.Jenkins{}
 	scheme.Scheme.AddKnownTypes(v1.SchemeGroupVersion, &cb, &js, &jenkinsApi.JenkinsList{}, &c)
 	cl := fake.NewClientBuilder().WithRuntimeObjects(&cb, &js, &secret, &c).Build()
-	svc := CodebaseBranchService{
+	svc := CodebaseBranchServiceProvider{
 		Client: cl,
 	}
 

@@ -226,7 +226,7 @@ func TestPutBranchInGit_ShouldBeExecutedSuccessfullyWithEdpVersioning(t *testing
 	err := PutBranchInGit{
 		Client: client,
 		Git:    mGit,
-		Service: service.CodebaseBranchService{
+		Service: &service.CodebaseBranchServiceProvider{
 			Client: client,
 		},
 	}.ServeRequest(cb)
@@ -276,7 +276,7 @@ func TestPutBranchInGit_ShouldThrowErrorWithEdpVersioning(t *testing.T) {
 	client := fake.NewFakeClient(objs...)
 	err := PutBranchInGit{
 		Client: client,
-		Service: service.CodebaseBranchService{
+		Service: &service.CodebaseBranchServiceProvider{
 			Client: client,
 		},
 	}.ServeRequest(cb)

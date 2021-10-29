@@ -1,8 +1,9 @@
 package factory
 
 import (
-	ctrl "sigs.k8s.io/controller-runtime"
 	"strings"
+
+	ctrl "sigs.k8s.io/controller-runtime"
 
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebasebranch/chain/clean_tmp_directory"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebasebranch/chain/empty"
@@ -24,7 +25,7 @@ func createJenkinsDefChain(client client.Client) handler.CodebaseBranchHandler {
 	return trigger_job.TriggerReleaseJob{
 		TriggerJob: trigger_job.TriggerJob{
 			Client: client,
-			Service: service.CodebaseBranchService{
+			Service: &service.CodebaseBranchServiceProvider{
 				Client: client,
 			},
 			Next: update_perf_data_sources.UpdatePerfDataSources{
@@ -50,7 +51,7 @@ func createGitlabCiDefChain(client client.Client) handler.CodebaseBranchHandler 
 			},
 			Client: client,
 		},
-		Service: service.CodebaseBranchService{
+		Service: &service.CodebaseBranchServiceProvider{
 			Client: client,
 		},
 	}
@@ -64,7 +65,7 @@ func GetDeletionChain(ciType string, client client.Client) handler.CodebaseBranc
 	return trigger_job.TriggerDeletionJob{
 		TriggerJob: trigger_job.TriggerJob{
 			Client: client,
-			Service: service.CodebaseBranchService{
+			Service: &service.CodebaseBranchServiceProvider{
 				Client: client,
 			},
 		},

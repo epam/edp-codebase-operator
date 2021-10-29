@@ -59,7 +59,7 @@ func (c JenkinsClient) GetJob(name string, delay time.Duration, retryCount int) 
 
 func (c JenkinsClient) TriggerDeletionJob(branchName string, appName string) error {
 	jobName := fmt.Sprintf("%v/job/Delete-release-%v", appName, appName)
-	log.Info("Trying to trigger jenkins job", "name", jobName)
+	log.Info("Trying to trigger Deletion jenkins job", "name", jobName)
 
 	job, err := c.GetJob(jobName, time.Second, 1)
 	if err != nil {
@@ -87,7 +87,7 @@ func (c JenkinsClient) TriggerDeletionJob(branchName string, appName string) err
 
 func (c JenkinsClient) TriggerReleaseJob(appName string, params map[string]string) error {
 	jobName := fmt.Sprintf("%v/job/Create-release-%v", appName, appName)
-	log.Info("Trying to trigger jenkins job", "name", jobName)
+	log.Info("Trying to trigger Release jenkins job", "name", jobName)
 
 	if _, err := c.GetJob(jobName, time.Second, c.triggerReleaseRetryCount); err != nil {
 		return errors.Wrapf(err, "unable to get job %s", jobName)
