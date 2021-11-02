@@ -8,7 +8,6 @@ import (
 
 	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebasebranch/service"
-	mockservice "github.com/epam/edp-codebase-operator/v2/pkg/controller/codebasebranch/service"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	jenkinsv1alpha1 "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
 	"github.com/stretchr/testify/assert"
@@ -69,7 +68,7 @@ func TestTriggerReleaseJob_ShouldPass(t *testing.T) {
 	scheme := runtime.NewScheme()
 	scheme.AddKnownTypes(v1.SchemeGroupVersion, c, cb, jf)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, cb, jf).Build()
-	ms := new(mockservice.MockCodebasebranch)
+	ms := new(service.MockCodebasebranch)
 
 	ms.On("TriggerReleaseJob", cb).Return(nil)
 
@@ -134,7 +133,7 @@ func TestTriggerReleaseJob_ShouldFailWhenTriggerJobReturnsErr(t *testing.T) {
 	scheme := runtime.NewScheme()
 	scheme.AddKnownTypes(v1.SchemeGroupVersion, c, cb, jf)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, cb, jf).Build()
-	ms := new(mockservice.MockCodebasebranch)
+	ms := new(service.MockCodebasebranch)
 
 	ms.On("TriggerReleaseJob", cb).Return(errors.New("FATAL ERROR"))
 
@@ -370,7 +369,7 @@ func TestTriggerReleaseJob_ShouldPassEDPVersioningAndHasNewVersion(t *testing.T)
 	scheme.AddKnownTypes(v1.SchemeGroupVersion, c, cb, jf)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, cb, jf).Build()
 
-	mockcbs := new(mockservice.MockCodebasebranch)
+	mockcbs := new(service.MockCodebasebranch)
 
 	mockcbs.On("TriggerReleaseJob", cb).Return(nil)
 	mockcbs.On("ResetBranchBuildCounter", cb).Return(nil)
@@ -445,7 +444,7 @@ func TestTriggerReleaseJob_ShouldFailEDPVersioningAndHasNewVersion(t *testing.T)
 	scheme.AddKnownTypes(v1.SchemeGroupVersion, c, cb, jf)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, cb, jf).Build()
 
-	mockcbs := new(mockservice.MockCodebasebranch)
+	mockcbs := new(service.MockCodebasebranch)
 
 	mockcbs.On("TriggerReleaseJob", cb).Return(nil)
 	mockcbs.On("ResetBranchBuildCounter", cb).Return(nil)

@@ -5,12 +5,11 @@ import (
 
 	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	jenkinsv1alpha1 "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
-	jfv1alpha1 "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
 )
 
 func Test_isJenkinsFolderAvailable(t *testing.T) {
 	type args struct {
-		jf *jfv1alpha1.JenkinsFolder
+		jf *jenkinsv1alpha1.JenkinsFolder
 	}
 	tests := []struct {
 		name string

@@ -61,7 +61,7 @@ func (s *CodebaseBranchServiceProvider) TriggerDeletionJob(cb *v1alpha1.Codebase
 	rLog.Info("Deletion job has been triggered")
 
 	rj := fmt.Sprintf("%v/job/Delete-release-%v", cb.Spec.CodebaseName, cb.Spec.CodebaseName)
-	js, err := jc.GetJobStatus(rj, 10*time.Second, 50)
+	js, err := jc.GetJobStatus(rj, 5*time.Second, 50)
 	if err != nil {
 		return errors.Wrap(err, "unable to get deletion job status")
 	}
@@ -109,7 +109,7 @@ func (s *CodebaseBranchServiceProvider) TriggerReleaseJob(cb *v1alpha1.CodebaseB
 	rLog.Info("Release job has been triggered")
 
 	rj := fmt.Sprintf("%v/job/Create-release-%v", cb.Spec.CodebaseName, cb.Spec.CodebaseName)
-	js, err := jc.GetJobStatus(rj, 10*time.Second, 50)
+	js, err := jc.GetJobStatus(rj, 5*time.Second, 50)
 	if err != nil {
 		return err
 	}

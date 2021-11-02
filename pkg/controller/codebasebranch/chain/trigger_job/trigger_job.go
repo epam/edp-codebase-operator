@@ -8,7 +8,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	edpv1alpha1 "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebasebranch/chain/handler"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebasebranch/service"
 	"github.com/epam/edp-codebase-operator/v2/pkg/model"
@@ -28,7 +27,7 @@ type TriggerJob struct {
 	Next    handler.CodebaseBranchHandler
 }
 
-func (h TriggerJob) Trigger(cb *v1alpha1.CodebaseBranch, actionType edpv1alpha1.ActionType,
+func (h TriggerJob) Trigger(cb *v1alpha1.CodebaseBranch, actionType v1alpha1.ActionType,
 	triggerFunc func(cb *v1alpha1.CodebaseBranch) error) error {
 
 	if err := h.SetIntermediateSuccessFields(cb, actionType); err != nil {
@@ -69,12 +68,12 @@ func (h TriggerJob) Trigger(cb *v1alpha1.CodebaseBranch, actionType edpv1alpha1.
 	return handler.NextServeOrNil(h.Next, cb)
 }
 
-func (h TriggerJob) SetIntermediateSuccessFields(cb *v1alpha1.CodebaseBranch, action edpv1alpha1.ActionType) error {
+func (h TriggerJob) SetIntermediateSuccessFields(cb *v1alpha1.CodebaseBranch, action v1alpha1.ActionType) error {
 	cb.Status = v1alpha1.CodebaseBranchStatus{
 		Status:              model.StatusInit,
 		LastTimeUpdated:     time.Now(),
 		Action:              action,
-		Result:              edpv1alpha1.Success,
+		Result:              v1alpha1.Success,
 		Username:            "system",
 		Value:               "inactive",
 		VersionHistory:      cb.Status.VersionHistory,
@@ -91,13 +90,13 @@ func (h TriggerJob) SetIntermediateSuccessFields(cb *v1alpha1.CodebaseBranch, ac
 	return nil
 }
 
-func (h TriggerJob) SetFailedFields(cb *edpv1alpha1.CodebaseBranch, a edpv1alpha1.ActionType, message string) {
-	cb.Status = edpv1alpha1.CodebaseBranchStatus{
+func (h TriggerJob) SetFailedFields(cb *v1alpha1.CodebaseBranch, a v1alpha1.ActionType, message string) {
+	cb.Status = v1alpha1.CodebaseBranchStatus{
 		Status:              util.StatusFailed,
 		LastTimeUpdated:     time.Now(),
 		Username:            "system",
 		Action:              a,
-		Result:              edpv1alpha1.Error,
+		Result:              v1alpha1.Error,
 		DetailedMessage:     message,
 		Value:               "failed",
 		VersionHistory:      cb.Status.VersionHistory,
