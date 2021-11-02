@@ -8,9 +8,9 @@ import (
 	"github.com/bndr/gojenkins"
 	"github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
 	"github.com/jarcoal/httpmock"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	coreV1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -311,7 +311,7 @@ func TestJenkinsClient_IsJobRunning_JobFoundButError(t *testing.T) {
 func TestGetJenkinsUrl_UrlOnly(t *testing.T) {
 
 	jspec := v1alpha1.Jenkins{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: v1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 			Annotations: map[string]string{
@@ -329,7 +329,7 @@ func TestGetJenkinsUrl_UrlOnly(t *testing.T) {
 func TestGetJenkinsUrl_BasepathOnly(t *testing.T) {
 
 	jspec := v1alpha1.Jenkins{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: v1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
@@ -346,7 +346,7 @@ func TestGetJenkinsUrl_BasepathOnly(t *testing.T) {
 func TestGetJenkinsUrl_WithUrlAndBasepath(t *testing.T) {
 
 	jspec := v1alpha1.Jenkins{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: v1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 			Annotations: map[string]string{
@@ -366,7 +366,7 @@ func TestGetJenkinsUrl_WithUrlAndBasepath(t *testing.T) {
 func TestGetJenkinsUrl_NoUrlNoBasepath(t *testing.T) {
 
 	jspec := v1alpha1.Jenkins{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: v1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
@@ -391,7 +391,7 @@ func TestGetJenkinsCreds_SecretExists(t *testing.T) {
 	}
 
 	jspec := &v1alpha1.Jenkins{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: v1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 			Annotations: map[string]string{
@@ -418,7 +418,7 @@ func TestGetJenkinsCreds_SecretExists(t *testing.T) {
 func TestGetJenkinsCreds_NoSecretExists(t *testing.T) {
 
 	jspec := &v1alpha1.Jenkins{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: v1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 			Annotations: map[string]string{
@@ -444,4 +444,184 @@ func TestGetJenkinsCreds_NoSecretExists(t *testing.T) {
 	}
 	assert.Empty(t, jt)
 	assert.Empty(t, ju)
+}
+
+func TestGetJenkins_ShouldFailWhenNotFound(t *testing.T) {
+	jl := &v1alpha1.JenkinsList{}
+	scheme := runtime.NewScheme()
+	scheme.AddKnownTypes(v1.SchemeGroupVersion, jl)
+	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(jl).Build()
+
+	j, err := GetJenkins(fakeCl, fakeNamespace)
+	assert.Nil(t, j)
+	assert.Error(t, err)
+	if !strings.Contains(err.Error(), "jenkins installation is not found in namespace fake-namespace") {
+		t.Fatalf("wrong error returned: %s", err.Error())
+	}
+}
+
+func TestGetJenkins_ShouldPass(t *testing.T) {
+
+	j := &v1alpha1.Jenkins{}
+	jl := &v1alpha1.JenkinsList{
+		Items: []v1alpha1.Jenkins{
+			{
+				ObjectMeta: v1.ObjectMeta{
+					Name:      fakeName,
+					Namespace: fakeNamespace,
+				},
+			},
+		},
+	}
+	scheme := runtime.NewScheme()
+	scheme.AddKnownTypes(v1.SchemeGroupVersion, j, jl)
+	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(j, jl).Build()
+
+	j, err := GetJenkins(fakeCl, fakeNamespace)
+	assert.NoError(t, err)
+	assert.Equal(t, j.Name, fakeName)
+}
+
+func TestJenkinsClient_TriggerDeletionJob_JobNotFound(t *testing.T) {
+	httpClient := http.Client{}
+	httpmock.ActivateNonDefault(&httpClient)
+	httpmock.RegisterResponder("GET", "j-url/api/json", httpmock.NewStringResponder(200, ""))
+	jenkins, err := gojenkins.CreateJenkins(&httpClient, "j-url", "j-username", "j-token").Init()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	jc := JenkinsClient{
+		Jenkins:                  jenkins,
+		triggerReleaseRetryCount: 1,
+	}
+
+	httpmock.RegisterResponder("GET", "j-url/job/codebase/job/Delete-release-codebase/api/json",
+		httpmock.NewStringResponder(404, ""))
+
+	err = jc.TriggerDeletionJob("master", "codebase")
+	if err == nil {
+		t.Fatal("no error returned")
+	}
+
+	if errors.Cause(err) != JobNotFoundError(err.Error()) {
+		t.Fatal("wrong error returned")
+	}
+}
+
+func TestJenkinsClient_TriggerDeletionJob_LastBuildNotFoundIssue(t *testing.T) {
+	httpClient := http.Client{}
+	httpmock.ActivateNonDefault(&httpClient)
+	httpmock.RegisterResponder("GET", "j-url/api/json", httpmock.NewStringResponder(200, ""))
+	jenkins, err := gojenkins.CreateJenkins(&httpClient, "j-url", "j-username", "j-token").Init()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	jc := JenkinsClient{
+		Jenkins:                  jenkins,
+		triggerReleaseRetryCount: 1,
+	}
+
+	httpmock.RegisterResponder("GET", "j-url/job/codebase/job/Delete-release-codebase/api/json",
+		httpmock.NewStringResponder(200, ""))
+
+	err = jc.TriggerDeletionJob("master", "codebase")
+	if err == nil {
+		t.Fatal("no error returned")
+	}
+
+	if !strings.Contains(err.Error(), "no responder found") {
+		t.Fatalf("wrong error returned: %s", err.Error())
+	}
+}
+
+func TestJenkinsClient_TriggerDeletionJob_ShouldPass(t *testing.T) {
+	httpClient := http.Client{}
+	httpmock.ActivateNonDefault(&httpClient)
+	httpmock.RegisterResponder("GET", "j-url/api/json", httpmock.NewStringResponder(200, ""))
+	jenkins, err := gojenkins.CreateJenkins(&httpClient, "j-url", "j-username", "j-token").Init()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	jc := JenkinsClient{
+		Jenkins:                  jenkins,
+		triggerReleaseRetryCount: 1,
+	}
+
+	jrsp := gojenkins.JobResponse{
+		InQueue: false,
+		LastBuild: gojenkins.JobBuild{
+			Number: 10,
+			URL:    "some",
+		},
+	}
+	brsp := gojenkins.BuildResponse{Building: false}
+
+	httpmock.RegisterResponder("GET", "j-url/job/codebase/job/Delete-release-codebase/api/json",
+		httpmock.NewJsonResponderOrPanic(200, &jrsp))
+
+	httpmock.RegisterResponder("GET", "j-url/job/codebase/job/Delete-release-codebase/10/api/json?depth=1",
+		httpmock.NewJsonResponderOrPanic(200, &brsp))
+
+	httpmock.RegisterResponder("GET", "j-url/crumbIssuer/api/json/api/json",
+		httpmock.NewStringResponder(404, ""))
+
+	buildRsp := httpmock.NewStringResponse(200, "")
+	buildRsp.Header.Add("Location", "/1")
+
+	httpmock.RegisterResponder("POST", "j-url/job/codebase/job/Delete-release-codebase/build",
+		func(request *http.Request) (*http.Response, error) {
+			return buildRsp, nil
+		})
+
+	if err := jc.TriggerDeletionJob("master", "codebase"); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestJenkinsClient_TriggerDeletionJob_ShouldFailOnJobBuildFailure(t *testing.T) {
+	httpClient := http.Client{}
+	httpmock.ActivateNonDefault(&httpClient)
+	httpmock.RegisterResponder("GET", "j-url/api/json", httpmock.NewStringResponder(200, ""))
+	jenkins, err := gojenkins.CreateJenkins(&httpClient, "j-url", "j-username", "j-token").Init()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	jc := JenkinsClient{
+		Jenkins:                  jenkins,
+		triggerReleaseRetryCount: 1,
+	}
+
+	jrsp := gojenkins.JobResponse{
+		InQueue: false,
+		LastBuild: gojenkins.JobBuild{
+			Number: 10,
+			URL:    "some",
+		},
+	}
+	brsp := gojenkins.BuildResponse{Building: false}
+
+	httpmock.RegisterResponder("GET", "j-url/job/codebase/job/Delete-release-codebase/api/json",
+		httpmock.NewJsonResponderOrPanic(200, &jrsp))
+
+	httpmock.RegisterResponder("GET", "j-url/job/codebase/job/Delete-release-codebase/10/api/json?depth=1",
+		httpmock.NewJsonResponderOrPanic(200, &brsp))
+
+	httpmock.RegisterResponder("GET", "j-url/crumbIssuer/api/json/api/json",
+		httpmock.NewStringResponder(404, ""))
+
+	httpmock.RegisterResponder("POST", "j-url/job/codebase/job/Delete-release-codebase/build",
+		httpmock.NewStringResponder(500, ""))
+
+	err = jc.TriggerDeletionJob("master", "codebase")
+	if err == nil {
+		t.Fatal("no error returned")
+	}
+
+	if !strings.Contains(err.Error(), "unable to build job") {
+		t.Fatalf("wrong error returned: %s", err.Error())
+	}
 }
