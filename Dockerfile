@@ -1,27 +1,28 @@
 FROM alpine:3.13.6
 
-ENV OPERATOR=/usr/local/bin/codebase-operator \
-    USER_UID=1001 \
-    USER_NAME=codebase-operator \
+ENV ASSETS_DIR=/usr/local/bin \
     HOME=/home/codebase-operator \
-    SSH_KNOWN_HOSTS=/home/codebase-operator/.ssh/known_hosts
+    OPERATOR=/usr/local/bin/codebase-operator \
+    SSH_KNOWN_HOSTS=/home/codebase-operator/.ssh/known_hosts \
+    USER_NAME=codebase-operator \
+    USER_UID=1001
 
 RUN apk add --no-cache ca-certificates==20191127-r5 \
                        openssh-client==8.4_p1-r4 \
                        git==2.30.2-r0
 
-COPY build/bin /usr/local/bin
-COPY build/templates /usr/local/bin/templates
-COPY build/pipelines /usr/local/bin/pipelines
-COPY build/configs /usr/local/bin/configs
-COPY build/img /usr/local/bin/img
+COPY build/bin ${ASSETS_DIR}
+COPY build/templates ${ASSETS_DIR}/templates
+COPY build/pipelines ${ASSETS_DIR}/pipelines
+COPY build/configs ${ASSETS_DIR}/configs
+COPY build/img ${ASSETS_DIR}/img
 
-RUN chgrp -R 0 /usr/local/bin/templates /usr/local/bin/pipelines && \
-    chmod -R g=u /usr/local/bin/templates /usr/local/bin/pipelines
+RUN chgrp -R 0 ${ASSETS_DIR}/templates ${ASSETS_DIR}/pipelines && \
+    chmod -R g=u ${ASSETS_DIR}/templates ${ASSETS_DIR}/pipelines
 
-RUN  chmod u+x /usr/local/bin/user_setup && \
-     chmod ugo+x /usr/local/bin/entrypoint && \
-     /usr/local/bin/user_setup
+RUN  chmod u+x ${ASSETS_DIR}/user_setup && \
+     chmod ugo+x ${ASSETS_DIR}/entrypoint && \
+     ${ASSETS_DIR}/user_setup
 
 # install operator binary
 COPY go-binary ${OPERATOR}

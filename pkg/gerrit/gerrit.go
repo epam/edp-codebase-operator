@@ -223,10 +223,15 @@ func SetupProjectReplication(client client.Client, sshPort int32, host, idrsa, c
 	logger.Info("Start setup project replication for app", "codebase", codebaseName)
 
 	replicaConfigNew, err := generateReplicationConfig(
-		util.GerritTemplates, ReplicationConfigTemplateName, ReplicationConfigParams{
+		fmt.Sprintf("%v/templates/gerrit", util.GetAssetsDir()),
+		ReplicationConfigTemplateName, ReplicationConfigParams{
 			Name:      codebaseName,
 			VcsSshUrl: vcsSshUrl,
 		})
+
+	if err != nil {
+		return errors.Wrap(err, "Uable to generate replication config")
+	}
 
 	gerritSettings := &v1.ConfigMap{}
 	err = client.Get(context.TODO(), types.NamespacedName{
@@ -237,15 +242,18 @@ func SetupProjectReplication(client client.Client, sshPort int32, host, idrsa, c
 		return errors.Wrapf(err, "couldn't get %v config map", "gerrit")
 	}
 	replicaConfig := gerritSettings.Data["replication.config"]
+	if replicaConfig == "" {
+		return errors.Wrap(err, "replication.config key is missing in gerrit ConfigMap")
+	}
 	gerritSettings.Data["replication.config"] = fmt.Sprintf("%v\n%v", replicaConfig, replicaConfigNew)
 
 	if err := client.Update(context.TODO(), gerritSettings); err != nil {
 		log.Printf("Unable to update config map with replication config: %v", err)
 		return err
 	}
-
-	log.Println("Waiting for gerrit replication config map appears in gerrit pod. Sleeping for 90 seconds...")
-	time.Sleep(90 * time.Second)
+	// TODO: refactor
+	log.Println("Waiting for gerrit replication config map appears in gerrit pod. Sleeping for 5 seconds...")
+	time.Sleep(5 * time.Second)
 
 	err = reloadReplicationPlugin(sshPort, idrsa, host, logger)
 	if err != nil {

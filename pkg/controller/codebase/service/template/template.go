@@ -17,9 +17,8 @@ import (
 
 var log = ctrl.Log.WithName("template")
 
-func PrepareTemplates(client client.Client, c v1alpha1.Codebase) error {
+func PrepareTemplates(client client.Client, c v1alpha1.Codebase, workDir, assetsDir string) error {
 	log.Info("start preparing deploy templates", "codebase", c.Name)
-	wd := fmt.Sprintf("/home/codebase-operator/edp/%v/%v", c.Namespace, c.Name)
 
 	cf, err := buildTemplateConfig(client, c)
 	if err != nil {
@@ -27,18 +26,17 @@ func PrepareTemplates(client client.Client, c v1alpha1.Codebase) error {
 	}
 
 	if c.Spec.Type == util.Application {
-		if err := util.CopyTemplate(c.Spec.DeploymentScript, wd, *cf); err != nil {
+		if err := util.CopyTemplate(c.Spec.DeploymentScript, workDir, assetsDir, *cf); err != nil {
 			return errors.Wrapf(err, "an error has occurred while copying template for %v codebase", c.Name)
 		}
 	}
 
-	if err := util.CopyPipelines(c.Spec.Type, util.PipelineTemplates, util.GetWorkDir(c.Name, c.Namespace)); err != nil {
+	if err := util.CopyPipelines(c.Spec.Type, fmt.Sprintf("%v/pipelines", assetsDir), workDir); err != nil {
 		return errors.Wrapf(err, "an error has occurred while copying pipelines for %v codebase", c.Name)
 	}
 
 	if c.Spec.Strategy != util.ImportStrategy {
-		td := fmt.Sprintf("%v/%v", wd, "templates")
-		if err := copySonarConfigs(td, *cf); err != nil {
+		if err := copySonarConfigs(workDir, assetsDir, *cf); err != nil {
 			return err
 		}
 	}
@@ -46,7 +44,7 @@ func PrepareTemplates(client client.Client, c v1alpha1.Codebase) error {
 	return nil
 }
 
-func PrepareGitlabCITemplates(client client.Client, c v1alpha1.Codebase) error {
+func PrepareGitlabCITemplates(client client.Client, c v1alpha1.Codebase, workDir, assetsDir string) error {
 	log.Info("start preparing deploy templates", "codebase", c.Name)
 
 	if c.Spec.Type != util.Application {
@@ -59,8 +57,7 @@ func PrepareGitlabCITemplates(client client.Client, c v1alpha1.Codebase) error {
 		return err
 	}
 
-	wd := fmt.Sprintf("/home/codebase-operator/edp/%v/%v", c.Namespace, c.Name)
-	if err := util.CopyTemplate(c.Spec.DeploymentScript, wd, *cf); err != nil {
+	if err := util.CopyTemplate(c.Spec.DeploymentScript, workDir, assetsDir, *cf); err != nil {
 		return errors.Wrapf(err, "an error has occurred while copying template for %v codebase", c.Name)
 	}
 
@@ -115,13 +112,16 @@ func getProjectUrl(c client.Client, s v1alpha1.CodebaseSpec, n string) (string, 
 	}
 }
 
-func copySonarConfigs(templateDirectory string, config model.ConfigGoTemplating) error {
+// Copy sonar configurations for JavaScript, Python, Go
+// It expects workDir - work dir, which contains codebase; td - template dir, which contains sonar.property file
+// It returns error in case of issue
+func copySonarConfigs(workDir, td string, config model.ConfigGoTemplating) error {
 	languagesForSonarTemplates := []string{util.LanguageJavascript, util.LanguagePython, util.LanguageGo}
 	if !util.CheckElementInArray(languagesForSonarTemplates, strings.ToLower(config.Lang)) {
 		return nil
 	}
 
-	sonarConfigPath := fmt.Sprintf("%v/%v/sonar-project.properties", templateDirectory, config.Name)
+	sonarConfigPath := fmt.Sprintf("%v/sonar-project.properties", workDir)
 	log.Info("start copying sonar configs", "path", sonarConfigPath)
 	if _, err := os.Stat(sonarConfigPath); err == nil {
 		return nil
@@ -134,7 +134,7 @@ func copySonarConfigs(templateDirectory string, config model.ConfigGoTemplating)
 	defer f.Close()
 
 	sonarTemplateName := fmt.Sprintf("%v-sonar-project.properties.tmpl", strings.ToLower(config.Lang))
-	sonarTemplateFile := fmt.Sprintf("/usr/local/bin/templates/sonar/%v", sonarTemplateName)
+	sonarTemplateFile := fmt.Sprintf("%v/templates/sonar/%v", td, sonarTemplateName)
 
 	tmpl, err := template.New(sonarTemplateName).ParseFiles(sonarTemplateFile)
 	if err != nil {

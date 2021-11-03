@@ -1,7 +1,6 @@
 package chain
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"strings"
@@ -13,9 +12,6 @@ import (
 	git "github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	"github.com/pkg/errors"
-	v1 "k8s.io/api/core/v1"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -103,7 +99,7 @@ func (h PutVersionFile) tryToPutVersionFile(c *v1alpha1.Codebase, projectPath st
 		return err
 	}
 
-	secret, err := getSecret(h.client, gs.NameSshKeySecret, c.Namespace)
+	secret, err := util.GetSecret(h.client, gs.NameSshKeySecret, c.Namespace)
 	if err != nil {
 		return errors.Wrapf(err, "an error has occurred while getting %v secret", gs.NameSshKeySecret)
 	}
@@ -124,19 +120,6 @@ func (h PutVersionFile) tryToPutVersionFile(c *v1alpha1.Codebase, projectPath st
 	}
 
 	return nil
-}
-
-func getSecret(c client.Client, name, namespace string) (*v1.Secret, error) {
-	log.Info("Start fetching Secret resource from k8s", "secret name", name, "namespace", namespace)
-	s := &v1.Secret{}
-	if err := c.Get(context.TODO(), types.NamespacedName{Namespace: namespace, Name: name}, s); err != nil {
-		if k8serrors.IsNotFound(err) {
-			return nil, errors.Wrapf(err, "secret %v doesn't exist in k8s.", name)
-		}
-		return nil, err
-	}
-	log.Info("Secret has been fetched", "secret name", name, "namespace", namespace)
-	return s, nil
 }
 
 func (h PutVersionFile) pushChanges(projectPath, privateKey, user string) error {

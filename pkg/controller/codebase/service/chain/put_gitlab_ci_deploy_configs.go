@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	edpv1alpha1 "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/helper"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/repository"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/service/chain/handler"
@@ -27,7 +26,7 @@ func (h PutGitlabCiDeployConfigs) ServeRequest(c *v1alpha1.Codebase) error {
 	rLog.Info("Start pushing configs...")
 
 	if err := h.tryToPushConfigs(*c); err != nil {
-		setFailedFields(c, edpv1alpha1.SetupDeploymentTemplates, err.Error())
+		setFailedFields(c, v1alpha1.SetupDeploymentTemplates, err.Error())
 		return errors.Wrapf(err, "couldn't push deploy configs for %v codebase", c.Name)
 	}
 	rLog.Info("end pushing configs to remote git server")
@@ -50,17 +49,18 @@ func (h PutGitlabCiDeployConfigs) tryToPushConfigs(c v1alpha1.Codebase) error {
 			"name", c.Name)
 		return nil
 	}
+	wd := util.GetWorkDir(c.Name, c.Namespace)
+	ad := util.GetAssetsDir()
 
-	if err := template.PrepareGitlabCITemplates(h.client, c); err != nil {
+	if err := template.PrepareGitlabCITemplates(h.client, c, wd, ad); err != nil {
 		return err
 	}
 
-	gf := fmt.Sprintf("/home/codebase-operator/edp/%v/%v/%v/%v", c.Namespace, c.Name, "templates", c.Name)
-	if err := h.git.CommitChanges(gf, fmt.Sprintf("Add template for %v", c.Name)); err != nil {
+	if err := h.git.CommitChanges(wd, fmt.Sprintf("Add template for %v", c.Name)); err != nil {
 		return err
 	}
 
-	if err := h.pushChanges(gf, c.Spec.GitServer, c.Namespace, c.Spec.DefaultBranch); err != nil {
+	if err := h.pushChanges(wd, c.Spec.GitServer, c.Namespace, c.Spec.DefaultBranch); err != nil {
 		return err
 	}
 

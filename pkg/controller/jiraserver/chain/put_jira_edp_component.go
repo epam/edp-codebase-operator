@@ -4,19 +4,21 @@ import (
 	"bufio"
 	"context"
 	"encoding/base64"
+	"fmt"
+	"io/ioutil"
+	"os"
+
 	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/jiraserver/chain/handler"
+	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	edpApi "github.com/epam/edp-component-operator/pkg/apis/v1/v1alpha1"
 	"github.com/pkg/errors"
-	"io/ioutil"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"os"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
-	jiraIconPath         = "/usr/local/bin/img/jira.svg"
 	edpComponentJiraType = "jira"
 )
 
@@ -68,7 +70,7 @@ func (h PutJiraEDPComponent) createEDPComponentIfNotExists(jira v1alpha1.JiraSer
 }
 
 func getIcon() (*string, error) {
-	f, err := os.Open(jiraIconPath)
+	f, err := os.Open(fmt.Sprintf("%v/img/jira.svg", util.GetAssetsDir()))
 	if err != nil {
 		return nil, err
 	}

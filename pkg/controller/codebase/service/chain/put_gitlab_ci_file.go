@@ -70,7 +70,7 @@ func (h PutGitlabCiFile) tryToPutGitlabCIFile(c *v1alpha1.Codebase) error {
 		return err
 	}
 
-	secret, err := getSecret(h.client, gs.NameSshKeySecret, c.Namespace)
+	secret, err := util.GetSecret(h.client, gs.NameSshKeySecret, c.Namespace)
 	if err != nil {
 		return errors.Wrapf(err, "an error has occurred while getting %v secret", gs.NameSshKeySecret)
 	}
@@ -96,9 +96,11 @@ func (h PutGitlabCiFile) pushChanges(projectPath, privateKey, user, defaultBranc
 }
 
 func (h PutGitlabCiFile) parseTemplate(c *v1alpha1.Codebase) error {
-	tp := getTemplatePath(*c.Spec.Framework, c.Spec.BuildTool)
+	tp := fmt.Sprintf("%v/templates/gitlabci/%v/%v-%v.tmpl",
+		util.GetAssetsDir(),
+		platform.GetPlatformType(), strings.ToLower(*c.Spec.Framework), strings.ToLower(c.Spec.BuildTool))
 
-	wd := fmt.Sprintf("/home/codebase-operator/edp/%v/%v/%v/%v", c.Namespace, c.Name, "templates", c.Name)
+	wd := util.GetWorkDir(c.Name, c.Namespace)
 	gitlabCiFile := fmt.Sprintf("%v/%v", wd, ".gitlab-ci.yml")
 
 	component, err := util.GetEdpComponent(h.client, getEdpComponentName(), c.Namespace)
@@ -141,11 +143,6 @@ func (h PutGitlabCiFile) gitlabCiFileExists(codebaseName, edpName string) (bool,
 	}
 
 	return false, nil
-}
-
-func getTemplatePath(framework, buildTool string) string {
-	return fmt.Sprintf("/usr/local/bin/templates/gitlabci/%v/%v-%v.tmpl",
-		platform.GetPlatformType(), strings.ToLower(framework), strings.ToLower(buildTool))
 }
 
 func parseTemplate(templatePath, gitlabCiFile string, data interface{}) error {

@@ -30,6 +30,16 @@ type PutJenkinsFolder struct {
 
 func (h PutJenkinsFolder) ServeRequest(c *v1alpha1.Codebase) error {
 	rLog := log.WithValues("codebase_name", c.Name)
+	jfn := fmt.Sprintf("%v-%v", c.Name, "codebase")
+	jfr, err := h.getJenkinsFolder(jfn, c.Namespace)
+	if err != nil {
+		return err
+	}
+
+	if jfr != nil {
+		rLog.Info("jenkins folder already exists in cluster", "name", jfn)
+		return nextServeOrNil(h.next, c)
+	}
 
 	gs, err := util.GetGitServer(h.client, c.Spec.GitServer, c.Namespace)
 	if err != nil {
@@ -58,7 +68,7 @@ func (h PutJenkinsFolder) ServeRequest(c *v1alpha1.Codebase) error {
 	}
 
 	rLog.Info("start creating jenkins folder...")
-	if err := h.putJenkinsFolder(c, string(jc)); err != nil {
+	if err := h.putJenkinsFolder(c, string(jc), jfn); err != nil {
 		setFailedFields(c, v1alpha1.PutJenkinsFolder, err.Error())
 		return err
 	}
@@ -66,17 +76,7 @@ func (h PutJenkinsFolder) ServeRequest(c *v1alpha1.Codebase) error {
 	return nextServeOrNil(h.next, c)
 }
 
-func (h PutJenkinsFolder) putJenkinsFolder(c *v1alpha1.Codebase, jc string) error {
-	jfn := fmt.Sprintf("%v-%v", c.Name, "codebase")
-	jfr, err := h.getJenkinsFolder(jfn, c.Namespace)
-	if err != nil {
-		return err
-	}
-
-	if jfr != nil {
-		log.Info("jenkins folder already exists in cluster", "name", jfn)
-		return nil
-	}
+func (h PutJenkinsFolder) putJenkinsFolder(c *v1alpha1.Codebase, jc, jfn string) error {
 
 	jf := &jenkinsv1alpha1.JenkinsFolder{
 		TypeMeta: metav1.TypeMeta{

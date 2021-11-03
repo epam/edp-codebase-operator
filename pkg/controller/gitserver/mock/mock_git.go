@@ -50,7 +50,7 @@ func (m *MockGit) Checkout(user, pass *string, directory, branchName string, rem
 
 func (m *MockGit) GetCurrentBranchName(directory string) (string, error) {
 	args := m.Called(directory)
-	return args.String(), args.Error(1)
+	return args.String(0), args.Error(1)
 }
 
 func (m *MockGit) Init(directory string) error { panic("implement me") }

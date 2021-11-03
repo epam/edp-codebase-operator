@@ -17,9 +17,8 @@ import (
 )
 
 const (
-	watchNamespaceEnvVar   = "WATCH_NAMESPACE"
-	debugModeEnvVar        = "DEBUG_MODE"
-	inClusterNamespacePath = "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
+	watchNamespaceEnvVar = "WATCH_NAMESPACE"
+	debugModeEnvVar      = "DEBUG_MODE"
 )
 
 func GetUserSettings(client client.Client, namespace string) (*model.UserSettings, error) {
@@ -167,13 +166,4 @@ func GetDebugMode() (bool, error) {
 		return false, err
 	}
 	return b, nil
-}
-
-// Check whether the operator is running in cluster or locally
-func RunningInCluster() bool {
-	_, err := os.Stat(inClusterNamespacePath)
-	if os.IsNotExist(err) {
-		return false
-	}
-	return true
 }

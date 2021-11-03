@@ -1,18 +1,17 @@
 package chain
 
 import (
+	"testing"
+
 	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	edpCompApi "github.com/epam/edp-component-operator/pkg/apis/v1/v1alpha1"
 	perfApi "github.com/epam/edp-perf-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/stretchr/testify/assert"
-	"k8s.io/api/apps/v1"
+	coreV1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	v12 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
-	"testing"
 )
 
 const (
@@ -24,7 +23,7 @@ func TestPutPerfDataSourcesChain_SkipCreatingPerfDataSource(t *testing.T) {
 		client: nil,
 	}
 	c := &v1alpha1.Codebase{
-		ObjectMeta: v12.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name: "fake-name",
 		},
 		Spec: v1alpha1.CodebaseSpec{},
@@ -33,6 +32,9 @@ func TestPutPerfDataSourcesChain_SkipCreatingPerfDataSource(t *testing.T) {
 }
 
 func TestPutPerfDataSourcesChain_JenkinsAndSonarDataSourcesShouldBeCreated(t *testing.T) {
+	pdss := &perfApi.PerfDataSourceSonar{}
+	pdsj := &perfApi.PerfDataSourceJenkins{}
+	pdsg := &perfApi.PerfDataSourceGitLab{}
 	ecJenkins := &edpCompApi.EDPComponent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "jenkins",
@@ -50,7 +52,7 @@ func TestPutPerfDataSourcesChain_JenkinsAndSonarDataSourcesShouldBeCreated(t *te
 	}
 
 	gs := &v1alpha1.GitServer{
-		ObjectMeta: v12.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
@@ -59,12 +61,8 @@ func TestPutPerfDataSourcesChain_JenkinsAndSonarDataSourcesShouldBeCreated(t *te
 		},
 	}
 
-	objs := []runtime.Object{
-		ecJenkins, ecSonar, gs,
-	}
-
 	c := &v1alpha1.Codebase{
-		ObjectMeta: v12.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
@@ -78,17 +76,18 @@ func TestPutPerfDataSourcesChain_JenkinsAndSonarDataSourcesShouldBeCreated(t *te
 			},
 		},
 	}
-	assert.NoError(t, PutPerfDataSources{client: fake.NewFakeClient(objs...)}.ServeRequest(c))
+	scheme := runtime.NewScheme()
+	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, gs)
+	scheme.AddKnownTypes(coreV1.SchemeGroupVersion, pdsj, pdss, pdsg, ecJenkins, ecSonar)
+	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(pdsj, pdss, pdsg, ecJenkins, ecSonar, gs).Build()
+
+	assert.NoError(t, PutPerfDataSources{client: fakeCl}.ServeRequest(c))
 }
 
 func TestPutPerfDataSourcesChain_ShouldNotFoundEdpComponent(t *testing.T) {
-	s := scheme.Scheme
-	s.AddKnownTypes(v1.SchemeGroupVersion,
-		&perfApi.PerfDataSourceJenkins{}, &perfApi.PerfDataSourceJenkinsList{},
-		&perfApi.PerfDataSourceSonar{}, &perfApi.PerfDataSourceSonarList{})
 
 	c := &v1alpha1.Codebase{
-		ObjectMeta: v12.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
@@ -99,5 +98,9 @@ func TestPutPerfDataSourcesChain_ShouldNotFoundEdpComponent(t *testing.T) {
 			},
 		},
 	}
-	assert.Error(t, PutPerfDataSources{client: fake.NewFakeClient([]runtime.Object{}...)}.ServeRequest(c))
+	scheme := runtime.NewScheme()
+	scheme.AddKnownTypes(coreV1.SchemeGroupVersion, c)
+	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c).Build()
+
+	assert.Error(t, PutPerfDataSources{client: fakeCl}.ServeRequest(c))
 }

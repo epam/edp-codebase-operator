@@ -2,6 +2,8 @@ package util
 
 import (
 	"fmt"
+	"os"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -14,7 +16,19 @@ func GetPointerStringP(val *string) *string {
 }
 
 func GetWorkDir(codebaseName, namespace string) string {
-	return fmt.Sprintf("/home/codebase-operator/edp/%v/%v/%v/%v", namespace, codebaseName, "templates", codebaseName)
+	value, ok := os.LookupEnv("WORKING_DIR")
+	if !ok {
+		return fmt.Sprintf("/home/codebase-operator/edp/%v/%v/%v/%v", namespace, codebaseName, "templates", codebaseName)
+	}
+	return fmt.Sprintf("%v/codebase-operator/edp/%v/%v/%v/%v", value, namespace, codebaseName, "templates", codebaseName)
+}
+
+func GetAssetsDir() string {
+	value, ok := os.LookupEnv("ASSETS_DIR")
+	if !ok {
+		panic("env variable ASSETS_DIR is missing")
+	}
+	return value
 }
 
 func GetOwnerReference(ownerKind string, ors []metav1.OwnerReference) (*metav1.OwnerReference, error) {

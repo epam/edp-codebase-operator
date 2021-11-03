@@ -18,10 +18,6 @@ const (
 
 	PrivateSShKeyName = "id_rsa"
 
-	//paths
-	GerritTemplates   = "/usr/local/bin/templates/gerrit"
-	PipelineTemplates = "/usr/local/bin/pipelines"
-
 	ImportStrategy     = "import"
 	Application        = "application"
 	LanguageJavascript = "javascript"

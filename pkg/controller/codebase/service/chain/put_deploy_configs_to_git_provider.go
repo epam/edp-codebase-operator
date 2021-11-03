@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	edpv1alpha1 "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/helper"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/repository"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/service/chain/handler"
@@ -27,7 +26,7 @@ func (h PutDeployConfigsToGitProvider) ServeRequest(c *v1alpha1.Codebase) error 
 	rLog.Info("Start pushing configs...")
 
 	if err := h.tryToPushConfigs(*c); err != nil {
-		setFailedFields(c, edpv1alpha1.SetupDeploymentTemplates, err.Error())
+		setFailedFields(c, v1alpha1.SetupDeploymentTemplates, err.Error())
 		return errors.Wrapf(err, "couldn't push deploy configs for %v codebase", c.Name)
 	}
 	rLog.Info("end pushing configs to remote git server")
@@ -51,6 +50,7 @@ func (h PutDeployConfigsToGitProvider) tryToPushConfigs(c v1alpha1.Codebase) err
 	}
 
 	wd := util.GetWorkDir(c.Name, c.Namespace)
+	ad := util.GetAssetsDir()
 	ru, err := util.GetRepoUrl(&c)
 	if err != nil {
 		return errors.Wrap(err, "couldn't build repo url")
@@ -60,7 +60,7 @@ func (h PutDeployConfigsToGitProvider) tryToPushConfigs(c v1alpha1.Codebase) err
 		return errors.Wrapf(err, "checkout default branch %v in Git put_deploy_config has been failed", c.Spec.DefaultBranch)
 	}
 
-	if err := template.PrepareTemplates(h.client, c); err != nil {
+	if err := template.PrepareTemplates(h.client, c, wd, ad); err != nil {
 		return err
 	}
 

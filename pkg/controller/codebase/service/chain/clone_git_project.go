@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	edpv1alpha1 "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/service/chain/handler"
 	git "github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver"
@@ -20,7 +19,7 @@ type CloneGitProject struct {
 	git    git.Git
 }
 
-func (h CloneGitProject) ServeRequest(c *v1alpha1.Codebase) error {
+func (h CloneGitProject) ServeRequest(c *edpv1alpha1.Codebase) error {
 	rLog := log.WithValues("codebase_name", c.Name)
 	rLog.Info("Start cloning project...")
 	rLog.Info("codebase data", "spec", c.Spec)

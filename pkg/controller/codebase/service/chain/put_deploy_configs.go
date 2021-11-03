@@ -6,7 +6,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	edpv1alpha1 "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/helper"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/repository"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/service/chain/handler"
@@ -29,19 +28,19 @@ func (h PutDeployConfigs) ServeRequest(c *v1alpha1.Codebase) error {
 
 	port, err := util.GetGerritPort(h.client, c.Namespace)
 	if err != nil {
-		setFailedFields(c, edpv1alpha1.SetupDeploymentTemplates, err.Error())
+		setFailedFields(c, v1alpha1.SetupDeploymentTemplates, err.Error())
 		return errors.Wrap(err, "unable get gerrit port")
 	}
 
 	if err := h.tryToPushConfigs(*c, *port); err != nil {
-		setFailedFields(c, edpv1alpha1.SetupDeploymentTemplates, err.Error())
+		setFailedFields(c, v1alpha1.SetupDeploymentTemplates, err.Error())
 		return errors.Wrapf(err, "couldn't push deploy configs for %v codebase", c.Name)
 	}
 	rLog.Info("end pushing configs")
 	return nextServeOrNil(h.next, c)
 }
 
-func (h PutDeployConfigs) tryToPushConfigs(c edpv1alpha1.Codebase, sshPort int32) error {
+func (h PutDeployConfigs) tryToPushConfigs(c v1alpha1.Codebase, sshPort int32) error {
 
 	edpN, err := helper.GetEDPName(h.client, c.Namespace)
 	if err != nil {
@@ -68,9 +67,10 @@ func (h PutDeployConfigs) tryToPushConfigs(c edpv1alpha1.Codebase, sshPort int32
 	u := "project-creator"
 	url := fmt.Sprintf("ssh://gerrit.%v:%v", c.Namespace, c.Name)
 	wd := util.GetWorkDir(c.Name, c.Namespace)
+	ad := util.GetAssetsDir()
 
 	if !util.DoesDirectoryExist(wd) || util.IsDirectoryEmpty(wd) {
-		if err := h.cloneProjectRepoFromGerrit(sshPort, idrsa, url, wd); err != nil {
+		if err := h.cloneProjectRepoFromGerrit(sshPort, idrsa, url, wd, ad); err != nil {
 			return err
 		}
 	}
@@ -84,7 +84,7 @@ func (h PutDeployConfigs) tryToPushConfigs(c edpv1alpha1.Codebase, sshPort int32
 		return errors.Wrapf(err, "checkout default branch %v in Gerrit put_deploy_config has been failed", c.Spec.DefaultBranch)
 	}
 
-	if err := template.PrepareTemplates(h.client, c); err != nil {
+	if err := template.PrepareTemplates(h.client, c, wd, ad); err != nil {
 		return err
 	}
 
@@ -104,7 +104,7 @@ func (h PutDeployConfigs) tryToPushConfigs(c edpv1alpha1.Codebase, sshPort int32
 	return nil
 }
 
-func (h PutDeployConfigs) cloneProjectRepoFromGerrit(sshPort int32, idrsa, cloneSshUrl, wd string) error {
+func (h PutDeployConfigs) cloneProjectRepoFromGerrit(sshPort int32, idrsa, cloneSshUrl, wd, ad string) error {
 	log.Info("start cloning repository from Gerrit", "ssh url", cloneSshUrl)
 
 	if err := h.git.CloneRepositoryBySsh(idrsa, "project-creator", cloneSshUrl, wd, sshPort); err != nil {
@@ -116,9 +116,8 @@ func (h PutDeployConfigs) cloneProjectRepoFromGerrit(sshPort int32, idrsa, clone
 		return errors.Wrapf(err, "couldn't create folder %v", destinationPath)
 	}
 
-	sourcePath := "/usr/local/bin/configs"
 	fileName := "commit-msg"
-	src := fmt.Sprintf("%v/%v", sourcePath, fileName)
+	src := fmt.Sprintf("%v/configs/%v", ad, fileName)
 	dest := fmt.Sprintf("%v/%v", destinationPath, fileName)
 	if err := util.CopyFile(src, dest); err != nil {
 		return errors.Wrapf(err, "couldn't copy file %v", fileName)

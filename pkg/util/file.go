@@ -3,9 +3,10 @@ package util
 import (
 	"bytes"
 	"fmt"
-	"github.com/pkg/errors"
 	"io/ioutil"
 	"os"
+
+	"github.com/pkg/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 

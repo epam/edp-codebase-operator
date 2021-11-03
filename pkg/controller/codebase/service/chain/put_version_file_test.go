@@ -21,7 +21,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
@@ -144,47 +143,6 @@ func clear(path string) {
 }
 
 func TestTryToPutVersionFileMethod_MustBeFinishedSuccessfully(t *testing.T) {
-	//mock methods of git interface
-	mGit := new(mock2.MockGit)
-	mGit.On("CommitChanges", path, fmt.Sprintf("Add %v file", versionFileName)).Return(
-		nil)
-	mGit.On("PushChanges", fakePrivateKey, fakeUser, path).Return(
-		nil)
-	mGit.On("Checkout", util.GetPointerStringP(nil), util.GetPointerStringP(nil), path, "", true).Return(
-		nil)
-	mGit.On("GetCurrentBranchName", path).Return(
-		"", nil)
-	mGit.On("CheckPermissions", "https://github.com/epmd-edp/go-go-go.git", util.GetPointerStringP(nil), util.GetPointerStringP(nil)).Return(
-		true)
-	h := PutVersionFile{
-		next:   nil,
-		client: initMockedClient(),
-		git:    mGit,
-	}
-
-	c := &codebaseApi.Codebase{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      fakeCodebaseName,
-			Namespace: fakeNamespace,
-		},
-		Spec: codebaseApi.CodebaseSpec{
-			GitServer: fakeGitServerName,
-			Lang:      goLang,
-			BuildTool: goLang,
-			Framework: util.GetStringP(goLang),
-			Versioning: codebaseApi.Versioning{
-				Type: codebaseApi.Default,
-			},
-		},
-	}
-
-	err := h.tryToPutVersionFile(c, path)
-	defer clear(fmt.Sprintf("%v/VERSION", path))
-
-	assert.NoError(t, err)
-}
-
-func initMockedClient() client.Client {
 	gs := &codebaseApi.GitServer{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      fakeGitServerName,
@@ -220,9 +178,47 @@ func initMockedClient() client.Client {
 		},
 	}
 
-	objs := []runtime.Object{
-		cm, gs, secret,
+	scheme := runtime.NewScheme()
+	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, gs)
+	scheme.AddKnownTypes(v1K8s.SchemeGroupVersion, secret, cm)
+	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(gs, secret, cm).Build()
+
+	//mock methods of git interface
+	mGit := new(mock2.MockGit)
+	mGit.On("CommitChanges", path, fmt.Sprintf("Add %v file", versionFileName)).Return(
+		nil)
+	mGit.On("PushChanges", fakePrivateKey, fakeUser, path).Return(
+		nil)
+	mGit.On("Checkout", util.GetPointerStringP(nil), util.GetPointerStringP(nil), path, "", true).Return(
+		nil)
+	mGit.On("GetCurrentBranchName", path).Return(
+		"", nil)
+	mGit.On("CheckPermissions", "https://github.com/epmd-edp/go-go-go.git", util.GetPointerStringP(nil), util.GetPointerStringP(nil)).Return(
+		true)
+	h := PutVersionFile{
+		next:   nil,
+		client: fakeCl,
+		git:    mGit,
 	}
 
-	return fake.NewFakeClient(objs...)
+	c := &codebaseApi.Codebase{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      fakeCodebaseName,
+			Namespace: fakeNamespace,
+		},
+		Spec: codebaseApi.CodebaseSpec{
+			GitServer: fakeGitServerName,
+			Lang:      goLang,
+			BuildTool: goLang,
+			Framework: util.GetStringP(goLang),
+			Versioning: codebaseApi.Versioning{
+				Type: codebaseApi.Default,
+			},
+		},
+	}
+
+	err := h.tryToPutVersionFile(c, path)
+	defer clear(fmt.Sprintf("%v/VERSION", path))
+
+	assert.NoError(t, err)
 }

@@ -3,7 +3,6 @@ package chain
 import (
 	"fmt"
 
-	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	edpv1alpha1 "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/service/chain/handler"
@@ -19,7 +18,7 @@ type PutGerritReplication struct {
 	client client.Client
 }
 
-func (h PutGerritReplication) ServeRequest(c *v1alpha1.Codebase) error {
+func (h PutGerritReplication) ServeRequest(c *edpv1alpha1.Codebase) error {
 	rLog := log.WithValues("codebase_name", c.Name)
 	rLog.Info("Start setting Gerrit replication...")
 
@@ -59,6 +58,6 @@ func (h PutGerritReplication) tryToSetupGerritReplication(codebaseName, namespac
 
 	idrsa := string(s.Data[util.PrivateSShKeyName])
 	host := fmt.Sprintf("gerrit.%v", namespace)
-	return gerrit.SetupProjectReplication(h.client, *port, host, idrsa, codebaseName, vcsConf.VcsSshUrl, namespace,
+	return gerrit.SetupProjectReplication(h.client, *port, host, idrsa, codebaseName, namespace, vcsConf.VcsSshUrl,
 		log)
 }

@@ -9,7 +9,6 @@ import (
 	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	edpv1alpha1 "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/helper"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/repository"
@@ -29,7 +28,7 @@ type PutProjectGerrit struct {
 	git    git.Git
 }
 
-func (h PutProjectGerrit) ServeRequest(c *v1alpha1.Codebase) error {
+func (h PutProjectGerrit) ServeRequest(c *edpv1alpha1.Codebase) error {
 	rLog := log.WithValues("codebase_name", c.Name)
 	rLog.Info("Start putting Codebase...")
 	rLog.Info("codebase data", "spec", c.Spec)
@@ -103,7 +102,8 @@ func (h PutProjectGerrit) ServeRequest(c *v1alpha1.Codebase) error {
 	return nextServeOrNil(h.next, c)
 }
 
-func (h PutProjectGerrit) tryToPushProjectToGerrit(c *v1alpha1.Codebase, sshPort int32, codebaseName, workDir, namespace, branchName string, strategy v1alpha1.Strategy) error {
+func (h PutProjectGerrit) tryToPushProjectToGerrit(c *edpv1alpha1.Codebase, sshPort int32, codebaseName, workDir,
+	namespace, branchName string, strategy edpv1alpha1.Strategy) error {
 	s, err := util.GetSecret(h.client, "gerrit-project-creator", namespace)
 	if err != nil {
 		return errors.Wrap(err, "unable to get gerrit-project-creator secret")
@@ -130,7 +130,7 @@ func (h PutProjectGerrit) tryToPushProjectToGerrit(c *v1alpha1.Codebase, sshPort
 	return nil
 }
 
-func (h PutProjectGerrit) pushToGerrit(sshPost int32, idrsa, host, codebaseName, directory string, strategy v1alpha1.Strategy) error {
+func (h PutProjectGerrit) pushToGerrit(sshPost int32, idrsa, host, codebaseName, directory string, strategy edpv1alpha1.Strategy) error {
 	log.Info("Start pushing project to Gerrit ", "codebase_name", codebaseName)
 	if err := gerrit.AddRemoteLinkToGerrit(directory, host, sshPost, codebaseName, log); err != nil {
 		return errors.Wrap(err, "couldn't add remote link to Gerrit")
@@ -227,8 +227,8 @@ func setFailedFields(c *edpv1alpha1.Codebase, a edpv1alpha1.ActionType, message 
 	}
 }
 
-func (h PutProjectGerrit) tryToSquashCommits(workDir, codebaseName string, strategy v1alpha1.Strategy) error {
-	if strategy != v1alpha1.Create {
+func (h PutProjectGerrit) tryToSquashCommits(workDir, codebaseName string, strategy edpv1alpha1.Strategy) error {
+	if strategy != edpv1alpha1.Create {
 		return nil
 	}
 
@@ -248,7 +248,7 @@ func (h PutProjectGerrit) tryToSquashCommits(workDir, codebaseName string, strat
 	return nil
 }
 
-func (h PutProjectGerrit) initialProjectProvisioning(c *v1alpha1.Codebase, rLog logr.Logger, wd string) error {
+func (h PutProjectGerrit) initialProjectProvisioning(c *edpv1alpha1.Codebase, rLog logr.Logger, wd string) error {
 	if c.Spec.EmptyProject {
 		return h.emptyProjectProvisioning(wd, c.Name)
 	}
@@ -269,7 +269,7 @@ func (h PutProjectGerrit) emptyProjectProvisioning(wd, codebaseName string) erro
 	return nil
 }
 
-func (h PutProjectGerrit) notEmptyProjectProvisioning(c *v1alpha1.Codebase, rLog logr.Logger, wd string) error {
+func (h PutProjectGerrit) notEmptyProjectProvisioning(c *edpv1alpha1.Codebase, rLog logr.Logger, wd string) error {
 	log.Info("Start initial provisioning for non-empty project", "codebase_name", c.Name)
 	ru, err := util.GetRepoUrl(c)
 	if err != nil {
@@ -279,6 +279,9 @@ func (h PutProjectGerrit) notEmptyProjectProvisioning(c *v1alpha1.Codebase, rLog
 	rLog.Info("Repository URL with template has been retrieved", "url", *ru)
 
 	repu, repp, err := GetRepositoryCredentialsIfExists(c, h.client)
+	if err != nil {
+		return errors.Wrap(err, "GetRepositoryCredentialsIfExists has been failed")
+	}
 
 	if !h.git.CheckPermissions(*ru, repu, repp) {
 		msg := fmt.Errorf("user %v cannot get access to the repository %v", repu, *ru)

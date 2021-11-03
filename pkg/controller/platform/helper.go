@@ -10,12 +10,6 @@ const (
 	defaultPt = Openshift
 )
 
-var value string
-
-func init() {
-	value = lookup()
-}
-
 func lookup() string {
 	if value, ok := os.LookupEnv(ptKey); ok {
 		return value
@@ -24,9 +18,9 @@ func lookup() string {
 }
 
 func IsK8S() bool {
-	return value == K8S
+	return lookup() == K8S
 }
 
 func GetPlatformType() string {
-	return value
+	return lookup()
 }

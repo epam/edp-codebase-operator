@@ -1,6 +1,7 @@
 package util
 
 import (
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -58,4 +59,33 @@ func TestGetWorkDir(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestGetWorkDir_WithCustomPathSHouldWork(t *testing.T) {
+	os.Setenv("WORKING_DIR", "/CUSTOM_PATH")
+	type args struct {
+		codebaseName string
+		namespace    string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{"1", args{codebaseName: "test", namespace: "fake-ns"}, "/CUSTOM_PATH/codebase-operator/edp/fake-ns/test/templates/test"},
+		{"2", args{codebaseName: "cb-name", namespace: "fake-ns"}, "/CUSTOM_PATH/codebase-operator/edp/fake-ns/cb-name/templates/cb-name"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := GetWorkDir(tt.args.codebaseName, tt.args.namespace); got != tt.want {
+				t.Errorf("GetWorkDir() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestGetAssetsDir_ShouldPass(t *testing.T) {
+	os.Setenv("ASSETS_DIR", "/tmp")
+	ad := GetAssetsDir()
+	assert.Equal(t, ad, "/tmp")
 }

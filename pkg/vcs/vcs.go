@@ -2,13 +2,14 @@ package vcs
 
 import (
 	"fmt"
+	"log"
+	"net/url"
+
 	"github.com/epam/edp-codebase-operator/v2/pkg/model"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	"github.com/epam/edp-codebase-operator/v2/pkg/vcs/impl/bitbucket"
 	"github.com/epam/edp-codebase-operator/v2/pkg/vcs/impl/gitlab"
 	"github.com/pkg/errors"
-	"log"
-	"net/url"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -50,6 +51,9 @@ func GetVcsConfig(client client.Client, us *model.UserSettings, codebaseName, na
 	projectVcsHostnameUrl := fmt.Sprintf("%v://%v", vcsGroupNameUrl.Scheme, vcsGroupNameUrl.Host)
 	VcsCredentialsSecretName := fmt.Sprintf("vcs-autouser-codebase-%v-temp", codebaseName)
 	vcsAutoUserLogin, vcsAutoUserPassword, err := util.GetVcsBasicAuthConfig(client, namespace, VcsCredentialsSecretName)
+	if err != nil {
+		return nil, errors.Wrapf(err, "GetVcsBasicAuthConfig: Unable to get secret %v", VcsCredentialsSecretName)
+	}
 
 	vcsTool, err := CreateVCSClient(us.VcsToolName, projectVcsHostnameUrl, vcsAutoUserLogin, vcsAutoUserPassword)
 	if err != nil {

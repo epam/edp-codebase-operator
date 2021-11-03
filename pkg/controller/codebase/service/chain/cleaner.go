@@ -33,9 +33,9 @@ func (h Cleaner) ServeRequest(c *v1alpha1.Codebase) error {
 func (h Cleaner) tryToClean(c *v1alpha1.Codebase) error {
 	s := fmt.Sprintf("repository-codebase-%v-temp", c.Name)
 	if err := h.deleteSecret(s, c.Namespace); err != nil {
-		return errors.Wrapf(err, "unable to delete secret %v", "")
+		return errors.Wrapf(err, "unable to delete secret %v", s)
 	}
-	wd := fmt.Sprintf("/home/codebase-operator/edp/%v/%v", c.Namespace, c.Name)
+	wd := util.GetWorkDir(c.Name, c.Namespace)
 	if err := deleteWorkDirectory(wd); err != nil {
 		return err
 	}
