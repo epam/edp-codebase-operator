@@ -49,8 +49,10 @@ ingress:
   annotations: {}
     # kubernetes.io/ingress.class: nginx
     # kubernetes.io/tls-acme: "true"
-  host: {{.Name}}
+  # If need to use specific host, define host value below. By default host formed according to the pattern: <CODEBASE_NAME>-<CODEBASE_NAMESPACE>.<CLUSTER_DNS_WILDCARD>
+  # host:
   path: "/"
+  dnsWildcard: {{.DnsWildcard}}
   tls: []
   #  - secretName: chart-example-tls
   #    hosts:
