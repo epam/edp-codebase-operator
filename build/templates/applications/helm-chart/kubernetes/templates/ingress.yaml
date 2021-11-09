@@ -19,12 +19,12 @@ spec:
   {{- if .Values.ingress.tls }}
   tls:
     {{- range .Values.ingress.tls }}
-    - host: {{ .Values.ingress.host }}
+    - host: {{if .Values.ingress.host}}{{ .Values.ingress.host }}{{else}}{{ $fullName }}-{{ .Release.Namespace}}.{{.DnsWildcard}}{{end}}
       secretName: {{ .secretName }}
     {{- end }}
   {{- end }}
   rules:
-    - host: {{ .Values.ingress.host | quote }}
+    - host: {{if .Values.ingress.host}}{{ .Values.ingress.host }}{{else}}{{ $fullName }}-{{ .Release.Namespace}}.{{.DnsWildcard}}{{end}}
       http:
         paths:
           - path: {{ .Values.ingress.path }}
