@@ -1,6 +1,10 @@
 package chain
 
 import (
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
 	"os"
 	"strings"
 	"testing"
@@ -85,13 +89,26 @@ func TestPutGerritReplication_ShouldFailWhenReloadGerritPlugin(t *testing.T) {
 			"replication.config": "stub-config",
 		},
 	}
+
+	pk, err := rsa.GenerateKey(rand.Reader, 128)
+	if err != nil {
+		t.Error("Unable to generate test private key")
+	}
+	privkey_bytes := x509.MarshalPKCS1PrivateKey(pk)
+	privkey_pem := pem.EncodeToMemory(
+		&pem.Block{
+			Type:  "RSA PRIVATE KEY",
+			Bytes: privkey_bytes,
+		},
+	)
+
 	ssh := &coreV1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "gerrit-project-creator",
 			Namespace: fakeNamespace,
 		},
 		Data: map[string][]byte{
-			util.PrivateSShKeyName: []byte("fake"),
+			util.PrivateSShKeyName: []byte(privkey_pem),
 		},
 	}
 
@@ -122,7 +139,7 @@ func TestPutGerritReplication_ShouldFailWhenReloadGerritPlugin(t *testing.T) {
 		client: fakeCl,
 	}
 
-	err := pdc.ServeRequest(c)
+	err = pdc.ServeRequest(c)
 	//TODO: mock sshclient and implement test that passes
 	assert.Error(t, err)
 	if !strings.Contains(err.Error(), "failed to dial: dial tcp: lookup gerrit.fake_namespace") {

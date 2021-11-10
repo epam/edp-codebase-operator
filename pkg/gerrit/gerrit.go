@@ -85,19 +85,15 @@ func (client *SSHClient) NewSession() (*ssh.Session, *ssh.Client, error) {
 	return session, connection, nil
 }
 
-func PublicKeyFile(idrsa string) ssh.AuthMethod {
-	key, err := ssh.ParsePrivateKey([]byte(idrsa))
+func SshInit(port int32, idrsa, host string, logger logr.Logger) (*SSHClient, error) {
+	pubkey, err := ssh.ParsePrivateKey([]byte(idrsa))
 	if err != nil {
-		return nil
+		return nil, errors.Wrap(err, "Unable to get Public Key from Private one")
 	}
-	return ssh.PublicKeys(key)
-}
-
-func SshInit(port int32, idrsa, host string, logger logr.Logger) (SSHClient, error) {
 	sshConfig := &ssh.ClientConfig{
 		User: "project-creator",
 		Auth: []ssh.AuthMethod{
-			PublicKeyFile(idrsa),
+			ssh.PublicKeys(pubkey),
 		},
 		HostKeyCallback: ssh.HostKeyCallback(func(hostname string, remote net.Addr, key ssh.PublicKey) error { return nil }),
 	}
@@ -110,7 +106,7 @@ func SshInit(port int32, idrsa, host string, logger logr.Logger) (SSHClient, err
 
 	logger.Info("SSH Client has been initialized", "host", host, "port", port)
 
-	return cl, nil
+	return &cl, nil
 }
 
 func CheckProjectExist(port int32, idrsa, host, appName string, logger logr.Logger) (*bool, error) {
@@ -174,12 +170,11 @@ func AddRemoteLinkToGerrit(repoPath string, host string, port int32, appName str
 
 	r, err := git.PlainOpen(repoPath)
 	if err != nil {
-		log.Println(err)
-		return err
+		return errors.Wrap(err, "Unable to open Git directory")
 	}
 	err = r.DeleteRemote("origin")
-	if err != nil {
-		log.Println(err)
+	if errors.Cause(err) != git.ErrRemoteNotFound {
+		return errors.Wrap(err, "Unable to delete remote origin")
 	}
 
 	_, err = r.CreateRemote(&config.RemoteConfig{
@@ -187,8 +182,7 @@ func AddRemoteLinkToGerrit(repoPath string, host string, port int32, appName str
 		URLs: []string{remoteUrl},
 	})
 	if err != nil {
-		log.Println(err)
-		return err
+		return errors.Wrap(err, "Unable to create remote origin")
 	}
 
 	logger.Info("Remote link has been added", "repoPath", repoPath, "host", host, "port", port,
@@ -243,7 +237,7 @@ func SetupProjectReplication(client client.Client, sshPort int32, host, idrsa, c
 	}
 	replicaConfig := gerritSettings.Data["replication.config"]
 	if replicaConfig == "" {
-		return errors.Wrap(err, "replication.config key is missing in gerrit ConfigMap")
+		return errors.New("replication.config key is missing in gerrit ConfigMap")
 	}
 	gerritSettings.Data["replication.config"] = fmt.Sprintf("%v\n%v", replicaConfig, replicaConfigNew)
 
