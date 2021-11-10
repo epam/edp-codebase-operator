@@ -45,13 +45,8 @@ func CopyPipelines(codebaseType, src, dest string) error {
 	return nil
 }
 
-func CopyHelmChartTemplates(deploymentScript, workDir, assetsDir string, config model.ConfigGoTemplating) error {
+func CopyHelmChartTemplates(deploymentScript, templatesDest, assetsDir string, config model.ConfigGoTemplating) error {
 	log.Info("start handling Helm Chart templates", "codebase_name", config.Name)
-	templatesDest := fmt.Sprintf("%v/deploy-templates", workDir)
-	if DoesDirectoryExist(templatesDest) {
-		log.Info("deploy-templates folder already exists")
-		return nil
-	}
 
 	templateBasePath := fmt.Sprintf("%v/templates/applications/%v/%v", assetsDir, deploymentScript, config.PlatformType)
 
@@ -143,13 +138,8 @@ func CopyHelmChartTemplates(deploymentScript, workDir, assetsDir string, config 
 	return nil
 }
 
-func CopyOpenshiftTemplate(deploymentScript, workDir, assetsDir string, config model.ConfigGoTemplating) error {
+func CopyOpenshiftTemplate(deploymentScript, templatesDest, assetsDir string, config model.ConfigGoTemplating) error {
 	log.Info("start handling Openshift template", "codebase_name", config.Name)
-	templatesDest := fmt.Sprintf("%v/deploy-templates", workDir)
-	if DoesDirectoryExist(templatesDest) {
-		log.Info("deploy-templates folder already exists")
-		return nil
-	}
 
 	templateBasePath := fmt.Sprintf("%v/templates/applications/%v/%v", assetsDir, deploymentScript, strings.ToLower(config.Lang))
 	templateName := fmt.Sprintf("%v.tmpl", strings.ToLower(config.Lang))
@@ -178,10 +168,20 @@ func CopyOpenshiftTemplate(deploymentScript, workDir, assetsDir string, config m
 }
 
 func CopyTemplate(deploymentScript, workDir, assetsDir string, cf model.ConfigGoTemplating) error {
-	if deploymentScript == HelmChartDeploymentScriptType {
-		return CopyHelmChartTemplates(deploymentScript, workDir, assetsDir, cf)
+	templatesDest := fmt.Sprintf("%v/deploy-templates", workDir)
+	if DoesDirectoryExist(templatesDest) {
+		log.Info("deploy-templates folder already exists")
+		return nil
 	}
-	return CopyOpenshiftTemplate(deploymentScript, workDir, assetsDir, cf)
+
+	switch deploymentScript {
+	case HelmChartDeploymentScriptType:
+		return CopyHelmChartTemplates(deploymentScript, templatesDest, assetsDir, cf)
+	case "openshift-template":
+		return CopyOpenshiftTemplate(deploymentScript, templatesDest, assetsDir, cf)
+	default:
+		return errors.New("Unsupported deployment type")
+	}
 }
 
 func renderTemplate(file *os.File, templateBasePath, templateName string, config model.ConfigGoTemplating) error {

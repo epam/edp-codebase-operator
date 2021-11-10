@@ -71,30 +71,6 @@ objects:
   kind: ServiceAccount
   metadata:
     name: {{.Name}}
-{{- if .Route}}
-- apiVersion: v1
-  kind: Route
-  metadata:
-    name: {{.Name}}
-    annotations:
-      description: "Route for {{.Name}} application"
-    labels:
-      app: {{.Name}}
-  spec:
-    tls:
-      insecureEdgeTerminationPolicy: Redirect
-      termination: edge
-{{- if and .Route.Site (ne .Route.Site "")}}
-    host: {{.Route.Site}}-${NAMESPACE}.{{.DnsWildcard}}
-{{- end}}
-    path: {{.Route.Path}}
-    port:
-      targetPort: 8080
-    to:
-      kind: Service
-      name: {{.Name}}
-    wildcardPolicy: None
-{{- end}}
 - apiVersion: v1
   kind: DeploymentConfig
   metadata:
