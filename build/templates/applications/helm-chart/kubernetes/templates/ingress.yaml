@@ -19,16 +19,34 @@ spec:
   {{- if .Values.ingress.tls }}
   tls:
     {{- range .Values.ingress.tls }}
-    - host: {{if .Values.ingress.host}}{{ .Values.ingress.host }}{{else}}{{ $fullName }}-{{ .Release.Namespace}}.{{.DnsWildcard}}{{end}}
+    {{- if .Values.ingress.hosts  }}
+    {{- range .Values.ingress.hosts }}
+    - host: {{ tpl . $}}
+    {{- end }}
+    {{- else }}
+    - host: {{ $fullName }}-{{ .Release.Namespace}}.{{ .Values.ingress.dnsWildcard}}
+    {{- end -}}
       secretName: {{ .secretName }}
     {{- end }}
   {{- end }}
   rules:
-    - host: {{if .Values.ingress.host}}{{ .Values.ingress.host }}{{else}}{{ $fullName }}-{{ .Release.Namespace}}.{{.DnsWildcard}}{{end}}
+  {{- if .Values.ingress.hosts  }}
+  {{- range .Values.ingress.hosts }}
+    - host: {{ tpl . $}}
       http:
         paths:
           - path: {{ .Values.ingress.path }}
             backend:
               serviceName: {{ $fullName }}
               servicePort: {{ $svcPort }}
+  {{- end }}
+  {{- else }}
+    - host: {{ $fullName }}-{{ .Release.Namespace}}.{{ .Values.ingress.dnsWildcard}}
+      http:
+        paths:
+          - path: {{ .Values.ingress.path }}
+            backend:
+              serviceName: {{ $fullName }}
+              servicePort: {{ $svcPort }}
+  {{- end -}}
   {{- end }}
