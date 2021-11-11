@@ -51,10 +51,6 @@ func (h PutProjectGerrit) ServeRequest(c *edpv1alpha1.Codebase) error {
 		return nextServeOrNil(h.next, c)
 	}
 
-	if err := h.setIntermediateSuccessFields(c, edpv1alpha1.AcceptCodebaseRegistration); err != nil {
-		return errors.Wrapf(err, "an error has been occurred while updating %v Codebase status", c.Name)
-	}
-
 	if err := h.setIntermediateSuccessFields(c, edpv1alpha1.GerritRepositoryProvisioning); err != nil {
 		return errors.Wrapf(err, "an error has been occurred while updating %v Codebase status", c.Name)
 	}
@@ -280,7 +276,7 @@ func (h PutProjectGerrit) notEmptyProjectProvisioning(c *edpv1alpha1.Codebase, r
 
 	repu, repp, err := GetRepositoryCredentialsIfExists(c, h.client)
 	if err != nil {
-		return errors.Wrap(err, "GetRepositoryCredentialsIfExists has been failed")
+		return errors.Wrap(err, "Unable to get repository credentials")
 	}
 
 	if !h.git.CheckPermissions(*ru, repu, repp) {

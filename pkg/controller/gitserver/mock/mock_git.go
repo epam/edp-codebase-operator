@@ -29,7 +29,8 @@ func (m *MockGit) CloneRepositoryBySsh(key, user, repoUrl, destination string, p
 }
 
 func (m *MockGit) CloneRepository(repo string, user *string, pass *string, destination string) error {
-	panic("implement me")
+	args := m.Called(repo, user, pass, destination)
+	return args.Error(0)
 }
 
 func (m *MockGit) CreateRemoteBranch(key, user, path, name string) error {
@@ -53,4 +54,7 @@ func (m *MockGit) GetCurrentBranchName(directory string) (string, error) {
 	return args.String(0), args.Error(1)
 }
 
-func (m *MockGit) Init(directory string) error { panic("implement me") }
+func (m *MockGit) Init(directory string) error {
+	args := m.Called(directory)
+	return args.Error(0)
+}
