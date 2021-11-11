@@ -1,12 +1,13 @@
 package gitlab
 
 import (
-	"errors"
 	"fmt"
-	"gopkg.in/resty.v1"
 	"log"
 	"net/url"
 	"strconv"
+
+	"github.com/pkg/errors"
+	"gopkg.in/resty.v1"
 )
 
 type GitLab struct {
@@ -59,7 +60,7 @@ func (gitlab GitLab) CreateProject(groupPath, projectName string) (string, error
 		return "", errors.New(errorMsg)
 	}
 	if resp.IsError() {
-		errorMsg := fmt.Sprintf(resp.String())
+		errorMsg := resp.String()
 		log.Println(errorMsg)
 		return "", errors.New(errorMsg)
 	}
@@ -97,7 +98,7 @@ func (gitlab *GitLab) GetRepositorySshUrl(groupPath, projectName string) (string
 	}
 	errMsg := fmt.Sprintf("SSH URL is not presented in the response by group path: %v, project name: %v",
 		groupPath, projectName)
-	log.Printf(errMsg)
+	log.Print(errMsg)
 	return "", errors.New(errMsg)
 }
 
@@ -114,8 +115,7 @@ func (gitlab *GitLab) Init(url string, username string, password string) error {
 	token, err := tryToLoginWithPass(url, username, password)
 	if err != nil {
 		log.Printf("Error has been occured tring login via password for user: %s", username)
-		log.Printf("Setting private_token for user %s", username)
-		client.SetQueryParam("private_token", password)
+		return errors.Wrap(err, "Unable to login to Gitlab")
 	} else {
 		log.Printf("Token for username: %v has been retrieved successfully", username)
 		client.Token = *token
@@ -142,7 +142,7 @@ func tryToLoginWithPass(url, user, pass string) (*string, error) {
 	}
 
 	if resp.IsError() {
-		errorMsg := fmt.Sprintf(resp.String())
+		errorMsg := resp.String()
 		log.Println(errorMsg)
 		return nil, errors.New(errorMsg)
 	}

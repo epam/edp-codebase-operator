@@ -43,18 +43,18 @@ func CreateVCSClient(vcsToolName model.VCSTool, url string, username string, pas
 }
 
 func GetVcsConfig(client client.Client, us *model.UserSettings, codebaseName, namespace string) (*model.Vcs, error) {
+	vcsAutoUserLogin, vcsAutoUserPassword, err := util.GetVcsBasicAuthConfig(client, namespace,
+		fmt.Sprintf("vcs-autouser-codebase-%v-temp", codebaseName))
+	if err != nil {
+		return nil, errors.Wrap(err, "Unable to get secret")
+	}
+
 	vcsGroupNameUrl, err := url.Parse(us.VcsGroupNameUrl)
 	if err != nil {
 		return nil, err
 	}
 
 	projectVcsHostnameUrl := fmt.Sprintf("%v://%v", vcsGroupNameUrl.Scheme, vcsGroupNameUrl.Host)
-	VcsCredentialsSecretName := fmt.Sprintf("vcs-autouser-codebase-%v-temp", codebaseName)
-	vcsAutoUserLogin, vcsAutoUserPassword, err := util.GetVcsBasicAuthConfig(client, namespace, VcsCredentialsSecretName)
-	if err != nil {
-		return nil, errors.Wrapf(err, "GetVcsBasicAuthConfig: Unable to get secret %v", VcsCredentialsSecretName)
-	}
-
 	vcsTool, err := CreateVCSClient(us.VcsToolName, projectVcsHostnameUrl, vcsAutoUserLogin, vcsAutoUserPassword)
 	if err != nil {
 		return nil, err
@@ -69,6 +69,8 @@ func GetVcsConfig(client client.Client, us *model.UserSettings, codebaseName, na
 		VcsSshUrl:             vcsSshUrl,
 		VcsIntegrationEnabled: us.VcsIntegrationEnabled,
 		VcsToolName:           us.VcsToolName,
+		VcsUsername:           vcsAutoUserLogin,
+		VcsPassword:           vcsAutoUserPassword,
 		ProjectVcsHostnameUrl: projectVcsHostnameUrl,
 		ProjectVcsGroupPath:   vcsGroupNameUrl.Path[1:len(vcsGroupNameUrl.Path)],
 	}, nil
@@ -80,10 +82,8 @@ func СreateProjectInVcs(client client.Client, us *model.UserSettings, codebaseN
 		return err
 	}
 
-	vcscn := fmt.Sprintf("vcs-autouser-codebase-%v-temp", codebaseName)
-	vcsAutoUserLogin, vcsAutoUserPassword, err := util.GetVcsBasicAuthConfig(client, namespace, vcscn)
 	vcsTool, err := CreateVCSClient(model.VCSTool(vcsConf.VcsToolName),
-		vcsConf.ProjectVcsHostnameUrl, vcsAutoUserLogin, vcsAutoUserPassword)
+		vcsConf.ProjectVcsHostnameUrl, vcsConf.VcsUsername, vcsConf.VcsPassword)
 	if err != nil {
 		return errors.Wrap(err, "unable to create VCS client")
 	}
@@ -102,6 +102,9 @@ func СreateProjectInVcs(client client.Client, us *model.UserSettings, codebaseN
 		return err
 	}
 	vcsConf.VcsSshUrl, err = vcsTool.GetRepositorySshUrl(vcsConf.ProjectVcsGroupPath, codebaseName)
+	if err != nil {
+		return errors.Wrap(err, "Unable to get repository ssh url")
+	}
 
 	return nil
 }

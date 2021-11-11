@@ -36,6 +36,8 @@ type Vcs struct {
 	VcsSshUrl             string
 	VcsIntegrationEnabled bool
 	VcsToolName           VCSTool
+	VcsUsername           string
+	VcsPassword           string
 	ProjectVcsHostnameUrl string
 	ProjectVcsGroupPath   string
 }
