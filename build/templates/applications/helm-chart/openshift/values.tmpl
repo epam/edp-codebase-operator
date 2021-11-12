@@ -49,8 +49,15 @@ ingress:
   annotations: {}
     # kubernetes.io/ingress.class: nginx
     # kubernetes.io/tls-acme: "true"
-  host: {{.Name}}
+  # pathType is only for k8s >= 1.1=
+  pathType: Prefix
+  # For Kubernetes >= 1.18 you should specify the ingress-controller via the field ingressClassName
+  # See https://kubernetes.io/blog/2020/04/02/improvements-to-the-ingress-api-in-kubernetes-1.18/#specifying-the-class-of-an-ingress
+  # ingressClassName: nginx
+  # If need to use specific host, define host value below. By default host formed according to the pattern: <CODEBASE_NAME>-<CODEBASE_NAMESPACE>.<CLUSTER_DNS_WILDCARD>
+  # host:
   path: "/"
+  dnsWildcard: {{.DnsWildcard}}
   tls: []
   #  - secretName: chart-example-tls
   #    hosts:
