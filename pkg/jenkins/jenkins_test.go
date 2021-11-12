@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/bndr/gojenkins"
 	"github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
@@ -624,4 +625,118 @@ func TestJenkinsClient_TriggerDeletionJob_ShouldFailOnJobBuildFailure(t *testing
 	if !strings.Contains(err.Error(), "unable to build job") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
+}
+
+func TestJenkinsClient_GetJobStatus_ShouldPass(t *testing.T) {
+	httpmock.Reset()
+	httpmock.Activate()
+	httpClient := http.Client{}
+	httpmock.ActivateNonDefault(&httpClient)
+	httpmock.RegisterResponder("GET", "j-url/api/json", httpmock.NewStringResponder(200, ""))
+	jenkins, err := gojenkins.CreateJenkins(&httpClient, "j-url", "j-username", "j-token").Init()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	jc := JenkinsClient{
+		Jenkins: jenkins,
+	}
+
+	jrsp := gojenkins.JobResponse{
+		InQueue: false,
+		Color:   "Green",
+	}
+	httpmock.RegisterResponder("GET", "j-url/job/job-name/api/json",
+		httpmock.NewJsonResponderOrPanic(200, &jrsp))
+
+	brsp := gojenkins.BuildResponse{Building: false}
+	httpmock.RegisterResponder("GET", "j-url/job/job-name/0/api/json?depth=1",
+		httpmock.NewJsonResponderOrPanic(200, &brsp))
+
+	js, err := jc.GetJobStatus("job-name", 1*time.Millisecond, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, js, "Green")
+}
+
+func TestJenkinsClient_GetJobStatus_ShouldFailWithJobNotFound(t *testing.T) {
+	httpmock.Reset()
+	httpmock.Activate()
+	httpClient := http.Client{}
+	httpmock.ActivateNonDefault(&httpClient)
+	httpmock.RegisterResponder("GET", "j-url/api/json", httpmock.NewStringResponder(404, ""))
+	jenkins, err := gojenkins.CreateJenkins(&httpClient, "j-url", "j-username", "j-token").Init()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	jc := JenkinsClient{
+		Jenkins: jenkins,
+	}
+
+	js, err := jc.GetJobStatus("job-name", 1*time.Millisecond, 1)
+	assert.Error(t, err)
+	assert.Equal(t, js, "")
+	assert.Contains(t, err.Error(), "job not found")
+}
+
+func TestJenkinsClient_GetJobStatus_ShouldFailOnTimeout(t *testing.T) {
+	httpmock.Reset()
+	httpmock.Activate()
+	httpClient := http.Client{}
+	httpmock.ActivateNonDefault(&httpClient)
+	httpmock.RegisterResponder("GET", "j-url/api/json", httpmock.NewStringResponder(200, ""))
+	jenkins, err := gojenkins.CreateJenkins(&httpClient, "j-url", "j-username", "j-token").Init()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	jc := JenkinsClient{
+		Jenkins: jenkins,
+	}
+
+	jrsp := gojenkins.JobResponse{
+		InQueue: false,
+		Color:   "notbuilt",
+	}
+	httpmock.RegisterResponder("GET", "j-url/job/job-name/api/json",
+		httpmock.NewJsonResponderOrPanic(200, &jrsp))
+
+	brsp := gojenkins.BuildResponse{Building: true}
+	httpmock.RegisterResponder("GET", "j-url/job/job-name/0/api/json?depth=1",
+		httpmock.NewJsonResponderOrPanic(200, &brsp))
+
+	js, err := jc.GetJobStatus("job-name", 1*time.Millisecond, 1)
+	assert.Error(t, err)
+	assert.Equal(t, js, "")
+	assert.Contains(t, err.Error(), "Job job-name has not been finished after specified delay")
+}
+
+func TestJenkinsClient_GetJobStatus_ShouldFailOnNotbuilt(t *testing.T) {
+	httpmock.Reset()
+	httpmock.Activate()
+	httpClient := http.Client{}
+	httpmock.ActivateNonDefault(&httpClient)
+	httpmock.RegisterResponder("GET", "j-url/api/json", httpmock.NewStringResponder(200, ""))
+	jenkins, err := gojenkins.CreateJenkins(&httpClient, "j-url", "j-username", "j-token").Init()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	jc := JenkinsClient{
+		Jenkins: jenkins,
+	}
+
+	jrsp := gojenkins.JobResponse{
+		InQueue: false,
+		Color:   "notbuilt",
+	}
+	httpmock.RegisterResponder("GET", "j-url/job/job-name/api/json",
+		httpmock.NewJsonResponderOrPanic(200, &jrsp))
+
+	js, err := jc.GetJobStatus("job-name", 1*time.Millisecond, 1)
+	assert.Error(t, err)
+	assert.Equal(t, js, "")
+	assert.Contains(t, err.Error(), "Job job-name has not been finished after specified delay")
 }
