@@ -3,6 +3,8 @@ package cdstagedeploy
 import (
 	"context"
 	"fmt"
+	"time"
+
 	v1alpha1Stage "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/cdstagedeploy/chain"
@@ -19,7 +21,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"time"
 )
 
 func NewReconcileCDStageDeploy(client client.Client, scheme *runtime.Scheme, log logr.Logger) *ReconcileCDStageDeploy {
