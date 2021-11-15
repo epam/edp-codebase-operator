@@ -65,7 +65,7 @@ func (h PutBranchInGit) ServeRequest(cb *v1alpha1.CodebaseBranch) error {
 		return err
 	}
 
-	wd := fmt.Sprintf("/home/codebase-operator/edp/%v/%v/%v", cb.Namespace, cb.Spec.CodebaseName, cb.Spec.BranchName)
+	wd := util.GetWorkDir(cb.Spec.CodebaseName, fmt.Sprintf("%v-%v", cb.Namespace, cb.Spec.BranchName))
 	if !checkDirectory(wd) {
 		ru := fmt.Sprintf("%v:%v", gs.GitHost, *c.Spec.GitUrlPath)
 		if err := h.Git.CloneRepositoryBySsh(string(secret.Data[util.PrivateSShKeyName]), gs.GitUser, ru, wd, gs.SshPort); err != nil {

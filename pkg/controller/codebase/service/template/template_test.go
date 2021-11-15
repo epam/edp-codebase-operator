@@ -61,7 +61,7 @@ func TestPrepareTemplates_ShouldPass(t *testing.T) {
 
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, cm).Build()
 
-	err = PrepareTemplates(fakeCl, *c, dir, "../../../../../build")
+	err = PrepareTemplates(fakeCl, c, dir, "../../../../../build")
 	assert.NoError(t, err)
 }
 
@@ -97,7 +97,7 @@ func TestPrepareTemplates_ShouldFailOnGetProjectUrl(t *testing.T) {
 
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, cm).Build()
 
-	err := PrepareTemplates(fakeCl, *c, "/tmp", "../../../../../build")
+	err := PrepareTemplates(fakeCl, c, "/tmp", "../../../../../build")
 	assert.Error(t, err)
 	if !strings.Contains(err.Error(), "unable get project url") {
 		t.Fatalf("wrong error returned: %s", err.Error())
@@ -149,7 +149,7 @@ func TestPrepareGitLabCITemplates(t *testing.T) {
 
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, cm).Build()
 
-	err = PrepareGitlabCITemplates(fakeCl, *c, dir, "../../../../../build")
+	err = PrepareGitlabCITemplates(fakeCl, c, dir, "../../../../../build")
 	assert.NoError(t, err)
 }
 

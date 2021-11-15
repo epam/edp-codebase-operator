@@ -2,15 +2,15 @@ package update_perf_data_sources
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	perfApi "github.com/epam/edp-perf-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/stretchr/testify/assert"
-	"k8s.io/api/apps/v1"
+	v1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
-	"testing"
 )
 
 const (
@@ -40,13 +40,11 @@ func TestUpdatePerfDataSources_ShouldSkipUpdating(t *testing.T) {
 		},
 	}
 
-	objs := []runtime.Object{
-		c, cb,
-	}
-	s := scheme.Scheme
-	s.AddKnownTypes(v1.SchemeGroupVersion, c, cb)
+	scheme := runtime.NewScheme()
+	scheme.AddKnownTypes(v1.SchemeGroupVersion, c, cb)
+	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, cb).Build()
 
-	assert.NoError(t, UpdatePerfDataSources{Client: fake.NewFakeClient(objs...)}.ServeRequest(cb))
+	assert.NoError(t, UpdatePerfDataSources{Client: fakeCl}.ServeRequest(cb))
 }
 
 func TestUpdatePerfDataSources_DsShouldBeUpdated(t *testing.T) {
@@ -85,12 +83,10 @@ func TestUpdatePerfDataSources_DsShouldBeUpdated(t *testing.T) {
 		},
 	}
 
-	objs := []runtime.Object{
-		c, p, cb,
-	}
-	s := scheme.Scheme
-	s.AddKnownTypes(v1.SchemeGroupVersion, c, p, cb)
-	assert.NoError(t, UpdatePerfDataSources{Client: fake.NewFakeClient(objs...)}.ServeRequest(cb))
+	scheme := runtime.NewScheme()
+	scheme.AddKnownTypes(v1.SchemeGroupVersion, c, p, cb)
+	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, p, cb).Build()
+	assert.NoError(t, UpdatePerfDataSources{Client: fakeCl}.ServeRequest(cb))
 }
 
 func TestUpdatePerfDataSources_CodebaseShouldNotBeFound(t *testing.T) {
@@ -116,12 +112,10 @@ func TestUpdatePerfDataSources_CodebaseShouldNotBeFound(t *testing.T) {
 		},
 	}
 
-	objs := []runtime.Object{
-		p, cb,
-	}
-	s := scheme.Scheme
-	s.AddKnownTypes(v1.SchemeGroupVersion, p, cb)
-	assert.Error(t, UpdatePerfDataSources{Client: fake.NewFakeClient(objs...)}.ServeRequest(cb))
+	scheme := runtime.NewScheme()
+	scheme.AddKnownTypes(v1.SchemeGroupVersion, p, cb)
+	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(p, cb).Build()
+	assert.Error(t, UpdatePerfDataSources{Client: fakeCl}.ServeRequest(cb))
 }
 
 func TestUpdatePerfDataSources_PerfDataSourceShouldNotBeFound(t *testing.T) {
@@ -160,12 +154,10 @@ func TestUpdatePerfDataSources_PerfDataSourceShouldNotBeFound(t *testing.T) {
 		},
 	}
 
-	objs := []runtime.Object{
-		c, p, cb,
-	}
-	s := scheme.Scheme
-	s.AddKnownTypes(v1.SchemeGroupVersion, c, p, cb)
-	assert.Error(t, UpdatePerfDataSources{Client: fake.NewFakeClient(objs...)}.ServeRequest(cb))
+	scheme := runtime.NewScheme()
+	scheme.AddKnownTypes(v1.SchemeGroupVersion, c, p, cb)
+	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, p, cb).Build()
+	assert.Error(t, UpdatePerfDataSources{Client: fakeCl}.ServeRequest(cb))
 }
 
 func TestUpdatePerfDataSources_JenkinsDsShouldBeUpdated(t *testing.T) {
@@ -209,12 +201,10 @@ func TestUpdatePerfDataSources_JenkinsDsShouldBeUpdated(t *testing.T) {
 		},
 	}
 
-	objs := []runtime.Object{
-		c, p, cb,
-	}
-	s := scheme.Scheme
-	s.AddKnownTypes(v1.SchemeGroupVersion, c, p, cb)
-	assert.NoError(t, UpdatePerfDataSources{Client: fake.NewFakeClient(objs...)}.ServeRequest(cb))
+	scheme := runtime.NewScheme()
+	scheme.AddKnownTypes(v1.SchemeGroupVersion, c, p, cb)
+	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, p, cb).Build()
+	assert.NoError(t, UpdatePerfDataSources{Client: fakeCl}.ServeRequest(cb))
 }
 
 func TestUpdatePerfDataSources_GitLabDsShouldBeUpdated(t *testing.T) {
@@ -260,10 +250,8 @@ func TestUpdatePerfDataSources_GitLabDsShouldBeUpdated(t *testing.T) {
 		},
 	}
 
-	objs := []runtime.Object{
-		c, p, cb,
-	}
-	s := scheme.Scheme
-	s.AddKnownTypes(v1.SchemeGroupVersion, c, p, cb)
-	assert.NoError(t, UpdatePerfDataSources{Client: fake.NewFakeClient(objs...)}.ServeRequest(cb))
+	scheme := runtime.NewScheme()
+	scheme.AddKnownTypes(v1.SchemeGroupVersion, c, p, cb)
+	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, p, cb).Build()
+	assert.NoError(t, UpdatePerfDataSources{Client: fakeCl}.ServeRequest(cb))
 }

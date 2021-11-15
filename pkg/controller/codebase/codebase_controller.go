@@ -3,7 +3,6 @@ package codebase
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"reflect"
 	"strings"
 	"time"
@@ -196,10 +195,7 @@ func (r ReconcileCodebase) tryToDeleteCodebase(ctx context.Context, c *codebaseA
 }
 
 func removeDirectoryIfExists(codebaseName, namespace string) error {
-	wd := fmt.Sprintf("/home/codebase-operator/edp/%v/%v", namespace, codebaseName)
-	if !util.DoesDirectoryExist(wd) {
-		return nil
-	}
+	wd := util.GetWorkDir(codebaseName, namespace)
 	if err := util.RemoveDirectory(wd); err != nil {
 		return err
 	}

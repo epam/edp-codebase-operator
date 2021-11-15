@@ -38,6 +38,26 @@ func TestGetGerritPort_ShouldFound(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestGetGerritPort_ShouldFailPortNotDefined(t *testing.T) {
+	gs := &v1alpha1.GitServer{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "gerrit",
+			Namespace: "stub-namespace",
+		},
+	}
+
+	scheme := runtime.NewScheme()
+	scheme.AddKnownTypes(v1.SchemeGroupVersion, gs)
+	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(gs).Build()
+
+	port, err := GetGerritPort(fakeCl, "stub-namespace")
+	assert.Nil(t, port)
+	assert.Error(t, err)
+	if !strings.Contains(err.Error(), "ssh port is zero or not defined in gerrit GitServer CR") {
+		t.Fatalf("wrong error returned: %s", err.Error())
+	}
+}
+
 func TestGetGerritPort_ShouldNotFound(t *testing.T) {
 	gs := &v1alpha1.GitServer{
 		ObjectMeta: metav1.ObjectMeta{

@@ -25,7 +25,7 @@ func (h PutDeployConfigsToGitProvider) ServeRequest(c *v1alpha1.Codebase) error 
 	rLog := log.WithValues("codebase_name", c.Name)
 	rLog.Info("Start pushing configs...")
 
-	if err := h.tryToPushConfigs(*c); err != nil {
+	if err := h.tryToPushConfigs(c); err != nil {
 		setFailedFields(c, v1alpha1.SetupDeploymentTemplates, err.Error())
 		return errors.Wrapf(err, "couldn't push deploy configs for %v codebase", c.Name)
 	}
@@ -33,7 +33,7 @@ func (h PutDeployConfigsToGitProvider) ServeRequest(c *v1alpha1.Codebase) error 
 	return nextServeOrNil(h.next, c)
 }
 
-func (h PutDeployConfigsToGitProvider) tryToPushConfigs(c v1alpha1.Codebase) error {
+func (h PutDeployConfigsToGitProvider) tryToPushConfigs(c *v1alpha1.Codebase) error {
 	name, err := helper.GetEDPName(h.client, c.Namespace)
 	if err != nil {
 		return errors.Wrap(err, "couldn't get edp name")
@@ -51,12 +51,12 @@ func (h PutDeployConfigsToGitProvider) tryToPushConfigs(c v1alpha1.Codebase) err
 
 	wd := util.GetWorkDir(c.Name, c.Namespace)
 	ad := util.GetAssetsDir()
-	ru, err := util.GetRepoUrl(&c)
+	ru, err := util.GetRepoUrl(c)
 	if err != nil {
 		return errors.Wrap(err, "couldn't build repo url")
 	}
 
-	if err := CheckoutBranch(ru, wd, c.Spec.DefaultBranch, h.git, &c, h.client); err != nil {
+	if err := CheckoutBranch(ru, wd, c.Spec.DefaultBranch, h.git, c, h.client); err != nil {
 		return errors.Wrapf(err, "checkout default branch %v in Git put_deploy_config has been failed", c.Spec.DefaultBranch)
 	}
 

@@ -2,17 +2,18 @@ package put_branch_in_git
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebasebranch/service"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver/mock"
+	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	"github.com/epam/edp-perf-operator/v2/pkg/util/common"
 	"github.com/stretchr/testify/assert"
 	coreV1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
@@ -67,27 +68,28 @@ func TestPutBranchInGit_ShouldBeExecutedSuccessfullyWithDefaultVersioning(t *tes
 		},
 		Spec: v1alpha1.CodebaseBranchSpec{
 			CodebaseName: fakeName,
+			BranchName:   fakeName,
 		},
 	}
 
-	objs := []runtime.Object{
-		c, cb, gs, s,
-	}
-	scheme.Scheme.AddKnownTypes(v1.SchemeGroupVersion, c, gs, cb)
+	scheme := runtime.NewScheme()
+	scheme.AddKnownTypes(v1.SchemeGroupVersion, c, gs, cb)
+	scheme.AddKnownTypes(coreV1.SchemeGroupVersion, s)
+	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, gs, cb, s).Build()
 
 	mGit := new(mock.MockGit)
 	var port int32 = 22
-	wd := fmt.Sprintf("/home/codebase-operator/edp/%v/%v/", fakeNamespace, fakeName)
+	wd := util.GetWorkDir(fakeName, fmt.Sprintf("%v-%v", fakeNamespace, fakeName))
 	mGit.On("CloneRepositoryBySsh", "",
 		fakeName, fmt.Sprintf("%v:%v", fakeName, fakeName),
 		wd, port).Return(
 		nil)
 
-	mGit.On("CreateRemoteBranch", "", fakeName, wd, "").Return(
+	mGit.On("CreateRemoteBranch", "", fakeName, wd, fakeName).Return(
 		nil)
 
 	err := PutBranchInGit{
-		Client: fake.NewFakeClient(objs...),
+		Client: fakeCl,
 		Git:    mGit,
 	}.ServeRequest(cb)
 
@@ -104,16 +106,22 @@ func TestPutBranchInGit_CodebaseShouldNotBeFound(t *testing.T) {
 			CodebaseName: fakeName,
 		},
 	}
+	scheme := runtime.NewScheme()
+	scheme.AddKnownTypes(v1.SchemeGroupVersion, cb)
+	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(cb).Build()
 
 	err := PutBranchInGit{
-		Client: fake.NewFakeClient([]runtime.Object{}...),
+		Client: fakeCl,
 	}.ServeRequest(cb)
 
 	assert.Error(t, err)
-	assert.Equal(t, v1alpha1.AcceptCodebaseBranchRegistration, cb.Status.Action)
+	if !strings.Contains(err.Error(), "Unable to get Codebase fake-name") {
+		t.Fatalf("wrong error returned: %s", err.Error())
+	}
+	assert.Equal(t, v1alpha1.PutBranchForGitlabCiCodebase, cb.Status.Action)
 }
 
-func TestPutBranchInGit_ShouldThrowNCodebaseBranchReconcileError(t *testing.T) {
+func TestPutBranchInGit_ShouldThrowCodebaseBranchReconcileError(t *testing.T) {
 	c := &v1alpha1.Codebase{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      fakeName,
@@ -128,11 +136,6 @@ func TestPutBranchInGit_ShouldThrowNCodebaseBranchReconcileError(t *testing.T) {
 		},
 	}
 
-	objs := []runtime.Object{
-		c,
-	}
-	scheme.Scheme.AddKnownTypes(v1.SchemeGroupVersion, c)
-
 	cb := &v1alpha1.CodebaseBranch{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      fakeName,
@@ -142,12 +145,15 @@ func TestPutBranchInGit_ShouldThrowNCodebaseBranchReconcileError(t *testing.T) {
 			CodebaseName: fakeName,
 		},
 	}
+	scheme := runtime.NewScheme()
+	scheme.AddKnownTypes(v1.SchemeGroupVersion, c, cb)
+	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, cb).Build()
 
 	err := PutBranchInGit{
-		Client: fake.NewFakeClient(objs...),
+		Client: fakeCl,
 	}.ServeRequest(cb)
 
-	assert.Error(t, err)
+	assert.ErrorIs(t, err, err.(*util.CodebaseBranchReconcileError))
 }
 
 func TestPutBranchInGit_ShouldBeExecutedSuccessfullyWithEdpVersioning(t *testing.T) {
@@ -200,91 +206,58 @@ func TestPutBranchInGit_ShouldBeExecutedSuccessfullyWithEdpVersioning(t *testing
 		Spec: v1alpha1.CodebaseBranchSpec{
 			CodebaseName: fakeName,
 			Version:      common.GetStringP("version3"),
+			BranchName:   fakeName,
 		},
 		Status: v1alpha1.CodebaseBranchStatus{
 			VersionHistory: []string{"version1", "version2"},
 		},
 	}
 
-	objs := []runtime.Object{
-		c, gs, s, cb,
-	}
-	scheme.Scheme.AddKnownTypes(v1.SchemeGroupVersion, c, gs, cb)
+	scheme := runtime.NewScheme()
+	scheme.AddKnownTypes(v1.SchemeGroupVersion, c, gs, cb)
+	scheme.AddKnownTypes(coreV1.SchemeGroupVersion, s)
+	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, gs, cb, s).Build()
 
 	mGit := new(mock.MockGit)
 	var port int32 = 22
-	wd := fmt.Sprintf("/home/codebase-operator/edp/%v/%v/", fakeNamespace, fakeName)
+	wd := util.GetWorkDir(fakeName, fmt.Sprintf("%v-%v", fakeNamespace, fakeName))
 	mGit.On("CloneRepositoryBySsh", "",
 		fakeName, fmt.Sprintf("%v:%v", fakeName, fakeName),
 		wd, port).Return(
 		nil)
 
-	mGit.On("CreateRemoteBranch", "", fakeName, wd, "").Return(
+	mGit.On("CreateRemoteBranch", "", fakeName, wd, fakeName).Return(
 		nil)
 
-	client := fake.NewFakeClient(objs...)
 	err := PutBranchInGit{
-		Client: client,
+		Client: fakeCl,
 		Git:    mGit,
 		Service: &service.CodebaseBranchServiceProvider{
-			Client: client,
+			Client: fakeCl,
 		},
 	}.ServeRequest(cb)
 
 	assert.NoError(t, err)
 }
 
-func TestPutBranchInGit_ShouldThrowErrorWithEdpVersioning(t *testing.T) {
-	c := &v1alpha1.Codebase{
-		ObjectMeta: v1.ObjectMeta{
-			Name:      fakeName,
-			Namespace: fakeNamespace,
-		},
-		Spec: v1alpha1.CodebaseSpec{
-			GitServer:  fakeName,
-			GitUrlPath: common.GetStringP(fakeName),
-			Versioning: v1alpha1.Versioning{
-				Type:      versioningType,
-				StartFrom: nil,
-			},
-		},
-		Status: v1alpha1.CodebaseStatus{
-			Available: true,
-		},
-	}
+func TestPutBranchInGit_ShouldFailToSetIntermediateStatus(t *testing.T) {
 
-	objs := []runtime.Object{
-		c,
-	}
-	scheme.Scheme.AddKnownTypes(v1.SchemeGroupVersion, c, &v1alpha1.CodebaseBranch{})
+	cb := &v1alpha1.CodebaseBranch{}
 
-	cb := &v1alpha1.CodebaseBranch{
-		ObjectMeta: v1.ObjectMeta{
-			Name:      fakeName,
-			Namespace: fakeNamespace,
-		},
-		Spec: v1alpha1.CodebaseBranchSpec{
-			CodebaseName: fakeName,
-			Version:      common.GetStringP("version3"),
-		},
-		Status: v1alpha1.CodebaseBranchStatus{
-			VersionHistory: []string{"version1", "version2"},
-			Build:          common.GetStringP("0"),
-		},
-	}
+	scheme := runtime.NewScheme()
+	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects().Build()
 
-	client := fake.NewFakeClient(objs...)
 	err := PutBranchInGit{
-		Client: client,
+		Client: fakeCl,
 		Service: &service.CodebaseBranchServiceProvider{
-			Client: client,
+			Client: fakeCl,
 		},
 	}.ServeRequest(cb)
 
 	assert.Error(t, err)
 }
 
-func TestPutBranchInGit_GitServerShouldNitBeFound(t *testing.T) {
+func TestPutBranchInGit_GitServerShouldNotBeFound(t *testing.T) {
 	c := &v1alpha1.Codebase{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      fakeName,
@@ -299,11 +272,6 @@ func TestPutBranchInGit_GitServerShouldNitBeFound(t *testing.T) {
 		},
 	}
 
-	objs := []runtime.Object{
-		c,
-	}
-	scheme.Scheme.AddKnownTypes(v1.SchemeGroupVersion, c)
-
 	cb := &v1alpha1.CodebaseBranch{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      fakeName,
@@ -314,14 +282,21 @@ func TestPutBranchInGit_GitServerShouldNitBeFound(t *testing.T) {
 		},
 	}
 
+	scheme := runtime.NewScheme()
+	scheme.AddKnownTypes(v1.SchemeGroupVersion, c, cb)
+	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, cb).Build()
+
 	err := PutBranchInGit{
-		Client: fake.NewFakeClient(objs...),
+		Client: fakeCl,
 	}.ServeRequest(cb)
 
 	assert.Error(t, err)
+	if !strings.Contains(err.Error(), "an error has occurred while getting fake-name Git Server CR") {
+		t.Fatalf("wrong error returned: %s", err.Error())
+	}
 }
 
-func TestPutBranchInGit_SecretShouldNitBeFound(t *testing.T) {
+func TestPutBranchInGit_SecretShouldNotBeFound(t *testing.T) {
 	c := &v1alpha1.Codebase{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      fakeName,
@@ -349,11 +324,6 @@ func TestPutBranchInGit_SecretShouldNitBeFound(t *testing.T) {
 		},
 	}
 
-	objs := []runtime.Object{
-		c, gs,
-	}
-	scheme.Scheme.AddKnownTypes(v1.SchemeGroupVersion, c, gs)
-
 	cb := &v1alpha1.CodebaseBranch{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      fakeName,
@@ -364,9 +334,17 @@ func TestPutBranchInGit_SecretShouldNitBeFound(t *testing.T) {
 		},
 	}
 
+	scheme := runtime.NewScheme()
+	scheme.AddKnownTypes(v1.SchemeGroupVersion, c, gs, cb)
+	scheme.AddKnownTypes(coreV1.SchemeGroupVersion, &coreV1.Secret{})
+	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, gs, cb).Build()
+
 	err := PutBranchInGit{
-		Client: fake.NewFakeClient(objs...),
+		Client: fakeCl,
 	}.ServeRequest(cb)
 
 	assert.Error(t, err)
+	if !strings.Contains(err.Error(), "Unable to get secret fake-name") {
+		t.Fatalf("wrong error returned: %s", err.Error())
+	}
 }

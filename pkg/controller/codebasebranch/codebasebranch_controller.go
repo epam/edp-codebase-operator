@@ -6,25 +6,23 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/go-logr/logr"
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/builder"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-
-	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebasebranch/service"
-
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebasebranch/chain/factory"
 	cbHandler "github.com/epam/edp-codebase-operator/v2/pkg/controller/codebasebranch/chain/handler"
+	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebasebranch/service"
 	"github.com/epam/edp-codebase-operator/v2/pkg/model"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
+	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -199,10 +197,7 @@ func (r ReconcileCodebaseBranch) tryToDeleteCodebaseBranch(ctx context.Context, 
 }
 
 func removeDirectoryIfExists(codebaseName, branchName, namespace string) error {
-	wd := fmt.Sprintf("/home/codebase-operator/edp/%v/%v/%v", namespace, codebaseName, branchName)
-	if !util.DoesDirectoryExist(wd) {
-		return nil
-	}
+	wd := util.GetWorkDir(codebaseName, fmt.Sprintf("%v-%v", namespace, branchName))
 	if err := util.RemoveDirectory(wd); err != nil {
 		return err
 	}

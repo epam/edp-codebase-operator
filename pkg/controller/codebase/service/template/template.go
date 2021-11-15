@@ -17,7 +17,7 @@ import (
 
 var log = ctrl.Log.WithName("template")
 
-func PrepareTemplates(client client.Client, c v1alpha1.Codebase, workDir, assetsDir string) error {
+func PrepareTemplates(client client.Client, c *v1alpha1.Codebase, workDir, assetsDir string) error {
 	log.Info("start preparing deploy templates", "codebase", c.Name)
 
 	cf, err := buildTemplateConfig(client, c)
@@ -44,7 +44,7 @@ func PrepareTemplates(client client.Client, c v1alpha1.Codebase, workDir, assets
 	return nil
 }
 
-func PrepareGitlabCITemplates(client client.Client, c v1alpha1.Codebase, workDir, assetsDir string) error {
+func PrepareGitlabCITemplates(client client.Client, c *v1alpha1.Codebase, workDir, assetsDir string) error {
 	log.Info("start preparing deploy templates", "codebase", c.Name)
 
 	if c.Spec.Type != util.Application {
@@ -65,7 +65,7 @@ func PrepareGitlabCITemplates(client client.Client, c v1alpha1.Codebase, workDir
 	return nil
 }
 
-func buildTemplateConfig(client client.Client, c v1alpha1.Codebase) (*model.ConfigGoTemplating, error) {
+func buildTemplateConfig(client client.Client, c *v1alpha1.Codebase) (*model.ConfigGoTemplating, error) {
 	log.Info("start creating template config", "codebase_name", c.Name)
 	us, err := util.GetUserSettings(client, c.Namespace)
 	if err != nil {

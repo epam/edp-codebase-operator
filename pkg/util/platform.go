@@ -55,6 +55,9 @@ func GetGerritPort(c client.Client, namespace string) (*int32, error) {
 	if err != nil {
 		return nil, errors.Wrapf(err, "an error has occurred while getting %v Git Server CR", "gerrit")
 	}
+	if gs.Spec.SshPort == 0 {
+		return nil, errors.New("ssh port is zero or not defined in gerrit GitServer CR")
+	}
 	return getInt32P(gs.Spec.SshPort), nil
 }
 

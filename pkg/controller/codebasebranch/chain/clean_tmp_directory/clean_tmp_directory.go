@@ -2,12 +2,13 @@ package clean_tmp_directory
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	edpv1alpha1 "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	"github.com/pkg/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"time"
 )
 
 type CleanTempDirectory struct {
@@ -19,7 +20,7 @@ func (h CleanTempDirectory) ServeRequest(cb *v1alpha1.CodebaseBranch) error {
 	rl := log.WithValues("namespace", cb.Namespace, "codebase branch", cb.Name)
 	rl.Info("start CleanTempDirectory method...")
 
-	wd := fmt.Sprintf("/home/codebase-operator/edp/%v/%v/%v", cb.Namespace, cb.Spec.CodebaseName, cb.Spec.BranchName)
+	wd := util.GetWorkDir(cb.Spec.CodebaseName, fmt.Sprintf("%v-%v", cb.Namespace, cb.Spec.BranchName))
 	if err := deleteWorkDirectory(wd); err != nil {
 		setFailedFields(cb, v1alpha1.CleanData, err.Error())
 		return err

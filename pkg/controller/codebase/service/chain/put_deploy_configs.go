@@ -26,13 +26,7 @@ func (h PutDeployConfigs) ServeRequest(c *v1alpha1.Codebase) error {
 	rLog := log.WithValues("codebase_name", c.Name)
 	rLog.Info("Start pushing configs...")
 
-	port, err := util.GetGerritPort(h.client, c.Namespace)
-	if err != nil {
-		setFailedFields(c, v1alpha1.SetupDeploymentTemplates, err.Error())
-		return errors.Wrap(err, "unable get gerrit port")
-	}
-
-	if err := h.tryToPushConfigs(*c, *port); err != nil {
+	if err := h.tryToPushConfigs(c); err != nil {
 		setFailedFields(c, v1alpha1.SetupDeploymentTemplates, err.Error())
 		return errors.Wrapf(err, "couldn't push deploy configs for %v codebase", c.Name)
 	}
@@ -40,7 +34,7 @@ func (h PutDeployConfigs) ServeRequest(c *v1alpha1.Codebase) error {
 	return nextServeOrNil(h.next, c)
 }
 
-func (h PutDeployConfigs) tryToPushConfigs(c v1alpha1.Codebase, sshPort int32) error {
+func (h PutDeployConfigs) tryToPushConfigs(c *v1alpha1.Codebase) error {
 
 	edpN, err := helper.GetEDPName(h.client, c.Namespace)
 	if err != nil {
@@ -70,17 +64,22 @@ func (h PutDeployConfigs) tryToPushConfigs(c v1alpha1.Codebase, sshPort int32) e
 	ad := util.GetAssetsDir()
 
 	if !util.DoesDirectoryExist(wd) || util.IsDirectoryEmpty(wd) {
-		if err := h.cloneProjectRepoFromGerrit(sshPort, idrsa, url, wd, ad); err != nil {
+		sshPort, err := util.GetGerritPort(h.client, c.Namespace)
+		if err != nil {
+			setFailedFields(c, v1alpha1.SetupDeploymentTemplates, err.Error())
+			return errors.Wrap(err, "unable get gerrit port")
+		}
+		if err := h.cloneProjectRepoFromGerrit(*sshPort, idrsa, url, wd, ad); err != nil {
 			return err
 		}
 	}
 
-	ru, err := util.GetRepoUrl(&c)
+	ru, err := util.GetRepoUrl(c)
 	if err != nil {
 		return errors.Wrap(err, "couldn't build repo url")
 	}
 
-	if err := CheckoutBranch(ru, wd, c.Spec.DefaultBranch, h.git, &c, h.client); err != nil {
+	if err := CheckoutBranch(ru, wd, c.Spec.DefaultBranch, h.git, c, h.client); err != nil {
 		return errors.Wrapf(err, "checkout default branch %v in Gerrit put_deploy_config has been failed", c.Spec.DefaultBranch)
 	}
 

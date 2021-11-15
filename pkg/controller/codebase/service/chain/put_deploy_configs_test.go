@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
@@ -129,4 +130,75 @@ func TestPutDeployConfigs_ShouldPass(t *testing.T) {
 
 	err = pdc.ServeRequest(c)
 	assert.NoError(t, err)
+}
+
+func TestPutDeployConfigs_ShouldFailOnGetGerritPort(t *testing.T) {
+	dir, err := ioutil.TempDir("/tmp", "codebase")
+	if err != nil {
+		t.Fatalf("unable to create temp directory for testing")
+	}
+	defer os.RemoveAll(dir)
+
+	os.Setenv("WORKING_DIR", dir)
+
+	c := &v1alpha1.Codebase{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      fakeName,
+			Namespace: fakeNamespace,
+		},
+		Spec: v1alpha1.CodebaseSpec{
+			GitServer: fakeName,
+		},
+	}
+
+	gs := &v1alpha1.GitServer{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "gerrit",
+			Namespace: fakeNamespace,
+		},
+	}
+	cm := &coreV1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "edp-config",
+			Namespace: fakeNamespace,
+		},
+		Data: map[string]string{
+			"vcs_integration_enabled":  "true",
+			"perf_integration_enabled": "true",
+			"dns_wildcard":             "dns",
+			"edp_name":                 "edp-name",
+			"edp_version":              "2.2.2",
+			"vcs_group_name_url":       "edp",
+			"vcs_ssh_port":             "22",
+			"vcs_tool_name":            "stub",
+		},
+	}
+	ssh := &coreV1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "gerrit-project-creator",
+			Namespace: fakeNamespace,
+		},
+		Data: map[string][]byte{
+			util.PrivateSShKeyName: []byte("fake"),
+		},
+	}
+
+	scheme := runtime.NewScheme()
+	scheme.AddKnownTypes(coreV1.SchemeGroupVersion, ssh, cm)
+	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, c, gs)
+
+	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, gs, ssh, cm).Build()
+
+	os.Setenv("ASSETS_DIR", "../../../../../build")
+
+	pdc := PutDeployConfigs{
+		client: fakeCl,
+		cr:     repository.NewK8SCodebaseRepository(fakeCl, c),
+	}
+
+	err = pdc.ServeRequest(c)
+	assert.Error(t, err)
+	if !strings.Contains(err.Error(), "unable get gerrit port") {
+		t.Fatalf("wrong error returned: %s", err.Error())
+	}
 }

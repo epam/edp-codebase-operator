@@ -25,7 +25,7 @@ func (h PutGitlabCiDeployConfigs) ServeRequest(c *v1alpha1.Codebase) error {
 	rLog := log.WithValues("codebase_name", c.Name)
 	rLog.Info("Start pushing configs...")
 
-	if err := h.tryToPushConfigs(*c); err != nil {
+	if err := h.tryToPushConfigs(c); err != nil {
 		setFailedFields(c, v1alpha1.SetupDeploymentTemplates, err.Error())
 		return errors.Wrapf(err, "couldn't push deploy configs for %v codebase", c.Name)
 	}
@@ -33,7 +33,7 @@ func (h PutGitlabCiDeployConfigs) ServeRequest(c *v1alpha1.Codebase) error {
 	return nextServeOrNil(h.next, c)
 }
 
-func (h PutGitlabCiDeployConfigs) tryToPushConfigs(c v1alpha1.Codebase) error {
+func (h PutGitlabCiDeployConfigs) tryToPushConfigs(c *v1alpha1.Codebase) error {
 	name, err := helper.GetEDPName(h.client, c.Namespace)
 	if err != nil {
 		return errors.Wrap(err, "couldn't get edp name")
