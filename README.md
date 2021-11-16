@@ -1,21 +1,24 @@
 # Codebase Operator
 
-Get acquainted with the Codebase Operator and the installation process as well as the local development, 
-and architecture scheme.
+| :heavy_exclamation_mark: Please refer to [EDP documentation](https://epam.github.io/edp-install/) to get the notion of the main concepts and guidelines. |
+| --- |
+
+Get acquainted with the Codebase Operator and the installation process as well as the local development, and architecture scheme.
 
 ## Overview
 
-Codebase Operator is an EDP operator that is responsible for provisioning codebase entities. 
-Operator installation can be applied on two container orchestration platforms: OpenShift and Kubernetes.
+Codebase Operator is an EDP operator that is responsible for provisioning codebase entities. Operator installation can be applied on two container orchestration platforms: OpenShift and Kubernetes.
 
 _**NOTE:** Operator is platform-independent, that is why there is a unified instruction for deploying._
 
 ## Prerequisites
+
 1. Linux machine or Windows Subsystem for Linux instance with [Helm 3](https://helm.sh/docs/intro/install/) installed;
 2. Cluster admin access to the cluster;
-3. EDP project/namespace is deployed by following the [EDP Install](https://epam.github.io/edp-install/operator-guide/install-edp/) instruction.
+3. EDP project/namespace is deployed by following the [Install EDP](https://epam.github.io/edp-install/operator-guide/install-edp/) instruction.
 
 ## Installation
+
 In order to install the Codebase Operator, follow the steps below:
 
 1. To add the Helm EPAMEDP Charts for local client, run "helm repo add":
@@ -28,7 +31,7 @@ In order to install the Codebase Operator, follow the steps below:
      NAME                           CHART VERSION   APP VERSION     DESCRIPTION
      epamedp/codebase-operator      v2.4.0                          Helm chart for Golang application/service deplo...
      ```
-  
+
     _**NOTE:** It is highly recommended to use the latest released version._
 
 3. Deploy operator:
@@ -57,9 +60,11 @@ In order to install the Codebase Operator, follow the steps below:
 5. Check the <edp_cicd_project> namespace that should contain operator deployment with your operator in a running status.
 
 ### Related Articles
+
 - [Architecture Scheme of Codebase Operator](documentation/arch.md)
 - [Codebase Controller Overview](documentation/codebase_controller.md)
 - [Codebase Branch Controller](documentation/codebase_branch_controller.md)
+- [Install EDP](https://epam.github.io/edp-install/operator-guide/install-edp/)
+- [Git Server Controller](documentation/git_server_controller.md)
 - [Jira Server Controller](documentation/jira_server_controller.md)
 - [Jira Issue Metadata Controller](documentation/jira_issue_metadata_controller.md)
-- [Git Server Controller](documentation/git_server_controller.md)
