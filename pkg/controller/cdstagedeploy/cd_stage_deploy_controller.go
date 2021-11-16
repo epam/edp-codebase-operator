@@ -96,7 +96,7 @@ func (r *ReconcileCDStageDeploy) Reconcile(ctx context.Context, request reconcil
 }
 
 func (r *ReconcileCDStageDeploy) setReconcilationPeriod(sd *codebaseApi.CDStageDeploy) time.Duration {
-	timeout := util.GetTimeout(sd.Status.FailureCount, 500*time.Millisecond)
+	timeout := util.GetTimeout(sd.Status.FailureCount, 10*time.Second)
 	r.log.Info("wait for next reconcilation", "next reconcilation in", timeout)
 	sd.Status.FailureCount += 1
 	return timeout

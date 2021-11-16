@@ -283,7 +283,7 @@ func TestReconcileCDStageDeploy_Reconcile_ShouldFailServeRequestWithExistingCR(t
 	res, err := r.Reconcile(context.TODO(), req)
 
 	assert.NoError(t, err)
-	assert.Equal(t, res.RequeueAfter, time.Duration(1359140914))
+	assert.Equal(t, res.RequeueAfter, 10*time.Second)
 
 	cdsdResp := &v1alpha1.CDStageDeploy{}
 	err = fakeCl.Get(context.TODO(),

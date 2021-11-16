@@ -4,13 +4,14 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"github.com/epam/edp-codebase-operator/v2/db"
-	"github.com/go-logr/logr"
 	"reflect"
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"strings"
 	"time"
+
+	"github.com/epam/edp-codebase-operator/v2/db"
+	"github.com/go-logr/logr"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/repository"
@@ -132,7 +133,7 @@ func (r ReconcileCodebase) updateFinishStatus(ctx context.Context, c *codebaseAp
 
 // setFailureCount increments failure count and returns delay for next reconciliation
 func (r ReconcileCodebase) setFailureCount(c *codebaseApi.Codebase) time.Duration {
-	timeout := util.GetTimeout(c.Status.FailureCount, 500*time.Millisecond)
+	timeout := util.GetTimeout(c.Status.FailureCount, 10*time.Second)
 	r.log.V(2).Info("wait for next reconcilation", "next reconcilation in", timeout)
 	c.Status.FailureCount += 1
 	return timeout
