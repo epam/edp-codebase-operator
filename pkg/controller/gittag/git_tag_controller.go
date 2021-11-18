@@ -2,6 +2,7 @@ package gittag
 
 import (
 	"context"
+
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/gittag/chain"
 	"github.com/go-logr/logr"
@@ -31,10 +32,7 @@ func (r *ReconcileGitTag) SetupWithManager(mgr ctrl.Manager) error {
 		UpdateFunc: func(e event.UpdateEvent) bool {
 			oldObject := e.ObjectOld.(*codebaseApi.GitTag)
 			newObject := e.ObjectNew.(*codebaseApi.GitTag)
-			if oldObject.Status != newObject.Status {
-				return false
-			}
-			return true
+			return oldObject.Status == newObject.Status
 		},
 	}
 	return ctrl.NewControllerManagedBy(mgr).

@@ -2,6 +2,7 @@ package imagestreamtag
 
 import (
 	"context"
+
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/imagestreamtag/chain"
 	"github.com/go-logr/logr"
@@ -31,10 +32,7 @@ func (r *ReconcileImageStreamTag) SetupWithManager(mgr ctrl.Manager) error {
 		UpdateFunc: func(e event.UpdateEvent) bool {
 			oldObject := e.ObjectOld.(*codebaseApi.ImageStreamTag)
 			newObject := e.ObjectNew.(*codebaseApi.ImageStreamTag)
-			if oldObject.Status != newObject.Status {
-				return false
-			}
-			return true
+			return oldObject.Status == newObject.Status
 		},
 	}
 	return ctrl.NewControllerManagedBy(mgr).

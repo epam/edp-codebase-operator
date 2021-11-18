@@ -1,6 +1,7 @@
 package adapter
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/andygrunwald/go-jira"
@@ -39,6 +40,16 @@ func TestGoJiraAdapter_Connected_False(t *testing.T) {
 	c, err := jc.Connected()
 	assert.Error(t, err)
 	assert.False(t, c)
+}
+
+func TestGoJiraAdapter_UnableCreateJiraClient(t *testing.T) {
+	httpmock.Reset()
+	jc, err := new(GoJiraAdapterFactory).New(dto.ConvertSpecToJiraServer("htt\\p://", "user", "pwd"))
+	assert.Error(t, err)
+	assert.Nil(t, jc)
+	if !strings.Contains(err.Error(), "parse \"htt\\\\p://\"") {
+		t.Fatalf("wrong error returned: %s", err.Error())
+	}
 }
 
 func TestGoJiraAdapter_GetIssueMetadata_Pass(t *testing.T) {

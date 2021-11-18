@@ -1,6 +1,8 @@
 package chain
 
 import (
+	"testing"
+
 	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -8,7 +10,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
-	"testing"
 )
 
 func TestDeleteJiraIssueMetadataCr_ServeRequest(t *testing.T) {
@@ -19,13 +20,13 @@ func TestDeleteJiraIssueMetadataCr_ServeRequest(t *testing.T) {
 		},
 	}
 
-	objs := []runtime.Object{
-		jim,
-	}
 	scheme.Scheme.AddKnownTypes(v1.SchemeGroupVersion, jim)
+	scheme := runtime.NewScheme()
+	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, jim)
+	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(jim).Build()
 
 	dimcr := DeleteJiraIssueMetadataCr{
-		c: fake.NewFakeClient(objs...),
+		c: fakeCl,
 	}
 
 	err := dimcr.ServeRequest(jim)

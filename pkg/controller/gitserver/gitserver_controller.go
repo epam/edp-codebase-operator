@@ -3,6 +3,8 @@ package gitserver
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/model"
@@ -15,7 +17,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"time"
 )
 
 func NewReconcileGitServer(client client.Client, log logr.Logger) *ReconcileGitServer {
@@ -35,10 +36,7 @@ func (r *ReconcileGitServer) SetupWithManager(mgr ctrl.Manager) error {
 		UpdateFunc: func(e event.UpdateEvent) bool {
 			oldObject := e.ObjectOld.(*codebaseApi.GitServer)
 			newObject := e.ObjectNew.(*codebaseApi.GitServer)
-			if oldObject.Status != newObject.Status {
-				return false
-			}
-			return true
+			return oldObject.Status == newObject.Status
 		},
 	}
 	return ctrl.NewControllerManagedBy(mgr).

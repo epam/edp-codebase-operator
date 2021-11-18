@@ -19,6 +19,9 @@ func (h PutIssueWebLink) ServeRequest(metadata *v1alpha1.JiraIssueMetadata) erro
 	if err != nil {
 		return errors.Wrap(err, "couldn't get map with Jira field values")
 	}
+	if _, ok := requestPayload["issuesLinks"]; !ok {
+		return errors.New("issuesLinks is a mandatory field in payload")
+	}
 
 	for _, linkInfo := range requestPayload["issuesLinks"].([]interface{}) {
 		info := linkInfo.(map[string]interface{})

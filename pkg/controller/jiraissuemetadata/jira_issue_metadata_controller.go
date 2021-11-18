@@ -53,10 +53,7 @@ func (r *ReconcileJiraIssueMetadata) SetupWithManager(mgr ctrl.Manager) error {
 		UpdateFunc: func(e event.UpdateEvent) bool {
 			oo := e.ObjectOld.(*codebaseApi.JiraIssueMetadata)
 			no := e.ObjectNew.(*codebaseApi.JiraIssueMetadata)
-			if !reflect.DeepEqual(oo.Spec, no.Spec) {
-				return true
-			}
-			return false
+			return !reflect.DeepEqual(oo.Spec, no.Spec)
 		},
 	}
 	return ctrl.NewControllerManagedBy(mgr).

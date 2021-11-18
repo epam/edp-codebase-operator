@@ -43,10 +43,7 @@ func (r *ReconcileJiraServer) SetupWithManager(mgr ctrl.Manager) error {
 		UpdateFunc: func(e event.UpdateEvent) bool {
 			oldObject := e.ObjectOld.(*codebaseApi.JiraServer)
 			newObject := e.ObjectNew.(*codebaseApi.JiraServer)
-			if oldObject.Status != newObject.Status {
-				return false
-			}
-			return true
+			return oldObject.Status == newObject.Status
 		},
 	}
 	return ctrl.NewControllerManagedBy(mgr).
