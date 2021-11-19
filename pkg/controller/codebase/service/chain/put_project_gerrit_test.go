@@ -464,13 +464,12 @@ func TestPutProjectGerrit_ShouldFailedOnInitialProjectProvisioning(t *testing.T)
 			"vcs_tool_name":            "stub",
 		},
 	}
-	ssh := &coreV1.Secret{}
 
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(coreV1.SchemeGroupVersion, ssh, cm)
+	scheme.AddKnownTypes(coreV1.SchemeGroupVersion, cm)
 	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, c, gs)
 
-	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, gs, ssh, cm).Build()
+	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, gs, cm).Build()
 
 	os.Setenv("ASSETS_DIR", "../../../../../build")
 

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	edpv1alpha1 "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
@@ -275,7 +276,8 @@ func (h PutProjectGerrit) notEmptyProjectProvisioning(c *edpv1alpha1.Codebase, r
 	rLog.Info("Repository URL with template has been retrieved", "url", *ru)
 
 	repu, repp, err := GetRepositoryCredentialsIfExists(c, h.client)
-	if err != nil {
+	// we are ok if no credentials is found, assuming this is a public repo
+	if err != nil && !k8serrors.IsNotFound(err) {
 		return errors.Wrap(err, "Unable to get repository credentials")
 	}
 
