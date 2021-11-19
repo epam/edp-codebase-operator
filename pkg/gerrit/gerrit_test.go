@@ -13,6 +13,7 @@ import (
 	"testing"
 
 	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/config"
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	coreV1 "k8s.io/api/core/v1"
@@ -71,7 +72,52 @@ func TestSShInit_ShouldFailForIncorrectRSAPKey(t *testing.T) {
 	assert.Contains(t, err.Error(), "Unable to get Public Key from Private one")
 }
 
-func TestAddRemoteLinkToGerri_ShouldPass(t *testing.T) {
+func TestAddRemoteLinkToGerrit_ShouldPass(t *testing.T) {
+	dir, err := ioutil.TempDir("/tmp", "codebase")
+	if err != nil {
+		t.Fatal("unable to create temp directory for testing")
+	}
+	defer os.RemoveAll(dir)
+	repo, err := git.PlainInit(dir, false)
+	if err != nil {
+		t.Error("Unable to create test git repo")
+	}
+	if _, err = repo.CreateRemote(&config.RemoteConfig{
+		Name: "origin",
+		URLs: []string{"https://example.com"},
+	}); err != nil {
+		t.Error("Unable to create remote")
+	}
+
+	err = AddRemoteLinkToGerrit(dir, "fake-host", 22, "appName", logr.DiscardLogger{})
+	assert.NoError(t, err)
+	b, err := ioutil.ReadFile(fmt.Sprintf("%v/.git/config", dir))
+	if err != nil {
+		t.Error("Unable to read test file with git config")
+	}
+	assert.Contains(t, string(b), "[remote \"origin\"]\n\turl = ssh://fake-host:22/appName")
+}
+
+func TestAddRemoteLinkToGerrit_ShouldPassWithErrRemoteNotFound(t *testing.T) {
+	dir, err := ioutil.TempDir("/tmp", "codebase")
+	if err != nil {
+		t.Fatal("unable to create temp directory for testing")
+	}
+	defer os.RemoveAll(dir)
+	if _, err = git.PlainInit(dir, false); err != nil {
+		t.Error("Unable to create test git repo")
+	}
+
+	err = AddRemoteLinkToGerrit(dir, "fake-host", 22, "appName", logr.DiscardLogger{})
+	assert.NoError(t, err)
+	b, err := ioutil.ReadFile(fmt.Sprintf("%v/.git/config", dir))
+	if err != nil {
+		t.Error("Unable to read test file with git config")
+	}
+	assert.Contains(t, string(b), "[remote \"origin\"]\n\turl = ssh://fake-host:22/appName")
+}
+
+func TestAddRemoteLinkToGerrit_ShouldFail(t *testing.T) {
 	dir, err := ioutil.TempDir("/tmp", "codebase")
 	if err != nil {
 		t.Fatal("unable to create temp directory for testing")
@@ -91,7 +137,7 @@ func TestAddRemoteLinkToGerri_ShouldPass(t *testing.T) {
 
 }
 
-func TestAddRemoteLinkToGerri_ShouldFailToOpenGit(t *testing.T) {
+func TestAddRemoteLinkToGerrit_ShouldFailToOpenGit(t *testing.T) {
 	err := AddRemoteLinkToGerrit("/tmp/1", "fake-host", 22, "appName", logr.DiscardLogger{})
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "Unable to open Git directory")

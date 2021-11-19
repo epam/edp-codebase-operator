@@ -13,7 +13,7 @@ import (
 var log = ctrl.Log.WithName("util")
 
 func CreateDirectory(path string) error {
-	log.Info("Creating directory for oc templates", "path", path)
+	log.Info("Creating directory", "path", path)
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		if err := os.MkdirAll(path, 0755); err != nil {
 			return err

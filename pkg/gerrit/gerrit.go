@@ -173,7 +173,7 @@ func AddRemoteLinkToGerrit(repoPath string, host string, port int32, appName str
 		return errors.Wrap(err, "Unable to open Git directory")
 	}
 	err = r.DeleteRemote("origin")
-	if errors.Cause(err) != git.ErrRemoteNotFound {
+	if err != nil && errors.Cause(err) != git.ErrRemoteNotFound {
 		return errors.Wrap(err, "Unable to delete remote origin")
 	}
 
