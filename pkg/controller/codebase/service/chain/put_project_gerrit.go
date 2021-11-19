@@ -282,7 +282,7 @@ func (h PutProjectGerrit) notEmptyProjectProvisioning(c *edpv1alpha1.Codebase, r
 	}
 
 	if !h.git.CheckPermissions(*ru, repu, repp) {
-		msg := fmt.Errorf("user %v cannot get access to the repository %v", repu, *ru)
+		msg := fmt.Errorf("user %v cannot get access to the repository %v", *repu, *ru)
 		setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, msg.Error())
 		return msg
 	}

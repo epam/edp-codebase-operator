@@ -29,7 +29,7 @@ func CheckoutBranch(repository *string, projectPath, branchName string, git git.
 		return err
 	}
 	if !git.CheckPermissions(*repository, user, password) {
-		msg := fmt.Errorf("user %v cannot get access to the repository %v", user, *repository)
+		msg := fmt.Errorf("user %v cannot get access to the repository %v", *user, *repository)
 		return msg
 	}
 	currentBranchName, err := git.GetCurrentBranchName(projectPath)
