@@ -1,3 +1,5 @@
+[![codecov](https://codecov.io/gh/epam/edp-codebase-operator/branch/master/graph/badge.svg?token=9C0CBQS08X)](https://codecov.io/gh/epam/edp-codebase-operator)
+
 # Codebase Operator
 
 | :heavy_exclamation_mark: Please refer to [EDP documentation](https://epam.github.io/edp-install/) to get the notion of the main concepts and guidelines. |
@@ -52,7 +54,7 @@ In order to install the Codebase Operator, follow the steps below:
     - jira.rootUrl                                    # URL to Jira server;
     - jira.credentialName                             # Name of secret with credentials to Jira server;
    ```
- 
+
 4. Install operator in the <edp_cicd_project> namespace with the helm command; find below the installation command example:
     ```bash
     helm install codebase-operator epamedp/codebase-operator --version <chart_version> --namespace <edp_cicd_project> --set name=codebase-operator --set global.edpName=<edp_cicd_project> --set global.platform=<platform_type> --set global.database.name=<db-name> --set global.database.host=<db-name>.<namespace_name> --set global.database.port=<port> --set jira.integration=false
