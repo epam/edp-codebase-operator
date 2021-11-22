@@ -20,28 +20,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
-
-func TestReconcileCodebaseBranch_SetupWithManager(t *testing.T) {
-
-	r := NewReconcileCodebaseBranch(nil, nil, logr.DiscardLogger{})
-	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{MetricsBindAddress: "0"})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	err = r.SetupWithManager(mgr, 1)
-	if err == nil {
-		t.Fatal("no error returned")
-	}
-
-	if !strings.Contains(err.Error(), "no kind is registered for the type") {
-		t.Fatalf("wrong error returned: %s", err.Error())
-	}
-}
 
 func TestReconcileCodebaseBranch_Reconcile_ShouldPassNotFoundCR(t *testing.T) {
 	c := &v1alpha1.CodebaseBranch{}
