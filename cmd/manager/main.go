@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
+	"github.com/epam/edp-codebase-operator/v2/internal/version"
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/cdstagedeploy"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase"
@@ -27,7 +28,7 @@ import (
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
-	"k8s.io/apimachinery/pkg/runtime"
+	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -39,7 +40,7 @@ import (
 )
 
 var (
-	scheme   = runtime.NewScheme()
+	scheme   = k8sruntime.NewScheme()
 	setupLog = ctrl.Log.WithName("setup")
 )
 
@@ -87,7 +88,19 @@ func main() {
 	opts.BindFlags(flag.CommandLine)
 	flag.Parse()
 
+	v := version.Get()
+
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
+
+	setupLog.Info("Starting the Codebase Operator",
+		"version", v.Version,
+		"git-commit", v.GitCommit,
+		"git-tag", v.GitTag,
+		"build-date", v.BuildDate,
+		"go-version", v.Go,
+		"go-client", v.KubectlVersion,
+		"platform", v.Platform,
+	)
 
 	ns, err := util.GetWatchNamespace()
 	if err != nil {
