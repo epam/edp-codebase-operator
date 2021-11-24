@@ -16,7 +16,7 @@ func (h CheckConnection) ServeRequest(jira *v1alpha1.JiraServer) error {
 	rl := log.WithValues("jira server name", jira.Name)
 	rl.V(2).Info("start checking connection...")
 	connected, err := h.checkConnection(*jira)
-	jira.Status.Available = err == nil && connected == true
+	jira.Status.Available = err == nil && connected
 	if err != nil {
 		return err
 	}

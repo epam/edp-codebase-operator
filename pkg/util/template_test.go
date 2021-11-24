@@ -123,11 +123,13 @@ func TestCopyTemplate_OpenShiftTemplates_ShouldPass(t *testing.T) {
 func TestCopyTemplate_ShouldNotOverwriteExistingDeploymentTemaplates(t *testing.T) {
 	testDir, err := ioutil.TempDir("/tmp", "codebase")
 	if err != nil {
-		t.Fatalf("unable to create temp directory for testing")
+		t.Fatal("unable to create temp directory for testing")
 	}
 	defer os.RemoveAll(testDir)
 	cf := model.ConfigGoTemplating{}
-	os.MkdirAll(fmt.Sprintf("%v/deploy-templates", testDir), 0775)
+	if err = os.MkdirAll(fmt.Sprintf("%v/deploy-templates", testDir), 0775); err != nil {
+		t.Fatal("Unable to create deploy-templates dir")
+	}
 
 	err = CopyTemplate("openshift-template", testDir, "../../build", cf)
 	assert.NoError(t, err)
@@ -136,7 +138,7 @@ func TestCopyTemplate_ShouldNotOverwriteExistingDeploymentTemaplates(t *testing.
 func TestCopyTemplate_ShouldFailOnUnsupportedDeploymemntType(t *testing.T) {
 	testDir, err := ioutil.TempDir("/tmp", "codebase")
 	if err != nil {
-		t.Fatalf("unable to create temp directory for testing")
+		t.Fatal("unable to create temp directory for testing")
 	}
 	defer os.RemoveAll(testDir)
 	cf := model.ConfigGoTemplating{}

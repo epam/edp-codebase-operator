@@ -9,8 +9,7 @@ import (
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
 const (
-	failed  = "failed"
-	success = "success"
+	failed = "failed"
 )
 
 // CDStageDeploySpec defines the desired state of CDStageDeploy

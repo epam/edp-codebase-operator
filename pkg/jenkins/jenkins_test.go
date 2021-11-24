@@ -14,7 +14,6 @@ import (
 	coreV1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
@@ -402,13 +401,12 @@ func TestGetJenkinsCreds_SecretExists(t *testing.T) {
 		Spec: v1alpha1.JenkinsSpec{},
 	}
 
-	objs := []runtime.Object{
-		s, jspec,
-	}
-	scheme.Scheme.AddKnownTypes(v1.SchemeGroupVersion, jspec)
-	client := fake.NewFakeClient(objs...)
+	scheme := runtime.NewScheme()
+	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, jspec)
+	scheme.AddKnownTypes(coreV1.SchemeGroupVersion, s)
+	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(s, jspec).Build()
 
-	jt, ju, err := GetJenkinsCreds(client, *jspec, fakeNamespace)
+	jt, ju, err := GetJenkinsCreds(fakeCl, *jspec, fakeNamespace)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -429,13 +427,12 @@ func TestGetJenkinsCreds_NoSecretExists(t *testing.T) {
 		Spec: v1alpha1.JenkinsSpec{},
 	}
 
-	objs := []runtime.Object{
-		jspec,
-	}
-	scheme.Scheme.AddKnownTypes(v1.SchemeGroupVersion, jspec)
-	client := fake.NewFakeClient(objs...)
+	scheme := runtime.NewScheme()
+	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, jspec)
+	scheme.AddKnownTypes(coreV1.SchemeGroupVersion, &coreV1.Secret{})
+	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(jspec).Build()
 
-	jt, ju, err := GetJenkinsCreds(client, *jspec, fakeNamespace)
+	jt, ju, err := GetJenkinsCreds(fakeCl, *jspec, fakeNamespace)
 	if err == nil {
 		t.Fatal("no error returned")
 	}

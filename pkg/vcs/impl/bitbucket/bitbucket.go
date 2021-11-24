@@ -1,11 +1,12 @@
 package bitbucket
 
 import (
-	"errors"
 	"fmt"
-	"gopkg.in/resty.v1"
 	"log"
 	"strconv"
+
+	"github.com/pkg/errors"
+	"gopkg.in/resty.v1"
 )
 
 type BitBucket struct {
@@ -97,7 +98,7 @@ func (bitBucket *BitBucket) CreateProject(groupPath, projectName string) (string
 	}
 
 	if resp.IsError() {
-		errorMsg := fmt.Sprintf(resp.String())
+		errorMsg := resp.String()
 		log.Println(errorMsg)
 		return "", errors.New(errorMsg)
 	}
@@ -114,7 +115,7 @@ func (bitBucket *BitBucket) GetRepositorySshUrl(groupPath, projectName string) (
 		return "", err
 	}
 	if !*exist {
-		return "", errors.New(fmt.Sprintf("project %v, does not exist in group %v", projectName, groupPath))
+		return "", errors.Errorf("project %v, does not exist in group %v", projectName, groupPath)
 	}
 	sshLink, err := getSshLink(*pr)
 
