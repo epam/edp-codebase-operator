@@ -1,4 +1,4 @@
-PACKAGE=github.com/epam/edp-codebase-operator/v2/internal/version
+PACKAGE=github.com/epam/edp-common/pkg/config
 CURRENT_DIR=$(shell pwd)
 DIST_DIR=${CURRENT_DIR}/dist
 BIN_NAME=go-binary

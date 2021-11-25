@@ -6,7 +6,6 @@ import (
 	"strconv"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
-	"github.com/epam/edp-codebase-operator/v2/internal/version"
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/cdstagedeploy"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase"
@@ -18,6 +17,7 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/jiraissuemetadata"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/jiraserver"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
+	buildInfo "github.com/epam/edp-common/pkg/config"
 	edpCompApi "github.com/epam/edp-component-operator/pkg/apis/v1/v1alpha1"
 	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
 	perfAPi "github.com/epam/edp-perf-operator/v2/pkg/apis/edp/v1alpha1"
@@ -88,7 +88,7 @@ func main() {
 	opts.BindFlags(flag.CommandLine)
 	flag.Parse()
 
-	v := version.Get()
+	v := buildInfo.Get()
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
