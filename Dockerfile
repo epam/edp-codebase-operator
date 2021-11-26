@@ -25,7 +25,7 @@ RUN  chmod u+x ${ASSETS_DIR}/user_setup && \
      ${ASSETS_DIR}/user_setup
 
 # install operator binary
-COPY go-binary ${OPERATOR}
+COPY ./dist/go-binary ${OPERATOR}
 
 ENTRYPOINT ["/usr/local/bin/entrypoint"]
 
