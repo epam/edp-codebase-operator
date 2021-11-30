@@ -10,56 +10,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestCopyPipelines_ShouldFailWhenReadFiles(t *testing.T) {
-	err := CopyPipelines("application", "/tmp/1", "/tmp/2")
-	assert.Error(t, err)
-}
-
-func TestCopyPipelines_ShouldPass(t *testing.T) {
-	testDir, err := ioutil.TempDir("/tmp", "codebase")
-	if err != nil {
-		t.Fatalf("unable to create temp directory for testing")
-	}
-	defer os.RemoveAll(testDir)
-
-	err = CopyPipelines("application", "../../build/pipelines", testDir)
-	assert.NoError(t, err)
-}
-
-func TestCopyPipelines_ShouldSkipToCopyExistingFiles(t *testing.T) {
-	testDir, err := ioutil.TempDir("/tmp", "codebase")
-	if err != nil {
-		t.Fatalf("unable to create temp directory for testing")
-	}
-	defer os.RemoveAll(testDir)
-
-	f, err := os.Create(fmt.Sprintf("%v/build.groovy", testDir))
-	if err != nil {
-		t.Fatalf("unable to create file for testing")
-	}
-
-	err = CopyPipelines("application", "../../build/pipelines", testDir)
-	assert.NoError(t, err)
-	fi, err := f.Stat()
-	if err != nil {
-		t.Fatalf("unable to get created file for testing")
-	}
-	assert.Equal(t, int64(0), fi.Size())
-}
-
-func TestCopyPipelines_ShouldNotCreateBuildGroovyForAutotests(t *testing.T) {
-	testDir, err := ioutil.TempDir("/tmp", "codebase")
-	if err != nil {
-		t.Fatalf("unable to create temp directory for testing")
-	}
-	defer os.RemoveAll(testDir)
-
-	err = CopyPipelines("autotests", "../../build/pipelines", testDir)
-	assert.NoError(t, err)
-	_, err = os.Stat(fmt.Sprintf("%v/build.groovy", testDir))
-	assert.True(t, os.IsNotExist(err))
-}
-
 func TestCopyTemplate_HelmTemplates_ShouldPass(t *testing.T) {
 	testDir, err := ioutil.TempDir("/tmp", "codebase")
 	if err != nil {

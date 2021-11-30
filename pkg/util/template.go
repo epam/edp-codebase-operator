@@ -2,7 +2,6 @@ package util
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 	"text/template"
@@ -10,40 +9,6 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/pkg/model"
 	"github.com/pkg/errors"
 )
-
-func CopyPipelines(codebaseType, src, dest string) error {
-	log.Info("Start copying pipelines", "src", src, "target", dest)
-
-	files, err := ioutil.ReadDir(src)
-	if err != nil {
-		return err
-	}
-
-	for _, f := range files {
-		if _, err := os.Stat(fmt.Sprintf("%v/%v", dest, f.Name())); err == nil {
-			log.Info("pipeline file already exists", "fileName", f.Name())
-			continue
-		}
-
-		if codebaseType == "autotests" && f.Name() == "build.groovy" {
-			continue
-		}
-
-		input, err := ioutil.ReadFile(src + "/" + f.Name())
-		if err != nil {
-			return err
-		}
-
-		err = ioutil.WriteFile(fmt.Sprintf("%s/%s", dest, f.Name()), input, 0755)
-		if err != nil {
-			return err
-		}
-	}
-
-	log.Info("Jenkins pipelines for codebase has been copied", "target", dest)
-
-	return nil
-}
 
 func CopyHelmChartTemplates(deploymentScript, templatesDest, assetsDir string, config model.ConfigGoTemplating) error {
 	log.Info("start handling Helm Chart templates", "codebase_name", config.Name)

@@ -13,12 +13,11 @@ RUN apk add --no-cache ca-certificates==20191127-r5 \
 
 COPY build/bin ${ASSETS_DIR}
 COPY build/templates ${ASSETS_DIR}/templates
-COPY build/pipelines ${ASSETS_DIR}/pipelines
 COPY build/configs ${ASSETS_DIR}/configs
 COPY build/img ${ASSETS_DIR}/img
 
-RUN chgrp -R 0 ${ASSETS_DIR}/templates ${ASSETS_DIR}/pipelines && \
-    chmod -R g=u ${ASSETS_DIR}/templates ${ASSETS_DIR}/pipelines
+RUN chgrp -R 0 ${ASSETS_DIR}/templates && \
+    chmod -R g=u ${ASSETS_DIR}/templates
 
 RUN  chmod u+x ${ASSETS_DIR}/user_setup && \
      chmod ugo+x ${ASSETS_DIR}/entrypoint && \

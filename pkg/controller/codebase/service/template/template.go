@@ -31,10 +31,6 @@ func PrepareTemplates(client client.Client, c *v1alpha1.Codebase, workDir, asset
 		}
 	}
 
-	if err := util.CopyPipelines(c.Spec.Type, fmt.Sprintf("%v/pipelines", assetsDir), workDir); err != nil {
-		return errors.Wrapf(err, "an error has occurred while copying pipelines for %v codebase", c.Name)
-	}
-
 	if c.Spec.Strategy != util.ImportStrategy {
 		if err := copySonarConfigs(workDir, assetsDir, *cf); err != nil {
 			return err
