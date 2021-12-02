@@ -34,7 +34,7 @@ func TestPutTagCodebaseImageStreamCrChain_ShouldBeExecutedSuccessfullyIfTagExist
 	s.AddKnownTypes(v1.SchemeGroupVersion, cis)
 
 	ch := PutTagCodebaseImageStreamCr{
-		client: fake.NewFakeClient(objs...),
+		client: fake.NewClientBuilder().WithRuntimeObjects(objs...).Build(),
 	}
 
 	ist := &v1alpha1.ImageStreamTag{
@@ -64,7 +64,7 @@ func TestPutTagCodebaseImageStreamCrChain_ShouldBeExecutedSuccessfullyIfTagDoesn
 	s.AddKnownTypes(v1.SchemeGroupVersion, cis)
 
 	ch := PutTagCodebaseImageStreamCr{
-		client: fake.NewFakeClient(objs...),
+		client: fake.NewClientBuilder().WithRuntimeObjects(objs...).Build(),
 	}
 
 	ist := &v1alpha1.ImageStreamTag{
