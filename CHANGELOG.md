@@ -1,6 +1,9 @@
 <a name="unreleased"></a>
 ## [Unreleased]
 
+
+<a name="v2.10.0"></a>
+## [v2.10.0] - 2021-12-06
 ### Features
 
 - Switch to edp-common for BuildInfo [EPMDEDP-7847](https://jiraeu.epam.com/browse/EPMDEDP-7847)
@@ -13,6 +16,7 @@
 
 ### Bug Fixes
 
+- Fix changelog links [EPMDEDP-7847](https://jiraeu.epam.com/browse/EPMDEDP-7847)
 - Address vet, lint issues [EPMDEDP-7847](https://jiraeu.epam.com/browse/EPMDEDP-7847)
 - Show username value in logs [EPMDEDP-7880](https://jiraeu.epam.com/browse/EPMDEDP-7880)
 - Address issue with git remote replacement [EPMDEDP-7880](https://jiraeu.epam.com/browse/EPMDEDP-7880)
@@ -92,7 +96,8 @@
 - [MDTUDDM-673] Save git status in the intermediate operations
 
 
-[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.9.0...HEAD
+[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.10.0...HEAD
+[v2.10.0]: https://github.com/epam/edp-codebase-operator/compare/v2.9.0...v2.10.0
 [v2.9.0]: https://github.com/epam/edp-codebase-operator/compare/v2.8.1...v2.9.0
 [v2.8.1]: https://github.com/epam/edp-codebase-operator/compare/v2.8.0...v2.8.1
 [v2.8.0]: https://github.com/epam/edp-codebase-operator/compare/v2.7.2...v2.8.0
