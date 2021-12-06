@@ -55,6 +55,7 @@
 
 ### Routine
 
+- Add changelog generator [EPMDEDP-7847](https://jiraeu.epam.com/browse/EPMDEDP-7847)
 - Update andygrunwald/go-jira to the latest stable [EPMDEDP-7930](https://jiraeu.epam.com/browse/EPMDEDP-7930)
 - Update cd-pipeline, jenkins, component to the latest stable [EPMDEDP-7930](https://jiraeu.epam.com/browse/EPMDEDP-7930)
 - update Go version at codecov.yaml [EPMDEDP-7885](https://jiraeu.epam.com/browse/EPMDEDP-7885)
@@ -91,10 +92,10 @@
 - [MDTUDDM-673] Save git status in the intermediate operations
 
 
-[Unreleased]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.9.0...HEAD
-[v2.9.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.8.1...v2.9.0
-[v2.8.1]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.8.0...v2.8.1
-[v2.8.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.7.2...v2.8.0
-[v2.7.2]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.7.1...v2.7.2
-[v2.7.1]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.7.0...v2.7.1
-[v2.7.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.3.0-95...v2.7.0
+[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.9.0...HEAD
+[v2.9.0]: https://github.com/epam/edp-codebase-operator/compare/v2.8.1...v2.9.0
+[v2.8.1]: https://github.com/epam/edp-codebase-operator/compare/v2.8.0...v2.8.1
+[v2.8.0]: https://github.com/epam/edp-codebase-operator/compare/v2.7.2...v2.8.0
+[v2.7.2]: https://github.com/epam/edp-codebase-operator/compare/v2.7.1...v2.7.2
+[v2.7.1]: https://github.com/epam/edp-codebase-operator/compare/v2.7.0...v2.7.1
+[v2.7.0]: https://github.com/epam/edp-codebase-operator/compare/v2.3.0-95...v2.7.0
