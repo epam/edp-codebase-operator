@@ -1,6 +1,10 @@
 <a name="unreleased"></a>
 ## [Unreleased]
 
+### Routine
+
+- Bump main branch version [EPMDEDP-7847](https://jiraeu.epam.com/browse/EPMDEDP-7847)
+
 
 <a name="v2.10.0"></a>
 ## [v2.10.0] - 2021-12-06
@@ -72,6 +76,12 @@
 ### Documentation
 
 - Update the links on GitHub [EPMDEDP-7781](https://jiraeu.epam.com/browse/EPMDEDP-7781)
+
+### BREAKING CHANGE:
+
+
+Now, codebase operator doesn't provision
+Jenkins pipelines for code-review, build, create-release flow.
 
 
 <a name="v2.9.0"></a>
