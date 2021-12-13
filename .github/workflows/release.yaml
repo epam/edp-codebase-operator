@@ -30,9 +30,11 @@ jobs:
             RELEASE_TAG="${SOURCE_TAG##*/}"
 
             # dowload git-chglog
-            go get -u github.com/git-chglog/git-chglog/cmd/git-chglog
+            go install github.com/git-chglog/git-chglog/cmd/git-chglog
 
             git-chglog -o release.md ${RELEASE_TAG}
+
+            echo "RELEASE_TAG=${RELEASE_TAG}" >> $GITHUB_ENV
 
       - name: Read release notes file
         id: release-notes
