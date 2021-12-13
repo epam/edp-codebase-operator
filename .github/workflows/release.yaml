@@ -30,7 +30,7 @@ jobs:
             RELEASE_TAG="${SOURCE_TAG##*/}"
 
             # dowload git-chglog
-            go install github.com/git-chglog/git-chglog/cmd/git-chglog
+            go get -u github.com/git-chglog/git-chglog/cmd/git-chglog
 
             git-chglog -o release.md ${RELEASE_TAG}
 
