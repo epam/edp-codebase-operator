@@ -42,6 +42,7 @@ spec:
               value: "{{ .Values.global.platform }}"
             - name: DB_ENABLED
               value: "{{ .Values.global.database.enabled }}"
+{{- if .Values.global.database.enabled }}
             - name: DB_HOST
               value: "{{ .Values.global.database.host }}"
             - name: DB_PORT
@@ -60,6 +61,7 @@ spec:
                   key: password
             - name: DB_SSL_MODE
               value: "disable"
+{{- end }}
             - name: RECONCILATION_PERIOD
               value: "360" # The value should be typed in minutes.
           resources:
