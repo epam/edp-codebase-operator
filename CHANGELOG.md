@@ -1,6 +1,17 @@
 <a name="unreleased"></a>
 ## [Unreleased]
 
+### Bug Fixes
+
+- Fix import strategy for arbitrary branch [EPMDEDP-8423](https://jiraeu.epam.com/browse/EPMDEDP-8423)
+- Change ca-certificates in dockerfile [EPMDEDP-8238](https://jiraeu.epam.com/browse/EPMDEDP-8238)
+
+### Routine
+
+- Fix git-chglog installation (GH Actions) [EPMDEDP-7847](https://jiraeu.epam.com/browse/EPMDEDP-7847)
+- Fix release pipeline in GH Actions [EPMDEDP-7847](https://jiraeu.epam.com/browse/EPMDEDP-7847)
+- Add automatic GitHub Release Action [EPMDEDP-7847](https://jiraeu.epam.com/browse/EPMDEDP-7847)
+
 
 <a name="v2.10.0"></a>
 ## [v2.10.0] - 2021-12-06
