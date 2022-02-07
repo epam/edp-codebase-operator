@@ -62,8 +62,7 @@ spec:
             - name: DB_SSL_MODE
               value: "disable"
 {{- end }}
-            - name: RECONCILATION_PERIOD
-              value: "360" # The value should be typed in minutes.
+{{ toYaml .Values.envs | indent 12 }}
           resources:
 {{ toYaml .Values.resources | indent 12 }}
       {{- with .Values.nodeSelector }}

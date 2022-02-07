@@ -16,6 +16,12 @@ image:
   name: epamedp/codebase-operator
   # if not defined then .Chart.AppVersion is used
   version:
+envs:
+  - name: RECONCILATION_PERIOD
+    value: "360"  # The value should be typed in minutes
+  # Maximum number of parallel reconciliation codebasebranches
+  - name: CODEBASE_BRANCH_MAX_CONCURRENT_RECONCILES
+    value: 3
 imagePullPolicy: "IfNotPresent"
 
 resources:
