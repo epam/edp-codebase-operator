@@ -1,11 +1,150 @@
 apiVersion: v2
 description: A Helm chart for EDP Codebase Operator
-home: https://solutionshub.epam.com/solution/epam-delivery-platform
+home: https://epam.github.io/edp-install/
 name: codebase-operator
 type: application
 version: 2.11.0-SNAPSHOT
 appVersion: 2.11.0-SNAPSHOT
+icon: https://epam.github.io/edp-install/assets/logo.png
+keywords:
+  - edp
+  - codebase
+  - operator
+  - pipelines
+  - jira
+  - ci
+  - cd
+  - docker
+  - image
+  - promote
+  - git
+  - gerrit
+  - github
+  - gitlab
 maintainers:
-  - name: EPAM EDP Team
+  - name: epmd-edp
+    email: SupportEPMD-EDP@epam.com
+    url: https://solutionshub.epam.com/solution/epam-delivery-platform
+  - name: sergk
+    url: https://github.com/SergK
 sources:
   - https://github.com/epam/edp-codebase-operator
+annotations:
+  artifacthub.io/license: Apache-2.0
+  artifacthub.io/operator: "true"
+  artifacthub.io/images: |
+    - name: codebase-operator:2.10.0
+      image: epamedp/codebase-operator:2.10.0
+    - name: codebase-operator:2.9.0
+      image: epamedp/codebase-operator:2.9.0
+  artifacthub.io/operatorCapabilities: Full Lifecycle
+  artifacthub.io/crds: |
+    - kind: CDStageDeploy
+      version: v2.edp.epam.com/v1alpha1
+      name: cdstagedeploy
+      displayName: CDStageDeploy
+      description: Stage deploy configuraion for CD
+    - kind: Codebase
+      version: v2.edp.epam.com/v1alpha1
+      name: codebase
+      displayName: Codebase
+      description: Creates an application in the admin console and starts CI pipeline
+    - kind: CodebaseBranch
+      version: v2.edp.epam.com/v1alpha1
+      name: codebasebranch
+      displayName: CodebaseBranch
+      description: Creates a branch for an application
+    - kind: CodebaseImageStream
+      version: v2.edp.epam.com/v1alpha1
+      name: codebaseimagestream
+      displayName: CodebaseImageStream
+      description: Creates a link to an images
+    - kind: GitServer
+      version: v2.edp.epam.com/v1alpha1
+      name: gitserver
+      displayName: GitServer
+      description: Communicates with Git server
+    - kind: GitTag
+      version: v2.edp.epam.com/v1alpha1
+      name: gittag
+      displayName: GitTag
+      description: Tags a git branch
+    - kind: ImageStreamTag
+      version: v2.edp.epam.com/v1alpha1
+      name: imagestreamtag
+      displayName: ImageStreamTag
+      description: Tags an image
+    - kind: JiraIssueMetadata
+      version: v2.edp.epam.com/v1alpha1
+      name: jiraissuemetadata
+      displayName: JiraIssueMetadata
+      description: Creates Jira metadata
+    - kind: JiraServer
+      version: v2.edp.epam.com/v1alpha1
+      name: jiraserver
+      displayName: JiraServer
+      description: Operates with Jira server
+  artifacthub.io/crdsExamples: |
+    - apiVersion: v2.edp.epam.com/v1alpha1
+      kind: Codebase
+      metadata:
+        name: javascript-deploy-edp
+      spec:
+        buildTool: NPM
+        ciTool: Jenkins
+        commitMessagePattern: null
+        defaultBranch: branch/dev-1
+        deploymentScript: helm-chart
+        description: null
+        emptyProject: false
+        framework: react
+        gitServer: gerrit
+        gitUrlPath: null
+        jenkinsSlave: npm
+        jiraIssueMetadataPayload: null
+        jobProvisioning: default
+        lang: JavaScript
+        perf: null
+        repository: null
+        strategy: create
+        testReportFramework: null
+        ticketNamePattern: null
+        type: application
+        versioning:
+          startFrom: 1.2.3-SNAPSHOT
+          type: edp
+    - apiVersion: v2.edp.epam.com/v1alpha1
+      kind: CodebaseBranch
+      metadata:
+        name: javascript-deploy-edp-branch-dev-1
+      spec:
+        branchName: branch/dev-1
+        codebaseName: javascript-deploy-edp
+        fromCommit: 'latest'
+        release: false
+        releaseJobParams: null
+        version: 1.2.3-SNAPSHOT
+    - apiVersion: v2.edp.epam.com/v1alpha1
+      kind: CodebaseImageStream
+      metadata:
+        name: javascript-deploy-edp-branch-dev-1
+      spec:
+        codebase: javascript-deploy-edp
+        imageName: >-
+          epamedp/javascript-deploy-edp
+    - apiVersion: v2.edp.epam.com/v1alpha1
+      kind: GitServer
+      metadata:
+        name: gerrit
+      spec:
+        createCodeReviewPipeline: false
+        gitHost: gerrit.edp-dev
+        gitUser: jenkins
+        httpsPort: 443
+        nameSshKeySecret: gerrit-ciuser-sshkey
+        sshPort: 30002
+  artifacthub.io/links: |
+    - name: EDP Documentation
+      url: https://epam.github.io/edp-install/
+    - name: EPAM SolutionHub
+      url: https://solutionshub.epam.com/solution/epam-delivery-platform
