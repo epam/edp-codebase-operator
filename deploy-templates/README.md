@@ -1,0 +1,45 @@
+# codebase-operator
+
+![Version: 2.10.0](https://img.shields.io/badge/Version-2.10.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 2.10.0](https://img.shields.io/badge/AppVersion-2.10.0-informational?style=flat-square)
+
+A Helm chart for EDP Codebase Operator
+
+**Homepage:** <https://solutionshub.epam.com/solution/epam-delivery-platform>
+
+## Maintainers
+
+| Name | Email | Url |
+| ---- | ------ | --- |
+| EPAM EDP Team |  |  |
+
+## Source Code
+
+* <https://github.com/epam/edp-codebase-operator>
+
+## Values
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| affinity | object | `{}` |  |
+| annotations | object | `{}` |  |
+| global.database.enabled | bool | `true` |  |
+| global.database.host | string | `nil` |  |
+| global.database.name | string | `"edp-db"` |  |
+| global.database.port | int | `5432` |  |
+| global.edpName | string | `""` |  |
+| global.platform | string | `"openshift"` |  |
+| image.name | string | `"epamedp/codebase-operator"` |  |
+| image.version | string | `nil` |  |
+| imagePullPolicy | string | `"IfNotPresent"` |  |
+| jira.apiUrl | string | `"https://jiraeu-api.example.com"` |  |
+| jira.credentialName | string | `"jira-user"` |  |
+| jira.integration | bool | `false` |  |
+| jira.name | string | `"jira"` |  |
+| jira.rootUrl | string | `"https://jiraeu.example.com"` |  |
+| name | string | `"codebase-operator"` |  |
+| nodeSelector | object | `{}` |  |
+| resources.limits.memory | string | `"192Mi"` |  |
+| resources.requests.cpu | string | `"50m"` |  |
+| resources.requests.memory | string | `"64Mi"` |  |
+| tolerations | list | `[]` |  |
+
