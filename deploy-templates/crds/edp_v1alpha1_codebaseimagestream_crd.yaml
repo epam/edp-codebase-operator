@@ -19,3 +19,19 @@ spec:
   - name: v1alpha1
     served: true
     storage: true
+  validation:
+    openAPIV3Schema:
+      type: object
+      properties:
+        spec:
+          type: object
+          properties:
+            codebase:
+              type: string
+              description: 'codebase name'
+            imagename:
+              type: string
+              description: 'docker container name without tag, e.g. registry-name/path/name'
+            tags:
+              type: array
+              description: 'A list of docker image tags available for imagename and their creation date'
