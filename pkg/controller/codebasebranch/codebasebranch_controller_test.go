@@ -9,8 +9,6 @@ import (
 	"time"
 
 	"github.com/bndr/gojenkins"
-	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	edpV1alpha1 "github.com/epam/edp-component-operator/pkg/apis/v1/v1alpha1"
 	jenkinsv1alpha1 "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
 	"github.com/go-logr/logr"
@@ -22,6 +20,10 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
+	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	"github.com/epam/edp-codebase-operator/v2/pkg/codebasebranch"
+	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
 func TestReconcileCodebaseBranch_Reconcile_ShouldPassNotFoundCR(t *testing.T) {
@@ -79,7 +81,10 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldFailNotFound(t *testing.T) {
 }
 
 func TestReconcileCodebaseBranch_Reconcile_ShouldFailGetCodebase(t *testing.T) {
-	os.Setenv("WORKING_DIR", "/tmp/1")
+	err := os.Setenv("WORKING_DIR", "/tmp/1")
+	if err != nil {
+		t.Fatal(err)
+	}
 	c := &v1alpha1.CodebaseBranch{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "NewCodebaseBranch",
@@ -115,7 +120,10 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldFailGetCodebase(t *testing.T) {
 }
 
 func TestReconcileCodebaseBranch_Reconcile_ShouldFailDeleteCodebasebranch(t *testing.T) {
-	os.Setenv("WORKING_DIR", "/tmp/1")
+	err := os.Setenv("WORKING_DIR", "/tmp/1")
+	if err != nil {
+		t.Fatal(err)
+	}
 	c := &v1alpha1.CodebaseBranch{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "NewCodebaseBranch",
@@ -166,7 +174,10 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldFailDeleteCodebasebranch(t *tes
 }
 
 func TestReconcileCodebaseBranch_Reconcile_ShouldPassDeleteCodebasebranch(t *testing.T) {
-	os.Setenv("WORKING_DIR", "/tmp/1")
+	err := os.Setenv("WORKING_DIR", "/tmp/1")
+	if err != nil {
+		t.Fatal(err)
+	}
 	cb := &v1alpha1.CodebaseBranch{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "NewCodebaseBranch",
@@ -220,7 +231,10 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldPassDeleteCodebasebranch(t *tes
 }
 
 func TestReconcileCodebaseBranch_Reconcile_ShouldPassWithDeleteJobFailure(t *testing.T) {
-	os.Setenv("WORKING_DIR", "/tmp/1")
+	err := os.Setenv("WORKING_DIR", "/tmp/1")
+	if err != nil {
+		t.Fatal(err)
+	}
 	cb := &v1alpha1.CodebaseBranch{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "NewCodebaseBranch",
@@ -344,7 +358,10 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldPassWithDeleteJobFailure(t *tes
 }
 
 func TestReconcileCodebaseBranch_Reconcile_ShouldPassWithCreatingCIS(t *testing.T) {
-	os.Setenv("WORKING_DIR", "/tmp/1")
+	err := os.Setenv("WORKING_DIR", "/tmp/1")
+	if err != nil {
+		t.Fatal(err)
+	}
 	cb := &v1alpha1.CodebaseBranch{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "NewCodebaseBranch",
@@ -470,10 +487,26 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldPassWithCreatingCIS(t *testing.
 		cResp)
 	assert.NoError(t, err)
 	assert.Equal(t, cResp.Spec.ImageName, "stub-url/namespace/NewCodebase")
+
+	gotCodebaseBranch := &v1alpha1.CodebaseBranch{}
+	err = fakeCl.Get(context.TODO(), types.NamespacedName{
+		Name:      "NewCodebaseBranch",
+		Namespace: "namespace",
+	}, gotCodebaseBranch)
+	if err != nil {
+		t.Fatal(err)
+	}
+	expectedLabels := map[string]string{
+		codebasebranch.LabelCodebaseName: "NewCodebase",
+	}
+	assert.Equal(t, expectedLabels, gotCodebaseBranch.GetLabels())
 }
 
 func TestReconcileCodebaseBranch_Reconcile_ShouldRequeueWithCodebaseNotReady(t *testing.T) {
-	os.Setenv("WORKING_DIR", "/tmp/1")
+	err := os.Setenv("WORKING_DIR", "/tmp/1")
+	if err != nil {
+		t.Fatal(err)
+	}
 	cb := &v1alpha1.CodebaseBranch{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "NewCodebaseBranch",
@@ -526,4 +559,17 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldRequeueWithCodebaseNotReady(t *
 	assert.NoError(t, err)
 	assert.False(t, res.Requeue)
 	assert.Equal(t, res.RequeueAfter, 5*time.Second)
+
+	gotCodebaseBranch := &v1alpha1.CodebaseBranch{}
+	err = fakeCl.Get(context.TODO(), types.NamespacedName{
+		Name:      "NewCodebaseBranch",
+		Namespace: "namespace",
+	}, gotCodebaseBranch)
+	if err != nil {
+		t.Fatal(err)
+	}
+	expectedLabels := map[string]string{
+		codebasebranch.LabelCodebaseName: "NewCodebase",
+	}
+	assert.Equal(t, expectedLabels, gotCodebaseBranch.GetLabels())
 }

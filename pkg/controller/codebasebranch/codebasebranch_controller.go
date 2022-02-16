@@ -6,12 +6,6 @@ import (
 	"reflect"
 	"time"
 
-	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebasebranch/chain/factory"
-	cbHandler "github.com/epam/edp-codebase-operator/v2/pkg/controller/codebasebranch/chain/handler"
-	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebasebranch/service"
-	"github.com/epam/edp-codebase-operator/v2/pkg/model"
-	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -26,6 +20,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	"github.com/epam/edp-codebase-operator/v2/pkg/codebasebranch"
+	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebasebranch/chain/factory"
+	cbHandler "github.com/epam/edp-codebase-operator/v2/pkg/controller/codebasebranch/chain/handler"
+	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebasebranch/service"
+	"github.com/epam/edp-codebase-operator/v2/pkg/model"
+	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
 func NewReconcileCodebaseBranch(client client.Client, scheme *runtime.Scheme, log logr.Logger) *ReconcileCodebaseBranch {
@@ -90,9 +92,13 @@ func (r *ReconcileCodebaseBranch) Reconcile(ctx context.Context, request reconci
 		return reconcile.Result{}, err
 	}
 
-	if err := r.setOwnerRef(cb, c); err != nil {
+	if err = r.setOwnerRef(cb, c); err != nil {
 		setErrorStatus(cb, err.Error())
 		return reconcile.Result{}, errors.Wrapf(err, "Unable to set OwnerRef for codebasebranch %v", cb.Name)
+	}
+
+	if err = codebasebranch.AddCodebaseLabel(ctx, r.client, cb, c.Name); err != nil {
+		log.Error(err, "set labels failed")
 	}
 
 	result, err := r.tryToDeleteCodebaseBranch(ctx, cb, factory.GetDeletionChain(c.Spec.CiTool, r.client))
