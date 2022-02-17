@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
+	"path"
 	"strings"
 	"time"
 
@@ -49,6 +50,7 @@ type Git interface {
 	Checkout(user, pass *string, directory, branchName string, remote bool) error
 	GetCurrentBranchName(directory string) (string, error)
 	Init(directory string) error
+	CheckoutRemoteBranchBySSH(key, user, gitPath, remoteBranchName string) error
 }
 
 type GitProvider struct {
@@ -483,7 +485,7 @@ func (gp GitProvider) Fetch(key, user, path, branchName string) error {
 }
 
 func (gp GitProvider) Checkout(user, pass *string, directory, branchName string, remote bool) error {
-	log.Info("start checkout branch", "name", branchName)
+	log.Info("trying to checkout to branch", "name", branchName)
 	r, err := git.PlainOpen(directory)
 	if err != nil {
 		return err
@@ -510,7 +512,7 @@ func (gp GitProvider) Checkout(user, pass *string, directory, branchName string,
 		err = r.Fetch(gfo)
 		if err != nil {
 			if err.Error() != "already up-to-date" {
-				return err
+				return errors.Wrapf(err, "Unable to fetch")
 			}
 		}
 
@@ -532,7 +534,7 @@ func (gp GitProvider) Checkout(user, pass *string, directory, branchName string,
 }
 
 func (gp GitProvider) GetCurrentBranchName(directory string) (string, error) {
-	log.Info("start getting branch name")
+	log.Info("trying to get current git branch")
 	r, err := git.PlainOpen(directory)
 	if err != nil {
 		return "", err
@@ -590,4 +592,34 @@ func checkBranchExistence(user, pass *string, branchName string, r git.Repositor
 	}
 	log.Info("branch existence status", "branchName", branchName, "existBranchOrNot", existBranchOrNot)
 	return existBranchOrNot, nil
+}
+
+func (gp GitProvider) CheckoutRemoteBranchBySSH(key, user, gitPath, remoteBranchName string) error {
+	log.Info("start checkout to", "branch", remoteBranchName)
+
+	keyPath, err := initAuth(key, user)
+	if err != nil {
+		return err
+	}
+	defer os.Remove(keyPath)
+
+	// running git fetch --update-head-ok
+	cmdFetch := exec.Command("git", "--git-dir", path.Join(gitPath, ".git"), "fetch", "--update-head-ok")
+	cmdFetch.Env = []string{fmt.Sprintf(`GIT_SSH_COMMAND=ssh -i %s -l %s -o StrictHostKeyChecking=no`, keyPath, user),
+		"GIT_SSH_VARIANT=ssh"}
+	cmdFetch.Dir = gitPath
+	if bts, err := cmdFetch.CombinedOutput(); err != nil {
+		return errors.Wrapf(err, "unable to fetch branches, err: %s", string(bts))
+	}
+
+	// here we expect that remote branch exists otherwise return error
+	// git checkout -b remoteBranchName remoteBranchName
+	cmdCheckout := exec.Command("git", "--git-dir", path.Join(gitPath, ".git"), "checkout", remoteBranchName)
+	cmdCheckout.Dir = gitPath
+	if bts, err := cmdCheckout.CombinedOutput(); err != nil {
+		return errors.Wrapf(err, "unable to checkout to branch, err: %s", string(bts))
+	}
+
+	log.Info("end checkout to", "branch", remoteBranchName)
+	return nil
 }

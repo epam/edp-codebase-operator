@@ -14,6 +14,7 @@ import (
 const (
 	Create  Strategy       = "create"
 	Clone   Strategy       = "clone"
+	Import  Strategy       = "import"
 	Default VersioningType = "default"
 )
 
