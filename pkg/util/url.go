@@ -15,6 +15,7 @@ var lf = map[string]string{
 	"python":          "python-3.8",
 	"terraform":       "terraform",
 	"rego":            "opa",
+	"container":       "docker",
 }
 
 func GetRepoUrl(c *v1alpha1.Codebase) (*string, error) {
