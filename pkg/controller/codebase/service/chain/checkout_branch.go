@@ -29,7 +29,7 @@ func CheckoutBranch(repository *string, projectPath, branchName string, git git.
 		return err
 	}
 	if !git.CheckPermissions(*repository, user, password) {
-		msg := fmt.Errorf("user %v cannot get access to the repository %v", *user, *repository)
+		msg := fmt.Errorf("user %s cannot get access to the repository %s", *user, *repository)
 		return msg
 	}
 	currentBranchName, err := git.GetCurrentBranchName(projectPath)
@@ -41,13 +41,40 @@ func CheckoutBranch(repository *string, projectPath, branchName string, git git.
 		return nil
 	}
 
-	remote := false
-	if c.Spec.Strategy != "create" {
-		remote = true
+	switch c.Spec.Strategy {
+	case "create":
+		if err := git.Checkout(user, password, projectPath, branchName, false); err != nil {
+			return errors.Wrapf(err, "checkout default branch %s has been failed (create strategy)",
+				branchName)
+		}
+
+	case "clone":
+		if err := git.Checkout(user, password, projectPath, branchName, true); err != nil {
+			return errors.Wrapf(err, "checkout default branch %s has been failed (clone strategy)",
+				branchName)
+		}
+	case "import":
+		gs, err := util.GetGitServer(client, c.Spec.GitServer, c.Namespace)
+		if err != nil {
+			return errors.Wrapf(err, "Unable to get GitServer")
+		}
+
+		secret, err := util.GetSecret(client, gs.NameSshKeySecret, c.Namespace)
+		if err != nil {
+			return errors.Wrapf(err, "an error has occurred while getting %v secret", gs.NameSshKeySecret)
+		}
+
+		k := string(secret.Data[util.PrivateSShKeyName])
+		u := gs.GitUser
+		// CheckoutRemoteBranchBySSH(key, user, gitPath, remoteBranchName string)
+		if err := git.CheckoutRemoteBranchBySSH(k, u, projectPath, branchName); err != nil {
+			return errors.Wrapf(err, "checkout default branch %s has been failed (import strategy)",
+				branchName)
+		}
+
+	default:
+		return fmt.Errorf("unable to checkout, unsupported strategy: '%s'", c.Spec.Strategy)
 	}
 
-	if err := git.Checkout(user, password, projectPath, branchName, remote); err != nil {
-		return errors.Wrapf(err, "checkout default branch %v has been failed", branchName)
-	}
 	return nil
 }

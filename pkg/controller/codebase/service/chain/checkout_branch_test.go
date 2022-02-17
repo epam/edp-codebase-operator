@@ -215,3 +215,67 @@ func TestCheckoutBranch_ShouldFailOnCheckout(t *testing.T) {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
 }
+
+func TestCheckoutBranch_ShouldPassForCloneStrategy(t *testing.T) {
+	var (
+		repo = "repo"
+		u    = "user"
+		p    = "pass"
+	)
+	c := &v1alpha1.Codebase{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "fake-name",
+			Namespace: fakeNamespace,
+		},
+		Spec: v1alpha1.CodebaseSpec{
+			GitServer: "git",
+			Repository: &v1alpha1.Repository{
+				Url: "repo",
+			},
+			Strategy: v1alpha1.Import,
+		},
+	}
+	gs := &v1alpha1.GitServer{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "git",
+			Namespace: fakeNamespace,
+		},
+		Spec: v1alpha1.GitServerSpec{
+			NameSshKeySecret: fakeName,
+			GitHost:          fakeName,
+			SshPort:          22,
+			GitUser:          fakeName,
+		},
+	}
+	s := &coreV1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "repository-codebase-fake-name-temp",
+			Namespace: fakeNamespace,
+		},
+		Data: map[string][]byte{
+			"username": []byte("user"),
+			"password": []byte("pass"),
+		},
+	}
+	ssh := &coreV1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      fakeName,
+			Namespace: fakeNamespace,
+		},
+		Data: map[string][]byte{
+			util.PrivateSShKeyName: []byte("fake"),
+		},
+	}
+	scheme := runtime.NewScheme()
+	scheme.AddKnownTypes(coreV1.SchemeGroupVersion, s, ssh)
+	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, c, gs)
+	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(s, c, gs, ssh).Build()
+
+	mGit := new(mockgit.MockGit)
+	mGit.On("CheckPermissions", "repo", &u, &p).Return(true)
+	mGit.On("GetCurrentBranchName", "project-path").Return("some-other-branch", nil)
+	mGit.On("CheckoutRemoteBranchBySSH", "fake", fakeName, "project-path", "branch").Return(nil)
+
+	err := CheckoutBranch(&repo, "project-path", "branch", mGit, c, fakeCl)
+	assert.NoError(t, err)
+}

@@ -58,3 +58,8 @@ func (m *MockGit) Init(directory string) error {
 	args := m.Called(directory)
 	return args.Error(0)
 }
+
+func (m *MockGit) CheckoutRemoteBranchBySSH(key, user, gitPath, remoteBranchName string) error {
+	args := m.Called(key, user, gitPath, remoteBranchName)
+	return args.Error(0)
+}
