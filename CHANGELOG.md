@@ -1,6 +1,9 @@
 <a name="unreleased"></a>
 ## [Unreleased]
 
+
+<a name="v2.10.1"></a>
+## [v2.10.1] - 2021-12-13
 ### Features
 
 - Generate CRDs and helm docs automatically [EPMDEDP-8385](https://jiraeu.epam.com/browse/EPMDEDP-8385)
@@ -13,6 +16,7 @@
 
 ### Routine
 
+- Switch changelog from JiraIssueID to Scope [EPMDEDP-7847](https://jiraeu.epam.com/browse/EPMDEDP-7847)
 - Fix git-chglog installation (GH Actions) [EPMDEDP-7847](https://jiraeu.epam.com/browse/EPMDEDP-7847)
 - Fix release pipeline in GH Actions [EPMDEDP-7847](https://jiraeu.epam.com/browse/EPMDEDP-7847)
 - Add automatic GitHub Release Action [EPMDEDP-7847](https://jiraeu.epam.com/browse/EPMDEDP-7847)
@@ -113,7 +117,8 @@
 - [MDTUDDM-673] Save git status in the intermediate operations
 
 
-[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.10.0...HEAD
+[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.10.1...HEAD
+[v2.10.1]: https://github.com/epam/edp-codebase-operator/compare/v2.10.0...v2.10.1
 [v2.10.0]: https://github.com/epam/edp-codebase-operator/compare/v2.9.0...v2.10.0
 [v2.9.0]: https://github.com/epam/edp-codebase-operator/compare/v2.8.1...v2.9.0
 [v2.8.1]: https://github.com/epam/edp-codebase-operator/compare/v2.8.0...v2.8.1
