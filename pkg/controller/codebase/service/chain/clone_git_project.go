@@ -48,7 +48,7 @@ func (h CloneGitProject) ServeRequest(c *edpv1alpha1.Codebase) error {
 
 	k := string(secret.Data[util.PrivateSShKeyName])
 	u := gs.GitUser
-	ru := fmt.Sprintf("%v:%v", gs.GitHost, *c.Spec.GitUrlPath)
+	ru := fmt.Sprintf("ssh://%v:%d%v", gs.GitHost, gs.SshPort, *c.Spec.GitUrlPath)
 
 	if !util.DoesDirectoryExist(wd) || util.IsDirectoryEmpty(wd) {
 		if err := h.git.CloneRepositoryBySsh(k, u, ru, wd, gs.SshPort); err != nil {

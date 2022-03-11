@@ -2,9 +2,11 @@ package gitserver
 
 import (
 	"encoding/base64"
+	"testing"
+
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/platform"
 	"github.com/jarcoal/httpmock"
-	"testing"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGitProvider_CheckPermissions(t *testing.T) {
@@ -59,4 +61,10 @@ func TestGitProvider_CheckPermissions_NoRefs(t *testing.T) {
 	if lastErr.Error() != "there are not refs in repository" {
 		t.Fatalf("wrong error returned: %s", lastErr.Error())
 	}
+}
+
+func TestInitAuth(t *testing.T) {
+	path, err := initAuth("foo", "bar")
+	assert.NoError(t, err)
+	assert.Contains(t, path, "sshkey")
 }

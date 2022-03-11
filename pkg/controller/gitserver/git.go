@@ -242,6 +242,7 @@ func (GitProvider) BareToNormal(path string) error {
 
 func (g GitProvider) CloneRepositoryBySsh(key, user, repoUrl, destination string, port int32) error {
 	log.Info("Start cloning", "repository", repoUrl)
+
 	keyPath, err := initAuth(key, user)
 	if err != nil {
 		return err
@@ -255,16 +256,26 @@ func (g GitProvider) CloneRepositoryBySsh(key, user, repoUrl, destination string
 		return errors.Wrapf(err, "unable to clone repo by ssh, err: %s", string(bytes))
 	}
 
-	fetchCMD := exec.Command("git", "--git-dir", destination, "fetch",
-		"--unshallow")
+	fetchCMD := exec.Command("git", "--git-dir", destination, "fetch", "--unshallow")
 	fetchCMD.Env = cloneCMD.Env
-	if bts, err := fetchCMD.CombinedOutput(); err != nil {
-		return errors.Wrapf(err, "unable to clone repo: %s", string(bts))
+	bts, err := fetchCMD.CombinedOutput()
+	if err != nil {
+		return errors.Wrapf(err, "unable to fetch unshallow repo: %s", string(bts))
 	}
+	log.Info("Result of `git fetch unshallow` command", "out", string(bts))
 
 	if err := g.BareToNormal(destination); err != nil {
 		return errors.Wrap(err, "unable to covert bare repo to normal")
 	}
+
+	fetchCMD = exec.Command("git", "--git-dir", path.Join(destination, ".git"), "pull", "origin",
+		"--unshallow", "--no-rebase")
+	fetchCMD.Env = cloneCMD.Env
+	bts, err = fetchCMD.CombinedOutput()
+	if err != nil && !strings.Contains(string(bts), "does not make sense") {
+		return errors.Wrapf(err, "unable to pull unshallow repo: %s", string(bts))
+	}
+	log.Info("Result of `git pull unshallow` command", "out", string(bts))
 
 	log.Info("End cloning", "repository", repoUrl)
 	return nil
@@ -296,15 +307,24 @@ func (g GitProvider) CloneRepository(repo string, user *string, pass *string, de
 		return errors.Wrapf(err, "unable to clone repo: %s", string(bts))
 	}
 
-	fetchCMD := exec.Command("git", "--git-dir", destination, "fetch",
-		"--unshallow")
-	if bts, err := fetchCMD.CombinedOutput(); err != nil {
-		return errors.Wrapf(err, "unable to clone repo: %s", string(bts))
+	fetchCMD := exec.Command("git", "--git-dir", destination, "fetch", "--unshallow")
+	bts, err := fetchCMD.CombinedOutput()
+	if err != nil {
+		return errors.Wrapf(err, "unable to fetch unshallow repo: %s", string(bts))
 	}
+	log.Info("Result of `git fetch unshallow` command", "out", string(bts))
 
 	if err := g.BareToNormal(destination); err != nil {
 		return errors.Wrap(err, "unable to covert bare repo to normal")
 	}
+
+	fetchCMD = exec.Command("git", "--git-dir", path.Join(destination, ".git"), "pull", "origin",
+		"--unshallow", "--no-rebase")
+	bts, err = fetchCMD.CombinedOutput()
+	if err != nil && !strings.Contains(string(bts), "does not make sense") {
+		return errors.Wrapf(err, "unable to pull unshallow repo: %s", string(bts))
+	}
+	log.Info("Result of `git pull unshallow` command", "out", string(bts))
 
 	log.Info("End cloning", "repository", repo)
 	return nil
