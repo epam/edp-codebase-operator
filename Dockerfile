@@ -23,6 +23,8 @@ RUN  chmod u+x ${ASSETS_DIR}/user_setup && \
      chmod ugo+x ${ASSETS_DIR}/entrypoint && \
      ${ASSETS_DIR}/user_setup
 
+RUN adduser -h /home/codebase-operator -s /bin/ash -D -u 1001 codebase-operator
+
 # install operator binary
 COPY ./dist/go-binary ${OPERATOR}
 

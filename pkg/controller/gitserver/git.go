@@ -151,6 +151,7 @@ func (GitProvider) PushChanges(key, user, directory string, pushParams ...string
 	}
 	defer os.Remove(keyPath)
 
+
 	basePushParams := []string{"--git-dir", fmt.Sprintf("%s/.git", directory),
 		"push", "origin"}
 	basePushParams = append(basePushParams, pushParams...)
@@ -258,13 +259,24 @@ func (g GitProvider) CloneRepositoryBySsh(key, user, repoUrl, destination string
 	fetchCMD := exec.Command("git", "--git-dir", destination, "fetch",
 		"--unshallow")
 	fetchCMD.Env = cloneCMD.Env
-	if bts, err := fetchCMD.CombinedOutput(); err != nil {
-		return errors.Wrapf(err, "unable to clone repo: %s", string(bts))
+	bts, err := fetchCMD.CombinedOutput()
+	if err != nil {
+		return errors.Wrapf(err, "unable to fetch unshallow repo: %s", string(bts))
 	}
+	log.Info("unshallow", "out", string(bts))
 
 	if err := g.BareToNormal(destination); err != nil {
 		return errors.Wrap(err, "unable to covert bare repo to normal")
 	}
+
+	fetchCMD = exec.Command("git", "--git-dir", path.Join(destination, ".git"), "pull", "origin", "master",
+		"--unshallow")
+	fetchCMD.Env = cloneCMD.Env
+	bts, err = fetchCMD.CombinedOutput()
+	if err != nil {
+		return errors.Wrapf(err, "unable to pull unshallow repo: %s", string(bts))
+	}
+	log.Info("unshallow", "out", string(bts))
 
 	log.Info("End cloning", "repository", repoUrl)
 	return nil
@@ -298,13 +310,23 @@ func (g GitProvider) CloneRepository(repo string, user *string, pass *string, de
 
 	fetchCMD := exec.Command("git", "--git-dir", destination, "fetch",
 		"--unshallow")
-	if bts, err := fetchCMD.CombinedOutput(); err != nil {
-		return errors.Wrapf(err, "unable to clone repo: %s", string(bts))
+	bts, err := fetchCMD.CombinedOutput()
+	if err != nil {
+		return errors.Wrapf(err, "unable to fetch unshallow repo: %s", string(bts))
 	}
+	log.Info("unshallow", "out", string(bts))
 
 	if err := g.BareToNormal(destination); err != nil {
 		return errors.Wrap(err, "unable to covert bare repo to normal")
 	}
+
+	fetchCMD = exec.Command("git", "--git-dir", path.Join(destination, ".git"), "pull", "origin", "master",
+		"--unshallow")
+	bts, err = fetchCMD.CombinedOutput()
+	if err != nil {
+		return errors.Wrapf(err, "unable to pull unshallow repo: %s", string(bts))
+	}
+	log.Info("unshallow", "out", string(bts))
 
 	log.Info("End cloning", "repository", repo)
 	return nil
