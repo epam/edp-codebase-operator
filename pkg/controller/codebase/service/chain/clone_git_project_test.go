@@ -82,7 +82,7 @@ func TestCloneGitProject_ShouldPass(t *testing.T) {
 	var port int32 = 22
 	wd := util.GetWorkDir(fakeName, fakeNamespace)
 	mGit.On("CloneRepositoryBySsh", "",
-		fakeName, fmt.Sprintf("%v:%v", fakeName, fakeName),
+		fakeName, fmt.Sprintf("ssh://%v:22%v", fakeName, fakeName),
 		wd, port).Return(
 		nil)
 
@@ -253,7 +253,7 @@ func TestCloneGitProject_CloneRepositoryBySshShouldFail(t *testing.T) {
 	var port int32 = 22
 	wd := util.GetWorkDir(fakeName, fakeNamespace)
 	mGit.On("CloneRepositoryBySsh", "",
-		fakeName, fmt.Sprintf("%v:%v", fakeName, fakeName),
+		fakeName, fmt.Sprintf("ssh://%v:22%v", fakeName, fakeName),
 		wd, port).Return(
 		errors.New("FATAL ERROR"))
 
@@ -264,7 +264,7 @@ func TestCloneGitProject_CloneRepositoryBySshShouldFail(t *testing.T) {
 
 	err = cgp.ServeRequest(c)
 	assert.Error(t, err)
-	if !strings.Contains(err.Error(), "an error has occurred while cloning repository fake-name:fake-name: FATAL ERROR") {
+	if !strings.Contains(err.Error(), "an error has occurred while cloning repository ssh://fake-name:22fake-name: FATAL ERROR") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
 }

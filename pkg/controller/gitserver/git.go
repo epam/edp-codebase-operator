@@ -151,7 +151,6 @@ func (GitProvider) PushChanges(key, user, directory string, pushParams ...string
 	}
 	defer os.Remove(keyPath)
 
-
 	basePushParams := []string{"--git-dir", fmt.Sprintf("%s/.git", directory),
 		"push", "origin"}
 	basePushParams = append(basePushParams, pushParams...)
@@ -270,10 +269,10 @@ func (g GitProvider) CloneRepositoryBySsh(key, user, repoUrl, destination string
 	}
 
 	fetchCMD = exec.Command("git", "--git-dir", path.Join(destination, ".git"), "pull", "origin", "master",
-		"--unshallow")
+		"--unshallow", "--no-rebase")
 	fetchCMD.Env = cloneCMD.Env
 	bts, err = fetchCMD.CombinedOutput()
-	if err != nil {
+	if err != nil && !strings.Contains(string(bts), "does not make sense") {
 		return errors.Wrapf(err, "unable to pull unshallow repo: %s", string(bts))
 	}
 	log.Info("unshallow", "out", string(bts))
@@ -321,9 +320,9 @@ func (g GitProvider) CloneRepository(repo string, user *string, pass *string, de
 	}
 
 	fetchCMD = exec.Command("git", "--git-dir", path.Join(destination, ".git"), "pull", "origin", "master",
-		"--unshallow")
+		"--unshallow", "--no-rebase")
 	bts, err = fetchCMD.CombinedOutput()
-	if err != nil {
+	if err != nil && !strings.Contains(string(bts), "does not make sense") {
 		return errors.Wrapf(err, "unable to pull unshallow repo: %s", string(bts))
 	}
 	log.Info("unshallow", "out", string(bts))
