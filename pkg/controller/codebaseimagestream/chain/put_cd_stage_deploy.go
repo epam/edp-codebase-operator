@@ -7,8 +7,6 @@ import (
 	"strings"
 	"time"
 
-	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
@@ -16,6 +14,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
 type PutCDStageDeploy struct {
@@ -29,6 +30,7 @@ type cdStageDeployCommand struct {
 	Pipeline  string
 	Stage     string
 	Tag       jenkinsApi.Tag
+	Tags      []jenkinsApi.Tag
 }
 
 const dateLayout = "2006-01-02T15:04:05"
@@ -140,6 +142,12 @@ func getCreateCommand(envLabel, name, namespace, codebase string, tags []codebas
 			Codebase: codebase,
 			Tag:      lastTag.Name,
 		},
+		Tags: []jenkinsApi.Tag{
+			{
+				Codebase: codebase,
+				Tag:      lastTag.Name,
+			},
+		},
 	}, nil
 }
 
@@ -179,6 +187,7 @@ func (h PutCDStageDeploy) create(command *cdStageDeployCommand) error {
 			Pipeline: command.Pipeline,
 			Stage:    command.Stage,
 			Tag:      command.Tag,
+			Tags:     command.Tags,
 		},
 	}
 	if err := h.client.Create(context.TODO(), stageDeploy); err != nil {

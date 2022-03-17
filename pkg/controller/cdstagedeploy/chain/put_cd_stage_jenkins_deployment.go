@@ -3,8 +3,7 @@ package chain
 import (
 	"context"
 	"fmt"
-	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	"github.com/epam/edp-codebase-operator/v2/pkg/util"
+
 	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
 	"github.com/epam/edp-jenkins-operator/v2/pkg/util/platform"
 	"github.com/go-logr/logr"
@@ -13,6 +12,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
 type PutCDStageJenkinsDeployment struct {
@@ -76,6 +78,14 @@ func (h PutCDStageJenkinsDeployment) create(stageDeploy *v1alpha1.CDStageDeploy)
 		return errors.Wrap(err, "couldn't generate labels")
 	}
 
+	tagsList := make([]jenkinsApi.Tag, 0)
+	for _, codebaseTag := range stageDeploy.Spec.Tags {
+		tagsList = append(tagsList, jenkinsApi.Tag{
+			Codebase: codebaseTag.Codebase,
+			Tag:      codebaseTag.Tag,
+		})
+	}
+
 	jdCommand := &jenkinsApi.CDStageJenkinsDeployment{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: util.V2APIVersion,
@@ -92,6 +102,7 @@ func (h PutCDStageJenkinsDeployment) create(stageDeploy *v1alpha1.CDStageDeploy)
 				Codebase: stageDeploy.Spec.Tag.Codebase,
 				Tag:      stageDeploy.Spec.Tag.Tag,
 			},
+			Tags: tagsList,
 		},
 	}
 	if err := h.client.Create(context.TODO(), jdCommand); err != nil {

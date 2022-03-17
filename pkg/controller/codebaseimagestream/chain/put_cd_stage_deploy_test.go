@@ -5,7 +5,6 @@ import (
 	"strings"
 	"testing"
 
-	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	mockclient "github.com/epam/edp-common/pkg/mock/controller-runtime/client"
 	"github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
 	"github.com/go-logr/logr"
@@ -17,6 +16,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 )
 
 func TestPutCDStageDeploy_ShouldNotFailOnEmptyLables(t *testing.T) {
@@ -467,6 +468,12 @@ func TestPutCDStageDeploy_ShouldFailToCreateCdstagedeploy(t *testing.T) {
 			Tag: v1alpha1.Tag{
 				Codebase: "cb-name",
 				Tag:      "master-0.0.1-2",
+			},
+			Tags: []v1alpha1.Tag{
+				{
+					Codebase: "cb-name",
+					Tag:      "master-0.0.1-2",
+				},
 			},
 		},
 	}
