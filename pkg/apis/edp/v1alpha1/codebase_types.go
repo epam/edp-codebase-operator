@@ -37,9 +37,6 @@ type Perf struct {
 }
 
 type CodebaseSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
-	// Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html
 	Lang                     string      `json:"lang"`
 	Description              *string     `json:"description"`
 	Framework                *string     `json:"framework"`
@@ -62,14 +59,16 @@ type CodebaseSpec struct {
 	DefaultBranch            string      `json:"defaultBranch"`
 	JiraIssueMetadataPayload *string     `json:"jiraIssueMetadataPayload"`
 	EmptyProject             bool        `json:"emptyProject"`
+
+	// While we clone new codebase we can select specific branch to clone.
+	// Selected branch will become a default branch for a new codebase (e.g. master, main).
+	// +optional
+	BranchToCopyInDefaultBranch string `json:"branchToCopyInDefaultBranch,omitempty"`
 }
 
 // CodebaseStatus defines the observed state of Codebase
 // +k8s:openapi-gen=true
 type CodebaseStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
-	// Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html
 	Available       bool       `json:"available"`
 	LastTimeUpdated time.Time  `json:"lastTimeUpdated"`
 	Status          string     `json:"status"`

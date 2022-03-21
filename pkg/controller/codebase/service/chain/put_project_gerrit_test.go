@@ -823,3 +823,26 @@ func TestPutProjectGerrit_tryToCloneShouldPassWithExistingRepo(t *testing.T) {
 	err = ppg.tryToCloneRepo("repourl", &u, &p, dir, "c-name")
 	assert.NoError(t, err)
 }
+
+func TestReplaceDefaultBranch(t *testing.T) {
+	mGit := mockgit.MockGit{}
+	ppg := PutProjectGerrit{
+		git: &mGit,
+	}
+
+	mGit.On("RemoveBranch", "foo", "bar").Return(nil).Once()
+	mGit.On("CreateChildBranch", "foo", "baz", "bar").Return(nil).Once()
+
+	err := ppg.replaceDefaultBranch("foo", "bar", "baz")
+	assert.NoError(t, err)
+
+	mGit.On("RemoveBranch", "foo", "bar").Return(errors.New("RemoveBranch fatal")).Once()
+	err = ppg.replaceDefaultBranch("foo", "bar", "baz")
+	assert.EqualError(t, err, "unable to remove master branch: RemoveBranch fatal")
+
+	mGit.On("RemoveBranch", "foo", "bar").Return(nil).Once()
+	mGit.On("CreateChildBranch", "foo", "baz", "bar").Return(errors.New("fatal")).Once()
+
+	err = ppg.replaceDefaultBranch("foo", "bar", "baz")
+	assert.EqualError(t, err, "unable to create child branch: fatal")
+}

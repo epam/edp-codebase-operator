@@ -2,6 +2,7 @@ package gitserver
 
 import (
 	"encoding/base64"
+	"errors"
 	"testing"
 
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/platform"
@@ -67,4 +68,82 @@ func TestInitAuth(t *testing.T) {
 	path, err := initAuth("foo", "bar")
 	assert.NoError(t, err)
 	assert.Contains(t, path, "sshkey")
+}
+
+func TestGitProvider_CreateChildBranch(t *testing.T) {
+	cm := commandMock{}
+	gp := GitProvider{
+		commandBuilder: func(cmd string, params ...string) Command {
+			return &cm
+		},
+	}
+
+	cm.On("CombinedOutput").Return([]byte("t"), nil)
+	err := gp.CreateChildBranch("dir", "br1", "br2")
+	assert.NoError(t, err)
+	cm.AssertExpectations(t)
+
+	cmError := commandMock{}
+	gp = GitProvider{
+		commandBuilder: func(cmd string, params ...string) Command {
+			return &cmError
+		},
+	}
+
+	cmError.On("CombinedOutput").Return([]byte("t"), errors.New("fatal")).Once()
+	err = gp.CreateChildBranch("dir", "br1", "br2")
+	assert.Error(t, err)
+	assert.EqualError(t, err, "unable to checkout branch, err: : fatal")
+}
+
+func TestGitProvider_RemoveBranch(t *testing.T) {
+	cm := commandMock{}
+	gp := GitProvider{
+		commandBuilder: func(cmd string, params ...string) Command {
+			return &cm
+		},
+	}
+
+	cm.On("CombinedOutput").Return([]byte("t"), nil)
+	err := gp.RemoveBranch("dir", "br1")
+	assert.NoError(t, err)
+	cm.AssertExpectations(t)
+
+	cmError := commandMock{}
+	gp = GitProvider{
+		commandBuilder: func(cmd string, params ...string) Command {
+			return &cmError
+		},
+	}
+
+	cmError.On("CombinedOutput").Return([]byte("t"), errors.New("fatal")).Once()
+	err = gp.RemoveBranch("dir", "br1")
+	assert.Error(t, err)
+	assert.EqualError(t, err, "unable to remove branch, err: : fatal")
+}
+
+func TestGitProvider_RenameBranch(t *testing.T) {
+	cm := commandMock{}
+	gp := GitProvider{
+		commandBuilder: func(cmd string, params ...string) Command {
+			return &cm
+		},
+	}
+
+	cm.On("CombinedOutput").Return([]byte("t"), nil)
+	err := gp.RenameBranch("dir", "br1", "br2")
+	assert.NoError(t, err)
+	cm.AssertExpectations(t)
+
+	cmError := commandMock{}
+	gp = GitProvider{
+		commandBuilder: func(cmd string, params ...string) Command {
+			return &cmError
+		},
+	}
+
+	cmError.On("CombinedOutput").Return([]byte("t"), errors.New("fatal")).Once()
+	err = gp.RenameBranch("dir", "br1", "br2")
+	assert.Error(t, err)
+	assert.EqualError(t, err, "unable to checkout branch, err: : fatal")
 }

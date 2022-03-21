@@ -117,13 +117,37 @@ func (h PutProjectGerrit) tryToPushProjectToGerrit(c *edpv1alpha1.Codebase, sshP
 		return errors.Wrap(err, "couldn't build repo url")
 	}
 
-	if err := CheckoutBranch(ru, workDir, branchName, h.git, c, h.client); err != nil {
-		return errors.Wrapf(err, "checkout default branch %v in Gerrit has been failed", branchName)
+	if c.Spec.BranchToCopyInDefaultBranch != "" && c.Spec.DefaultBranch != c.Spec.BranchToCopyInDefaultBranch {
+		if err := CheckoutBranch(ru, workDir, c.Spec.BranchToCopyInDefaultBranch, h.git, c, h.client); err != nil {
+			return errors.Wrapf(err, "checkout default branch %v in Gerrit has been failed", branchName)
+		}
+
+		if err := h.replaceDefaultBranch(workDir, c.Spec.DefaultBranch, c.Spec.BranchToCopyInDefaultBranch); err != nil {
+			return errors.Wrap(err, "unable to replace master")
+		}
+	} else {
+		if err := CheckoutBranch(ru, workDir, branchName, h.git, c, h.client); err != nil {
+			return errors.Wrapf(err, "checkout default branch %v in Gerrit has been failed", branchName)
+		}
 	}
 
 	if err := h.pushToGerrit(sshPort, idrsa, host, codebaseName, workDir, strategy); err != nil {
 		return err
 	}
+	return nil
+}
+
+func (h PutProjectGerrit) replaceDefaultBranch(directory, defaultBranchName, newBranchName string) error {
+	log.Info("Replace master branch with %s")
+
+	if err := h.git.RemoveBranch(directory, defaultBranchName); err != nil {
+		return errors.Wrap(err, "unable to remove master branch")
+	}
+
+	if err := h.git.CreateChildBranch(directory, newBranchName, defaultBranchName); err != nil {
+		return errors.Wrap(err, "unable to create child branch")
+	}
+
 	return nil
 }
 
