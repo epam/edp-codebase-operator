@@ -51,9 +51,27 @@ type Git interface {
 	GetCurrentBranchName(directory string) (string, error)
 	Init(directory string) error
 	CheckoutRemoteBranchBySSH(key, user, gitPath, remoteBranchName string) error
+	RemoveBranch(directory, branchName string) error
+	RenameBranch(directory, currentName, newName string) error
+	CreateChildBranch(directory, currentBranch, newBranch string) error
+}
+
+type Command interface {
+	CombinedOutput() ([]byte, error)
 }
 
 type GitProvider struct {
+	commandBuilder func(cmd string, params ...string) Command
+}
+
+func (gp *GitProvider) buildCommand(cmd string, params ...string) Command {
+	if gp.commandBuilder == nil {
+		gp.commandBuilder = func(cmd string, params ...string) Command {
+			return exec.Command(cmd, params...)
+		}
+	}
+
+	return gp.commandBuilder(cmd, params...)
 }
 
 var log = ctrl.Log.WithName("git-provider")
@@ -140,6 +158,47 @@ func (GitProvider) CommitChanges(directory, commitMsg string) error {
 		return err
 	}
 	log.Info("Changes have been commited", "directory", directory)
+	return nil
+}
+
+func (gp GitProvider) RemoveBranch(directory, branchName string) error {
+	cmd := gp.buildCommand("git", "--git-dir", fmt.Sprintf("%s/.git", directory), "branch", "-D", branchName)
+	if bts, err := cmd.CombinedOutput(); err != nil {
+		return errors.Wrapf(err, "unable to remove branch, err: %s", string(bts))
+	}
+
+	return nil
+}
+
+func (gp GitProvider) RenameBranch(directory, currentName, newName string) error {
+	cmd := gp.buildCommand("git", "--git-dir", fmt.Sprintf("%s/.git", directory), "checkout",
+		currentName)
+	if bts, err := cmd.CombinedOutput(); err != nil {
+		return errors.Wrapf(err, "unable to checkout branch, err: %s", string(bts))
+	}
+
+	cmd = gp.buildCommand("git", "--git-dir", fmt.Sprintf("%s/.git", directory), "branch", "-m",
+		newName)
+	if bts, err := cmd.CombinedOutput(); err != nil {
+		return errors.Wrapf(err, "unable to rename branch, err: %s", string(bts))
+	}
+
+	return nil
+}
+
+func (gp GitProvider) CreateChildBranch(directory, currentBranch, newBranch string) error {
+	cmd := gp.buildCommand("git", "--git-dir", fmt.Sprintf("%s/.git", directory), "checkout",
+		currentBranch)
+	if bts, err := cmd.CombinedOutput(); err != nil {
+		return errors.Wrapf(err, "unable to checkout branch, err: %s", string(bts))
+	}
+
+	cmd = gp.buildCommand("git", "--git-dir", fmt.Sprintf("%s/.git", directory), "checkout", "-b",
+		newBranch)
+	if bts, err := cmd.CombinedOutput(); err != nil {
+		return errors.Wrapf(err, "unable to rename branch, err: %s", string(bts))
+	}
+
 	return nil
 }
 

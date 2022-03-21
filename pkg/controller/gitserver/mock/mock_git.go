@@ -63,3 +63,15 @@ func (m *MockGit) CheckoutRemoteBranchBySSH(key, user, gitPath, remoteBranchName
 	args := m.Called(key, user, gitPath, remoteBranchName)
 	return args.Error(0)
 }
+
+func (m *MockGit) CreateChildBranch(directory, currentBranch, newBranch string) error {
+	return m.Called(directory, currentBranch, newBranch).Error(0)
+}
+
+func (m *MockGit) RemoveBranch(directory, branchName string) error {
+	return m.Called(directory, branchName).Error(0)
+}
+
+func (m *MockGit) RenameBranch(directory, currentName, newName string) error {
+	return m.Called(directory, currentName, newName).Error(0)
+}
