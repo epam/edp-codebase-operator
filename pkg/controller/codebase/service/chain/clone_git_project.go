@@ -19,9 +19,18 @@ type CloneGitProject struct {
 	git    git.Git
 }
 
+const (
+	repoNotReady = "NOT_READY"
+)
+
 func (h CloneGitProject) ServeRequest(c *edpv1alpha1.Codebase) error {
 	rLog := log.WithValues("codebase_name", c.Name)
 	rLog.Info("Start cloning project...")
+	if c.Spec.GitUrlPath != nil && *c.Spec.GitUrlPath == repoNotReady {
+		rLog.Info("postpone reconciliation, repo is not ready")
+		return PostponeError{Timeout: time.Second * 30}
+	}
+
 	rLog.Info("codebase data", "spec", c.Spec)
 	if err := h.setIntermediateSuccessFields(c, edpv1alpha1.AcceptCodebaseRegistration); err != nil {
 		return errors.Wrapf(err, "an error has been occurred while updating %v Codebase status", c.Name)

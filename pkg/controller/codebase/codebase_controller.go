@@ -7,24 +7,24 @@ import (
 	"strings"
 	"time"
 
-	"github.com/epam/edp-codebase-operator/v2/db"
 	"github.com/go-logr/logr"
+	"github.com/pkg/errors"
+	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
+	"github.com/epam/edp-codebase-operator/v2/db"
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/repository"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/service/chain"
 	cHand "github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/service/chain/handler"
 	validate "github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/validation"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
-	"github.com/pkg/errors"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/event"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 const codebaseOperatorFinalizerName = "codebase.operator.finalizer.name"
@@ -39,10 +39,11 @@ func NewReconcileCodebase(client client.Client, scheme *runtime.Scheme, log logr
 }
 
 type ReconcileCodebase struct {
-	client client.Client
-	scheme *runtime.Scheme
-	db     *sql.DB
-	log    logr.Logger
+	client      client.Client
+	scheme      *runtime.Scheme
+	db          *sql.DB
+	log         logr.Logger
+	chainGetter func(cr *codebaseApi.Codebase) (cHand.CodebaseHandler, error)
 }
 
 func (r *ReconcileCodebase) SetupWithManager(mgr ctrl.Manager) error {
@@ -70,7 +71,7 @@ func (r *ReconcileCodebase) Reconcile(ctx context.Context, request reconcile.Req
 
 	c := &codebaseApi.Codebase{}
 	if err := r.client.Get(ctx, request.NamespacedName, c); err != nil {
-		if k8serrors.IsNotFound(err) {
+		if k8sErrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, err
@@ -102,6 +103,10 @@ func (r *ReconcileCodebase) Reconcile(ctx context.Context, request reconcile.Req
 	}
 
 	if err := ch.ServeRequest(c); err != nil {
+		if pErr, ok := errors.Cause(err).(chain.PostponeError); ok {
+			return reconcile.Result{RequeueAfter: pErr.Timeout}, nil
+		}
+
 		timeout := r.setFailureCount(c)
 		log.Error(err, "an error has occurred while handling codebase", "name", c.Name)
 		return reconcile.Result{RequeueAfter: timeout}, nil
@@ -138,9 +143,15 @@ func (r ReconcileCodebase) setFailureCount(c *codebaseApi.Codebase) time.Duratio
 	return timeout
 }
 
-func (r ReconcileCodebase) getChain(cr *codebaseApi.Codebase) (cHand.CodebaseHandler, error) {
-	r.log.Info("select correct chain to handle codebase", "name", cr.Name)
-	return r.getStrategyChain(cr)
+func (r *ReconcileCodebase) getChain(cr *codebaseApi.Codebase) (cHand.CodebaseHandler, error) {
+	if r.chainGetter == nil {
+		r.chainGetter = func(cr *codebaseApi.Codebase) (cHand.CodebaseHandler, error) {
+			r.log.Info("select correct chain to handle codebase", "name", cr.Name)
+			return r.getStrategyChain(cr)
+		}
+	}
+
+	return r.chainGetter(cr)
 }
 
 func (r ReconcileCodebase) getStrategyChain(c *codebaseApi.Codebase) (cHand.CodebaseHandler, error) {
@@ -197,7 +208,7 @@ func (r ReconcileCodebase) tryToDeleteCodebase(ctx context.Context, c *codebaseA
 func removeDirectoryIfExists(codebaseName, namespace string) error {
 	wd := util.GetWorkDir(codebaseName, namespace)
 	if err := util.RemoveDirectory(wd); err != nil {
-		return err
+		return errors.Wrap(err, "unable to remove directory if exists")
 	}
 	return nil
 }
