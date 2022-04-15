@@ -3,9 +3,12 @@ package codebase
 import (
 	"context"
 	"os"
-	"strings"
 	"testing"
 	"time"
+
+	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/service/chain"
+
+	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/service/chain/handler"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
@@ -13,6 +16,7 @@ import (
 	jenkinsv1alpha1 "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 	coreV1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -21,12 +25,26 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-func TestReconcileCodebase_Reconcile_ShouldPassNotFound(t *testing.T) {
-	c := &v1alpha1.Codebase{}
+type ControllerTestSuite struct {
+	suite.Suite
+	scheme *runtime.Scheme
+}
 
-	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, c)
-	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c).Build()
+func TestControllerTestSuite(t *testing.T) {
+	suite.Run(t, new(ControllerTestSuite))
+}
+
+func (s *ControllerTestSuite) SetupTest() {
+	os.Setenv("WORKING_DIR", "/tmp/1")
+	s.scheme = runtime.NewScheme()
+	assert.NoError(s.T(), v1alpha1.AddToScheme(s.scheme))
+	assert.NoError(s.T(), jenkinsv1alpha1.AddToScheme(s.scheme))
+	s.scheme.AddKnownTypes(coreV1.SchemeGroupVersion, &coreV1.ConfigMap{}, &coreV1.Secret{})
+}
+
+func (s *ControllerTestSuite) TestReconcileCodebase_Reconcile_ShouldPassNotFound() {
+	c := &v1alpha1.Codebase{}
+	fakeCl := fake.NewClientBuilder().WithScheme(s.scheme).WithRuntimeObjects(c).Build()
 
 	//request
 	req := reconcile.Request{
@@ -39,16 +57,17 @@ func TestReconcileCodebase_Reconcile_ShouldPassNotFound(t *testing.T) {
 	r := ReconcileCodebase{
 		client: fakeCl,
 		log:    logr.DiscardLogger{},
-		scheme: scheme,
+		scheme: s.scheme,
 	}
 
 	res, err := r.Reconcile(context.TODO(), req)
 
+	t := s.T()
 	assert.NoError(t, err)
 	assert.False(t, res.Requeue)
 }
 
-func TestReconcileCodebase_Reconcile_ShouldFailNotFound(t *testing.T) {
+func (s *ControllerTestSuite) TestReconcileCodebase_Reconcile_ShouldFailNotFound() {
 	scheme := runtime.NewScheme()
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects().Build()
 
@@ -68,15 +87,13 @@ func TestReconcileCodebase_Reconcile_ShouldFailNotFound(t *testing.T) {
 
 	res, err := r.Reconcile(context.TODO(), req)
 
+	t := s.T()
 	assert.Error(t, err)
-	if !strings.Contains(err.Error(), "no kind is registered for the type v1alpha1.Codebase") {
-		t.Fatalf("wrong error returned: %s", err.Error())
-	}
+	assert.Contains(t, err.Error(), "no kind is registered for the type v1alpha1.Codebase")
 	assert.False(t, res.Requeue)
 }
 
-func TestReconcileCodebase_Reconcile_ShouldFailDeleteCodebase(t *testing.T) {
-	os.Setenv("WORKING_DIR", "/tmp/1")
+func (s *ControllerTestSuite) TestReconcileCodebase_Reconcile_ShouldFailDeleteCodebase() {
 	c := &v1alpha1.Codebase{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "NewCodebase",
@@ -86,9 +103,8 @@ func TestReconcileCodebase_Reconcile_ShouldFailDeleteCodebase(t *testing.T) {
 			},
 		},
 	}
-
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, c)
+	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, &v1alpha1.Codebase{})
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c).Build()
 
 	//request
@@ -107,15 +123,13 @@ func TestReconcileCodebase_Reconcile_ShouldFailDeleteCodebase(t *testing.T) {
 
 	res, err := r.Reconcile(context.TODO(), req)
 
+	t := s.T()
 	assert.Error(t, err)
 	assert.False(t, res.Requeue)
-	if !strings.Contains(err.Error(), "an error has occurred while trying to delete codebase") {
-		t.Fatalf("wrong error returned: %s", err.Error())
-	}
+	assert.Contains(t, err.Error(), "an error has occurred while trying to delete codebase")
 }
 
-func TestReconcileCodebase_Reconcile_ShouldPassOnInvalidCodebase(t *testing.T) {
-	os.Setenv("WORKING_DIR", "/tmp/1")
+func (s *ControllerTestSuite) TestReconcileCodebase_Reconcile_ShouldPassOnInvalidCodebase() {
 	c := &v1alpha1.Codebase{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "NewCodebase",
@@ -123,9 +137,7 @@ func TestReconcileCodebase_Reconcile_ShouldPassOnInvalidCodebase(t *testing.T) {
 		},
 	}
 
-	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, c)
-	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c).Build()
+	fakeCl := fake.NewClientBuilder().WithScheme(s.scheme).WithRuntimeObjects(c).Build()
 
 	//request
 	req := reconcile.Request{
@@ -138,17 +150,17 @@ func TestReconcileCodebase_Reconcile_ShouldPassOnInvalidCodebase(t *testing.T) {
 	r := ReconcileCodebase{
 		client: fakeCl,
 		log:    logr.DiscardLogger{},
-		scheme: scheme,
+		scheme: s.scheme,
 	}
 
 	res, err := r.Reconcile(context.TODO(), req)
 
+	t := s.T()
 	assert.NoError(t, err)
 	assert.False(t, res.Requeue)
 }
 
-func TestReconcileCodebase_Reconcile_ShouldFailOnCreateStrategy(t *testing.T) {
-	os.Setenv("WORKING_DIR", "/tmp/1")
+func (s *ControllerTestSuite) TestReconcileCodebase_Reconcile_ShouldFailOnCreateStrategy() {
 	c := &v1alpha1.Codebase{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "NewCodebase",
@@ -160,9 +172,7 @@ func TestReconcileCodebase_Reconcile_ShouldFailOnCreateStrategy(t *testing.T) {
 		},
 	}
 
-	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, c)
-	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c).Build()
+	fakeCl := fake.NewClientBuilder().WithScheme(s.scheme).WithRuntimeObjects(c).Build()
 
 	//request
 	req := reconcile.Request{
@@ -175,11 +185,12 @@ func TestReconcileCodebase_Reconcile_ShouldFailOnCreateStrategy(t *testing.T) {
 	r := ReconcileCodebase{
 		client: fakeCl,
 		log:    logr.DiscardLogger{},
-		scheme: scheme,
+		scheme: s.scheme,
 	}
 
 	res, err := r.Reconcile(context.TODO(), req)
 
+	t := s.T()
 	assert.NoError(t, err)
 	assert.Equal(t, res.RequeueAfter, 10*time.Second)
 
@@ -194,8 +205,7 @@ func TestReconcileCodebase_Reconcile_ShouldFailOnCreateStrategy(t *testing.T) {
 	assert.Equal(t, cResp.Status.FailureCount, int64(1))
 }
 
-func TestReconcileCodebase_Reconcile_ShouldPassOnJavaCreateStrategy(t *testing.T) {
-	os.Setenv("WORKING_DIR", "/tmp/1")
+func (s *ControllerTestSuite) TestReconcileCodebase_Reconcile_ShouldPassOnJavaCreateStrategy() {
 	c := &v1alpha1.Codebase{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "NewCodebase",
@@ -241,12 +251,8 @@ func TestReconcileCodebase_Reconcile_ShouldPassOnJavaCreateStrategy(t *testing.T
 			Namespace: "namespace",
 		},
 	}
-	s := &coreV1.Secret{}
-
-	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, c, gs, jf)
-	scheme.AddKnownTypes(coreV1.SchemeGroupVersion, cm, s)
-	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, cm, gs, jf, s).Build()
+	secret := &coreV1.Secret{}
+	fakeCl := fake.NewClientBuilder().WithScheme(s.scheme).WithRuntimeObjects(c, cm, gs, jf, secret).Build()
 
 	//request
 	req := reconcile.Request{
@@ -259,17 +265,17 @@ func TestReconcileCodebase_Reconcile_ShouldPassOnJavaCreateStrategy(t *testing.T
 	r := ReconcileCodebase{
 		client: fakeCl,
 		log:    logr.DiscardLogger{},
-		scheme: scheme,
+		scheme: s.scheme,
 	}
 
 	res, err := r.Reconcile(context.TODO(), req)
 
+	t := s.T()
 	assert.NoError(t, err)
 	assert.Equal(t, res.RequeueAfter, time.Duration(0))
 }
 
-func TestReconcileCodebase_Reconcile_ShouldDeleteCodebase(t *testing.T) {
-	os.Setenv("WORKING_DIR", "/tmp/1")
+func (s *ControllerTestSuite) TestReconcileCodebase_Reconcile_ShouldDeleteCodebase() {
 	c := &v1alpha1.Codebase{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "NewCodebase",
@@ -282,9 +288,7 @@ func TestReconcileCodebase_Reconcile_ShouldDeleteCodebase(t *testing.T) {
 	cbl := &v1alpha1.CodebaseBranchList{}
 	jfl := &jenkinsv1alpha1.JenkinsFolderList{}
 
-	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, c, cbl, jfl)
-	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, cbl, jfl).Build()
+	fakeCl := fake.NewClientBuilder().WithScheme(s.scheme).WithRuntimeObjects(c, cbl, jfl).Build()
 
 	//request
 	req := reconcile.Request{
@@ -297,16 +301,17 @@ func TestReconcileCodebase_Reconcile_ShouldDeleteCodebase(t *testing.T) {
 	r := ReconcileCodebase{
 		client: fakeCl,
 		log:    logr.DiscardLogger{},
-		scheme: scheme,
+		scheme: s.scheme,
 	}
 
 	res, err := r.Reconcile(context.TODO(), req)
 
+	t := s.T()
 	assert.NoError(t, err)
 	assert.False(t, res.Requeue)
 }
 
-func TestReconcileCodebase_getStrategyChain_ShouldPassImportStrategy(t *testing.T) {
+func (s *ControllerTestSuite) TestReconcileCodebase_getStrategyChain_ShouldPassImportStrategy() {
 	c := &v1alpha1.Codebase{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "NewCodebase",
@@ -325,11 +330,13 @@ func TestReconcileCodebase_getStrategyChain_ShouldPassImportStrategy(t *testing.
 		scheme: scheme,
 	}
 	ch, err := r.getStrategyChain(c)
+
+	t := s.T()
 	assert.NoError(t, err)
 	assert.NotNil(t, ch)
 }
 
-func TestReconcileCodebase_getStrategyChain_ShouldPassImportStrategyGitLab(t *testing.T) {
+func (s *ControllerTestSuite) TestReconcileCodebase_getStrategyChain_ShouldPassImportStrategyGitLab() {
 	c := &v1alpha1.Codebase{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "NewCodebase",
@@ -340,33 +347,76 @@ func TestReconcileCodebase_getStrategyChain_ShouldPassImportStrategyGitLab(t *te
 			CiTool:   util.GitlabCi,
 		},
 	}
-	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, c)
-	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c).Build()
+	fakeCl := fake.NewClientBuilder().WithScheme(s.scheme).WithRuntimeObjects(c).Build()
 	r := ReconcileCodebase{
 		client: fakeCl,
 		log:    logr.DiscardLogger{},
-		scheme: scheme,
+		scheme: s.scheme,
 	}
 	ch, err := r.getStrategyChain(c)
+
+	t := s.T()
 	assert.NoError(t, err)
 	assert.NotNil(t, ch)
 }
 
-func TestReconcileCodebase_getStrategyChain_ShouldPassWothDb(t *testing.T) {
+func (s *ControllerTestSuite) TestReconcileCodebase_getStrategyChain_ShouldPassWothDb() {
 	db, _, _ := sqlmock.New()
 	defer db.Close()
 
 	c := &v1alpha1.Codebase{}
-	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, c)
-	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c).Build()
+	fakeCl := fake.NewClientBuilder().WithScheme(s.scheme).WithRuntimeObjects(c).Build()
 	r := ReconcileCodebase{
 		client: fakeCl,
 		log:    logr.DiscardLogger{},
-		scheme: scheme,
+		scheme: s.scheme,
 		db:     db,
 	}
 	repo := r.createCodebaseRepo(c)
+
+	t := s.T()
 	assert.NotNil(t, repo)
+}
+
+func (s *ControllerTestSuite) TestPostpone() {
+	c := v1alpha1.Codebase{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Codebase",
+			APIVersion: "v2.edp.epam.com/v1alpha1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:            "NewCodebase",
+			Namespace:       "namespace",
+			ResourceVersion: "1",
+		},
+		Spec: v1alpha1.CodebaseSpec{
+			Strategy: util.ImportStrategy,
+			CiTool:   util.GitlabCi,
+			Lang:     "java",
+		},
+	}
+	fakeCl := fake.NewClientBuilder().WithScheme(s.scheme).WithRuntimeObjects(&c).Build()
+
+	handlerMock := handler.Mock{}
+
+	cloneCb := c.DeepCopy()
+	cloneCb.ResourceVersion = "2"
+	cloneCb.Finalizers = []string{"codebase.operator.finalizer.name", "foregroundDeletion"}
+	handlerMock.On("ServeRequest", cloneCb).Return(chain.PostponeError{Timeout: time.Second})
+	r := ReconcileCodebase{
+		client: fakeCl,
+		log:    logr.DiscardLogger{},
+		scheme: s.scheme,
+		chainGetter: func(cr *v1alpha1.Codebase) (handler.CodebaseHandler, error) {
+			return &handlerMock, nil
+		},
+	}
+
+	res, err := r.Reconcile(context.Background(),
+		reconcile.Request{NamespacedName: types.NamespacedName{Name: c.Name, Namespace: c.Namespace}})
+
+	assert.NoError(s.T(), err)
+	assert.Equal(s.T(), res.RequeueAfter, time.Second)
+
+	handlerMock.AssertExpectations(s.T())
 }

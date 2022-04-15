@@ -268,3 +268,11 @@ func TestCloneGitProject_CloneRepositoryBySshShouldFail(t *testing.T) {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
 }
+
+func TestCloneGitProject_Postpone(t *testing.T) {
+	cl := CloneGitProject{}
+	path := repoNotReady
+	err := cl.ServeRequest(&v1alpha1.Codebase{Spec: v1alpha1.CodebaseSpec{GitUrlPath: &path}})
+	assert.Error(t, err)
+	assert.IsType(t, PostponeError{}, err)
+}
