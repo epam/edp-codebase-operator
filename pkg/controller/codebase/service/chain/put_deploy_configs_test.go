@@ -11,6 +11,7 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/repository"
 	mockgit "github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver/mock"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
+	"github.com/epam/edp-common/pkg/mock"
 	"github.com/stretchr/testify/assert"
 	coreV1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -201,4 +202,34 @@ func TestPutDeployConfigs_ShouldFailOnGetGerritPort(t *testing.T) {
 	if !strings.Contains(err.Error(), "unable get gerrit port") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
+}
+
+func TestPutDeployConfigs_ServeRequest_Skip(t *testing.T) {
+	pdc := PutDeployConfigs{}
+	logger := mock.Logger{}
+	log = &logger
+	cb := &v1alpha1.Codebase{
+		Spec: v1alpha1.CodebaseSpec{DisablePutDeployTemplates: true},
+	}
+	expectedLog := "skip of putting deploy templates to codebase due to specified flag"
+	err := pdc.ServeRequest(cb)
+	assert.NoError(t, err)
+	_, ok := logger.InfoMessages[expectedLog]
+	assert.True(t, ok)
+
+	delete(logger.InfoMessages, expectedLog)
+
+	pdctp := PutDeployConfigsToGitProvider{}
+	err = pdctp.ServeRequest(cb)
+	assert.NoError(t, err)
+	_, ok = logger.InfoMessages[expectedLog]
+	assert.True(t, ok)
+
+	delete(logger.InfoMessages, expectedLog)
+
+	pdGitlab := PutGitlabCiDeployConfigs{}
+	err = pdGitlab.ServeRequest(cb)
+	assert.NoError(t, err)
+	_, ok = logger.InfoMessages[expectedLog]
+	assert.True(t, ok)
 }

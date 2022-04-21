@@ -64,6 +64,10 @@ type CodebaseSpec struct {
 	// Selected branch will become a default branch for a new codebase (e.g. master, main).
 	// +optional
 	BranchToCopyInDefaultBranch string `json:"branchToCopyInDefaultBranch,omitempty"`
+
+	// Controller must skip step "put deploy templates" in action chain.
+	// +optional
+	DisablePutDeployTemplates bool `json:"disablePutDeployTemplates,omitempty"`
 }
 
 // CodebaseStatus defines the observed state of Codebase

@@ -107,6 +107,8 @@ spec:
                 - type: string
             emptyProject:
               type: boolean
+            disablePutDeployTemplates:
+              type: boolean
           required:
             - lang
             - type

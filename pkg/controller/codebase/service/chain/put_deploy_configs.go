@@ -24,6 +24,11 @@ type PutDeployConfigs struct {
 
 func (h PutDeployConfigs) ServeRequest(c *v1alpha1.Codebase) error {
 	rLog := log.WithValues("codebase_name", c.Name)
+	if c.Spec.DisablePutDeployTemplates {
+		rLog.Info("skip of putting deploy templates to codebase due to specified flag")
+		return nextServeOrNil(h.next, c)
+	}
+
 	rLog.Info("Start pushing configs...")
 
 	if err := h.tryToPushConfigs(c); err != nil {

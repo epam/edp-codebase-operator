@@ -9,6 +9,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+//TODO: remove global variable log
 var log = ctrl.Log.WithName("codebase_handler")
 
 func CreateGerritDefChain(client client.Client, cr repository.CodebaseRepository) handler.CodebaseHandler {
