@@ -9,5 +9,9 @@ chmod ug+rwx ${HOME}
 # runtime user will need to be able to self-insert in /etc/passwd
 chmod g+rw /etc/passwd
 
+# enable ssh-rsa for openssh-client
+mkdir ~/.ssh
+echo -e "Host *\nHostkeyAlgorithms +ssh-rsa\nPubkeyAcceptedAlgorithms +ssh-rsa" >> ~/.ssh/config
+
 # no need for this script to remain in the image after running
 rm $0
