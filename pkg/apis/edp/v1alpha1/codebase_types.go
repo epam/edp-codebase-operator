@@ -63,6 +63,7 @@ type CodebaseSpec struct {
 	JiraIssueMetadataPayload    *string     `json:"jiraIssueMetadataPayload"`
 	EmptyProject                bool        `json:"emptyProject"`
 	BranchToCopyInDefaultBranch string      `json:"branchToCopyInDefaultBranch"`
+	DisablePutDeployTemplates   bool        `json:"disablePutDeployTemplates"`
 }
 
 // CodebaseStatus defines the observed state of Codebase

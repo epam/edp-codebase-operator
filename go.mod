@@ -17,7 +17,7 @@ require (
 	github.com/bndr/gojenkins v0.2.1-0.20181125150310-de43c03cf849
 	github.com/dchest/uniuri v0.0.0-20160212164326-8902c56451e9
 	github.com/epam/edp-cd-pipeline-operator/v2 v2.3.0-58.0.20211129102137-8d83de42573a
-	github.com/epam/edp-common v0.0.0-20211124100535-e54dcdf42879
+	github.com/epam/edp-common v0.0.0-20211206180607-3e1ca60d6e4a
 	github.com/epam/edp-component-operator v0.1.1-0.20211129100139-b5b7659f98f6
 	github.com/epam/edp-jenkins-operator/v2 v2.3.0-130.0.20211129152322-3fdc74f98b19
 	github.com/epam/edp-perf-operator/v2 v2.0.0-20210719113600-816c452ccbb0
