@@ -8,11 +8,11 @@ import (
 )
 
 func TestConvertToGitServer(t *testing.T) {
-	gs, err := ConvertToGitServer(v1alpha1.GitServer{
+	gs := ConvertToGitServer(v1alpha1.GitServer{
 		Status: v1alpha1.GitServerStatus{
 			Status: "hello world",
 		},
 	})
-	assert.NoError(t, err)
+
 	assert.Equal(t, gs.ActionLog.Event, "hello_world")
 }

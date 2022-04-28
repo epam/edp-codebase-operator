@@ -87,11 +87,7 @@ func GetGitServer(c client.Client, name, namespace string) (*model.GitServer, er
 		return nil, errors.Wrapf(err, "an error has occurred while getting %v Git Server CR", name)
 	}
 
-	gs, err := model.ConvertToGitServer(*gitReq)
-	if err != nil {
-		return nil, errors.Wrapf(err, "an error has occurred while converting request %v Git Server to DTO",
-			name)
-	}
+	gs := model.ConvertToGitServer(*gitReq)
 	return gs, nil
 }
 
