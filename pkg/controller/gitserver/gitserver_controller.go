@@ -60,7 +60,7 @@ func (r *ReconcileGitServer) Reconcile(ctx context.Context, request reconcile.Re
 		return reconcile.Result{}, err
 	}
 
-	gitServer, _ := model.ConvertToGitServer(*instance)
+	gitServer := model.ConvertToGitServer(*instance)
 
 	hasConnection, err := checkConnectionToGitServer(r.client, *gitServer)
 	if err != nil {
@@ -69,6 +69,11 @@ func (r *ReconcileGitServer) Reconcile(ctx context.Context, request reconcile.Re
 
 	if err := r.updateStatus(ctx, r.client, instance, hasConnection); err != nil {
 		return reconcile.Result{}, errors.Wrap(err, fmt.Sprintf("an error has occurred while updating GitServer status %v", gitServer.GitHost))
+	}
+
+	if !hasConnection {
+		log.Info("git server does not have connection, will try again later")
+		return reconcile.Result{RequeueAfter: time.Second * 30}, nil
 	}
 
 	log.Info("Reconciling codebase has been finished")

@@ -41,14 +41,14 @@ type RepositoryData struct {
 	FolderToClone string
 }
 
-func ConvertToGitServer(k8sObj v1alpha1.GitServer) (*GitServer, error) {
+func ConvertToGitServer(k8sObj v1alpha1.GitServer) *GitServer {
 	log.Info("Start converting GitServer", "data", k8sObj.Name)
 
 	spec := k8sObj.Spec
 
 	actionLog := convertGitServerActionLog(k8sObj.Status)
 
-	gitServer := GitServer{
+	return &GitServer{
 		GitHost:                  spec.GitHost,
 		GitUser:                  spec.GitUser,
 		HttpsPort:                spec.HttpsPort,
@@ -59,8 +59,6 @@ func ConvertToGitServer(k8sObj v1alpha1.GitServer) (*GitServer, error) {
 		Namespace:                k8sObj.Namespace,
 		Name:                     k8sObj.Name,
 	}
-
-	return &gitServer, nil
 }
 
 func convertGitServerActionLog(status v1alpha1.GitServerStatus) *ActionLog {
