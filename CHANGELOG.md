@@ -4,6 +4,10 @@
 ### Features
 
 - Add tags-field for the list of codebases' tags. [EPMDEDP-8313](https://jiraeu.epam.com/browse/EPMDEDP-8313)
+- Add replace default branch option to spec [EPMDEDP-8804](https://jiraeu.epam.com/browse/EPMDEDP-8804)
+- Postpone reconciliation for import strategy [EPMDEDP-8956](https://jiraeu.epam.com/browse/EPMDEDP-8956)
+- Repeat reconciliation if git server is unavailable [EPMDEDP-8996](https://jiraeu.epam.com/browse/EPMDEDP-8996)
+- Disable of putting deploy configs by flag [EPMDEDP-9003](https://jiraeu.epam.com/browse/EPMDEDP-9003)
 
 ### Bug Fixes
 
@@ -13,6 +17,7 @@
 ### Routine
 
 - Update base docker image to alpine 3.15.4 [EPMDEDP-8853](https://jiraeu.epam.com/browse/EPMDEDP-8853)
+- Update changelog [EPMDEDP-9185](https://jiraeu.epam.com/browse/EPMDEDP-9185)
 
 
 <a name="v2.11.0"></a>
