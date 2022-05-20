@@ -33,12 +33,10 @@ annotations:
   artifacthub.io/license: Apache-2.0
   artifacthub.io/operator: "true"
   artifacthub.io/images: |
-    - name: codebase-operator:2.10.1
-      image: epamedp/codebase-operator:2.10.1
-    - name: codebase-operator:2.10.0
-      image: epamedp/codebase-operator:2.10.0
-    - name: codebase-operator:2.9.0
-      image: epamedp/codebase-operator:2.9.0
+    - name: codebase-operator:2.12.0
+      image: epamedp/codebase-operator:2.12.0
+    - name: alpine:3.15.4
+      image: alpine:3.15.4
   artifacthub.io/operatorCapabilities: Full Lifecycle
   artifacthub.io/crds: |
     - kind: CDStageDeploy
@@ -134,6 +132,9 @@ annotations:
         codebase: javascript-deploy-edp
         imageName: >-
           epamedp/javascript-deploy-edp
+        tags:
+          - created: '2022-05-25T08:57:12'
+            name: branch/dev-1-0.0.1-snapshot-1
     - apiVersion: v2.edp.epam.com/v1alpha1
       kind: GitServer
       metadata:
@@ -145,6 +146,14 @@ annotations:
         httpsPort: 443
         nameSshKeySecret: gerrit-ciuser-sshkey
         sshPort: 30002
+    - apiVersion: v2.edp.epam.com/v1alpha1
+      kind: JiraServer
+      metadata:
+        name: jiraserver
+      spec:
+        apiUrl: https://jiraeu-api.test.com
+        credentialName: test-jira-user
+        rootUrl: https://jiraeu.test.com
   artifacthub.io/links: |
     - name: EDP Documentation
       url: https://epam.github.io/edp-install/
