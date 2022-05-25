@@ -1,9 +1,16 @@
 <a name="unreleased"></a>
 ## [Unreleased]
 
+
+<a name="v2.12.0"></a>
+## [v2.12.0] - 2022-04-28
 ### Features
 
 - Add tags-field for the list of codebases' tags. [EPMDEDP-8313](https://jiraeu.epam.com/browse/EPMDEDP-8313)
+- Add replace default branch option to spec [EPMDEDP-8804](https://jiraeu.epam.com/browse/EPMDEDP-8804)
+- Postpone reconciliation for import strategy [EPMDEDP-8956](https://jiraeu.epam.com/browse/EPMDEDP-8956)
+- Repeat reconciliation if git server is unavailable [EPMDEDP-8996](https://jiraeu.epam.com/browse/EPMDEDP-8996)
+- Disable of putting deploy configs by flag [EPMDEDP-9003](https://jiraeu.epam.com/browse/EPMDEDP-9003)
 
 ### Bug Fixes
 
@@ -13,6 +20,7 @@
 ### Routine
 
 - Update base docker image to alpine 3.15.4 [EPMDEDP-8853](https://jiraeu.epam.com/browse/EPMDEDP-8853)
+- Update changelog [EPMDEDP-9185](https://jiraeu.epam.com/browse/EPMDEDP-9185)
 
 
 <a name="v2.11.0"></a>
@@ -169,7 +177,8 @@ Jenkins pipelines for code-review, build, create-release flow.
 - [MDTUDDM-673] Save git status in the intermediate operations
 
 
-[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.11.0...HEAD
+[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.12.0...HEAD
+[v2.12.0]: https://github.com/epam/edp-codebase-operator/compare/v2.11.0...v2.12.0
 [v2.11.0]: https://github.com/epam/edp-codebase-operator/compare/v2.10.1...v2.11.0
 [v2.10.1]: https://github.com/epam/edp-codebase-operator/compare/v2.10.0...v2.10.1
 [v2.10.0]: https://github.com/epam/edp-codebase-operator/compare/v2.9.0...v2.10.0
