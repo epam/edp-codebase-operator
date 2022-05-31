@@ -3,20 +3,21 @@ package trigger_job
 import (
 	"context"
 	"fmt"
-	"time"
 
+	"github.com/pkg/errors"
+	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebasebranch/chain/handler"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebasebranch/service"
 	"github.com/epam/edp-codebase-operator/v2/pkg/model"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
-	jfv1alpha1 "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
-	"github.com/pkg/errors"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var log = ctrl.Log.WithName("trigger-job-chain")
@@ -27,8 +28,8 @@ type TriggerJob struct {
 	Next    handler.CodebaseBranchHandler
 }
 
-func (h TriggerJob) Trigger(cb *v1alpha1.CodebaseBranch, actionType v1alpha1.ActionType,
-	triggerFunc func(cb *v1alpha1.CodebaseBranch) error) error {
+func (h TriggerJob) Trigger(cb *codebaseApi.CodebaseBranch, actionType codebaseApi.ActionType,
+	triggerFunc func(cb *codebaseApi.CodebaseBranch) error) error {
 
 	if err := h.SetIntermediateSuccessFields(cb, actionType); err != nil {
 		return err
@@ -68,12 +69,12 @@ func (h TriggerJob) Trigger(cb *v1alpha1.CodebaseBranch, actionType v1alpha1.Act
 	return handler.NextServeOrNil(h.Next, cb)
 }
 
-func (h TriggerJob) SetIntermediateSuccessFields(cb *v1alpha1.CodebaseBranch, action v1alpha1.ActionType) error {
-	cb.Status = v1alpha1.CodebaseBranchStatus{
+func (h TriggerJob) SetIntermediateSuccessFields(cb *codebaseApi.CodebaseBranch, action codebaseApi.ActionType) error {
+	cb.Status = codebaseApi.CodebaseBranchStatus{
 		Status:              model.StatusInit,
-		LastTimeUpdated:     time.Now(),
+		LastTimeUpdated:     metaV1.Now(),
 		Action:              action,
-		Result:              v1alpha1.Success,
+		Result:              codebaseApi.Success,
 		Username:            "system",
 		Value:               "inactive",
 		VersionHistory:      cb.Status.VersionHistory,
@@ -90,13 +91,13 @@ func (h TriggerJob) SetIntermediateSuccessFields(cb *v1alpha1.CodebaseBranch, ac
 	return nil
 }
 
-func (h TriggerJob) SetFailedFields(cb *v1alpha1.CodebaseBranch, a v1alpha1.ActionType, message string) {
-	cb.Status = v1alpha1.CodebaseBranchStatus{
+func (h TriggerJob) SetFailedFields(cb *codebaseApi.CodebaseBranch, a codebaseApi.ActionType, message string) {
+	cb.Status = codebaseApi.CodebaseBranchStatus{
 		Status:              util.StatusFailed,
-		LastTimeUpdated:     time.Now(),
+		LastTimeUpdated:     metaV1.Now(),
 		Username:            "system",
 		Action:              a,
-		Result:              v1alpha1.Error,
+		Result:              codebaseApi.Error,
 		DetailedMessage:     message,
 		Value:               "failed",
 		VersionHistory:      cb.Status.VersionHistory,
@@ -106,14 +107,14 @@ func (h TriggerJob) SetFailedFields(cb *v1alpha1.CodebaseBranch, a v1alpha1.Acti
 	}
 }
 
-func (h TriggerJob) GetJenkinsFolder(name, namespace string) (*jfv1alpha1.JenkinsFolder, error) {
-	i := &jfv1alpha1.JenkinsFolder{}
+func (h TriggerJob) GetJenkinsFolder(name, namespace string) (*jenkinsApi.JenkinsFolder, error) {
+	i := &jenkinsApi.JenkinsFolder{}
 	err := h.Client.Get(context.TODO(), types.NamespacedName{
 		Namespace: namespace,
 		Name:      name,
 	}, i)
 	if err != nil {
-		if k8serrors.IsNotFound(err) {
+		if k8sErrors.IsNotFound(err) {
 			return nil, nil
 		}
 		return nil, errors.Wrapf(err, "failed to get jenkins folder %v", name)
@@ -121,7 +122,7 @@ func (h TriggerJob) GetJenkinsFolder(name, namespace string) (*jfv1alpha1.Jenkin
 	return i, nil
 }
 
-func (h TriggerJob) ProcessNewVersion(b *v1alpha1.CodebaseBranch) error {
+func (h TriggerJob) ProcessNewVersion(b *codebaseApi.CodebaseBranch) error {
 	if err := h.Service.ResetBranchBuildCounter(b); err != nil {
 		return err
 	}
@@ -133,11 +134,11 @@ func (h TriggerJob) ProcessNewVersion(b *v1alpha1.CodebaseBranch) error {
 	return h.Service.AppendVersionToTheHistorySlice(b)
 }
 
-func hasNewVersion(b *v1alpha1.CodebaseBranch) bool {
+func hasNewVersion(b *codebaseApi.CodebaseBranch) bool {
 	return !util.SearchVersion(b.Status.VersionHistory, *b.Spec.Version)
 }
 
-func isJenkinsFolderAvailable(jf *jfv1alpha1.JenkinsFolder) bool {
+func isJenkinsFolderAvailable(jf *jenkinsApi.JenkinsFolder) bool {
 	if jf == nil {
 		return false
 	}

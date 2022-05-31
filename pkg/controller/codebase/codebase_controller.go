@@ -10,6 +10,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -19,7 +20,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/epam/edp-codebase-operator/v2/db"
-	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/repository"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/service/chain"
 	cHand "github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/service/chain/handler"
@@ -124,7 +125,7 @@ func (r ReconcileCodebase) updateFinishStatus(ctx context.Context, c *codebaseAp
 	c.Status = codebaseApi.CodebaseStatus{
 		Status:          util.StatusFinished,
 		Available:       true,
-		LastTimeUpdated: time.Now(),
+		LastTimeUpdated: metaV1.Now(),
 		Username:        "system",
 		Action:          codebaseApi.SetupDeploymentTemplates,
 		Result:          codebaseApi.Success,

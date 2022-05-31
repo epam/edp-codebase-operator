@@ -5,55 +5,57 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	edpV1alpha1 "github.com/epam/edp-component-operator/pkg/apis/v1/v1alpha1"
 	"github.com/stretchr/testify/assert"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+
+	edpComponentApi "github.com/epam/edp-component-operator/pkg/apis/v1/v1alpha1"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 )
 
 func TestPutCodebaseImageStream_ShouldCreateCisWithDefaultVersioningType(t *testing.T) {
-	c := &v1alpha1.Codebase{
-		ObjectMeta: metav1.ObjectMeta{
+	c := &codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "stub-name",
 			Namespace: "stub-namespace",
 		},
-		Spec: v1alpha1.CodebaseSpec{
-			Versioning: v1alpha1.Versioning{
+		Spec: codebaseApi.CodebaseSpec{
+			Versioning: codebaseApi.Versioning{
 				Type: "default",
 			},
 		},
 	}
 
-	cb := &v1alpha1.CodebaseBranch{
-		ObjectMeta: metav1.ObjectMeta{
+	cb := &codebaseApi.CodebaseBranch{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "stub-name",
 			Namespace: "stub-namespace",
 		},
-		Spec: v1alpha1.CodebaseBranchSpec{
+		Spec: codebaseApi.CodebaseBranchSpec{
 			BranchName:   "stub-name",
 			CodebaseName: "stub-name",
 		},
 	}
 
-	ec := &edpV1alpha1.EDPComponent{
-		ObjectMeta: metav1.ObjectMeta{
+	ec := &edpComponentApi.EDPComponent{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      dockerRegistryName,
 			Namespace: "stub-namespace",
 		},
-		Spec: edpV1alpha1.EDPComponentSpec{
+		Spec: edpComponentApi.EDPComponentSpec{
 			Url: "stub-url",
 		},
 	}
 
-	cis := &v1alpha1.CodebaseImageStream{}
+	cis := &codebaseApi.CodebaseImageStream{}
 
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, c, ec, cb)
-	scheme.AddKnownTypes(schema.GroupVersion{Group: "v2.edp.epam.com", Version: "v1alpha1"}, cis)
+	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, c, ec, cb)
+	scheme.AddKnownTypes(schema.GroupVersion{Group: "v2.edp.epam.com", Version: "v1"}, cis)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, cb, ec, cis).Build()
 	cisChain := PutCodebaseImageStream{
 		Client: fakeCl,
@@ -62,7 +64,7 @@ func TestPutCodebaseImageStream_ShouldCreateCisWithDefaultVersioningType(t *test
 	err := cisChain.ServeRequest(cb)
 	assert.NoError(t, err)
 
-	cisResp := &v1alpha1.CodebaseImageStream{}
+	cisResp := &codebaseApi.CodebaseImageStream{}
 	err = fakeCl.Get(context.TODO(),
 		types.NamespacedName{
 			Name:      "stub-name-stub-name",
@@ -73,31 +75,31 @@ func TestPutCodebaseImageStream_ShouldCreateCisWithDefaultVersioningType(t *test
 }
 
 func TestPutCodebaseImageStream_ShouldNotFindCodebase(t *testing.T) {
-	c := &v1alpha1.Codebase{
-		ObjectMeta: metav1.ObjectMeta{
+	c := &codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "stub-name",
 			Namespace: "stub-namespace",
 		},
-		Spec: v1alpha1.CodebaseSpec{
-			Versioning: v1alpha1.Versioning{
+		Spec: codebaseApi.CodebaseSpec{
+			Versioning: codebaseApi.Versioning{
 				Type: "default",
 			},
 		},
 	}
 
-	cb := &v1alpha1.CodebaseBranch{
-		ObjectMeta: metav1.ObjectMeta{
+	cb := &codebaseApi.CodebaseBranch{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "stub-name",
 			Namespace: "stub-namespace",
 		},
-		Spec: v1alpha1.CodebaseBranchSpec{
+		Spec: codebaseApi.CodebaseBranchSpec{
 			BranchName:   "stub-name",
 			CodebaseName: "stub-name-fake",
 		},
 	}
 
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, c)
+	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, c)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c).Build()
 	cisChain := PutCodebaseImageStream{
 		Client: fakeCl,
@@ -108,41 +110,41 @@ func TestPutCodebaseImageStream_ShouldNotFindCodebase(t *testing.T) {
 }
 
 func TestPutCodebaseImageStream_ShouldNotFindEdpComponent(t *testing.T) {
-	c := &v1alpha1.Codebase{
-		ObjectMeta: metav1.ObjectMeta{
+	c := &codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "stub-name",
 			Namespace: "stub-namespace",
 		},
-		Spec: v1alpha1.CodebaseSpec{
-			Versioning: v1alpha1.Versioning{
+		Spec: codebaseApi.CodebaseSpec{
+			Versioning: codebaseApi.Versioning{
 				Type: "default",
 			},
 		},
 	}
 
-	cb := &v1alpha1.CodebaseBranch{
-		ObjectMeta: metav1.ObjectMeta{
+	cb := &codebaseApi.CodebaseBranch{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "stub-name",
 			Namespace: "stub-namespace",
 		},
-		Spec: v1alpha1.CodebaseBranchSpec{
+		Spec: codebaseApi.CodebaseBranchSpec{
 			BranchName:   "stub-name",
 			CodebaseName: "stub-name",
 		},
 	}
 
-	ec := &edpV1alpha1.EDPComponent{
-		ObjectMeta: metav1.ObjectMeta{
+	ec := &edpComponentApi.EDPComponent{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "fake-name",
 			Namespace: "stub-namespace",
 		},
-		Spec: edpV1alpha1.EDPComponentSpec{
+		Spec: edpComponentApi.EDPComponentSpec{
 			Url: "stub-url",
 		},
 	}
 
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, c, ec)
+	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, c, ec)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c).Build()
 	cisChain := PutCodebaseImageStream{
 		Client: fakeCl,
@@ -153,21 +155,21 @@ func TestPutCodebaseImageStream_ShouldNotFindEdpComponent(t *testing.T) {
 }
 
 func TestPutCodebaseImageStream_ShouldFailToGetCodebase(t *testing.T) {
-	c := &v1alpha1.Codebase{}
+	c := &codebaseApi.Codebase{}
 
-	cb := &v1alpha1.CodebaseBranch{
-		ObjectMeta: metav1.ObjectMeta{
+	cb := &codebaseApi.CodebaseBranch{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "stub-name",
 			Namespace: "stub-namespace",
 		},
-		Spec: v1alpha1.CodebaseBranchSpec{
+		Spec: codebaseApi.CodebaseBranchSpec{
 			BranchName:   "stub-name",
 			CodebaseName: "stub-name",
 		},
 	}
 
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, c, cb)
+	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, c, cb)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, cb).Build()
 	cisChain := PutCodebaseImageStream{
 		Client: fakeCl,

@@ -4,13 +4,15 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/service/chain/handler"
-	"github.com/epam/edp-codebase-operator/v2/pkg/util"
-	jenkinsV1alpha1 "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
+	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/service/chain/handler"
+	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
 type DropJenkinsFolders struct {
@@ -24,11 +26,11 @@ func (e ErrorBranchesExists) Error() string {
 	return string(e)
 }
 
-func (h DropJenkinsFolders) ServeRequest(c *v1alpha1.Codebase) error {
+func (h DropJenkinsFolders) ServeRequest(c *codebaseApi.Codebase) error {
 	rLog := log.WithValues("codebase_name", c.Name)
 	rLog.Info("starting to delete related jenkins folders")
 
-	var branchList v1alpha1.CodebaseBranchList
+	var branchList codebaseApi.CodebaseBranchList
 	if err := h.k8sClient.List(context.TODO(), &branchList, &client.ListOptions{
 		Namespace: c.Namespace,
 	}); err != nil {
@@ -51,7 +53,7 @@ func (h DropJenkinsFolders) ServeRequest(c *v1alpha1.Codebase) error {
 		LabelSelector: selector,
 	}
 
-	var jenkinsFolderList jenkinsV1alpha1.JenkinsFolderList
+	var jenkinsFolderList jenkinsApi.JenkinsFolderList
 	if err := h.k8sClient.List(context.TODO(), &jenkinsFolderList, options); err != nil {
 		return errors.Wrap(err, "unable to list jenkins folders")
 	}

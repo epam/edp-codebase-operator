@@ -5,12 +5,14 @@ import (
 	"fmt"
 	"time"
 
-	edpv1alpha1 "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	"github.com/pkg/errors"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/service/chain/handler"
 	git "github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
-	"github.com/pkg/errors"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type CloneGitProject struct {
@@ -23,7 +25,7 @@ const (
 	repoNotReady = "NOT_READY"
 )
 
-func (h CloneGitProject) ServeRequest(c *edpv1alpha1.Codebase) error {
+func (h CloneGitProject) ServeRequest(c *codebaseApi.Codebase) error {
 	rLog := log.WithValues("codebase_name", c.Name)
 	rLog.Info("Start cloning project...")
 	if c.Spec.GitUrlPath != nil && *c.Spec.GitUrlPath == repoNotReady {
@@ -32,26 +34,26 @@ func (h CloneGitProject) ServeRequest(c *edpv1alpha1.Codebase) error {
 	}
 
 	rLog.Info("codebase data", "spec", c.Spec)
-	if err := h.setIntermediateSuccessFields(c, edpv1alpha1.AcceptCodebaseRegistration); err != nil {
+	if err := h.setIntermediateSuccessFields(c, codebaseApi.AcceptCodebaseRegistration); err != nil {
 		return errors.Wrapf(err, "an error has been occurred while updating %v Codebase status", c.Name)
 	}
 
 	wd := util.GetWorkDir(c.Name, c.Namespace)
 	log.Info("Setting path for local Git folder", "path", wd)
 	if err := util.CreateDirectory(wd); err != nil {
-		setFailedFields(c, edpv1alpha1.ImportProject, err.Error())
+		setFailedFields(c, codebaseApi.ImportProject, err.Error())
 		return err
 	}
 
 	gs, err := util.GetGitServer(h.client, c.Spec.GitServer, c.Namespace)
 	if err != nil {
-		setFailedFields(c, edpv1alpha1.ImportProject, err.Error())
+		setFailedFields(c, codebaseApi.ImportProject, err.Error())
 		return errors.Wrapf(err, "an error has occurred while getting %v GitServer", c.Spec.GitServer)
 	}
 
 	secret, err := util.GetSecret(h.client, gs.NameSshKeySecret, c.Namespace)
 	if err != nil {
-		setFailedFields(c, edpv1alpha1.ImportProject, err.Error())
+		setFailedFields(c, codebaseApi.ImportProject, err.Error())
 		return errors.Wrapf(err, "an error has occurred while getting %v secret", gs.NameSshKeySecret)
 	}
 
@@ -61,7 +63,7 @@ func (h CloneGitProject) ServeRequest(c *edpv1alpha1.Codebase) error {
 
 	if !util.DoesDirectoryExist(wd) || util.IsDirectoryEmpty(wd) {
 		if err := h.git.CloneRepositoryBySsh(k, u, ru, wd, gs.SshPort); err != nil {
-			setFailedFields(c, edpv1alpha1.ImportProject, err.Error())
+			setFailedFields(c, codebaseApi.ImportProject, err.Error())
 			return errors.Wrapf(err, "an error has occurred while cloning repository %v", ru)
 		}
 	}
@@ -69,13 +71,13 @@ func (h CloneGitProject) ServeRequest(c *edpv1alpha1.Codebase) error {
 	return nextServeOrNil(h.next, c)
 }
 
-func (h CloneGitProject) setIntermediateSuccessFields(c *edpv1alpha1.Codebase, action edpv1alpha1.ActionType) error {
-	c.Status = edpv1alpha1.CodebaseStatus{
+func (h CloneGitProject) setIntermediateSuccessFields(c *codebaseApi.Codebase, action codebaseApi.ActionType) error {
+	c.Status = codebaseApi.CodebaseStatus{
 		Status:          util.StatusInProgress,
 		Available:       false,
-		LastTimeUpdated: time.Now(),
+		LastTimeUpdated: metaV1.Now(),
 		Action:          action,
-		Result:          edpv1alpha1.Success,
+		Result:          codebaseApi.Success,
 		Username:        "system",
 		Value:           "inactive",
 		FailureCount:    c.Status.FailureCount,

@@ -5,21 +5,22 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 )
 
 func TestReconcileGitTag_Reconcile_ShouldPassNotFound(t *testing.T) {
-	gt := &v1alpha1.GitTag{}
+	gt := &codebaseApi.GitTag{}
 
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, gt)
+	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, gt)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(gt).Build()
 
 	//request
@@ -61,25 +62,25 @@ func TestReconcileGitTag_Reconcile_ShouldFailNotFound(t *testing.T) {
 	res, err := r.Reconcile(context.TODO(), req)
 
 	assert.Error(t, err)
-	if !strings.Contains(err.Error(), "no kind is registered for the type v1alpha1.GitTag") {
+	if !strings.Contains(err.Error(), "no kind is registered for the type v1.GitTag") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
 	assert.False(t, res.Requeue)
 }
 
 func TestReconcileGitTag_Reconcile_ShouldFail(t *testing.T) {
-	gt := &v1alpha1.GitTag{
-		ObjectMeta: metav1.ObjectMeta{
+	gt := &codebaseApi.GitTag{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "NewGT",
 			Namespace: "namespace",
 		},
-		Spec: v1alpha1.GitTagSpec{
+		Spec: codebaseApi.GitTagSpec{
 			Tag: "111",
 		},
 	}
 
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, gt)
+	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, gt)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(gt).Build()
 
 	//request

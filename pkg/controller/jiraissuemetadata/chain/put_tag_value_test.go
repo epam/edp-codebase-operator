@@ -1,12 +1,14 @@
 package chain
 
 import (
-	"github.com/andygrunwald/go-jira"
-	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	"github.com/epam/edp-codebase-operator/v2/pkg/client/jira/mock"
-	"github.com/stretchr/testify/assert"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"testing"
+
+	"github.com/andygrunwald/go-jira"
+	"github.com/stretchr/testify/assert"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
+	"github.com/epam/edp-codebase-operator/v2/pkg/client/jira/mock"
 )
 
 func TestPutTagValue_ServeRequest(t *testing.T) {
@@ -42,12 +44,12 @@ func TestPutTagValue_ServeRequest(t *testing.T) {
 	mClient.On("GetIssueMetadata", "fake-projectKey").Return(
 		issueMetadata, nil)
 
-	jim := &v1alpha1.JiraIssueMetadata{
-		ObjectMeta: metav1.ObjectMeta{
+	jim := &codebaseApi.JiraIssueMetadata{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "fake-name",
 			Namespace: "fake-namespace",
 		},
-		Spec: v1alpha1.JiraIssueMetadataSpec{
+		Spec: codebaseApi.JiraIssueMetadataSpec{
 			Tickets: []string{"fake-issueId"},
 			Payload: `{"issuesLinks": [{"ticket":"fake-issueId", "title":"fake-title", "url":"fake-url"}], "allowedValues": [{"ticket":"fakeId"}]}`,
 		},

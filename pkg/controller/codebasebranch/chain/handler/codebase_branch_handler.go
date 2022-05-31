@@ -1,17 +1,18 @@
 package handler
 
 import (
-	edpv1alpha1 "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 )
 
 type CodebaseBranchHandler interface {
-	ServeRequest(c *edpv1alpha1.CodebaseBranch) error
+	ServeRequest(c *codebaseApi.CodebaseBranch) error
 }
 
 var log = ctrl.Log.WithName("codebase_branch_handler")
 
-func NextServeOrNil(next CodebaseBranchHandler, cb *edpv1alpha1.CodebaseBranch) error {
+func NextServeOrNil(next CodebaseBranchHandler, cb *codebaseApi.CodebaseBranch) error {
 	if next != nil {
 		return next.ServeRequest(cb)
 	}

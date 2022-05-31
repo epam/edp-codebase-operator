@@ -5,16 +5,18 @@ import (
 	"testing"
 	"time"
 
-	v1alpha1Stage "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
-	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
+	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
+	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 )
 
 func TestReconcileCDStageDeploy_Reconcile_ShouldPass(t *testing.T) {
@@ -22,7 +24,7 @@ func TestReconcileCDStageDeploy_Reconcile_ShouldPass(t *testing.T) {
 	jl := &jenkinsApi.JenkinsList{
 		Items: []jenkinsApi.Jenkins{
 			{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: metaV1.ObjectMeta{
 					Name:      "jenkins",
 					Namespace: "namespace",
 				},
@@ -30,18 +32,18 @@ func TestReconcileCDStageDeploy_Reconcile_ShouldPass(t *testing.T) {
 		},
 	}
 	jcdsd := &jenkinsApi.CDStageJenkinsDeployment{}
-	s := &v1alpha1Stage.Stage{
-		ObjectMeta: metav1.ObjectMeta{
+	s := &cdPipeApi.Stage{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "pipeline-stage",
 			Namespace: "namespace",
 		},
 	}
-	cdsd := &v1alpha1.CDStageDeploy{
-		ObjectMeta: metav1.ObjectMeta{
+	cdsd := &codebaseApi.CDStageDeploy{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "NewCDStageDeploy",
 			Namespace: "namespace",
 		},
-		Spec: v1alpha1.CDStageDeploySpec{
+		Spec: codebaseApi.CDStageDeploySpec{
 			Pipeline: "pipeline",
 			Stage:    "stage",
 			Tag: jenkinsApi.Tag{
@@ -51,9 +53,9 @@ func TestReconcileCDStageDeploy_Reconcile_ShouldPass(t *testing.T) {
 		},
 	}
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(metav1.SchemeGroupVersion, jl, j)
-	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, cdsd)
-	scheme.AddKnownTypes(v1alpha1Stage.SchemeGroupVersion, s)
+	scheme.AddKnownTypes(metaV1.SchemeGroupVersion, jl, j)
+	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, cdsd)
+	scheme.AddKnownTypes(cdPipeApi.SchemeGroupVersion, s)
 	scheme.AddKnownTypes(jenkinsApi.SchemeGroupVersion, jcdsd)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(cdsd, s, jcdsd, j, jl).Build()
 
@@ -77,8 +79,7 @@ func TestReconcileCDStageDeploy_Reconcile_ShouldPass(t *testing.T) {
 	assert.False(t, res.Requeue)
 }
 
-func TestReconcileCDStageDeploy_Reconcile_ShouldFailtoGetCDStageDeploy(t *testing.T) {
-
+func TestReconcileCDStageDeploy_Reconcile_ShouldFailToGetCDStageDeploy(t *testing.T) {
 	scheme := runtime.NewScheme()
 
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects().Build()
@@ -101,13 +102,13 @@ func TestReconcileCDStageDeploy_Reconcile_ShouldFailtoGetCDStageDeploy(t *testin
 
 	assert.Error(t, err)
 	assert.False(t, res.Requeue)
-	assert.Contains(t, err.Error(), "no kind is registered for the type v1alpha1.CDStageDeploy in scheme")
+	assert.Contains(t, err.Error(), "no kind is registered for the type v1.CDStageDeploy in scheme")
 }
 
 func TestReconcileCDStageDeploy_Reconcile_ShouldPassWithNoFoundCDStageDeploy(t *testing.T) {
-	cdsd := &v1alpha1.CDStageDeploy{}
+	cdsd := &codebaseApi.CDStageDeploy{}
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, cdsd)
+	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, cdsd)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(cdsd).Build()
 
 	//request
@@ -131,17 +132,17 @@ func TestReconcileCDStageDeploy_Reconcile_ShouldPassWithNoFoundCDStageDeploy(t *
 }
 
 func TestReconcileCDStageDeploy_Reconcile_ShouldFailSetOwnerRef(t *testing.T) {
-	cdsd := &v1alpha1.CDStageDeploy{
-		ObjectMeta: metav1.ObjectMeta{
+	cdsd := &codebaseApi.CDStageDeploy{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "NewCDStageDeploy",
 			Namespace: "namespace",
-			DeletionTimestamp: &metav1.Time{
-				Time: metav1.Now().Time,
+			DeletionTimestamp: &metaV1.Time{
+				Time: metaV1.Now().Time,
 			},
 		},
 	}
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, cdsd)
+	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, cdsd)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(cdsd).Build()
 
 	//request
@@ -166,12 +167,12 @@ func TestReconcileCDStageDeploy_Reconcile_ShouldFailSetOwnerRef(t *testing.T) {
 }
 
 func TestReconcileCDStageDeploy_Reconcile_ShouldFailServeRequest(t *testing.T) {
-	cdsd := &v1alpha1.CDStageDeploy{
-		ObjectMeta: metav1.ObjectMeta{
+	cdsd := &codebaseApi.CDStageDeploy{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "NewCDStageDeploy",
 			Namespace: "namespace",
 		},
-		Spec: v1alpha1.CDStageDeploySpec{
+		Spec: codebaseApi.CDStageDeploySpec{
 			Pipeline: "pipeline",
 			Stage:    "stage",
 			Tag: jenkinsApi.Tag{
@@ -180,15 +181,15 @@ func TestReconcileCDStageDeploy_Reconcile_ShouldFailServeRequest(t *testing.T) {
 			},
 		},
 	}
-	s := &v1alpha1Stage.Stage{
-		ObjectMeta: metav1.ObjectMeta{
+	s := &cdPipeApi.Stage{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "pipeline-stage",
 			Namespace: "namespace",
 		},
 	}
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1alpha1Stage.SchemeGroupVersion, s)
-	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, cdsd)
+	scheme.AddKnownTypes(cdPipeApi.SchemeGroupVersion, s)
+	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, cdsd)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(cdsd, s).Build()
 
 	//request
@@ -213,12 +214,12 @@ func TestReconcileCDStageDeploy_Reconcile_ShouldFailServeRequest(t *testing.T) {
 }
 
 func TestReconcileCDStageDeploy_Reconcile_ShouldFailServeRequestWithExistingCR(t *testing.T) {
-	cdsd := &v1alpha1.CDStageDeploy{
-		ObjectMeta: metav1.ObjectMeta{
+	cdsd := &codebaseApi.CDStageDeploy{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "NewCDStageDeploy",
 			Namespace: "namespace",
 		},
-		Spec: v1alpha1.CDStageDeploySpec{
+		Spec: codebaseApi.CDStageDeploySpec{
 			Pipeline: "pipeline",
 			Stage:    "stage",
 			Tag: jenkinsApi.Tag{
@@ -227,22 +228,22 @@ func TestReconcileCDStageDeploy_Reconcile_ShouldFailServeRequestWithExistingCR(t
 			},
 		},
 	}
-	s := &v1alpha1Stage.Stage{
-		ObjectMeta: metav1.ObjectMeta{
+	s := &cdPipeApi.Stage{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "pipeline-stage",
 			Namespace: "namespace",
 		},
 	}
 	jcdsd := &jenkinsApi.CDStageJenkinsDeployment{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "NewCDStageDeploy",
 			Namespace: "namespace",
 		},
 	}
 
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1alpha1Stage.SchemeGroupVersion, s)
-	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, cdsd)
+	scheme.AddKnownTypes(cdPipeApi.SchemeGroupVersion, s)
+	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, cdsd)
 	scheme.AddKnownTypes(jenkinsApi.SchemeGroupVersion, jcdsd)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(cdsd, jcdsd, s).Build()
 
@@ -265,7 +266,7 @@ func TestReconcileCDStageDeploy_Reconcile_ShouldFailServeRequestWithExistingCR(t
 	assert.NoError(t, err)
 	assert.Equal(t, res.RequeueAfter, 10*time.Second)
 
-	cdsdResp := &v1alpha1.CDStageDeploy{}
+	cdsdResp := &codebaseApi.CDStageDeploy{}
 	err = fakeCl.Get(context.TODO(),
 		types.NamespacedName{
 			Name:      "NewCDStageDeploy",

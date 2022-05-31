@@ -3,14 +3,15 @@ package util
 import (
 	"testing"
 
-	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/stretchr/testify/assert"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 )
 
 func TestBuildRepoUrl_DatabaseIsNil(t *testing.T) {
 	expectedURL := "https://github.com/epmd-edp/java-maven-java11.git"
 	framework := "java11"
-	spec := v1alpha1.CodebaseSpec{
+	spec := codebaseApi.CodebaseSpec{
 		Lang:      "Java",
 		BuildTool: "Maven",
 		Type:      "application",
@@ -22,7 +23,7 @@ func TestBuildRepoUrl_DatabaseIsNil(t *testing.T) {
 
 func TestBuildRepoUrl_FrameworkIsNil(t *testing.T) {
 	expectedURL := "https://github.com/epmd-edp/javascript-npm-react.git"
-	spec := v1alpha1.CodebaseSpec{
+	spec := codebaseApi.CodebaseSpec{
 		Lang:      "javascript",
 		BuildTool: "npm",
 		Type:      "library",
@@ -32,8 +33,8 @@ func TestBuildRepoUrl_FrameworkIsNil(t *testing.T) {
 }
 
 func Test_tryGetRepoUrl_ShouldPass(t *testing.T) {
-	c := v1alpha1.CodebaseSpec{
-		Repository: &v1alpha1.Repository{
+	c := codebaseApi.CodebaseSpec{
+		Repository: &codebaseApi.Repository{
 			Url: "test",
 		},
 	}
@@ -43,7 +44,7 @@ func Test_tryGetRepoUrl_ShouldPass(t *testing.T) {
 }
 
 func Test_tryGetRepoUrl_ShouldFail(t *testing.T) {
-	c := v1alpha1.CodebaseSpec{}
+	c := codebaseApi.CodebaseSpec{}
 	s, err := tryGetRepoUrl(c)
 	assert.Error(t, err)
 	assert.Nil(t, s)
@@ -52,9 +53,9 @@ func Test_tryGetRepoUrl_ShouldFail(t *testing.T) {
 func TestGetRepoUrl_ShouldPass(t *testing.T) {
 	f := "java11"
 	r := "https://github.com/epmd-edp/java11-maven-java11.git"
-	c := v1alpha1.Codebase{
-		Spec: v1alpha1.CodebaseSpec{
-			Strategy:  v1alpha1.Create,
+	c := codebaseApi.Codebase{
+		Spec: codebaseApi.CodebaseSpec{
+			Strategy:  codebaseApi.Create,
 			Lang:      "java11",
 			BuildTool: "maven",
 			Framework: &f,
@@ -67,10 +68,10 @@ func TestGetRepoUrl_ShouldPass(t *testing.T) {
 
 func TestGetRepoUrl_CloneShouldPass(t *testing.T) {
 	r := "link"
-	c := v1alpha1.Codebase{
-		Spec: v1alpha1.CodebaseSpec{
-			Strategy: v1alpha1.Clone,
-			Repository: &v1alpha1.Repository{
+	c := codebaseApi.Codebase{
+		Spec: codebaseApi.CodebaseSpec{
+			Strategy: codebaseApi.Clone,
+			Repository: &codebaseApi.Repository{
 				Url: "link",
 			},
 		},

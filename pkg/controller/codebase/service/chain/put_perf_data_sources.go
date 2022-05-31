@@ -6,15 +6,17 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/service/chain/handler"
-	"github.com/epam/edp-codebase-operator/v2/pkg/util"
-	perfAPi "github.com/epam/edp-perf-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/pkg/errors"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	perfAPi "github.com/epam/edp-perf-operator/v2/pkg/apis/edp/v1alpha1"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
+	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/service/chain/handler"
+	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
 type PutPerfDataSources struct {
@@ -31,7 +33,7 @@ const (
 	gitLabDataSourceType  = "GitLab"
 )
 
-func (h PutPerfDataSources) ServeRequest(c *v1alpha1.Codebase) error {
+func (h PutPerfDataSources) ServeRequest(c *codebaseApi.Codebase) error {
 	rLog := log.WithValues("codebase_name", c.Name)
 	rLog.Info("start creating PERF data source cr...")
 	if err := h.tryToCreateDataSourceCr(c); err != nil {
@@ -41,7 +43,7 @@ func (h PutPerfDataSources) ServeRequest(c *v1alpha1.Codebase) error {
 	return nextServeOrNil(h.next, c)
 }
 
-func (h PutPerfDataSources) tryToCreateDataSourceCr(c *v1alpha1.Codebase) error {
+func (h PutPerfDataSources) tryToCreateDataSourceCr(c *codebaseApi.Codebase) error {
 	if c.Spec.Perf == nil {
 		log.Info("PERF server wasn't selected. skip creating PERF data source cr...",
 			"codebase_name", c.Name)
@@ -57,22 +59,22 @@ func (h PutPerfDataSources) tryToCreateDataSourceCr(c *v1alpha1.Codebase) error 
 	return nil
 }
 
-func (h PutPerfDataSources) getCreateFactory() map[string]func(c *v1alpha1.Codebase, dataSourceType string) error {
-	return map[string]func(c *v1alpha1.Codebase, dataSourceType string) error{
+func (h PutPerfDataSources) getCreateFactory() map[string]func(c *codebaseApi.Codebase, dataSourceType string) error {
+	return map[string]func(c *codebaseApi.Codebase, dataSourceType string) error{
 		jenkinsDataSourceType: h.tryToCreateJenkinsDataSource,
 		sonarDataSourceType:   h.tryToCreateSonarDataSource,
 		gitLabDataSourceType:  h.tryToCreateGitLabDataSource,
 	}
 }
 
-func (h PutPerfDataSources) tryToCreateJenkinsDataSource(c *v1alpha1.Codebase, dataSourceType string) error {
+func (h PutPerfDataSources) tryToCreateJenkinsDataSource(c *codebaseApi.Codebase, dataSourceType string) error {
 	ds := &perfAPi.PerfDataSourceJenkins{}
 	err := h.client.Get(context.TODO(), types.NamespacedName{
 		Name:      getDataSourceName(c.Name, dataSourceType),
 		Namespace: c.Namespace,
 	}, ds)
 	if err != nil {
-		if k8serrors.IsNotFound(err) {
+		if k8sErrors.IsNotFound(err) {
 			return h.createJenkinsDataSource(c, dataSourceType)
 		}
 		return err
@@ -80,14 +82,14 @@ func (h PutPerfDataSources) tryToCreateJenkinsDataSource(c *v1alpha1.Codebase, d
 	return nil
 }
 
-func (h PutPerfDataSources) tryToCreateSonarDataSource(c *v1alpha1.Codebase, dataSourceType string) error {
+func (h PutPerfDataSources) tryToCreateSonarDataSource(c *codebaseApi.Codebase, dataSourceType string) error {
 	ds := &perfAPi.PerfDataSourceSonar{}
 	err := h.client.Get(context.TODO(), types.NamespacedName{
 		Name:      getDataSourceName(c.Name, dataSourceType),
 		Namespace: c.Namespace,
 	}, ds)
 	if err != nil {
-		if k8serrors.IsNotFound(err) {
+		if k8sErrors.IsNotFound(err) {
 			return h.createSonarDataSource(c, dataSourceType)
 		}
 		return err
@@ -95,14 +97,14 @@ func (h PutPerfDataSources) tryToCreateSonarDataSource(c *v1alpha1.Codebase, dat
 	return nil
 }
 
-func (h PutPerfDataSources) tryToCreateGitLabDataSource(c *v1alpha1.Codebase, dataSourceType string) error {
+func (h PutPerfDataSources) tryToCreateGitLabDataSource(c *codebaseApi.Codebase, dataSourceType string) error {
 	ds := &perfAPi.PerfDataSourceGitLab{}
 	err := h.client.Get(context.TODO(), types.NamespacedName{
 		Name:      getDataSourceName(c.Name, dataSourceType),
 		Namespace: c.Namespace,
 	}, ds)
 	if err != nil {
-		if k8serrors.IsNotFound(err) {
+		if k8sErrors.IsNotFound(err) {
 			return h.createGitLabDataSource(c, dataSourceType)
 		}
 		return err
@@ -110,7 +112,7 @@ func (h PutPerfDataSources) tryToCreateGitLabDataSource(c *v1alpha1.Codebase, da
 	return nil
 }
 
-func (h PutPerfDataSources) createJenkinsDataSource(c *v1alpha1.Codebase, dataSourceType string) error {
+func (h PutPerfDataSources) createJenkinsDataSource(c *codebaseApi.Codebase, dataSourceType string) error {
 	config, err := h.getJenkinsDataSourceConfig(c.Spec.DefaultBranch, c.Name, c.Namespace)
 	if err != nil {
 		return err
@@ -140,7 +142,7 @@ func (h PutPerfDataSources) createJenkinsDataSource(c *v1alpha1.Codebase, dataSo
 	return nil
 }
 
-func (h PutPerfDataSources) createSonarDataSource(c *v1alpha1.Codebase, dataSourceType string) error {
+func (h PutPerfDataSources) createSonarDataSource(c *codebaseApi.Codebase, dataSourceType string) error {
 	config, err := h.getSonarDataSourceConfig(c.Spec.DefaultBranch, c.Name, c.Namespace)
 	if err != nil {
 		return err
@@ -170,7 +172,7 @@ func (h PutPerfDataSources) createSonarDataSource(c *v1alpha1.Codebase, dataSour
 	return nil
 }
 
-func (h PutPerfDataSources) createGitLabDataSource(c *v1alpha1.Codebase, dataSourceType string) error {
+func (h PutPerfDataSources) createGitLabDataSource(c *codebaseApi.Codebase, dataSourceType string) error {
 	config, err := h.getGitLabDataSourceConfig(c)
 	if err != nil {
 		return err
@@ -224,7 +226,7 @@ func (h PutPerfDataSources) getSonarDataSourceConfig(branch, codebase, namespace
 	}, nil
 }
 
-func (h PutPerfDataSources) getGitLabDataSourceConfig(codebase *v1alpha1.Codebase) (*perfAPi.DataSourceGitLabConfig, error) {
+func (h PutPerfDataSources) getGitLabDataSourceConfig(codebase *codebaseApi.Codebase) (*perfAPi.DataSourceGitLabConfig, error) {
 	gs, err := util.GetGitServer(h.client, codebase.Spec.GitServer, codebase.Namespace)
 	if err != nil {
 		return nil, err

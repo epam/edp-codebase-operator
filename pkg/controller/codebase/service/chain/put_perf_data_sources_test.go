@@ -3,15 +3,17 @@ package chain
 import (
 	"testing"
 
-	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	"github.com/epam/edp-codebase-operator/v2/pkg/util"
-	edpCompApi "github.com/epam/edp-component-operator/pkg/apis/v1/v1alpha1"
-	perfApi "github.com/epam/edp-perf-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/stretchr/testify/assert"
 	coreV1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+
+	edpCompApi "github.com/epam/edp-component-operator/pkg/apis/v1/v1alpha1"
+	perfApi "github.com/epam/edp-perf-operator/v2/pkg/apis/edp/v1alpha1"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
+	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
 const (
@@ -22,11 +24,11 @@ func TestPutPerfDataSourcesChain_SkipCreatingPerfDataSource(t *testing.T) {
 	sources := PutPerfDataSources{
 		client: nil,
 	}
-	c := &v1alpha1.Codebase{
-		ObjectMeta: metav1.ObjectMeta{
+	c := &codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name: "fake-name",
 		},
-		Spec: v1alpha1.CodebaseSpec{},
+		Spec: codebaseApi.CodebaseSpec{},
 	}
 	assert.NoError(t, sources.ServeRequest(c))
 }
@@ -36,7 +38,7 @@ func TestPutPerfDataSourcesChain_JenkinsAndSonarDataSourcesShouldBeCreated(t *te
 	pdsj := &perfApi.PerfDataSourceJenkins{}
 	pdsg := &perfApi.PerfDataSourceGitLab{}
 	ecJenkins := &edpCompApi.EDPComponent{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "jenkins",
 			Namespace: fakeNamespace,
 		},
@@ -44,40 +46,40 @@ func TestPutPerfDataSourcesChain_JenkinsAndSonarDataSourcesShouldBeCreated(t *te
 	}
 
 	ecSonar := &edpCompApi.EDPComponent{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "sonar",
 			Namespace: fakeNamespace,
 		},
 		Spec: edpCompApi.EDPComponentSpec{},
 	}
 
-	gs := &v1alpha1.GitServer{
-		ObjectMeta: metav1.ObjectMeta{
+	gs := &codebaseApi.GitServer{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
-		Spec: v1alpha1.GitServerSpec{
+		Spec: codebaseApi.GitServerSpec{
 			GitHost: fakeName,
 		},
 	}
 
-	c := &v1alpha1.Codebase{
-		ObjectMeta: metav1.ObjectMeta{
+	c := &codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
-		Spec: v1alpha1.CodebaseSpec{
+		Spec: codebaseApi.CodebaseSpec{
 			DefaultBranch: fakeName,
 			GitUrlPath:    util.GetStringP("/fake"),
 			GitServer:     fakeName,
-			Perf: &v1alpha1.Perf{
+			Perf: &codebaseApi.Perf{
 				Name:        fakeName,
 				DataSources: []string{"Jenkins", "Sonar", "GitLab"},
 			},
 		},
 	}
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, gs)
+	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, gs)
 	scheme.AddKnownTypes(coreV1.SchemeGroupVersion, pdsj, pdss, pdsg, ecJenkins, ecSonar)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(pdsj, pdss, pdsg, ecJenkins, ecSonar, gs).Build()
 
@@ -86,13 +88,13 @@ func TestPutPerfDataSourcesChain_JenkinsAndSonarDataSourcesShouldBeCreated(t *te
 
 func TestPutPerfDataSourcesChain_ShouldNotFoundEdpComponent(t *testing.T) {
 
-	c := &v1alpha1.Codebase{
-		ObjectMeta: metav1.ObjectMeta{
+	c := &codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
-		Spec: v1alpha1.CodebaseSpec{
-			Perf: &v1alpha1.Perf{
+		Spec: codebaseApi.CodebaseSpec{
+			Perf: &codebaseApi.Perf{
 				Name:        fakeName,
 				DataSources: []string{"Jenkins", "Sonar"},
 			},

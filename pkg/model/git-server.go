@@ -4,8 +4,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 )
 
 var log = ctrl.Log.WithName("git-server-model")
@@ -41,7 +42,7 @@ type RepositoryData struct {
 	FolderToClone string
 }
 
-func ConvertToGitServer(k8sObj v1alpha1.GitServer) *GitServer {
+func ConvertToGitServer(k8sObj codebaseApi.GitServer) *GitServer {
 	log.Info("Start converting GitServer", "data", k8sObj.Name)
 
 	spec := k8sObj.Spec
@@ -61,13 +62,12 @@ func ConvertToGitServer(k8sObj v1alpha1.GitServer) *GitServer {
 	}
 }
 
-func convertGitServerActionLog(status v1alpha1.GitServerStatus) *ActionLog {
-
+func convertGitServerActionLog(status codebaseApi.GitServerStatus) *ActionLog {
 	return &ActionLog{
 		Event:           formatStatus(status.Status),
 		DetailedMessage: status.DetailedMessage,
 		Username:        status.Username,
-		UpdatedAt:       status.LastTimeUpdated,
+		UpdatedAt:       status.LastTimeUpdated.Time,
 		Action:          status.Action,
 		Result:          status.Result,
 	}

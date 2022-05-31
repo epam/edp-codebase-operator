@@ -1,12 +1,13 @@
 package chain
 
 import (
-	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/client/jira"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/jiraissuemetadata/chain/handler"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var log = ctrl.Log.WithName("jira_issue_metadata_handler")
@@ -50,7 +51,7 @@ func createWithoutApplyingTagsChain(jiraClient *jira.Client, client client.Clien
 	}
 }
 
-func nextServeOrNil(next handler.JiraIssueMetadataHandler, metadata *v1alpha1.JiraIssueMetadata) error {
+func nextServeOrNil(next handler.JiraIssueMetadataHandler, metadata *codebaseApi.JiraIssueMetadata) error {
 	if next != nil {
 		return next.ServeRequest(metadata)
 	}

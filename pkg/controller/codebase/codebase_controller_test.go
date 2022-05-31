@@ -11,17 +11,17 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	coreV1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/service/chain"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/service/chain/handler"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
-	jenkinsv1alpha1 "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
+	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
 )
 
 type ControllerTestSuite struct {
@@ -36,13 +36,13 @@ func TestControllerTestSuite(t *testing.T) {
 func (s *ControllerTestSuite) SetupTest() {
 	os.Setenv("WORKING_DIR", "/tmp/1")
 	s.scheme = runtime.NewScheme()
-	assert.NoError(s.T(), v1alpha1.AddToScheme(s.scheme))
-	assert.NoError(s.T(), jenkinsv1alpha1.AddToScheme(s.scheme))
+	assert.NoError(s.T(), codebaseApi.AddToScheme(s.scheme))
+	assert.NoError(s.T(), jenkinsApi.AddToScheme(s.scheme))
 	s.scheme.AddKnownTypes(coreV1.SchemeGroupVersion, &coreV1.ConfigMap{}, &coreV1.Secret{})
 }
 
 func (s *ControllerTestSuite) TestReconcileCodebase_Reconcile_ShouldPassNotFound() {
-	c := &v1alpha1.Codebase{}
+	c := &codebaseApi.Codebase{}
 	fakeCl := fake.NewClientBuilder().WithScheme(s.scheme).WithRuntimeObjects(c).Build()
 
 	//request
@@ -88,22 +88,22 @@ func (s *ControllerTestSuite) TestReconcileCodebase_Reconcile_ShouldFailNotFound
 
 	t := s.T()
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "no kind is registered for the type v1alpha1.Codebase")
+	assert.Contains(t, err.Error(), "no kind is registered for the type v1.Codebase")
 	assert.False(t, res.Requeue)
 }
 
 func (s *ControllerTestSuite) TestReconcileCodebase_Reconcile_ShouldFailDeleteCodebase() {
-	c := &v1alpha1.Codebase{
-		ObjectMeta: metav1.ObjectMeta{
+	c := &codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "NewCodebase",
 			Namespace: "namespace",
-			DeletionTimestamp: &metav1.Time{
-				Time: metav1.Now().Time,
+			DeletionTimestamp: &metaV1.Time{
+				Time: metaV1.Now().Time,
 			},
 		},
 	}
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, &v1alpha1.Codebase{})
+	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, &codebaseApi.Codebase{})
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c).Build()
 
 	//request
@@ -129,8 +129,8 @@ func (s *ControllerTestSuite) TestReconcileCodebase_Reconcile_ShouldFailDeleteCo
 }
 
 func (s *ControllerTestSuite) TestReconcileCodebase_Reconcile_ShouldPassOnInvalidCodebase() {
-	c := &v1alpha1.Codebase{
-		ObjectMeta: metav1.ObjectMeta{
+	c := &codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "NewCodebase",
 			Namespace: "namespace",
 		},
@@ -160,13 +160,13 @@ func (s *ControllerTestSuite) TestReconcileCodebase_Reconcile_ShouldPassOnInvali
 }
 
 func (s *ControllerTestSuite) TestReconcileCodebase_Reconcile_ShouldFailOnCreateStrategy() {
-	c := &v1alpha1.Codebase{
-		ObjectMeta: metav1.ObjectMeta{
+	c := &codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "NewCodebase",
 			Namespace: "namespace",
 		},
-		Spec: v1alpha1.CodebaseSpec{
-			Strategy: v1alpha1.Create,
+		Spec: codebaseApi.CodebaseSpec{
+			Strategy: codebaseApi.Create,
 			Lang:     "go",
 		},
 	}
@@ -193,7 +193,7 @@ func (s *ControllerTestSuite) TestReconcileCodebase_Reconcile_ShouldFailOnCreate
 	assert.NoError(t, err)
 	assert.Equal(t, res.RequeueAfter, 10*time.Second)
 
-	cResp := &v1alpha1.Codebase{}
+	cResp := &codebaseApi.Codebase{}
 	err = fakeCl.Get(context.TODO(),
 		types.NamespacedName{
 			Name:      "NewCodebase",
@@ -205,21 +205,21 @@ func (s *ControllerTestSuite) TestReconcileCodebase_Reconcile_ShouldFailOnCreate
 }
 
 func (s *ControllerTestSuite) TestReconcileCodebase_Reconcile_ShouldPassOnJavaCreateStrategy() {
-	c := &v1alpha1.Codebase{
-		ObjectMeta: metav1.ObjectMeta{
+	c := &codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "NewCodebase",
 			Namespace: "namespace",
 		},
-		Spec: v1alpha1.CodebaseSpec{
-			Strategy: v1alpha1.Create,
+		Spec: codebaseApi.CodebaseSpec{
+			Strategy: codebaseApi.Create,
 			Lang:     "java",
 		},
-		Status: v1alpha1.CodebaseStatus{
+		Status: codebaseApi.CodebaseStatus{
 			Git: *util.GetStringP("templates_pushed"),
 		},
 	}
 	cm := &coreV1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "edp-config",
 			Namespace: "namespace",
 		},
@@ -234,18 +234,18 @@ func (s *ControllerTestSuite) TestReconcileCodebase_Reconcile_ShouldPassOnJavaCr
 			"vcs_tool_name":            "gitlab",
 		},
 	}
-	gs := &v1alpha1.GitServer{
-		ObjectMeta: metav1.ObjectMeta{
+	gs := &codebaseApi.GitServer{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "gerrit",
 			Namespace: "namespace",
 		},
-		Spec: v1alpha1.GitServerSpec{
+		Spec: codebaseApi.GitServerSpec{
 			SshPort: 22,
 		},
 	}
 
-	jf := &jenkinsv1alpha1.JenkinsFolder{
-		ObjectMeta: metav1.ObjectMeta{
+	jf := &jenkinsApi.JenkinsFolder{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "NewCodebase-codebase",
 			Namespace: "namespace",
 		},
@@ -275,17 +275,17 @@ func (s *ControllerTestSuite) TestReconcileCodebase_Reconcile_ShouldPassOnJavaCr
 }
 
 func (s *ControllerTestSuite) TestReconcileCodebase_Reconcile_ShouldDeleteCodebase() {
-	c := &v1alpha1.Codebase{
-		ObjectMeta: metav1.ObjectMeta{
+	c := &codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "NewCodebase",
 			Namespace: "namespace",
-			DeletionTimestamp: &metav1.Time{
-				Time: metav1.Now().Time,
+			DeletionTimestamp: &metaV1.Time{
+				Time: metaV1.Now().Time,
 			},
 		},
 	}
-	cbl := &v1alpha1.CodebaseBranchList{}
-	jfl := &jenkinsv1alpha1.JenkinsFolderList{}
+	cbl := &codebaseApi.CodebaseBranchList{}
+	jfl := &jenkinsApi.JenkinsFolderList{}
 
 	fakeCl := fake.NewClientBuilder().WithScheme(s.scheme).WithRuntimeObjects(c, cbl, jfl).Build()
 
@@ -311,17 +311,17 @@ func (s *ControllerTestSuite) TestReconcileCodebase_Reconcile_ShouldDeleteCodeba
 }
 
 func (s *ControllerTestSuite) TestReconcileCodebase_getStrategyChain_ShouldPassImportStrategy() {
-	c := &v1alpha1.Codebase{
-		ObjectMeta: metav1.ObjectMeta{
+	c := &codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "NewCodebase",
 			Namespace: "namespace",
 		},
-		Spec: v1alpha1.CodebaseSpec{
+		Spec: codebaseApi.CodebaseSpec{
 			Strategy: util.ImportStrategy,
 		},
 	}
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, c)
+	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, c)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c).Build()
 	r := ReconcileCodebase{
 		client: fakeCl,
@@ -336,12 +336,12 @@ func (s *ControllerTestSuite) TestReconcileCodebase_getStrategyChain_ShouldPassI
 }
 
 func (s *ControllerTestSuite) TestReconcileCodebase_getStrategyChain_ShouldPassImportStrategyGitLab() {
-	c := &v1alpha1.Codebase{
-		ObjectMeta: metav1.ObjectMeta{
+	c := &codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "NewCodebase",
 			Namespace: "namespace",
 		},
-		Spec: v1alpha1.CodebaseSpec{
+		Spec: codebaseApi.CodebaseSpec{
 			Strategy: util.ImportStrategy,
 			CiTool:   util.GitlabCi,
 		},
@@ -363,7 +363,7 @@ func (s *ControllerTestSuite) TestReconcileCodebase_getStrategyChain_ShouldPassW
 	db, _, _ := sqlmock.New()
 	defer db.Close()
 
-	c := &v1alpha1.Codebase{}
+	c := &codebaseApi.Codebase{}
 	fakeCl := fake.NewClientBuilder().WithScheme(s.scheme).WithRuntimeObjects(c).Build()
 	r := ReconcileCodebase{
 		client: fakeCl,
@@ -378,17 +378,17 @@ func (s *ControllerTestSuite) TestReconcileCodebase_getStrategyChain_ShouldPassW
 }
 
 func (s *ControllerTestSuite) TestPostpone() {
-	c := v1alpha1.Codebase{
-		TypeMeta: metav1.TypeMeta{
+	c := codebaseApi.Codebase{
+		TypeMeta: metaV1.TypeMeta{
 			Kind:       "Codebase",
-			APIVersion: "v2.edp.epam.com/v1alpha1",
+			APIVersion: "v2.edp.epam.com/v1",
 		},
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:            "NewCodebase",
 			Namespace:       "namespace",
 			ResourceVersion: "1",
 		},
-		Spec: v1alpha1.CodebaseSpec{
+		Spec: codebaseApi.CodebaseSpec{
 			Strategy: util.ImportStrategy,
 			CiTool:   util.GitlabCi,
 			Lang:     "java",
@@ -406,7 +406,7 @@ func (s *ControllerTestSuite) TestPostpone() {
 		client: fakeCl,
 		log:    logr.DiscardLogger{},
 		scheme: s.scheme,
-		chainGetter: func(cr *v1alpha1.Codebase) (handler.CodebaseHandler, error) {
+		chainGetter: func(cr *codebaseApi.Codebase) (handler.CodebaseHandler, error) {
 			return &handlerMock, nil
 		},
 	}

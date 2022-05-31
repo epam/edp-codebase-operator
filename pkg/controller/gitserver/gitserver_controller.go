@@ -5,18 +5,19 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	"github.com/epam/edp-codebase-operator/v2/pkg/model"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
+	"github.com/epam/edp-codebase-operator/v2/pkg/model"
 )
 
 func NewReconcileGitServer(client client.Client, log logr.Logger) *ReconcileGitServer {
@@ -51,7 +52,7 @@ func (r *ReconcileGitServer) Reconcile(ctx context.Context, request reconcile.Re
 	instance := &codebaseApi.GitServer{}
 	err := r.client.Get(ctx, request.NamespacedName, instance)
 	if err != nil {
-		if k8serrors.IsNotFound(err) {
+		if k8sErrors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
 			// Return and don't requeue
@@ -94,22 +95,22 @@ func (r *ReconcileGitServer) updateStatus(ctx context.Context, client client.Cli
 	return nil
 }
 
-func generateStatus(hasConnection bool) v1alpha1.GitServerStatus {
+func generateStatus(hasConnection bool) codebaseApi.GitServerStatus {
 	if hasConnection {
-		return v1alpha1.GitServerStatus{
+		return codebaseApi.GitServerStatus{
 			Status:          "created",
 			Available:       hasConnection,
-			LastTimeUpdated: time.Now(),
+			LastTimeUpdated: metaV1.Now(),
 			Result:          "success",
 			Username:        "system",
 			Value:           "active",
 		}
 	}
 
-	return v1alpha1.GitServerStatus{
+	return codebaseApi.GitServerStatus{
 		Status:          "created",
 		Available:       hasConnection,
-		LastTimeUpdated: time.Now(),
+		LastTimeUpdated: metaV1.Now(),
 		Result:          "error",
 		Username:        "system",
 		Value:           "inactive",

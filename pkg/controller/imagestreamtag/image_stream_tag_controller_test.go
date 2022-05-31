@@ -5,21 +5,22 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 )
 
 func TestReconcileImageStreamTag_Reconcile_ShouldPassNotFound(t *testing.T) {
-	ist := &v1alpha1.ImageStreamTag{}
+	ist := &codebaseApi.ImageStreamTag{}
 
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, ist)
+	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, ist)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(ist).Build()
 
 	//request
@@ -61,26 +62,26 @@ func TestReconcileImageStreamTag_Reconcile_ShouldFailNotFound(t *testing.T) {
 	res, err := r.Reconcile(context.TODO(), req)
 
 	assert.Error(t, err)
-	if !strings.Contains(err.Error(), "no kind is registered for the type v1alpha1.ImageStreamTag") {
+	if !strings.Contains(err.Error(), "no kind is registered for the type v1.ImageStreamTag") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
 	assert.False(t, res.Requeue)
 }
 
 func TestReconcileImageStreamTag_Reconcile_ShouldFail(t *testing.T) {
-	ist := &v1alpha1.ImageStreamTag{
-		ObjectMeta: metav1.ObjectMeta{
+	ist := &codebaseApi.ImageStreamTag{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "IST",
 			Namespace: "namespace",
 		},
-		Spec: v1alpha1.ImageStreamTagSpec{
+		Spec: codebaseApi.ImageStreamTagSpec{
 			Tag:                     "111",
 			CodebaseImageStreamName: "cis",
 		},
 	}
 
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, ist)
+	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, ist)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(ist).Build()
 
 	//request
@@ -106,25 +107,25 @@ func TestReconcileImageStreamTag_Reconcile_ShouldFail(t *testing.T) {
 }
 
 func TestReconcileImageStreamTag_Reconcile_ShouldPass(t *testing.T) {
-	ist := &v1alpha1.ImageStreamTag{
-		ObjectMeta: metav1.ObjectMeta{
+	ist := &codebaseApi.ImageStreamTag{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "IST",
 			Namespace: "namespace",
 		},
-		Spec: v1alpha1.ImageStreamTagSpec{
+		Spec: codebaseApi.ImageStreamTagSpec{
 			Tag:                     "111",
 			CodebaseImageStreamName: "codebase-master",
 		},
 	}
-	cis := &v1alpha1.CodebaseImageStream{
-		ObjectMeta: metav1.ObjectMeta{
+	cis := &codebaseApi.CodebaseImageStream{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "codebase-master",
 			Namespace: "namespace",
 		},
 	}
 
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, ist, cis)
+	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, ist, cis)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(ist, cis).Build()
 
 	//request
@@ -144,7 +145,7 @@ func TestReconcileImageStreamTag_Reconcile_ShouldPass(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.False(t, res.Requeue)
-	istResp := &v1alpha1.CodebaseImageStream{}
+	istResp := &codebaseApi.CodebaseImageStream{}
 	err = fakeCl.Get(context.TODO(),
 		types.NamespacedName{
 			Name:      "codebase-master",

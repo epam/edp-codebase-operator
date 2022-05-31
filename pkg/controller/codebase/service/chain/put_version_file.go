@@ -5,14 +5,15 @@ import (
 	"os"
 	"strings"
 
-	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	"github.com/pkg/errors"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/helper"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/repository"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/service/chain/handler"
 	git "github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
-	"github.com/pkg/errors"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type PutVersionFile struct {
@@ -28,7 +29,7 @@ const (
 	goLang          = "go"
 )
 
-func (h PutVersionFile) ServeRequest(c *v1alpha1.Codebase) error {
+func (h PutVersionFile) ServeRequest(c *codebaseApi.Codebase) error {
 	if strings.ToLower(c.Spec.Lang) != goLang ||
 		(strings.ToLower(c.Spec.Lang) == goLang && c.Spec.Versioning.Type == "edp") {
 		return nextServeOrNil(h.next, c)
@@ -39,13 +40,13 @@ func (h PutVersionFile) ServeRequest(c *v1alpha1.Codebase) error {
 
 	name, err := helper.GetEDPName(h.client, c.Namespace)
 	if err != nil {
-		setFailedFields(c, v1alpha1.PutVersionFile, err.Error())
+		setFailedFields(c, codebaseApi.PutVersionFile, err.Error())
 		return err
 	}
 
 	exists, err := h.versionFileExists(c.Name, *name)
 	if err != nil {
-		setFailedFields(c, v1alpha1.PutVersionFile, err.Error())
+		setFailedFields(c, codebaseApi.PutVersionFile, err.Error())
 		return err
 	}
 
@@ -56,14 +57,14 @@ func (h PutVersionFile) ServeRequest(c *v1alpha1.Codebase) error {
 	}
 
 	if err := h.tryToPutVersionFile(c, util.GetWorkDir(c.Name, c.Namespace)); err != nil {
-		setFailedFields(c, v1alpha1.PutVersionFile, err.Error())
+		setFailedFields(c, codebaseApi.PutVersionFile, err.Error())
 		return err
 	}
 
 	if err := h.cr.UpdateProjectStatusValue(util.ProjectVersionGoFilePushedStatus, c.Name, *name); err != nil {
 		err := errors.Wrapf(err, "couldn't set project_status %v value for %v codebase",
 			util.ProjectVersionGoFilePushedStatus, c.Name)
-		setFailedFields(c, v1alpha1.PutVersionFile, err.Error())
+		setFailedFields(c, codebaseApi.PutVersionFile, err.Error())
 		return err
 	}
 
@@ -84,7 +85,7 @@ func (h PutVersionFile) versionFileExists(codebaseName, edpName string) (bool, e
 	return false, nil
 }
 
-func (h PutVersionFile) tryToPutVersionFile(c *v1alpha1.Codebase, projectPath string) error {
+func (h PutVersionFile) tryToPutVersionFile(c *codebaseApi.Codebase, projectPath string) error {
 	path := fmt.Sprintf("%v/%v", projectPath, versionFileName)
 	if err := createFile(path); err != nil {
 		return errors.Wrapf(err, "couldn't create file %v", path)

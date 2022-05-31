@@ -6,13 +6,14 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/jenkins"
 	"github.com/epam/edp-codebase-operator/v2/pkg/model"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	"github.com/pkg/errors"
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var log = ctrl.Log.WithName("codebase_branch_service")
@@ -20,13 +21,13 @@ var log = ctrl.Log.WithName("codebase_branch_service")
 const jenkinsJobSuccessStatus = "blue"
 
 type CodebaseBranchService interface {
-	AppendVersionToTheHistorySlice(*v1alpha1.CodebaseBranch) error
-	convertCodebaseBranchSpecToParams(*v1alpha1.CodebaseBranch) (map[string]string, error)
-	ResetBranchBuildCounter(*v1alpha1.CodebaseBranch) error
-	ResetBranchSuccessBuildCounter(*v1alpha1.CodebaseBranch) error
-	TriggerDeletionJob(*v1alpha1.CodebaseBranch) error
-	TriggerReleaseJob(*v1alpha1.CodebaseBranch) error
-	updateStatus(*v1alpha1.CodebaseBranch) error
+	AppendVersionToTheHistorySlice(*codebaseApi.CodebaseBranch) error
+	convertCodebaseBranchSpecToParams(*codebaseApi.CodebaseBranch) (map[string]string, error)
+	ResetBranchBuildCounter(*codebaseApi.CodebaseBranch) error
+	ResetBranchSuccessBuildCounter(*codebaseApi.CodebaseBranch) error
+	TriggerDeletionJob(*codebaseApi.CodebaseBranch) error
+	TriggerReleaseJob(*codebaseApi.CodebaseBranch) error
+	updateStatus(*codebaseApi.CodebaseBranch) error
 }
 
 type CodebaseBranchServiceProvider struct {
@@ -39,7 +40,7 @@ func (j JobFailedError) Error() string {
 	return string(j)
 }
 
-func (s *CodebaseBranchServiceProvider) TriggerDeletionJob(cb *v1alpha1.CodebaseBranch) error {
+func (s *CodebaseBranchServiceProvider) TriggerDeletionJob(cb *codebaseApi.CodebaseBranch) error {
 	rLog := log.WithValues("codebasebranch_name", cb.Name, "codebase_name", cb.Spec.CodebaseName)
 	rLog.V(2).Info("start triggering deletion job")
 
@@ -75,7 +76,7 @@ func (s *CodebaseBranchServiceProvider) TriggerDeletionJob(cb *v1alpha1.Codebase
 	return nil
 }
 
-func (s *CodebaseBranchServiceProvider) TriggerReleaseJob(cb *v1alpha1.CodebaseBranch) error {
+func (s *CodebaseBranchServiceProvider) TriggerReleaseJob(cb *codebaseApi.CodebaseBranch) error {
 	if cb.Status.Status != model.StatusInit {
 		log.Info("Release for codebase is not in init status. Skipped.",
 			"release", cb.Spec.BranchName, "codebase_name", cb.Spec.CodebaseName)
@@ -122,7 +123,7 @@ func (s *CodebaseBranchServiceProvider) TriggerReleaseJob(cb *v1alpha1.CodebaseB
 	return nil
 }
 
-func (s *CodebaseBranchServiceProvider) convertCodebaseBranchSpecToParams(cb *v1alpha1.CodebaseBranch) (map[string]string, error) {
+func (s *CodebaseBranchServiceProvider) convertCodebaseBranchSpecToParams(cb *codebaseApi.CodebaseBranch) (map[string]string, error) {
 	bts, err := json.Marshal(cb.Spec)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to encode codebase branch spec")
@@ -183,7 +184,7 @@ func initJenkinsClient(client client.Client, namespace string) (*jenkins.Jenkins
 	return jc, nil
 }
 
-func (s *CodebaseBranchServiceProvider) AppendVersionToTheHistorySlice(b *v1alpha1.CodebaseBranch) error {
+func (s *CodebaseBranchServiceProvider) AppendVersionToTheHistorySlice(b *codebaseApi.CodebaseBranch) error {
 	if b.Spec.Version == nil {
 		return nil
 	}
@@ -192,7 +193,7 @@ func (s *CodebaseBranchServiceProvider) AppendVersionToTheHistorySlice(b *v1alph
 	return s.updateStatus(b)
 }
 
-func (s *CodebaseBranchServiceProvider) ResetBranchBuildCounter(cb *v1alpha1.CodebaseBranch) error {
+func (s *CodebaseBranchServiceProvider) ResetBranchBuildCounter(cb *codebaseApi.CodebaseBranch) error {
 	if cb.Status.Build == nil {
 		return nil
 	}
@@ -200,7 +201,7 @@ func (s *CodebaseBranchServiceProvider) ResetBranchBuildCounter(cb *v1alpha1.Cod
 	return s.updateStatus(cb)
 }
 
-func (s *CodebaseBranchServiceProvider) ResetBranchSuccessBuildCounter(cb *v1alpha1.CodebaseBranch) error {
+func (s *CodebaseBranchServiceProvider) ResetBranchSuccessBuildCounter(cb *codebaseApi.CodebaseBranch) error {
 	if cb.Status.LastSuccessfulBuild == nil {
 		return nil
 	}
@@ -209,7 +210,7 @@ func (s *CodebaseBranchServiceProvider) ResetBranchSuccessBuildCounter(cb *v1alp
 	return s.updateStatus(cb)
 }
 
-func (s *CodebaseBranchServiceProvider) updateStatus(cb *v1alpha1.CodebaseBranch) error {
+func (s *CodebaseBranchServiceProvider) updateStatus(cb *codebaseApi.CodebaseBranch) error {
 	if err := s.Client.Status().Update(context.TODO(), cb); err != nil {
 		if err := s.Client.Update(context.TODO(), cb); err != nil {
 			return errors.Wrap(err, "CodebaseBranchServiceProvider: couldn't update codebase branch status")

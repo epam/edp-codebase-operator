@@ -2,10 +2,12 @@ package chain
 
 import (
 	"context"
-	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	"github.com/epam/edp-codebase-operator/v2/pkg/controller/gittag/chain/handler"
+
 	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
+	"github.com/epam/edp-codebase-operator/v2/pkg/controller/gittag/chain/handler"
 )
 
 type DeleteGitTagCr struct {
@@ -13,7 +15,7 @@ type DeleteGitTagCr struct {
 	client client.Client
 }
 
-func (h DeleteGitTagCr) ServeRequest(gt *v1alpha1.GitTag) error {
+func (h DeleteGitTagCr) ServeRequest(gt *codebaseApi.GitTag) error {
 	rl := log.WithValues("gi tag name", gt.Name)
 	rl.Info("start DeleteGitTagCr chain executing...")
 	if err := h.delete(gt); err != nil {
@@ -23,7 +25,7 @@ func (h DeleteGitTagCr) ServeRequest(gt *v1alpha1.GitTag) error {
 	return nextServeOrNil(h.next, gt)
 }
 
-func (h DeleteGitTagCr) delete(tag *v1alpha1.GitTag) error {
+func (h DeleteGitTagCr) delete(tag *codebaseApi.GitTag) error {
 	if err := h.client.Delete(context.TODO(), tag); err != nil {
 		return errors.Wrapf(err, "couldn't remove git tag %v.", tag.Name)
 	}

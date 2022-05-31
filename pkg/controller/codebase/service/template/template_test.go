@@ -6,13 +6,14 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	"github.com/stretchr/testify/assert"
 	coreV1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
+	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
 const (
@@ -27,24 +28,24 @@ func TestPrepareTemplates_ShouldPass(t *testing.T) {
 	}
 	defer os.RemoveAll(dir)
 
-	c := &v1alpha1.Codebase{
-		ObjectMeta: metav1.ObjectMeta{
+	c := &codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
-		Spec: v1alpha1.CodebaseSpec{
+		Spec: codebaseApi.CodebaseSpec{
 			Type:             util.Application,
-			Strategy:         v1alpha1.Create,
+			Strategy:         codebaseApi.Create,
 			DeploymentScript: "helm-chart",
 			Lang:             "go",
 		},
-		Status: v1alpha1.CodebaseStatus{
+		Status: codebaseApi.CodebaseStatus{
 			Git: *util.GetStringP("pushed"),
 		},
 	}
 
 	cm := &coreV1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "edp-config",
 			Namespace: fakeNamespace,
 		},
@@ -57,7 +58,7 @@ func TestPrepareTemplates_ShouldPass(t *testing.T) {
 
 	scheme := runtime.NewScheme()
 	scheme.AddKnownTypes(coreV1.SchemeGroupVersion, cm)
-	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, c)
+	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, c)
 
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, cm).Build()
 
@@ -66,12 +67,12 @@ func TestPrepareTemplates_ShouldPass(t *testing.T) {
 }
 
 func TestPrepareTemplates_ShouldFailOnGetProjectUrl(t *testing.T) {
-	c := &v1alpha1.Codebase{
-		ObjectMeta: metav1.ObjectMeta{
+	c := &codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
-		Spec: v1alpha1.CodebaseSpec{
+		Spec: codebaseApi.CodebaseSpec{
 			Type:             util.Application,
 			Strategy:         "fake",
 			DeploymentScript: "helm-chart",
@@ -80,7 +81,7 @@ func TestPrepareTemplates_ShouldFailOnGetProjectUrl(t *testing.T) {
 	}
 
 	cm := &coreV1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "edp-config",
 			Namespace: fakeNamespace,
 		},
@@ -93,7 +94,7 @@ func TestPrepareTemplates_ShouldFailOnGetProjectUrl(t *testing.T) {
 
 	scheme := runtime.NewScheme()
 	scheme.AddKnownTypes(coreV1.SchemeGroupVersion, cm)
-	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, c)
+	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, c)
 
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, cm).Build()
 
@@ -111,28 +112,28 @@ func TestPrepareGitLabCITemplates(t *testing.T) {
 	}
 	defer os.RemoveAll(dir)
 
-	c := &v1alpha1.Codebase{
-		ObjectMeta: metav1.ObjectMeta{
+	c := &codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
-		Spec: v1alpha1.CodebaseSpec{
+		Spec: codebaseApi.CodebaseSpec{
 			Type:             util.Application,
-			Strategy:         v1alpha1.Clone,
+			Strategy:         codebaseApi.Clone,
 			DeploymentScript: "helm-chart",
 			Lang:             "java",
-			Repository: &v1alpha1.Repository{
+			Repository: &codebaseApi.Repository{
 				Url: "http://example.com",
 			},
 			Framework: util.GetStringP("java11"),
 		},
-		Status: v1alpha1.CodebaseStatus{
+		Status: codebaseApi.CodebaseStatus{
 			Git: *util.GetStringP("pushed"),
 		},
 	}
 
 	cm := &coreV1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "edp-config",
 			Namespace: fakeNamespace,
 		},
@@ -145,7 +146,7 @@ func TestPrepareGitLabCITemplates(t *testing.T) {
 
 	scheme := runtime.NewScheme()
 	scheme.AddKnownTypes(coreV1.SchemeGroupVersion, cm)
-	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, c)
+	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, c)
 
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, cm).Build()
 
@@ -155,26 +156,26 @@ func TestPrepareGitLabCITemplates(t *testing.T) {
 
 func TestGetProjectUrl_ShouldPass(t *testing.T) {
 
-	c := &v1alpha1.Codebase{
-		Spec: v1alpha1.CodebaseSpec{
+	c := &codebaseApi.Codebase{
+		Spec: codebaseApi.CodebaseSpec{
 			Type:       util.Application,
 			Strategy:   util.ImportStrategy,
 			GitUrlPath: util.GetStringP("/fake/repo.git"),
 			GitServer:  fakeName,
 		},
 	}
-	gs := &v1alpha1.GitServer{
-		ObjectMeta: metav1.ObjectMeta{
+	gs := &codebaseApi.GitServer{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
-		Spec: v1alpha1.GitServerSpec{
+		Spec: codebaseApi.GitServerSpec{
 			GitHost: fakeName,
 		},
 	}
 
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, c, gs)
+	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, c, gs)
 
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, gs).Build()
 
@@ -185,8 +186,8 @@ func TestGetProjectUrl_ShouldPass(t *testing.T) {
 
 func TestGetProjectUrl_ShouldFailToGetGitserver(t *testing.T) {
 
-	c := &v1alpha1.Codebase{
-		Spec: v1alpha1.CodebaseSpec{
+	c := &codebaseApi.Codebase{
+		Spec: codebaseApi.CodebaseSpec{
 			Type:       util.Application,
 			Strategy:   util.ImportStrategy,
 			GitUrlPath: util.GetStringP("/fake/repo.git"),
@@ -195,7 +196,7 @@ func TestGetProjectUrl_ShouldFailToGetGitserver(t *testing.T) {
 	}
 
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, c)
+	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, c)
 
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c).Build()
 
@@ -209,15 +210,15 @@ func TestGetProjectUrl_ShouldFailToGetGitserver(t *testing.T) {
 
 func TestGetProjectUrl_ShouldFailWithUnsupportStrategy(t *testing.T) {
 
-	c := &v1alpha1.Codebase{
-		Spec: v1alpha1.CodebaseSpec{
+	c := &codebaseApi.Codebase{
+		Spec: codebaseApi.CodebaseSpec{
 			Type:     util.Application,
 			Strategy: "fake",
 		},
 	}
 
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, c)
+	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, c)
 
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c).Build()
 

@@ -5,21 +5,22 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 )
 
 func TestReconcileCodebaseImageStream_Reconcile_ShouldPassNotFound(t *testing.T) {
-	gs := &v1alpha1.CodebaseImageStream{}
+	gs := &codebaseApi.CodebaseImageStream{}
 
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, gs)
+	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, gs)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(gs).Build()
 
 	//request
@@ -61,22 +62,22 @@ func TestReconcileCodebaseImageStream_Reconcile_ShouldFailNotFound(t *testing.T)
 	res, err := r.Reconcile(context.TODO(), req)
 
 	assert.Error(t, err)
-	if !strings.Contains(err.Error(), "no kind is registered for the type v1alpha1.CodebaseImageStream") {
+	if !strings.Contains(err.Error(), "no kind is registered for the type v1.CodebaseImageStream") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
 	assert.False(t, res.Requeue)
 }
 
 func TestReconcileCodebaseImageStream_Reconcile_ShouldPass(t *testing.T) {
-	gs := &v1alpha1.CodebaseImageStream{
-		ObjectMeta: metav1.ObjectMeta{
+	gs := &codebaseApi.CodebaseImageStream{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "NewCIS",
 			Namespace: "namespace",
 		},
 	}
 
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, gs)
+	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, gs)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(gs).Build()
 
 	//request
@@ -99,8 +100,8 @@ func TestReconcileCodebaseImageStream_Reconcile_ShouldPass(t *testing.T) {
 }
 
 func TestReconcileCodebaseImageStream_Reconcile_ShouldFail(t *testing.T) {
-	gs := &v1alpha1.CodebaseImageStream{
-		ObjectMeta: metav1.ObjectMeta{
+	gs := &codebaseApi.CodebaseImageStream{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "NewCIS",
 			Namespace: "namespace",
 			Labels: map[string]string{
@@ -110,7 +111,7 @@ func TestReconcileCodebaseImageStream_Reconcile_ShouldFail(t *testing.T) {
 	}
 
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, gs)
+	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, gs)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(gs).Build()
 
 	//request

@@ -2,10 +2,12 @@ package chain
 
 import (
 	"context"
-	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	"github.com/epam/edp-codebase-operator/v2/pkg/controller/imagestreamtag/chain/handler"
+
 	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
+	"github.com/epam/edp-codebase-operator/v2/pkg/controller/imagestreamtag/chain/handler"
 )
 
 type DeleteTagCodebaseImageStreamCr struct {
@@ -13,7 +15,7 @@ type DeleteTagCodebaseImageStreamCr struct {
 	client client.Client
 }
 
-func (h DeleteTagCodebaseImageStreamCr) ServeRequest(ist *v1alpha1.ImageStreamTag) error {
+func (h DeleteTagCodebaseImageStreamCr) ServeRequest(ist *codebaseApi.ImageStreamTag) error {
 	rl := log.WithValues("image stream tag name", ist.Name)
 	rl.Info("start DeleteTagCodebaseImageStreamCr chain executing...")
 
@@ -25,7 +27,7 @@ func (h DeleteTagCodebaseImageStreamCr) ServeRequest(ist *v1alpha1.ImageStreamTa
 	return nextServeOrNil(h.next, ist)
 }
 
-func (h DeleteTagCodebaseImageStreamCr) delete(tag *v1alpha1.ImageStreamTag) error {
+func (h DeleteTagCodebaseImageStreamCr) delete(tag *codebaseApi.ImageStreamTag) error {
 	if err := h.client.Delete(context.TODO(), tag); err != nil {
 		return errors.Wrapf(err, "couldn't remove image stream tag %v.", tag.Name)
 	}

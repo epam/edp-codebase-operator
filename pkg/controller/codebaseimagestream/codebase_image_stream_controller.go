@@ -2,17 +2,20 @@ package codebaseimagestream
 
 import (
 	"context"
-	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebaseimagestream/chain"
-	"github.com/go-logr/logr"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"reflect"
+
+	"github.com/go-logr/logr"
+	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
+	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebaseimagestream/chain"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 )
 
 func NewReconcileCodebaseImageStream(client client.Client, log logr.Logger) *ReconcileCodebaseImageStream {
@@ -53,7 +56,7 @@ func (r *ReconcileCodebaseImageStream) Reconcile(ctx context.Context, request re
 
 	i := &codebaseApi.CodebaseImageStream{}
 	if err := r.client.Get(ctx, request.NamespacedName, i); err != nil {
-		if k8serrors.IsNotFound(err) {
+		if k8sErrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, err

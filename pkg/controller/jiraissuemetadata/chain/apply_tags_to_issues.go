@@ -1,11 +1,12 @@
 package chain
 
 import (
-	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	"github.com/pkg/errors"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/client/jira"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/jiraissuemetadata/chain/handler"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
-	"github.com/pkg/errors"
 )
 
 type ApplyTagsToIssues struct {
@@ -13,7 +14,7 @@ type ApplyTagsToIssues struct {
 	client jira.Client
 }
 
-func (h ApplyTagsToIssues) ServeRequest(metadata *v1alpha1.JiraIssueMetadata) error {
+func (h ApplyTagsToIssues) ServeRequest(metadata *codebaseApi.JiraIssueMetadata) error {
 	log.Info("start applying tags to issues.")
 	requestPayload, err := util.GetFieldsMap(metadata.Spec.Payload, []string{issuesLinksKey})
 	if err != nil {

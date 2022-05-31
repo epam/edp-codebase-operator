@@ -3,21 +3,22 @@ package trigger_job
 import (
 	"testing"
 
-	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	jenkinsv1alpha1 "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
+	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 )
 
 func Test_isJenkinsFolderAvailable(t *testing.T) {
 	type args struct {
-		jf *jenkinsv1alpha1.JenkinsFolder
+		jf *jenkinsApi.JenkinsFolder
 	}
 	tests := []struct {
 		name string
 		args args
 		want bool
 	}{
-		{"Jenkinsfolder is available", args{jf: &jenkinsv1alpha1.JenkinsFolder{Status: jenkinsv1alpha1.JenkinsFolderStatus{Available: true}}}, true},
-		{"Jenkinsfolder is NOT available", args{jf: &jenkinsv1alpha1.JenkinsFolder{Status: jenkinsv1alpha1.JenkinsFolderStatus{Available: false}}}, false},
+		{"Jenkinsfolder is available", args{jf: &jenkinsApi.JenkinsFolder{Status: jenkinsApi.JenkinsFolderStatus{Available: true}}}, true},
+		{"Jenkinsfolder is NOT available", args{jf: &jenkinsApi.JenkinsFolder{Status: jenkinsApi.JenkinsFolderStatus{Available: false}}}, false},
 		{"Jenkinsfolder is NOT available", args{jf: nil}, false},
 	}
 	for _, tt := range tests {
@@ -31,7 +32,7 @@ func Test_isJenkinsFolderAvailable(t *testing.T) {
 
 func Test_hasNewVersion(t *testing.T) {
 	type args struct {
-		b *v1alpha1.CodebaseBranch
+		b *codebaseApi.CodebaseBranch
 	}
 	var version1 string = "0.0.0-SNAPSHOT"
 	var version2 string = "1.0.0-SNAPSHOT"
@@ -42,22 +43,22 @@ func Test_hasNewVersion(t *testing.T) {
 	}{
 		{"Codebasebranch Doesn't have new version",
 			args{
-				b: &v1alpha1.CodebaseBranch{
-					Spec: v1alpha1.CodebaseBranchSpec{
+				b: &codebaseApi.CodebaseBranch{
+					Spec: codebaseApi.CodebaseBranchSpec{
 						Version: &version1,
 					},
-					Status: v1alpha1.CodebaseBranchStatus{
+					Status: codebaseApi.CodebaseBranchStatus{
 						VersionHistory: []string{"0.0.0-SNAPSHOT"},
 					},
 				},
 			}, false},
 		{"Codebasebranch has new version",
 			args{
-				b: &v1alpha1.CodebaseBranch{
-					Spec: v1alpha1.CodebaseBranchSpec{
+				b: &codebaseApi.CodebaseBranch{
+					Spec: codebaseApi.CodebaseBranchSpec{
 						Version: &version2,
 					},
-					Status: v1alpha1.CodebaseBranchStatus{
+					Status: codebaseApi.CodebaseBranchStatus{
 						VersionHistory: []string{"0.0.0-SNAPSHOT", "0.0.1-SNAPSHOT"},
 					},
 				},

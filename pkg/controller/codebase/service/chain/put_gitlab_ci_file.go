@@ -6,15 +6,16 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	"github.com/pkg/errors"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/helper"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/repository"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/service/chain/handler"
 	git "github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/platform"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
-	"github.com/pkg/errors"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type PutGitlabCiFile struct {
@@ -24,19 +25,19 @@ type PutGitlabCiFile struct {
 	git    git.Git
 }
 
-func (h PutGitlabCiFile) ServeRequest(c *v1alpha1.Codebase) error {
+func (h PutGitlabCiFile) ServeRequest(c *codebaseApi.Codebase) error {
 	rLog := log.WithValues("codebase_name", c.Name)
 	rLog.Info("start creating gitlab ci file...")
 
 	name, err := helper.GetEDPName(h.client, c.Namespace)
 	if err != nil {
-		setFailedFields(c, v1alpha1.PutGitlabCIFile, err.Error())
+		setFailedFields(c, codebaseApi.PutGitlabCIFile, err.Error())
 		return err
 	}
 
 	exists, err := h.gitlabCiFileExists(c.Name, *name)
 	if err != nil {
-		setFailedFields(c, v1alpha1.PutGitlabCIFile, err.Error())
+		setFailedFields(c, codebaseApi.PutGitlabCIFile, err.Error())
 		return err
 	}
 
@@ -46,13 +47,13 @@ func (h PutGitlabCiFile) ServeRequest(c *v1alpha1.Codebase) error {
 	}
 
 	if err := h.tryToPutGitlabCIFile(c); err != nil {
-		setFailedFields(c, v1alpha1.PutGitlabCIFile, err.Error())
+		setFailedFields(c, codebaseApi.PutGitlabCIFile, err.Error())
 		return err
 	}
 
 	if err := h.cr.UpdateProjectStatusValue(util.GitlabCi, c.Name, *name); err != nil {
 		err = errors.Wrapf(err, "couldn't set project_status %v value for %v codebase", util.GitlabCi, c.Name)
-		setFailedFields(c, v1alpha1.PutGitlabCIFile, err.Error())
+		setFailedFields(c, codebaseApi.PutGitlabCIFile, err.Error())
 		return err
 	}
 
@@ -60,7 +61,7 @@ func (h PutGitlabCiFile) ServeRequest(c *v1alpha1.Codebase) error {
 	return nextServeOrNil(h.next, c)
 }
 
-func (h PutGitlabCiFile) tryToPutGitlabCIFile(c *v1alpha1.Codebase) error {
+func (h PutGitlabCiFile) tryToPutGitlabCIFile(c *codebaseApi.Codebase) error {
 	if err := h.parseTemplate(c); err != nil {
 		return err
 	}
@@ -95,7 +96,7 @@ func (h PutGitlabCiFile) pushChanges(projectPath, privateKey, user, defaultBranc
 	return nil
 }
 
-func (h PutGitlabCiFile) parseTemplate(c *v1alpha1.Codebase) error {
+func (h PutGitlabCiFile) parseTemplate(c *codebaseApi.Codebase) error {
 	tp := fmt.Sprintf("%v/templates/gitlabci/%v/%v-%v.tmpl",
 		util.GetAssetsDir(),
 		platform.GetPlatformType(), strings.ToLower(*c.Spec.Framework), strings.ToLower(c.Spec.BuildTool))

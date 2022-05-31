@@ -4,13 +4,15 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	perfApi "github.com/epam/edp-perf-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/apps/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+
+	perfApi "github.com/epam/edp-perf-operator/v2/pkg/apis/edp/v1alpha1"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 )
 
 const (
@@ -19,23 +21,23 @@ const (
 )
 
 func TestUpdatePerfDataSources_ShouldSkipUpdating(t *testing.T) {
-	c := &v1alpha1.Codebase{
-		ObjectMeta: metav1.ObjectMeta{
+	c := &codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
 	}
 
-	cb := &v1alpha1.CodebaseBranch{
-		ObjectMeta: metav1.ObjectMeta{
-			OwnerReferences: []metav1.OwnerReference{{
+	cb := &codebaseApi.CodebaseBranch{
+		ObjectMeta: metaV1.ObjectMeta{
+			OwnerReferences: []metaV1.OwnerReference{{
 				Kind: "Codebase",
 				Name: fakeName,
 			}},
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
-		Spec: v1alpha1.CodebaseBranchSpec{
+		Spec: codebaseApi.CodebaseBranchSpec{
 			CodebaseName: fakeName,
 		},
 	}
@@ -48,13 +50,13 @@ func TestUpdatePerfDataSources_ShouldSkipUpdating(t *testing.T) {
 }
 
 func TestUpdatePerfDataSources_DsShouldBeUpdated(t *testing.T) {
-	c := &v1alpha1.Codebase{
-		ObjectMeta: metav1.ObjectMeta{
+	c := &codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
-		Spec: v1alpha1.CodebaseSpec{
-			Perf: &v1alpha1.Perf{
+		Spec: codebaseApi.CodebaseSpec{
+			Perf: &codebaseApi.Perf{
 				Name:        fakeName,
 				DataSources: []string{"Jenkins", "Sonar"},
 			},
@@ -62,22 +64,22 @@ func TestUpdatePerfDataSources_DsShouldBeUpdated(t *testing.T) {
 	}
 
 	p := &perfApi.PerfDataSourceJenkins{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      fmt.Sprintf("%v-%v", fakeName, "jenkins"),
 			Namespace: fakeNamespace,
 		},
 	}
 
-	cb := &v1alpha1.CodebaseBranch{
-		ObjectMeta: metav1.ObjectMeta{
-			OwnerReferences: []metav1.OwnerReference{{
+	cb := &codebaseApi.CodebaseBranch{
+		ObjectMeta: metaV1.ObjectMeta{
+			OwnerReferences: []metaV1.OwnerReference{{
 				Kind: "Codebase",
 				Name: fakeName,
 			}},
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
-		Spec: v1alpha1.CodebaseBranchSpec{
+		Spec: codebaseApi.CodebaseBranchSpec{
 			CodebaseName: fakeName,
 			BranchName:   fakeName,
 		},
@@ -91,22 +93,22 @@ func TestUpdatePerfDataSources_DsShouldBeUpdated(t *testing.T) {
 
 func TestUpdatePerfDataSources_CodebaseShouldNotBeFound(t *testing.T) {
 	p := &perfApi.PerfDataSourceJenkins{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      fmt.Sprintf("%v-%v", fakeName, "jenkins"),
 			Namespace: fakeNamespace,
 		},
 	}
 
-	cb := &v1alpha1.CodebaseBranch{
-		ObjectMeta: metav1.ObjectMeta{
-			OwnerReferences: []metav1.OwnerReference{{
+	cb := &codebaseApi.CodebaseBranch{
+		ObjectMeta: metaV1.ObjectMeta{
+			OwnerReferences: []metaV1.OwnerReference{{
 				Kind: "Codebase",
 				Name: fakeName,
 			}},
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
-		Spec: v1alpha1.CodebaseBranchSpec{
+		Spec: codebaseApi.CodebaseBranchSpec{
 			CodebaseName: fakeName,
 			BranchName:   fakeName,
 		},
@@ -119,13 +121,13 @@ func TestUpdatePerfDataSources_CodebaseShouldNotBeFound(t *testing.T) {
 }
 
 func TestUpdatePerfDataSources_PerfDataSourceShouldNotBeFound(t *testing.T) {
-	c := &v1alpha1.Codebase{
-		ObjectMeta: metav1.ObjectMeta{
+	c := &codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
-		Spec: v1alpha1.CodebaseSpec{
-			Perf: &v1alpha1.Perf{
+		Spec: codebaseApi.CodebaseSpec{
+			Perf: &codebaseApi.Perf{
 				Name:        fakeName,
 				DataSources: []string{"Jenkins", "Sonar"},
 			},
@@ -133,22 +135,22 @@ func TestUpdatePerfDataSources_PerfDataSourceShouldNotBeFound(t *testing.T) {
 	}
 
 	p := &perfApi.PerfDataSourceSonar{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      fmt.Sprintf("%v-%v", fakeName, "sonar"),
 			Namespace: fakeNamespace,
 		},
 	}
 
-	cb := &v1alpha1.CodebaseBranch{
-		ObjectMeta: metav1.ObjectMeta{
-			OwnerReferences: []metav1.OwnerReference{{
+	cb := &codebaseApi.CodebaseBranch{
+		ObjectMeta: metaV1.ObjectMeta{
+			OwnerReferences: []metaV1.OwnerReference{{
 				Kind: "Codebase",
 				Name: fakeName,
 			}},
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
-		Spec: v1alpha1.CodebaseBranchSpec{
+		Spec: codebaseApi.CodebaseBranchSpec{
 			CodebaseName: fakeName,
 			BranchName:   fakeName,
 		},
@@ -161,13 +163,13 @@ func TestUpdatePerfDataSources_PerfDataSourceShouldNotBeFound(t *testing.T) {
 }
 
 func TestUpdatePerfDataSources_JenkinsDsShouldBeUpdated(t *testing.T) {
-	c := &v1alpha1.Codebase{
-		ObjectMeta: metav1.ObjectMeta{
+	c := &codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
-		Spec: v1alpha1.CodebaseSpec{
-			Perf: &v1alpha1.Perf{
+		Spec: codebaseApi.CodebaseSpec{
+			Perf: &codebaseApi.Perf{
 				Name:        fakeName,
 				DataSources: []string{"Jenkins", "Sonar"},
 			},
@@ -175,7 +177,7 @@ func TestUpdatePerfDataSources_JenkinsDsShouldBeUpdated(t *testing.T) {
 	}
 
 	p := &perfApi.PerfDataSourceJenkins{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      fmt.Sprintf("%v-%v", fakeName, "jenkins"),
 			Namespace: fakeNamespace,
 		},
@@ -186,16 +188,16 @@ func TestUpdatePerfDataSources_JenkinsDsShouldBeUpdated(t *testing.T) {
 		},
 	}
 
-	cb := &v1alpha1.CodebaseBranch{
-		ObjectMeta: metav1.ObjectMeta{
-			OwnerReferences: []metav1.OwnerReference{{
+	cb := &codebaseApi.CodebaseBranch{
+		ObjectMeta: metaV1.ObjectMeta{
+			OwnerReferences: []metaV1.OwnerReference{{
 				Kind: "Codebase",
 				Name: fakeName,
 			}},
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
-		Spec: v1alpha1.CodebaseBranchSpec{
+		Spec: codebaseApi.CodebaseBranchSpec{
 			CodebaseName: fakeName,
 			BranchName:   fakeName,
 		},
@@ -208,13 +210,13 @@ func TestUpdatePerfDataSources_JenkinsDsShouldBeUpdated(t *testing.T) {
 }
 
 func TestUpdatePerfDataSources_GitLabDsShouldBeUpdated(t *testing.T) {
-	c := &v1alpha1.Codebase{
-		ObjectMeta: metav1.ObjectMeta{
+	c := &codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
-		Spec: v1alpha1.CodebaseSpec{
-			Perf: &v1alpha1.Perf{
+		Spec: codebaseApi.CodebaseSpec{
+			Perf: &codebaseApi.Perf{
 				Name:        fakeName,
 				DataSources: []string{"GitLab"},
 			},
@@ -222,7 +224,7 @@ func TestUpdatePerfDataSources_GitLabDsShouldBeUpdated(t *testing.T) {
 	}
 
 	p := &perfApi.PerfDataSourceGitLab{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      fmt.Sprintf("%v-%v", fakeName, "gitlab"),
 			Namespace: fakeNamespace,
 		},
@@ -235,16 +237,16 @@ func TestUpdatePerfDataSources_GitLabDsShouldBeUpdated(t *testing.T) {
 		},
 	}
 
-	cb := &v1alpha1.CodebaseBranch{
-		ObjectMeta: metav1.ObjectMeta{
-			OwnerReferences: []metav1.OwnerReference{{
+	cb := &codebaseApi.CodebaseBranch{
+		ObjectMeta: metaV1.ObjectMeta{
+			OwnerReferences: []metaV1.OwnerReference{{
 				Kind: "Codebase",
 				Name: fakeName,
 			}},
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
-		Spec: v1alpha1.CodebaseBranchSpec{
+		Spec: codebaseApi.CodebaseBranchSpec{
 			CodebaseName: fakeName,
 			BranchName:   fakeName,
 		},

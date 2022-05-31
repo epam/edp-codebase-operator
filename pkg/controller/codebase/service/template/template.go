@@ -6,18 +6,19 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	"github.com/epam/edp-codebase-operator/v2/pkg/controller/platform"
-	"github.com/epam/edp-codebase-operator/v2/pkg/model"
-	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	"github.com/pkg/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
+	"github.com/epam/edp-codebase-operator/v2/pkg/controller/platform"
+	"github.com/epam/edp-codebase-operator/v2/pkg/model"
+	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
 var log = ctrl.Log.WithName("template")
 
-func PrepareTemplates(client client.Client, c *v1alpha1.Codebase, workDir, assetsDir string) error {
+func PrepareTemplates(client client.Client, c *codebaseApi.Codebase, workDir, assetsDir string) error {
 	log.Info("start preparing deploy templates", "codebase", c.Name)
 
 	cf, err := buildTemplateConfig(client, c)
@@ -40,7 +41,7 @@ func PrepareTemplates(client client.Client, c *v1alpha1.Codebase, workDir, asset
 	return nil
 }
 
-func PrepareGitlabCITemplates(client client.Client, c *v1alpha1.Codebase, workDir, assetsDir string) error {
+func PrepareGitlabCITemplates(client client.Client, c *codebaseApi.Codebase, workDir, assetsDir string) error {
 	log.Info("start preparing deploy templates", "codebase", c.Name)
 
 	if c.Spec.Type != util.Application {
@@ -61,7 +62,7 @@ func PrepareGitlabCITemplates(client client.Client, c *v1alpha1.Codebase, workDi
 	return nil
 }
 
-func buildTemplateConfig(client client.Client, c *v1alpha1.Codebase) (*model.ConfigGoTemplating, error) {
+func buildTemplateConfig(client client.Client, c *codebaseApi.Codebase) (*model.ConfigGoTemplating, error) {
 	log.Info("start creating template config", "codebase_name", c.Name)
 	us, err := util.GetUserSettings(client, c.Namespace)
 	if err != nil {
@@ -86,7 +87,7 @@ func buildTemplateConfig(client client.Client, c *v1alpha1.Codebase) (*model.Con
 	return &cf, nil
 }
 
-func getProjectUrl(c client.Client, s v1alpha1.CodebaseSpec, n string) (string, error) {
+func getProjectUrl(c client.Client, s codebaseApi.CodebaseSpec, n string) (string, error) {
 	switch s.Strategy {
 	case "create":
 		p := util.BuildRepoUrl(s)

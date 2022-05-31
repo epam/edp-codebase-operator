@@ -40,52 +40,52 @@ annotations:
   artifacthub.io/operatorCapabilities: Full Lifecycle
   artifacthub.io/crds: |
     - kind: CDStageDeploy
-      version: v2.edp.epam.com/v1alpha1
+      version: v2.edp.epam.com/v1
       name: cdstagedeploy
       displayName: CDStageDeploy
       description: Stage deploy configuraion for CD
     - kind: Codebase
-      version: v2.edp.epam.com/v1alpha1
+      version: v2.edp.epam.com/v1
       name: codebase
       displayName: Codebase
       description: Creates an application in the admin console and starts CI pipeline
     - kind: CodebaseBranch
-      version: v2.edp.epam.com/v1alpha1
+      version: v2.edp.epam.com/v1
       name: codebasebranch
       displayName: CodebaseBranch
       description: Creates a branch for an application
     - kind: CodebaseImageStream
-      version: v2.edp.epam.com/v1alpha1
+      version: v2.edp.epam.com/v1
       name: codebaseimagestream
       displayName: CodebaseImageStream
       description: Creates a link to an images
     - kind: GitServer
-      version: v2.edp.epam.com/v1alpha1
+      version: v2.edp.epam.com/v1
       name: gitserver
       displayName: GitServer
       description: Communicates with Git server
     - kind: GitTag
-      version: v2.edp.epam.com/v1alpha1
+      version: v2.edp.epam.com/v1
       name: gittag
       displayName: GitTag
       description: Tags a git branch
     - kind: ImageStreamTag
-      version: v2.edp.epam.com/v1alpha1
+      version: v2.edp.epam.com/v1
       name: imagestreamtag
       displayName: ImageStreamTag
       description: Tags an image
     - kind: JiraIssueMetadata
-      version: v2.edp.epam.com/v1alpha1
+      version: v2.edp.epam.com/v1
       name: jiraissuemetadata
       displayName: JiraIssueMetadata
       description: Creates Jira metadata
     - kind: JiraServer
-      version: v2.edp.epam.com/v1alpha1
+      version: v2.edp.epam.com/v1
       name: jiraserver
       displayName: JiraServer
       description: Operates with Jira server
   artifacthub.io/crdsExamples: |
-    - apiVersion: v2.edp.epam.com/v1alpha1
+    - apiVersion: v2.edp.epam.com/v1
       kind: Codebase
       metadata:
         name: javascript-deploy-edp
@@ -113,7 +113,7 @@ annotations:
         versioning:
           startFrom: 1.2.3-SNAPSHOT
           type: edp
-    - apiVersion: v2.edp.epam.com/v1alpha1
+    - apiVersion: v2.edp.epam.com/v1
       kind: CodebaseBranch
       metadata:
         name: javascript-deploy-edp-branch-dev-1
@@ -124,7 +124,7 @@ annotations:
         release: false
         releaseJobParams: null
         version: 1.2.3-SNAPSHOT
-    - apiVersion: v2.edp.epam.com/v1alpha1
+    - apiVersion: v2.edp.epam.com/v1
       kind: CodebaseImageStream
       metadata:
         name: javascript-deploy-edp-branch-dev-1
@@ -135,7 +135,7 @@ annotations:
         tags:
           - created: '2022-05-25T08:57:12'
             name: branch/dev-1-0.0.1-snapshot-1
-    - apiVersion: v2.edp.epam.com/v1alpha1
+    - apiVersion: v2.edp.epam.com/v1
       kind: GitServer
       metadata:
         name: gerrit
@@ -146,7 +146,7 @@ annotations:
         httpsPort: 443
         nameSshKeySecret: gerrit-ciuser-sshkey
         sshPort: 30002
-    - apiVersion: v2.edp.epam.com/v1alpha1
+    - apiVersion: v2.edp.epam.com/v1
       kind: JiraServer
       metadata:
         name: jiraserver

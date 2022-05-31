@@ -5,30 +5,31 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	mockgit "github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver/mock"
-	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	"github.com/stretchr/testify/assert"
 	coreV1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
+	mockGit "github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver/mock"
+	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
 func TestGetRepositoryCredentialsIfExists_ShouldPass(t *testing.T) {
-	c := &v1alpha1.Codebase{
-		ObjectMeta: metav1.ObjectMeta{
+	c := &codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "fake-name",
 			Namespace: fakeNamespace,
 		},
-		Spec: v1alpha1.CodebaseSpec{
-			Repository: &v1alpha1.Repository{
+		Spec: codebaseApi.CodebaseSpec{
+			Repository: &codebaseApi.Repository{
 				Url: "repo",
 			},
 		},
 	}
 	s := &coreV1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "repository-codebase-fake-name-temp",
 			Namespace: fakeNamespace,
 		},
@@ -39,7 +40,7 @@ func TestGetRepositoryCredentialsIfExists_ShouldPass(t *testing.T) {
 	}
 	scheme := runtime.NewScheme()
 	scheme.AddKnownTypes(coreV1.SchemeGroupVersion, s)
-	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, c)
+	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, c)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(s, c).Build()
 	u, p, err := GetRepositoryCredentialsIfExists(c, fakeCl)
 	assert.Equal(t, u, util.GetStringP("user"))
@@ -48,20 +49,20 @@ func TestGetRepositoryCredentialsIfExists_ShouldPass(t *testing.T) {
 }
 
 func TestGetRepositoryCredentialsIfExists_ShouldFail(t *testing.T) {
-	c := &v1alpha1.Codebase{
-		ObjectMeta: metav1.ObjectMeta{
+	c := &codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "fake-name",
 			Namespace: fakeNamespace,
 		},
-		Spec: v1alpha1.CodebaseSpec{
-			Repository: &v1alpha1.Repository{
+		Spec: codebaseApi.CodebaseSpec{
+			Repository: &codebaseApi.Repository{
 				Url: "repo",
 			},
 		},
 	}
 
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, c)
+	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, c)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c).Build()
 	_, _, err := GetRepositoryCredentialsIfExists(c, fakeCl)
 	assert.Error(t, err)
@@ -71,23 +72,23 @@ func TestGetRepositoryCredentialsIfExists_ShouldFail(t *testing.T) {
 }
 
 func TestCheckoutBranch_ShouldFailOnGetSecret(t *testing.T) {
-	c := &v1alpha1.Codebase{
-		ObjectMeta: metav1.ObjectMeta{
+	c := &codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "fake-name",
 			Namespace: fakeNamespace,
 		},
-		Spec: v1alpha1.CodebaseSpec{
-			Repository: &v1alpha1.Repository{
+		Spec: codebaseApi.CodebaseSpec{
+			Repository: &codebaseApi.Repository{
 				Url: "repo",
 			},
 		},
 	}
 
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, c)
+	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, c)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c).Build()
 
-	mGit := new(mockgit.MockGit)
+	mGit := new(mockGit.MockGit)
 
 	err := CheckoutBranch(util.GetStringP("repo"), "project-path", "branch", mGit, c, fakeCl)
 	assert.Error(t, err)
@@ -97,19 +98,19 @@ func TestCheckoutBranch_ShouldFailOnGetSecret(t *testing.T) {
 }
 
 func TestCheckoutBranch_ShouldFailOnCheckPermission(t *testing.T) {
-	c := &v1alpha1.Codebase{
-		ObjectMeta: metav1.ObjectMeta{
+	c := &codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "fake-name",
 			Namespace: fakeNamespace,
 		},
-		Spec: v1alpha1.CodebaseSpec{
-			Repository: &v1alpha1.Repository{
+		Spec: codebaseApi.CodebaseSpec{
+			Repository: &codebaseApi.Repository{
 				Url: "repo",
 			},
 		},
 	}
 	s := &coreV1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "repository-codebase-fake-name-temp",
 			Namespace: fakeNamespace,
 		},
@@ -120,10 +121,10 @@ func TestCheckoutBranch_ShouldFailOnCheckPermission(t *testing.T) {
 	}
 	scheme := runtime.NewScheme()
 	scheme.AddKnownTypes(coreV1.SchemeGroupVersion, s)
-	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, c)
+	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, c)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(s, c).Build()
 
-	mGit := new(mockgit.MockGit)
+	mGit := new(mockGit.MockGit)
 	mGit.On("CheckPermissions", "repo", util.GetStringP("user"), util.GetStringP("pass")).Return(false)
 
 	err := CheckoutBranch(util.GetStringP("repo"), "project-path", "branch", mGit, c, fakeCl)
@@ -134,19 +135,19 @@ func TestCheckoutBranch_ShouldFailOnCheckPermission(t *testing.T) {
 }
 
 func TestCheckoutBranch_ShouldFailOnGetCurrentBranchName(t *testing.T) {
-	c := &v1alpha1.Codebase{
-		ObjectMeta: metav1.ObjectMeta{
+	c := &codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "fake-name",
 			Namespace: fakeNamespace,
 		},
-		Spec: v1alpha1.CodebaseSpec{
-			Repository: &v1alpha1.Repository{
+		Spec: codebaseApi.CodebaseSpec{
+			Repository: &codebaseApi.Repository{
 				Url: "repo",
 			},
 		},
 	}
 	s := &coreV1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "repository-codebase-fake-name-temp",
 			Namespace: fakeNamespace,
 		},
@@ -157,10 +158,10 @@ func TestCheckoutBranch_ShouldFailOnGetCurrentBranchName(t *testing.T) {
 	}
 	scheme := runtime.NewScheme()
 	scheme.AddKnownTypes(coreV1.SchemeGroupVersion, s)
-	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, c)
+	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, c)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(s, c).Build()
 
-	mGit := new(mockgit.MockGit)
+	mGit := new(mockGit.MockGit)
 	mGit.On("CheckPermissions", "repo", util.GetStringP("user"), util.GetStringP("pass")).Return(true)
 	mGit.On("GetCurrentBranchName", "project-path").Return("", errors.New("FATAL:FAILED"))
 
@@ -177,20 +178,20 @@ func TestCheckoutBranch_ShouldFailOnCheckout(t *testing.T) {
 		u    = "user"
 		p    = "pass"
 	)
-	c := &v1alpha1.Codebase{
-		ObjectMeta: metav1.ObjectMeta{
+	c := &codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "fake-name",
 			Namespace: fakeNamespace,
 		},
-		Spec: v1alpha1.CodebaseSpec{
-			Repository: &v1alpha1.Repository{
+		Spec: codebaseApi.CodebaseSpec{
+			Repository: &codebaseApi.Repository{
 				Url: "repo",
 			},
-			Strategy: v1alpha1.Clone,
+			Strategy: codebaseApi.Clone,
 		},
 	}
 	s := &coreV1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "repository-codebase-fake-name-temp",
 			Namespace: fakeNamespace,
 		},
@@ -201,10 +202,10 @@ func TestCheckoutBranch_ShouldFailOnCheckout(t *testing.T) {
 	}
 	scheme := runtime.NewScheme()
 	scheme.AddKnownTypes(coreV1.SchemeGroupVersion, s)
-	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, c)
+	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, c)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(s, c).Build()
 
-	mGit := new(mockgit.MockGit)
+	mGit := new(mockGit.MockGit)
 	mGit.On("CheckPermissions", "repo", &u, &p).Return(true)
 	mGit.On("GetCurrentBranchName", "project-path").Return("some-other-branch", nil)
 	mGit.On("Checkout", &u, &p, "project-path", "branch", true).Return(errors.New("FATAL:FAILED"))
@@ -222,25 +223,25 @@ func TestCheckoutBranch_ShouldPassForCloneStrategy(t *testing.T) {
 		u    = "user"
 		p    = "pass"
 	)
-	c := &v1alpha1.Codebase{
-		ObjectMeta: metav1.ObjectMeta{
+	c := &codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "fake-name",
 			Namespace: fakeNamespace,
 		},
-		Spec: v1alpha1.CodebaseSpec{
+		Spec: codebaseApi.CodebaseSpec{
 			GitServer: "git",
-			Repository: &v1alpha1.Repository{
+			Repository: &codebaseApi.Repository{
 				Url: "repo",
 			},
-			Strategy: v1alpha1.Import,
+			Strategy: codebaseApi.Import,
 		},
 	}
-	gs := &v1alpha1.GitServer{
-		ObjectMeta: metav1.ObjectMeta{
+	gs := &codebaseApi.GitServer{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "git",
 			Namespace: fakeNamespace,
 		},
-		Spec: v1alpha1.GitServerSpec{
+		Spec: codebaseApi.GitServerSpec{
 			NameSshKeySecret: fakeName,
 			GitHost:          fakeName,
 			SshPort:          22,
@@ -248,7 +249,7 @@ func TestCheckoutBranch_ShouldPassForCloneStrategy(t *testing.T) {
 		},
 	}
 	s := &coreV1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "repository-codebase-fake-name-temp",
 			Namespace: fakeNamespace,
 		},
@@ -258,7 +259,7 @@ func TestCheckoutBranch_ShouldPassForCloneStrategy(t *testing.T) {
 		},
 	}
 	ssh := &coreV1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
@@ -268,10 +269,10 @@ func TestCheckoutBranch_ShouldPassForCloneStrategy(t *testing.T) {
 	}
 	scheme := runtime.NewScheme()
 	scheme.AddKnownTypes(coreV1.SchemeGroupVersion, s, ssh)
-	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, c, gs)
+	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, c, gs)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(s, c, gs, ssh).Build()
 
-	mGit := new(mockgit.MockGit)
+	mGit := new(mockGit.MockGit)
 	mGit.On("CheckPermissions", "repo", &u, &p).Return(true)
 	mGit.On("GetCurrentBranchName", "project-path").Return("some-other-branch", nil)
 	mGit.On("CheckoutRemoteBranchBySSH", "fake", fakeName, "project-path", "branch").Return(nil)

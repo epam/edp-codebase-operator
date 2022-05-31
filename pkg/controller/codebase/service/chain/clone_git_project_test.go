@@ -8,14 +8,15 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	mockgit "github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver/mock"
-	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	"github.com/stretchr/testify/assert"
 	coreV1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
+	mockGit "github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver/mock"
+	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
 func TestCloneGitProject_ShouldPass(t *testing.T) {
@@ -27,21 +28,21 @@ func TestCloneGitProject_ShouldPass(t *testing.T) {
 
 	os.Setenv("WORKING_DIR", dir)
 
-	c := &v1alpha1.Codebase{
-		ObjectMeta: metav1.ObjectMeta{
+	c := &codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
-		Spec: v1alpha1.CodebaseSpec{
+		Spec: codebaseApi.CodebaseSpec{
 			GitUrlPath: util.GetStringP(fakeName),
-			Repository: &v1alpha1.Repository{
+			Repository: &codebaseApi.Repository{
 				Url: "repo",
 			},
 			GitServer: fakeName,
 		},
 	}
 	s := &coreV1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "repository-codebase-fake-name-temp",
 			Namespace: fakeNamespace,
 		},
@@ -51,12 +52,12 @@ func TestCloneGitProject_ShouldPass(t *testing.T) {
 		},
 	}
 
-	gs := &v1alpha1.GitServer{
-		ObjectMeta: metav1.ObjectMeta{
+	gs := &codebaseApi.GitServer{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
-		Spec: v1alpha1.GitServerSpec{
+		Spec: codebaseApi.GitServerSpec{
 			NameSshKeySecret: fakeName,
 			GitHost:          fakeName,
 			SshPort:          22,
@@ -64,7 +65,7 @@ func TestCloneGitProject_ShouldPass(t *testing.T) {
 		},
 	}
 	ssh := &coreV1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
@@ -75,10 +76,10 @@ func TestCloneGitProject_ShouldPass(t *testing.T) {
 
 	scheme := runtime.NewScheme()
 	scheme.AddKnownTypes(coreV1.SchemeGroupVersion, s, ssh)
-	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, c, gs)
+	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, c, gs)
 
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(s, c, gs, ssh).Build()
-	mGit := new(mockgit.MockGit)
+	mGit := new(mockGit.MockGit)
 	var port int32 = 22
 	wd := util.GetWorkDir(fakeName, fakeNamespace)
 	mGit.On("CloneRepositoryBySsh", "",
@@ -96,8 +97,8 @@ func TestCloneGitProject_ShouldPass(t *testing.T) {
 }
 
 func TestCloneGitProject_SetIntermediateSuccessFieldsShouldFail(t *testing.T) {
-	c := &v1alpha1.Codebase{
-		ObjectMeta: metav1.ObjectMeta{
+	c := &codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name: fakeName,
 		},
 	}
@@ -116,14 +117,14 @@ func TestCloneGitProject_SetIntermediateSuccessFieldsShouldFail(t *testing.T) {
 }
 
 func TestCloneGitProject_GetGitServerShouldFail(t *testing.T) {
-	c := &v1alpha1.Codebase{
-		ObjectMeta: metav1.ObjectMeta{
+	c := &codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
-		Spec: v1alpha1.CodebaseSpec{
+		Spec: codebaseApi.CodebaseSpec{
 			GitUrlPath: util.GetStringP(fakeName),
-			Repository: &v1alpha1.Repository{
+			Repository: &codebaseApi.Repository{
 				Url: "repo",
 			},
 			GitServer: fakeName,
@@ -131,7 +132,7 @@ func TestCloneGitProject_GetGitServerShouldFail(t *testing.T) {
 	}
 
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, c)
+	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, c)
 
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c).Build()
 
@@ -147,26 +148,26 @@ func TestCloneGitProject_GetGitServerShouldFail(t *testing.T) {
 }
 
 func TestCloneGitProject_GetSecretShouldFail(t *testing.T) {
-	c := &v1alpha1.Codebase{
-		ObjectMeta: metav1.ObjectMeta{
+	c := &codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
-		Spec: v1alpha1.CodebaseSpec{
+		Spec: codebaseApi.CodebaseSpec{
 			GitUrlPath: util.GetStringP(fakeName),
-			Repository: &v1alpha1.Repository{
+			Repository: &codebaseApi.Repository{
 				Url: "repo",
 			},
 			GitServer: fakeName,
 		},
 	}
 
-	gs := &v1alpha1.GitServer{
-		ObjectMeta: metav1.ObjectMeta{
+	gs := &codebaseApi.GitServer{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
-		Spec: v1alpha1.GitServerSpec{
+		Spec: codebaseApi.GitServerSpec{
 			NameSshKeySecret: fakeName,
 			GitHost:          fakeName,
 			SshPort:          22,
@@ -174,7 +175,7 @@ func TestCloneGitProject_GetSecretShouldFail(t *testing.T) {
 		},
 	}
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, c, gs)
+	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, c, gs)
 
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, gs).Build()
 
@@ -198,21 +199,21 @@ func TestCloneGitProject_CloneRepositoryBySshShouldFail(t *testing.T) {
 
 	os.Setenv("WORKING_DIR", dir)
 
-	c := &v1alpha1.Codebase{
-		ObjectMeta: metav1.ObjectMeta{
+	c := &codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
-		Spec: v1alpha1.CodebaseSpec{
+		Spec: codebaseApi.CodebaseSpec{
 			GitUrlPath: util.GetStringP(fakeName),
-			Repository: &v1alpha1.Repository{
+			Repository: &codebaseApi.Repository{
 				Url: "repo",
 			},
 			GitServer: fakeName,
 		},
 	}
 	s := &coreV1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "repository-codebase-fake-name-temp",
 			Namespace: fakeNamespace,
 		},
@@ -222,12 +223,12 @@ func TestCloneGitProject_CloneRepositoryBySshShouldFail(t *testing.T) {
 		},
 	}
 
-	gs := &v1alpha1.GitServer{
-		ObjectMeta: metav1.ObjectMeta{
+	gs := &codebaseApi.GitServer{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
-		Spec: v1alpha1.GitServerSpec{
+		Spec: codebaseApi.GitServerSpec{
 			NameSshKeySecret: fakeName,
 			GitHost:          fakeName,
 			SshPort:          22,
@@ -235,7 +236,7 @@ func TestCloneGitProject_CloneRepositoryBySshShouldFail(t *testing.T) {
 		},
 	}
 	ssh := &coreV1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
@@ -246,10 +247,10 @@ func TestCloneGitProject_CloneRepositoryBySshShouldFail(t *testing.T) {
 
 	scheme := runtime.NewScheme()
 	scheme.AddKnownTypes(coreV1.SchemeGroupVersion, s, ssh)
-	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, c, gs)
+	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, c, gs)
 
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(s, c, gs, ssh).Build()
-	mGit := new(mockgit.MockGit)
+	mGit := new(mockGit.MockGit)
 	var port int32 = 22
 	wd := util.GetWorkDir(fakeName, fakeNamespace)
 	mGit.On("CloneRepositoryBySsh", "",
@@ -272,7 +273,7 @@ func TestCloneGitProject_CloneRepositoryBySshShouldFail(t *testing.T) {
 func TestCloneGitProject_Postpone(t *testing.T) {
 	cl := CloneGitProject{}
 	path := repoNotReady
-	err := cl.ServeRequest(&v1alpha1.Codebase{Spec: v1alpha1.CodebaseSpec{GitUrlPath: &path}})
+	err := cl.ServeRequest(&codebaseApi.Codebase{Spec: codebaseApi.CodebaseSpec{GitUrlPath: &path}})
 	assert.Error(t, err)
 	assert.IsType(t, PostponeError{}, err)
 }

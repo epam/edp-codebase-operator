@@ -7,15 +7,10 @@ import (
 	"reflect"
 	"time"
 
-	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	"github.com/epam/edp-codebase-operator/v2/pkg/client/jira"
-	"github.com/epam/edp-codebase-operator/v2/pkg/client/jira/adapter"
-	"github.com/epam/edp-codebase-operator/v2/pkg/client/jira/dto"
-	"github.com/epam/edp-codebase-operator/v2/pkg/controller/jiraissuemetadata/chain"
-	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -25,6 +20,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
+	"github.com/epam/edp-codebase-operator/v2/pkg/client/jira"
+	"github.com/epam/edp-codebase-operator/v2/pkg/client/jira/adapter"
+	"github.com/epam/edp-codebase-operator/v2/pkg/client/jira/dto"
+	"github.com/epam/edp-codebase-operator/v2/pkg/controller/jiraissuemetadata/chain"
+	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
 const (
@@ -67,7 +69,7 @@ func (r *ReconcileJiraIssueMetadata) Reconcile(ctx context.Context, request reco
 
 	i := &codebaseApi.JiraIssueMetadata{}
 	if err := r.client.Get(ctx, request.NamespacedName, i); err != nil {
-		if k8serrors.IsNotFound(err) {
+		if k8sErrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, err
@@ -151,7 +153,7 @@ func setErrorStatus(metadata *codebaseApi.JiraIssueMetadata, msg string) {
 	metadata.Status.DetailedMessage = msg
 }
 func (r *ReconcileJiraIssueMetadata) updateStatus(ctx context.Context, instance *codebaseApi.JiraIssueMetadata) {
-	instance.Status.LastTimeUpdated = time.Now()
+	instance.Status.LastTimeUpdated = metaV1.Now()
 	err := r.client.Status().Update(ctx, instance)
 	if err != nil {
 		_ = r.client.Update(ctx, instance)

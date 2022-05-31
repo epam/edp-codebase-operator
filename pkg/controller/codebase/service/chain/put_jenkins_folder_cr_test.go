@@ -5,40 +5,42 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	"github.com/epam/edp-codebase-operator/v2/pkg/util"
-	jenkinsv1alpha1 "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
-	"github.com/epam/edp-jenkins-operator/v2/pkg/util/consts"
 	"github.com/stretchr/testify/assert"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+
+	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
+	"github.com/epam/edp-jenkins-operator/v2/pkg/util/consts"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
+	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
 func TestPutJenkinsFolder_ShouldCreateJenkinsfolder(t *testing.T) {
-	c := &v1alpha1.Codebase{
-		ObjectMeta: metav1.ObjectMeta{
+	c := &codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
-		Spec: v1alpha1.CodebaseSpec{
+		Spec: codebaseApi.CodebaseSpec{
 			BuildTool:       "Maven",
 			GitServer:       fakeName,
 			JobProvisioning: util.GetStringP("ci"),
-			Strategy:        v1alpha1.Clone,
-			Repository: &v1alpha1.Repository{
+			Strategy:        codebaseApi.Clone,
+			Repository: &codebaseApi.Repository{
 				Url: "https://example.com",
 			},
 		},
 	}
 
-	gs := &v1alpha1.GitServer{
-		ObjectMeta: metav1.ObjectMeta{
+	gs := &codebaseApi.GitServer{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
-		Spec: v1alpha1.GitServerSpec{
+		Spec: codebaseApi.GitServerSpec{
 			NameSshKeySecret: fakeName,
 			GitHost:          fakeName,
 			SshPort:          22,
@@ -46,10 +48,10 @@ func TestPutJenkinsFolder_ShouldCreateJenkinsfolder(t *testing.T) {
 		},
 	}
 
-	jf := &jenkinsv1alpha1.JenkinsFolder{}
+	jf := &jenkinsApi.JenkinsFolder{}
 
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, c, gs, jf)
+	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, c, gs, jf)
 
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, gs, jf).Build()
 
@@ -60,7 +62,7 @@ func TestPutJenkinsFolder_ShouldCreateJenkinsfolder(t *testing.T) {
 	if err := pjf.ServeRequest(c); err != nil {
 		t.Error("ServeRequest failed for PutJenkinsFolder")
 	}
-	gjf := &jenkinsv1alpha1.JenkinsFolder{}
+	gjf := &jenkinsApi.JenkinsFolder{}
 	if err := fakeCl.Get(context.TODO(),
 		types.NamespacedName{
 			Name:      "fake-name-codebase",
@@ -73,22 +75,22 @@ func TestPutJenkinsFolder_ShouldCreateJenkinsfolder(t *testing.T) {
 }
 
 func TestPutJenkinsFolder_ShouldSkipWhenJenkinsfolderExists(t *testing.T) {
-	c := &v1alpha1.Codebase{
-		ObjectMeta: metav1.ObjectMeta{
+	c := &codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
 	}
 
-	jf := &jenkinsv1alpha1.JenkinsFolder{
-		ObjectMeta: metav1.ObjectMeta{
+	jf := &jenkinsApi.JenkinsFolder{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "fake-name-codebase",
 			Namespace: fakeNamespace,
 		},
 	}
 
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, c, jf)
+	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, c, jf)
 
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, jf).Build()
 
@@ -102,15 +104,15 @@ func TestPutJenkinsFolder_ShouldSkipWhenJenkinsfolderExists(t *testing.T) {
 }
 
 func TestPutJenkinsFolder_ShouldFailWhenGetJenkinsfolder(t *testing.T) {
-	c := &v1alpha1.Codebase{
-		ObjectMeta: metav1.ObjectMeta{
+	c := &codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
 	}
 
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, c)
+	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, c)
 
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c).Build()
 
@@ -124,19 +126,19 @@ func TestPutJenkinsFolder_ShouldFailWhenGetJenkinsfolder(t *testing.T) {
 }
 
 func TestPutJenkinsFolder_ShouldFailWhenGetGitServer(t *testing.T) {
-	c := &v1alpha1.Codebase{
-		ObjectMeta: metav1.ObjectMeta{
+	c := &codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
-		Spec: v1alpha1.CodebaseSpec{
+		Spec: codebaseApi.CodebaseSpec{
 			GitServer: fakeName,
 		},
 	}
-	jf := &jenkinsv1alpha1.JenkinsFolder{}
+	jf := &jenkinsApi.JenkinsFolder{}
 
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, c, jf)
+	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, c, jf)
 
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, jf).Build()
 
@@ -163,7 +165,7 @@ func Test_getRepositoryPath(t *testing.T) {
 		want string
 	}{
 		{"Import strategy", args{"codebase-name", consts.ImportStrategy, util.GetStringP("url")}, "url"},
-		{"Clone strategy", args{"codebase-name", string(v1alpha1.Clone), util.GetStringP("url")}, "/codebase-name"},
+		{"Clone strategy", args{"codebase-name", string(codebaseApi.Clone), util.GetStringP("url")}, "/codebase-name"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

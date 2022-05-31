@@ -1,66 +1,97 @@
 package v1alpha1
 
 import (
-	"time"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
 // CodebaseBranchSpec defines the desired state of CodebaseBranch
-// +k8s:openapi-gen=true
 type CodebaseBranchSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
-	// Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html
-	CodebaseName     string            `json:"codebaseName"`
-	BranchName       string            `json:"branchName"`
-	FromCommit       string            `json:"fromCommit"`
-	Version          *string           `json:"version,omitempty"`
-	Release          bool              `json:"release"`
-	ReleaseJobParams map[string]string `json:"releaseJobParams"`
+	// Name of Codebase associated with.
+	CodebaseName string `json:"codebaseName"`
+
+	// Name of a branch.
+	BranchName string `json:"branchName"`
+
+	// The new branch will be created starting from the selected commit hash.
+	FromCommit string `json:"fromCommit"`
+
+	// +nullable
+	// +optional
+	Version *string `json:"version,omitempty"`
+
+	// Flag if branch is used as "release" branch.
+	Release bool `json:"release"`
+
+	// +nullable
+	// +optional
+	ReleaseJobParams map[string]string `json:"releaseJobParams,omitempty"`
 }
 
 // CodebaseBranchStatus defines the observed state of CodebaseBranch
-// +k8s:openapi-gen=true
 type CodebaseBranchStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
-	// Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html
-	LastTimeUpdated     time.Time  `json:"lastTimeUpdated"`
-	VersionHistory      []string   `json:"versionHistory"`
-	LastSuccessfulBuild *string    `json:"lastSuccessfulBuild,omitempty"`
-	Build               *string    `json:"build,omitempty"`
-	Status              string     `json:"status"`
-	Username            string     `json:"username"`
-	Action              ActionType `json:"action"`
-	Result              Result     `json:"result"`
-	DetailedMessage     string     `json:"detailedMessage"`
-	Value               string     `json:"value"`
-	FailureCount        int64      `json:"failureCount"`
+	// Information when the last time the action were performed.
+	LastTimeUpdated metaV1.Time `json:"lastTimeUpdated"`
+
+	// +nullable
+	// +optional
+	VersionHistory []string `json:"versionHistory,omitempty"`
+
+	// +nullable
+	// +optional
+	LastSuccessfulBuild *string `json:"lastSuccessfulBuild,omitempty"`
+
+	// +nullable
+	// +optional
+	Build *string `json:"build,omitempty"`
+
+	// Specifies a current status of CodebaseBranch.
+	Status string `json:"status"`
+
+	// Name of user who made a last change.
+	Username string `json:"username"`
+
+	// The last Action was performed.
+	Action ActionType `json:"action"`
+
+	// A result of an action which were performed.
+	// - "success": action where performed successfully;
+	// - "error": error has occurred;
+	Result Result `json:"result"`
+
+	// Detailed information regarding action result
+	// which were performed
+	// +optional
+	DetailedMessage string `json:"detailedMessage,omitempty"`
+
+	// Specifies a current state of CodebaseBranch.
+	Value string `json:"value"`
+
+	// Amount of times, operator fail to serve with existing CR.
+	FailureCount int64 `json:"failureCount"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:object:root=true
+// +kubebuilder:deprecatedversion
 
-// CodebaseBranch is the Schema for the codebasebranches API
-// +k8s:openapi-gen=true
+// CodebaseBranch is the Schema for the CodebaseBranches API
 type CodebaseBranch struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
+	metaV1.TypeMeta   `json:",inline"`
+	metaV1.ObjectMeta `json:"metadata,omitempty"`
 
 	Spec   CodebaseBranchSpec   `json:"spec,omitempty"`
 	Status CodebaseBranchStatus `json:"status,omitempty"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:object:root=true
 
 // CodebaseBranchList contains a list of CodebaseBranch
 type CodebaseBranchList struct {
-	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []CodebaseBranch `json:"items"`
+	metaV1.TypeMeta `json:",inline"`
+	metaV1.ListMeta `json:"metadata,omitempty"`
+
+	Items []CodebaseBranch `json:"items"`
 }
 
 func init() {

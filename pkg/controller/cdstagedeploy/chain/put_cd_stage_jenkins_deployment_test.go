@@ -4,15 +4,17 @@ import (
 	"strings"
 	"testing"
 
-	v1alpha1Stage "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
-	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	"github.com/epam/edp-codebase-operator/v2/pkg/util"
-	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+
+	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
+	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
+	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
 func TestPutCDStageJenkinsDeployment_ServeRequest_ShouldPass(t *testing.T) {
@@ -20,7 +22,7 @@ func TestPutCDStageJenkinsDeployment_ServeRequest_ShouldPass(t *testing.T) {
 	jl := &jenkinsApi.JenkinsList{
 		Items: []jenkinsApi.Jenkins{
 			{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: metaV1.ObjectMeta{
 					Name:      "jenkins",
 					Namespace: "namespace",
 				},
@@ -28,18 +30,18 @@ func TestPutCDStageJenkinsDeployment_ServeRequest_ShouldPass(t *testing.T) {
 		},
 	}
 	jcdsd := &jenkinsApi.CDStageJenkinsDeployment{}
-	s := &v1alpha1Stage.Stage{
-		ObjectMeta: metav1.ObjectMeta{
+	s := &cdPipeApi.Stage{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "pipeline-stage",
 			Namespace: "namespace",
 		},
 	}
-	cdsd := &v1alpha1.CDStageDeploy{
-		ObjectMeta: metav1.ObjectMeta{
+	cdsd := &codebaseApi.CDStageDeploy{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "NewCDStageDeploy",
 			Namespace: "namespace",
 		},
-		Spec: v1alpha1.CDStageDeploySpec{
+		Spec: codebaseApi.CDStageDeploySpec{
 			Pipeline: "pipeline",
 			Stage:    "stage",
 			Tag: jenkinsApi.Tag{
@@ -49,9 +51,9 @@ func TestPutCDStageJenkinsDeployment_ServeRequest_ShouldPass(t *testing.T) {
 		},
 	}
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(metav1.SchemeGroupVersion, jl, j)
-	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, cdsd)
-	scheme.AddKnownTypes(v1alpha1Stage.SchemeGroupVersion, s)
+	scheme.AddKnownTypes(metaV1.SchemeGroupVersion, jl, j)
+	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, cdsd)
+	scheme.AddKnownTypes(cdPipeApi.SchemeGroupVersion, s)
 	scheme.AddKnownTypes(jenkinsApi.SchemeGroupVersion, jcdsd)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(cdsd, s, jcdsd, j, jl).Build()
 
@@ -64,12 +66,12 @@ func TestPutCDStageJenkinsDeployment_ServeRequest_ShouldPass(t *testing.T) {
 }
 
 func TestPutCDStageJenkinsDeployment_ServeRequest_ShouldFailWithExistingCR(t *testing.T) {
-	cdsd := &v1alpha1.CDStageDeploy{
-		ObjectMeta: metav1.ObjectMeta{
+	cdsd := &codebaseApi.CDStageDeploy{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "NewCDStageDeploy",
 			Namespace: "namespace",
 		},
-		Spec: v1alpha1.CDStageDeploySpec{
+		Spec: codebaseApi.CDStageDeploySpec{
 			Pipeline: "pipeline",
 			Stage:    "stage",
 			Tag: jenkinsApi.Tag{
@@ -78,22 +80,22 @@ func TestPutCDStageJenkinsDeployment_ServeRequest_ShouldFailWithExistingCR(t *te
 			},
 		},
 	}
-	s := &v1alpha1Stage.Stage{
-		ObjectMeta: metav1.ObjectMeta{
+	s := &cdPipeApi.Stage{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "pipeline-stage",
 			Namespace: "namespace",
 		},
 	}
 	jcdsd := &jenkinsApi.CDStageJenkinsDeployment{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "NewCDStageDeploy",
 			Namespace: "namespace",
 		},
 	}
 
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1alpha1Stage.SchemeGroupVersion, s)
-	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, cdsd)
+	scheme.AddKnownTypes(cdPipeApi.SchemeGroupVersion, s)
+	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, cdsd)
 	scheme.AddKnownTypes(jenkinsApi.SchemeGroupVersion, jcdsd)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(cdsd, jcdsd, s).Build()
 
@@ -111,18 +113,18 @@ func TestPutCDStageJenkinsDeployment_ServeRequest_ShouldFailGenerateLabels(t *te
 	j := &jenkinsApi.Jenkins{}
 	jl := &jenkinsApi.JenkinsList{}
 	jcdsd := &jenkinsApi.CDStageJenkinsDeployment{}
-	s := &v1alpha1Stage.Stage{
-		ObjectMeta: metav1.ObjectMeta{
+	s := &cdPipeApi.Stage{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "pipeline-stage",
 			Namespace: "namespace",
 		},
 	}
-	cdsd := &v1alpha1.CDStageDeploy{
-		ObjectMeta: metav1.ObjectMeta{
+	cdsd := &codebaseApi.CDStageDeploy{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "NewCDStageDeploy",
 			Namespace: "namespace",
 		},
-		Spec: v1alpha1.CDStageDeploySpec{
+		Spec: codebaseApi.CDStageDeploySpec{
 			Pipeline: "pipeline",
 			Stage:    "stage",
 			Tag: jenkinsApi.Tag{
@@ -132,9 +134,9 @@ func TestPutCDStageJenkinsDeployment_ServeRequest_ShouldFailGenerateLabels(t *te
 		},
 	}
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(metav1.SchemeGroupVersion, jl, j)
-	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, cdsd)
-	scheme.AddKnownTypes(v1alpha1Stage.SchemeGroupVersion, s)
+	scheme.AddKnownTypes(metaV1.SchemeGroupVersion, jl, j)
+	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, cdsd)
+	scheme.AddKnownTypes(cdPipeApi.SchemeGroupVersion, s)
 	scheme.AddKnownTypes(jenkinsApi.SchemeGroupVersion, jcdsd)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(cdsd, s, jcdsd, j, jl).Build()
 
@@ -150,14 +152,14 @@ func TestPutCDStageJenkinsDeployment_ServeRequest_ShouldFailGenerateLabels(t *te
 }
 
 func TestPutCDStageJenkinsDeployment_ServeRequest_ShouldFailGetJenkinsDeployment(t *testing.T) {
-	cdsd := &v1alpha1.CDStageDeploy{
-		ObjectMeta: metav1.ObjectMeta{
+	cdsd := &codebaseApi.CDStageDeploy{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "NewCDStageDeploy",
 			Namespace: "namespace",
 		},
 	}
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, cdsd)
+	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, cdsd)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(cdsd).Build()
 
 	jd := PutCDStageJenkinsDeployment{

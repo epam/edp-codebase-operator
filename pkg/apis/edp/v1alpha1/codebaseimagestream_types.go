@@ -1,59 +1,62 @@
 package v1alpha1
 
 import (
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
 // CodebaseImageStreamSpec defines the desired state of CodebaseImageStream
-// +k8s:openapi-gen=true
 type CodebaseImageStreamSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
-	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
-	Codebase  string `json:"codebase"`
+	// Name of Codebase associated with.
+	Codebase string `json:"codebase"`
+
+	// Docker container name without tag, e.g. registry-name/path/name.
 	ImageName string `json:"imageName"`
-	Tags      []Tag  `json:"tags,omitempty"`
+
+	// A list of docker image tags available for ImageName and their creation date.
+	// +nullable
+	// +optional
+	Tags []Tag `json:"tags,omitempty"`
 }
 
-// +k8s:openapi-gen=true
 type Tag struct {
 	Name    string `json:"name"`
 	Created string `json:"created"`
 }
 
 // CodebaseImageStreamStatus defines the observed state of CodebaseImageStream
-// +k8s:openapi-gen=true
 type CodebaseImageStreamStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
-	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
+	// Detailed information regarding action result
+	// which were performed
+	// +optional
 	DetailedMessage string `json:"detailed_message"`
-	FailureCount    int64  `json:"failureCount"`
+
+	// Amount of times, operator fail to serve with existing CR.
+	FailureCount int64 `json:"failureCount"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
-// CodebaseImageStream is the Schema for the codebaseimagestreams API
-// +k8s:openapi-gen=true
+// +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:deprecatedversion
+
+// CodebaseImageStream is the Schema for the CodebaseImageStreams API
 type CodebaseImageStream struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
+	metaV1.TypeMeta   `json:",inline"`
+	metaV1.ObjectMeta `json:"metadata,omitempty"`
 
 	Spec   CodebaseImageStreamSpec   `json:"spec,omitempty"`
 	Status CodebaseImageStreamStatus `json:"status,omitempty"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:object:root=true
 
-// CodebaseImageStreamList contains a list of CodebaseImageStream
+// CodebaseImageStreamList contains a list of CodebaseImageStreams
 type CodebaseImageStreamList struct {
-	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []CodebaseImageStream `json:"items"`
+	metaV1.TypeMeta `json:",inline"`
+	metaV1.ListMeta `json:"metadata,omitempty"`
+
+	Items []CodebaseImageStream `json:"items"`
 }
 
 func init() {

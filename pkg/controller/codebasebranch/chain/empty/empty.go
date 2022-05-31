@@ -4,7 +4,7 @@ import (
 	"errors"
 	ctrl "sigs.k8s.io/controller-runtime"
 
-	edpv1alpha1 "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 )
 
 var log = ctrl.Log.WithName("empty_chain")
@@ -21,7 +21,7 @@ func MakeChain(logMessage string, returnError bool) Chain {
 	}
 }
 
-func (e Chain) ServeRequest(*edpv1alpha1.CodebaseBranch) error {
+func (e Chain) ServeRequest(*codebaseApi.CodebaseBranch) error {
 	if e.returnError {
 		err := errors.New(e.logMessage)
 		log.Error(err, err.Error())

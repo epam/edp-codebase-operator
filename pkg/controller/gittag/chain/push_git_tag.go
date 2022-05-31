@@ -3,12 +3,13 @@ package chain
 import (
 	"fmt"
 
-	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	"github.com/pkg/errors"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/gittag/chain/handler"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
-	"github.com/pkg/errors"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type PushGitTag struct {
@@ -17,7 +18,7 @@ type PushGitTag struct {
 	git    gitserver.Git
 }
 
-func (h PushGitTag) ServeRequest(gt *v1alpha1.GitTag) error {
+func (h PushGitTag) ServeRequest(gt *codebaseApi.GitTag) error {
 	rl := log.WithValues("git tag name", gt.Name)
 	rl.Info("start PushGitTag chain executing...")
 	if err := h.tryToPushTag(gt); err != nil {
@@ -27,7 +28,7 @@ func (h PushGitTag) ServeRequest(gt *v1alpha1.GitTag) error {
 	return nextServeOrNil(h.next, gt)
 }
 
-func (h PushGitTag) tryToPushTag(gt *v1alpha1.GitTag) error {
+func (h PushGitTag) tryToPushTag(gt *codebaseApi.GitTag) error {
 	c, err := util.GetCodebase(h.client, gt.Spec.Codebase, gt.Namespace)
 	if err != nil {
 		return err

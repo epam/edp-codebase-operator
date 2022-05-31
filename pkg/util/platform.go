@@ -6,14 +6,16 @@ import (
 	"os"
 	"strconv"
 
-	edpv1alpha1 "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	"github.com/epam/edp-codebase-operator/v2/pkg/model"
-	"github.com/epam/edp-component-operator/pkg/apis/v1/v1alpha1"
 	"github.com/pkg/errors"
 	coreV1 "k8s.io/api/core/v1"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/epam/edp-component-operator/pkg/apis/v1/v1alpha1"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
+	"github.com/epam/edp-codebase-operator/v2/pkg/model"
 )
 
 const (
@@ -91,11 +93,11 @@ func GetGitServer(c client.Client, name, namespace string) (*model.GitServer, er
 	return gs, nil
 }
 
-func getGitServerCR(c client.Client, name, namespace string) (*edpv1alpha1.GitServer, error) {
+func getGitServerCR(c client.Client, name, namespace string) (*codebaseApi.GitServer, error) {
 	log.Info("Start fetching GitServer resource from k8s", "name", name, "namespace", namespace)
-	instance := &edpv1alpha1.GitServer{}
+	instance := &codebaseApi.GitServer{}
 	if err := c.Get(context.TODO(), types.NamespacedName{Namespace: namespace, Name: name}, instance); err != nil {
-		if k8serrors.IsNotFound(err) {
+		if k8sErrors.IsNotFound(err) {
 			return nil, errors.Wrapf(err, "GitServer %v doesn't exist in k8s.", name)
 		}
 		return nil, errors.Wrapf(err, "Unable to get GitServer %v", name)
@@ -118,8 +120,8 @@ func GetSecret(c client.Client, secretName, namespace string) (*coreV1.Secret, e
 	return secret, nil
 }
 
-func GetCodebase(client client.Client, name, namespace string) (*edpv1alpha1.Codebase, error) {
-	instance := &edpv1alpha1.Codebase{}
+func GetCodebase(client client.Client, name, namespace string) (*codebaseApi.Codebase, error) {
+	instance := &codebaseApi.Codebase{}
 	err := client.Get(context.TODO(), types.NamespacedName{
 		Namespace: namespace,
 		Name:      name,

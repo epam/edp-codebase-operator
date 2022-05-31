@@ -2,14 +2,16 @@ package chain
 
 import (
 	"fmt"
-	gojira "github.com/andygrunwald/go-jira"
-	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	"strconv"
+
+	goJira "github.com/andygrunwald/go-jira"
+	"github.com/pkg/errors"
+	"github.com/trivago/tgo/tcontainer"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/client/jira"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/jiraissuemetadata/chain/handler"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
-	"github.com/pkg/errors"
-	"github.com/trivago/tgo/tcontainer"
-	"strconv"
 )
 
 type PutTagValue struct {
@@ -22,7 +24,7 @@ const (
 	jiraLabelFieldName = "labels"
 )
 
-func (h PutTagValue) ServeRequest(metadata *v1alpha1.JiraIssueMetadata) error {
+func (h PutTagValue) ServeRequest(metadata *codebaseApi.JiraIssueMetadata) error {
 	log.Info("start creating field values in Jira project.")
 	requestPayload, err := util.GetFieldsMap(metadata.Spec.Payload, []string{issuesLinksKey, jiraLabelFieldName})
 	if err != nil {
@@ -87,7 +89,7 @@ func (h PutTagValue) tryToCreateFieldValues(requestPayload map[string]interface{
 	return nil
 }
 
-func (h PutTagValue) getIssueTypes(projectId, projectKey string) ([]*gojira.MetaIssueType, error) {
+func (h PutTagValue) getIssueTypes(projectId, projectKey string) ([]*goJira.MetaIssueType, error) {
 	issueMetadata, err := h.client.GetIssueMetadata(projectKey)
 	if err != nil {
 		return nil, err
@@ -100,7 +102,7 @@ func (h PutTagValue) getIssueTypes(projectId, projectKey string) ([]*gojira.Meta
 	return metaProject.IssueTypes, nil
 }
 
-func findProject(projects []*gojira.MetaProject, id string) *gojira.MetaProject {
+func findProject(projects []*goJira.MetaProject, id string) *goJira.MetaProject {
 	for _, p := range projects {
 		if p.Id == id {
 			return p
@@ -109,7 +111,7 @@ func findProject(projects []*gojira.MetaProject, id string) *gojira.MetaProject 
 	return nil
 }
 
-func findIssueMetaInfo(types []*gojira.MetaIssueType, issueType string) tcontainer.MarshalMap {
+func findIssueMetaInfo(types []*goJira.MetaIssueType, issueType string) tcontainer.MarshalMap {
 	for _, t := range types {
 		if t.Name == issueType {
 			return t.Fields

@@ -6,7 +6,8 @@ import (
 	"strconv"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
-	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	codebaseApiV1 "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
+	codebaseApiV1Alpha1 "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/cdstagedeploy"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebasebranch"
@@ -52,7 +53,9 @@ const (
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
-	utilruntime.Must(codebaseApi.AddToScheme(scheme))
+	utilruntime.Must(codebaseApiV1Alpha1.AddToScheme(scheme))
+
+	utilruntime.Must(codebaseApiV1.AddToScheme(scheme))
 
 	utilruntime.Must(cdPipeApi.AddToScheme(scheme))
 

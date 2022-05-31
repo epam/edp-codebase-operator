@@ -9,19 +9,21 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/dchest/uniuri"
-	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/helper"
-	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/repository"
-	mock2 "github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver/mock"
-	"github.com/epam/edp-codebase-operator/v2/pkg/util"
-	perfApi "github.com/epam/edp-perf-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/stretchr/testify/assert"
 	v1K8s "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	utilRuntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+
+	perfApi "github.com/epam/edp-perf-operator/v2/pkg/apis/edp/v1alpha1"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
+	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/helper"
+	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/repository"
+	mockGit "github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver/mock"
+	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
 const (
@@ -38,8 +40,8 @@ const (
 var path = getExecutableFilePath()
 
 func init() {
-	utilruntime.Must(perfApi.AddToScheme(scheme.Scheme))
-	utilruntime.Must(codebaseApi.AddToScheme(scheme.Scheme))
+	utilRuntime.Must(perfApi.AddToScheme(scheme.Scheme))
+	utilRuntime.Must(codebaseApi.AddToScheme(scheme.Scheme))
 }
 
 func TestVersionFileExists_VersionFileMustExist(t *testing.T) {
@@ -144,7 +146,7 @@ func clear(path string) {
 
 func TestTryToPutVersionFileMethod_MustBeFinishedSuccessfully(t *testing.T) {
 	gs := &codebaseApi.GitServer{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      fakeGitServerName,
 			Namespace: fakeNamespace,
 		},
@@ -159,7 +161,7 @@ func TestTryToPutVersionFileMethod_MustBeFinishedSuccessfully(t *testing.T) {
 	}
 
 	secret := &v1K8s.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "fake_secret_name",
 			Namespace: "fake_namespace",
 		},
@@ -169,7 +171,7 @@ func TestTryToPutVersionFileMethod_MustBeFinishedSuccessfully(t *testing.T) {
 	}
 
 	cm := &v1K8s.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      helper.EDPConfigCM,
 			Namespace: fakeNamespace,
 		},
@@ -184,7 +186,7 @@ func TestTryToPutVersionFileMethod_MustBeFinishedSuccessfully(t *testing.T) {
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(gs, secret, cm).Build()
 
 	//mock methods of git interface
-	mGit := new(mock2.MockGit)
+	mGit := new(mockGit.MockGit)
 	mGit.On("CommitChanges", path, fmt.Sprintf("Add %v file", versionFileName)).Return(
 		nil)
 	mGit.On("PushChanges", fakePrivateKey, fakeUser, path).Return(
@@ -202,7 +204,7 @@ func TestTryToPutVersionFileMethod_MustBeFinishedSuccessfully(t *testing.T) {
 	}
 
 	c := &codebaseApi.Codebase{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      fakeCodebaseName,
 			Namespace: fakeNamespace,
 		},

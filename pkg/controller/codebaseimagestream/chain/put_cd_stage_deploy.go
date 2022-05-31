@@ -7,15 +7,16 @@ import (
 	"strings"
 	"time"
 
-	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
@@ -117,7 +118,7 @@ func (h PutCDStageDeploy) getCDStageDeploy(name, namespace string) (*codebaseApi
 		Name:      name,
 	}
 	if err := h.client.Get(context.TODO(), nn, i); err != nil {
-		if k8serrors.IsNotFound(err) {
+		if k8sErrors.IsNotFound(err) {
 			return nil, nil
 		}
 		return nil, err
@@ -175,11 +176,11 @@ func (h PutCDStageDeploy) create(command *cdStageDeployCommand) error {
 	log.Info("cd stage deploy is not present in cluster. start creating...")
 
 	stageDeploy := &codebaseApi.CDStageDeploy{
-		TypeMeta: metav1.TypeMeta{
+		TypeMeta: metaV1.TypeMeta{
 			APIVersion: util.V2APIVersion,
 			Kind:       util.CDStageDeployKind,
 		},
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      command.Name,
 			Namespace: command.Namespace,
 		},

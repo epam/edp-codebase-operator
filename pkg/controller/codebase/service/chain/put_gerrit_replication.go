@@ -3,14 +3,14 @@ package chain
 import (
 	"fmt"
 
-	edpv1alpha1 "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	"github.com/pkg/errors"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/service/chain/handler"
 	"github.com/epam/edp-codebase-operator/v2/pkg/gerrit"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	"github.com/epam/edp-codebase-operator/v2/pkg/vcs"
-	"github.com/pkg/errors"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type PutGerritReplication struct {
@@ -18,12 +18,12 @@ type PutGerritReplication struct {
 	client client.Client
 }
 
-func (h PutGerritReplication) ServeRequest(c *edpv1alpha1.Codebase) error {
+func (h PutGerritReplication) ServeRequest(c *codebaseApi.Codebase) error {
 	rLog := log.WithValues("codebase_name", c.Name)
 	rLog.Info("Start setting Gerrit replication...")
 
 	if err := h.tryToSetupGerritReplication(c.Name, c.Namespace); err != nil {
-		setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
+		setFailedFields(c, codebaseApi.GerritRepositoryProvisioning, err.Error())
 		return errors.Wrapf(err, "setup Gerrit replication for codebase %v has been failed", c.Name)
 	}
 	rLog.Info("Gerrit replication section finished successfully")

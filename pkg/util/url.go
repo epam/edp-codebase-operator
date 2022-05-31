@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 )
 
 var lf = map[string]string{
@@ -18,9 +18,9 @@ var lf = map[string]string{
 	"container":       "docker",
 }
 
-func GetRepoUrl(c *v1alpha1.Codebase) (*string, error) {
+func GetRepoUrl(c *codebaseApi.Codebase) (*string, error) {
 	log.Info("Setup repo url", "codebase_name", c.Name)
-	if c.Spec.Strategy == v1alpha1.Clone {
+	if c.Spec.Strategy == codebaseApi.Clone {
 		log.Info("strategy is clone. Try to use default value...", "codebase_name", c.Name)
 		return tryGetRepoUrl(c.Spec)
 	}
@@ -32,20 +32,20 @@ func GetRepoUrl(c *v1alpha1.Codebase) (*string, error) {
 
 }
 
-func tryGetRepoUrl(spec v1alpha1.CodebaseSpec) (*string, error) {
+func tryGetRepoUrl(spec codebaseApi.CodebaseSpec) (*string, error) {
 	if spec.Repository == nil {
 		return nil, errors.New("repository cannot be nil for specified strategy")
 	}
 	return &spec.Repository.Url, nil
 }
 
-func BuildRepoUrl(spec v1alpha1.CodebaseSpec) string {
+func BuildRepoUrl(spec codebaseApi.CodebaseSpec) string {
 	log.Info("Start building repo url", "base url", GithubDomain, "spec", spec)
 	return strings.ToLower(fmt.Sprintf("%v/%v-%v-%v.git", GithubDomain, spec.Lang, spec.BuildTool,
 		getFrameworkOrDefault(spec)))
 }
 
-func getFrameworkOrDefault(spec v1alpha1.CodebaseSpec) string {
+func getFrameworkOrDefault(spec codebaseApi.CodebaseSpec) string {
 	if spec.Framework != nil && *spec.Framework != "" {
 		return *spec.Framework
 	}

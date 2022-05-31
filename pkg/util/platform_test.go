@@ -5,26 +5,28 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	mockclient "github.com/epam/edp-common/pkg/mock/controller-runtime/client"
-	edpV1alpha1 "github.com/epam/edp-component-operator/pkg/apis/v1/v1alpha1"
+	k8sMockClient "github.com/epam/edp-common/pkg/mock/controller-runtime/client"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/apps/v1"
 	coreV1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+
+	edpComponentApi "github.com/epam/edp-component-operator/pkg/apis/v1/v1alpha1"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 )
 
 func TestGetGerritPort_ShouldFound(t *testing.T) {
-	gs := &v1alpha1.GitServer{
-		ObjectMeta: metav1.ObjectMeta{
+	gs := &codebaseApi.GitServer{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "gerrit",
 			Namespace: "stub-namespace",
 		},
-		Spec: v1alpha1.GitServerSpec{
+		Spec: codebaseApi.GitServerSpec{
 			SshPort: 22,
 		},
 	}
@@ -39,8 +41,8 @@ func TestGetGerritPort_ShouldFound(t *testing.T) {
 }
 
 func TestGetGerritPort_ShouldFailPortNotDefined(t *testing.T) {
-	gs := &v1alpha1.GitServer{
-		ObjectMeta: metav1.ObjectMeta{
+	gs := &codebaseApi.GitServer{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "gerrit",
 			Namespace: "stub-namespace",
 		},
@@ -59,12 +61,12 @@ func TestGetGerritPort_ShouldFailPortNotDefined(t *testing.T) {
 }
 
 func TestGetGerritPort_ShouldNotFound(t *testing.T) {
-	gs := &v1alpha1.GitServer{
-		ObjectMeta: metav1.ObjectMeta{
+	gs := &codebaseApi.GitServer{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "stub-gerrit",
 			Namespace: "stub-namespace",
 		},
-		Spec: v1alpha1.GitServerSpec{
+		Spec: codebaseApi.GitServerSpec{
 			SshPort: 22,
 		},
 	}
@@ -83,14 +85,14 @@ func TestGetGerritPort_ShouldNotFound(t *testing.T) {
 }
 
 func TestGetGerritPort_ShouldFailToGetPort(t *testing.T) {
-	mc := mockclient.Client{}
+	mc := k8sMockClient.Client{}
 
-	gs := &v1alpha1.GitServer{
-		ObjectMeta: metav1.ObjectMeta{
+	gs := &codebaseApi.GitServer{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "stub-gerrit",
 			Namespace: "stub-namespace",
 		},
-		Spec: v1alpha1.GitServerSpec{
+		Spec: codebaseApi.GitServerSpec{
 			SshPort: 22,
 		},
 	}
@@ -103,7 +105,7 @@ func TestGetGerritPort_ShouldFailToGetPort(t *testing.T) {
 	mc.On("Get", types.NamespacedName{
 		Namespace: "stub-namespace",
 		Name:      "gerrit",
-	}, &v1alpha1.GitServer{}).Return(mockErr)
+	}, &codebaseApi.GitServer{}).Return(mockErr)
 
 	port, err := GetGerritPort(&mc, "stub-namespace")
 	assert.Nil(t, port)
@@ -115,12 +117,12 @@ func TestGetGerritPort_ShouldFailToGetPort(t *testing.T) {
 }
 
 func TestGetEdpComponent_ShouldPass(t *testing.T) {
-	c := &edpV1alpha1.EDPComponent{
-		ObjectMeta: metav1.ObjectMeta{
+	c := &edpComponentApi.EDPComponent{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "stub-name",
 			Namespace: "stub-namespace",
 		},
-		Spec: edpV1alpha1.EDPComponentSpec{},
+		Spec: edpComponentApi.EDPComponentSpec{},
 	}
 
 	scheme := runtime.NewScheme()
@@ -133,14 +135,14 @@ func TestGetEdpComponent_ShouldPass(t *testing.T) {
 }
 
 func TestGetEdpComponent_ShouldFail(t *testing.T) {
-	mc := mockclient.Client{}
+	mc := k8sMockClient.Client{}
 
-	c := &edpV1alpha1.EDPComponent{
-		ObjectMeta: metav1.ObjectMeta{
+	c := &edpComponentApi.EDPComponent{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "stub-name",
 			Namespace: "stub-namespace",
 		},
-		Spec: edpV1alpha1.EDPComponentSpec{},
+		Spec: edpComponentApi.EDPComponentSpec{},
 	}
 
 	scheme := runtime.NewScheme()
@@ -150,7 +152,7 @@ func TestGetEdpComponent_ShouldFail(t *testing.T) {
 	mc.On("Get", types.NamespacedName{
 		Namespace: "stub-namespace",
 		Name:      "stub-name",
-	}, &edpV1alpha1.EDPComponent{}).Return(mockErr)
+	}, &edpComponentApi.EDPComponent{}).Return(mockErr)
 
 	edc, err := GetEdpComponent(&mc, "stub-name", "stub-namespace")
 	assert.Error(t, err)
@@ -162,12 +164,12 @@ func TestGetEdpComponent_ShouldFail(t *testing.T) {
 }
 
 func TestGetCodebase_ShouldPass(t *testing.T) {
-	c := &v1alpha1.Codebase{
-		ObjectMeta: metav1.ObjectMeta{
+	c := &codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "stub-name",
 			Namespace: "stub-namespace",
 		},
-		Spec: v1alpha1.CodebaseSpec{},
+		Spec: codebaseApi.CodebaseSpec{},
 	}
 
 	scheme := runtime.NewScheme()
@@ -180,14 +182,14 @@ func TestGetCodebase_ShouldPass(t *testing.T) {
 }
 
 func TestGetCodebase_ShouldFail(t *testing.T) {
-	mc := mockclient.Client{}
+	mc := k8sMockClient.Client{}
 
-	c := &v1alpha1.Codebase{
-		ObjectMeta: metav1.ObjectMeta{
+	c := &codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "stub-name",
 			Namespace: "stub-namespace",
 		},
-		Spec: v1alpha1.CodebaseSpec{},
+		Spec: codebaseApi.CodebaseSpec{},
 	}
 
 	scheme := runtime.NewScheme()
@@ -197,7 +199,7 @@ func TestGetCodebase_ShouldFail(t *testing.T) {
 	mc.On("Get", types.NamespacedName{
 		Namespace: "stub-namespace",
 		Name:      "stub-name",
-	}, &v1alpha1.Codebase{}).Return(mockErr)
+	}, &codebaseApi.Codebase{}).Return(mockErr)
 
 	cb, err := GetCodebase(&mc, "stub-name", "stub-namespace")
 	assert.Error(t, err)
@@ -211,7 +213,7 @@ func TestGetCodebase_ShouldFail(t *testing.T) {
 func TestGetSecret_ShouldPass(t *testing.T) {
 
 	secret := &coreV1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "stub-name",
 			Namespace: "stub-namespace",
 		},
@@ -231,7 +233,7 @@ func TestGetSecret_ShouldPass(t *testing.T) {
 
 func TestGetSecret_ShouldFail(t *testing.T) {
 	s := &coreV1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "stub-name",
 			Namespace: "stub-namespace",
 		},
@@ -252,7 +254,7 @@ func TestGetSecret_ShouldFail(t *testing.T) {
 func TestGetVcsBasicAuthConfig_ShouldPass(t *testing.T) {
 
 	secret := &coreV1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "stub-name",
 			Namespace: "stub-namespace",
 		},
@@ -273,7 +275,7 @@ func TestGetVcsBasicAuthConfig_ShouldPass(t *testing.T) {
 
 func TestGetVcsBasicAuthConfig_ShouldFail(t *testing.T) {
 	s := &coreV1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "stub-name",
 			Namespace: "stub-namespace",
 		},
@@ -295,7 +297,7 @@ func TestGetVcsBasicAuthConfig_ShouldFail(t *testing.T) {
 func TestGetVcsBasicAuthConfig_ShouldFailIfUsernameOrPasswordIsNotDefined(t *testing.T) {
 
 	secret := &coreV1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "stub-name",
 			Namespace: "stub-namespace",
 		},
@@ -317,12 +319,12 @@ func TestGetVcsBasicAuthConfig_ShouldFailIfUsernameOrPasswordIsNotDefined(t *tes
 }
 
 func TestGetGitServer_ShouldPass(t *testing.T) {
-	gs := &v1alpha1.GitServer{
-		ObjectMeta: metav1.ObjectMeta{
+	gs := &codebaseApi.GitServer{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "gerrit",
 			Namespace: "stub-namespace",
 		},
-		Spec: v1alpha1.GitServerSpec{
+		Spec: codebaseApi.GitServerSpec{
 			SshPort: 22,
 		},
 	}
@@ -337,12 +339,12 @@ func TestGetGitServer_ShouldPass(t *testing.T) {
 }
 
 func TestGetGitServer_ShouldFailIfNotFound(t *testing.T) {
-	gs := &v1alpha1.GitServer{
-		ObjectMeta: metav1.ObjectMeta{
+	gs := &codebaseApi.GitServer{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "gerrit",
 			Namespace: "stub-namespace",
 		},
-		Spec: v1alpha1.GitServerSpec{
+		Spec: codebaseApi.GitServerSpec{
 			SshPort: 22,
 		},
 	}
@@ -361,7 +363,7 @@ func TestGetGitServer_ShouldFailIfNotFound(t *testing.T) {
 
 func TestGetUserSettings_ShouldPass(t *testing.T) {
 	cm := &coreV1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "edp-config",
 			Namespace: "stub-namespace",
 		},
@@ -390,7 +392,7 @@ func TestGetUserSettings_ShouldPass(t *testing.T) {
 
 func TestGetUserSettings_ShouldFailToConvertBoolVcsintegration(t *testing.T) {
 	cm := &coreV1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "edp-config",
 			Namespace: "stub-namespace",
 		},
@@ -412,7 +414,7 @@ func TestGetUserSettings_ShouldFailToConvertBoolVcsintegration(t *testing.T) {
 
 func TestGetUserSettings_ShouldFailToConvertBoolPerfintegration(t *testing.T) {
 	cm := &coreV1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "edp-config",
 			Namespace: "stub-namespace",
 		},
@@ -434,7 +436,7 @@ func TestGetUserSettings_ShouldFailToConvertBoolPerfintegration(t *testing.T) {
 
 func TestGetUserSettings_ShouldFailOnFindConfigmap(t *testing.T) {
 	cm := &coreV1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "edp-config",
 			Namespace: "stub-namespace",
 		},

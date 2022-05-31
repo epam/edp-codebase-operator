@@ -4,13 +4,14 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"time"
 
 	"github.com/go-logr/logr"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"github.com/pkg/errors"
+	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	edpv1alpha1 "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/helper"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/repository"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/service/chain/handler"
@@ -19,7 +20,6 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/pkg/model"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	"github.com/epam/edp-codebase-operator/v2/pkg/vcs"
-	"github.com/pkg/errors"
 )
 
 type PutProjectGerrit struct {
@@ -29,20 +29,20 @@ type PutProjectGerrit struct {
 	git    git.Git
 }
 
-func (h PutProjectGerrit) ServeRequest(c *edpv1alpha1.Codebase) error {
+func (h PutProjectGerrit) ServeRequest(c *codebaseApi.Codebase) error {
 	rLog := log.WithValues("codebase_name", c.Name)
 	rLog.Info("Start putting Codebase...")
 	rLog.Info("codebase data", "spec", c.Spec)
 
 	edpN, err := helper.GetEDPName(h.client, c.Namespace)
 	if err != nil {
-		setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
+		setFailedFields(c, codebaseApi.GerritRepositoryProvisioning, err.Error())
 		return errors.Wrap(err, "couldn't get edp name")
 	}
 
 	ps, err := h.cr.SelectProjectStatusValue(c.Name, *edpN)
 	if err != nil {
-		setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
+		setFailedFields(c, codebaseApi.GerritRepositoryProvisioning, err.Error())
 		return errors.Wrapf(err, "couldn't get project_status value for %v codebase", c.Name)
 	}
 
@@ -52,45 +52,45 @@ func (h PutProjectGerrit) ServeRequest(c *edpv1alpha1.Codebase) error {
 		return nextServeOrNil(h.next, c)
 	}
 
-	if err := h.setIntermediateSuccessFields(c, edpv1alpha1.GerritRepositoryProvisioning); err != nil {
+	if err := h.setIntermediateSuccessFields(c, codebaseApi.GerritRepositoryProvisioning); err != nil {
 		return errors.Wrapf(err, "an error has been occurred while updating %v Codebase status", c.Name)
 	}
 
 	wd := util.GetWorkDir(c.Name, c.Namespace)
 	if err := util.CreateDirectory(wd); err != nil {
-		setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
+		setFailedFields(c, codebaseApi.GerritRepositoryProvisioning, err.Error())
 		return err
 	}
 
 	port, err := util.GetGerritPort(h.client, c.Namespace)
 	if err != nil {
-		setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
+		setFailedFields(c, codebaseApi.GerritRepositoryProvisioning, err.Error())
 		return errors.Wrap(err, "unable get gerrit port")
 	}
 
 	us, err := util.GetUserSettings(h.client, c.Namespace)
 	if err != nil {
-		setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
+		setFailedFields(c, codebaseApi.GerritRepositoryProvisioning, err.Error())
 		return errors.Wrap(err, "unable get user settings settings")
 	}
 
 	if err := h.tryToCreateProjectInVcs(us, c.Name, c.Namespace); err != nil {
-		setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
+		setFailedFields(c, codebaseApi.GerritRepositoryProvisioning, err.Error())
 		return errors.Wrap(err, "unable to create project in VCS")
 	}
 
 	if err := h.initialProjectProvisioning(c, rLog, wd); err != nil {
-		setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
+		setFailedFields(c, codebaseApi.GerritRepositoryProvisioning, err.Error())
 		return errors.Wrapf(err, "initial provisioning of codebase %v has been failed", c.Name)
 	}
 
 	if err := h.tryToPushProjectToGerrit(c, *port, c.Name, wd, c.Namespace, c.Spec.DefaultBranch, c.Spec.Strategy); err != nil {
-		setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
+		setFailedFields(c, codebaseApi.GerritRepositoryProvisioning, err.Error())
 		return errors.Wrapf(err, "push to gerrit for codebase %v has been failed", c.Name)
 	}
 
 	if err := h.cr.UpdateProjectStatusValue(util.ProjectPushedStatus, c.Name, *edpN); err != nil {
-		setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
+		setFailedFields(c, codebaseApi.GerritRepositoryProvisioning, err.Error())
 		return errors.Wrapf(err, "couldn't set project_status %v value for %v codebase",
 			util.ProjectTemplatesPushedStatus, c.Name)
 	}
@@ -99,8 +99,8 @@ func (h PutProjectGerrit) ServeRequest(c *edpv1alpha1.Codebase) error {
 	return nextServeOrNil(h.next, c)
 }
 
-func (h PutProjectGerrit) tryToPushProjectToGerrit(c *edpv1alpha1.Codebase, sshPort int32, codebaseName, workDir,
-	namespace, branchName string, strategy edpv1alpha1.Strategy) error {
+func (h PutProjectGerrit) tryToPushProjectToGerrit(c *codebaseApi.Codebase, sshPort int32, codebaseName, workDir,
+	namespace, branchName string, strategy codebaseApi.Strategy) error {
 	s, err := util.GetSecret(h.client, "gerrit-project-creator", namespace)
 	if err != nil {
 		return errors.Wrap(err, "unable to get gerrit-project-creator secret")
@@ -151,7 +151,7 @@ func (h PutProjectGerrit) replaceDefaultBranch(directory, defaultBranchName, new
 	return nil
 }
 
-func (h PutProjectGerrit) pushToGerrit(sshPost int32, idrsa, host, codebaseName, directory string, strategy edpv1alpha1.Strategy) error {
+func (h PutProjectGerrit) pushToGerrit(sshPost int32, idrsa, host, codebaseName, directory string, strategy codebaseApi.Strategy) error {
 	log.Info("Start pushing project to Gerrit ", "codebase_name", codebaseName)
 	if err := gerrit.AddRemoteLinkToGerrit(directory, host, sshPost, codebaseName, log); err != nil {
 		return errors.Wrap(err, "couldn't add remote link to Gerrit")
@@ -212,13 +212,13 @@ func (h PutProjectGerrit) tryToCreateProjectInVcs(us *model.UserSettings, codeba
 	return nil
 }
 
-func (h PutProjectGerrit) setIntermediateSuccessFields(c *edpv1alpha1.Codebase, action edpv1alpha1.ActionType) error {
-	c.Status = edpv1alpha1.CodebaseStatus{
+func (h PutProjectGerrit) setIntermediateSuccessFields(c *codebaseApi.Codebase, action codebaseApi.ActionType) error {
+	c.Status = codebaseApi.CodebaseStatus{
 		Status:          util.StatusInProgress,
 		Available:       false,
-		LastTimeUpdated: time.Now(),
+		LastTimeUpdated: metaV1.Now(),
 		Action:          action,
-		Result:          edpv1alpha1.Success,
+		Result:          codebaseApi.Success,
 		Username:        "system",
 		Value:           "inactive",
 		FailureCount:    c.Status.FailureCount,
@@ -233,14 +233,14 @@ func (h PutProjectGerrit) setIntermediateSuccessFields(c *edpv1alpha1.Codebase, 
 	return nil
 }
 
-func setFailedFields(c *edpv1alpha1.Codebase, a edpv1alpha1.ActionType, message string) {
-	c.Status = edpv1alpha1.CodebaseStatus{
+func setFailedFields(c *codebaseApi.Codebase, a codebaseApi.ActionType, message string) {
+	c.Status = codebaseApi.CodebaseStatus{
 		Status:          util.StatusFailed,
 		Available:       false,
-		LastTimeUpdated: time.Now(),
+		LastTimeUpdated: metaV1.Now(),
 		Username:        "system",
 		Action:          a,
-		Result:          edpv1alpha1.Error,
+		Result:          codebaseApi.Error,
 		DetailedMessage: message,
 		Value:           "failed",
 		FailureCount:    c.Status.FailureCount,
@@ -248,8 +248,8 @@ func setFailedFields(c *edpv1alpha1.Codebase, a edpv1alpha1.ActionType, message 
 	}
 }
 
-func (h PutProjectGerrit) tryToSquashCommits(workDir, codebaseName string, strategy edpv1alpha1.Strategy) error {
-	if strategy != edpv1alpha1.Create {
+func (h PutProjectGerrit) tryToSquashCommits(workDir, codebaseName string, strategy codebaseApi.Strategy) error {
+	if strategy != codebaseApi.Create {
 		return nil
 	}
 
@@ -269,7 +269,7 @@ func (h PutProjectGerrit) tryToSquashCommits(workDir, codebaseName string, strat
 	return nil
 }
 
-func (h PutProjectGerrit) initialProjectProvisioning(c *edpv1alpha1.Codebase, rLog logr.Logger, wd string) error {
+func (h PutProjectGerrit) initialProjectProvisioning(c *codebaseApi.Codebase, rLog logr.Logger, wd string) error {
 	if c.Spec.EmptyProject {
 		return h.emptyProjectProvisioning(wd, c.Name)
 	}
@@ -290,34 +290,34 @@ func (h PutProjectGerrit) emptyProjectProvisioning(wd, codebaseName string) erro
 	return nil
 }
 
-func (h PutProjectGerrit) notEmptyProjectProvisioning(c *edpv1alpha1.Codebase, rLog logr.Logger, wd string) error {
+func (h PutProjectGerrit) notEmptyProjectProvisioning(c *codebaseApi.Codebase, rLog logr.Logger, wd string) error {
 	log.Info("Start initial provisioning for non-empty project", "codebase_name", c.Name)
 	ru, err := util.GetRepoUrl(c)
 	if err != nil {
-		setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
+		setFailedFields(c, codebaseApi.GerritRepositoryProvisioning, err.Error())
 		return errors.Wrap(err, "couldn't build repo url")
 	}
 	rLog.Info("Repository URL with template has been retrieved", "url", *ru)
 
 	repu, repp, err := GetRepositoryCredentialsIfExists(c, h.client)
 	// we are ok if no credentials is found, assuming this is a public repo
-	if err != nil && !k8serrors.IsNotFound(err) {
+	if err != nil && !k8sErrors.IsNotFound(err) {
 		return errors.Wrap(err, "Unable to get repository credentials")
 	}
 
 	if !h.git.CheckPermissions(*ru, repu, repp) {
 		msg := fmt.Errorf("user %v cannot get access to the repository %v", *repu, *ru)
-		setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, msg.Error())
+		setFailedFields(c, codebaseApi.GerritRepositoryProvisioning, msg.Error())
 		return msg
 	}
 
 	if err := h.tryToCloneRepo(*ru, repu, repp, wd, c.Name); err != nil {
-		setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
+		setFailedFields(c, codebaseApi.GerritRepositoryProvisioning, err.Error())
 		return errors.Wrap(err, "cloning template project has been failed")
 	}
 
 	if err := h.tryToSquashCommits(wd, c.Name, c.Spec.Strategy); err != nil {
-		setFailedFields(c, edpv1alpha1.GerritRepositoryProvisioning, err.Error())
+		setFailedFields(c, codebaseApi.GerritRepositoryProvisioning, err.Error())
 		return errors.Wrap(err, "squash commits in a template repo has been failed")
 	}
 	return nil

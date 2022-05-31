@@ -4,28 +4,32 @@ import (
 	"context"
 	"testing"
 
-	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	jenkinsv1alpha1 "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
 	"github.com/stretchr/testify/assert"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+
+	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 )
 
 func TestDropJenkinsFolders_ServeRequest(t *testing.T) {
-	c := &v1alpha1.Codebase{
-		ObjectMeta: metav1.ObjectMeta{
+	t.Parallel()
+
+	c := &codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
 	}
 
-	cbl := &v1alpha1.CodebaseBranchList{
-		Items: []v1alpha1.CodebaseBranch{
+	cbl := &codebaseApi.CodebaseBranchList{
+		Items: []codebaseApi.CodebaseBranch{
 			{
-				ObjectMeta: metav1.ObjectMeta{
-					OwnerReferences: []metav1.OwnerReference{{
+				ObjectMeta: metaV1.ObjectMeta{
+					OwnerReferences: []metaV1.OwnerReference{{
 						Kind: "Codebase",
 						Name: fakeName,
 					}},
@@ -36,10 +40,10 @@ func TestDropJenkinsFolders_ServeRequest(t *testing.T) {
 		},
 	}
 
-	jfl := &jenkinsv1alpha1.JenkinsFolderList{
-		Items: []jenkinsv1alpha1.JenkinsFolder{
+	jfl := &jenkinsApi.JenkinsFolderList{
+		Items: []jenkinsApi.JenkinsFolder{
 			{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: metaV1.ObjectMeta{
 					Labels: map[string]string{
 						"codebase": fakeName,
 					},
@@ -48,7 +52,7 @@ func TestDropJenkinsFolders_ServeRequest(t *testing.T) {
 				},
 			},
 			{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: metaV1.ObjectMeta{
 					Labels: map[string]string{
 						"codebase": "another-codebase",
 					},
@@ -60,8 +64,8 @@ func TestDropJenkinsFolders_ServeRequest(t *testing.T) {
 	}
 
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, c, cbl, &v1alpha1.CodebaseBranch{}, jfl)
-	scheme.AddKnownTypes(jenkinsv1alpha1.SchemeGroupVersion, &jenkinsv1alpha1.JenkinsFolder{})
+	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, c, cbl, &codebaseApi.CodebaseBranch{})
+	scheme.AddKnownTypes(jenkinsApi.SchemeGroupVersion, &jenkinsApi.JenkinsFolder{}, jfl)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, jfl, cbl).Build()
 
 	djf := DropJenkinsFolders{
@@ -71,7 +75,7 @@ func TestDropJenkinsFolders_ServeRequest(t *testing.T) {
 	err := djf.ServeRequest(c)
 	assert.NoError(t, err)
 
-	jfr := &jenkinsv1alpha1.JenkinsFolder{}
+	jfr := &jenkinsApi.JenkinsFolder{}
 	if err := fakeCl.Get(context.TODO(),
 		types.NamespacedName{
 			Name:      "another-jf",
@@ -82,7 +86,7 @@ func TestDropJenkinsFolders_ServeRequest(t *testing.T) {
 	}
 	assert.Equal(t, jfr.Labels["codebase"], "another-codebase")
 
-	jflr := &jenkinsv1alpha1.JenkinsFolderList{}
+	jflr := &jenkinsApi.JenkinsFolderList{}
 	if err := fakeCl.List(context.TODO(), jflr); err != nil {
 		t.Error("Unable to get JenkinsFolder")
 	}
@@ -90,22 +94,22 @@ func TestDropJenkinsFolders_ServeRequest(t *testing.T) {
 }
 
 func TestDropJenkinsFolders_ServeRequest_ShouldFailCodebaseExists(t *testing.T) {
-	c := &v1alpha1.Codebase{
-		TypeMeta: metav1.TypeMeta{
+	c := &codebaseApi.Codebase{
+		TypeMeta: metaV1.TypeMeta{
 			Kind: "Codebase",
 		},
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 			UID:       "xxx",
 		},
 	}
 
-	cbl := &v1alpha1.CodebaseBranchList{
-		Items: []v1alpha1.CodebaseBranch{
+	cbl := &codebaseApi.CodebaseBranchList{
+		Items: []codebaseApi.CodebaseBranch{
 			{
-				ObjectMeta: metav1.ObjectMeta{
-					OwnerReferences: []metav1.OwnerReference{{
+				ObjectMeta: metaV1.ObjectMeta{
+					OwnerReferences: []metaV1.OwnerReference{{
 						Kind: "Codebase",
 						Name: fakeName,
 						UID:  "xxx",
@@ -118,7 +122,7 @@ func TestDropJenkinsFolders_ServeRequest_ShouldFailCodebaseExists(t *testing.T) 
 	}
 
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, c, cbl, &v1alpha1.CodebaseBranch{})
+	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, c, cbl, &codebaseApi.CodebaseBranch{})
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, cbl).Build()
 
 	djf := DropJenkinsFolders{

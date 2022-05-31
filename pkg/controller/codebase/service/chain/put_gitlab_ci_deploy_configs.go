@@ -3,15 +3,16 @@ package chain
 import (
 	"fmt"
 
-	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	"github.com/pkg/errors"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/helper"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/repository"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/service/chain/handler"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/service/template"
 	git "github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
-	"github.com/pkg/errors"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type PutGitlabCiDeployConfigs struct {
@@ -21,7 +22,7 @@ type PutGitlabCiDeployConfigs struct {
 	git    git.Git
 }
 
-func (h PutGitlabCiDeployConfigs) ServeRequest(c *v1alpha1.Codebase) error {
+func (h PutGitlabCiDeployConfigs) ServeRequest(c *codebaseApi.Codebase) error {
 	rLog := log.WithValues("codebase_name", c.Name)
 	if c.Spec.DisablePutDeployTemplates {
 		rLog.Info("skip of putting deploy templates to codebase due to specified flag")
@@ -30,14 +31,14 @@ func (h PutGitlabCiDeployConfigs) ServeRequest(c *v1alpha1.Codebase) error {
 
 	rLog.Info("Start pushing configs...")
 	if err := h.tryToPushConfigs(c); err != nil {
-		setFailedFields(c, v1alpha1.SetupDeploymentTemplates, err.Error())
+		setFailedFields(c, codebaseApi.SetupDeploymentTemplates, err.Error())
 		return errors.Wrapf(err, "couldn't push deploy configs for %v codebase", c.Name)
 	}
 	rLog.Info("end pushing configs to remote git server")
 	return nextServeOrNil(h.next, c)
 }
 
-func (h PutGitlabCiDeployConfigs) tryToPushConfigs(c *v1alpha1.Codebase) error {
+func (h PutGitlabCiDeployConfigs) tryToPushConfigs(c *codebaseApi.Codebase) error {
 	name, err := helper.GetEDPName(h.client, c.Namespace)
 	if err != nil {
 		return errors.Wrap(err, "couldn't get edp name")

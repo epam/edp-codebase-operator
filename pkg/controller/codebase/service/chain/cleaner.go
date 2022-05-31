@@ -4,14 +4,15 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/service/chain/handler"
-	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
+	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/service/chain/handler"
+	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
 type Cleaner struct {
@@ -19,18 +20,18 @@ type Cleaner struct {
 	client client.Client
 }
 
-func (h Cleaner) ServeRequest(c *v1alpha1.Codebase) error {
+func (h Cleaner) ServeRequest(c *codebaseApi.Codebase) error {
 	rLog := log.WithValues("codebase_name", c.Name)
 	rLog.Info("start cleaning data...")
 	if err := h.tryToClean(c); err != nil {
-		setFailedFields(c, v1alpha1.CleanData, err.Error())
+		setFailedFields(c, codebaseApi.CleanData, err.Error())
 		return err
 	}
 	rLog.Info("end cleaning data...")
 	return nextServeOrNil(h.next, c)
 }
 
-func (h Cleaner) tryToClean(c *v1alpha1.Codebase) error {
+func (h Cleaner) tryToClean(c *codebaseApi.Codebase) error {
 	s := fmt.Sprintf("repository-codebase-%v-temp", c.Name)
 	if err := h.deleteSecret(s, c.Namespace); err != nil {
 		return errors.Wrapf(err, "unable to delete secret %v", s)
@@ -45,12 +46,12 @@ func (h Cleaner) tryToClean(c *v1alpha1.Codebase) error {
 func (h Cleaner) deleteSecret(secretName, namespace string) error {
 	log.Info("start deleting secret", "name", secretName)
 	if err := h.client.Delete(context.TODO(), &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      secretName,
 			Namespace: namespace,
 		},
 	}); err != nil {
-		if k8serrors.IsNotFound(err) {
+		if k8sErrors.IsNotFound(err) {
 			log.Info("secret doesn't exist. skip deleting", "name", secretName)
 			return nil
 		}

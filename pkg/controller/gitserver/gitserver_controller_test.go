@@ -6,24 +6,25 @@ import (
 	"testing"
 	"time"
 
-	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	"github.com/epam/edp-common/pkg/mock"
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	coreV1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
+	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
 func TestReconcileGitServer_Reconcile_ShouldPassNotFound(t *testing.T) {
-	gs := &v1alpha1.GitServer{}
+	gs := &codebaseApi.GitServer{}
 
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, gs)
+	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, gs)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(gs).Build()
 
 	//request
@@ -65,25 +66,25 @@ func TestReconcileGitServer_Reconcile_ShouldFailNotFound(t *testing.T) {
 	res, err := r.Reconcile(context.TODO(), req)
 
 	assert.Error(t, err)
-	if !strings.Contains(err.Error(), "no kind is registered for the type v1alpha1.GitServer") {
+	if !strings.Contains(err.Error(), "no kind is registered for the type v1.GitServer") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
 	assert.False(t, res.Requeue)
 }
 
 func TestReconcileGitServer_Reconcile_ShouldFailToGetSecret(t *testing.T) {
-	gs := &v1alpha1.GitServer{
-		ObjectMeta: metav1.ObjectMeta{
+	gs := &codebaseApi.GitServer{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "NewGitServer",
 			Namespace: "namespace",
 		},
-		Spec: v1alpha1.GitServerSpec{
+		Spec: codebaseApi.GitServerSpec{
 			GitHost:          "g-host",
 			NameSshKeySecret: "ssh-secret",
 		},
 	}
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, gs)
+	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, gs)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(gs).Build()
 
 	//request
@@ -109,18 +110,18 @@ func TestReconcileGitServer_Reconcile_ShouldFailToGetSecret(t *testing.T) {
 }
 
 func TestReconcileGitServer_UpdateStatus_ShouldPassWithSuccess(t *testing.T) {
-	gs := &v1alpha1.GitServer{
-		ObjectMeta: metav1.ObjectMeta{
+	gs := &codebaseApi.GitServer{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "NewGitServer",
 			Namespace: "namespace",
 		},
-		Spec: v1alpha1.GitServerSpec{
+		Spec: codebaseApi.GitServerSpec{
 			GitHost:          "g-host",
 			NameSshKeySecret: "ssh-secret",
 		},
 	}
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, gs)
+	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, gs)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(gs).Build()
 
 	r := ReconcileGitServer{
@@ -135,18 +136,18 @@ func TestReconcileGitServer_UpdateStatus_ShouldPassWithSuccess(t *testing.T) {
 }
 
 func TestReconcileGitServer_UpdateStatus_ShouldPassWithFailure(t *testing.T) {
-	gs := &v1alpha1.GitServer{
-		ObjectMeta: metav1.ObjectMeta{
+	gs := &codebaseApi.GitServer{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "NewGitServer",
 			Namespace: "namespace",
 		},
-		Spec: v1alpha1.GitServerSpec{
+		Spec: codebaseApi.GitServerSpec{
 			GitHost:          "g-host",
 			NameSshKeySecret: "ssh-secret",
 		},
 	}
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, gs)
+	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, gs)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(gs).Build()
 
 	r := ReconcileGitServer{
@@ -200,22 +201,22 @@ jDUnjND10WwDI7AAAAIm15a2hhaWxvX2JvbHN1bm92c2t5aUBFUFVBS1lJVzBBNkI=
 -----END OPENSSH PRIVATE KEY-----`
 
 func TestReconcileGitServer_ServerUnavailable(t *testing.T) {
-	gs := &v1alpha1.GitServer{
-		ObjectMeta: metav1.ObjectMeta{
+	gs := &codebaseApi.GitServer{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "NewGitServer",
 			Namespace: "namespace",
 		},
-		Spec: v1alpha1.GitServerSpec{
+		Spec: codebaseApi.GitServerSpec{
 			GitHost:          "g-host",
 			NameSshKeySecret: "ssh-secret",
 		},
 	}
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, gs)
+	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, gs)
 	err := coreV1.AddToScheme(scheme)
 	assert.NoError(t, err)
 
-	secret := coreV1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "ssh-secret", Namespace: gs.Namespace}, Data: map[string][]byte{
+	secret := coreV1.Secret{ObjectMeta: metaV1.ObjectMeta{Name: "ssh-secret", Namespace: gs.Namespace}, Data: map[string][]byte{
 		util.PrivateSShKeyName: []byte(testKey),
 	}}
 

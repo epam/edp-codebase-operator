@@ -5,16 +5,18 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebasebranch/service"
-	"github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver/mock"
-	"github.com/epam/edp-codebase-operator/v2/pkg/util"
-	"github.com/epam/edp-perf-operator/v2/pkg/util/common"
 	"github.com/stretchr/testify/assert"
 	coreV1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+
+	"github.com/epam/edp-perf-operator/v2/pkg/util/common"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
+	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebasebranch/service"
+	"github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver/mock"
+	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
 const (
@@ -24,26 +26,26 @@ const (
 )
 
 func TestPutBranchInGit_ShouldBeExecutedSuccessfullyWithDefaultVersioning(t *testing.T) {
-	c := &v1alpha1.Codebase{
+	c := &codebaseApi.Codebase{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
-		Spec: v1alpha1.CodebaseSpec{
+		Spec: codebaseApi.CodebaseSpec{
 			GitServer:  fakeName,
 			GitUrlPath: common.GetStringP(fakeName),
 		},
-		Status: v1alpha1.CodebaseStatus{
+		Status: codebaseApi.CodebaseStatus{
 			Available: true,
 		},
 	}
 
-	gs := &v1alpha1.GitServer{
+	gs := &codebaseApi.GitServer{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
-		Spec: v1alpha1.GitServerSpec{
+		Spec: codebaseApi.GitServerSpec{
 			NameSshKeySecret: fakeName,
 			GitHost:          fakeName,
 			SshPort:          22,
@@ -61,12 +63,12 @@ func TestPutBranchInGit_ShouldBeExecutedSuccessfullyWithDefaultVersioning(t *tes
 		},
 	}
 
-	cb := &v1alpha1.CodebaseBranch{
+	cb := &codebaseApi.CodebaseBranch{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
-		Spec: v1alpha1.CodebaseBranchSpec{
+		Spec: codebaseApi.CodebaseBranchSpec{
 			CodebaseName: fakeName,
 			BranchName:   fakeName,
 		},
@@ -97,12 +99,12 @@ func TestPutBranchInGit_ShouldBeExecutedSuccessfullyWithDefaultVersioning(t *tes
 }
 
 func TestPutBranchInGit_CodebaseShouldNotBeFound(t *testing.T) {
-	cb := &v1alpha1.CodebaseBranch{
+	cb := &codebaseApi.CodebaseBranch{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
-		Spec: v1alpha1.CodebaseBranchSpec{
+		Spec: codebaseApi.CodebaseBranchSpec{
 			CodebaseName: fakeName,
 		},
 	}
@@ -118,30 +120,30 @@ func TestPutBranchInGit_CodebaseShouldNotBeFound(t *testing.T) {
 	if !strings.Contains(err.Error(), "Unable to get Codebase fake-name") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
-	assert.Equal(t, v1alpha1.PutBranchForGitlabCiCodebase, cb.Status.Action)
+	assert.Equal(t, codebaseApi.PutBranchForGitlabCiCodebase, cb.Status.Action)
 }
 
 func TestPutBranchInGit_ShouldThrowCodebaseBranchReconcileError(t *testing.T) {
-	c := &v1alpha1.Codebase{
+	c := &codebaseApi.Codebase{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
-		Spec: v1alpha1.CodebaseSpec{
+		Spec: codebaseApi.CodebaseSpec{
 			GitServer:  fakeName,
 			GitUrlPath: common.GetStringP(fakeName),
 		},
-		Status: v1alpha1.CodebaseStatus{
+		Status: codebaseApi.CodebaseStatus{
 			Available: false,
 		},
 	}
 
-	cb := &v1alpha1.CodebaseBranch{
+	cb := &codebaseApi.CodebaseBranch{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
-		Spec: v1alpha1.CodebaseBranchSpec{
+		Spec: codebaseApi.CodebaseBranchSpec{
 			CodebaseName: fakeName,
 		},
 	}
@@ -157,30 +159,30 @@ func TestPutBranchInGit_ShouldThrowCodebaseBranchReconcileError(t *testing.T) {
 }
 
 func TestPutBranchInGit_ShouldBeExecutedSuccessfullyWithEdpVersioning(t *testing.T) {
-	c := &v1alpha1.Codebase{
+	c := &codebaseApi.Codebase{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
-		Spec: v1alpha1.CodebaseSpec{
+		Spec: codebaseApi.CodebaseSpec{
 			GitServer:  fakeName,
 			GitUrlPath: common.GetStringP(fakeName),
-			Versioning: v1alpha1.Versioning{
+			Versioning: codebaseApi.Versioning{
 				Type:      versioningType,
 				StartFrom: nil,
 			},
 		},
-		Status: v1alpha1.CodebaseStatus{
+		Status: codebaseApi.CodebaseStatus{
 			Available: true,
 		},
 	}
 
-	gs := &v1alpha1.GitServer{
+	gs := &codebaseApi.GitServer{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
-		Spec: v1alpha1.GitServerSpec{
+		Spec: codebaseApi.GitServerSpec{
 			NameSshKeySecret: fakeName,
 			GitHost:          fakeName,
 			SshPort:          22,
@@ -198,17 +200,17 @@ func TestPutBranchInGit_ShouldBeExecutedSuccessfullyWithEdpVersioning(t *testing
 		},
 	}
 
-	cb := &v1alpha1.CodebaseBranch{
+	cb := &codebaseApi.CodebaseBranch{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
-		Spec: v1alpha1.CodebaseBranchSpec{
+		Spec: codebaseApi.CodebaseBranchSpec{
 			CodebaseName: fakeName,
 			Version:      common.GetStringP("version3"),
 			BranchName:   fakeName,
 		},
-		Status: v1alpha1.CodebaseBranchStatus{
+		Status: codebaseApi.CodebaseBranchStatus{
 			VersionHistory: []string{"version1", "version2"},
 		},
 	}
@@ -242,7 +244,7 @@ func TestPutBranchInGit_ShouldBeExecutedSuccessfullyWithEdpVersioning(t *testing
 
 func TestPutBranchInGit_ShouldFailToSetIntermediateStatus(t *testing.T) {
 
-	cb := &v1alpha1.CodebaseBranch{}
+	cb := &codebaseApi.CodebaseBranch{}
 
 	scheme := runtime.NewScheme()
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects().Build()
@@ -258,26 +260,26 @@ func TestPutBranchInGit_ShouldFailToSetIntermediateStatus(t *testing.T) {
 }
 
 func TestPutBranchInGit_GitServerShouldNotBeFound(t *testing.T) {
-	c := &v1alpha1.Codebase{
+	c := &codebaseApi.Codebase{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
-		Spec: v1alpha1.CodebaseSpec{
+		Spec: codebaseApi.CodebaseSpec{
 			GitServer:  fakeName,
 			GitUrlPath: common.GetStringP(fakeName),
 		},
-		Status: v1alpha1.CodebaseStatus{
+		Status: codebaseApi.CodebaseStatus{
 			Available: true,
 		},
 	}
 
-	cb := &v1alpha1.CodebaseBranch{
+	cb := &codebaseApi.CodebaseBranch{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
-		Spec: v1alpha1.CodebaseBranchSpec{
+		Spec: codebaseApi.CodebaseBranchSpec{
 			CodebaseName: fakeName,
 		},
 	}
@@ -297,26 +299,26 @@ func TestPutBranchInGit_GitServerShouldNotBeFound(t *testing.T) {
 }
 
 func TestPutBranchInGit_SecretShouldNotBeFound(t *testing.T) {
-	c := &v1alpha1.Codebase{
+	c := &codebaseApi.Codebase{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
-		Spec: v1alpha1.CodebaseSpec{
+		Spec: codebaseApi.CodebaseSpec{
 			GitServer:  fakeName,
 			GitUrlPath: common.GetStringP(fakeName),
 		},
-		Status: v1alpha1.CodebaseStatus{
+		Status: codebaseApi.CodebaseStatus{
 			Available: true,
 		},
 	}
 
-	gs := &v1alpha1.GitServer{
+	gs := &codebaseApi.GitServer{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
-		Spec: v1alpha1.GitServerSpec{
+		Spec: codebaseApi.GitServerSpec{
 			NameSshKeySecret: fakeName,
 			GitHost:          fakeName,
 			SshPort:          22,
@@ -324,12 +326,12 @@ func TestPutBranchInGit_SecretShouldNotBeFound(t *testing.T) {
 		},
 	}
 
-	cb := &v1alpha1.CodebaseBranch{
+	cb := &codebaseApi.CodebaseBranch{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
-		Spec: v1alpha1.CodebaseBranchSpec{
+		Spec: codebaseApi.CodebaseBranchSpec{
 			CodebaseName: fakeName,
 		},
 	}

@@ -8,16 +8,17 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	edpV1alpha1 "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/repository"
-	mockgit "github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver/mock"
-	"github.com/epam/edp-codebase-operator/v2/pkg/util"
-	"github.com/epam/edp-component-operator/pkg/apis/v1/v1alpha1"
 	"github.com/stretchr/testify/assert"
 	coreV1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
+	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/repository"
+	mockGit "github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver/mock"
+	"github.com/epam/edp-codebase-operator/v2/pkg/util"
+	"github.com/epam/edp-component-operator/pkg/apis/v1/v1alpha1"
 )
 
 func TestPutGitlabCiFile_ShouldPass(t *testing.T) {
@@ -31,7 +32,7 @@ func TestPutGitlabCiFile_ShouldPass(t *testing.T) {
 	os.Setenv("PLATFORM_TYPE", "kubernetes")
 
 	ec := &v1alpha1.EDPComponent{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "kubernetes",
 			Namespace: fakeNamespace,
 		},
@@ -43,28 +44,28 @@ func TestPutGitlabCiFile_ShouldPass(t *testing.T) {
 		},
 	}
 
-	c := &edpV1alpha1.Codebase{
-		ObjectMeta: metav1.ObjectMeta{
+	c := &codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
-		Spec: edpV1alpha1.CodebaseSpec{
+		Spec: codebaseApi.CodebaseSpec{
 			Type:      util.Application,
 			Framework: util.GetStringP("java11"),
 			BuildTool: "Maven",
 			GitServer: fakeName,
 		},
-		Status: edpV1alpha1.CodebaseStatus{
+		Status: codebaseApi.CodebaseStatus{
 			Git: *util.GetStringP("pushed"),
 		},
 	}
 
-	gs := &edpV1alpha1.GitServer{
-		ObjectMeta: metav1.ObjectMeta{
+	gs := &codebaseApi.GitServer{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
-		Spec: edpV1alpha1.GitServerSpec{
+		Spec: codebaseApi.GitServerSpec{
 			NameSshKeySecret: fakeName,
 			GitHost:          fakeName,
 			SshPort:          22,
@@ -72,7 +73,7 @@ func TestPutGitlabCiFile_ShouldPass(t *testing.T) {
 		},
 	}
 	cm := &coreV1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "edp-config",
 			Namespace: fakeNamespace,
 		},
@@ -81,7 +82,7 @@ func TestPutGitlabCiFile_ShouldPass(t *testing.T) {
 		},
 	}
 	ssh := &coreV1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
@@ -92,7 +93,7 @@ func TestPutGitlabCiFile_ShouldPass(t *testing.T) {
 
 	scheme := runtime.NewScheme()
 	scheme.AddKnownTypes(coreV1.SchemeGroupVersion, ssh, cm)
-	scheme.AddKnownTypes(edpV1alpha1.SchemeGroupVersion, c, gs, ec)
+	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, c, gs, ec)
 
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, gs, ssh, cm, ec).Build()
 
@@ -105,7 +106,7 @@ func TestPutGitlabCiFile_ShouldPass(t *testing.T) {
 		t.Error("Unable to create directory for testing")
 	}
 
-	mGit := new(mockgit.MockGit)
+	mGit := new(mockGit.MockGit)
 	mGit.On("CommitChanges", wd, "Add gitlab ci file").Return(nil)
 	mGit.On("PushChanges", "fake", fakeName, wd).Return(nil)
 
@@ -121,7 +122,7 @@ func TestPutGitlabCiFile_ShouldPass(t *testing.T) {
 
 func TestParseTemplateMethod_ShouldFailToGetEdpComponent(t *testing.T) {
 	ec := &v1alpha1.EDPComponent{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "fake-name",
 			Namespace: "fake-namespace",
 		},
@@ -141,17 +142,17 @@ func TestParseTemplateMethod_ShouldFailToGetEdpComponent(t *testing.T) {
 		client: fakeCl,
 	}
 
-	c := &edpV1alpha1.Codebase{
-		ObjectMeta: metav1.ObjectMeta{
+	c := &codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      fakeCodebaseName,
 			Namespace: fakeNamespace,
 		},
-		Spec: edpV1alpha1.CodebaseSpec{
+		Spec: codebaseApi.CodebaseSpec{
 			Framework: util.GetStringP("maven"),
 			BuildTool: "maven",
 			Lang:      goLang,
-			Versioning: edpV1alpha1.Versioning{
-				Type: edpV1alpha1.Default,
+			Versioning: codebaseApi.Versioning{
+				Type: codebaseApi.Default,
 			},
 		},
 	}
@@ -161,7 +162,7 @@ func TestParseTemplateMethod_ShouldFailToGetEdpComponent(t *testing.T) {
 
 func TestPushChangesMethod_ShouldBeExecutedSuccessfully(t *testing.T) {
 
-	mGit := new(mockgit.MockGit)
+	mGit := new(mockGit.MockGit)
 	ch := PutGitlabCiFile{
 		git: mGit,
 	}
@@ -173,12 +174,12 @@ func TestPushChangesMethod_ShouldBeExecutedSuccessfully(t *testing.T) {
 }
 
 func TestPutGitlabCiFile_gitlabCiFileExistsShouldReturnTrue(t *testing.T) {
-	c := &edpV1alpha1.Codebase{
-		ObjectMeta: metav1.ObjectMeta{
+	c := &codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      fakeCodebaseName,
 			Namespace: fakeNamespace,
 		},
-		Status: edpV1alpha1.CodebaseStatus{
+		Status: codebaseApi.CodebaseStatus{
 			Git: *util.GetStringP("gitlab ci"),
 		},
 	}
@@ -196,12 +197,12 @@ func TestPutGitlabCiFile_gitlabCiFileExistsShouldReturnTrue(t *testing.T) {
 }
 
 func TestPutGitlabCiFile_gitlabCiFileExistsShouldReturnFalse(t *testing.T) {
-	c := &edpV1alpha1.Codebase{
-		ObjectMeta: metav1.ObjectMeta{
+	c := &codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      fakeCodebaseName,
 			Namespace: fakeNamespace,
 		},
-		Status: edpV1alpha1.CodebaseStatus{
+		Status: codebaseApi.CodebaseStatus{
 			Git: *util.GetStringP(""),
 		},
 	}
@@ -249,7 +250,7 @@ func TestParseTemplate_ShouldPass(t *testing.T) {
 	}{
 		fakeName,
 		fakeNamespace,
-		string(edpV1alpha1.Default),
+		string(codebaseApi.Default),
 		"url",
 	}
 

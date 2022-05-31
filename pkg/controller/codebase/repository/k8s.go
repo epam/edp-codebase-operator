@@ -2,18 +2,20 @@ package repository
 
 import (
 	"context"
-	edpv1alpha1 "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 )
 
 type K8SCodebaseRepository struct {
 	client client.Client
-	cr     *edpv1alpha1.Codebase
+	cr     *codebaseApi.Codebase
 }
 
 // Simple constructor for K8SCodebaseRepository. Codebase CR is used to avoid additional calls to K8S and error
 // with concurrent resource update
-func NewK8SCodebaseRepository(client client.Client, cr *edpv1alpha1.Codebase) CodebaseRepository {
+func NewK8SCodebaseRepository(client client.Client, cr *codebaseApi.Codebase) CodebaseRepository {
 	return K8SCodebaseRepository{
 		client: client,
 		cr:     cr,

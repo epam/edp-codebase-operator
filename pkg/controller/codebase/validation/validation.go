@@ -1,9 +1,11 @@
 package validation
 
 import (
-	edpv1alpha1 "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"strings"
+
+	ctrl "sigs.k8s.io/controller-runtime"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 )
 
 var log = ctrl.Log.WithName("codebase_validator")
@@ -13,7 +15,7 @@ var allowedCodebaseSettings = map[string][]string{
 	"language":          {"java", "dotnet", "javascript", "groovy-pipeline", "other", "go", "python", "terraform", "rego", "container"},
 }
 
-func IsCodebaseValid(cr *edpv1alpha1.Codebase) bool {
+func IsCodebaseValid(cr *codebaseApi.Codebase) bool {
 	if !(containSettings(allowedCodebaseSettings["add_repo_strategy"], string(cr.Spec.Strategy))) {
 		log.Info("Provided unsupported repository strategy", "strategy", string(cr.Spec.Strategy))
 		return false

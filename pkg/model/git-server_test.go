@@ -3,13 +3,14 @@ package model
 import (
 	"testing"
 
-	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/stretchr/testify/assert"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 )
 
 func TestConvertToGitServer(t *testing.T) {
-	gs := ConvertToGitServer(v1alpha1.GitServer{
-		Status: v1alpha1.GitServerStatus{
+	gs := ConvertToGitServer(codebaseApi.GitServer{
+		Status: codebaseApi.GitServerStatus{
 			Status: "hello world",
 		},
 	})

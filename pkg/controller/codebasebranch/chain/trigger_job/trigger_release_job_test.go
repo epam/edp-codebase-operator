@@ -6,61 +6,63 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebasebranch/service"
-	"github.com/epam/edp-codebase-operator/v2/pkg/util"
-	jenkinsv1alpha1 "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/apps/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+
+	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
+	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebasebranch/service"
+	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
 func TestTriggerReleaseJob_ShouldPass(t *testing.T) {
-	c := &v1alpha1.Codebase{
-		ObjectMeta: metav1.ObjectMeta{
+	c := &codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "c-stub-name",
 			Namespace: "stub-namespace",
 		},
-		Spec: v1alpha1.CodebaseSpec{
-			Versioning: v1alpha1.Versioning{
+		Spec: codebaseApi.CodebaseSpec{
+			Versioning: codebaseApi.Versioning{
 				Type: "default",
 			},
 		},
-		Status: v1alpha1.CodebaseStatus{
+		Status: codebaseApi.CodebaseStatus{
 			Available: true,
 		},
 	}
 
-	cb := &v1alpha1.CodebaseBranch{
-		ObjectMeta: metav1.ObjectMeta{
+	cb := &codebaseApi.CodebaseBranch{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "cb-stub-name",
 			Namespace: "stub-namespace",
 		},
-		Spec: v1alpha1.CodebaseBranchSpec{
+		Spec: codebaseApi.CodebaseBranchSpec{
 			BranchName:   "stub-name",
 			CodebaseName: "c-stub-name",
 		},
 	}
 
-	jf := &jenkinsv1alpha1.JenkinsFolder{
-		TypeMeta: metav1.TypeMeta{
+	jf := &jenkinsApi.JenkinsFolder{
+		TypeMeta: metaV1.TypeMeta{
 			APIVersion: util.V2APIVersion,
 			Kind:       util.JenkinsFolderKind,
 		},
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "c-stub-name-codebase",
 			Namespace: c.Namespace,
 		},
-		Spec: jenkinsv1alpha1.JenkinsFolderSpec{
-			Job: &jenkinsv1alpha1.Job{
+		Spec: jenkinsApi.JenkinsFolderSpec{
+			Job: &jenkinsApi.Job{
 				Name:   "job-provisions/job/ci/job/name",
 				Config: "jenkins-config",
 			},
 		},
-		Status: jenkinsv1alpha1.JenkinsFolderStatus{
+		Status: jenkinsApi.JenkinsFolderStatus{
 			Available: true,
 		},
 	}
@@ -84,48 +86,48 @@ func TestTriggerReleaseJob_ShouldPass(t *testing.T) {
 }
 
 func TestTriggerReleaseJob_ShouldFailWhenTriggerJobReturnsErr(t *testing.T) {
-	c := &v1alpha1.Codebase{
-		ObjectMeta: metav1.ObjectMeta{
+	c := &codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "c-stub-name",
 			Namespace: "stub-namespace",
 		},
-		Spec: v1alpha1.CodebaseSpec{
-			Versioning: v1alpha1.Versioning{
+		Spec: codebaseApi.CodebaseSpec{
+			Versioning: codebaseApi.Versioning{
 				Type: "default",
 			},
 		},
-		Status: v1alpha1.CodebaseStatus{
+		Status: codebaseApi.CodebaseStatus{
 			Available: true,
 		},
 	}
 
-	cb := &v1alpha1.CodebaseBranch{
-		ObjectMeta: metav1.ObjectMeta{
+	cb := &codebaseApi.CodebaseBranch{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "cb-stub-name",
 			Namespace: "stub-namespace",
 		},
-		Spec: v1alpha1.CodebaseBranchSpec{
+		Spec: codebaseApi.CodebaseBranchSpec{
 			BranchName:   "stub-name",
 			CodebaseName: "c-stub-name",
 		},
 	}
 
-	jf := &jenkinsv1alpha1.JenkinsFolder{
-		TypeMeta: metav1.TypeMeta{
+	jf := &jenkinsApi.JenkinsFolder{
+		TypeMeta: metaV1.TypeMeta{
 			APIVersion: util.V2APIVersion,
 			Kind:       util.JenkinsFolderKind,
 		},
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "c-stub-name-codebase",
 			Namespace: c.Namespace,
 		},
-		Spec: jenkinsv1alpha1.JenkinsFolderSpec{
-			Job: &jenkinsv1alpha1.Job{
+		Spec: jenkinsApi.JenkinsFolderSpec{
+			Job: &jenkinsApi.Job{
 				Name:   "job-provisions/job/ci/job/name",
 				Config: "jenkins-config",
 			},
 		},
-		Status: jenkinsv1alpha1.JenkinsFolderStatus{
+		Status: jenkinsApi.JenkinsFolderStatus{
 			Available: true,
 		},
 	}
@@ -150,7 +152,7 @@ func TestTriggerReleaseJob_ShouldFailWhenTriggerJobReturnsErr(t *testing.T) {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
 
-	cbResp := &v1alpha1.CodebaseBranch{}
+	cbResp := &codebaseApi.CodebaseBranch{}
 	err = fakeCl.Get(context.TODO(),
 		types.NamespacedName{
 			Name:      "cb-stub-name",
@@ -160,7 +162,7 @@ func TestTriggerReleaseJob_ShouldFailWhenTriggerJobReturnsErr(t *testing.T) {
 	// here we have values set with SetIntermediateSuccessFields()
 	assert.NoError(t, err)
 	assert.Equal(t, cbResp.Status.Value, "inactive")
-	assert.Equal(t, cbResp.Status.Action, v1alpha1.ActionType("trigger_release_job"))
+	assert.Equal(t, cbResp.Status.Action, codebaseApi.ActionType("trigger_release_job"))
 	// Our cb object should have values from SetFailedFields(), but values
 	// will be set in Reconciler() using defer approach
 	assert.Equal(t, cb.Status.Value, "failed")
@@ -168,27 +170,27 @@ func TestTriggerReleaseJob_ShouldFailWhenTriggerJobReturnsErr(t *testing.T) {
 }
 
 func TestTriggerReleaseJob_ShouldFailOnCodebaseNotFound(t *testing.T) {
-	c := &v1alpha1.Codebase{
-		ObjectMeta: metav1.ObjectMeta{
+	c := &codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "c-stub-name",
 			Namespace: "stub-namespace",
 		},
-		Spec: v1alpha1.CodebaseSpec{
-			Versioning: v1alpha1.Versioning{
+		Spec: codebaseApi.CodebaseSpec{
+			Versioning: codebaseApi.Versioning{
 				Type: "default",
 			},
 		},
-		Status: v1alpha1.CodebaseStatus{
+		Status: codebaseApi.CodebaseStatus{
 			Available: true,
 		},
 	}
 
-	cb := &v1alpha1.CodebaseBranch{
-		ObjectMeta: metav1.ObjectMeta{
+	cb := &codebaseApi.CodebaseBranch{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "cb-stub-name",
 			Namespace: "stub-namespace",
 		},
-		Spec: v1alpha1.CodebaseBranchSpec{
+		Spec: codebaseApi.CodebaseBranchSpec{
 			BranchName:   "stub-name",
 			CodebaseName: "non-existing-stub-name",
 		},
@@ -213,7 +215,7 @@ func TestTriggerReleaseJob_ShouldFailOnCodebaseNotFound(t *testing.T) {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
 
-	cbResp := &v1alpha1.CodebaseBranch{}
+	cbResp := &codebaseApi.CodebaseBranch{}
 	err = fakeCl.Get(context.TODO(),
 		types.NamespacedName{
 			Name:      "cb-stub-name",
@@ -223,7 +225,7 @@ func TestTriggerReleaseJob_ShouldFailOnCodebaseNotFound(t *testing.T) {
 	// here we have values set with SetIntermediateSuccessFields()
 	assert.NoError(t, err)
 	assert.Equal(t, cbResp.Status.Value, "inactive")
-	assert.Equal(t, cbResp.Status.Action, v1alpha1.ActionType("trigger_release_job"))
+	assert.Equal(t, cbResp.Status.Action, codebaseApi.ActionType("trigger_release_job"))
 	// Our cb object should have values from SetFailedFields(), but values
 	// will be set in Reconciler() using defer approach
 	assert.Equal(t, cb.Status.Value, "failed")
@@ -231,33 +233,33 @@ func TestTriggerReleaseJob_ShouldFailOnCodebaseNotFound(t *testing.T) {
 }
 
 func TestTriggerReleaseJob_ShouldFailOnJenkinsfolderNotFound(t *testing.T) {
-	c := &v1alpha1.Codebase{
-		ObjectMeta: metav1.ObjectMeta{
+	c := &codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "c-stub-name",
 			Namespace: "stub-namespace",
 		},
-		Spec: v1alpha1.CodebaseSpec{
-			Versioning: v1alpha1.Versioning{
+		Spec: codebaseApi.CodebaseSpec{
+			Versioning: codebaseApi.Versioning{
 				Type: "default",
 			},
 		},
-		Status: v1alpha1.CodebaseStatus{
+		Status: codebaseApi.CodebaseStatus{
 			Available: true,
 		},
 	}
 
-	cb := &v1alpha1.CodebaseBranch{
-		ObjectMeta: metav1.ObjectMeta{
+	cb := &codebaseApi.CodebaseBranch{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "cb-stub-name",
 			Namespace: "stub-namespace",
 		},
-		Spec: v1alpha1.CodebaseBranchSpec{
+		Spec: codebaseApi.CodebaseBranchSpec{
 			BranchName:   "stub-name",
 			CodebaseName: "c-stub-name",
 		},
 	}
 
-	jf := &jenkinsv1alpha1.JenkinsFolder{}
+	jf := &jenkinsApi.JenkinsFolder{}
 
 	scheme := runtime.NewScheme()
 	scheme.AddKnownTypes(v1.SchemeGroupVersion, c, cb, jf)
@@ -281,12 +283,12 @@ func TestTriggerReleaseJob_ShouldFailOnJenkinsfolderNotFound(t *testing.T) {
 
 func TestTriggerReleaseJob_ShouldFailOnSetintermediatestatus(t *testing.T) {
 
-	cb := &v1alpha1.CodebaseBranch{
-		ObjectMeta: metav1.ObjectMeta{
+	cb := &codebaseApi.CodebaseBranch{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "cb-stub-name",
 			Namespace: "stub-namespace",
 		},
-		Spec: v1alpha1.CodebaseBranchSpec{
+		Spec: codebaseApi.CodebaseBranchSpec{
 			BranchName:   "stub-name",
 			CodebaseName: "c-stub-name",
 		},
@@ -315,52 +317,52 @@ func TestTriggerReleaseJob_ShouldFailOnSetintermediatestatus(t *testing.T) {
 func TestTriggerReleaseJob_ShouldPassEDPVersioningAndHasNewVersion(t *testing.T) {
 	var cbVersion string = "1.0.0-SNAPSHOT"
 
-	c := &v1alpha1.Codebase{
-		ObjectMeta: metav1.ObjectMeta{
+	c := &codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "c-stub-name",
 			Namespace: "stub-namespace",
 		},
-		Spec: v1alpha1.CodebaseSpec{
-			Versioning: v1alpha1.Versioning{
+		Spec: codebaseApi.CodebaseSpec{
+			Versioning: codebaseApi.Versioning{
 				Type: "edp",
 			},
 		},
-		Status: v1alpha1.CodebaseStatus{
+		Status: codebaseApi.CodebaseStatus{
 			Available: true,
 		},
 	}
 
-	cb := &v1alpha1.CodebaseBranch{
-		ObjectMeta: metav1.ObjectMeta{
+	cb := &codebaseApi.CodebaseBranch{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "cb-stub-name",
 			Namespace: "stub-namespace",
 		},
-		Spec: v1alpha1.CodebaseBranchSpec{
+		Spec: codebaseApi.CodebaseBranchSpec{
 			BranchName:   "stub-name",
 			CodebaseName: "c-stub-name",
 			Version:      &cbVersion,
 		},
-		Status: v1alpha1.CodebaseBranchStatus{
+		Status: codebaseApi.CodebaseBranchStatus{
 			VersionHistory: []string{"0.0.0-SNAPSHOT"},
 		},
 	}
 
-	jf := &jenkinsv1alpha1.JenkinsFolder{
-		TypeMeta: metav1.TypeMeta{
+	jf := &jenkinsApi.JenkinsFolder{
+		TypeMeta: metaV1.TypeMeta{
 			APIVersion: util.V2APIVersion,
 			Kind:       util.JenkinsFolderKind,
 		},
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "c-stub-name-codebase",
 			Namespace: c.Namespace,
 		},
-		Spec: jenkinsv1alpha1.JenkinsFolderSpec{
-			Job: &jenkinsv1alpha1.Job{
+		Spec: jenkinsApi.JenkinsFolderSpec{
+			Job: &jenkinsApi.Job{
 				Name:   "job-provisions/job/ci/job/name",
 				Config: "jenkins-config",
 			},
 		},
-		Status: jenkinsv1alpha1.JenkinsFolderStatus{
+		Status: jenkinsApi.JenkinsFolderStatus{
 			Available: true,
 		},
 	}
@@ -390,52 +392,52 @@ func TestTriggerReleaseJob_ShouldPassEDPVersioningAndHasNewVersion(t *testing.T)
 func TestTriggerReleaseJob_ShouldFailEDPVersioningAndHasNewVersion(t *testing.T) {
 	var cbVersion string = "1.0.0-SNAPSHOT"
 
-	c := &v1alpha1.Codebase{
-		ObjectMeta: metav1.ObjectMeta{
+	c := &codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "c-stub-name",
 			Namespace: "stub-namespace",
 		},
-		Spec: v1alpha1.CodebaseSpec{
-			Versioning: v1alpha1.Versioning{
+		Spec: codebaseApi.CodebaseSpec{
+			Versioning: codebaseApi.Versioning{
 				Type: "edp",
 			},
 		},
-		Status: v1alpha1.CodebaseStatus{
+		Status: codebaseApi.CodebaseStatus{
 			Available: true,
 		},
 	}
 
-	cb := &v1alpha1.CodebaseBranch{
-		ObjectMeta: metav1.ObjectMeta{
+	cb := &codebaseApi.CodebaseBranch{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "cb-stub-name",
 			Namespace: "stub-namespace",
 		},
-		Spec: v1alpha1.CodebaseBranchSpec{
+		Spec: codebaseApi.CodebaseBranchSpec{
 			BranchName:   "stub-name",
 			CodebaseName: "c-stub-name",
 			Version:      &cbVersion,
 		},
-		Status: v1alpha1.CodebaseBranchStatus{
+		Status: codebaseApi.CodebaseBranchStatus{
 			VersionHistory: []string{"0.0.0-SNAPSHOT"},
 		},
 	}
 
-	jf := &jenkinsv1alpha1.JenkinsFolder{
-		TypeMeta: metav1.TypeMeta{
+	jf := &jenkinsApi.JenkinsFolder{
+		TypeMeta: metaV1.TypeMeta{
 			APIVersion: util.V2APIVersion,
 			Kind:       util.JenkinsFolderKind,
 		},
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "c-stub-name-codebase",
 			Namespace: c.Namespace,
 		},
-		Spec: jenkinsv1alpha1.JenkinsFolderSpec{
-			Job: &jenkinsv1alpha1.Job{
+		Spec: jenkinsApi.JenkinsFolderSpec{
+			Job: &jenkinsApi.Job{
 				Name:   "job-provisions/job/ci/job/name",
 				Config: "jenkins-config",
 			},
 		},
-		Status: jenkinsv1alpha1.JenkinsFolderStatus{
+		Status: jenkinsApi.JenkinsFolderStatus{
 			Available: true,
 		},
 	}

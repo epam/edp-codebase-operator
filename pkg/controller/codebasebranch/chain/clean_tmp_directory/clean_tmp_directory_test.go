@@ -4,19 +4,20 @@ import (
 	"os"
 	"testing"
 
-	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/stretchr/testify/assert"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 )
 
 func TestCleanTempDirectory_ShouldRemoveWithSuccessStatus(t *testing.T) {
 	os.Setenv("WORKING_DIR", "/tmp/1")
-	cb := &v1alpha1.CodebaseBranch{
-		ObjectMeta: metav1.ObjectMeta{
+	cb := &codebaseApi.CodebaseBranch{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "stub-name",
 			Namespace: "stub-namespace",
 		},
-		Spec: v1alpha1.CodebaseBranchSpec{
+		Spec: codebaseApi.CodebaseBranchSpec{
 			CodebaseName: "stub-codebase-name",
 			BranchName:   "stub-branch-name",
 		},
@@ -27,7 +28,7 @@ func TestCleanTempDirectory_ShouldRemoveWithSuccessStatus(t *testing.T) {
 }
 
 func TestCleanTempDirectory_setFailedFields_ShouldPass(t *testing.T) {
-	cb := &v1alpha1.CodebaseBranch{}
-	setFailedFields(cb, v1alpha1.AcceptCodebaseBranchRegistration, "test")
+	cb := &codebaseApi.CodebaseBranch{}
+	setFailedFields(cb, codebaseApi.AcceptCodebaseBranchRegistration, "test")
 	assert.Equal(t, cb.Status.DetailedMessage, "test")
 }

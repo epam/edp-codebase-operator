@@ -8,14 +8,16 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	"github.com/pkg/errors"
+	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	edpComponentApi "github.com/epam/edp-component-operator/pkg/apis/v1/v1alpha1"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/jiraserver/chain/handler"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
-	edpApi "github.com/epam/edp-component-operator/pkg/apis/v1/v1alpha1"
-	"github.com/pkg/errors"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -29,7 +31,7 @@ type PutJiraEDPComponent struct {
 
 const statusFinished = "finished"
 
-func (h PutJiraEDPComponent) ServeRequest(jira *v1alpha1.JiraServer) error {
+func (h PutJiraEDPComponent) ServeRequest(jira *codebaseApi.JiraServer) error {
 	rl := log.WithValues("jira server name", jira.Name)
 	rl.V(2).Info("start putting Jira EDP component...")
 	if err := h.createEDPComponentIfNotExists(*jira); err != nil {
@@ -41,18 +43,18 @@ func (h PutJiraEDPComponent) ServeRequest(jira *v1alpha1.JiraServer) error {
 	return nextServeOrNil(h.next, jira)
 }
 
-func (h PutJiraEDPComponent) createEDPComponentIfNotExists(jira v1alpha1.JiraServer) error {
+func (h PutJiraEDPComponent) createEDPComponentIfNotExists(jira codebaseApi.JiraServer) error {
 	icon, err := getIcon()
 	if err != nil {
 		return errors.Wrapf(err, "couldn't encode icon %v", jira.Name)
 	}
 
-	c := &edpApi.EDPComponent{
-		ObjectMeta: metav1.ObjectMeta{
+	c := &edpComponentApi.EDPComponent{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      jira.Name,
 			Namespace: jira.Namespace,
 		},
-		Spec: edpApi.EDPComponentSpec{
+		Spec: edpComponentApi.EDPComponentSpec{
 			Type:    edpComponentJiraType,
 			Url:     jira.Spec.RootUrl,
 			Icon:    *icon,
@@ -60,7 +62,7 @@ func (h PutJiraEDPComponent) createEDPComponentIfNotExists(jira v1alpha1.JiraSer
 		},
 	}
 	if err := h.client.Create(context.TODO(), c); err != nil {
-		if k8serrors.IsAlreadyExists(err) {
+		if k8sErrors.IsAlreadyExists(err) {
 			log.V(2).Info("edp component already exists. skip creating...", "name", jira.Name)
 			return nil
 		}

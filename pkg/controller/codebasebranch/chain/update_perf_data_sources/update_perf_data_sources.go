@@ -4,19 +4,20 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"time"
 
+	"github.com/epam/edp-perf-operator/v2/pkg/util/cluster"
+	"github.com/pkg/errors"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	perfApi "github.com/epam/edp-perf-operator/v2/pkg/apis/edp/v1alpha1"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebasebranch/chain/handler"
 	"github.com/epam/edp-codebase-operator/v2/pkg/model"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
-	perfApi "github.com/epam/edp-perf-operator/v2/pkg/apis/edp/v1alpha1"
-	"github.com/epam/edp-perf-operator/v2/pkg/util/cluster"
-	"github.com/pkg/errors"
-	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type UpdatePerfDataSources struct {
@@ -33,26 +34,26 @@ const (
 
 var log = ctrl.Log.WithName("update-perf-data-source-chain")
 
-func (h UpdatePerfDataSources) ServeRequest(cb *v1alpha1.CodebaseBranch) error {
+func (h UpdatePerfDataSources) ServeRequest(cb *codebaseApi.CodebaseBranch) error {
 	rLog := log.WithValues("codebase", cb.Spec.CodebaseName, "branch", cb.Name)
 	rLog.Info("start updating PERF data source cr...")
-	if err := h.setIntermediateSuccessFields(cb, v1alpha1.PerfDataSourceCrUpdate); err != nil {
+	if err := h.setIntermediateSuccessFields(cb, codebaseApi.PerfDataSourceCrUpdate); err != nil {
 		return err
 	}
 	if err := h.tryToUpdateDataSourceCr(cb); err != nil {
-		setFailedFields(cb, v1alpha1.PerfDataSourceCrUpdate, err.Error())
+		setFailedFields(cb, codebaseApi.PerfDataSourceCrUpdate, err.Error())
 		return errors.Wrap(err, "couldn't update PerfDataSource CR")
 	}
 	rLog.Info("data source has been updated")
 	return handler.NextServeOrNil(h.Next, cb)
 }
 
-func (h UpdatePerfDataSources) setIntermediateSuccessFields(cb *v1alpha1.CodebaseBranch, action v1alpha1.ActionType) error {
-	cb.Status = v1alpha1.CodebaseBranchStatus{
+func (h UpdatePerfDataSources) setIntermediateSuccessFields(cb *codebaseApi.CodebaseBranch, action codebaseApi.ActionType) error {
+	cb.Status = codebaseApi.CodebaseBranchStatus{
 		Status:              model.StatusInit,
-		LastTimeUpdated:     time.Now(),
+		LastTimeUpdated:     metaV1.Now(),
 		Action:              action,
-		Result:              v1alpha1.Success,
+		Result:              codebaseApi.Success,
 		Username:            "system",
 		Value:               "inactive",
 		VersionHistory:      cb.Status.VersionHistory,
@@ -68,13 +69,13 @@ func (h UpdatePerfDataSources) setIntermediateSuccessFields(cb *v1alpha1.Codebas
 	return nil
 }
 
-func setFailedFields(cb *v1alpha1.CodebaseBranch, a v1alpha1.ActionType, message string) {
-	cb.Status = v1alpha1.CodebaseBranchStatus{
+func setFailedFields(cb *codebaseApi.CodebaseBranch, a codebaseApi.ActionType, message string) {
+	cb.Status = codebaseApi.CodebaseBranchStatus{
 		Status:              util.StatusFailed,
-		LastTimeUpdated:     time.Now(),
+		LastTimeUpdated:     metaV1.Now(),
 		Username:            "system",
 		Action:              a,
-		Result:              v1alpha1.Error,
+		Result:              codebaseApi.Error,
 		DetailedMessage:     message,
 		Value:               "failed",
 		VersionHistory:      cb.Status.VersionHistory,
@@ -83,7 +84,7 @@ func setFailedFields(cb *v1alpha1.CodebaseBranch, a v1alpha1.ActionType, message
 	}
 }
 
-func (h UpdatePerfDataSources) tryToUpdateDataSourceCr(cb *v1alpha1.CodebaseBranch) error {
+func (h UpdatePerfDataSources) tryToUpdateDataSourceCr(cb *codebaseApi.CodebaseBranch) error {
 	owr := cluster.GetOwnerReference(codebaseKind, cb.GetOwnerReferences())
 	if owr == nil {
 		return errors.New("unable to get owner reference")
@@ -113,14 +114,14 @@ func (h UpdatePerfDataSources) tryToUpdateDataSourceCr(cb *v1alpha1.CodebaseBran
 	return nil
 }
 
-func (h UpdatePerfDataSources) getCreateFactory() map[string]func(cb *v1alpha1.CodebaseBranch, dataSourceType string) error {
-	return map[string]func(cb *v1alpha1.CodebaseBranch, dataSourceType string) error{
+func (h UpdatePerfDataSources) getCreateFactory() map[string]func(cb *codebaseApi.CodebaseBranch, dataSourceType string) error {
+	return map[string]func(cb *codebaseApi.CodebaseBranch, dataSourceType string) error{
 		jenkinsDataSourceType: h.tryToUpdateJenkinsDataSource,
 		gitLabDataSourceType:  h.tryToUpdateGitLabDataSource,
 	}
 }
 
-func (h UpdatePerfDataSources) tryToUpdateJenkinsDataSource(cb *v1alpha1.CodebaseBranch, dataSourceType string) error {
+func (h UpdatePerfDataSources) tryToUpdateJenkinsDataSource(cb *codebaseApi.CodebaseBranch, dataSourceType string) error {
 	ds, err := h.getPerfDataSourceJenkinsCr(fmt.Sprintf("%v-%v", cb.Spec.CodebaseName, strings.ToLower(dataSourceType)), cb.Namespace)
 	if err != nil {
 		return err
@@ -137,7 +138,7 @@ func (h UpdatePerfDataSources) tryToUpdateJenkinsDataSource(cb *v1alpha1.Codebas
 	return h.Client.Update(context.TODO(), ds)
 }
 
-func (h UpdatePerfDataSources) tryToUpdateGitLabDataSource(cb *v1alpha1.CodebaseBranch, dataSourceType string) error {
+func (h UpdatePerfDataSources) tryToUpdateGitLabDataSource(cb *codebaseApi.CodebaseBranch, dataSourceType string) error {
 	ds, err := h.getPerfDataSourceGitLabCr(fmt.Sprintf("%v-%v", cb.Spec.CodebaseName, strings.ToLower(dataSourceType)), cb.Namespace)
 	if err != nil {
 		return err

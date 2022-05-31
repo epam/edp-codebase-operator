@@ -1,7 +1,9 @@
 package handler
 
-import "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+import (
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
+)
 
 type JiraServerHandler interface {
-	ServeRequest(jira *v1alpha1.JiraServer) error
+	ServeRequest(jira *codebaseApi.JiraServer) error
 }

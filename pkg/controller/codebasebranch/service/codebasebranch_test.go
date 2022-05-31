@@ -6,23 +6,25 @@ import (
 	"testing"
 
 	"github.com/bndr/gojenkins"
-	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	"github.com/epam/edp-codebase-operator/v2/pkg/model"
-	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
 	"github.com/jarcoal/httpmock"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/apps/v1"
 	coreV1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+
+	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
+	"github.com/epam/edp-codebase-operator/v2/pkg/model"
 )
 
 func TestCodebaseBranchService_TriggerReleaseJob(t *testing.T) {
-	cb := v1alpha1.CodebaseBranch{
-		Spec: v1alpha1.CodebaseBranchSpec{
+	cb := codebaseApi.CodebaseBranch{
+		Spec: codebaseApi.CodebaseBranchSpec{
 			CodebaseName: "codebase",
 			ReleaseJobParams: map[string]string{
 				"codebaseName": "RELEASE_NAME",
@@ -30,12 +32,12 @@ func TestCodebaseBranchService_TriggerReleaseJob(t *testing.T) {
 				"gitServer":    "GIT_SERVER",
 			},
 		},
-		Status: v1alpha1.CodebaseBranchStatus{
+		Status: codebaseApi.CodebaseBranchStatus{
 			Status: model.StatusInit,
 		},
 	}
-	c := v1alpha1.Codebase{
-		ObjectMeta: metav1.ObjectMeta{
+	c := codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name: "codebase",
 		},
 	}
@@ -72,14 +74,14 @@ func TestCodebaseBranchService_TriggerReleaseJob(t *testing.T) {
 }
 
 func TestCodebaseBranchService_TriggerDeletionJob(t *testing.T) {
-	cb := v1alpha1.CodebaseBranch{
-		Spec: v1alpha1.CodebaseBranchSpec{
+	cb := codebaseApi.CodebaseBranch{
+		Spec: codebaseApi.CodebaseBranchSpec{
 			CodebaseName: "codebase",
 		},
 	}
 
-	c := v1alpha1.Codebase{
-		ObjectMeta: metav1.ObjectMeta{
+	c := codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name: "codebase",
 		},
 	}
@@ -125,14 +127,14 @@ func TestCodebaseBranchService_TriggerDeletionJob(t *testing.T) {
 }
 
 func TestCodebaseBranchService_TriggerDeletionJobFailed(t *testing.T) {
-	cb := v1alpha1.CodebaseBranch{
-		Spec: v1alpha1.CodebaseBranchSpec{
+	cb := codebaseApi.CodebaseBranch{
+		Spec: codebaseApi.CodebaseBranchSpec{
 			CodebaseName: "codebase",
 		},
 	}
 
-	c := v1alpha1.Codebase{
-		ObjectMeta: metav1.ObjectMeta{
+	c := codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name: "codebase",
 		},
 	}
@@ -181,15 +183,15 @@ func TestCodebaseBranchService_TriggerDeletionJobFailed(t *testing.T) {
 
 func TestCodebaseBranchServiceProvider_AppendVersionToTheHistorySlice(t *testing.T) {
 	version := "0-0-1-SNAPSHOT"
-	cb := &v1alpha1.CodebaseBranch{
-		ObjectMeta: metav1.ObjectMeta{
+	cb := &codebaseApi.CodebaseBranch{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "stub-name",
 			Namespace: "stub-namespace",
 		},
-		Spec: v1alpha1.CodebaseBranchSpec{
+		Spec: codebaseApi.CodebaseBranchSpec{
 			Version: &version,
 		},
-		Status: v1alpha1.CodebaseBranchStatus{
+		Status: codebaseApi.CodebaseBranchStatus{
 			VersionHistory: []string{"0-0-0-SNAPSHOT"},
 		},
 	}
@@ -203,7 +205,7 @@ func TestCodebaseBranchServiceProvider_AppendVersionToTheHistorySlice(t *testing
 		t.Errorf("unexpected error")
 	}
 
-	cbResp := &v1alpha1.CodebaseBranch{}
+	cbResp := &codebaseApi.CodebaseBranch{}
 	err := fakeCl.Get(context.TODO(),
 		types.NamespacedName{
 			Name:      "stub-name",
@@ -218,12 +220,12 @@ func TestCodebaseBranchServiceProvider_AppendVersionToTheHistorySlice(t *testing
 func TestCodebaseBranchServiceProvider_ResetBranchBuildCounter(t *testing.T) {
 	b := "100"
 	zb := "0"
-	cb := &v1alpha1.CodebaseBranch{
-		ObjectMeta: metav1.ObjectMeta{
+	cb := &codebaseApi.CodebaseBranch{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "stub-name",
 			Namespace: "stub-namespace",
 		},
-		Status: v1alpha1.CodebaseBranchStatus{
+		Status: codebaseApi.CodebaseBranchStatus{
 			Build: &b,
 		},
 	}
@@ -237,7 +239,7 @@ func TestCodebaseBranchServiceProvider_ResetBranchBuildCounter(t *testing.T) {
 		t.Errorf("unexpected error")
 	}
 
-	cbResp := &v1alpha1.CodebaseBranch{}
+	cbResp := &codebaseApi.CodebaseBranch{}
 	err := fakeCl.Get(context.TODO(),
 		types.NamespacedName{
 			Name:      "stub-name",
@@ -250,12 +252,12 @@ func TestCodebaseBranchServiceProvider_ResetBranchBuildCounter(t *testing.T) {
 
 func TestCodebaseBranchServiceProvider_ResetBranchSuccessBuildCounter(t *testing.T) {
 	b := "100"
-	cb := &v1alpha1.CodebaseBranch{
-		ObjectMeta: metav1.ObjectMeta{
+	cb := &codebaseApi.CodebaseBranch{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "stub-name",
 			Namespace: "stub-namespace",
 		},
-		Status: v1alpha1.CodebaseBranchStatus{
+		Status: codebaseApi.CodebaseBranchStatus{
 			LastSuccessfulBuild: &b,
 		},
 	}
@@ -269,7 +271,7 @@ func TestCodebaseBranchServiceProvider_ResetBranchSuccessBuildCounter(t *testing
 		t.Errorf("unexpected error")
 	}
 
-	cbResp := &v1alpha1.CodebaseBranch{}
+	cbResp := &codebaseApi.CodebaseBranch{}
 	err := fakeCl.Get(context.TODO(),
 		types.NamespacedName{
 			Name:      "stub-name",

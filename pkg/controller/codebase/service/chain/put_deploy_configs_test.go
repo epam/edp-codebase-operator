@@ -7,16 +7,18 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/repository"
-	mockgit "github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver/mock"
-	"github.com/epam/edp-codebase-operator/v2/pkg/util"
-	"github.com/epam/edp-common/pkg/mock"
 	"github.com/stretchr/testify/assert"
 	coreV1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+
+	"github.com/epam/edp-common/pkg/mock"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
+	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/repository"
+	mockGit "github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver/mock"
+	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
 func TestPutDeployConfigs_ShouldPass(t *testing.T) {
@@ -28,29 +30,29 @@ func TestPutDeployConfigs_ShouldPass(t *testing.T) {
 
 	os.Setenv("WORKING_DIR", dir)
 
-	c := &v1alpha1.Codebase{
-		ObjectMeta: metav1.ObjectMeta{
+	c := &codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
-		Spec: v1alpha1.CodebaseSpec{
+		Spec: codebaseApi.CodebaseSpec{
 			Type:             util.Application,
 			DeploymentScript: util.HelmChartDeploymentScriptType,
-			Strategy:         v1alpha1.Create,
+			Strategy:         codebaseApi.Create,
 			Lang:             util.LanguageGo,
 			DefaultBranch:    "fake-defaultBranch",
 			GitUrlPath:       util.GetStringP(fakeName),
-			Repository: &v1alpha1.Repository{
+			Repository: &codebaseApi.Repository{
 				Url: "repo",
 			},
 			GitServer: fakeName,
 		},
-		Status: v1alpha1.CodebaseStatus{
+		Status: codebaseApi.CodebaseStatus{
 			Git: *util.GetStringP("pushed"),
 		},
 	}
 	s := &coreV1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "repository-codebase-fake-name-temp",
 			Namespace: fakeNamespace,
 		},
@@ -60,12 +62,12 @@ func TestPutDeployConfigs_ShouldPass(t *testing.T) {
 		},
 	}
 
-	gs := &v1alpha1.GitServer{
-		ObjectMeta: metav1.ObjectMeta{
+	gs := &codebaseApi.GitServer{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "gerrit",
 			Namespace: fakeNamespace,
 		},
-		Spec: v1alpha1.GitServerSpec{
+		Spec: codebaseApi.GitServerSpec{
 			NameSshKeySecret: fakeName,
 			GitHost:          fakeName,
 			SshPort:          22,
@@ -73,7 +75,7 @@ func TestPutDeployConfigs_ShouldPass(t *testing.T) {
 		},
 	}
 	cm := &coreV1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "edp-config",
 			Namespace: fakeNamespace,
 		},
@@ -89,7 +91,7 @@ func TestPutDeployConfigs_ShouldPass(t *testing.T) {
 		},
 	}
 	ssh := &coreV1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "gerrit-project-creator",
 			Namespace: fakeNamespace,
 		},
@@ -100,7 +102,7 @@ func TestPutDeployConfigs_ShouldPass(t *testing.T) {
 
 	scheme := runtime.NewScheme()
 	scheme.AddKnownTypes(coreV1.SchemeGroupVersion, ssh, cm, s)
-	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, c, gs)
+	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, c, gs)
 
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, gs, ssh, cm, s).Build()
 
@@ -112,7 +114,7 @@ func TestPutDeployConfigs_ShouldPass(t *testing.T) {
 	)
 	wd := util.GetWorkDir(fakeName, fakeNamespace)
 
-	mGit := new(mockgit.MockGit)
+	mGit := new(mockGit.MockGit)
 	mGit.On("CloneRepositoryBySsh", "fake",
 		"project-creator", fmt.Sprintf("ssh://gerrit.%v:%v", fakeNamespace, fakeName),
 		wd, port).Return(nil)
@@ -142,24 +144,24 @@ func TestPutDeployConfigs_ShouldFailOnGetGerritPort(t *testing.T) {
 
 	os.Setenv("WORKING_DIR", dir)
 
-	c := &v1alpha1.Codebase{
-		ObjectMeta: metav1.ObjectMeta{
+	c := &codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
-		Spec: v1alpha1.CodebaseSpec{
+		Spec: codebaseApi.CodebaseSpec{
 			GitServer: fakeName,
 		},
 	}
 
-	gs := &v1alpha1.GitServer{
-		ObjectMeta: metav1.ObjectMeta{
+	gs := &codebaseApi.GitServer{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "gerrit",
 			Namespace: fakeNamespace,
 		},
 	}
 	cm := &coreV1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "edp-config",
 			Namespace: fakeNamespace,
 		},
@@ -175,7 +177,7 @@ func TestPutDeployConfigs_ShouldFailOnGetGerritPort(t *testing.T) {
 		},
 	}
 	ssh := &coreV1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "gerrit-project-creator",
 			Namespace: fakeNamespace,
 		},
@@ -186,7 +188,7 @@ func TestPutDeployConfigs_ShouldFailOnGetGerritPort(t *testing.T) {
 
 	scheme := runtime.NewScheme()
 	scheme.AddKnownTypes(coreV1.SchemeGroupVersion, ssh, cm)
-	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, c, gs)
+	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, c, gs)
 
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, gs, ssh, cm).Build()
 
@@ -208,8 +210,8 @@ func TestPutDeployConfigs_ServeRequest_Skip(t *testing.T) {
 	pdc := PutDeployConfigs{}
 	logger := mock.Logger{}
 	log = &logger
-	cb := &v1alpha1.Codebase{
-		Spec: v1alpha1.CodebaseSpec{DisablePutDeployTemplates: true},
+	cb := &codebaseApi.Codebase{
+		Spec: codebaseApi.CodebaseSpec{DisablePutDeployTemplates: true},
 	}
 	expectedLog := "skip of putting deploy templates to codebase due to specified flag"
 	err := pdc.ServeRequest(cb)

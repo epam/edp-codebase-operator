@@ -1,56 +1,57 @@
 package v1alpha1
 
 import (
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"time"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
+// NOTE: json tags are required. Any new fields you add must have json tags for the fields to be serialized.
 
 // JiraServerSpec defines the desired state of JiraServer
-// +k8s:openapi-gen=true
 type JiraServerSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
-	// Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html
-	ApiUrl         string `json:"apiUrl"`
-	RootUrl        string `json:"rootUrl"`
+	ApiUrl string `json:"apiUrl"`
+
+	RootUrl string `json:"rootUrl"`
+
 	CredentialName string `json:"credentialName"`
 }
 
 // JiraServerStatus defines the observed state of JiraServer
-// +k8s:openapi-gen=true
-
 type JiraServerStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
-	// Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html
-	Available       bool      `json:"available"`
-	LastTimeUpdated time.Time `json:"last_time_updated"`
-	Status          string    `json:"status"`
-	DetailedMessage string    `json:"detailed_message"`
+	// This flag indicates neither JiraServer are initialized and ready to work. Defaults to false.
+	Available bool `json:"available"`
+
+	// Information when the last time the action were performed.
+	LastTimeUpdated metaV1.Time `json:"last_time_updated"`
+
+	// Specifies a current status of JiraServer.
+	Status string `json:"status"`
+
+	// Detailed information regarding action result
+	// which were performed
+	// +optional
+	DetailedMessage string `json:"detailed_message,omitempty"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:object:root=true
+// +kubebuilder:deprecatedversion
 
-// JiraServer is the Schema for the gitservers API
-// +k8s:openapi-gen=true
+// JiraServer is the Schema for the JiraServers API
 type JiraServer struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
+	metaV1.TypeMeta   `json:",inline"`
+	metaV1.ObjectMeta `json:"metadata,omitempty"`
 
 	Spec   JiraServerSpec   `json:"spec,omitempty"`
 	Status JiraServerStatus `json:"status,omitempty"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:object:root=true
 
-// JiraServerList contains a list of JiraServer
+// JiraServerList contains a list of JiraServers
 type JiraServerList struct {
-	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []JiraServer `json:"items"`
+	metaV1.TypeMeta `json:",inline"`
+	metaV1.ListMeta `json:"metadata,omitempty"`
+
+	Items []JiraServer `json:"items"`
 }
 
 func init() {

@@ -8,19 +8,20 @@ import (
 	"strings"
 	"time"
 
+	"github.com/pkg/errors"
+	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
+	"github.com/epam/edp-jenkins-operator/v2/pkg/util/consts"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/service/chain/handler"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/platform"
 	"github.com/epam/edp-codebase-operator/v2/pkg/model"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
-	jenkinsv1alpha1 "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
-	"github.com/epam/edp-jenkins-operator/v2/pkg/util/consts"
-	"github.com/pkg/errors"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 )
 
 type PutJenkinsFolder struct {
@@ -28,7 +29,7 @@ type PutJenkinsFolder struct {
 	client client.Client
 }
 
-func (h PutJenkinsFolder) ServeRequest(c *v1alpha1.Codebase) error {
+func (h PutJenkinsFolder) ServeRequest(c *codebaseApi.Codebase) error {
 	rLog := log.WithValues("codebase_name", c.Name)
 	jfn := fmt.Sprintf("%v-%v", c.Name, "codebase")
 	jfr, err := h.getJenkinsFolder(jfn, c.Namespace)
@@ -69,34 +70,34 @@ func (h PutJenkinsFolder) ServeRequest(c *v1alpha1.Codebase) error {
 
 	rLog.Info("start creating jenkins folder...")
 	if err := h.putJenkinsFolder(c, string(jc), jfn); err != nil {
-		setFailedFields(c, v1alpha1.PutJenkinsFolder, err.Error())
+		setFailedFields(c, codebaseApi.PutJenkinsFolder, err.Error())
 		return err
 	}
 	rLog.Info("end creating jenkins folder...")
 	return nextServeOrNil(h.next, c)
 }
 
-func (h PutJenkinsFolder) putJenkinsFolder(c *v1alpha1.Codebase, jc, jfn string) error {
+func (h PutJenkinsFolder) putJenkinsFolder(c *codebaseApi.Codebase, jc, jfn string) error {
 
-	jf := &jenkinsv1alpha1.JenkinsFolder{
-		TypeMeta: metav1.TypeMeta{
+	jf := &jenkinsApi.JenkinsFolder{
+		TypeMeta: metaV1.TypeMeta{
 			APIVersion: util.V2APIVersion,
 			Kind:       util.JenkinsFolderKind,
 		},
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      jfn,
 			Namespace: c.Namespace,
 			Labels: map[string]string{
 				util.CodebaseLabelKey: c.Name,
 			},
 		},
-		Spec: jenkinsv1alpha1.JenkinsFolderSpec{
-			Job: &jenkinsv1alpha1.Job{
+		Spec: jenkinsApi.JenkinsFolderSpec{
+			Job: &jenkinsApi.Job{
 				Name:   fmt.Sprintf("job-provisions/job/ci/job/%v", *c.Spec.JobProvisioning),
 				Config: jc,
 			},
 		},
-		Status: jenkinsv1alpha1.JenkinsFolderStatus{
+		Status: jenkinsApi.JenkinsFolderStatus{
 			Available:       false,
 			LastTimeUpdated: time.Time{},
 			Status:          util.StatusInProgress,
@@ -108,14 +109,14 @@ func (h PutJenkinsFolder) putJenkinsFolder(c *v1alpha1.Codebase, jc, jfn string)
 	return nil
 }
 
-func (h PutJenkinsFolder) getJenkinsFolder(name, namespace string) (*jenkinsv1alpha1.JenkinsFolder, error) {
+func (h PutJenkinsFolder) getJenkinsFolder(name, namespace string) (*jenkinsApi.JenkinsFolder, error) {
 	nsn := types.NamespacedName{
 		Namespace: namespace,
 		Name:      name,
 	}
-	i := &jenkinsv1alpha1.JenkinsFolder{}
+	i := &jenkinsApi.JenkinsFolder{}
 	if err := h.client.Get(context.TODO(), nsn, i); err != nil {
-		if k8serrors.IsNotFound(err) {
+		if k8sErrors.IsNotFound(err) {
 			return nil, nil
 		}
 		return nil, errors.Wrapf(err, "failed to get instance by owner %v", name)

@@ -4,10 +4,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	"github.com/epam/edp-codebase-operator/v2/pkg/client/jira/mock"
 	"github.com/stretchr/testify/assert"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
+	"github.com/epam/edp-codebase-operator/v2/pkg/client/jira/mock"
 )
 
 func TestPutIssueWebLink_ServeRequest_ShouldPass(t *testing.T) {
@@ -15,12 +16,12 @@ func TestPutIssueWebLink_ServeRequest_ShouldPass(t *testing.T) {
 	mClient.On("CreateIssueLink", "fake-issueId", "fake-title", "fake-url").Return(
 		nil)
 
-	jim := &v1alpha1.JiraIssueMetadata{
-		ObjectMeta: metav1.ObjectMeta{
+	jim := &codebaseApi.JiraIssueMetadata{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "fake-name",
 			Namespace: "fake-namespace",
 		},
-		Spec: v1alpha1.JiraIssueMetadataSpec{
+		Spec: codebaseApi.JiraIssueMetadataSpec{
 			Payload: `{"issuesLinks": [{"ticket":"fake-issueId", "title":"fake-title", "url":"fake-url"}]}`,
 		},
 	}
@@ -38,12 +39,12 @@ func TestPutIssueWebLink_ServeRequest_ShouldFail(t *testing.T) {
 	mClient.On("CreateIssueLink", "fake-issueId", "fake-title", "fake-url").Return(
 		nil)
 
-	jim := &v1alpha1.JiraIssueMetadata{
-		ObjectMeta: metav1.ObjectMeta{
+	jim := &codebaseApi.JiraIssueMetadata{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "fake-name",
 			Namespace: "fake-namespace",
 		},
-		Spec: v1alpha1.JiraIssueMetadataSpec{
+		Spec: codebaseApi.JiraIssueMetadataSpec{
 			Payload: "{}",
 		},
 	}

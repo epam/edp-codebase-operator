@@ -1,12 +1,13 @@
 package chain
 
 import (
-	edpv1alpha1 "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/repository"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/service/chain/handler"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver"
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 //TODO: remove global variable log
@@ -108,7 +109,7 @@ func CreateGitlabCiDefChain(client client.Client, cr repository.CodebaseReposito
 	}
 }
 
-func nextServeOrNil(next handler.CodebaseHandler, codebase *edpv1alpha1.Codebase) error {
+func nextServeOrNil(next handler.CodebaseHandler, codebase *codebaseApi.Codebase) error {
 	if next != nil {
 		return next.ServeRequest(codebase)
 	}

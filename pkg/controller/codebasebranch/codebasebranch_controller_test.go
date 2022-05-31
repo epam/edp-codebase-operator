@@ -9,28 +9,29 @@ import (
 	"time"
 
 	"github.com/bndr/gojenkins"
-	edpV1alpha1 "github.com/epam/edp-component-operator/pkg/apis/v1/v1alpha1"
-	jenkinsv1alpha1 "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
 	"github.com/go-logr/logr"
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
 	coreV1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	edpComponentApi "github.com/epam/edp-component-operator/pkg/apis/v1/v1alpha1"
+	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/codebasebranch"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
 func TestReconcileCodebaseBranch_Reconcile_ShouldPassNotFoundCR(t *testing.T) {
-	c := &v1alpha1.CodebaseBranch{}
+	c := &codebaseApi.CodebaseBranch{}
 
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, c)
+	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, c)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c).Build()
 
 	//request
@@ -74,7 +75,7 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldFailNotFound(t *testing.T) {
 	res, err := r.Reconcile(context.TODO(), req)
 
 	assert.Error(t, err)
-	if !strings.Contains(err.Error(), "no kind is registered for the type v1alpha1.Codebase") {
+	if !strings.Contains(err.Error(), "no kind is registered for the type v1.Codebase") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
 	assert.False(t, res.Requeue)
@@ -85,15 +86,15 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldFailGetCodebase(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	c := &v1alpha1.CodebaseBranch{
-		ObjectMeta: metav1.ObjectMeta{
+	c := &codebaseApi.CodebaseBranch{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "NewCodebaseBranch",
 			Namespace: "namespace",
 		},
 	}
 
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, c)
+	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, c)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c).Build()
 
 	//request
@@ -124,30 +125,30 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldFailDeleteCodebasebranch(t *tes
 	if err != nil {
 		t.Fatal(err)
 	}
-	c := &v1alpha1.CodebaseBranch{
-		ObjectMeta: metav1.ObjectMeta{
+	c := &codebaseApi.CodebaseBranch{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "NewCodebaseBranch",
 			Namespace: "namespace",
-			DeletionTimestamp: &metav1.Time{
-				Time: metav1.Now().Time,
+			DeletionTimestamp: &metaV1.Time{
+				Time: metaV1.Now().Time,
 			},
 		},
-		Spec: v1alpha1.CodebaseBranchSpec{
+		Spec: codebaseApi.CodebaseBranchSpec{
 			CodebaseName: "NewCodebase",
 		},
 	}
-	cb := &v1alpha1.Codebase{
-		ObjectMeta: metav1.ObjectMeta{
+	cb := &codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "NewCodebase",
 			Namespace: "namespace",
-			DeletionTimestamp: &metav1.Time{
-				Time: metav1.Now().Time,
+			DeletionTimestamp: &metaV1.Time{
+				Time: metaV1.Now().Time,
 			},
 		},
 	}
 
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, c, cb)
+	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, c, cb)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, cb).Build()
 
 	//request
@@ -178,36 +179,36 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldPassDeleteCodebasebranch(t *tes
 	if err != nil {
 		t.Fatal(err)
 	}
-	cb := &v1alpha1.CodebaseBranch{
-		ObjectMeta: metav1.ObjectMeta{
+	cb := &codebaseApi.CodebaseBranch{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "NewCodebaseBranch",
 			Namespace: "namespace",
-			DeletionTimestamp: &metav1.Time{
-				Time: metav1.Now().Time,
+			DeletionTimestamp: &metaV1.Time{
+				Time: metaV1.Now().Time,
 			},
 		},
-		Spec: v1alpha1.CodebaseBranchSpec{
+		Spec: codebaseApi.CodebaseBranchSpec{
 			CodebaseName: "NewCodebase",
 		},
 	}
-	c := &v1alpha1.Codebase{
-		ObjectMeta: metav1.ObjectMeta{
+	c := &codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "NewCodebase",
 			Namespace: "namespace",
-			DeletionTimestamp: &metav1.Time{
-				Time: metav1.Now().Time,
+			DeletionTimestamp: &metaV1.Time{
+				Time: metaV1.Now().Time,
 			},
 		},
-		Spec: v1alpha1.CodebaseSpec{
+		Spec: codebaseApi.CodebaseSpec{
 			CiTool: util.GitlabCi,
 		},
-		Status: v1alpha1.CodebaseStatus{
+		Status: codebaseApi.CodebaseStatus{
 			Available: true,
 		},
 	}
 
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, c, cb)
+	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, c, cb)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, cb).Build()
 
 	//request
@@ -235,42 +236,42 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldPassWithDeleteJobFailure(t *tes
 	if err != nil {
 		t.Fatal(err)
 	}
-	cb := &v1alpha1.CodebaseBranch{
-		ObjectMeta: metav1.ObjectMeta{
+	cb := &codebaseApi.CodebaseBranch{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "NewCodebaseBranch",
 			Namespace: "namespace",
-			DeletionTimestamp: &metav1.Time{
-				Time: metav1.Now().Time,
+			DeletionTimestamp: &metaV1.Time{
+				Time: metaV1.Now().Time,
 			},
 		},
-		Spec: v1alpha1.CodebaseBranchSpec{
+		Spec: codebaseApi.CodebaseBranchSpec{
 			CodebaseName: "NewCodebase",
 		},
 	}
-	c := &v1alpha1.Codebase{
-		ObjectMeta: metav1.ObjectMeta{
+	c := &codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "NewCodebase",
 			Namespace: "namespace",
-			DeletionTimestamp: &metav1.Time{
-				Time: metav1.Now().Time,
+			DeletionTimestamp: &metaV1.Time{
+				Time: metaV1.Now().Time,
 			},
 		},
-		Status: v1alpha1.CodebaseStatus{
+		Status: codebaseApi.CodebaseStatus{
 			Available: true,
 		},
 	}
-	jf := &jenkinsv1alpha1.JenkinsFolder{
-		ObjectMeta: metav1.ObjectMeta{
+	jf := &jenkinsApi.JenkinsFolder{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "NewCodebase-codebase",
 			Namespace: "namespace",
 		},
-		Status: jenkinsv1alpha1.JenkinsFolderStatus{
+		Status: jenkinsApi.JenkinsFolderStatus{
 			Available: true,
 		},
 	}
 
 	s := &coreV1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "fake-admin-token",
 			Namespace: "namespace",
 		},
@@ -279,11 +280,11 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldPassWithDeleteJobFailure(t *tes
 			"password": []byte("j-token"),
 		},
 	}
-	js := &jenkinsv1alpha1.Jenkins{}
-	jl := &jenkinsv1alpha1.JenkinsList{
-		Items: []jenkinsv1alpha1.Jenkins{
+	js := &jenkinsApi.Jenkins{}
+	jl := &jenkinsApi.JenkinsList{
+		Items: []jenkinsApi.Jenkins{
 			{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: metaV1.ObjectMeta{
 					Name:      "jenkins",
 					Namespace: "namespace",
 					Annotations: map[string]string{
@@ -295,7 +296,7 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldPassWithDeleteJobFailure(t *tes
 	}
 
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, c, cb, jf, js, jl)
+	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, c, cb, jf, js, jl)
 	scheme.AddKnownTypes(coreV1.SchemeGroupVersion, s)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, cb, jf, s, js, jl).Build()
 
@@ -346,7 +347,7 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldPassWithDeleteJobFailure(t *tes
 	assert.NoError(t, err)
 	assert.False(t, res.Requeue)
 	assert.Equal(t, res.RequeueAfter, 10*time.Second)
-	cResp := &v1alpha1.CodebaseBranch{}
+	cResp := &codebaseApi.CodebaseBranch{}
 	err = fakeCl.Get(context.TODO(),
 		types.NamespacedName{
 			Name:      "NewCodebaseBranch",
@@ -362,37 +363,37 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldPassWithCreatingCIS(t *testing.
 	if err != nil {
 		t.Fatal(err)
 	}
-	cb := &v1alpha1.CodebaseBranch{
-		ObjectMeta: metav1.ObjectMeta{
+	cb := &codebaseApi.CodebaseBranch{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "NewCodebaseBranch",
 			Namespace: "namespace",
 		},
-		Spec: v1alpha1.CodebaseBranchSpec{
+		Spec: codebaseApi.CodebaseBranchSpec{
 			CodebaseName: "NewCodebase",
 			BranchName:   "master",
 		},
 	}
-	c := &v1alpha1.Codebase{
-		ObjectMeta: metav1.ObjectMeta{
+	c := &codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "NewCodebase",
 			Namespace: "namespace",
 		},
-		Status: v1alpha1.CodebaseStatus{
+		Status: codebaseApi.CodebaseStatus{
 			Available: true,
 		},
 	}
-	jf := &jenkinsv1alpha1.JenkinsFolder{
-		ObjectMeta: metav1.ObjectMeta{
+	jf := &jenkinsApi.JenkinsFolder{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "NewCodebase-codebase",
 			Namespace: "namespace",
 		},
-		Status: jenkinsv1alpha1.JenkinsFolderStatus{
+		Status: jenkinsApi.JenkinsFolderStatus{
 			Available: true,
 		},
 	}
 
 	s := &coreV1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "fake-admin-token",
 			Namespace: "namespace",
 		},
@@ -401,11 +402,11 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldPassWithCreatingCIS(t *testing.
 			"password": []byte("j-token"),
 		},
 	}
-	js := &jenkinsv1alpha1.Jenkins{}
-	jl := &jenkinsv1alpha1.JenkinsList{
-		Items: []jenkinsv1alpha1.Jenkins{
+	js := &jenkinsApi.Jenkins{}
+	jl := &jenkinsApi.JenkinsList{
+		Items: []jenkinsApi.Jenkins{
 			{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: metaV1.ObjectMeta{
 					Name:      "jenkins",
 					Namespace: "namespace",
 					Annotations: map[string]string{
@@ -416,19 +417,19 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldPassWithCreatingCIS(t *testing.
 		},
 	}
 
-	ec := &edpV1alpha1.EDPComponent{
-		ObjectMeta: metav1.ObjectMeta{
+	ec := &edpComponentApi.EDPComponent{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "docker-registry",
 			Namespace: "namespace",
 		},
-		Spec: edpV1alpha1.EDPComponentSpec{
+		Spec: edpComponentApi.EDPComponentSpec{
 			Url: "stub-url",
 		},
 	}
-	cis := &v1alpha1.CodebaseImageStream{}
+	cis := &codebaseApi.CodebaseImageStream{}
 
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, c, cb, jf, js, jl, ec, cis)
+	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, c, cb, jf, js, jl, ec, cis)
 	scheme.AddKnownTypes(coreV1.SchemeGroupVersion, s)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, cb, jf, s, js, jl, ec, cis).Build()
 
@@ -478,7 +479,7 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldPassWithCreatingCIS(t *testing.
 
 	assert.NoError(t, err)
 	assert.False(t, res.Requeue)
-	cResp := &v1alpha1.CodebaseImageStream{}
+	cResp := &codebaseApi.CodebaseImageStream{}
 	err = fakeCl.Get(context.TODO(),
 		types.NamespacedName{
 			Name:      "NewCodebase-master",
@@ -488,7 +489,7 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldPassWithCreatingCIS(t *testing.
 	assert.NoError(t, err)
 	assert.Equal(t, cResp.Spec.ImageName, "stub-url/namespace/NewCodebase")
 
-	gotCodebaseBranch := &v1alpha1.CodebaseBranch{}
+	gotCodebaseBranch := &codebaseApi.CodebaseBranch{}
 	err = fakeCl.Get(context.TODO(), types.NamespacedName{
 		Name:      "NewCodebaseBranch",
 		Namespace: "namespace",
@@ -507,37 +508,37 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldRequeueWithCodebaseNotReady(t *
 	if err != nil {
 		t.Fatal(err)
 	}
-	cb := &v1alpha1.CodebaseBranch{
-		ObjectMeta: metav1.ObjectMeta{
+	cb := &codebaseApi.CodebaseBranch{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "NewCodebaseBranch",
 			Namespace: "namespace",
 		},
-		Spec: v1alpha1.CodebaseBranchSpec{
+		Spec: codebaseApi.CodebaseBranchSpec{
 			CodebaseName: "NewCodebase",
 		},
-		Status: v1alpha1.CodebaseBranchStatus{
+		Status: codebaseApi.CodebaseBranchStatus{
 			Status: "done",
 		},
 	}
-	c := &v1alpha1.Codebase{
-		ObjectMeta: metav1.ObjectMeta{
+	c := &codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "NewCodebase",
 			Namespace: "namespace",
 		},
 	}
 
-	jf := &jenkinsv1alpha1.JenkinsFolder{
-		ObjectMeta: metav1.ObjectMeta{
+	jf := &jenkinsApi.JenkinsFolder{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "NewCodebase-codebase",
 			Namespace: "namespace",
 		},
-		Status: jenkinsv1alpha1.JenkinsFolderStatus{
+		Status: jenkinsApi.JenkinsFolderStatus{
 			Available: true,
 		},
 	}
 
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, c, cb, jf)
+	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, c, cb, jf)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, cb, jf).Build()
 
 	//request
@@ -560,7 +561,7 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldRequeueWithCodebaseNotReady(t *
 	assert.False(t, res.Requeue)
 	assert.Equal(t, res.RequeueAfter, 5*time.Second)
 
-	gotCodebaseBranch := &v1alpha1.CodebaseBranch{}
+	gotCodebaseBranch := &codebaseApi.CodebaseBranch{}
 	err = fakeCl.Get(context.TODO(), types.NamespacedName{
 		Name:      "NewCodebaseBranch",
 		Namespace: "namespace",

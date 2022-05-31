@@ -1,30 +1,38 @@
 package v1alpha1
 
 import (
-	"time"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// CodebaseSpec defines the desired state of Codebase
-// +k8s:openapi-gen=true
+// Strategy describes integration strategy for a codebase.
+// +kubebuilder:validation:Enum=create;clone;import
+type Strategy string
+
 const (
-	Create  Strategy       = "create"
-	Clone   Strategy       = "clone"
-	Import  Strategy       = "import"
-	Default VersioningType = "default"
+	// Create a new codebase
+	Create Strategy = "create"
+
+	// Clone an existing codebase
+	Clone Strategy = "clone"
+
+	// Import existing codebase
+	Import Strategy = "import"
 )
 
 type VersioningType string
 
-type Strategy string
+const (
+	Default VersioningType = "default"
+)
 
 type Versioning struct {
-	Type      VersioningType `json:"type"`
-	StartFrom *string        `json:"startFrom,omitempty"`
+	Type VersioningType `json:"type"`
+
+	// +nullable
+	// +optional
+	StartFrom *string `json:"startFrom,omitempty"`
 }
 
 type Repository struct {
@@ -36,29 +44,89 @@ type Perf struct {
 	DataSources []string `json:"dataSources"`
 }
 
+// CodebaseSpec defines the desired state of Codebase.
 type CodebaseSpec struct {
-	Lang                     string      `json:"lang"`
-	Description              *string     `json:"description"`
-	Framework                *string     `json:"framework"`
-	BuildTool                string      `json:"buildTool"`
-	Strategy                 Strategy    `json:"strategy"`
-	Repository               *Repository `json:"repository"`
-	TestReportFramework      *string     `json:"testReportFramework"`
-	Type                     string      `json:"type"`
-	GitServer                string      `json:"gitServer"`
-	GitUrlPath               *string     `json:"gitUrlPath"`
-	JenkinsSlave             *string     `json:"jenkinsSlave"`
-	JobProvisioning          *string     `json:"jobProvisioning"`
-	DeploymentScript         string      `json:"deploymentScript"`
-	Versioning               Versioning  `json:"versioning"`
-	JiraServer               *string     `json:"jiraServer,omitempty"`
-	CommitMessagePattern     *string     `json:"commitMessagePattern"`
-	TicketNamePattern        *string     `json:"ticketNamePattern"`
-	CiTool                   string      `json:"ciTool"`
-	Perf                     *Perf       `json:"perf"`
-	DefaultBranch            string      `json:"defaultBranch"`
-	JiraIssueMetadataPayload *string     `json:"jiraIssueMetadataPayload"`
-	EmptyProject             bool        `json:"emptyProject"`
+	// Programming language used in codebase.
+	Lang string `json:"lang"`
+
+	// A short description of codebase.
+	// +nullable
+	// +optional
+	Description *string `json:"description,omitempty"`
+
+	// A framework used in codebase.
+	// +nullable
+	// +optional
+	Framework *string `json:"framework,omitempty"`
+
+	// A build tool which is used on codebase.
+	BuildTool string `json:"buildTool"`
+
+	// integration strategy for a codebase, e.g. clone, import, etc.
+	Strategy Strategy `json:"strategy"`
+
+	// +nullable
+	// +optional
+	Repository *Repository `json:"repository,omitempty"`
+
+	// +nullable
+	// +optional
+	TestReportFramework *string `json:"testReportFramework,omitempty"`
+
+	// Type of codebase. E.g. application, autotest or library.
+	Type string `json:"type"`
+
+	// A name of git server which will be used as VCS.
+	// Example: "gerrit".
+	GitServer string `json:"gitServer"`
+
+	// A link to external git server, used for "import" strategy.
+	// +nullable
+	// +optional
+	GitUrlPath *string `json:"gitUrlPath,omitempty"`
+
+	// A name of Jenkins slave instance which will be used to handle codebase.
+	// +nullable
+	// +optional
+	JenkinsSlave *string `json:"jenkinsSlave"`
+
+	// +nullable
+	// +optional
+	JobProvisioning *string `json:"jobProvisioning"`
+
+	// +optional
+	DeploymentScript string `json:"deploymentScript,omitempty"`
+
+	Versioning Versioning `json:"versioning"`
+
+	// +nullable
+	// +optional
+	JiraServer *string `json:"jiraServer,omitempty"`
+
+	// +nullable
+	// +optional
+	CommitMessagePattern *string `json:"commitMessagePattern,omitempty"`
+
+	// +nullable
+	// +optional
+	TicketNamePattern *string `json:"ticketNamePattern"`
+
+	// A name of tool which should be used as CI.
+	CiTool string `json:"ciTool"`
+
+	// +nullable
+	// +optional
+	Perf *Perf `json:"perf,omitempty"`
+
+	// Name of default branch.
+	DefaultBranch string `json:"defaultBranch"`
+
+	// +nullable
+	// +optional
+	JiraIssueMetadataPayload *string `json:"jiraIssueMetadataPayload"`
+
+	// A flag indicating how project should be provisioned. Default: false
+	EmptyProject bool `json:"emptyProject"`
 
 	// While we clone new codebase we can select specific branch to clone.
 	// Selected branch will become a default branch for a new codebase (e.g. master, main).
@@ -70,23 +138,7 @@ type CodebaseSpec struct {
 	DisablePutDeployTemplates bool `json:"disablePutDeployTemplates,omitempty"`
 }
 
-// CodebaseStatus defines the observed state of Codebase
-// +k8s:openapi-gen=true
-type CodebaseStatus struct {
-	Available       bool       `json:"available"`
-	LastTimeUpdated time.Time  `json:"lastTimeUpdated"`
-	Status          string     `json:"status"`
-	Username        string     `json:"username"`
-	Action          ActionType `json:"action"`
-	Result          Result     `json:"result"`
-	DetailedMessage string     `json:"detailedMessage"`
-	Value           string     `json:"value"`
-	FailureCount    int64      `json:"failureCount"`
-	Git             string     `json:"git"`
-}
-
 type ActionType string
-type Result string
 
 const (
 	AcceptCodebaseRegistration       ActionType = "accept_codebase_registration"
@@ -105,30 +157,79 @@ const (
 	TriggerReleaseJob                ActionType = "trigger_release_job"
 	TriggerDeletionJob               ActionType = "trigger_deletion_job"
 	PerfDataSourceCrUpdate           ActionType = "perf_data_source_cr_update"
-
-	Success Result = "success"
-	Error   Result = "error"
 )
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// Result describes how action were performed.
+// Once action ended, we record a result of this action.
+// +kubebuilder:validation:Enum=success;error
+type Result string
 
-// Codebase is the Schema for the codebases API
-// +k8s:openapi-gen=true
+const (
+	// Success result of operation.
+	Success Result = "success"
+
+	// Error result point to unsuccessful operation.
+	Error Result = "error"
+)
+
+// CodebaseStatus defines the observed state of Codebase
+type CodebaseStatus struct {
+	// This flag indicates neither Codebase are initialized and ready to work. Defaults to false.
+	Available bool `json:"available"`
+
+	// Information when the last time the action were performed.
+	LastTimeUpdated metaV1.Time `json:"lastTimeUpdated"`
+
+	// Specifies a current status of Codebase.
+	Status string `json:"status"`
+
+	// Name of user who made a last change.
+	Username string `json:"username"`
+
+	// The last Action was performed.
+	Action ActionType `json:"action"`
+
+	// A result of an action which were performed.
+	// - "success": action where performed successfully;
+	// - "error": error has occurred;
+	Result Result `json:"result"`
+
+	// Detailed information regarding action result
+	// which were performed
+	// +optional
+	DetailedMessage string `json:"detailedMessage,omitempty"`
+
+	// Specifies a current state of Codebase.
+	Value string `json:"value"`
+
+	// Amount of times, operator fail to serve with existing CR.
+	FailureCount int64 `json:"failureCount"`
+
+	// Specifies a status of action for git.
+	Git string `json:"git"`
+}
+
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+// +kubebuilder:deprecatedversion
+
+// Codebase is the Schema for the Codebases API
 type Codebase struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
+	metaV1.TypeMeta   `json:",inline"`
+	metaV1.ObjectMeta `json:"metadata,omitempty"`
 
 	Spec   CodebaseSpec   `json:"spec,omitempty"`
 	Status CodebaseStatus `json:"status,omitempty"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:object:root=true
 
-// CodebaseList contains a list of Codebase
+// CodebaseList contains a list of Codebases
 type CodebaseList struct {
-	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []Codebase `json:"items"`
+	metaV1.TypeMeta `json:",inline"`
+	metaV1.ListMeta `json:"metadata,omitempty"`
+
+	Items []Codebase `json:"items"`
 }
 
 func init() {

@@ -7,7 +7,7 @@ import (
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
 	coreV1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -24,9 +24,9 @@ func TestCreateVCSClient_ShouldFailForUnsupportedVCS(t *testing.T) {
 	assert.Contains(t, err.Error(), "invalid VCS tool. Currently we do not support custom")
 }
 
-func TestСreateProjectInVcs_ShouldPassToCreateRepo(t *testing.T) {
+func TestCreateProjectInVcs_ShouldPassToCreateRepo(t *testing.T) {
 	s := &coreV1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "vcs-autouser-codebase-fake-name-temp",
 			Namespace: "fake-namespace",
 		},
@@ -68,7 +68,7 @@ func TestСreateProjectInVcs_ShouldPassToCreateRepo(t *testing.T) {
 
 func TestСreateProjectInVcs_ShouldFailToInitGitlabClient(t *testing.T) {
 	s := &coreV1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "vcs-autouser-codebase-fake-name-temp",
 			Namespace: "fake-namespace",
 		},
@@ -103,7 +103,7 @@ func TestСreateProjectInVcs_ShouldFailToInitGitlabClient(t *testing.T) {
 
 func TestСreateProjectInVcs_ShouldPassOnExistingProject(t *testing.T) {
 	s := &coreV1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "vcs-autouser-codebase-fake-name-temp",
 			Namespace: "fake-namespace",
 		},
@@ -155,7 +155,7 @@ func TestGetVcsConfig_ShouldFailToGetSecret(t *testing.T) {
 func TestGetVcsConfig_ShouldFailToUrl(t *testing.T) {
 
 	s := &coreV1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "vcs-autouser-codebase-codebaseName-temp",
 			Namespace: "fake-namespace",
 		},

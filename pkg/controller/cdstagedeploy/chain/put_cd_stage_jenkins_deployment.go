@@ -4,16 +4,17 @@ import (
 	"context"
 	"fmt"
 
-	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
-	"github.com/epam/edp-jenkins-operator/v2/pkg/util/platform"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
+	"github.com/epam/edp-jenkins-operator/v2/pkg/util/platform"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
@@ -28,7 +29,7 @@ const (
 	cdStageDeployKey  = "cdStageDeployName"
 )
 
-func (h PutCDStageJenkinsDeployment) ServeRequest(stageDeploy *v1alpha1.CDStageDeploy) error {
+func (h PutCDStageJenkinsDeployment) ServeRequest(stageDeploy *codebaseApi.CDStageDeploy) error {
 	log := h.log.WithValues("name", stageDeploy.Name)
 	log.Info("creating CDStageJenkinsDeployment.")
 
@@ -61,7 +62,7 @@ func (h PutCDStageJenkinsDeployment) getCDStageJenkinsDeployment(name, namespace
 		Name:      name,
 	}
 	if err := h.client.Get(context.TODO(), nn, i); err != nil {
-		if k8serrors.IsNotFound(err) {
+		if k8sErrors.IsNotFound(err) {
 			return nil, nil
 		}
 		return nil, err
@@ -69,7 +70,7 @@ func (h PutCDStageJenkinsDeployment) getCDStageJenkinsDeployment(name, namespace
 	return i, nil
 }
 
-func (h PutCDStageJenkinsDeployment) create(stageDeploy *v1alpha1.CDStageDeploy) error {
+func (h PutCDStageJenkinsDeployment) create(stageDeploy *codebaseApi.CDStageDeploy) error {
 	log := h.log.WithValues("name", stageDeploy.Name)
 	log.Info("cd stage jenkins deployment is not present in cluster. start creating...")
 
@@ -87,11 +88,11 @@ func (h PutCDStageJenkinsDeployment) create(stageDeploy *v1alpha1.CDStageDeploy)
 	}
 
 	jdCommand := &jenkinsApi.CDStageJenkinsDeployment{
-		TypeMeta: metav1.TypeMeta{
+		TypeMeta: metaV1.TypeMeta{
 			APIVersion: util.V2APIVersion,
 			Kind:       util.CDStageJenkinsDeploymentKind,
 		},
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      stageDeploy.Name,
 			Namespace: stageDeploy.Namespace,
 			Labels:    labels,

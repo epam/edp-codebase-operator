@@ -5,24 +5,25 @@ import (
 	"strings"
 	"testing"
 
-	mockclient "github.com/epam/edp-common/pkg/mock/controller-runtime/client"
-	"github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
+	k8sMockClient "github.com/epam/edp-common/pkg/mock/controller-runtime/client"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	"github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 )
 
 func TestPutCDStageDeploy_ShouldNotFailOnEmptyLables(t *testing.T) {
 	cis := &codebaseApi.CodebaseImageStream{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "cbis-name",
 			Namespace: "stub-namespace",
 		},
@@ -46,7 +47,7 @@ func TestPutCDStageDeploy_ShouldNotFailOnEmptyLables(t *testing.T) {
 
 func TestPutCDStageDeploy_ShouldFailWithEmptyCodebase(t *testing.T) {
 	cis := &codebaseApi.CodebaseImageStream{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "cbis-name",
 			Namespace: "stub-namespace",
 			Labels: map[string]string{
@@ -75,7 +76,7 @@ func TestPutCDStageDeploy_ShouldFailWithEmptyCodebase(t *testing.T) {
 
 func TestPutCDStageDeploy_ShouldFailWithEmptyTags(t *testing.T) {
 	cis := &codebaseApi.CodebaseImageStream{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "cbis-name",
 			Namespace: "stub-namespace",
 			Labels: map[string]string{
@@ -106,7 +107,7 @@ func TestPutCDStageDeploy_ShouldFailWithEmptyTags(t *testing.T) {
 
 func TestPutCDStageDeploy_ShouldFailWithInvalidLabels(t *testing.T) {
 	cis := &codebaseApi.CodebaseImageStream{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "cbis-name",
 			Namespace: "stub-namespace",
 			Labels: map[string]string{
@@ -143,7 +144,7 @@ func TestPutCDStageDeploy_ShouldFailWithInvalidLabels(t *testing.T) {
 
 func TestPutCDStageDeploy_CdstagedeployShouldFailOnSearch(t *testing.T) {
 	cis := &codebaseApi.CodebaseImageStream{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "cbis-name",
 			Namespace: "stub-namespace",
 			Labels: map[string]string{
@@ -181,7 +182,7 @@ func TestPutCDStageDeploy_CdstagedeployShouldFailOnSearch(t *testing.T) {
 
 func TestPutCDStageDeploy_ShouldFailWhenCdstagedeployExist(t *testing.T) {
 	cis := &codebaseApi.CodebaseImageStream{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "cbis-name",
 			Namespace: "stub-namespace",
 			Labels: map[string]string{
@@ -200,7 +201,7 @@ func TestPutCDStageDeploy_ShouldFailWhenCdstagedeployExist(t *testing.T) {
 	}
 
 	cdsd := &codebaseApi.CDStageDeploy{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "pipeline-name-stage-name-cb-name",
 			Namespace: "stub-namespace",
 		},
@@ -226,7 +227,7 @@ func TestPutCDStageDeploy_ShouldFailWhenCdstagedeployExist(t *testing.T) {
 
 func TestPutCDStageDeploy_ShouldCreateCdstagedeploy(t *testing.T) {
 	cis := &codebaseApi.CodebaseImageStream{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "cbis-name",
 			Namespace: "stub-namespace",
 			Labels: map[string]string{
@@ -249,7 +250,7 @@ func TestPutCDStageDeploy_ShouldCreateCdstagedeploy(t *testing.T) {
 	}
 
 	cdsd := &codebaseApi.CDStageDeploy{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "cdsd-name",
 			Namespace: "stub-namespace",
 		},
@@ -281,7 +282,7 @@ func TestPutCDStageDeploy_ShouldCreateCdstagedeploy(t *testing.T) {
 
 func TestPutCDStageDeploy_ShouldFailWithIncorrectTagstimestamp(t *testing.T) {
 	cis := &codebaseApi.CodebaseImageStream{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "cbis-name",
 			Namespace: "stub-namespace",
 			Labels: map[string]string{
@@ -304,7 +305,7 @@ func TestPutCDStageDeploy_ShouldFailWithIncorrectTagstimestamp(t *testing.T) {
 	}
 
 	cdsd := &codebaseApi.CDStageDeploy{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "cdsd-name",
 			Namespace: "stub-namespace",
 		},
@@ -420,10 +421,10 @@ func Test_generateCdStageDeployName(t *testing.T) {
 }
 
 func TestPutCDStageDeploy_ShouldFailToCreateCdstagedeploy(t *testing.T) {
-	mc := mockclient.Client{}
+	mc := k8sMockClient.Client{}
 
 	cis := &codebaseApi.CodebaseImageStream{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "cbis-name",
 			Namespace: "stub-namespace",
 			Labels: map[string]string{
@@ -446,7 +447,7 @@ func TestPutCDStageDeploy_ShouldFailToCreateCdstagedeploy(t *testing.T) {
 	}
 
 	cdsd := &codebaseApi.CDStageDeploy{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "cdsd-name",
 			Namespace: "stub-namespace",
 		},
@@ -454,11 +455,11 @@ func TestPutCDStageDeploy_ShouldFailToCreateCdstagedeploy(t *testing.T) {
 	}
 
 	existingCdsd := &codebaseApi.CDStageDeploy{
-		TypeMeta: metav1.TypeMeta{
+		TypeMeta: metaV1.TypeMeta{
 			APIVersion: "v2.edp.epam.com/v1alpha1",
 			Kind:       "CDStageDeploy",
 		},
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "pipeline-name-stage-name-cb-name",
 			Namespace: "stub-namespace",
 		},

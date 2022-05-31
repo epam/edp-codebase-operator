@@ -3,17 +3,18 @@ package put_branch_in_git
 import (
 	"context"
 	"fmt"
-	"time"
 
-	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	"github.com/pkg/errors"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebasebranch/chain/handler"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebasebranch/service"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver"
 	"github.com/epam/edp-codebase-operator/v2/pkg/model"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
-	"github.com/pkg/errors"
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type PutBranchInGit struct {
@@ -25,17 +26,17 @@ type PutBranchInGit struct {
 
 var log = ctrl.Log.WithName("put-branch-in-git-chain")
 
-func (h PutBranchInGit) ServeRequest(cb *v1alpha1.CodebaseBranch) error {
+func (h PutBranchInGit) ServeRequest(cb *codebaseApi.CodebaseBranch) error {
 	rl := log.WithValues("namespace", cb.Namespace, "codebase branch", cb.Name)
 	rl.Info("start PutBranchInGit method...")
 
-	if err := h.setIntermediateSuccessFields(cb, v1alpha1.AcceptCodebaseBranchRegistration); err != nil {
+	if err := h.setIntermediateSuccessFields(cb, codebaseApi.AcceptCodebaseBranchRegistration); err != nil {
 		return err
 	}
 
 	c, err := util.GetCodebase(h.Client, cb.Spec.CodebaseName, cb.Namespace)
 	if err != nil {
-		setFailedFields(cb, v1alpha1.PutBranchForGitlabCiCodebase, err.Error())
+		setFailedFields(cb, codebaseApi.PutBranchForGitlabCiCodebase, err.Error())
 		return err
 	}
 
@@ -47,21 +48,21 @@ func (h PutBranchInGit) ServeRequest(cb *v1alpha1.CodebaseBranch) error {
 	if c.Spec.Versioning.Type == util.VersioningTypeEDP && hasNewVersion(cb) {
 		if err := h.processNewVersion(cb); err != nil {
 			err = errors.Wrapf(err, "couldn't process new version for %v branch", cb.Name)
-			setFailedFields(cb, v1alpha1.PutBranchForGitlabCiCodebase, err.Error())
+			setFailedFields(cb, codebaseApi.PutBranchForGitlabCiCodebase, err.Error())
 			return err
 		}
 	}
 
 	gs, err := util.GetGitServer(h.Client, c.Spec.GitServer, c.Namespace)
 	if err != nil {
-		setFailedFields(cb, v1alpha1.PutBranchForGitlabCiCodebase, err.Error())
+		setFailedFields(cb, codebaseApi.PutBranchForGitlabCiCodebase, err.Error())
 		return err
 	}
 
 	secret, err := util.GetSecret(h.Client, gs.NameSshKeySecret, c.Namespace)
 	if err != nil {
 		err = errors.Wrapf(err, "an error has occurred while getting %v secret", gs.NameSshKeySecret)
-		setFailedFields(cb, v1alpha1.PutBranchForGitlabCiCodebase, err.Error())
+		setFailedFields(cb, codebaseApi.PutBranchForGitlabCiCodebase, err.Error())
 		return err
 	}
 
@@ -69,25 +70,25 @@ func (h PutBranchInGit) ServeRequest(cb *v1alpha1.CodebaseBranch) error {
 	if !checkDirectory(wd) {
 		ru := fmt.Sprintf("%v:%v", gs.GitHost, *c.Spec.GitUrlPath)
 		if err := h.Git.CloneRepositoryBySsh(string(secret.Data[util.PrivateSShKeyName]), gs.GitUser, ru, wd, gs.SshPort); err != nil {
-			setFailedFields(cb, v1alpha1.PutBranchForGitlabCiCodebase, err.Error())
+			setFailedFields(cb, codebaseApi.PutBranchForGitlabCiCodebase, err.Error())
 			return err
 		}
 	}
 
 	if err := h.Git.CreateRemoteBranch(string(secret.Data[util.PrivateSShKeyName]), gs.GitUser, wd, cb.Spec.BranchName); err != nil {
-		setFailedFields(cb, v1alpha1.PutBranchForGitlabCiCodebase, err.Error())
+		setFailedFields(cb, codebaseApi.PutBranchForGitlabCiCodebase, err.Error())
 		return err
 	}
 	rl.Info("end PutBranchInGit method...")
 	return handler.NextServeOrNil(h.Next, cb)
 }
 
-func (h PutBranchInGit) setIntermediateSuccessFields(cb *v1alpha1.CodebaseBranch, action v1alpha1.ActionType) error {
-	cb.Status = v1alpha1.CodebaseBranchStatus{
+func (h PutBranchInGit) setIntermediateSuccessFields(cb *codebaseApi.CodebaseBranch, action codebaseApi.ActionType) error {
+	cb.Status = codebaseApi.CodebaseBranchStatus{
 		Status:              model.StatusInit,
-		LastTimeUpdated:     time.Now(),
+		LastTimeUpdated:     metaV1.Now(),
 		Action:              action,
-		Result:              v1alpha1.Success,
+		Result:              codebaseApi.Success,
 		Username:            "system",
 		Value:               "inactive",
 		VersionHistory:      cb.Status.VersionHistory,
@@ -103,13 +104,13 @@ func (h PutBranchInGit) setIntermediateSuccessFields(cb *v1alpha1.CodebaseBranch
 	return nil
 }
 
-func setFailedFields(cb *v1alpha1.CodebaseBranch, a v1alpha1.ActionType, message string) {
-	cb.Status = v1alpha1.CodebaseBranchStatus{
+func setFailedFields(cb *codebaseApi.CodebaseBranch, a codebaseApi.ActionType, message string) {
+	cb.Status = codebaseApi.CodebaseBranchStatus{
 		Status:              util.StatusFailed,
-		LastTimeUpdated:     time.Now(),
+		LastTimeUpdated:     metaV1.Now(),
 		Username:            "system",
 		Action:              a,
-		Result:              v1alpha1.Error,
+		Result:              codebaseApi.Error,
 		DetailedMessage:     message,
 		Value:               "failed",
 		VersionHistory:      cb.Status.VersionHistory,
@@ -122,7 +123,7 @@ func checkDirectory(path string) bool {
 	return util.DoesDirectoryExist(path) && !util.IsDirectoryEmpty(path)
 }
 
-func (h PutBranchInGit) processNewVersion(b *v1alpha1.CodebaseBranch) error {
+func (h PutBranchInGit) processNewVersion(b *codebaseApi.CodebaseBranch) error {
 	if err := h.Service.ResetBranchBuildCounter(b); err != nil {
 		return err
 	}
@@ -134,6 +135,6 @@ func (h PutBranchInGit) processNewVersion(b *v1alpha1.CodebaseBranch) error {
 	return h.Service.AppendVersionToTheHistorySlice(b)
 }
 
-func hasNewVersion(b *v1alpha1.CodebaseBranch) bool {
+func hasNewVersion(b *codebaseApi.CodebaseBranch) bool {
 	return !util.SearchVersion(b.Status.VersionHistory, *b.Spec.Version)
 }

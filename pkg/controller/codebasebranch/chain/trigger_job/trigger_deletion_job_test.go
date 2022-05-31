@@ -3,60 +3,62 @@ package trigger_job
 import (
 	"testing"
 
-	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebasebranch/service"
-	"github.com/epam/edp-codebase-operator/v2/pkg/util"
-	jenkinsv1alpha1 "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/apps/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+
+	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
+	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebasebranch/service"
+	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
 func TestDeletionJob_ShouldPass(t *testing.T) {
-	c := &v1alpha1.Codebase{
-		ObjectMeta: metav1.ObjectMeta{
+	c := &codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "c-stub-name",
 			Namespace: "stub-namespace",
 		},
-		Spec: v1alpha1.CodebaseSpec{
-			Versioning: v1alpha1.Versioning{
+		Spec: codebaseApi.CodebaseSpec{
+			Versioning: codebaseApi.Versioning{
 				Type: "default",
 			},
 		},
-		Status: v1alpha1.CodebaseStatus{
+		Status: codebaseApi.CodebaseStatus{
 			Available: true,
 		},
 	}
 
-	cb := &v1alpha1.CodebaseBranch{
-		ObjectMeta: metav1.ObjectMeta{
+	cb := &codebaseApi.CodebaseBranch{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "cb-stub-name",
 			Namespace: "stub-namespace",
 		},
-		Spec: v1alpha1.CodebaseBranchSpec{
+		Spec: codebaseApi.CodebaseBranchSpec{
 			BranchName:   "stub-name",
 			CodebaseName: "c-stub-name",
 		},
 	}
 
-	jf := &jenkinsv1alpha1.JenkinsFolder{
-		TypeMeta: metav1.TypeMeta{
+	jf := &jenkinsApi.JenkinsFolder{
+		TypeMeta: metaV1.TypeMeta{
 			APIVersion: util.V2APIVersion,
 			Kind:       util.JenkinsFolderKind,
 		},
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "c-stub-name-codebase",
 			Namespace: c.Namespace,
 		},
-		Spec: jenkinsv1alpha1.JenkinsFolderSpec{
-			Job: &jenkinsv1alpha1.Job{
+		Spec: jenkinsApi.JenkinsFolderSpec{
+			Job: &jenkinsApi.Job{
 				Name:   "job-provisions/job/ci/job/name",
 				Config: "jenkins-config",
 			},
 		},
-		Status: jenkinsv1alpha1.JenkinsFolderStatus{
+		Status: jenkinsApi.JenkinsFolderStatus{
 			Available: true,
 		},
 	}

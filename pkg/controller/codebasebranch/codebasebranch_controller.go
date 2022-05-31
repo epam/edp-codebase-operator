@@ -8,7 +8,8 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
@@ -21,7 +22,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/codebasebranch"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebasebranch/chain/factory"
 	cbHandler "github.com/epam/edp-codebase-operator/v2/pkg/controller/codebasebranch/chain/handler"
@@ -76,7 +77,7 @@ func (r *ReconcileCodebaseBranch) Reconcile(ctx context.Context, request reconci
 
 	cb := &codebaseApi.CodebaseBranch{}
 	if err := r.client.Get(ctx, request.NamespacedName, cb); err != nil {
-		if k8serrors.IsNotFound(err) {
+		if k8sErrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, err
@@ -131,7 +132,7 @@ func (r *ReconcileCodebaseBranch) Reconcile(ctx context.Context, request reconci
 
 func (r *ReconcileCodebaseBranch) setSuccessStatus(ctx context.Context, cb *codebaseApi.CodebaseBranch, action codebaseApi.ActionType) error {
 	cb.Status = codebaseApi.CodebaseBranchStatus{
-		LastTimeUpdated:     time.Now(),
+		LastTimeUpdated:     metaV1.Now(),
 		Username:            "system",
 		Action:              action,
 		Result:              codebaseApi.Success,
