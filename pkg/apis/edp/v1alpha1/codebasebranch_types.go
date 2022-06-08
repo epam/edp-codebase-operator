@@ -73,6 +73,7 @@ type CodebaseBranchStatus struct {
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 // +kubebuilder:deprecatedversion
 
 // CodebaseBranch is the Schema for the CodebaseBranches API

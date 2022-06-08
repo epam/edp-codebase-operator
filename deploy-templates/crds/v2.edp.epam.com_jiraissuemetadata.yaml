@@ -81,6 +81,8 @@ spec:
         type: object
     served: true
     storage: true
+    subresources:
+      status: {}
   - deprecated: true
     name: v1alpha1
     schema:
@@ -148,6 +150,8 @@ spec:
         type: object
     served: true
     storage: false
+    subresources:
+      status: {}
 status:
   acceptedNames:
     kind: ""

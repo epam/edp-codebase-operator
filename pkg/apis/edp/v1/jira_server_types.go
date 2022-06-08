@@ -33,6 +33,7 @@ type JiraServerStatus struct {
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 // +kubebuilder:storageversion
 
 // JiraServer is the Schema for the JiraServers API

@@ -42,6 +42,7 @@ type JiraIssueMetadataStatus struct {
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 // +kubebuilder:deprecatedversion
 
 // JiraIssueMetadata is the Schema for the JiraIssueMetadatas API
