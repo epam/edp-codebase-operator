@@ -55,6 +55,7 @@ type GitServerStatus struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:resource:shortName=gs
 // +kubebuilder:deprecatedversion
 
 // GitServer is the Schema for the gitservers API

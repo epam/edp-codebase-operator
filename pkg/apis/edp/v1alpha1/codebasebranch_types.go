@@ -74,6 +74,7 @@ type CodebaseBranchStatus struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:resource:shortName=cb
 // +kubebuilder:deprecatedversion
 
 // CodebaseBranch is the Schema for the CodebaseBranches API

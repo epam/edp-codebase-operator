@@ -211,6 +211,7 @@ type CodebaseStatus struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:resource:shortName=cdbs
 // +kubebuilder:deprecatedversion
 
 // Codebase is the Schema for the Codebases API

@@ -5,13 +5,15 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.8.0
   creationTimestamp: null
-  name: cdstagedeploys.v2.edp.epam.com
+  name: cdstagedeployments.v2.edp.epam.com
 spec:
   group: v2.edp.epam.com
   names:
     kind: CDStageDeploy
     listKind: CDStageDeployList
-    plural: cdstagedeploys
+    plural: cdstagedeployments
+    shortNames:
+    - csd
     singular: cdstagedeploy
   scope: Namespaced
   versions:

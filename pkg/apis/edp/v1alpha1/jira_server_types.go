@@ -34,6 +34,7 @@ type JiraServerStatus struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:resource:shortName=jrs
 // +kubebuilder:deprecatedversion
 
 // JiraServer is the Schema for the JiraServers API

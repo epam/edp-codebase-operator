@@ -12,6 +12,8 @@ spec:
     kind: CodebaseImageStream
     listKind: CodebaseImageStreamList
     plural: codebaseimagestreams
+    shortNames:
+    - cbis
     singular: codebaseimagestream
   scope: Namespaced
   versions:

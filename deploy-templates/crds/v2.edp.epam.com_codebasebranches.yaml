@@ -12,6 +12,8 @@ spec:
     kind: CodebaseBranch
     listKind: CodebaseBranchList
     plural: codebasebranches
+    shortNames:
+    - cb
     singular: codebasebranch
   scope: Namespaced
   versions:

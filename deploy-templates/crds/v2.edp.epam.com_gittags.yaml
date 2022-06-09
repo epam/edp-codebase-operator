@@ -12,6 +12,8 @@ spec:
     kind: GitTag
     listKind: GitTagList
     plural: gittags
+    shortNames:
+    - gt
     singular: gittag
   scope: Namespaced
   versions:

@@ -40,6 +40,7 @@ type CDStageDeployStatus struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:resource:shortName=csd,path=cdstagedeployments
 // +kubebuilder:deprecatedversion
 
 // CDStageDeploy is the Schema for the CDStageDeployments API

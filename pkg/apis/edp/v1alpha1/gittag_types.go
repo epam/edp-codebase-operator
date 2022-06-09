@@ -24,6 +24,7 @@ type GitTagStatus struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:resource:shortName=gt
 // +kubebuilder:deprecatedversion
 
 // GitTag is the Schema for the GitTags API

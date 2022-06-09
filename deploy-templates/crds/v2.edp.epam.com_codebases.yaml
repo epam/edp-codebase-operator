@@ -12,6 +12,8 @@ spec:
     kind: Codebase
     listKind: CodebaseList
     plural: codebases
+    shortNames:
+    - cdbs
     singular: codebase
   scope: Namespaced
   versions:

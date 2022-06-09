@@ -43,7 +43,7 @@ annotations:
       version: v2.edp.epam.com/v1
       name: cdstagedeploy
       displayName: CDStageDeploy
-      description: Stage deploy configuraion for CD
+      description: Stage deploy configuration for CD
     - kind: Codebase
       version: v2.edp.epam.com/v1
       name: codebase

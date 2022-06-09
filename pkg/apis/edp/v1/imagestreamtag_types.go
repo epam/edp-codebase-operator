@@ -19,6 +19,7 @@ type ImageStreamTagStatus struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:resource:shortName=ist
 // +kubebuilder:storageversion
 
 // ImageStreamTag is the Schema for the ImageStreamTags API

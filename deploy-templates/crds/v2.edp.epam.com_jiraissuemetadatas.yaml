@@ -5,13 +5,15 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.8.0
   creationTimestamp: null
-  name: jiraissuemetadata.v2.edp.epam.com
+  name: jiraissuemetadatas.v2.edp.epam.com
 spec:
   group: v2.edp.epam.com
   names:
     kind: JiraIssueMetadata
     listKind: JiraIssueMetadataList
-    plural: jiraissuemetadata
+    plural: jiraissuemetadatas
+    shortNames:
+    - jim
     singular: jiraissuemetadata
   scope: Namespaced
   versions:

@@ -12,6 +12,8 @@ spec:
     kind: GitServer
     listKind: GitServerList
     plural: gitservers
+    shortNames:
+    - gs
     singular: gitserver
   scope: Namespaced
   versions:

@@ -12,6 +12,8 @@ spec:
     kind: ImageStreamTag
     listKind: ImageStreamTagList
     plural: imagestreamtags
+    shortNames:
+    - ist
     singular: imagestreamtag
   scope: Namespaced
   versions:
