@@ -3,6 +3,19 @@
 
 ### Features
 
+- Add Kubernetes and GitOps languages [EPMDEDP-8257](https://jiraeu.epam.com/browse/EPMDEDP-8257)
+- Switch all CRDs to V1 schema [EPMDEDP-9215](https://jiraeu.epam.com/browse/EPMDEDP-9215)
+
+### Routine
+
+- Update current development version [EPMDEDP-8832](https://jiraeu.epam.com/browse/EPMDEDP-8832)
+- Update chart annotation [EPMDEDP-9515](https://jiraeu.epam.com/browse/EPMDEDP-9515)
+
+
+<a name="v2.12.0"></a>
+## [v2.12.0] - 2022-05-25
+### Features
+
 - Add tags-field for the list of codebases' tags. [EPMDEDP-8313](https://jiraeu.epam.com/browse/EPMDEDP-8313)
 - Add replace default branch option to spec [EPMDEDP-8804](https://jiraeu.epam.com/browse/EPMDEDP-8804)
 - Postpone reconciliation for import strategy [EPMDEDP-8956](https://jiraeu.epam.com/browse/EPMDEDP-8956)
@@ -174,7 +187,8 @@ Jenkins pipelines for code-review, build, create-release flow.
 - [MDTUDDM-673] Save git status in the intermediate operations
 
 
-[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.11.0...HEAD
+[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.12.0...HEAD
+[v2.12.0]: https://github.com/epam/edp-codebase-operator/compare/v2.11.0...v2.12.0
 [v2.11.0]: https://github.com/epam/edp-codebase-operator/compare/v2.10.1...v2.11.0
 [v2.10.1]: https://github.com/epam/edp-codebase-operator/compare/v2.10.0...v2.10.1
 [v2.10.0]: https://github.com/epam/edp-codebase-operator/compare/v2.9.0...v2.10.0
