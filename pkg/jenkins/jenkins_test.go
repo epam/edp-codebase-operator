@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/bndr/gojenkins"
-	"github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
+	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
 	"github.com/jarcoal/httpmock"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -310,7 +310,7 @@ func TestJenkinsClient_IsJobRunning_JobFoundButError(t *testing.T) {
 
 func TestGetJenkinsUrl_UrlOnly(t *testing.T) {
 
-	jspec := v1alpha1.Jenkins{
+	jspec := jenkinsApi.Jenkins{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
@@ -318,7 +318,7 @@ func TestGetJenkinsUrl_UrlOnly(t *testing.T) {
 				"edp.epam.com/externalUrl": "external-jenkins",
 			},
 		},
-		Spec: v1alpha1.JenkinsSpec{},
+		Spec: jenkinsApi.JenkinsSpec{},
 	}
 
 	jurl := GetJenkinsUrl(jspec, "namespace")
@@ -328,12 +328,12 @@ func TestGetJenkinsUrl_UrlOnly(t *testing.T) {
 
 func TestGetJenkinsUrl_BasepathOnly(t *testing.T) {
 
-	jspec := v1alpha1.Jenkins{
+	jspec := jenkinsApi.Jenkins{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
-		Spec: v1alpha1.JenkinsSpec{
+		Spec: jenkinsApi.JenkinsSpec{
 			BasePath: "basepath",
 		},
 	}
@@ -345,7 +345,7 @@ func TestGetJenkinsUrl_BasepathOnly(t *testing.T) {
 
 func TestGetJenkinsUrl_WithUrlAndBasepath(t *testing.T) {
 
-	jspec := v1alpha1.Jenkins{
+	jspec := jenkinsApi.Jenkins{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
@@ -353,7 +353,7 @@ func TestGetJenkinsUrl_WithUrlAndBasepath(t *testing.T) {
 				"edp.epam.com/externalUrl": "external-jenkins",
 			},
 		},
-		Spec: v1alpha1.JenkinsSpec{
+		Spec: jenkinsApi.JenkinsSpec{
 			BasePath: "basepath",
 		},
 	}
@@ -365,7 +365,7 @@ func TestGetJenkinsUrl_WithUrlAndBasepath(t *testing.T) {
 
 func TestGetJenkinsUrl_NoUrlNoBasepath(t *testing.T) {
 
-	jspec := v1alpha1.Jenkins{
+	jspec := jenkinsApi.Jenkins{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
@@ -390,7 +390,7 @@ func TestGetJenkinsCreds_SecretExists(t *testing.T) {
 		},
 	}
 
-	jspec := &v1alpha1.Jenkins{
+	jspec := &jenkinsApi.Jenkins{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
@@ -398,11 +398,11 @@ func TestGetJenkinsCreds_SecretExists(t *testing.T) {
 				"edp.epam.com/admin-token": "fake-admin-token",
 			},
 		},
-		Spec: v1alpha1.JenkinsSpec{},
+		Spec: jenkinsApi.JenkinsSpec{},
 	}
 
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, jspec)
+	scheme.AddKnownTypes(jenkinsApi.SchemeGroupVersion, jspec)
 	scheme.AddKnownTypes(coreV1.SchemeGroupVersion, s)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(s, jspec).Build()
 
@@ -416,7 +416,7 @@ func TestGetJenkinsCreds_SecretExists(t *testing.T) {
 
 func TestGetJenkinsCreds_NoSecretExists(t *testing.T) {
 
-	jspec := &v1alpha1.Jenkins{
+	jspec := &jenkinsApi.Jenkins{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
@@ -424,11 +424,11 @@ func TestGetJenkinsCreds_NoSecretExists(t *testing.T) {
 				"edp.epam.com/admin-token": "non-existing-secret",
 			},
 		},
-		Spec: v1alpha1.JenkinsSpec{},
+		Spec: jenkinsApi.JenkinsSpec{},
 	}
 
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, jspec)
+	scheme.AddKnownTypes(jenkinsApi.SchemeGroupVersion, jspec)
 	scheme.AddKnownTypes(coreV1.SchemeGroupVersion, &coreV1.Secret{})
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(jspec).Build()
 
@@ -445,7 +445,7 @@ func TestGetJenkinsCreds_NoSecretExists(t *testing.T) {
 }
 
 func TestGetJenkins_ShouldFailWhenNotFound(t *testing.T) {
-	jl := &v1alpha1.JenkinsList{}
+	jl := &jenkinsApi.JenkinsList{}
 	scheme := runtime.NewScheme()
 	scheme.AddKnownTypes(v1.SchemeGroupVersion, jl)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(jl).Build()
@@ -460,9 +460,9 @@ func TestGetJenkins_ShouldFailWhenNotFound(t *testing.T) {
 
 func TestGetJenkins_ShouldPass(t *testing.T) {
 
-	j := &v1alpha1.Jenkins{}
-	jl := &v1alpha1.JenkinsList{
-		Items: []v1alpha1.Jenkins{
+	j := &jenkinsApi.Jenkins{}
+	jl := &jenkinsApi.JenkinsList{
+		Items: []jenkinsApi.Jenkins{
 			{
 				ObjectMeta: v1.ObjectMeta{
 					Name:      fakeName,

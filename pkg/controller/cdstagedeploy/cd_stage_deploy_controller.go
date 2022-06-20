@@ -18,7 +18,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	v1alpha1Stage "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
+	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/cdstagedeploy/chain"
@@ -134,9 +134,9 @@ func (r *ReconcileCDStageDeploy) setFinalizer(ctx context.Context, stageDeploy *
 	return r.client.Update(ctx, stageDeploy)
 }
 
-func (r *ReconcileCDStageDeploy) getCDStage(ctx context.Context, name, namespace string) (*v1alpha1Stage.Stage, error) {
+func (r *ReconcileCDStageDeploy) getCDStage(ctx context.Context, name, namespace string) (*cdPipeApi.Stage, error) {
 	r.log.Info("getting cd stage", "name", name)
-	i := &v1alpha1Stage.Stage{}
+	i := &cdPipeApi.Stage{}
 	nn := types.NamespacedName{
 		Namespace: namespace,
 		Name:      name,

@@ -18,7 +18,7 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/repository"
 	mockGit "github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver/mock"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
-	"github.com/epam/edp-component-operator/pkg/apis/v1/v1alpha1"
+	edpCompApi "github.com/epam/edp-component-operator/pkg/apis/v1/v1"
 )
 
 func TestPutGitlabCiFile_ShouldPass(t *testing.T) {
@@ -31,12 +31,12 @@ func TestPutGitlabCiFile_ShouldPass(t *testing.T) {
 	os.Setenv("WORKING_DIR", dir)
 	os.Setenv("PLATFORM_TYPE", "kubernetes")
 
-	ec := &v1alpha1.EDPComponent{
+	ec := &edpCompApi.EDPComponent{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "kubernetes",
 			Namespace: fakeNamespace,
 		},
-		Spec: v1alpha1.EDPComponentSpec{
+		Spec: edpCompApi.EDPComponentSpec{
 			Type:    "",
 			Url:     "https://kubernetes.default.svc",
 			Icon:    "",
@@ -121,12 +121,12 @@ func TestPutGitlabCiFile_ShouldPass(t *testing.T) {
 }
 
 func TestParseTemplateMethod_ShouldFailToGetEdpComponent(t *testing.T) {
-	ec := &v1alpha1.EDPComponent{
+	ec := &edpCompApi.EDPComponent{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "fake-name",
 			Namespace: "fake-namespace",
 		},
-		Spec: v1alpha1.EDPComponentSpec{
+		Spec: edpCompApi.EDPComponentSpec{
 			Type:    "",
 			Url:     "",
 			Icon:    "",

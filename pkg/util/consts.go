@@ -27,7 +27,7 @@ const (
 	JenkinsFolderKind            = "JenkinsFolder"
 	CDStageDeployKind            = "CDStageDeploy"
 	CDStageJenkinsDeploymentKind = "CDStageJenkinsDeployment"
-	V2APIVersion                 = "v2.edp.epam.com/v1alpha1"
+	V2APIVersion                 = "v2.edp.epam.com/v1"
 
 	ProjectPushedStatus              = "pushed"
 	ProjectTemplatesPushedStatus     = "templates_pushed"

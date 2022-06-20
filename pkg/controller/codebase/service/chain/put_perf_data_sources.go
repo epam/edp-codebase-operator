@@ -120,7 +120,7 @@ func (h PutPerfDataSources) createJenkinsDataSource(c *codebaseApi.Codebase, dat
 
 	ds := &perfAPi.PerfDataSourceJenkins{
 		TypeMeta: v1.TypeMeta{
-			APIVersion: "v2.edp.epam.com/v1alpha1",
+			APIVersion: "v2.edp.epam.com/v1",
 			Kind:       "PerfDataSourceJenkins",
 		},
 		ObjectMeta: v1.ObjectMeta{
@@ -150,7 +150,7 @@ func (h PutPerfDataSources) createSonarDataSource(c *codebaseApi.Codebase, dataS
 
 	ds := &perfAPi.PerfDataSourceSonar{
 		TypeMeta: v1.TypeMeta{
-			APIVersion: "v2.edp.epam.com/v1alpha1",
+			APIVersion: "v2.edp.epam.com/v1",
 			Kind:       "PerfDataSourceSonar",
 		},
 		ObjectMeta: v1.ObjectMeta{
@@ -180,7 +180,7 @@ func (h PutPerfDataSources) createGitLabDataSource(c *codebaseApi.Codebase, data
 
 	ds := &perfAPi.PerfDataSourceGitLab{
 		TypeMeta: v1.TypeMeta{
-			APIVersion: "v2.edp.epam.com/v1alpha1",
+			APIVersion: "v2.edp.epam.com/v1",
 			Kind:       "PerfDataSourceGitLab",
 		},
 		ObjectMeta: v1.ObjectMeta{

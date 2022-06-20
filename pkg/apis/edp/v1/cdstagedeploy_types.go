@@ -1,7 +1,7 @@
 package v1
 
 import (
-	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
+	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 

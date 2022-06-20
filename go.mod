@@ -16,11 +16,11 @@ require (
 	github.com/andygrunwald/go-jira v1.14.0
 	github.com/bndr/gojenkins v0.2.1-0.20181125150310-de43c03cf849
 	github.com/dchest/uniuri v0.0.0-20160212164326-8902c56451e9
-	github.com/epam/edp-cd-pipeline-operator/v2 v2.3.0-58.0.20211130105433-ab18815b74d0
+	github.com/epam/edp-cd-pipeline-operator/v2 v2.3.0-58.0.20220615152459-3b84bce15819
 	github.com/epam/edp-common v0.0.0-20211206180607-3e1ca60d6e4a
-	github.com/epam/edp-component-operator v0.1.1-0.20211129100139-b5b7659f98f6
-	github.com/epam/edp-jenkins-operator/v2 v2.3.0-130.0.20220317153036-60f17fac1722
-	github.com/epam/edp-perf-operator/v2 v2.0.0-20210719113600-816c452ccbb0
+	github.com/epam/edp-component-operator v0.1.1-0.20220520092339-3063cc593800
+	github.com/epam/edp-jenkins-operator/v2 v2.3.0-130.0.20220615130453-41c49930569c
+	github.com/epam/edp-perf-operator/v2 v2.0.0-20220610074242-b9ebbfdf8023
 	github.com/go-git/go-git/v5 v5.4.3-0.20210630082519-b4368b2a2ca4
 	github.com/go-logr/logr v0.4.0
 	github.com/go-openapi/spec v0.19.5

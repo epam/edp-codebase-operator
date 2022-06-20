@@ -12,7 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/epam/edp-component-operator/pkg/apis/v1/v1alpha1"
+	edpComponentApi "github.com/epam/edp-component-operator/pkg/apis/v1/v1"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/model"
@@ -134,8 +134,8 @@ func GetCodebase(client client.Client, name, namespace string) (*codebaseApi.Cod
 	return instance, nil
 }
 
-func GetEdpComponent(c client.Client, name, namespace string) (*v1alpha1.EDPComponent, error) {
-	ec := &v1alpha1.EDPComponent{}
+func GetEdpComponent(c client.Client, name, namespace string) (*edpComponentApi.EDPComponent, error) {
+	ec := &edpComponentApi.EDPComponent{}
 	err := c.Get(context.TODO(), types.NamespacedName{
 		Name:      name,
 		Namespace: namespace,

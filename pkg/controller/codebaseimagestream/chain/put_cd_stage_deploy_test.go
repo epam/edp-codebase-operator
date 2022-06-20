@@ -16,7 +16,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	"github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
+	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 )
@@ -33,7 +33,7 @@ func TestPutCDStageDeploy_ShouldNotFailOnEmptyLables(t *testing.T) {
 	}
 
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(schema.GroupVersion{Group: "v2.edp.epam.com", Version: "v1alpha1"}, cis)
+	scheme.AddKnownTypes(schema.GroupVersion{Group: "v2.edp.epam.com", Version: "v1"}, cis)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(cis).Build()
 
 	chain := PutCDStageDeploy{
@@ -58,7 +58,7 @@ func TestPutCDStageDeploy_ShouldFailWithEmptyCodebase(t *testing.T) {
 	}
 
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(schema.GroupVersion{Group: "v2.edp.epam.com", Version: "v1alpha1"}, cis)
+	scheme.AddKnownTypes(schema.GroupVersion{Group: "v2.edp.epam.com", Version: "v1"}, cis)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(cis).Build()
 
 	chain := PutCDStageDeploy{
@@ -89,7 +89,7 @@ func TestPutCDStageDeploy_ShouldFailWithEmptyTags(t *testing.T) {
 	}
 
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(schema.GroupVersion{Group: "v2.edp.epam.com", Version: "v1alpha1"}, cis)
+	scheme.AddKnownTypes(schema.GroupVersion{Group: "v2.edp.epam.com", Version: "v1"}, cis)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(cis).Build()
 
 	chain := PutCDStageDeploy{
@@ -126,7 +126,7 @@ func TestPutCDStageDeploy_ShouldFailWithInvalidLabels(t *testing.T) {
 	}
 
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(schema.GroupVersion{Group: "v2.edp.epam.com", Version: "v1alpha1"}, cis)
+	scheme.AddKnownTypes(schema.GroupVersion{Group: "v2.edp.epam.com", Version: "v1"}, cis)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(cis).Build()
 
 	chain := PutCDStageDeploy{
@@ -163,7 +163,7 @@ func TestPutCDStageDeploy_CdstagedeployShouldFailOnSearch(t *testing.T) {
 	}
 
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(schema.GroupVersion{Group: "v2.edp.epam.com", Version: "v1alpha1"}, cis)
+	scheme.AddKnownTypes(schema.GroupVersion{Group: "v2.edp.epam.com", Version: "v1"}, cis)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(cis).Build()
 
 	chain := PutCDStageDeploy{
@@ -209,7 +209,7 @@ func TestPutCDStageDeploy_ShouldFailWhenCdstagedeployExist(t *testing.T) {
 	}
 
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(schema.GroupVersion{Group: "v2.edp.epam.com", Version: "v1alpha1"}, cis, cdsd)
+	scheme.AddKnownTypes(schema.GroupVersion{Group: "v2.edp.epam.com", Version: "v1"}, cis, cdsd)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(cis, cdsd).Build()
 
 	chain := PutCDStageDeploy{
@@ -258,7 +258,7 @@ func TestPutCDStageDeploy_ShouldCreateCdstagedeploy(t *testing.T) {
 	}
 
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(schema.GroupVersion{Group: "v2.edp.epam.com", Version: "v1alpha1"}, cis, cdsd)
+	scheme.AddKnownTypes(schema.GroupVersion{Group: "v2.edp.epam.com", Version: "v1"}, cis, cdsd)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(cis, cdsd).Build()
 
 	chain := PutCDStageDeploy{
@@ -313,7 +313,7 @@ func TestPutCDStageDeploy_ShouldFailWithIncorrectTagstimestamp(t *testing.T) {
 	}
 
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(schema.GroupVersion{Group: "v2.edp.epam.com", Version: "v1alpha1"}, cis, cdsd)
+	scheme.AddKnownTypes(schema.GroupVersion{Group: "v2.edp.epam.com", Version: "v1"}, cis, cdsd)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(cis, cdsd).Build()
 
 	chain := PutCDStageDeploy{
@@ -456,7 +456,7 @@ func TestPutCDStageDeploy_ShouldFailToCreateCdstagedeploy(t *testing.T) {
 
 	existingCdsd := &codebaseApi.CDStageDeploy{
 		TypeMeta: metaV1.TypeMeta{
-			APIVersion: "v2.edp.epam.com/v1alpha1",
+			APIVersion: "v2.edp.epam.com/v1",
 			Kind:       "CDStageDeploy",
 		},
 		ObjectMeta: metaV1.ObjectMeta{
@@ -466,11 +466,11 @@ func TestPutCDStageDeploy_ShouldFailToCreateCdstagedeploy(t *testing.T) {
 		Spec: codebaseApi.CDStageDeploySpec{
 			Pipeline: "pipeline-name",
 			Stage:    "stage-name",
-			Tag: v1alpha1.Tag{
+			Tag: jenkinsApi.Tag{
 				Codebase: "cb-name",
 				Tag:      "master-0.0.1-2",
 			},
-			Tags: []v1alpha1.Tag{
+			Tags: []jenkinsApi.Tag{
 				{
 					Codebase: "cb-name",
 					Tag:      "master-0.0.1-2",
@@ -480,7 +480,7 @@ func TestPutCDStageDeploy_ShouldFailToCreateCdstagedeploy(t *testing.T) {
 	}
 
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(schema.GroupVersion{Group: "v2.edp.epam.com", Version: "v1alpha1"}, cis, cdsd)
+	scheme.AddKnownTypes(schema.GroupVersion{Group: "v2.edp.epam.com", Version: "v1"}, cis, cdsd)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(cis, cdsd).Build()
 
 	mockErr := errors.New("FATAL")

@@ -13,7 +13,7 @@ import (
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	edpComponentApi "github.com/epam/edp-component-operator/pkg/apis/v1/v1alpha1"
+	edpComponentApi "github.com/epam/edp-component-operator/pkg/apis/v1/v1"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/jiraserver/chain/handler"

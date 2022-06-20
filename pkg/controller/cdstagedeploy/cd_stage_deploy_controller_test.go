@@ -13,8 +13,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
-	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
+	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1"
+	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 )
@@ -163,7 +163,7 @@ func TestReconcileCDStageDeploy_Reconcile_ShouldFailSetOwnerRef(t *testing.T) {
 
 	assert.Error(t, err)
 	assert.False(t, res.Requeue)
-	assert.Contains(t, err.Error(), "no kind is registered for the type v1alpha1.Stage in scheme")
+	assert.Contains(t, err.Error(), "no kind is registered for the type v1.Stage in scheme")
 }
 
 func TestReconcileCDStageDeploy_Reconcile_ShouldFailServeRequest(t *testing.T) {

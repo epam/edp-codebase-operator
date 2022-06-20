@@ -6,7 +6,7 @@
 package v1alpha1
 
 import (
-	v2v1alpha1 "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
+	"github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -75,7 +75,7 @@ func (in *CDStageDeploySpec) DeepCopyInto(out *CDStageDeploySpec) {
 	out.Tag = in.Tag
 	if in.Tags != nil {
 		in, out := &in.Tags, &out.Tags
-		*out = make([]v2v1alpha1.Tag, len(*in))
+		*out = make([]v1.Tag, len(*in))
 		copy(*out, *in)
 	}
 }
