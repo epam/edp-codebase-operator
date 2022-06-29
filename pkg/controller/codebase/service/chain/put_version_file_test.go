@@ -151,12 +151,11 @@ func TestTryToPutVersionFileMethod_MustBeFinishedSuccessfully(t *testing.T) {
 			Namespace: fakeNamespace,
 		},
 		Spec: codebaseApi.GitServerSpec{
-			GitHost:                  "fake_host",
-			GitUser:                  "fake_user",
-			HttpsPort:                8080,
-			SshPort:                  22,
-			NameSshKeySecret:         "fake_secret_name",
-			CreateCodeReviewPipeline: false,
+			GitHost:          "fake_host",
+			GitUser:          "fake_user",
+			HttpsPort:        8080,
+			SshPort:          22,
+			NameSshKeySecret: "fake_secret_name",
 		},
 	}
 

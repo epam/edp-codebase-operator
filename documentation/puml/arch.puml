@@ -119,7 +119,6 @@ package com.epam.edp.codebase {
         String httpsPort
         String sshPort
         String nameSshKeySecret
-        Boolean createCodeReviewPipeline
     -- status --
         Date lastTimeUpdated
         String status

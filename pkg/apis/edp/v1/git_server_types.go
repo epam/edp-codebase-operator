@@ -17,9 +17,6 @@ type GitServerSpec struct {
 	SshPort int32 `json:"sshPort"`
 
 	NameSshKeySecret string `json:"nameSshKeySecret"`
-
-	// +optional
-	CreateCodeReviewPipeline bool `json:"createCodeReviewPipeline,omitempty"`
 }
 
 // GitServerStatus defines the observed state of GitServer

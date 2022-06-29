@@ -1167,13 +1167,6 @@ GitServerSpec defines the desired state of GitServer
             <i>Format</i>: int32<br/>
         </td>
         <td>true</td>
-      </tr><tr>
-        <td><b>createCodeReviewPipeline</b></td>
-        <td>boolean</td>
-        <td>
-          <br/>
-        </td>
-        <td>false</td>
       </tr></tbody>
 </table>
 

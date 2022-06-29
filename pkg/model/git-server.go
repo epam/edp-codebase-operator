@@ -23,15 +23,14 @@ type ActionLog struct {
 }
 
 type GitServer struct {
-	GitHost                  string
-	GitUser                  string
-	HttpsPort                int32
-	SshPort                  int32
-	NameSshKeySecret         string
-	CreateCodeReviewPipeline bool
-	ActionLog                ActionLog
-	Namespace                string
-	Name                     string
+	GitHost          string
+	GitUser          string
+	HttpsPort        int32
+	SshPort          int32
+	NameSshKeySecret string
+	ActionLog        ActionLog
+	Namespace        string
+	Name             string
 }
 
 type RepositoryData struct {
@@ -50,15 +49,14 @@ func ConvertToGitServer(k8sObj codebaseApi.GitServer) *GitServer {
 	actionLog := convertGitServerActionLog(k8sObj.Status)
 
 	return &GitServer{
-		GitHost:                  spec.GitHost,
-		GitUser:                  spec.GitUser,
-		HttpsPort:                spec.HttpsPort,
-		SshPort:                  spec.SshPort,
-		NameSshKeySecret:         spec.NameSshKeySecret,
-		CreateCodeReviewPipeline: spec.CreateCodeReviewPipeline,
-		ActionLog:                *actionLog,
-		Namespace:                k8sObj.Namespace,
-		Name:                     k8sObj.Name,
+		GitHost:          spec.GitHost,
+		GitUser:          spec.GitUser,
+		HttpsPort:        spec.HttpsPort,
+		SshPort:          spec.SshPort,
+		NameSshKeySecret: spec.NameSshKeySecret,
+		ActionLog:        *actionLog,
+		Namespace:        k8sObj.Namespace,
+		Name:             k8sObj.Name,
 	}
 }
 

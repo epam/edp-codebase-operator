@@ -37,8 +37,6 @@ spec:
           spec:
             description: GitServerSpec defines the desired state of GitServer
             properties:
-              createCodeReviewPipeline:
-                type: boolean
               gitHost:
                 type: string
               gitUser:
