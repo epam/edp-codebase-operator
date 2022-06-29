@@ -12,6 +12,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	coreV1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -573,4 +574,75 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldRequeueWithCodebaseNotReady(t *
 		codebasebranch.LabelCodebaseName: "NewCodebase",
 	}
 	assert.Equal(t, expectedLabels, gotCodebaseBranch.GetLabels())
+}
+
+func TestReconcileCodebaseBranch_Reconcile_ShouldInitBuildForEDPVersioning(t *testing.T) {
+	t.Parallel()
+
+	namespace := "test-namespace"
+	cb := &codebaseApi.CodebaseBranch{
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      "NewCodebaseBranch",
+			Namespace: namespace,
+		},
+		Spec: codebaseApi.CodebaseBranchSpec{
+			CodebaseName: "NewCodebase",
+		},
+	}
+	c := &codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      "NewCodebase",
+			Namespace: namespace,
+		},
+		Spec: codebaseApi.CodebaseSpec{
+			Versioning: codebaseApi.Versioning{
+				Type: util.VersioningTypeEDP,
+			},
+		},
+	}
+	jf := &jenkinsApi.JenkinsFolder{
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      "NewCodebase-codebase",
+			Namespace: namespace,
+		},
+		Status: jenkinsApi.JenkinsFolderStatus{
+			Available: true,
+		},
+	}
+
+	scheme := runtime.NewScheme()
+	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, c, cb, jf)
+	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, cb, jf).Build()
+
+	//request
+	req := reconcile.Request{
+		NamespacedName: types.NamespacedName{
+			Name:      "NewCodebaseBranch",
+			Namespace: namespace,
+		},
+	}
+
+	r := ReconcileCodebaseBranch{
+		client: fakeCl,
+		log:    logr.DiscardLogger{},
+		scheme: scheme,
+	}
+
+	res, err := r.Reconcile(context.Background(), req)
+
+	require.NoError(t, err)
+	assert.False(t, res.Requeue)
+
+	gotCodebaseBranch := codebaseApi.CodebaseBranch{}
+	err = fakeCl.Get(context.Background(), types.NamespacedName{
+		Name:      "NewCodebaseBranch",
+		Namespace: namespace,
+	}, &gotCodebaseBranch)
+
+	require.NoError(t, err)
+
+	expectedBuildNumber := "0"
+
+	assert.NotNil(t, gotCodebaseBranch.Status.Build)
+	assert.Equal(t, &expectedBuildNumber, gotCodebaseBranch.Status.Build)
 }
