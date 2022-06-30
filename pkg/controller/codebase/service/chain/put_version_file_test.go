@@ -37,7 +37,7 @@ const (
 	fakeInputParam = "fake_input_param"
 )
 
-var path = getExecutableFilePath()
+var path = "/tmp"
 
 func init() {
 	utilRuntime.Must(perfApi.AddToScheme(scheme.Scheme))
