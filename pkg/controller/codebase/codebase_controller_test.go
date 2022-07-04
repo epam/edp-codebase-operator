@@ -391,6 +391,7 @@ func (s *ControllerTestSuite) TestPostpone() {
 		Spec: codebaseApi.CodebaseSpec{
 			Strategy: util.ImportStrategy,
 			CiTool:   util.GitlabCi,
+			Type:     "application",
 			Lang:     "java",
 		},
 	}
@@ -399,7 +400,8 @@ func (s *ControllerTestSuite) TestPostpone() {
 	handlerMock := handler.Mock{}
 
 	cloneCb := c.DeepCopy()
-	cloneCb.ResourceVersion = "2"
+	cloneCb.ResourceVersion = "3"
+	cloneCb.Labels = map[string]string{"app.edp.epam.com/codebaseType": "application"}
 	cloneCb.Finalizers = []string{"codebase.operator.finalizer.name", "foregroundDeletion"}
 	handlerMock.On("ServeRequest", cloneCb).Return(chain.PostponeError{Timeout: time.Second})
 	r := ReconcileCodebase{

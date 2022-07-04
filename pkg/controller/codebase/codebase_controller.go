@@ -98,6 +98,12 @@ func (r *ReconcileCodebase) Reconcile(ctx context.Context, request reconcile.Req
 	if !validate.IsCodebaseValid(c) {
 		return reconcile.Result{}, nil
 	}
+
+	err = r.initLabels(ctx, c)
+	if err != nil {
+		return reconcile.Result{}, errors.Wrap(err, "fail to init labels for codebase")
+	}
+
 	ch, err := r.getChain(c)
 	if err != nil {
 		return reconcile.Result{}, errors.Wrap(err, "an error has occurred while selecting chain")
@@ -121,7 +127,7 @@ func (r *ReconcileCodebase) Reconcile(ctx context.Context, request reconcile.Req
 	return reconcile.Result{}, nil
 }
 
-func (r ReconcileCodebase) updateFinishStatus(ctx context.Context, c *codebaseApi.Codebase) error {
+func (r *ReconcileCodebase) updateFinishStatus(ctx context.Context, c *codebaseApi.Codebase) error {
 	c.Status = codebaseApi.CodebaseStatus{
 		Status:          util.StatusFinished,
 		Available:       true,
@@ -137,7 +143,7 @@ func (r ReconcileCodebase) updateFinishStatus(ctx context.Context, c *codebaseAp
 }
 
 // setFailureCount increments failure count and returns delay for next reconciliation
-func (r ReconcileCodebase) setFailureCount(c *codebaseApi.Codebase) time.Duration {
+func (r *ReconcileCodebase) setFailureCount(c *codebaseApi.Codebase) time.Duration {
 	timeout := util.GetTimeout(c.Status.FailureCount, 10*time.Second)
 	r.log.V(2).Info("wait for next reconcilation", "next reconcilation in", timeout)
 	c.Status.FailureCount += 1
@@ -155,7 +161,7 @@ func (r *ReconcileCodebase) getChain(cr *codebaseApi.Codebase) (cHand.CodebaseHa
 	return r.chainGetter(cr)
 }
 
-func (r ReconcileCodebase) getStrategyChain(c *codebaseApi.Codebase) (cHand.CodebaseHandler, error) {
+func (r *ReconcileCodebase) getStrategyChain(c *codebaseApi.Codebase) (cHand.CodebaseHandler, error) {
 	repo := r.createCodebaseRepo(c)
 	if c.Spec.Strategy == util.ImportStrategy {
 		return r.getCiChain(c, repo)
@@ -163,14 +169,14 @@ func (r ReconcileCodebase) getStrategyChain(c *codebaseApi.Codebase) (cHand.Code
 	return chain.CreateGerritDefChain(r.client, repo), nil
 }
 
-func (r ReconcileCodebase) createCodebaseRepo(c *codebaseApi.Codebase) repository.CodebaseRepository {
+func (r *ReconcileCodebase) createCodebaseRepo(c *codebaseApi.Codebase) repository.CodebaseRepository {
 	if r.db == nil {
 		return repository.NewK8SCodebaseRepository(r.client, c)
 	}
 	return repository.SqlCodebaseRepository{DB: r.db}
 }
 
-func (r ReconcileCodebase) getCiChain(c *codebaseApi.Codebase, repo repository.CodebaseRepository) (cHand.CodebaseHandler, error) {
+func (r *ReconcileCodebase) getCiChain(c *codebaseApi.Codebase, repo repository.CodebaseRepository) (cHand.CodebaseHandler, error) {
 	if strings.ToLower(c.Spec.CiTool) == util.GitlabCi {
 		return chain.CreateGitlabCiDefChain(r.client, repo), nil
 	}
@@ -186,7 +192,7 @@ func (r *ReconcileCodebase) updateStatus(ctx context.Context, instance *codebase
 	return nil
 }
 
-func (r ReconcileCodebase) tryToDeleteCodebase(ctx context.Context, c *codebaseApi.Codebase) (*reconcile.Result, error) {
+func (r *ReconcileCodebase) tryToDeleteCodebase(ctx context.Context, c *codebaseApi.Codebase) (*reconcile.Result, error) {
 	if c.GetDeletionTimestamp().IsZero() {
 		return nil, nil
 	}
@@ -206,15 +212,7 @@ func (r ReconcileCodebase) tryToDeleteCodebase(ctx context.Context, c *codebaseA
 	return &reconcile.Result{}, nil
 }
 
-func removeDirectoryIfExists(codebaseName, namespace string) error {
-	wd := util.GetWorkDir(codebaseName, namespace)
-	if err := util.RemoveDirectory(wd); err != nil {
-		return errors.Wrap(err, "unable to remove directory if exists")
-	}
-	return nil
-}
-
-func (r ReconcileCodebase) setFinalizers(ctx context.Context, c *codebaseApi.Codebase) error {
+func (r *ReconcileCodebase) setFinalizers(ctx context.Context, c *codebaseApi.Codebase) error {
 	if !c.GetDeletionTimestamp().IsZero() {
 		return nil
 	}
@@ -228,4 +226,36 @@ func (r ReconcileCodebase) setFinalizers(ctx context.Context, c *codebaseApi.Cod
 	}
 
 	return r.client.Update(ctx, c)
+}
+
+func removeDirectoryIfExists(codebaseName, namespace string) error {
+	wd := util.GetWorkDir(codebaseName, namespace)
+	if err := util.RemoveDirectory(wd); err != nil {
+		return errors.Wrap(err, "unable to remove directory if exists")
+	}
+	return nil
+}
+
+func (r *ReconcileCodebase) initLabels(ctx context.Context, c *codebaseApi.Codebase) error {
+	const codebaseTypeLabelName = "app.edp.epam.com/codebaseType"
+
+	r.log.Info("Trying to update labels for codebase", "name", c.Name)
+
+	originalCodeBase := c.DeepCopy()
+
+	labels := c.GetLabels()
+	if labels == nil {
+		labels = make(map[string]string)
+	}
+
+	if _, ok := labels[codebaseTypeLabelName]; ok {
+		r.log.Info("Codebase already has label", "name", c.Name, "label", codebaseTypeLabelName)
+		return nil
+	}
+
+	labels[codebaseTypeLabelName] = c.Spec.Type
+
+	c.SetLabels(labels)
+
+	return r.client.Patch(ctx, c, client.MergeFrom(originalCodeBase))
 }
