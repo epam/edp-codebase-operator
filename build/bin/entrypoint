@@ -5,8 +5,9 @@
 
 if ! whoami &>/dev/null; then
   if [ -w /etc/passwd ]; then
-    usermod -u $(id -u) ${USER_NAME:-codebase-operator}
-    groupmod -g $(id -g) ${USER_NAME:-codebase-operator}
+    UID=$(id -u)
+    GID=$(id -g)
+    sed -i "s/1001:1001/$UID:$GID/g" /etc/passwd
   fi
 fi
 

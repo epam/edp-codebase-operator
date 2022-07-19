@@ -9,8 +9,7 @@ ENV ASSETS_DIR=/usr/local/bin \
 
 RUN apk add --no-cache ca-certificates=20211220-r0 \
                        openssh-client==8.8_p1-r1 \
-                       git==2.34.4-r0 \
-                       shadow==4.8.1-r1
+                       git==2.34.4-r0
 
 COPY build/bin ${ASSETS_DIR}
 COPY build/templates ${ASSETS_DIR}/templates
