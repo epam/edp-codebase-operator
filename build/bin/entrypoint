@@ -5,7 +5,8 @@
 
 if ! whoami &>/dev/null; then
   if [ -w /etc/passwd ]; then
-    echo "${USER_NAME:-codebase-operator}:x:$(id -u):$(id -g):${USER_NAME:-codebase-operator} user:${HOME}:/bin/ash" >> /etc/passwd
+    usermod -u $(id -u) ${USER_NAME:-codebase-operator}
+    groupmod -g $(id -g) ${USER_NAME:-codebase-operator}
   fi
 fi
 

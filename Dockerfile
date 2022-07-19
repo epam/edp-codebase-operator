@@ -9,7 +9,8 @@ ENV ASSETS_DIR=/usr/local/bin \
 
 RUN apk add --no-cache ca-certificates=20211220-r0 \
                        openssh-client==8.8_p1-r1 \
-                       git==2.34.2-r0
+                       git==2.34.4-r0 \
+                       shadow==4.8.1-r1
 
 COPY build/bin ${ASSETS_DIR}
 COPY build/templates ${ASSETS_DIR}/templates
@@ -23,7 +24,7 @@ RUN  chmod u+x ${ASSETS_DIR}/user_setup && \
      chmod ugo+x ${ASSETS_DIR}/entrypoint && \
      ${ASSETS_DIR}/user_setup
 
-RUN adduser -h /home/codebase-operator -s /bin/ash -D -u 1001 codebase-operator
+RUN adduser -h ${HOME} -s /bin/ash -D -u ${USER_UID} codebase-operator
 
 # install operator binary
 COPY ./dist/go-binary ${OPERATOR}
