@@ -13,9 +13,9 @@ nodeSelector: {}
 tolerations: []
 affinity: {}
 image:
-  name: epamedp/codebase-operator
+  repository: epamedp/codebase-operator
   # if not defined then .Chart.AppVersion is used
-  version:
+  tag:
 envs:
   - name: RECONCILATION_PERIOD
     value: "360"  # The value should be typed in minutes

@@ -33,8 +33,8 @@ A Helm chart for EDP Codebase Operator
 | global.database.port | int | `5432` |  |
 | global.edpName | string | `""` |  |
 | global.platform | string | `"openshift"` |  |
-| image.name | string | `"epamedp/codebase-operator"` |  |
-| image.version | string | `nil` |  |
+| image.repository | string | `"epamedp/codebase-operator"` |  |
+| image.tag | string | `nil` |  |
 | imagePullPolicy | string | `"IfNotPresent"` |  |
 | jira.apiUrl | string | `"https://jiraeu-api.example.com"` |  |
 | jira.credentialName | string | `"jira-user"` |  |
