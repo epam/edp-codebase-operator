@@ -25,23 +25,22 @@ A Helm chart for EDP Codebase Operator
 | annotations | object | `{}` |  |
 | envs[0].name | string | `"RECONCILATION_PERIOD"` |  |
 | envs[0].value | string | `"360"` |  |
-| envs[1].name | string | `"CODEBASE_BRANCH_MAX_CONCURRENT_RECONCILES"` |  |
-| envs[1].value | string | `"3"` |  |
-| global.database.enabled | bool | `true` |  |
-| global.database.host | string | `nil` |  |
-| global.database.name | string | `"edp-db"` |  |
-| global.database.port | int | `5432` |  |
-| global.edpName | string | `""` |  |
-| global.platform | string | `"openshift"` |  |
-| image.repository | string | `"epamedp/codebase-operator"` |  |
-| image.tag | string | `nil` |  |
+| envs[1] | object | `{"name":"CODEBASE_BRANCH_MAX_CONCURRENT_RECONCILES","value":"3"}` | Maximum number of parallel reconciliation codebasebranches |
+| global.database.enabled | bool | `true` | Flag to enable/disable database deploy |
+| global.database.host | string | `nil` | Database host |
+| global.database.name | string | `"edp-db"` | Database name |
+| global.database.port | int | `5432` | Database port |
+| global.edpName | string | `""` | namespace or a project name (in case of OpenShift) |
+| global.platform | string | `"openshift"` | platform type that can be "kubernetes" or "openshift" |
+| image.repository | string | `"epamedp/codebase-operator"` | EDP codebase-operator Docker image name. The released image can be found on [Dockerhub](https://hub.docker.com/r/epamedp/codebase-operator) |
+| image.tag | string | `nil` | EDP codebase-operator Docker image tag. The released image can be found on [Dockerhub](https://hub.docker.com/r/epamedp/codebase-operator/tags) |
 | imagePullPolicy | string | `"IfNotPresent"` |  |
-| jira.apiUrl | string | `"https://jiraeu-api.example.com"` |  |
-| jira.credentialName | string | `"jira-user"` |  |
-| jira.integration | bool | `false` |  |
-| jira.name | string | `"jira"` |  |
-| jira.rootUrl | string | `"https://jiraeu.example.com"` |  |
-| name | string | `"codebase-operator"` |  |
+| jira.apiUrl | string | `"https://jiraeu-api.example.com"` | API URL for development |
+| jira.credentialName | string | `"jira-user"` | Name of secret with credentials to Jira server |
+| jira.integration | bool | `false` | Flag to enable/disable Jira integration |
+| jira.name | string | `"jira"` | JiraServer CR name |
+| jira.rootUrl | string | `"https://jiraeu.example.com"` | URL to Jira server |
+| name | string | `"codebase-operator"` | component name |
 | nodeSelector | object | `{}` |  |
 | resources.limits.memory | string | `"192Mi"` |  |
 | resources.requests.cpu | string | `"50m"` |  |

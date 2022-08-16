@@ -25,41 +25,33 @@ In order to install the Codebase Operator, follow the steps below:
 
 1. To add the Helm EPAMEDP Charts for local client, run "helm repo add":
      ```bash
-     helm repo add epamedp https://chartmuseum.demo.edp-epam.com/
+     helm repo add epamedp https://epam.github.io/edp-helm-charts/stable
      ```
 2. Choose available Helm chart version:
      ```bash
-     helm search repo epamedp/codebase-operator
+     helm search repo epamedp/codebase-operator -l
      NAME                           CHART VERSION   APP VERSION     DESCRIPTION
-     epamedp/codebase-operator      v2.4.0                          Helm chart for Golang application/service deplo...
+     epamedp/codebase-operator      2.12.0          2.12.0          A Helm chart for EDP Codebase Operator
+     epamedp/codebase-operator	    2.11.0          2.11.0          A Helm chart for EDP Codebase Operator
+     epamedp/codebase-operator	    2.10.1          2.10.1          A Helm chart for EDP Codebase Operator
+     epamedp/codebase-operator	    2.10.0          2.10.0          A Helm chart for EDP Codebase Operator
      ```
 
     _**NOTE:** It is highly recommended to use the latest released version._
 
-3. Deploy operator:
+3. Full chart parameters available in [deploy-templates/README.md](deploy-templates/README.md).
 
-   Full available chart parameters list:
-   ```
-    - chart_version                                   # a version of CD Pipeline operator Helm chart;
-    - global.edpName                                  # a namespace or a project name (in case of OpenShift);
-    - global.platform                                 # openshift or kubernetes;
-    - global.database.host                            # Host to DB (<db-name>.<namespace>);
-    - global.database.port                            # Port to DB;
-    - global.database.name                            # Name of DB;
-    - image.repository                                # EDP image. The released image can be found on [Dockerhub](https://hub.docker.com/r/epamedp/codebase-operator);
-    - image.tag                                       # EDP tag. The released image can be found on [Dockerhub](https://hub.docker.com/r/epamedp/codebase-operator/tags);
-    - jira.integration                                # Flag to enable/disable Jira integration;
-    - jira.name                                       # JiraServer CR name;
-    - jira.apiUrl                                     # API URL for development;
-    - jira.rootUrl                                    # URL to Jira server;
-    - jira.credentialName                             # Name of secret with credentials to Jira server;
-   ```
-
-4. Install operator in the <edp_cicd_project> namespace with the helm command; find below the installation command example:
+4. Install operator in the <edp-project> namespace with the helm command; find below the installation command example:
     ```bash
-    helm install codebase-operator epamedp/codebase-operator --version <chart_version> --namespace <edp_cicd_project> --set name=codebase-operator --set global.edpName=<edp_cicd_project> --set global.platform=<platform_type> --set global.database.name=<db-name> --set global.database.host=<db-name>.<namespace_name> --set global.database.port=<port> --set jira.integration=false
+    helm install codebase-operator epamedp/codebase-operator --version <chart_version> --namespace <edp-project> --set name=codebase-operator --set global.edpName=<edp-project> --set global.platform=<platform_type> --set global.database.name=<db-name> --set global.database.host=<db-name>.<namespace_name> --set global.database.port=<port> --set jira.integration=false
     ```
-5. Check the <edp_cicd_project> namespace that should contain operator deployment with your operator in a running status.
+5. Check the <edp-project> namespace that should contain operator deployment with your operator in a running status.
+
+## Local Development
+
+In order to develop the operator, first set up a local environment. For details, please refer to the [Local Development](https://epam.github.io/edp-install/developer-guide/local-development/) page.
+
+Development versions are also available, please refer to the [snapshot helm chart repository](https://epam.github.io/edp-helm-charts/snapshot/) page.
 
 ### Related Articles
 

@@ -1,25 +1,34 @@
 global:
+  # -- namespace or a project name (in case of OpenShift)
   edpName: ""
+  # -- platform type that can be "kubernetes" or "openshift"
   platform: "openshift"
   database:
+    # -- Flag to enable/disable database deploy
     enabled: true
+    # -- Database port
     port: 5432
+    # -- Database host
     host:
+    # -- Database name
     name: "edp-db"
 
+# -- component name
 name: codebase-operator
 annotations: {}
 nodeSelector: {}
 tolerations: []
 affinity: {}
 image:
+  # -- EDP codebase-operator Docker image name. The released image can be found on [Dockerhub](https://hub.docker.com/r/epamedp/codebase-operator)
   repository: epamedp/codebase-operator
   # if not defined then .Chart.AppVersion is used
+  # -- EDP codebase-operator Docker image tag. The released image can be found on [Dockerhub](https://hub.docker.com/r/epamedp/codebase-operator/tags)
   tag:
 envs:
   - name: RECONCILATION_PERIOD
     value: "360"  # The value should be typed in minutes
-  # Maximum number of parallel reconciliation codebasebranches
+  # -- Maximum number of parallel reconciliation codebasebranches
   - name: CODEBASE_BRANCH_MAX_CONCURRENT_RECONCILES
     value: "3"
 imagePullPolicy: "IfNotPresent"
@@ -32,8 +41,13 @@ resources:
     memory: 64Mi
 
 jira:
+  # -- Flag to enable/disable Jira integration
   integration: false
+  # -- JiraServer CR name
   name: "jira"
+  # -- API URL for development
   apiUrl: "https://jiraeu-api.example.com"
+  # -- URL to Jira server
   rootUrl: "https://jiraeu.example.com"
+  # -- Name of secret with credentials to Jira server
   credentialName: "jira-user"
