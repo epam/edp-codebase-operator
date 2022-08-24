@@ -3,15 +3,16 @@ set -x
 
 # ensure $HOME exists
 mkdir -p ${HOME}/.ssh
+touch ${HOME}/.ssh/known_hosts
 
 # runtime user will need to be able to self-insert in /etc/passwd
-chmod g+rw /etc/passwd /etc
+chmod g+rw /etc/passwd /etc ${HOME}/.ssh/known_hosts
 
 # enable ssh-rsa for openssh-client
 echo -e "Host *\nHostkeyAlgorithms +ssh-rsa\nPubkeyAcceptedAlgorithms +ssh-rsa" >> ${HOME}/.ssh/config
 
 # ensure $HOME exists and is accessible by group 0 (we don't know what the runtime UID will be)
-chmod ug+rwx ${HOME}
+chmod ug+rwx ${HOME} ${HOME}/.ssh/
 chown ${USER_UID}:0 ${HOME}
 
 # no need for this script to remain in the image after running
