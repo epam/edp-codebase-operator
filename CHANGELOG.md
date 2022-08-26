@@ -1,15 +1,49 @@
 <a name="unreleased"></a>
 ## [Unreleased]
 
+
+<a name="v2.13.0"></a>
+## [v2.13.0] - 2022-08-24
 ### Features
 
+- Switch to use V1 apis of EDP components [EPMDEDP-10086](https://jiraeu.epam.com/browse/EPMDEDP-10086)
+- Download required tools for Makefile targets [EPMDEDP-10105](https://jiraeu.epam.com/browse/EPMDEDP-10105)
+- Add label for a type of Codebase [EPMDEDP-10122](https://jiraeu.epam.com/browse/EPMDEDP-10122)
 - Add Kubernetes and GitOps languages [EPMDEDP-8257](https://jiraeu.epam.com/browse/EPMDEDP-8257)
 - Switch all CRDs to V1 schema [EPMDEDP-9215](https://jiraeu.epam.com/browse/EPMDEDP-9215)
 
+### Bug Fixes
+
+- Add a short names for CRs, plus fix two plurals [EPMDEDP-10043](https://jiraeu.epam.com/browse/EPMDEDP-10043)
+- Make sure CRD which requires update of a status field have enabled status as subresource [EPMDEDP-10043](https://jiraeu.epam.com/browse/EPMDEDP-10043)
+- Make sure we init "build_number" field for "edp" versioning [EPMDEDP-10122](https://jiraeu.epam.com/browse/EPMDEDP-10122)
+- Allow to update known_hosts [EPMDEDP-10473](https://jiraeu.epam.com/browse/EPMDEDP-10473)
+
+### Code Refactoring
+
+- Refactor user creation procedure [EPMDEDP-10131](https://jiraeu.epam.com/browse/EPMDEDP-10131)
+- Replace usermod with sed approach [EPMDEDP-10131](https://jiraeu.epam.com/browse/EPMDEDP-10131)
+- Refactor user creation for OpenShift [EPMDEDP-10131](https://jiraeu.epam.com/browse/EPMDEDP-10131)
+- Remove createCodeReviewPipeline in Codebase [EPMDEDP-10156](https://jiraeu.epam.com/browse/EPMDEDP-10156)
+- Use repository and tag for image reference in chart [EPMDEDP-10389](https://jiraeu.epam.com/browse/EPMDEDP-10389)
+
 ### Routine
 
+- Upgrade go version to 1.18 [EPMDEDP-10110](https://jiraeu.epam.com/browse/EPMDEDP-10110)
+- Fix Jira Ticket pattern for changelog generator [EPMDEDP-10159](https://jiraeu.epam.com/browse/EPMDEDP-10159)
+- Update alpine base image to 3.16.2 version [EPMDEDP-10274](https://jiraeu.epam.com/browse/EPMDEDP-10274)
+- Update alpine base image version [EPMDEDP-10280](https://jiraeu.epam.com/browse/EPMDEDP-10280)
+- Change 'go get' to 'go install' for git-chglog [EPMDEDP-10337](https://jiraeu.epam.com/browse/EPMDEDP-10337)
+- Remove VERSION file [EPMDEDP-10387](https://jiraeu.epam.com/browse/EPMDEDP-10387)
+- Remove Kubernetes and GitOps languages [EPMDEDP-10397](https://jiraeu.epam.com/browse/EPMDEDP-10397)
+- Add gcflags for go build artifact [EPMDEDP-10411](https://jiraeu.epam.com/browse/EPMDEDP-10411)
 - Update current development version [EPMDEDP-8832](https://jiraeu.epam.com/browse/EPMDEDP-8832)
 - Update chart annotation [EPMDEDP-9515](https://jiraeu.epam.com/browse/EPMDEDP-9515)
+
+### Documentation
+
+- Align README.md [EPMDEDP-10274](https://jiraeu.epam.com/browse/EPMDEDP-10274)
+- Align README.md [EPMDEDP-10274](https://jiraeu.epam.com/browse/EPMDEDP-10274)
 
 
 <a name="v2.12.0"></a>
@@ -187,7 +221,8 @@ Jenkins pipelines for code-review, build, create-release flow.
 - [MDTUDDM-673] Save git status in the intermediate operations
 
 
-[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.12.0...HEAD
+[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.13.0...HEAD
+[v2.13.0]: https://github.com/epam/edp-codebase-operator/compare/v2.12.0...v2.13.0
 [v2.12.0]: https://github.com/epam/edp-codebase-operator/compare/v2.11.0...v2.12.0
 [v2.11.0]: https://github.com/epam/edp-codebase-operator/compare/v2.10.1...v2.11.0
 [v2.10.1]: https://github.com/epam/edp-codebase-operator/compare/v2.10.0...v2.10.1
