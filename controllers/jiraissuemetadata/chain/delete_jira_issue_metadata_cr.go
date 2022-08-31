@@ -16,6 +16,10 @@ type DeleteJiraIssueMetadataCr struct {
 }
 
 func (h DeleteJiraIssueMetadataCr) ServeRequest(metadata *codebaseApi.JiraIssueMetadata) error {
+	if metadata.Status.Error != nil {
+		return errors.New(metadata.Status.PrintErrors())
+	}
+
 	logv := log.WithValues("name", metadata.Name)
 	logv.V(2).Info("start deleting Jira issue metadata cr.")
 

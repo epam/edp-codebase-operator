@@ -40,12 +40,12 @@ func (m *MockClient) GetIssueMetadata(projectKey string) (*jira.CreateMetaInfo, 
 	return args.Get(0).(*jira.CreateMetaInfo), args.Error(1)
 }
 
-func (m *MockClient) GetIssueType(issueId string) (*string, error) {
+func (m *MockClient) GetIssueType(issueId string) (string, error) {
 	args := m.Called(issueId)
 	if args.Get(0) == nil {
-		return nil, args.Error(1)
+		return "", args.Error(1)
 	}
-	return args.Get(0).(*string), args.Error(1)
+	return args.String(0), args.Error(1)
 }
 
 func (m *MockClient) ApplyTagsToIssue(issue string, tags map[string]interface{}) error {

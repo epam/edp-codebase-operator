@@ -218,6 +218,42 @@ func TestPutProjectGerrit_ShouldFailToGetConfigmap(t *testing.T) {
 	assert.Contains(t, err.Error(), "configmaps \"edp-config\" not found")
 }
 
+func TestPutProjectGerrit_ShouldFailToCreateRepo(t *testing.T) {
+	c := &codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      fakeName,
+			Namespace: fakeNamespace,
+		},
+	}
+	cm := &coreV1.ConfigMap{
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      "edp-config",
+			Namespace: fakeNamespace,
+		},
+		Data: map[string]string{
+			"edp_name": "edp-name",
+		},
+	}
+
+	scheme := runtime.NewScheme()
+	scheme.AddKnownTypes(coreV1.SchemeGroupVersion, cm)
+	scheme.AddKnownTypes(codebaseApi.GroupVersion, c)
+
+	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, cm).Build()
+
+	ppg := PutProjectGerrit{
+		client: fakeCl,
+		cr:     repository.NewK8SCodebaseRepository(fakeCl, c),
+	}
+
+	t.Setenv("WORKING_DIR", "/tmp/")
+
+	err := ppg.ServeRequest(context.Background(), c)
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "Unable to get GitServer gerrit")
+}
+
 func TestPutProjectGerrit_ShouldFailToGetGerritPort(t *testing.T) {
 	ctx := context.Background()
 

@@ -2,17 +2,18 @@ package adapter
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"regexp"
 	"strconv"
 
 	"github.com/andygrunwald/go-jira"
 	ctrl "sigs.k8s.io/controller-runtime"
-
-	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
 var log = ctrl.Log.WithName("gojira_adapter")
+
+var ErrNotFound = errors.New("404")
 
 type GoJiraAdapter struct {
 	client jira.Client
@@ -47,7 +48,7 @@ func (a *GoJiraAdapter) GetIssueMetadata(projectKey string) (*jira.CreateMetaInf
 	return meta, nil
 }
 
-func (a *GoJiraAdapter) GetIssueType(issueId string) (*string, error) {
+func (a *GoJiraAdapter) GetIssueType(issueId string) (string, error) {
 	logv := log.WithValues("issueId", issueId)
 	logv.V(2).Info("start GetIssueType method.")
 
@@ -55,12 +56,12 @@ func (a *GoJiraAdapter) GetIssueType(issueId string) (*string, error) {
 
 	issue, _, err := a.client.Issue.GetWithContext(ctx, issueId, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch jira issue: %w", err)
+		return "", fmt.Errorf("failed to fetch jira issue: %w", err)
 	}
 
 	logv.Info("end GetIssueType method.")
 
-	return util.GetStringP(issue.Fields.Type.Name), nil
+	return issue.Fields.Type.Name, nil
 }
 
 func (a *GoJiraAdapter) GetProjectInfo(issueId string) (*jira.Project, error) {
@@ -71,6 +72,10 @@ func (a *GoJiraAdapter) GetProjectInfo(issueId string) (*jira.Project, error) {
 
 	issueResp, _, err := a.client.Issue.GetWithContext(ctx, issueId, nil)
 	if err != nil {
+		if err.Error() == "404" {
+			return nil, ErrNotFound
+		}
+
 		return nil, fmt.Errorf("failed to fetch jira issue: %w", err)
 	}
 

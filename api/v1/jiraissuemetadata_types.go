@@ -1,6 +1,9 @@
 package v1
 
 import (
+	"strings"
+
+	"github.com/hashicorp/go-multierror"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -39,6 +42,21 @@ type JiraIssueMetadataStatus struct {
 
 	// Amount of times, operator fail to serve with existing CR.
 	FailureCount int64 `json:"failureCount"`
+
+	Error error `json:"-"`
+}
+
+func (in *JiraIssueMetadataStatus) PrintErrors() string {
+	if merr, ok := in.Error.(*multierror.Error); ok {
+		strErrors := make([]string, 0, len(merr.Errors))
+		for _, e := range merr.Errors {
+			strErrors = append(strErrors, e.Error())
+		}
+
+		return strings.Join(strErrors, "\n")
+	}
+
+	return in.Error.Error()
 }
 
 // +kubebuilder:object:root=true
