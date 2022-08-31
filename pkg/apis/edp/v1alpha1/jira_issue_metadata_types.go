@@ -1,8 +1,11 @@
 package v1alpha1
 
 import (
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"strings"
 	"time"
+
+	"github.com/hashicorp/go-multierror"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -31,6 +34,20 @@ type JiraIssueMetadataStatus struct {
 	Status          string    `json:"status"`
 	DetailedMessage string    `json:"detailed_message"`
 	FailureCount    int64     `json:"failureCount"`
+	Error           error     `json:"-"`
+}
+
+func (in JiraIssueMetadataStatus) PrintErrors() string {
+	if merr, ok := in.Error.(*multierror.Error); ok {
+		strErrors := make([]string, 0, len(merr.Errors))
+		for _, e := range merr.Errors {
+			strErrors = append(strErrors, e.Error())
+		}
+
+		return strings.Join(strErrors, "\n")
+	}
+
+	return in.Error.Error()
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

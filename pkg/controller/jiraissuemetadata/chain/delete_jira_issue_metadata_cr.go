@@ -2,6 +2,7 @@ package chain
 
 import (
 	"context"
+
 	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/jiraissuemetadata/chain/handler"
 	"github.com/pkg/errors"
@@ -14,6 +15,10 @@ type DeleteJiraIssueMetadataCr struct {
 }
 
 func (h DeleteJiraIssueMetadataCr) ServeRequest(metadata *v1alpha1.JiraIssueMetadata) error {
+	if metadata.Status.Error != nil {
+		return errors.New(metadata.Status.PrintErrors())
+	}
+
 	logv := log.WithValues("name", metadata.Name)
 	logv.V(2).Info("start deleting Jira issue metadata cr.")
 

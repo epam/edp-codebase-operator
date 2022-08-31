@@ -7,9 +7,9 @@ ENV ASSETS_DIR=/usr/local/bin \
     USER_NAME=codebase-operator \
     USER_UID=1001
 
-RUN apk add --no-cache ca-certificates=20211220-r0 \
+RUN apk add --no-cache ca-certificates=20220614-r0 \
                        openssh-client==8.8_p1-r1 \
-                       git==2.34.2-r0
+                       git==2.34.5-r0
 
 COPY build/bin ${ASSETS_DIR}
 COPY build/templates ${ASSETS_DIR}/templates

@@ -239,9 +239,10 @@ func TestPutProjectGerrit_ShouldFailToCreateRepo(t *testing.T) {
 		cr:     repository.NewK8SCodebaseRepository(fakeCl, c),
 	}
 
+	t.Setenv("WORKING_DIR", "/tmp/")
 	err := ppg.ServeRequest(c)
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "mkdir /home/codebase-operator:")
+	assert.Contains(t, err.Error(), "no kind is registered for the type v1alpha1.GitServer in scheme")
 }
 
 func TestPutProjectGerrit_ShouldFailToGetGerritPort(t *testing.T) {

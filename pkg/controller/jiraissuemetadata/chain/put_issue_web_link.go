@@ -1,10 +1,13 @@
 package chain
 
 import (
+	"fmt"
+
 	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/client/jira"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/jiraissuemetadata/chain/handler"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
+	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 )
 
@@ -26,10 +29,13 @@ func (h PutIssueWebLink) ServeRequest(metadata *v1alpha1.JiraIssueMetadata) erro
 	for _, linkInfo := range requestPayload["issuesLinks"].([]interface{}) {
 		info := linkInfo.(map[string]interface{})
 		if err := h.client.CreateIssueLink(info["ticket"].(string), info["title"].(string), info["url"].(string)); err != nil {
-			return errors.Wrapf(err, "an error has occurred during creating remote link."+
-				" ticket - %v, title - %v, url - %v", info["ticket"].(string), info["title"].(string), info["url"].(string))
+			metadata.Status.Error = multierror.Append(metadata.Status.Error,
+				fmt.Errorf("an error has occurred during creating remote link."+
+					" ticket - %s, title - %s, url - %s, err: %w", info["ticket"].(string), info["title"].(string),
+					info["url"].(string), err))
 		}
 	}
+
 	log.Info("end creating web link in issues.")
 	return nextServeOrNil(h.next, metadata)
 }

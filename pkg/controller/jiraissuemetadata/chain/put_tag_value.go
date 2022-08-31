@@ -2,6 +2,10 @@ package chain
 
 import (
 	"fmt"
+	"strconv"
+
+	"github.com/epam/edp-codebase-operator/v2/pkg/client/jira/adapter"
+
 	gojira "github.com/andygrunwald/go-jira"
 	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/client/jira"
@@ -9,7 +13,6 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/trivago/tgo/tcontainer"
-	"strconv"
 )
 
 type PutTagValue struct {
@@ -38,7 +41,7 @@ func (h PutTagValue) ServeRequest(metadata *v1alpha1.JiraIssueMetadata) error {
 		return errors.New("JiraIssueMetadata is invalid. Tickets field cann't be empty.")
 	}
 
-	if err := h.tryToCreateFieldValues(requestPayload, metadata.Spec.Tickets[0], createApiMap); err != nil {
+	if err := h.tryToCreateFieldValues(requestPayload, metadata.Spec.Tickets, createApiMap); err != nil {
 		return errors.Wrap(err, "an error has occurred during creating field values in Jira project")
 	}
 
@@ -46,9 +49,10 @@ func (h PutTagValue) ServeRequest(metadata *v1alpha1.JiraIssueMetadata) error {
 	return nextServeOrNil(h.next, metadata)
 }
 
-func (h PutTagValue) tryToCreateFieldValues(requestPayload map[string]interface{}, ticket string,
+func (h PutTagValue) tryToCreateFieldValues(requestPayload map[string]interface{}, tickets []string,
 	createApiMap map[string]func(projectId int, versionName string) error) error {
-	projectInfo, err := h.client.GetProjectInfo(ticket)
+
+	projectInfo, ticket, err := h.getProjectInfo(tickets)
 	if err != nil {
 		return errors.Wrap(err, "couldn't get project info")
 	}
@@ -63,7 +67,7 @@ func (h PutTagValue) tryToCreateFieldValues(requestPayload map[string]interface{
 		return errors.Wrapf(err, "couldn't get issue type for %v ticket", ticket)
 	}
 
-	metaInfo := findIssueMetaInfo(issueTypes, *issueType)
+	metaInfo := findIssueMetaInfo(issueTypes, issueType)
 	for k, v := range requestPayload {
 		fieldProperties, exists := metaInfo.Value(k)
 		if !exists {
@@ -85,6 +89,23 @@ func (h PutTagValue) tryToCreateFieldValues(requestPayload map[string]interface{
 		}
 	}
 	return nil
+}
+
+func (h PutTagValue) getProjectInfo(tickets []string) (*gojira.Project, string, error) {
+	for _, ticket := range tickets {
+		projectInfo, err := h.client.GetProjectInfo(ticket)
+		if err != nil {
+			if errors.Is(err, adapter.ErrNotFound) {
+				continue
+			}
+
+			return nil, "", fmt.Errorf("unable to get project info: %w", err)
+		}
+
+		return projectInfo, ticket, nil
+	}
+
+	return nil, "", errors.New("jira issue not found")
 }
 
 func (h PutTagValue) getIssueTypes(projectId, projectKey string) ([]*gojira.MetaIssueType, error) {
