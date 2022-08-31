@@ -16,7 +16,7 @@ type Client interface {
 
 	GetIssueMetadata(projectKey string) (*jira.CreateMetaInfo, error)
 
-	GetIssueType(issueId string) (*string, error)
+	GetIssueType(issueId string) (string, error)
 
 	ApplyTagsToIssue(issue string, tags map[string]interface{}) error
 

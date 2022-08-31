@@ -240,9 +240,10 @@ func TestPutProjectGerrit_ShouldFailToCreateRepo(t *testing.T) {
 		cr:     repository.NewK8SCodebaseRepository(fakeCl, c),
 	}
 
+	t.Setenv("WORKING_DIR", "/tmp/")
 	err := ppg.ServeRequest(c)
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "mkdir /home/codebase-operator:")
+	assert.Contains(t, err.Error(), "Unable to get GitServer gerrit")
 }
 
 func TestPutProjectGerrit_ShouldFailToGetGerritPort(t *testing.T) {

@@ -1,16 +1,18 @@
 package chain
 
 import (
+	"errors"
 	"testing"
 
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
+	"github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	"github.com/hashicorp/go-multierror"
 	"github.com/stretchr/testify/assert"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
-
-	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 )
 
 func TestDeleteJiraIssueMetadataCr_ServeRequest(t *testing.T) {
@@ -32,4 +34,29 @@ func TestDeleteJiraIssueMetadataCr_ServeRequest(t *testing.T) {
 
 	err := dimcr.ServeRequest(jim)
 	assert.NoError(t, err)
+}
+
+func TestDeleteJiraIssueMetadataCr_ServeRequest_StopOnErrors(t *testing.T) {
+	jim := &codebaseApi.JiraIssueMetadata{
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      "fake-name",
+			Namespace: "fake-namespace",
+		},
+		Status: codebaseApi.JiraIssueMetadataStatus{
+			Error: multierror.Append(errors.New("error1"), errors.New("error2")),
+		},
+	}
+
+	scheme.Scheme.AddKnownTypes(v1.SchemeGroupVersion, jim)
+	sch1 := runtime.NewScheme()
+	sch1.AddKnownTypes(v1alpha1.SchemeGroupVersion, jim)
+	fakeCl := fake.NewClientBuilder().WithScheme(sch1).WithRuntimeObjects(jim).Build()
+
+	dimcr := DeleteJiraIssueMetadataCr{
+		c: fakeCl,
+	}
+
+	err := dimcr.ServeRequest(jim)
+	assert.Error(t, err)
+	assert.Equal(t, err.Error(), "error1\nerror2")
 }

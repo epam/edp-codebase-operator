@@ -1,7 +1,7 @@
 package chain
 
 import (
-	"strings"
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -36,8 +36,10 @@ func TestPutIssueWebLink_ServeRequest_ShouldPass(t *testing.T) {
 
 func TestPutIssueWebLink_ServeRequest_ShouldFail(t *testing.T) {
 	mClient := new(mock.MockClient)
-	mClient.On("CreateIssueLink", "fake-issueId", "fake-title", "fake-url").Return(
-		nil)
+	mClient.On("CreateIssueLink", "DEV-0000",
+		"[DEV-0000] updated components versions [alpha-zeta][build/1.5.0-SNAPSHOT.377]",
+		"https://jenkins.example.com/job/alpha-zeta/job/MASTER-Build-alpha-zeta/890/console").Return(
+		errors.New("create-link-failure"))
 
 	jim := &codebaseApi.JiraIssueMetadata{
 		ObjectMeta: metaV1.ObjectMeta{
@@ -45,7 +47,7 @@ func TestPutIssueWebLink_ServeRequest_ShouldFail(t *testing.T) {
 			Namespace: "fake-namespace",
 		},
 		Spec: codebaseApi.JiraIssueMetadataSpec{
-			Payload: "{}",
+			Payload: "{\n        \"components\": \"control-plane-gerrit\",\n        \"issuesLinks\": [\n            {\n                \"ticket\": \"DEV-0000\",\n                \"title\": \"[DEV-0000] updated components versions [alpha-zeta][build/1.5.0-SNAPSHOT.377]\",\n                \"url\": \"https://jenkins.example.com/job/alpha-zeta/job/MASTER-Build-alpha-zeta/890/console\"\n            }\n        ],\n        \"fixVersions\": \"alpha-zeta-1.5.0\"\n    }",
 		},
 	}
 
@@ -54,8 +56,6 @@ func TestPutIssueWebLink_ServeRequest_ShouldFail(t *testing.T) {
 	}
 
 	err := piwl.ServeRequest(jim)
-	assert.Error(t, err)
-	if !strings.Contains(err.Error(), "issuesLinks is a mandatory field in payload") {
-		t.Fatalf("wrong error returned: %s", err.Error())
-	}
+	assert.NoError(t, err)
+	assert.Error(t, jim.Status.Error)
 }

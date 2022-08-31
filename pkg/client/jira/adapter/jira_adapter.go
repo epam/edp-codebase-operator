@@ -1,15 +1,18 @@
 package adapter
 
 import (
+	"errors"
 	"fmt"
-	"github.com/andygrunwald/go-jira"
-	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	"regexp"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"strconv"
+
+	"github.com/andygrunwald/go-jira"
+	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 var log = ctrl.Log.WithName("gojira_adapter")
+
+var ErrNotFound = errors.New("404")
 
 type GoJiraAdapter struct {
 	client jira.Client
@@ -35,15 +38,15 @@ func (a GoJiraAdapter) GetIssueMetadata(projectKey string) (*jira.CreateMetaInfo
 	return meta, nil
 }
 
-func (a GoJiraAdapter) GetIssueType(issueId string) (*string, error) {
+func (a GoJiraAdapter) GetIssueType(issueId string) (string, error) {
 	logv := log.WithValues("issueId", issueId)
 	logv.V(2).Info("start GetIssueType method.")
 	issue, _, err := a.client.Issue.Get(issueId, nil)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	logv.Info("end GetIssueType method.")
-	return util.GetStringP(issue.Fields.Type.Name), nil
+	return issue.Fields.Type.Name, nil
 }
 
 func (a GoJiraAdapter) GetProjectInfo(issueId string) (*jira.Project, error) {
@@ -51,6 +54,10 @@ func (a GoJiraAdapter) GetProjectInfo(issueId string) (*jira.Project, error) {
 	logv.V(2).Info("start GetProjectInfo method.")
 	issueResp, _, err := a.client.Issue.Get(issueId, nil)
 	if err != nil {
+		if err.Error() == "404" {
+			return nil, ErrNotFound
+		}
+
 		return nil, err
 	}
 	logv.V(2).Info("project info has been fetched.", "id", issueResp.Fields.Project.ID)

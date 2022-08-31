@@ -6,7 +6,6 @@ import (
 
 	"github.com/andygrunwald/go-jira"
 	"github.com/epam/edp-codebase-operator/v2/pkg/client/jira/dto"
-	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
 )
@@ -106,7 +105,7 @@ func TestGoJiraAdapter_GetIssueType_Pass(t *testing.T) {
 	}
 	issue, err := jc.GetIssueType("issueId")
 	assert.NoError(t, err)
-	assert.Equal(t, issue, util.GetStringP("bug"))
+	assert.Equal(t, issue, "bug")
 }
 
 func TestGoJiraAdapter_GetIssueType_Fail(t *testing.T) {
@@ -118,7 +117,7 @@ func TestGoJiraAdapter_GetIssueType_Fail(t *testing.T) {
 	}
 	issue, err := jc.GetIssueType("issueId")
 	assert.Error(t, err)
-	assert.Nil(t, issue)
+	assert.Equal(t, "", issue)
 }
 
 func TestGoJiraAdapter_GetProjectInfo_Pass(t *testing.T) {
