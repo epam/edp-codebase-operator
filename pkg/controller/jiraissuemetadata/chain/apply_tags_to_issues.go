@@ -1,6 +1,9 @@
 package chain
 
 import (
+	"fmt"
+
+	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
@@ -25,7 +28,8 @@ func (h ApplyTagsToIssues) ServeRequest(metadata *codebaseApi.JiraIssueMetadata)
 	body := createRequestBody(requestPayload)
 	for _, ticket := range metadata.Spec.Tickets {
 		if err := h.client.ApplyTagsToIssue(ticket, body); err != nil {
-			return errors.Wrapf(err, "couldn't apply tags to issue %v", ticket)
+			metadata.Status.Error = multierror.Append(metadata.Status.Error,
+				fmt.Errorf("couldn't apply tags to issue %s, err: %w", ticket, err))
 		}
 	}
 

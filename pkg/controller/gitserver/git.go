@@ -2,7 +2,6 @@ package gitserver
 
 import (
 	"fmt"
-	"io/ioutil"
 	netHttp "net/http"
 	"net/url"
 	"os"
@@ -680,7 +679,7 @@ func isBranchExists(name string, branches storer.ReferenceIter) (bool, error) {
 func initAuth(key, user string) (string, error) {
 	log.Info("Initializing auth", "user", user)
 
-	keyFile, err := ioutil.TempFile("", "sshkey")
+	keyFile, err := os.CreateTemp("", "sshkey")
 	if err != nil {
 		return "", errors.Wrap(err, "unable to create temp file for ssh key")
 	}

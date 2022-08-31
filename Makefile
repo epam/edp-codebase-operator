@@ -37,6 +37,14 @@ SHELL=/bin/bash -o pipefail -o errexit
 help:  ## Display this help
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z0-9_-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 
+.PHONY: manifests
+manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
+	$(CONTROLLER_GEN) crd paths="./..." output:crd:artifacts:config=deploy-templates/crds
+
+.PHONY: generate
+generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
+	$(CONTROLLER_GEN) rbac:roleName=manager-role object paths="./..."
+
 .PHONY: validate-docs
 validate-docs: api-docs helm-docs  ## Validate helm and api docs
 	@git diff -s --exit-code deploy-templates/README.md || (echo "Run 'make helm-docs' to address the issue." && git diff && exit 1)
@@ -58,7 +66,7 @@ lint: golangci-lint ## Run go lint
 
 # Run tests
 test: fmt vet
-	go test ./... -coverprofile=coverage.out `go list ./...`
+	KUBECONFIG=${CURRENT_DIR}/hack/kubecfg-stub.yaml go test ./... -coverprofile=coverage.out `go list ./...`
 
 fmt:  ## Run go fmt
 	go fmt ./...
