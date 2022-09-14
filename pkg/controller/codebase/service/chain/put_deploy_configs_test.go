@@ -2,7 +2,6 @@ package chain
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 	"testing"
@@ -22,7 +21,7 @@ import (
 )
 
 func TestPutDeployConfigs_ShouldPass(t *testing.T) {
-	dir, err := ioutil.TempDir("/tmp", "codebase")
+	dir, err := os.MkdirTemp("/tmp", "codebase")
 	if err != nil {
 		t.Fatalf("unable to create temp directory for testing")
 	}
@@ -136,7 +135,7 @@ func TestPutDeployConfigs_ShouldPass(t *testing.T) {
 }
 
 func TestPutDeployConfigs_ShouldFailOnGetGerritPort(t *testing.T) {
-	dir, err := ioutil.TempDir("/tmp", "codebase")
+	dir, err := os.MkdirTemp("/tmp", "codebase")
 	if err != nil {
 		t.Fatalf("unable to create temp directory for testing")
 	}

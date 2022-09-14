@@ -7,7 +7,6 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"testing"
 
@@ -62,7 +61,7 @@ func TestPutProjectGerrit_ShouldPassForPushedTemplate(t *testing.T) {
 }
 
 func TestPutProjectGerrit_ShouldFailToRunSSHCommand(t *testing.T) {
-	dir, err := ioutil.TempDir("/tmp", "codebase")
+	dir, err := os.MkdirTemp("/tmp", "codebase")
 	if err != nil {
 		t.Fatalf("unable to create temp directory for testing")
 	}
@@ -187,7 +186,6 @@ func TestPutProjectGerrit_ShouldFailToRunSSHCommand(t *testing.T) {
 }
 
 func TestPutProjectGerrit_ShouldFailToGetConfgimap(t *testing.T) {
-
 	c := &codebaseApi.Codebase{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      fakeName,
@@ -246,7 +244,7 @@ func TestPutProjectGerrit_ShouldFailToCreateRepo(t *testing.T) {
 }
 
 func TestPutProjectGerrit_ShouldFailToGetGerritPort(t *testing.T) {
-	dir, err := ioutil.TempDir("/tmp", "codebase")
+	dir, err := os.MkdirTemp("/tmp", "codebase")
 	if err != nil {
 		t.Fatalf("unable to create temp directory for testing")
 	}
@@ -290,7 +288,7 @@ func TestPutProjectGerrit_ShouldFailToGetGerritPort(t *testing.T) {
 }
 
 func TestPutProjectGerrit_ShouldFailToGetUserSettings(t *testing.T) {
-	dir, err := ioutil.TempDir("/tmp", "codebase")
+	dir, err := os.MkdirTemp("/tmp", "codebase")
 	if err != nil {
 		t.Fatalf("unable to create temp directory for testing")
 	}
@@ -344,7 +342,7 @@ func TestPutProjectGerrit_ShouldFailToGetUserSettings(t *testing.T) {
 }
 
 func TestPutProjectGerrit_ShouldFailToSetVCSIntegration(t *testing.T) {
-	dir, err := ioutil.TempDir("/tmp", "codebase")
+	dir, err := os.MkdirTemp("/tmp", "codebase")
 	if err != nil {
 		t.Fatalf("unable to create temp directory for testing")
 	}
@@ -404,7 +402,7 @@ func TestPutProjectGerrit_ShouldFailToSetVCSIntegration(t *testing.T) {
 }
 
 func TestPutProjectGerrit_ShouldFailedOnInitialProjectProvisioning(t *testing.T) {
-	dir, err := ioutil.TempDir("/tmp", "codebase")
+	dir, err := os.MkdirTemp("/tmp", "codebase")
 	if err != nil {
 		t.Fatalf("unable to create temp directory for testing")
 	}
@@ -485,7 +483,7 @@ func TestPutProjectGerrit_ShouldFailedOnInitialProjectProvisioning(t *testing.T)
 }
 
 func TestPutProjectGerrit_pushToGerrit_ShouldPass(t *testing.T) {
-	dir, err := ioutil.TempDir("/tmp", "codebase")
+	dir, err := os.MkdirTemp("/tmp", "codebase")
 	if err != nil {
 		t.Fatal("unable to create temp directory for testing")
 	}
@@ -515,7 +513,7 @@ func TestPutProjectGerrit_pushToGerrit_ShouldFailToAddRemoteLink(t *testing.T) {
 }
 
 func TestPutProjectGerrit_pushToGerrit_ShouldFailOnPush(t *testing.T) {
-	dir, err := ioutil.TempDir("/tmp", "codebase")
+	dir, err := os.MkdirTemp("/tmp", "codebase")
 	if err != nil {
 		t.Fatal("unable to create temp directory for testing")
 	}
@@ -805,7 +803,7 @@ func TestPutProjectGerrit_tryToSquashCommitsShouldFailOnCommitChanges(t *testing
 }
 
 func TestPutProjectGerrit_tryToCloneShouldPassWithExistingRepo(t *testing.T) {
-	dir, err := ioutil.TempDir("/tmp", "codebase")
+	dir, err := os.MkdirTemp("/tmp", "codebase")
 	if err != nil {
 		t.Fatal("unable to create temp directory for testing")
 	}

@@ -2,7 +2,6 @@ package util
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"testing"
 
@@ -11,7 +10,7 @@ import (
 )
 
 func TestCopyTemplate_HelmTemplates_ShouldPass(t *testing.T) {
-	testDir, err := ioutil.TempDir("/tmp", "codebase")
+	testDir, err := os.MkdirTemp("/tmp", "codebase")
 	if err != nil {
 		t.Fatalf("unable to create temp directory for testing")
 	}
@@ -33,7 +32,7 @@ func TestCopyTemplate_HelmTemplates_ShouldPass(t *testing.T) {
 		t.Fatalf("unable to check test file")
 	}
 	// read the whole file at once
-	b, err := ioutil.ReadFile(chf)
+	b, err := os.ReadFile(chf)
 	if err != nil {
 		t.Fatalf("unable to read test file")
 	}
@@ -41,7 +40,7 @@ func TestCopyTemplate_HelmTemplates_ShouldPass(t *testing.T) {
 }
 
 func TestCopyTemplate_OpenShiftTemplates_ShouldPass(t *testing.T) {
-	testDir, err := ioutil.TempDir("/tmp", "codebase")
+	testDir, err := os.MkdirTemp("/tmp", "codebase")
 	if err != nil {
 		t.Fatalf("unable to create temp directory for testing")
 	}
@@ -63,7 +62,7 @@ func TestCopyTemplate_OpenShiftTemplates_ShouldPass(t *testing.T) {
 		t.Fatalf("unable to check test file")
 	}
 
-	b, err := ioutil.ReadFile(chf)
+	b, err := os.ReadFile(chf)
 	if err != nil {
 		t.Fatalf("unable to read test file")
 	}
@@ -71,7 +70,7 @@ func TestCopyTemplate_OpenShiftTemplates_ShouldPass(t *testing.T) {
 }
 
 func TestCopyTemplate_ShouldNotOverwriteExistingDeploymentTemaplates(t *testing.T) {
-	testDir, err := ioutil.TempDir("/tmp", "codebase")
+	testDir, err := os.MkdirTemp("/tmp", "codebase")
 	if err != nil {
 		t.Fatal("unable to create temp directory for testing")
 	}
@@ -86,7 +85,7 @@ func TestCopyTemplate_ShouldNotOverwriteExistingDeploymentTemaplates(t *testing.
 }
 
 func TestCopyTemplate_ShouldFailOnUnsupportedDeploymemntType(t *testing.T) {
-	testDir, err := ioutil.TempDir("/tmp", "codebase")
+	testDir, err := os.MkdirTemp("/tmp", "codebase")
 	if err != nil {
 		t.Fatal("unable to create temp directory for testing")
 	}

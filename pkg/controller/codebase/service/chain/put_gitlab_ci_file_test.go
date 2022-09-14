@@ -2,7 +2,6 @@ package chain
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 	"testing"
@@ -22,7 +21,7 @@ import (
 )
 
 func TestPutGitlabCiFile_ShouldPass(t *testing.T) {
-	dir, err := ioutil.TempDir("/tmp", "codebase")
+	dir, err := os.MkdirTemp("/tmp", "codebase")
 	if err != nil {
 		t.Fatalf("unable to create temp directory for testing")
 	}
@@ -236,7 +235,7 @@ func TestPutGitlabCiFile_gitlabCiFileExistsShouldReturnError(t *testing.T) {
 }
 
 func TestParseTemplate_ShouldPass(t *testing.T) {
-	tempDir, err := ioutil.TempDir("/tmp/", "temp")
+	tempDir, err := os.MkdirTemp("/tmp/", "temp")
 	if err != nil {
 		t.Errorf("create tempDir: %v", err)
 	}

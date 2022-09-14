@@ -1,7 +1,6 @@
 package template
 
 import (
-	"io/ioutil"
 	"os"
 	"strings"
 	"testing"
@@ -22,7 +21,7 @@ const (
 )
 
 func TestPrepareTemplates_ShouldPass(t *testing.T) {
-	dir, err := ioutil.TempDir("/tmp", "codebase")
+	dir, err := os.MkdirTemp("/tmp", "codebase")
 	if err != nil {
 		t.Fatalf("unable to create temp directory for testing")
 	}
@@ -106,7 +105,7 @@ func TestPrepareTemplates_ShouldFailOnGetProjectUrl(t *testing.T) {
 }
 
 func TestPrepareGitLabCITemplates(t *testing.T) {
-	dir, err := ioutil.TempDir("/tmp", "codebase")
+	dir, err := os.MkdirTemp("/tmp", "codebase")
 	if err != nil {
 		t.Fatalf("unable to create temp directory for testing")
 	}

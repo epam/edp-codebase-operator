@@ -1,7 +1,6 @@
 package chain
 
 import (
-	"io/ioutil"
 	"os"
 	"strings"
 	"testing"
@@ -15,7 +14,7 @@ import (
 )
 
 func TestCleaner_ShouldPass(t *testing.T) {
-	dir, err := ioutil.TempDir("/tmp", "codebase")
+	dir, err := os.MkdirTemp("/tmp", "codebase")
 	if err != nil {
 		t.Fatalf("unable to create temp directory for testing")
 	}
@@ -52,7 +51,7 @@ func TestCleaner_ShouldPass(t *testing.T) {
 }
 
 func TestCleaner_ShouldNotFailedIfSecretNotFound(t *testing.T) {
-	dir, err := ioutil.TempDir("/tmp", "codebase")
+	dir, err := os.MkdirTemp("/tmp", "codebase")
 	if err != nil {
 		t.Fatalf("unable to create temp directory for testing")
 	}
@@ -84,7 +83,7 @@ func TestCleaner_ShouldNotFailedIfSecretNotFound(t *testing.T) {
 }
 
 func TestCleaner_ShouldFail(t *testing.T) {
-	dir, err := ioutil.TempDir("/tmp", "codebase")
+	dir, err := os.MkdirTemp("/tmp", "codebase")
 	if err != nil {
 		t.Fatalf("unable to create temp directory for testing")
 	}

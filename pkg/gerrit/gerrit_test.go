@@ -6,7 +6,6 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"strings"
@@ -73,7 +72,7 @@ func TestSShInit_ShouldFailForIncorrectRSAPKey(t *testing.T) {
 }
 
 func TestAddRemoteLinkToGerrit_ShouldPass(t *testing.T) {
-	dir, err := ioutil.TempDir("/tmp", "codebase")
+	dir, err := os.MkdirTemp("/tmp", "codebase")
 	if err != nil {
 		t.Fatal("unable to create temp directory for testing")
 	}
@@ -91,7 +90,7 @@ func TestAddRemoteLinkToGerrit_ShouldPass(t *testing.T) {
 
 	err = AddRemoteLinkToGerrit(dir, "fake-host", 22, "appName", logr.DiscardLogger{})
 	assert.NoError(t, err)
-	b, err := ioutil.ReadFile(fmt.Sprintf("%v/.git/config", dir))
+	b, err := os.ReadFile(fmt.Sprintf("%v/.git/config", dir))
 	if err != nil {
 		t.Error("Unable to read test file with git config")
 	}
@@ -99,7 +98,7 @@ func TestAddRemoteLinkToGerrit_ShouldPass(t *testing.T) {
 }
 
 func TestAddRemoteLinkToGerrit_ShouldPassWithErrRemoteNotFound(t *testing.T) {
-	dir, err := ioutil.TempDir("/tmp", "codebase")
+	dir, err := os.MkdirTemp("/tmp", "codebase")
 	if err != nil {
 		t.Fatal("unable to create temp directory for testing")
 	}
@@ -110,7 +109,7 @@ func TestAddRemoteLinkToGerrit_ShouldPassWithErrRemoteNotFound(t *testing.T) {
 
 	err = AddRemoteLinkToGerrit(dir, "fake-host", 22, "appName", logr.DiscardLogger{})
 	assert.NoError(t, err)
-	b, err := ioutil.ReadFile(fmt.Sprintf("%v/.git/config", dir))
+	b, err := os.ReadFile(fmt.Sprintf("%v/.git/config", dir))
 	if err != nil {
 		t.Error("Unable to read test file with git config")
 	}
@@ -118,7 +117,7 @@ func TestAddRemoteLinkToGerrit_ShouldPassWithErrRemoteNotFound(t *testing.T) {
 }
 
 func TestAddRemoteLinkToGerrit_ShouldFail(t *testing.T) {
-	dir, err := ioutil.TempDir("/tmp", "codebase")
+	dir, err := os.MkdirTemp("/tmp", "codebase")
 	if err != nil {
 		t.Fatal("unable to create temp directory for testing")
 	}
@@ -129,7 +128,7 @@ func TestAddRemoteLinkToGerrit_ShouldFail(t *testing.T) {
 
 	err = AddRemoteLinkToGerrit(dir, "fake-host", 22, "appName", logr.DiscardLogger{})
 	assert.NoError(t, err)
-	b, err := ioutil.ReadFile(fmt.Sprintf("%v/.git/config", dir))
+	b, err := os.ReadFile(fmt.Sprintf("%v/.git/config", dir))
 	if err != nil {
 		t.Error("Unable to read test file with git config")
 	}

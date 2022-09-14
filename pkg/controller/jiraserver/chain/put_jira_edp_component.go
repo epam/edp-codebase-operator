@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 
 	"github.com/pkg/errors"
@@ -77,7 +77,7 @@ func getIcon() (*string, error) {
 		return nil, err
 	}
 	reader := bufio.NewReader(f)
-	content, err := ioutil.ReadAll(reader)
+	content, err := io.ReadAll(reader)
 	if err != nil {
 		return nil, err
 	}

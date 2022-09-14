@@ -3,7 +3,7 @@ package util
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
+	"io/fs"
 	"os"
 
 	"github.com/pkg/errors"
@@ -26,7 +26,7 @@ func CreateDirectory(path string) error {
 func CopyFiles(src, dest string) error {
 	log.Info("Start copying files", "src", src, "dest", dest)
 
-	files, err := ioutil.ReadDir(src)
+	files, err := os.ReadDir(src)
 	if err != nil {
 		return err
 	}
@@ -35,12 +35,12 @@ func CopyFiles(src, dest string) error {
 		if f.IsDir() {
 			continue
 		}
-		input, err := ioutil.ReadFile(src + "/" + f.Name())
+		input, err := os.ReadFile(src + "/" + f.Name())
 		if err != nil {
 			return err
 		}
 
-		err = ioutil.WriteFile(fmt.Sprintf("%s/%s", dest, f.Name()), input, 0755)
+		err = os.WriteFile(fmt.Sprintf("%s/%s", dest, f.Name()), input, 0755)
 		if err != nil {
 			return err
 		}
@@ -54,12 +54,12 @@ func CopyFiles(src, dest string) error {
 func CopyFile(src, dest string) error {
 	log.Info("Start copying file", "src", src, "dest", dest)
 
-	input, err := ioutil.ReadFile(src)
+	input, err := os.ReadFile(src)
 	if err != nil {
 		return err
 	}
 
-	if err := ioutil.WriteFile(dest, input, 0755); err != nil {
+	if err := os.WriteFile(dest, input, 0755); err != nil {
 		return err
 	}
 	log.Info("File has been copied", "dest", dest)
@@ -86,7 +86,7 @@ func RemoveDirectory(path string) error {
 }
 
 func IsDirectoryEmpty(path string) bool {
-	files, err := ioutil.ReadDir(path)
+	files, err := os.ReadDir(path)
 	if err != nil {
 		log.Error(err, "unable to check directory")
 		return false
@@ -95,21 +95,21 @@ func IsDirectoryEmpty(path string) bool {
 }
 
 func ReplaceStringInFile(file, oldLine, newLine string) error {
-	input, err := ioutil.ReadFile(file)
+	input, err := os.ReadFile(file)
 	if err != nil {
 		return err
 	}
 
 	output := bytes.Replace(input, []byte(oldLine), []byte(newLine), -1)
 
-	if err = ioutil.WriteFile(file, output, 0666); err != nil {
+	if err = os.WriteFile(file, output, 0666); err != nil {
 		return err
 	}
 	return nil
 }
 
-func GetListFilesInDirectory(src string) ([]os.FileInfo, error) {
-	files, err := ioutil.ReadDir(src)
+func GetListFilesInDirectory(src string) ([]fs.DirEntry, error) {
+	files, err := os.ReadDir(src)
 	if err != nil {
 		return nil, err
 	}

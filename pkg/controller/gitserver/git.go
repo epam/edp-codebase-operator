@@ -2,7 +2,6 @@ package gitserver
 
 import (
 	"fmt"
-	"io/ioutil"
 	netHttp "net/http"
 	"net/url"
 	"os"
@@ -261,7 +260,7 @@ func (GitProvider) BareToNormal(path string) error {
 		return errors.Wrap(err, "unable to create .git folder")
 	}
 
-	files, err := ioutil.ReadDir(path)
+	files, err := os.ReadDir(path)
 	if err != nil {
 		return errors.Wrap(err, "unable to list dir")
 	}

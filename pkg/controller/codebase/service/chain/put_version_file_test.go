@@ -3,7 +3,6 @@ package chain
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"regexp"
 	"testing"
 
@@ -128,14 +127,6 @@ func TestWriteFile_MethodMustThrowAnException(t *testing.T) {
 
 	assert.NoError(t, rerr)
 	assert.Error(t, werr)
-}
-
-func getExecutableFilePath() string {
-	executableFilePath, err := os.Executable()
-	if err != nil {
-		println(err)
-	}
-	return filepath.Dir(executableFilePath)
 }
 
 func clear(path string) {

@@ -3,7 +3,6 @@ package chain
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 	"testing"
@@ -20,7 +19,7 @@ import (
 )
 
 func TestCloneGitProject_ShouldPass(t *testing.T) {
-	dir, err := ioutil.TempDir("/tmp", "codebase")
+	dir, err := os.MkdirTemp("/tmp", "codebase")
 	if err != nil {
 		t.Fatalf("unable to create temp directory for testing")
 	}
@@ -191,7 +190,7 @@ func TestCloneGitProject_GetSecretShouldFail(t *testing.T) {
 }
 
 func TestCloneGitProject_CloneRepositoryBySshShouldFail(t *testing.T) {
-	dir, err := ioutil.TempDir("/tmp", "codebase")
+	dir, err := os.MkdirTemp("/tmp", "codebase")
 	if err != nil {
 		t.Fatalf("unable to create temp directory for testing")
 	}
