@@ -1,6 +1,7 @@
 package chain
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strings"
@@ -12,20 +13,22 @@ import (
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/helper"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/repository"
-	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/service/chain/handler"
 	git "github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/platform"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
 type PutGitlabCiFile struct {
-	next   handler.CodebaseHandler
 	client client.Client
 	cr     repository.CodebaseRepository
 	git    git.Git
 }
 
-func (h PutGitlabCiFile) ServeRequest(c *codebaseApi.Codebase) error {
+func NewPutGitlabCiFile(client client.Client, cr repository.CodebaseRepository, git git.Git) *PutGitlabCiFile {
+	return &PutGitlabCiFile{client: client, cr: cr, git: git}
+}
+
+func (h *PutGitlabCiFile) ServeRequest(cxt context.Context, c *codebaseApi.Codebase) error {
 	rLog := log.WithValues("codebase_name", c.Name)
 	rLog.Info("start creating gitlab ci file...")
 
@@ -43,7 +46,7 @@ func (h PutGitlabCiFile) ServeRequest(c *codebaseApi.Codebase) error {
 
 	if exists {
 		log.Info("skip pushing gitlab ci file to Git provider. file already exists", "name", c.Name)
-		return nextServeOrNil(h.next, c)
+		return nil
 	}
 
 	if err := h.tryToPutGitlabCIFile(c); err != nil {
@@ -58,10 +61,10 @@ func (h PutGitlabCiFile) ServeRequest(c *codebaseApi.Codebase) error {
 	}
 
 	rLog.Info("end creating gitlab ci file...")
-	return nextServeOrNil(h.next, c)
+	return nil
 }
 
-func (h PutGitlabCiFile) tryToPutGitlabCIFile(c *codebaseApi.Codebase) error {
+func (h *PutGitlabCiFile) tryToPutGitlabCIFile(c *codebaseApi.Codebase) error {
 	if err := h.parseTemplate(c); err != nil {
 		return err
 	}
@@ -84,7 +87,7 @@ func (h PutGitlabCiFile) tryToPutGitlabCIFile(c *codebaseApi.Codebase) error {
 	return nil
 }
 
-func (h PutGitlabCiFile) pushChanges(projectPath, privateKey, user, defaultBranch string) error {
+func (h *PutGitlabCiFile) pushChanges(projectPath, privateKey, user, defaultBranch string) error {
 	if err := h.git.CommitChanges(projectPath, fmt.Sprintf("Add %v file", util.GitlabCi)); err != nil {
 		return err
 	}
@@ -96,7 +99,7 @@ func (h PutGitlabCiFile) pushChanges(projectPath, privateKey, user, defaultBranc
 	return nil
 }
 
-func (h PutGitlabCiFile) parseTemplate(c *codebaseApi.Codebase) error {
+func (h *PutGitlabCiFile) parseTemplate(c *codebaseApi.Codebase) error {
 	tp := fmt.Sprintf("%v/templates/gitlabci/%v/%v-%v.tmpl",
 		util.GetAssetsDir(),
 		platform.GetPlatformType(), strings.ToLower(*c.Spec.Framework), strings.ToLower(c.Spec.BuildTool))
@@ -126,14 +129,7 @@ func (h PutGitlabCiFile) parseTemplate(c *codebaseApi.Codebase) error {
 	return nil
 }
 
-func getEdpComponentName() string {
-	if platform.IsK8S() {
-		return platform.K8S
-	}
-	return platform.Openshift
-}
-
-func (h PutGitlabCiFile) gitlabCiFileExists(codebaseName, edpName string) (bool, error) {
+func (h *PutGitlabCiFile) gitlabCiFileExists(codebaseName, edpName string) (bool, error) {
 	ps, err := h.cr.SelectProjectStatusValue(codebaseName, edpName)
 	if err != nil {
 		return false, errors.Wrapf(err, "couldn't get project_status value for %v codebase", codebaseName)
@@ -165,4 +161,11 @@ func parseTemplate(templatePath, gitlabCiFile string, data interface{}) error {
 	}
 	log.Info("template has been rendered", "path", gitlabCiFile)
 	return nil
+}
+
+func getEdpComponentName() string {
+	if platform.IsK8S() {
+		return platform.K8S
+	}
+	return platform.Openshift
 }

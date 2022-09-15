@@ -14,7 +14,6 @@ import (
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/helper"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/repository"
-	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/service/chain/handler"
 	git "github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver"
 	"github.com/epam/edp-codebase-operator/v2/pkg/gerrit"
 	"github.com/epam/edp-codebase-operator/v2/pkg/model"
@@ -23,13 +22,16 @@ import (
 )
 
 type PutProjectGerrit struct {
-	next   handler.CodebaseHandler
 	client client.Client
 	cr     repository.CodebaseRepository
 	git    git.Git
 }
 
-func (h PutProjectGerrit) ServeRequest(c *codebaseApi.Codebase) error {
+func NewPutProjectGerrit(client client.Client, cr repository.CodebaseRepository, git git.Git) *PutProjectGerrit {
+	return &PutProjectGerrit{client: client, cr: cr, git: git}
+}
+
+func (h *PutProjectGerrit) ServeRequest(ctx context.Context, c *codebaseApi.Codebase) error {
 	rLog := log.WithValues("codebase_name", c.Name)
 	rLog.Info("Start putting Codebase...")
 	rLog.Info("codebase data", "spec", c.Spec)
@@ -49,7 +51,7 @@ func (h PutProjectGerrit) ServeRequest(c *codebaseApi.Codebase) error {
 	var status = []string{util.ProjectPushedStatus, util.ProjectTemplatesPushedStatus, util.ProjectVersionGoFilePushedStatus}
 	if util.ContainsString(status, *ps) {
 		log.Info("skip pushing to gerrit. project already pushed", "name", c.Name)
-		return nextServeOrNil(h.next, c)
+		return nil
 	}
 
 	if err := h.setIntermediateSuccessFields(c, codebaseApi.GerritRepositoryProvisioning); err != nil {
@@ -96,10 +98,10 @@ func (h PutProjectGerrit) ServeRequest(c *codebaseApi.Codebase) error {
 	}
 
 	rLog.Info("end creating project in Gerrit")
-	return nextServeOrNil(h.next, c)
+	return nil
 }
 
-func (h PutProjectGerrit) tryToPushProjectToGerrit(c *codebaseApi.Codebase, sshPort int32, codebaseName, workDir,
+func (h *PutProjectGerrit) tryToPushProjectToGerrit(c *codebaseApi.Codebase, sshPort int32, codebaseName, workDir,
 	namespace, branchName string, strategy codebaseApi.Strategy) error {
 	s, err := util.GetSecret(h.client, "gerrit-project-creator", namespace)
 	if err != nil {
@@ -137,7 +139,7 @@ func (h PutProjectGerrit) tryToPushProjectToGerrit(c *codebaseApi.Codebase, sshP
 	return nil
 }
 
-func (h PutProjectGerrit) replaceDefaultBranch(directory, defaultBranchName, newBranchName string) error {
+func (h *PutProjectGerrit) replaceDefaultBranch(directory, defaultBranchName, newBranchName string) error {
 	log.Info("Replace master branch with %s")
 
 	if err := h.git.RemoveBranch(directory, defaultBranchName); err != nil {
@@ -151,7 +153,7 @@ func (h PutProjectGerrit) replaceDefaultBranch(directory, defaultBranchName, new
 	return nil
 }
 
-func (h PutProjectGerrit) pushToGerrit(sshPost int32, idrsa, host, codebaseName, directory string, strategy codebaseApi.Strategy) error {
+func (h *PutProjectGerrit) pushToGerrit(sshPost int32, idrsa, host, codebaseName, directory string, strategy codebaseApi.Strategy) error {
 	log.Info("Start pushing project to Gerrit ", "codebase_name", codebaseName)
 	if err := gerrit.AddRemoteLinkToGerrit(directory, host, sshPost, codebaseName, log); err != nil {
 		return errors.Wrap(err, "couldn't add remote link to Gerrit")
@@ -167,7 +169,7 @@ func (h PutProjectGerrit) pushToGerrit(sshPost int32, idrsa, host, codebaseName,
 	return nil
 }
 
-func (h PutProjectGerrit) tryToCreateProjectInGerrit(sshPort int32, idrsa, host, codebaseName string) error {
+func (h *PutProjectGerrit) tryToCreateProjectInGerrit(sshPort int32, idrsa, host, codebaseName string) error {
 	log.Info("Start creating project in Gerrit", "codebase_name", codebaseName)
 	projectExist, err := gerrit.CheckProjectExist(sshPort, idrsa, host, codebaseName, log)
 	if err != nil {
@@ -184,8 +186,7 @@ func (h PutProjectGerrit) tryToCreateProjectInGerrit(sshPort int32, idrsa, host,
 	return nil
 }
 
-func (h PutProjectGerrit) tryToCloneRepo(repoUrl string, repositoryUsername *string, repositoryPassword *string, workDir, codebaseName string) error {
-
+func (h *PutProjectGerrit) tryToCloneRepo(repoUrl string, repositoryUsername *string, repositoryPassword *string, workDir, codebaseName string) error {
 	log.Info("Start cloning repository", "src", repoUrl, "dest", workDir)
 
 	if util.DoesDirectoryExist(workDir + "/.git") {
@@ -200,7 +201,7 @@ func (h PutProjectGerrit) tryToCloneRepo(repoUrl string, repositoryUsername *str
 	return nil
 }
 
-func (h PutProjectGerrit) tryToCreateProjectInVcs(us *model.UserSettings, codebaseName, namespace string) error {
+func (h *PutProjectGerrit) tryToCreateProjectInVcs(us *model.UserSettings, codebaseName, namespace string) error {
 	log.Info("Start project creation in VCS", "codebase_name", codebaseName)
 	if us.VcsIntegrationEnabled {
 		if err := vcs.СreateProjectInVcs(h.client, us, codebaseName, namespace); err != nil {
@@ -212,7 +213,7 @@ func (h PutProjectGerrit) tryToCreateProjectInVcs(us *model.UserSettings, codeba
 	return nil
 }
 
-func (h PutProjectGerrit) setIntermediateSuccessFields(c *codebaseApi.Codebase, action codebaseApi.ActionType) error {
+func (h *PutProjectGerrit) setIntermediateSuccessFields(c *codebaseApi.Codebase, action codebaseApi.ActionType) error {
 	c.Status = codebaseApi.CodebaseStatus{
 		Status:          util.StatusInProgress,
 		Available:       false,
@@ -233,22 +234,7 @@ func (h PutProjectGerrit) setIntermediateSuccessFields(c *codebaseApi.Codebase, 
 	return nil
 }
 
-func setFailedFields(c *codebaseApi.Codebase, a codebaseApi.ActionType, message string) {
-	c.Status = codebaseApi.CodebaseStatus{
-		Status:          util.StatusFailed,
-		Available:       false,
-		LastTimeUpdated: metaV1.Now(),
-		Username:        "system",
-		Action:          a,
-		Result:          codebaseApi.Error,
-		DetailedMessage: message,
-		Value:           "failed",
-		FailureCount:    c.Status.FailureCount,
-		Git:             c.Status.Git,
-	}
-}
-
-func (h PutProjectGerrit) tryToSquashCommits(workDir, codebaseName string, strategy codebaseApi.Strategy) error {
+func (h *PutProjectGerrit) tryToSquashCommits(workDir, codebaseName string, strategy codebaseApi.Strategy) error {
 	if strategy != codebaseApi.Create {
 		return nil
 	}
@@ -269,14 +255,14 @@ func (h PutProjectGerrit) tryToSquashCommits(workDir, codebaseName string, strat
 	return nil
 }
 
-func (h PutProjectGerrit) initialProjectProvisioning(c *codebaseApi.Codebase, rLog logr.Logger, wd string) error {
+func (h *PutProjectGerrit) initialProjectProvisioning(c *codebaseApi.Codebase, rLog logr.Logger, wd string) error {
 	if c.Spec.EmptyProject {
 		return h.emptyProjectProvisioning(wd, c.Name)
 	}
 	return h.notEmptyProjectProvisioning(c, rLog, wd)
 }
 
-func (h PutProjectGerrit) emptyProjectProvisioning(wd, codebaseName string) error {
+func (h *PutProjectGerrit) emptyProjectProvisioning(wd, codebaseName string) error {
 	log.Info("Start initial provisioning for empty project", "codebase_name", codebaseName)
 
 	if err := h.git.Init(wd); err != nil {
@@ -290,7 +276,7 @@ func (h PutProjectGerrit) emptyProjectProvisioning(wd, codebaseName string) erro
 	return nil
 }
 
-func (h PutProjectGerrit) notEmptyProjectProvisioning(c *codebaseApi.Codebase, rLog logr.Logger, wd string) error {
+func (h *PutProjectGerrit) notEmptyProjectProvisioning(c *codebaseApi.Codebase, rLog logr.Logger, wd string) error {
 	log.Info("Start initial provisioning for non-empty project", "codebase_name", c.Name)
 	ru, err := util.GetRepoUrl(c)
 	if err != nil {
@@ -321,4 +307,19 @@ func (h PutProjectGerrit) notEmptyProjectProvisioning(c *codebaseApi.Codebase, r
 		return errors.Wrap(err, "squash commits in a template repo has been failed")
 	}
 	return nil
+}
+
+func setFailedFields(c *codebaseApi.Codebase, a codebaseApi.ActionType, message string) {
+	c.Status = codebaseApi.CodebaseStatus{
+		Status:          util.StatusFailed,
+		Available:       false,
+		LastTimeUpdated: metaV1.Now(),
+		Username:        "system",
+		Action:          a,
+		Result:          codebaseApi.Error,
+		DetailedMessage: message,
+		Value:           "failed",
+		FailureCount:    c.Status.FailureCount,
+		Git:             c.Status.Git,
+	}
 }

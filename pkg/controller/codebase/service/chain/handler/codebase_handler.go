@@ -1,7 +1,11 @@
 package handler
 
-import codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
+import (
+	"context"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
+)
 
 type CodebaseHandler interface {
-	ServeRequest(c *codebaseApi.Codebase) error
+	ServeRequest(context.Context, *codebaseApi.Codebase) error
 }

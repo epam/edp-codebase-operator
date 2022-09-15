@@ -10,13 +10,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
-	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/service/chain/handler"
 	git "github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
 type CloneGitProject struct {
-	next   handler.CodebaseHandler
 	client client.Client
 	git    git.Git
 }
@@ -25,7 +23,11 @@ const (
 	repoNotReady = "NOT_READY"
 )
 
-func (h CloneGitProject) ServeRequest(c *codebaseApi.Codebase) error {
+func NewCloneGitProject(client client.Client, git git.Git) *CloneGitProject {
+	return &CloneGitProject{client: client, git: git}
+}
+
+func (h *CloneGitProject) ServeRequest(_ context.Context, c *codebaseApi.Codebase) error {
 	rLog := log.WithValues("codebase_name", c.Name)
 	rLog.Info("Start cloning project...")
 	if c.Spec.GitUrlPath != nil && *c.Spec.GitUrlPath == repoNotReady {
@@ -68,10 +70,10 @@ func (h CloneGitProject) ServeRequest(c *codebaseApi.Codebase) error {
 		}
 	}
 	rLog.Info("end cloning project")
-	return nextServeOrNil(h.next, c)
+	return nil
 }
 
-func (h CloneGitProject) setIntermediateSuccessFields(c *codebaseApi.Codebase, action codebaseApi.ActionType) error {
+func (h *CloneGitProject) setIntermediateSuccessFields(c *codebaseApi.Codebase, action codebaseApi.ActionType) error {
 	c.Status = codebaseApi.CodebaseStatus{
 		Status:          util.StatusInProgress,
 		Available:       false,

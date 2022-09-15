@@ -18,6 +18,7 @@ import (
 func TestDropJenkinsFolders_ServeRequest(t *testing.T) {
 	t.Parallel()
 
+	ctx := context.Background()
 	c := &codebaseApi.Codebase{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      fakeName,
@@ -68,15 +69,15 @@ func TestDropJenkinsFolders_ServeRequest(t *testing.T) {
 	scheme.AddKnownTypes(jenkinsApi.SchemeGroupVersion, &jenkinsApi.JenkinsFolder{}, jfl)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, jfl, cbl).Build()
 
-	djf := DropJenkinsFolders{
-		k8sClient: fakeCl,
-	}
+	djf := NewDropJenkinsFolders(
+		fakeCl,
+	)
 
-	err := djf.ServeRequest(c)
+	err := djf.ServeRequest(ctx, c)
 	assert.NoError(t, err)
 
 	jfr := &jenkinsApi.JenkinsFolder{}
-	if err := fakeCl.Get(context.TODO(),
+	if err := fakeCl.Get(ctx,
 		types.NamespacedName{
 			Name:      "another-jf",
 			Namespace: fakeNamespace,
@@ -87,13 +88,14 @@ func TestDropJenkinsFolders_ServeRequest(t *testing.T) {
 	assert.Equal(t, jfr.Labels["codebase"], "another-codebase")
 
 	jflr := &jenkinsApi.JenkinsFolderList{}
-	if err := fakeCl.List(context.TODO(), jflr); err != nil {
+	if err := fakeCl.List(ctx, jflr); err != nil {
 		t.Error("Unable to get JenkinsFolder")
 	}
 	assert.Equal(t, len(jflr.Items), 1)
 }
 
 func TestDropJenkinsFolders_ServeRequest_ShouldFailCodebaseExists(t *testing.T) {
+	ctx := context.Background()
 	c := &codebaseApi.Codebase{
 		TypeMeta: metaV1.TypeMeta{
 			Kind: "Codebase",
@@ -125,10 +127,10 @@ func TestDropJenkinsFolders_ServeRequest_ShouldFailCodebaseExists(t *testing.T) 
 	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, c, cbl, &codebaseApi.CodebaseBranch{})
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, cbl).Build()
 
-	djf := DropJenkinsFolders{
-		k8sClient: fakeCl,
-	}
+	djf := NewDropJenkinsFolders(
+		fakeCl,
+	)
 
-	err := djf.ServeRequest(c)
+	err := djf.ServeRequest(ctx, c)
 	assert.ErrorIs(t, err, ErrorBranchesExists(err.Error()))
 }

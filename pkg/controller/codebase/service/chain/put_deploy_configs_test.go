@@ -1,12 +1,13 @@
 package chain
 
 import (
+	"context"
 	"fmt"
 	"os"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	coreV1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -21,13 +22,18 @@ import (
 )
 
 func TestPutDeployConfigs_ShouldPass(t *testing.T) {
-	dir, err := os.MkdirTemp("/tmp", "codebase")
-	if err != nil {
-		t.Fatalf("unable to create temp directory for testing")
-	}
-	defer os.RemoveAll(dir)
+	ctx := context.Background()
 
-	os.Setenv("WORKING_DIR", dir)
+	dir, err := os.MkdirTemp("/tmp", "codebase")
+	require.NoError(t, err, "unable to create temp directory for testing")
+
+	defer func() {
+		err = os.RemoveAll(dir)
+		require.NoError(t, err)
+	}()
+
+	err = os.Setenv("WORKING_DIR", dir)
+	require.NoError(t, err)
 
 	c := &codebaseApi.Codebase{
 		ObjectMeta: metaV1.ObjectMeta{
@@ -105,7 +111,9 @@ func TestPutDeployConfigs_ShouldPass(t *testing.T) {
 
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, gs, ssh, cm, s).Build()
 
-	os.Setenv("ASSETS_DIR", "../../../../../build")
+	err = os.Setenv("ASSETS_DIR", "../../../../../build")
+	require.NoError(t, err)
+
 	var (
 		port int32 = 22
 		u          = "user"
@@ -124,24 +132,29 @@ func TestPutDeployConfigs_ShouldPass(t *testing.T) {
 	mGit.On("CommitChanges", wd, fmt.Sprintf("Add deployment templates for %v", c.Name)).Return(nil)
 	mGit.On("PushChanges", "fake", "project-creator", wd).Return(nil)
 
-	pdc := PutDeployConfigs{
-		client: fakeCl,
-		git:    mGit,
-		cr:     repository.NewK8SCodebaseRepository(fakeCl, c),
-	}
+	pdc := NewPutDeployConfigs(
+		fakeCl,
+		repository.NewK8SCodebaseRepository(fakeCl, c),
+		mGit,
+	)
 
-	err = pdc.ServeRequest(c)
+	err = pdc.ServeRequest(ctx, c)
 	assert.NoError(t, err)
 }
 
 func TestPutDeployConfigs_ShouldFailOnGetGerritPort(t *testing.T) {
-	dir, err := os.MkdirTemp("/tmp", "codebase")
-	if err != nil {
-		t.Fatalf("unable to create temp directory for testing")
-	}
-	defer os.RemoveAll(dir)
+	ctx := context.Background()
 
-	os.Setenv("WORKING_DIR", dir)
+	dir, err := os.MkdirTemp("/tmp", "codebase")
+	require.NoError(t, err, "unable to create temp directory for testing")
+
+	defer func() {
+		err = os.RemoveAll(dir)
+		require.NoError(t, err)
+	}()
+
+	err = os.Setenv("WORKING_DIR", dir)
+	require.NoError(t, err)
 
 	c := &codebaseApi.Codebase{
 		ObjectMeta: metaV1.ObjectMeta{
@@ -191,46 +204,54 @@ func TestPutDeployConfigs_ShouldFailOnGetGerritPort(t *testing.T) {
 
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, gs, ssh, cm).Build()
 
-	os.Setenv("ASSETS_DIR", "../../../../../build")
+	err = os.Setenv("ASSETS_DIR", "../../../../../build")
+	require.NoError(t, err)
 
-	pdc := PutDeployConfigs{
-		client: fakeCl,
-		cr:     repository.NewK8SCodebaseRepository(fakeCl, c),
-	}
+	pdc := NewPutDeployConfigs(
+		fakeCl,
+		repository.NewK8SCodebaseRepository(fakeCl, c),
+		nil,
+	)
 
-	err = pdc.ServeRequest(c)
+	err = pdc.ServeRequest(ctx, c)
+
 	assert.Error(t, err)
-	if !strings.Contains(err.Error(), "unable get gerrit port") {
-		t.Fatalf("wrong error returned: %s", err.Error())
-	}
+	assert.Contains(t, err.Error(), "unable get gerrit port", "wrong error returned")
 }
 
 func TestPutDeployConfigs_ServeRequest_Skip(t *testing.T) {
-	pdc := PutDeployConfigs{}
+	ctx := context.Background()
+	pdc := NewPutDeployConfigs(nil, nil, nil)
 	logger := mock.Logger{}
 	log = &logger
 	cb := &codebaseApi.Codebase{
 		Spec: codebaseApi.CodebaseSpec{DisablePutDeployTemplates: true},
 	}
 	expectedLog := "skip of putting deploy templates to codebase due to specified flag"
-	err := pdc.ServeRequest(cb)
+
+	err := pdc.ServeRequest(ctx, cb)
 	assert.NoError(t, err)
+
 	_, ok := logger.InfoMessages[expectedLog]
 	assert.True(t, ok)
 
 	delete(logger.InfoMessages, expectedLog)
 
 	pdctp := PutDeployConfigsToGitProvider{}
-	err = pdctp.ServeRequest(cb)
+
+	err = pdctp.ServeRequest(ctx, cb)
 	assert.NoError(t, err)
+
 	_, ok = logger.InfoMessages[expectedLog]
 	assert.True(t, ok)
 
 	delete(logger.InfoMessages, expectedLog)
 
 	pdGitlab := PutGitlabCiDeployConfigs{}
-	err = pdGitlab.ServeRequest(cb)
+
+	err = pdGitlab.ServeRequest(ctx, cb)
 	assert.NoError(t, err)
+
 	_, ok = logger.InfoMessages[expectedLog]
 	assert.True(t, ok)
 }

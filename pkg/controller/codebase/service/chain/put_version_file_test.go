@@ -9,6 +9,7 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/dchest/uniuri"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	v1K8s "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -47,12 +48,13 @@ func TestVersionFileExists_VersionFileMustExist(t *testing.T) {
 	db, mock, _ := sqlmock.New()
 	defer db.Close()
 
-	h := PutVersionFile{
-		next: nil,
-		cr: repository.SqlCodebaseRepository{
+	h := NewPutVersionFile(
+		nil,
+		repository.SqlCodebaseRepository{
 			DB: db,
 		},
-	}
+		nil,
+	)
 
 	mock.ExpectPrepare(regexp.QuoteMeta(
 		fmt.Sprintf(`select project_status from "%v".codebase where name = $1 ;`, fakeEdpName)))
@@ -73,12 +75,13 @@ func TestVersionFileExists_AnErrorOccursDueToInvalidInputParameter(t *testing.T)
 	db, mock, _ := sqlmock.New()
 	defer db.Close()
 
-	h := PutVersionFile{
-		next: nil,
-		cr: repository.SqlCodebaseRepository{
+	h := NewPutVersionFile(
+		nil,
+		repository.SqlCodebaseRepository{
 			DB: db,
 		},
-	}
+		nil,
+	)
 
 	mock.ExpectPrepare(regexp.QuoteMeta(
 		fmt.Sprintf(`select project_status from "%v".codebase where name = $1 ;`, fakeEdpName)))
@@ -96,9 +99,9 @@ func TestVersionFileExists_AnErrorOccursDueToInvalidInputParameter(t *testing.T)
 }
 
 func TestCreateFile_FileMustBeCreated(t *testing.T) {
-	path := fmt.Sprintf("%v/%v", path, uniuri.NewLen(5))
-	err := createFile(path)
-	defer clear(path)
+	p := fmt.Sprintf("%v/%v", path, uniuri.NewLen(5))
+	err := createFile(p)
+	defer clear(p)
 
 	assert.NoError(t, err)
 }
@@ -110,23 +113,27 @@ func TestCreateFile_MethodMustThrowAnException(t *testing.T) {
 }
 
 func TestWriteFile_DataMustBeWritten(t *testing.T) {
-	path := fmt.Sprintf("%v/%v", path, uniuri.NewLen(5))
-	rerr := createFile(path)
-	defer clear(path)
-	werr := writeFile(path)
+	p := fmt.Sprintf("%v/%v", path, uniuri.NewLen(5))
 
-	assert.NoError(t, rerr)
-	assert.NoError(t, werr)
+	err := createFile(p)
+	require.NoError(t, err)
+
+	defer clear(p)
+
+	err = writeFile(p)
+	assert.NoError(t, err)
 }
 
 func TestWriteFile_MethodMustThrowAnException(t *testing.T) {
-	path := fmt.Sprintf("%v/%v", path, uniuri.NewLen(5))
-	rerr := createFile(path)
-	defer clear(path)
-	werr := writeFile("")
+	p := fmt.Sprintf("%v/%v", path, uniuri.NewLen(5))
 
-	assert.NoError(t, rerr)
-	assert.Error(t, werr)
+	err := createFile(p)
+	require.NoError(t, err)
+
+	defer clear(p)
+
+	err = writeFile("")
+	assert.Error(t, err)
 }
 
 func clear(path string) {
@@ -170,10 +177,10 @@ func TestTryToPutVersionFileMethod_MustBeFinishedSuccessfully(t *testing.T) {
 		},
 	}
 
-	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, gs)
-	scheme.AddKnownTypes(v1K8s.SchemeGroupVersion, secret, cm)
-	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(gs, secret, cm).Build()
+	testScheme := runtime.NewScheme()
+	testScheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, gs)
+	testScheme.AddKnownTypes(v1K8s.SchemeGroupVersion, secret, cm)
+	fakeCl := fake.NewClientBuilder().WithScheme(testScheme).WithRuntimeObjects(gs, secret, cm).Build()
 
 	//mock methods of git interface
 	mGit := new(mockGit.MockGit)
@@ -187,11 +194,12 @@ func TestTryToPutVersionFileMethod_MustBeFinishedSuccessfully(t *testing.T) {
 		"", nil)
 	mGit.On("CheckPermissions", "https://github.com/epmd-edp/go-go-go.git", util.GetPointerStringP(nil), util.GetPointerStringP(nil)).Return(
 		true)
-	h := PutVersionFile{
-		next:   nil,
-		client: fakeCl,
-		git:    mGit,
-	}
+
+	h := NewPutVersionFile(
+		fakeCl,
+		nil,
+		mGit,
+	)
 
 	c := &codebaseApi.Codebase{
 		ObjectMeta: metaV1.ObjectMeta{

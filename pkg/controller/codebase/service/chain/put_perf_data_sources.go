@@ -15,12 +15,10 @@ import (
 	perfAPi "github.com/epam/edp-perf-operator/v2/pkg/apis/edp/v1alpha1"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
-	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/service/chain/handler"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
 type PutPerfDataSources struct {
-	next   handler.CodebaseHandler
 	client client.Client
 }
 
@@ -33,17 +31,21 @@ const (
 	gitLabDataSourceType  = "GitLab"
 )
 
-func (h PutPerfDataSources) ServeRequest(c *codebaseApi.Codebase) error {
+func NewPutPerfDataSources(client client.Client) *PutPerfDataSources {
+	return &PutPerfDataSources{client: client}
+}
+
+func (h *PutPerfDataSources) ServeRequest(ctx context.Context, c *codebaseApi.Codebase) error {
 	rLog := log.WithValues("codebase_name", c.Name)
 	rLog.Info("start creating PERF data source cr...")
 	if err := h.tryToCreateDataSourceCr(c); err != nil {
 		return errors.Wrap(err, "couldn't create PerfDataSource CR")
 	}
 	rLog.Info("data source has been created")
-	return nextServeOrNil(h.next, c)
+	return nil
 }
 
-func (h PutPerfDataSources) tryToCreateDataSourceCr(c *codebaseApi.Codebase) error {
+func (h *PutPerfDataSources) tryToCreateDataSourceCr(c *codebaseApi.Codebase) error {
 	if c.Spec.Perf == nil {
 		log.Info("PERF server wasn't selected. skip creating PERF data source cr...",
 			"codebase_name", c.Name)
@@ -59,7 +61,7 @@ func (h PutPerfDataSources) tryToCreateDataSourceCr(c *codebaseApi.Codebase) err
 	return nil
 }
 
-func (h PutPerfDataSources) getCreateFactory() map[string]func(c *codebaseApi.Codebase, dataSourceType string) error {
+func (h *PutPerfDataSources) getCreateFactory() map[string]func(c *codebaseApi.Codebase, dataSourceType string) error {
 	return map[string]func(c *codebaseApi.Codebase, dataSourceType string) error{
 		jenkinsDataSourceType: h.tryToCreateJenkinsDataSource,
 		sonarDataSourceType:   h.tryToCreateSonarDataSource,
@@ -67,7 +69,7 @@ func (h PutPerfDataSources) getCreateFactory() map[string]func(c *codebaseApi.Co
 	}
 }
 
-func (h PutPerfDataSources) tryToCreateJenkinsDataSource(c *codebaseApi.Codebase, dataSourceType string) error {
+func (h *PutPerfDataSources) tryToCreateJenkinsDataSource(c *codebaseApi.Codebase, dataSourceType string) error {
 	ds := &perfAPi.PerfDataSourceJenkins{}
 	err := h.client.Get(context.TODO(), types.NamespacedName{
 		Name:      getDataSourceName(c.Name, dataSourceType),
@@ -82,7 +84,7 @@ func (h PutPerfDataSources) tryToCreateJenkinsDataSource(c *codebaseApi.Codebase
 	return nil
 }
 
-func (h PutPerfDataSources) tryToCreateSonarDataSource(c *codebaseApi.Codebase, dataSourceType string) error {
+func (h *PutPerfDataSources) tryToCreateSonarDataSource(c *codebaseApi.Codebase, dataSourceType string) error {
 	ds := &perfAPi.PerfDataSourceSonar{}
 	err := h.client.Get(context.TODO(), types.NamespacedName{
 		Name:      getDataSourceName(c.Name, dataSourceType),
@@ -97,7 +99,7 @@ func (h PutPerfDataSources) tryToCreateSonarDataSource(c *codebaseApi.Codebase, 
 	return nil
 }
 
-func (h PutPerfDataSources) tryToCreateGitLabDataSource(c *codebaseApi.Codebase, dataSourceType string) error {
+func (h *PutPerfDataSources) tryToCreateGitLabDataSource(c *codebaseApi.Codebase, dataSourceType string) error {
 	ds := &perfAPi.PerfDataSourceGitLab{}
 	err := h.client.Get(context.TODO(), types.NamespacedName{
 		Name:      getDataSourceName(c.Name, dataSourceType),
@@ -112,7 +114,7 @@ func (h PutPerfDataSources) tryToCreateGitLabDataSource(c *codebaseApi.Codebase,
 	return nil
 }
 
-func (h PutPerfDataSources) createJenkinsDataSource(c *codebaseApi.Codebase, dataSourceType string) error {
+func (h *PutPerfDataSources) createJenkinsDataSource(c *codebaseApi.Codebase, dataSourceType string) error {
 	config, err := h.getJenkinsDataSourceConfig(c.Spec.DefaultBranch, c.Name, c.Namespace)
 	if err != nil {
 		return err
@@ -142,7 +144,7 @@ func (h PutPerfDataSources) createJenkinsDataSource(c *codebaseApi.Codebase, dat
 	return nil
 }
 
-func (h PutPerfDataSources) createSonarDataSource(c *codebaseApi.Codebase, dataSourceType string) error {
+func (h *PutPerfDataSources) createSonarDataSource(c *codebaseApi.Codebase, dataSourceType string) error {
 	config, err := h.getSonarDataSourceConfig(c.Spec.DefaultBranch, c.Name, c.Namespace)
 	if err != nil {
 		return err
@@ -172,7 +174,7 @@ func (h PutPerfDataSources) createSonarDataSource(c *codebaseApi.Codebase, dataS
 	return nil
 }
 
-func (h PutPerfDataSources) createGitLabDataSource(c *codebaseApi.Codebase, dataSourceType string) error {
+func (h *PutPerfDataSources) createGitLabDataSource(c *codebaseApi.Codebase, dataSourceType string) error {
 	config, err := h.getGitLabDataSourceConfig(c)
 	if err != nil {
 		return err
@@ -202,7 +204,7 @@ func (h PutPerfDataSources) createGitLabDataSource(c *codebaseApi.Codebase, data
 	return nil
 }
 
-func (h PutPerfDataSources) getJenkinsDataSourceConfig(branch, codebase, namespace string) (*perfAPi.DataSourceJenkinsConfig, error) {
+func (h *PutPerfDataSources) getJenkinsDataSourceConfig(branch, codebase, namespace string) (*perfAPi.DataSourceJenkinsConfig, error) {
 	c, err := util.GetEdpComponent(h.client, jenkinsEdpComponentName, namespace)
 	if err != nil {
 		return nil, err
@@ -214,7 +216,7 @@ func (h PutPerfDataSources) getJenkinsDataSourceConfig(branch, codebase, namespa
 	}, nil
 }
 
-func (h PutPerfDataSources) getSonarDataSourceConfig(branch, codebase, namespace string) (*perfAPi.DataSourceSonarConfig, error) {
+func (h *PutPerfDataSources) getSonarDataSourceConfig(branch, codebase, namespace string) (*perfAPi.DataSourceSonarConfig, error) {
 	c, err := util.GetEdpComponent(h.client, sonarEdpComponentName, namespace)
 	if err != nil {
 		return nil, err
@@ -226,7 +228,7 @@ func (h PutPerfDataSources) getSonarDataSourceConfig(branch, codebase, namespace
 	}, nil
 }
 
-func (h PutPerfDataSources) getGitLabDataSourceConfig(codebase *codebaseApi.Codebase) (*perfAPi.DataSourceGitLabConfig, error) {
+func (h *PutPerfDataSources) getGitLabDataSourceConfig(codebase *codebaseApi.Codebase) (*perfAPi.DataSourceGitLabConfig, error) {
 	gs, err := util.GetGitServer(h.client, codebase.Spec.GitServer, codebase.Namespace)
 	if err != nil {
 		return nil, err

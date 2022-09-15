@@ -1,6 +1,7 @@
 package chain
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strings"
@@ -11,13 +12,11 @@ import (
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/helper"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/repository"
-	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/service/chain/handler"
 	git "github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
 type PutVersionFile struct {
-	next   handler.CodebaseHandler
 	client client.Client
 	cr     repository.CodebaseRepository
 	git    git.Git
@@ -29,10 +28,14 @@ const (
 	goLang          = "go"
 )
 
-func (h PutVersionFile) ServeRequest(c *codebaseApi.Codebase) error {
+func NewPutVersionFile(client client.Client, cr repository.CodebaseRepository, git git.Git) *PutVersionFile {
+	return &PutVersionFile{client: client, cr: cr, git: git}
+}
+
+func (h *PutVersionFile) ServeRequest(_ context.Context, c *codebaseApi.Codebase) error {
 	if strings.ToLower(c.Spec.Lang) != goLang ||
 		(strings.ToLower(c.Spec.Lang) == goLang && c.Spec.Versioning.Type == "edp") {
-		return nextServeOrNil(h.next, c)
+		return nil
 	}
 
 	rLog := log.WithValues("codebase_name", c.Name)
@@ -53,7 +56,7 @@ func (h PutVersionFile) ServeRequest(c *codebaseApi.Codebase) error {
 	if exists {
 		log.Info("skip pushing VERSION file to Git provider. file already exists",
 			"name", c.Name)
-		return nextServeOrNil(h.next, c)
+		return nil
 	}
 
 	if err := h.tryToPutVersionFile(c, util.GetWorkDir(c.Name, c.Namespace)); err != nil {
@@ -69,10 +72,10 @@ func (h PutVersionFile) ServeRequest(c *codebaseApi.Codebase) error {
 	}
 
 	rLog.Info("end putting VERSION file...")
-	return nextServeOrNil(h.next, c)
+	return nil
 }
 
-func (h PutVersionFile) versionFileExists(codebaseName, edpName string) (bool, error) {
+func (h *PutVersionFile) versionFileExists(codebaseName, edpName string) (bool, error) {
 	ps, err := h.cr.SelectProjectStatusValue(codebaseName, edpName)
 	if err != nil {
 		return false, errors.Wrapf(err, "couldn't get project_status value for %v codebase", codebaseName)
@@ -85,7 +88,7 @@ func (h PutVersionFile) versionFileExists(codebaseName, edpName string) (bool, e
 	return false, nil
 }
 
-func (h PutVersionFile) tryToPutVersionFile(c *codebaseApi.Codebase, projectPath string) error {
+func (h *PutVersionFile) tryToPutVersionFile(c *codebaseApi.Codebase, projectPath string) error {
 	path := fmt.Sprintf("%v/%v", projectPath, versionFileName)
 	if err := createFile(path); err != nil {
 		return errors.Wrapf(err, "couldn't create file %v", path)
@@ -123,7 +126,7 @@ func (h PutVersionFile) tryToPutVersionFile(c *codebaseApi.Codebase, projectPath
 	return nil
 }
 
-func (h PutVersionFile) pushChanges(projectPath, privateKey, user string) error {
+func (h *PutVersionFile) pushChanges(projectPath, privateKey, user string) error {
 	if err := h.git.CommitChanges(projectPath, fmt.Sprintf("Add %v file", versionFileName)); err != nil {
 		return err
 	}

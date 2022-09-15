@@ -1,24 +1,27 @@
 package chain
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
-	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/service/chain/handler"
 	"github.com/epam/edp-codebase-operator/v2/pkg/gerrit"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	"github.com/epam/edp-codebase-operator/v2/pkg/vcs"
 )
 
 type PutGerritReplication struct {
-	next   handler.CodebaseHandler
 	client client.Client
 }
 
-func (h PutGerritReplication) ServeRequest(c *codebaseApi.Codebase) error {
+func NewPutGerritReplication(client client.Client) *PutGerritReplication {
+	return &PutGerritReplication{client: client}
+}
+
+func (h *PutGerritReplication) ServeRequest(ctx context.Context, c *codebaseApi.Codebase) error {
 	rLog := log.WithValues("codebase_name", c.Name)
 	rLog.Info("Start setting Gerrit replication...")
 
@@ -27,10 +30,10 @@ func (h PutGerritReplication) ServeRequest(c *codebaseApi.Codebase) error {
 		return errors.Wrapf(err, "setup Gerrit replication for codebase %v has been failed", c.Name)
 	}
 	rLog.Info("Gerrit replication section finished successfully")
-	return nextServeOrNil(h.next, c)
+	return nil
 }
 
-func (h PutGerritReplication) tryToSetupGerritReplication(codebaseName, namespace string) error {
+func (h *PutGerritReplication) tryToSetupGerritReplication(codebaseName, namespace string) error {
 	us, err := util.GetUserSettings(h.client, namespace)
 	if err != nil {
 		return errors.Wrap(err, "unable get user settings settings")

@@ -1,6 +1,7 @@
 package chain
 
 import (
+	"context"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
@@ -13,6 +14,7 @@ import (
 	"github.com/go-git/go-git/v5"
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	coreV1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -25,7 +27,7 @@ import (
 )
 
 func TestPutProjectGerrit_ShouldPassForPushedTemplate(t *testing.T) {
-
+	ctx := context.Background()
 	c := &codebaseApi.Codebase{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      fakeName,
@@ -51,36 +53,40 @@ func TestPutProjectGerrit_ShouldPassForPushedTemplate(t *testing.T) {
 
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, cm).Build()
 
-	ppg := PutProjectGerrit{
-		client: fakeCl,
-		cr:     repository.NewK8SCodebaseRepository(fakeCl, c),
-	}
+	ppg := NewPutProjectGerrit(
+		fakeCl,
+		repository.NewK8SCodebaseRepository(fakeCl, c),
+		nil,
+	)
 
-	err := ppg.ServeRequest(c)
+	err := ppg.ServeRequest(ctx, c)
 	assert.NoError(t, err)
 }
 
 func TestPutProjectGerrit_ShouldFailToRunSSHCommand(t *testing.T) {
+	ctx := context.Background()
+
 	dir, err := os.MkdirTemp("/tmp", "codebase")
-	if err != nil {
-		t.Fatalf("unable to create temp directory for testing")
-	}
+	require.NoError(t, err, "unable to create temp directory for testing")
+
 	defer func() {
-		os.RemoveAll(dir)
+		err = os.RemoveAll(dir)
+		require.NoError(t, err)
+
 		os.Clearenv()
 	}()
 
-	os.Setenv("WORKING_DIR", dir)
+	err = os.Setenv("WORKING_DIR", dir)
+	require.NoError(t, err)
 
 	pk, err := rsa.GenerateKey(rand.Reader, 128)
-	if err != nil {
-		t.Error("Unable to generate test private key")
-	}
-	privkey_bytes := x509.MarshalPKCS1PrivateKey(pk)
-	privkey_pem := pem.EncodeToMemory(
+	require.NoError(t, err)
+
+	privkeyBytes := x509.MarshalPKCS1PrivateKey(pk)
+	privkeyPem := pem.EncodeToMemory(
 		&pem.Block{
 			Type:  "RSA PRIVATE KEY",
-			Bytes: privkey_bytes,
+			Bytes: privkeyBytes,
 		},
 	)
 
@@ -150,7 +156,7 @@ func TestPutProjectGerrit_ShouldFailToRunSSHCommand(t *testing.T) {
 			Namespace: fakeNamespace,
 		},
 		Data: map[string][]byte{
-			util.PrivateSShKeyName: []byte(privkey_pem),
+			util.PrivateSShKeyName: privkeyPem,
 		},
 	}
 
@@ -160,7 +166,9 @@ func TestPutProjectGerrit_ShouldFailToRunSSHCommand(t *testing.T) {
 
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, gs, ssh, cm, s).Build()
 
-	os.Setenv("ASSETS_DIR", "../../../../../build")
+	err = os.Setenv("ASSETS_DIR", "../../../../../build")
+	require.NoError(t, err)
+
 	var (
 		u = "user"
 		p = "pass"
@@ -174,18 +182,19 @@ func TestPutProjectGerrit_ShouldFailToRunSSHCommand(t *testing.T) {
 	mGit.On("Init", wd).Return(nil)
 	mGit.On("CommitChanges", wd, "Initial commit").Return(nil)
 
-	ppg := PutProjectGerrit{
-		client: fakeCl,
-		git:    mGit,
-		cr:     repository.NewK8SCodebaseRepository(fakeCl, c),
-	}
+	ppg := NewPutProjectGerrit(
+		fakeCl,
+		repository.NewK8SCodebaseRepository(fakeCl, c),
+		mGit,
+	)
 
-	err = ppg.ServeRequest(c)
+	err = ppg.ServeRequest(ctx, c)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "unable to run ssh command")
 }
 
 func TestPutProjectGerrit_ShouldFailToGetConfgimap(t *testing.T) {
+	ctx := context.Background()
 	c := &codebaseApi.Codebase{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      fakeName,
@@ -200,17 +209,19 @@ func TestPutProjectGerrit_ShouldFailToGetConfgimap(t *testing.T) {
 
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, cm).Build()
 
-	ppg := PutProjectGerrit{
-		client: fakeCl,
-		cr:     repository.NewK8SCodebaseRepository(fakeCl, c),
-	}
+	ppg := NewPutProjectGerrit(
+		fakeCl,
+		repository.NewK8SCodebaseRepository(fakeCl, c),
+		nil,
+	)
 
-	err := ppg.ServeRequest(c)
+	err := ppg.ServeRequest(ctx, c)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "couldn't get edp name: configmaps \"edp-config\" not found")
 }
 
 func TestPutProjectGerrit_ShouldFailToCreateRepo(t *testing.T) {
+	ctx := context.Background()
 	c := &codebaseApi.Codebase{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      fakeName,
@@ -238,22 +249,26 @@ func TestPutProjectGerrit_ShouldFailToCreateRepo(t *testing.T) {
 		cr:     repository.NewK8SCodebaseRepository(fakeCl, c),
 	}
 
-	err := ppg.ServeRequest(c)
+	err := ppg.ServeRequest(ctx, c)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "mkdir /home/codebase-operator:")
 }
 
 func TestPutProjectGerrit_ShouldFailToGetGerritPort(t *testing.T) {
+	ctx := context.Background()
+
 	dir, err := os.MkdirTemp("/tmp", "codebase")
-	if err != nil {
-		t.Fatalf("unable to create temp directory for testing")
-	}
+	require.NoError(t, err, "unable to create temp directory for testing")
+
 	defer func() {
-		os.RemoveAll(dir)
+		err = os.RemoveAll(dir)
+		require.NoError(t, err)
+
 		os.Clearenv()
 	}()
 
-	os.Setenv("WORKING_DIR", dir)
+	err = os.Setenv("WORKING_DIR", dir)
+	require.NoError(t, err)
 
 	c := &codebaseApi.Codebase{
 		ObjectMeta: metaV1.ObjectMeta{
@@ -277,27 +292,32 @@ func TestPutProjectGerrit_ShouldFailToGetGerritPort(t *testing.T) {
 
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, cm).Build()
 
-	ppg := PutProjectGerrit{
-		client: fakeCl,
-		cr:     repository.NewK8SCodebaseRepository(fakeCl, c),
-	}
+	ppg := NewPutProjectGerrit(
+		fakeCl,
+		repository.NewK8SCodebaseRepository(fakeCl, c),
+		nil,
+	)
 
-	err = ppg.ServeRequest(c)
+	err = ppg.ServeRequest(ctx, c)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "unable get gerrit port")
 }
 
 func TestPutProjectGerrit_ShouldFailToGetUserSettings(t *testing.T) {
+	ctx := context.Background()
+
 	dir, err := os.MkdirTemp("/tmp", "codebase")
-	if err != nil {
-		t.Fatalf("unable to create temp directory for testing")
-	}
+	require.NoError(t, err, "unable to create temp directory for testing")
+
 	defer func() {
-		os.RemoveAll(dir)
+		err = os.RemoveAll(dir)
+		require.NoError(t, err)
+
 		os.Clearenv()
 	}()
 
-	os.Setenv("WORKING_DIR", dir)
+	err = os.Setenv("WORKING_DIR", dir)
+	require.NoError(t, err)
 
 	c := &codebaseApi.Codebase{
 		ObjectMeta: metaV1.ObjectMeta{
@@ -331,27 +351,32 @@ func TestPutProjectGerrit_ShouldFailToGetUserSettings(t *testing.T) {
 
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, cm, gs).Build()
 
-	ppg := PutProjectGerrit{
-		client: fakeCl,
-		cr:     repository.NewK8SCodebaseRepository(fakeCl, c),
-	}
+	ppg := NewPutProjectGerrit(
+		fakeCl,
+		repository.NewK8SCodebaseRepository(fakeCl, c),
+		nil,
+	)
 
-	err = ppg.ServeRequest(c)
+	err = ppg.ServeRequest(ctx, c)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "unable get user settings settings")
 }
 
 func TestPutProjectGerrit_ShouldFailToSetVCSIntegration(t *testing.T) {
+	ctx := context.Background()
+
 	dir, err := os.MkdirTemp("/tmp", "codebase")
-	if err != nil {
-		t.Fatalf("unable to create temp directory for testing")
-	}
+	require.NoError(t, err, "unable to create temp directory for testing")
+
 	defer func() {
-		os.RemoveAll(dir)
+		err = os.RemoveAll(dir)
+		require.NoError(t, err)
+
 		os.Clearenv()
 	}()
 
-	os.Setenv("WORKING_DIR", dir)
+	err = os.Setenv("WORKING_DIR", dir)
+	require.NoError(t, err)
 
 	c := &codebaseApi.Codebase{
 		ObjectMeta: metaV1.ObjectMeta{
@@ -391,27 +416,32 @@ func TestPutProjectGerrit_ShouldFailToSetVCSIntegration(t *testing.T) {
 
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, cm, gs).Build()
 
-	ppg := PutProjectGerrit{
-		client: fakeCl,
-		cr:     repository.NewK8SCodebaseRepository(fakeCl, c),
-	}
+	ppg := NewPutProjectGerrit(
+		fakeCl,
+		repository.NewK8SCodebaseRepository(fakeCl, c),
+		nil,
+	)
 
-	err = ppg.ServeRequest(c)
+	err = ppg.ServeRequest(ctx, c)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "unable to create project in VCS")
 }
 
 func TestPutProjectGerrit_ShouldFailedOnInitialProjectProvisioning(t *testing.T) {
+	ctx := context.Background()
+
 	dir, err := os.MkdirTemp("/tmp", "codebase")
-	if err != nil {
-		t.Fatalf("unable to create temp directory for testing")
-	}
+	require.NoError(t, err, "unable to create temp directory for testing")
+
 	defer func() {
-		os.RemoveAll(dir)
+		err = os.RemoveAll(dir)
+		require.NoError(t, err)
+
 		os.Clearenv()
 	}()
 
-	os.Setenv("WORKING_DIR", dir)
+	err = os.Setenv("WORKING_DIR", dir)
+	require.NoError(t, err)
 
 	c := &codebaseApi.Codebase{
 		ObjectMeta: metaV1.ObjectMeta{
@@ -470,28 +500,31 @@ func TestPutProjectGerrit_ShouldFailedOnInitialProjectProvisioning(t *testing.T)
 
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, gs, cm).Build()
 
-	os.Setenv("ASSETS_DIR", "../../../../../build")
+	err = os.Setenv("ASSETS_DIR", "../../../../../build")
+	require.NoError(t, err)
 
-	ppg := PutProjectGerrit{
-		client: fakeCl,
-		cr:     repository.NewK8SCodebaseRepository(fakeCl, c),
-	}
+	ppg := NewPutProjectGerrit(
+		fakeCl,
+		repository.NewK8SCodebaseRepository(fakeCl, c),
+		nil,
+	)
 
-	err = ppg.ServeRequest(c)
+	err = ppg.ServeRequest(ctx, c)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "initial provisioning of codebase fake-name has been failed")
 }
 
 func TestPutProjectGerrit_pushToGerrit_ShouldPass(t *testing.T) {
 	dir, err := os.MkdirTemp("/tmp", "codebase")
-	if err != nil {
-		t.Fatal("unable to create temp directory for testing")
-	}
-	defer os.RemoveAll(dir)
+	require.NoError(t, err, "unable to create temp directory for testing")
 
-	if _, err = git.PlainInit(dir, false); err != nil {
-		t.Error("Unable to create test git repo")
-	}
+	defer func() {
+		err = os.RemoveAll(dir)
+		require.NoError(t, err)
+	}()
+
+	_, err = git.PlainInit(dir, false)
+	require.NoError(t, err, "unable to create test git repo")
 
 	mGit := new(mockGit.MockGit)
 	mGit.On("PushChanges", "idrsa", "project-creator", dir).Return(nil)
@@ -505,8 +538,8 @@ func TestPutProjectGerrit_pushToGerrit_ShouldPass(t *testing.T) {
 }
 
 func TestPutProjectGerrit_pushToGerrit_ShouldFailToAddRemoteLink(t *testing.T) {
+	ppg := NewPutProjectGerrit(nil, nil, nil)
 
-	ppg := PutProjectGerrit{}
 	err := ppg.pushToGerrit(22, "idrsa", "fake-host", "c-name", "/tmp", codebaseApi.Clone)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "couldn't add remote link to Gerrit")
@@ -514,21 +547,24 @@ func TestPutProjectGerrit_pushToGerrit_ShouldFailToAddRemoteLink(t *testing.T) {
 
 func TestPutProjectGerrit_pushToGerrit_ShouldFailOnPush(t *testing.T) {
 	dir, err := os.MkdirTemp("/tmp", "codebase")
-	if err != nil {
-		t.Fatal("unable to create temp directory for testing")
-	}
-	defer os.RemoveAll(dir)
+	require.NoError(t, err, "unable to create temp directory for testing")
 
-	if _, err = git.PlainInit(dir, false); err != nil {
-		t.Error("Unable to create test git repo")
-	}
+	defer func() {
+		err = os.RemoveAll(dir)
+		require.NoError(t, err)
+	}()
+
+	_, err = git.PlainInit(dir, false)
+	require.NoError(t, err, "unable to create test git repo")
 
 	mGit := new(mockGit.MockGit)
 	mGit.On("PushChanges", "idrsa", "project-creator", dir).Return(errors.New("FATAL: PUSH"))
 
-	ppg := PutProjectGerrit{
-		git: mGit,
-	}
+	ppg := NewPutProjectGerrit(
+		nil,
+		nil,
+		mGit,
+	)
 
 	err = ppg.pushToGerrit(22, "idrsa", "fake-host", "c-name", dir, codebaseApi.Clone)
 	assert.Error(t, err)
@@ -555,10 +591,11 @@ func TestPutProjectGerrit_initialProjectProvisioningForEmptyProjectShouldPass(t 
 	mGit.On("Init", "/tmp").Return(nil)
 	mGit.On("CommitChanges", "/tmp", "Initial commit").Return(nil)
 
-	ppg := PutProjectGerrit{
-		client: fakeCl,
-		git:    mGit,
-	}
+	ppg := NewPutProjectGerrit(
+		fakeCl,
+		nil,
+		mGit,
+	)
 
 	err := ppg.initialProjectProvisioning(c, logr.DiscardLogger{}, "/tmp")
 	assert.NoError(t, err)
@@ -568,9 +605,11 @@ func TestPutProjectGerrit_emptyProjectProvisioningShouldFailOnInit(t *testing.T)
 	mGit := new(mockGit.MockGit)
 	mGit.On("Init", "/tmp").Return(errors.New("FATAL:FAIL"))
 
-	ppg := PutProjectGerrit{
-		git: mGit,
-	}
+	ppg := NewPutProjectGerrit(
+		nil,
+		nil,
+		mGit,
+	)
 
 	err := ppg.emptyProjectProvisioning("/tmp", "c-name")
 	assert.Error(t, err)
@@ -582,9 +621,11 @@ func TestPutProjectGerrit_emptyProjectProvisioningShouldFailOnCommit(t *testing.
 	mGit.On("Init", "/tmp").Return(nil)
 	mGit.On("CommitChanges", "/tmp", "Initial commit").Return(errors.New("FATAL:FAIL"))
 
-	ppg := PutProjectGerrit{
-		git: mGit,
-	}
+	ppg := NewPutProjectGerrit(
+		nil,
+		nil,
+		mGit,
+	)
 
 	err := ppg.emptyProjectProvisioning("/tmp", "c-name")
 	assert.Error(t, err)
@@ -606,9 +647,11 @@ func TestPutProjectGerrit_notEmptyProjectProvisioningShouldFailOnGetRepoUrl(t *t
 
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c).Build()
 
-	ppg := PutProjectGerrit{
-		client: fakeCl,
-	}
+	ppg := NewPutProjectGerrit(
+		fakeCl,
+		nil,
+		nil,
+	)
 
 	err := ppg.notEmptyProjectProvisioning(c, logr.DiscardLogger{}, "/tmp")
 	assert.Error(t, err)
@@ -633,9 +676,11 @@ func TestPutProjectGerrit_notEmptyProjectProvisioningShouldFailOnGetRepoCreds(t 
 
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c).Build()
 
-	ppg := PutProjectGerrit{
-		client: fakeCl,
-	}
+	ppg := NewPutProjectGerrit(
+		fakeCl,
+		nil,
+		nil,
+	)
 
 	err := ppg.notEmptyProjectProvisioning(c, logr.DiscardLogger{}, "/tmp")
 	assert.Error(t, err)
@@ -677,10 +722,11 @@ func TestPutProjectGerrit_notEmptyProjectProvisioningShouldFailOnCheckPermission
 	mGit := new(mockGit.MockGit)
 	mGit.On("CheckPermissions", "link", &u, &p).Return(false)
 
-	ppg := PutProjectGerrit{
-		client: fakeCl,
-		git:    mGit,
-	}
+	ppg := NewPutProjectGerrit(
+		fakeCl,
+		nil,
+		mGit,
+	)
 
 	err := ppg.notEmptyProjectProvisioning(c, logr.DiscardLogger{}, "/tmp")
 	assert.Error(t, err)
@@ -724,10 +770,11 @@ func TestPutProjectGerrit_notEmptyProjectProvisioningShouldFailOnCloneRepo(t *te
 	mGit.On("CloneRepository", "link",
 		&u, &p, "/tmp").Return(errors.New("FATAL: FAIL"))
 
-	ppg := PutProjectGerrit{
-		client: fakeCl,
-		git:    mGit,
-	}
+	ppg := NewPutProjectGerrit(
+		fakeCl,
+		nil,
+		mGit,
+	)
 
 	err := ppg.notEmptyProjectProvisioning(c, logr.DiscardLogger{}, "/tmp")
 	assert.Error(t, err)
@@ -772,10 +819,11 @@ func TestPutProjectGerrit_notEmptyProjectProvisioningShouldFailOnSquash(t *testi
 		&u, &p, "/tmp").Return(nil)
 	mGit.On("Init", "/tmp").Return(errors.New("FATAL: FAIL"))
 
-	ppg := PutProjectGerrit{
-		client: fakeCl,
-		git:    mGit,
-	}
+	ppg := NewPutProjectGerrit(
+		fakeCl,
+		nil,
+		mGit,
+	)
 
 	err := ppg.notEmptyProjectProvisioning(c, logr.DiscardLogger{}, "/tmp")
 	assert.Error(t, err)
@@ -783,10 +831,9 @@ func TestPutProjectGerrit_notEmptyProjectProvisioningShouldFailOnSquash(t *testi
 }
 
 func TestPutProjectGerrit_tryToSquashCommitsShouldReturnNil(t *testing.T) {
-	ppg := PutProjectGerrit{}
-	if err := ppg.tryToSquashCommits("workDir", "codebaseName", codebaseApi.Clone); err != nil {
-		t.Fatal("Must not fail")
-	}
+	ppg := NewPutProjectGerrit(nil, nil, nil)
+	err := ppg.tryToSquashCommits("workDir", "codebaseName", codebaseApi.Clone)
+	assert.NoError(t, err)
 }
 
 func TestPutProjectGerrit_tryToSquashCommitsShouldFailOnCommitChanges(t *testing.T) {
@@ -794,9 +841,11 @@ func TestPutProjectGerrit_tryToSquashCommitsShouldFailOnCommitChanges(t *testing
 	mGit.On("Init", "workDir").Return(nil)
 	mGit.On("CommitChanges", "workDir", "Initial commit").Return(errors.New("FATAL: FAIL"))
 
-	ppg := PutProjectGerrit{
-		git: mGit,
-	}
+	ppg := NewPutProjectGerrit(
+		nil,
+		nil,
+		mGit,
+	)
 	err := ppg.tryToSquashCommits("workDir", "codebaseName", codebaseApi.Create)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "an error has occurred while committing all default content")
@@ -804,30 +853,30 @@ func TestPutProjectGerrit_tryToSquashCommitsShouldFailOnCommitChanges(t *testing
 
 func TestPutProjectGerrit_tryToCloneShouldPassWithExistingRepo(t *testing.T) {
 	dir, err := os.MkdirTemp("/tmp", "codebase")
-	if err != nil {
-		t.Fatal("unable to create temp directory for testing")
-	}
-	defer os.RemoveAll(dir)
+	require.NoError(t, err, "unable to create temp directory for testing")
+
+	_, err = git.PlainInit(dir, false)
+	require.NoError(t, err, "unable to create test git repo")
 
 	var (
 		u = "user"
 		p = "pass"
 	)
 	err = os.MkdirAll(fmt.Sprintf("%v/.git", dir), 0775)
-	if err != nil {
-		t.Fatal("unable to create .git directory for test")
-	}
+	require.NoError(t, err, "unable to create .git directory for test")
 
-	ppg := PutProjectGerrit{}
+	ppg := NewPutProjectGerrit(nil, nil, nil)
 	err = ppg.tryToCloneRepo("repourl", &u, &p, dir, "c-name")
 	assert.NoError(t, err)
 }
 
 func TestReplaceDefaultBranch(t *testing.T) {
 	mGit := mockGit.MockGit{}
-	ppg := PutProjectGerrit{
-		git: &mGit,
-	}
+	ppg := NewPutProjectGerrit(
+		nil,
+		nil,
+		&mGit,
+	)
 
 	mGit.On("RemoveBranch", "foo", "bar").Return(nil).Once()
 	mGit.On("CreateChildBranch", "foo", "baz", "bar").Return(nil).Once()

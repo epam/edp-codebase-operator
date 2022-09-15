@@ -4,7 +4,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/repository"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/service/chain/handler"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver"
@@ -13,106 +12,65 @@ import (
 //TODO: remove global variable log
 var log = ctrl.Log.WithName("codebase_handler")
 
-func CreateGerritDefChain(client client.Client, cr repository.CodebaseRepository) handler.CodebaseHandler {
+func MakeGerritDefChain(c client.Client, cr repository.CodebaseRepository) handler.CodebaseHandler {
 	log.Info("chain is selected", "type", "gerrit")
+
+	ch := &chain{}
 	gp := gitserver.GitProvider{}
-	return PutProjectGerrit{
-		next: PutGerritReplication{
-			next: PutPerfDataSources{
-				next: PutDeployConfigs{
-					next: PutVersionFile{
-						next: PutJenkinsFolder{
-							next: Cleaner{
-								client: client,
-							},
-							client: client,
-						},
-						client: client,
-						cr:     cr,
-						git:    gp,
-					},
-					client: client,
-					cr:     cr,
-					git:    gp,
-				},
-				client: client,
-			},
-			client: client,
-		},
-		client: client,
-		cr:     cr,
-		git:    gp,
-	}
+
+	ch.Use(
+		NewPutProjectGerrit(c, cr, gp),
+		NewPutGerritReplication(c),
+		NewPutPerfDataSources(c),
+		NewPutDeployConfigs(c, cr, gp),
+		NewPutVersionFile(c, cr, gp),
+		NewPutJenkinsFolder(c),
+		NewCleaner(c),
+	)
+
+	return ch
 }
 
-func CreateThirdPartyVcsProviderDefChain(client client.Client, cr repository.CodebaseRepository) handler.CodebaseHandler {
+func MakeThirdPartyVcsProviderDefChain(c client.Client, cr repository.CodebaseRepository) handler.CodebaseHandler {
 	log.Info("chain is selected", "type", "third party VCS provider")
+
+	ch := &chain{}
 	gp := gitserver.GitProvider{}
-	return CloneGitProject{
-		next: PutPerfDataSources{
-			next: PutDeployConfigsToGitProvider{
-				next: PutVersionFile{
-					next: PutJenkinsFolder{
-						next: Cleaner{
-							client: client,
-						},
-						client: client,
-					},
-					client: client,
-					cr:     cr,
-					git:    gp,
-				},
-				client: client,
-				cr:     cr,
-				git:    gp,
-			},
-			client: client,
-		},
-		git:    gp,
-		client: client,
-	}
+
+	ch.Use(
+		NewCloneGitProject(c, gp),
+		NewPutPerfDataSources(c),
+		NewPutDeployConfigsToGitProvider(c, cr, gp),
+		NewPutVersionFile(c, cr, gp),
+		NewPutJenkinsFolder(c),
+		NewCleaner(c),
+	)
+
+	return ch
 }
 
-func CreateDeletionChain(k8sClient client.Client) handler.CodebaseHandler {
-	return DropJenkinsFolders{
-		k8sClient: k8sClient,
-	}
+func MakeDeletionChain(c client.Client) handler.CodebaseHandler {
+	ch := &chain{}
+
+	ch.Use(NewDropJenkinsFolders(c))
+
+	return ch
 }
 
-func CreateGitlabCiDefChain(client client.Client, cr repository.CodebaseRepository) handler.CodebaseHandler {
+func MakeGitlabCiDefChain(c client.Client, cr repository.CodebaseRepository) handler.CodebaseHandler {
 	log.Info("chain is selected", "type", "gitlab ci")
-	gp := gitserver.GitProvider{}
-	return CloneGitProject{
-		next: PutPerfDataSources{
-			next: PutGitlabCiDeployConfigs{
-				next: PutGitlabCiFile{
-					next: PutVersionFile{
-						next: Cleaner{
-							client: client,
-						},
-						client: client,
-						cr:     cr,
-						git:    gp,
-					},
-					client: client,
-					cr:     cr,
-					git:    gp,
-				},
-				client: client,
-				cr:     cr,
-				git:    gp,
-			},
-			client: client,
-		},
-		git:    gp,
-		client: client,
-	}
-}
 
-func nextServeOrNil(next handler.CodebaseHandler, codebase *codebaseApi.Codebase) error {
-	if next != nil {
-		return next.ServeRequest(codebase)
-	}
-	log.Info("handling of codebase has been finished", "codebase_name", codebase.Name)
-	return nil
+	ch := &chain{}
+	gp := gitserver.GitProvider{}
+
+	ch.Use(
+		NewCloneGitProject(c, gp),
+		NewPutPerfDataSources(c),
+		NewPutGitlabCiDeployConfigs(c, cr, gp),
+		NewPutGitlabCiFile(c, cr, gp),
+		NewPutVersionFile(c, cr, gp),
+		NewCleaner(c),
+	)
+
+	return ch
 }

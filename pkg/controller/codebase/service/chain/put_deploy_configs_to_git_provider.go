@@ -1,6 +1,7 @@
 package chain
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/pkg/errors"
@@ -9,24 +10,26 @@ import (
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/helper"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/repository"
-	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/service/chain/handler"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/service/template"
 	git "github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
 type PutDeployConfigsToGitProvider struct {
-	next   handler.CodebaseHandler
 	client client.Client
 	cr     repository.CodebaseRepository
 	git    git.Git
 }
 
-func (h PutDeployConfigsToGitProvider) ServeRequest(c *codebaseApi.Codebase) error {
+func NewPutDeployConfigsToGitProvider(client client.Client, cr repository.CodebaseRepository, git git.Git) *PutDeployConfigsToGitProvider {
+	return &PutDeployConfigsToGitProvider{client: client, cr: cr, git: git}
+}
+
+func (h *PutDeployConfigsToGitProvider) ServeRequest(_ context.Context, c *codebaseApi.Codebase) error {
 	rLog := log.WithValues("codebase_name", c.Name)
 	if c.Spec.DisablePutDeployTemplates {
 		rLog.Info("skip of putting deploy templates to codebase due to specified flag")
-		return nextServeOrNil(h.next, c)
+		return nil
 	}
 
 	rLog.Info("Start pushing configs...")
@@ -35,10 +38,10 @@ func (h PutDeployConfigsToGitProvider) ServeRequest(c *codebaseApi.Codebase) err
 		return errors.Wrapf(err, "couldn't push deploy configs for %v codebase", c.Name)
 	}
 	rLog.Info("end pushing configs to remote git server")
-	return nextServeOrNil(h.next, c)
+	return nil
 }
 
-func (h PutDeployConfigsToGitProvider) tryToPushConfigs(c *codebaseApi.Codebase) error {
+func (h *PutDeployConfigsToGitProvider) tryToPushConfigs(c *codebaseApi.Codebase) error {
 	name, err := helper.GetEDPName(h.client, c.Namespace)
 	if err != nil {
 		return errors.Wrap(err, "couldn't get edp name")
@@ -85,7 +88,7 @@ func (h PutDeployConfigsToGitProvider) tryToPushConfigs(c *codebaseApi.Codebase)
 	return nil
 }
 
-func (h PutDeployConfigsToGitProvider) pushChanges(projectPath, gitServerName, namespace, defaultBranch string) error {
+func (h *PutDeployConfigsToGitProvider) pushChanges(projectPath, gitServerName, namespace, defaultBranch string) error {
 	gs, err := util.GetGitServer(h.client, gitServerName, namespace)
 	if err != nil {
 		return err
@@ -105,7 +108,7 @@ func (h PutDeployConfigsToGitProvider) pushChanges(projectPath, gitServerName, n
 	return nil
 }
 
-func (h PutDeployConfigsToGitProvider) skipTemplatePreparing(edpName, codebaseName, namespace string) (bool, error) {
+func (h *PutDeployConfigsToGitProvider) skipTemplatePreparing(edpName, codebaseName, namespace string) (bool, error) {
 	ps, err := h.cr.SelectProjectStatusValue(codebaseName, edpName)
 	if err != nil {
 		return true, errors.Wrapf(err, "couldn't get project_status value for %v codebase", codebaseName)

@@ -17,18 +17,20 @@ import (
 	"github.com/epam/edp-jenkins-operator/v2/pkg/util/consts"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
-	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/service/chain/handler"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/platform"
 	"github.com/epam/edp-codebase-operator/v2/pkg/model"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
 type PutJenkinsFolder struct {
-	next   handler.CodebaseHandler
 	client client.Client
 }
 
-func (h PutJenkinsFolder) ServeRequest(c *codebaseApi.Codebase) error {
+func NewPutJenkinsFolder(client client.Client) *PutJenkinsFolder {
+	return &PutJenkinsFolder{client: client}
+}
+
+func (h *PutJenkinsFolder) ServeRequest(ctx context.Context, c *codebaseApi.Codebase) error {
 	rLog := log.WithValues("codebase_name", c.Name)
 	jfn := fmt.Sprintf("%v-%v", c.Name, "codebase")
 	jfr, err := h.getJenkinsFolder(jfn, c.Namespace)
@@ -38,7 +40,7 @@ func (h PutJenkinsFolder) ServeRequest(c *codebaseApi.Codebase) error {
 
 	if jfr != nil {
 		rLog.Info("jenkins folder already exists in cluster", "name", jfn)
-		return nextServeOrNil(h.next, c)
+		return nil
 	}
 
 	gs, err := util.GetGitServer(h.client, c.Spec.GitServer, c.Namespace)
@@ -73,11 +75,10 @@ func (h PutJenkinsFolder) ServeRequest(c *codebaseApi.Codebase) error {
 		return err
 	}
 	rLog.Info("end creating jenkins folder...")
-	return nextServeOrNil(h.next, c)
+	return nil
 }
 
-func (h PutJenkinsFolder) putJenkinsFolder(c *codebaseApi.Codebase, jc, jfn string) error {
-
+func (h *PutJenkinsFolder) putJenkinsFolder(c *codebaseApi.Codebase, jc, jfn string) error {
 	jf := &jenkinsApi.JenkinsFolder{
 		TypeMeta: metaV1.TypeMeta{
 			APIVersion: util.V2APIVersion,
@@ -108,7 +109,7 @@ func (h PutJenkinsFolder) putJenkinsFolder(c *codebaseApi.Codebase, jc, jfn stri
 	return nil
 }
 
-func (h PutJenkinsFolder) getJenkinsFolder(name, namespace string) (*jenkinsApi.JenkinsFolder, error) {
+func (h *PutJenkinsFolder) getJenkinsFolder(name, namespace string) (*jenkinsApi.JenkinsFolder, error) {
 	nsn := types.NamespacedName{
 		Namespace: namespace,
 		Name:      name,

@@ -11,14 +11,8 @@ import (
 	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
-	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/service/chain/handler"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
-
-type DropJenkinsFolders struct {
-	next      handler.CodebaseHandler
-	k8sClient client.Client
-}
 
 type ErrorBranchesExists string
 
@@ -26,12 +20,20 @@ func (e ErrorBranchesExists) Error() string {
 	return string(e)
 }
 
-func (h DropJenkinsFolders) ServeRequest(c *codebaseApi.Codebase) error {
+type DropJenkinsFolders struct {
+	k8sClient client.Client
+}
+
+func NewDropJenkinsFolders(k8sClient client.Client) *DropJenkinsFolders {
+	return &DropJenkinsFolders{k8sClient: k8sClient}
+}
+
+func (h *DropJenkinsFolders) ServeRequest(ctx context.Context, c *codebaseApi.Codebase) error {
 	rLog := log.WithValues("codebase_name", c.Name)
 	rLog.Info("starting to delete related jenkins folders")
 
 	var branchList codebaseApi.CodebaseBranchList
-	if err := h.k8sClient.List(context.TODO(), &branchList, &client.ListOptions{
+	if err := h.k8sClient.List(ctx, &branchList, &client.ListOptions{
 		Namespace: c.Namespace,
 	}); err != nil {
 		return errors.Wrap(err, "unable to list codebase branches")
@@ -54,17 +56,17 @@ func (h DropJenkinsFolders) ServeRequest(c *codebaseApi.Codebase) error {
 	}
 
 	var jenkinsFolderList jenkinsApi.JenkinsFolderList
-	if err := h.k8sClient.List(context.TODO(), &jenkinsFolderList, options); err != nil {
+	if err := h.k8sClient.List(ctx, &jenkinsFolderList, options); err != nil {
 		return errors.Wrap(err, "unable to list jenkins folders")
 	}
 
 	for i, v := range jenkinsFolderList.Items {
 		rLog.Info("trying to delete jenkins folder", "folder name", v.Name)
-		if err := h.k8sClient.Delete(context.TODO(), &jenkinsFolderList.Items[i]); err != nil {
+		if err := h.k8sClient.Delete(ctx, &jenkinsFolderList.Items[i]); err != nil {
 			return errors.Wrap(err, "unable to delete jenkins folder")
 		}
 	}
 
 	rLog.Info("done deleting child jenkins folders")
-	return nextServeOrNil(h.next, c)
+	return nil
 }

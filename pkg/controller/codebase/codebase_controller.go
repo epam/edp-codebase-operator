@@ -109,7 +109,7 @@ func (r *ReconcileCodebase) Reconcile(ctx context.Context, request reconcile.Req
 		return reconcile.Result{}, errors.Wrap(err, "an error has occurred while selecting chain")
 	}
 
-	if err := ch.ServeRequest(c); err != nil {
+	if err := ch.ServeRequest(ctx, c); err != nil {
 		if pErr, ok := errors.Cause(err).(chain.PostponeError); ok {
 			return reconcile.Result{RequeueAfter: pErr.Timeout}, nil
 		}
@@ -166,7 +166,7 @@ func (r *ReconcileCodebase) getStrategyChain(c *codebaseApi.Codebase) (cHand.Cod
 	if c.Spec.Strategy == util.ImportStrategy {
 		return r.getCiChain(c, repo)
 	}
-	return chain.CreateGerritDefChain(r.client, repo), nil
+	return chain.MakeGerritDefChain(r.client, repo), nil
 }
 
 func (r *ReconcileCodebase) createCodebaseRepo(c *codebaseApi.Codebase) repository.CodebaseRepository {
@@ -178,9 +178,9 @@ func (r *ReconcileCodebase) createCodebaseRepo(c *codebaseApi.Codebase) reposito
 
 func (r *ReconcileCodebase) getCiChain(c *codebaseApi.Codebase, repo repository.CodebaseRepository) (cHand.CodebaseHandler, error) {
 	if strings.ToLower(c.Spec.CiTool) == util.GitlabCi {
-		return chain.CreateGitlabCiDefChain(r.client, repo), nil
+		return chain.MakeGitlabCiDefChain(r.client, repo), nil
 	}
-	return chain.CreateThirdPartyVcsProviderDefChain(r.client, repo), nil
+	return chain.MakeThirdPartyVcsProviderDefChain(r.client, repo), nil
 }
 
 func (r *ReconcileCodebase) updateStatus(ctx context.Context, instance *codebaseApi.Codebase) error {
@@ -201,7 +201,7 @@ func (r *ReconcileCodebase) tryToDeleteCodebase(ctx context.Context, c *codebase
 		return nil, err
 	}
 
-	if err := chain.CreateDeletionChain(r.client).ServeRequest(c); err != nil {
+	if err := chain.MakeDeletionChain(r.client).ServeRequest(ctx, c); err != nil {
 		return nil, errors.Wrap(err, "errors during deletion chain")
 	}
 

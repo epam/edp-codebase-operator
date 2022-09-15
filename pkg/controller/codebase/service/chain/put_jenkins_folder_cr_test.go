@@ -18,7 +18,8 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
-func TestPutJenkinsFolder_ShouldCreateJenkinsfolder(t *testing.T) {
+func TestPutJenkinsFolder_ShouldCreateJenkinsFolder(t *testing.T) {
+	ctx := context.Background()
 	c := &codebaseApi.Codebase{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      fakeName,
@@ -55,11 +56,9 @@ func TestPutJenkinsFolder_ShouldCreateJenkinsfolder(t *testing.T) {
 
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, gs, jf).Build()
 
-	pjf := PutJenkinsFolder{
-		client: fakeCl,
-	}
+	pjf := NewPutJenkinsFolder(fakeCl)
 
-	if err := pjf.ServeRequest(c); err != nil {
+	if err := pjf.ServeRequest(ctx, c); err != nil {
 		t.Error("ServeRequest failed for PutJenkinsFolder")
 	}
 	gjf := &jenkinsApi.JenkinsFolder{}
@@ -74,7 +73,8 @@ func TestPutJenkinsFolder_ShouldCreateJenkinsfolder(t *testing.T) {
 	assert.Equal(t, gjf.Spec.Job.Name, "job-provisions/job/ci/job/ci")
 }
 
-func TestPutJenkinsFolder_ShouldSkipWhenJenkinsfolderExists(t *testing.T) {
+func TestPutJenkinsFolder_ShouldSkipWhenJenkinsFolderExists(t *testing.T) {
+	ctx := context.Background()
 	c := &codebaseApi.Codebase{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      fakeName,
@@ -94,16 +94,15 @@ func TestPutJenkinsFolder_ShouldSkipWhenJenkinsfolderExists(t *testing.T) {
 
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, jf).Build()
 
-	pjf := PutJenkinsFolder{
-		client: fakeCl,
-	}
+	pjf := NewPutJenkinsFolder(fakeCl)
 
-	if err := pjf.ServeRequest(c); err != nil {
+	if err := pjf.ServeRequest(ctx, c); err != nil {
 		t.Error("ServeRequest failed for PutJenkinsFolder")
 	}
 }
 
-func TestPutJenkinsFolder_ShouldFailWhenGetJenkinsfolder(t *testing.T) {
+func TestPutJenkinsFolder_ShouldFailWhenGetJenkinsFolder(t *testing.T) {
+	ctx := context.Background()
 	c := &codebaseApi.Codebase{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      fakeName,
@@ -116,16 +115,15 @@ func TestPutJenkinsFolder_ShouldFailWhenGetJenkinsfolder(t *testing.T) {
 
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c).Build()
 
-	pjf := PutJenkinsFolder{
-		client: fakeCl,
-	}
+	pjf := NewPutJenkinsFolder(fakeCl)
 
-	if err := pjf.ServeRequest(c); err == nil {
+	if err := pjf.ServeRequest(ctx, c); err == nil {
 		t.Error("ServeRequest must fail because kind JenkinsFolder is not registered")
 	}
 }
 
 func TestPutJenkinsFolder_ShouldFailWhenGetGitServer(t *testing.T) {
+	ctx := context.Background()
 	c := &codebaseApi.Codebase{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      fakeName,
@@ -142,11 +140,9 @@ func TestPutJenkinsFolder_ShouldFailWhenGetGitServer(t *testing.T) {
 
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, jf).Build()
 
-	pjf := PutJenkinsFolder{
-		client: fakeCl,
-	}
+	pjf := NewPutJenkinsFolder(fakeCl)
 
-	err := pjf.ServeRequest(c)
+	err := pjf.ServeRequest(ctx, c)
 	assert.Error(t, err)
 	if !strings.Contains(err.Error(), "an error has occurred while getting fake-name Git Server CR") {
 		t.Fatalf("wrong error returned: %s", err.Error())

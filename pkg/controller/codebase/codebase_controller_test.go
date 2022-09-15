@@ -20,6 +20,7 @@ import (
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/service/chain"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/service/chain/handler"
+	chainMocks "github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/service/chain/mocks"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
 )
@@ -378,6 +379,7 @@ func (s *ControllerTestSuite) TestReconcileCodebase_getStrategyChain_ShouldPassW
 }
 
 func (s *ControllerTestSuite) TestPostpone() {
+	ctx := context.Background()
 	c := codebaseApi.Codebase{
 		TypeMeta: metaV1.TypeMeta{
 			Kind:       "Codebase",
@@ -397,13 +399,13 @@ func (s *ControllerTestSuite) TestPostpone() {
 	}
 	fakeCl := fake.NewClientBuilder().WithScheme(s.scheme).WithRuntimeObjects(&c).Build()
 
-	handlerMock := handler.Mock{}
+	handlerMock := chainMocks.CodebaseHandler{}
 
 	cloneCb := c.DeepCopy()
 	cloneCb.ResourceVersion = "3"
 	cloneCb.Labels = map[string]string{"app.edp.epam.com/codebaseType": "application"}
 	cloneCb.Finalizers = []string{"codebase.operator.finalizer.name", "foregroundDeletion"}
-	handlerMock.On("ServeRequest", cloneCb).Return(chain.PostponeError{Timeout: time.Second})
+	handlerMock.On("ServeRequest", ctx, cloneCb).Return(chain.PostponeError{Timeout: time.Second})
 	r := ReconcileCodebase{
 		client: fakeCl,
 		log:    logr.DiscardLogger{},
@@ -413,8 +415,7 @@ func (s *ControllerTestSuite) TestPostpone() {
 		},
 	}
 
-	res, err := r.Reconcile(context.Background(),
-		reconcile.Request{NamespacedName: types.NamespacedName{Name: c.Name, Namespace: c.Namespace}})
+	res, err := r.Reconcile(ctx, reconcile.Request{NamespacedName: types.NamespacedName{Name: c.Name, Namespace: c.Namespace}})
 
 	assert.NoError(s.T(), err)
 	assert.Equal(s.T(), res.RequeueAfter, time.Second)

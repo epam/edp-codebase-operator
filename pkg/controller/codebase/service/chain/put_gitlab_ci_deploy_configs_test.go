@@ -1,11 +1,13 @@
 package chain
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	coreV1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -18,13 +20,18 @@ import (
 )
 
 func TestPutGitlabCiDeployConfigs_ShouldPass(t *testing.T) {
-	dir, err := os.MkdirTemp("/tmp", "codebase")
-	if err != nil {
-		t.Fatalf("unable to create temp directory for testing")
-	}
-	defer os.RemoveAll(dir)
+	ctx := context.Background()
 
-	os.Setenv("WORKING_DIR", dir)
+	dir, err := os.MkdirTemp("/tmp", "codebase")
+	require.NoError(t, err, "unable to create temp directory for testing")
+
+	defer func() {
+		err = os.RemoveAll(dir)
+		require.NoError(t, err)
+	}()
+
+	err = os.Setenv("WORKING_DIR", dir)
+	require.NoError(t, err)
 
 	c := &codebaseApi.Codebase{
 		ObjectMeta: metaV1.ObjectMeta{
@@ -102,7 +109,9 @@ func TestPutGitlabCiDeployConfigs_ShouldPass(t *testing.T) {
 
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, gs, ssh, cm, s).Build()
 
-	os.Setenv("ASSETS_DIR", "../../../../../build")
+	err = os.Setenv("ASSETS_DIR", "../../../../../build")
+	require.NoError(t, err)
+
 	var (
 		port int32 = 22
 		u          = "user"
@@ -121,12 +130,12 @@ func TestPutGitlabCiDeployConfigs_ShouldPass(t *testing.T) {
 	mGit.On("CommitChanges", wd, fmt.Sprintf("Add template for %v", c.Name)).Return(nil)
 	mGit.On("PushChanges", "fake", fakeName, wd).Return(nil)
 
-	pdc := PutGitlabCiDeployConfigs{
-		client: fakeCl,
-		git:    mGit,
-		cr:     repository.NewK8SCodebaseRepository(fakeCl, c),
-	}
+	pdc := NewPutGitlabCiDeployConfigs(
+		fakeCl,
+		repository.NewK8SCodebaseRepository(fakeCl, c),
+		mGit,
+	)
 
-	err = pdc.ServeRequest(c)
+	err = pdc.ServeRequest(ctx, c)
 	assert.NoError(t, err)
 }

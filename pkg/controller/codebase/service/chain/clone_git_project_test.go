@@ -1,13 +1,14 @@
 package chain
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	coreV1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -19,13 +20,18 @@ import (
 )
 
 func TestCloneGitProject_ShouldPass(t *testing.T) {
-	dir, err := os.MkdirTemp("/tmp", "codebase")
-	if err != nil {
-		t.Fatalf("unable to create temp directory for testing")
-	}
-	defer os.RemoveAll(dir)
+	ctx := context.Background()
 
-	os.Setenv("WORKING_DIR", dir)
+	dir, err := os.MkdirTemp("/tmp", "codebase")
+	require.NoError(t, err, "unable to create temp directory for testing")
+
+	defer func() {
+		err = os.RemoveAll(dir)
+		require.NoError(t, err)
+	}()
+
+	err = os.Setenv("WORKING_DIR", dir)
+	require.NoError(t, err)
 
 	c := &codebaseApi.Codebase{
 		ObjectMeta: metaV1.ObjectMeta{
@@ -86,16 +92,17 @@ func TestCloneGitProject_ShouldPass(t *testing.T) {
 		wd, port).Return(
 		nil)
 
-	cgp := CloneGitProject{
-		client: fakeCl,
-		git:    mGit,
-	}
+	cgp := NewCloneGitProject(
+		fakeCl,
+		mGit,
+	)
 
-	err = cgp.ServeRequest(c)
+	err = cgp.ServeRequest(ctx, c)
 	assert.NoError(t, err)
 }
 
 func TestCloneGitProject_SetIntermediateSuccessFieldsShouldFail(t *testing.T) {
+	ctx := context.Background()
 	c := &codebaseApi.Codebase{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name: fakeName,
@@ -104,18 +111,18 @@ func TestCloneGitProject_SetIntermediateSuccessFieldsShouldFail(t *testing.T) {
 	scheme := runtime.NewScheme()
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects().Build()
 
-	cgp := CloneGitProject{
-		client: fakeCl,
-	}
+	cgp := NewCloneGitProject(
+		fakeCl,
+		nil,
+	)
 
-	err := cgp.ServeRequest(c)
+	err := cgp.ServeRequest(ctx, c)
 	assert.Error(t, err)
-	if !strings.Contains(err.Error(), "an error has been occurred while updating fake-name Codebase status") {
-		t.Fatalf("wrong error returned: %s", err.Error())
-	}
+	assert.Contains(t, err.Error(), "an error has been occurred while updating fake-name Codebase status", "wrong error returned")
 }
 
 func TestCloneGitProject_GetGitServerShouldFail(t *testing.T) {
+	ctx := context.Background()
 	c := &codebaseApi.Codebase{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      fakeName,
@@ -135,18 +142,18 @@ func TestCloneGitProject_GetGitServerShouldFail(t *testing.T) {
 
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c).Build()
 
-	cgp := CloneGitProject{
-		client: fakeCl,
-	}
+	cgp := NewCloneGitProject(
+		fakeCl,
+		nil,
+	)
 
-	err := cgp.ServeRequest(c)
+	err := cgp.ServeRequest(ctx, c)
 	assert.Error(t, err)
-	if !strings.Contains(err.Error(), "an error has occurred while getting fake-name GitServer") {
-		t.Fatalf("wrong error returned: %s", err.Error())
-	}
+	assert.Contains(t, err.Error(), "an error has occurred while getting fake-name GitServer", "wrong error returned")
 }
 
 func TestCloneGitProject_GetSecretShouldFail(t *testing.T) {
+	ctx := context.Background()
 	c := &codebaseApi.Codebase{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      fakeName,
@@ -178,25 +185,29 @@ func TestCloneGitProject_GetSecretShouldFail(t *testing.T) {
 
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, gs).Build()
 
-	cgp := CloneGitProject{
-		client: fakeCl,
-	}
+	cgp := NewCloneGitProject(
+		fakeCl,
+		nil,
+	)
 
-	err := cgp.ServeRequest(c)
+	err := cgp.ServeRequest(ctx, c)
 	assert.Error(t, err)
-	if !strings.Contains(err.Error(), "an error has occurred while getting fake-name secret") {
-		t.Fatalf("wrong error returned: %s", err.Error())
-	}
+	assert.Contains(t, err.Error(), "an error has occurred while getting fake-name secret", "wrong error returned")
 }
 
 func TestCloneGitProject_CloneRepositoryBySshShouldFail(t *testing.T) {
-	dir, err := os.MkdirTemp("/tmp", "codebase")
-	if err != nil {
-		t.Fatalf("unable to create temp directory for testing")
-	}
-	defer os.RemoveAll(dir)
+	ctx := context.Background()
 
-	os.Setenv("WORKING_DIR", dir)
+	dir, err := os.MkdirTemp("/tmp", "codebase")
+	require.NoError(t, err, "unable to create temp directory for testing")
+
+	defer func() {
+		err = os.RemoveAll(dir)
+		require.NoError(t, err)
+	}()
+
+	err = os.Setenv("WORKING_DIR", dir)
+	require.NoError(t, err)
 
 	c := &codebaseApi.Codebase{
 		ObjectMeta: metaV1.ObjectMeta{
@@ -257,22 +268,22 @@ func TestCloneGitProject_CloneRepositoryBySshShouldFail(t *testing.T) {
 		wd, port).Return(
 		errors.New("FATAL ERROR"))
 
-	cgp := CloneGitProject{
-		client: fakeCl,
-		git:    mGit,
-	}
+	cgp := NewCloneGitProject(
+		fakeCl,
+		mGit,
+	)
 
-	err = cgp.ServeRequest(c)
+	err = cgp.ServeRequest(ctx, c)
 	assert.Error(t, err)
-	if !strings.Contains(err.Error(), "an error has occurred while cloning repository ssh://fake-name:22fake-name: FATAL ERROR") {
-		t.Fatalf("wrong error returned: %s", err.Error())
-	}
+	assert.Contains(t, err.Error(), "an error has occurred while cloning repository ssh://fake-name:22fake-name: FATAL ERROR", "wrong error returned")
 }
 
 func TestCloneGitProject_Postpone(t *testing.T) {
-	cl := CloneGitProject{}
-	path := repoNotReady
-	err := cl.ServeRequest(&codebaseApi.Codebase{Spec: codebaseApi.CodebaseSpec{GitUrlPath: &path}})
+	ctx := context.Background()
+	cl := NewCloneGitProject(nil, nil)
+	p := repoNotReady
+
+	err := cl.ServeRequest(ctx, &codebaseApi.Codebase{Spec: codebaseApi.CodebaseSpec{GitUrlPath: &p}})
 	assert.Error(t, err)
 	assert.IsType(t, PostponeError{}, err)
 }

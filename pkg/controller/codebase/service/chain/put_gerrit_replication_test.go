@@ -1,6 +1,7 @@
 package chain
 
 import (
+	"context"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	coreV1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -23,6 +25,7 @@ func TestPutGerritReplication_ShouldFailWhenReloadGerritPlugin(t *testing.T) {
 	//TODO: mock sshclient and implement test that passes
 	t.Skip()
 
+	ctx := context.Background()
 	c := &codebaseApi.Codebase{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      fakeName,
@@ -94,14 +97,13 @@ func TestPutGerritReplication_ShouldFailWhenReloadGerritPlugin(t *testing.T) {
 	}
 
 	pk, err := rsa.GenerateKey(rand.Reader, 128)
-	if err != nil {
-		t.Error("Unable to generate test private key")
-	}
-	privkey_bytes := x509.MarshalPKCS1PrivateKey(pk)
-	privkey_pem := pem.EncodeToMemory(
+	require.NoError(t, err, "unable to generate test private key")
+
+	privkeyBytes := x509.MarshalPKCS1PrivateKey(pk)
+	privkeyPem := pem.EncodeToMemory(
 		&pem.Block{
 			Type:  "RSA PRIVATE KEY",
-			Bytes: privkey_bytes,
+			Bytes: privkeyBytes,
 		},
 	)
 
@@ -111,7 +113,7 @@ func TestPutGerritReplication_ShouldFailWhenReloadGerritPlugin(t *testing.T) {
 			Namespace: fakeNamespace,
 		},
 		Data: map[string][]byte{
-			util.PrivateSShKeyName: []byte(privkey_pem),
+			util.PrivateSShKeyName: privkeyPem,
 		},
 	}
 
@@ -121,7 +123,8 @@ func TestPutGerritReplication_ShouldFailWhenReloadGerritPlugin(t *testing.T) {
 
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, gs, ssh, cm, s, cmg).Build()
 
-	os.Setenv("ASSETS_DIR", "../../../../../build")
+	err = os.Setenv("ASSETS_DIR", "../../../../../build")
+	require.NoError(t, err)
 
 	httpmock.Reset()
 	httpmock.Activate()
@@ -138,11 +141,9 @@ func TestPutGerritReplication_ShouldFailWhenReloadGerritPlugin(t *testing.T) {
 	httpmock.RegisterResponder("GET", "https://gitlab.example.com/api/v4/projects/backup%252Ffake-name?simple=true",
 		httpmock.NewJsonResponderOrPanic(200, &jr))
 
-	pdc := PutGerritReplication{
-		client: fakeCl,
-	}
+	pdc := NewPutGerritReplication(fakeCl)
 
-	err = pdc.ServeRequest(c)
+	err = pdc.ServeRequest(ctx, c)
 
 	assert.NoError(t, err)
 }

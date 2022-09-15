@@ -11,16 +11,18 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
-	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/service/chain/handler"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
 type Cleaner struct {
-	next   handler.CodebaseHandler
 	client client.Client
 }
 
-func (h Cleaner) ServeRequest(c *codebaseApi.Codebase) error {
+func NewCleaner(client client.Client) *Cleaner {
+	return &Cleaner{client: client}
+}
+
+func (h *Cleaner) ServeRequest(_ context.Context, c *codebaseApi.Codebase) error {
 	rLog := log.WithValues("codebase_name", c.Name)
 	rLog.Info("start cleaning data...")
 	if err := h.tryToClean(c); err != nil {
@@ -28,10 +30,10 @@ func (h Cleaner) ServeRequest(c *codebaseApi.Codebase) error {
 		return err
 	}
 	rLog.Info("end cleaning data...")
-	return nextServeOrNil(h.next, c)
+	return nil
 }
 
-func (h Cleaner) tryToClean(c *codebaseApi.Codebase) error {
+func (h *Cleaner) tryToClean(c *codebaseApi.Codebase) error {
 	s := fmt.Sprintf("repository-codebase-%v-temp", c.Name)
 	if err := h.deleteSecret(s, c.Namespace); err != nil {
 		return errors.Wrapf(err, "unable to delete secret %v", s)
@@ -43,7 +45,7 @@ func (h Cleaner) tryToClean(c *codebaseApi.Codebase) error {
 	return nil
 }
 
-func (h Cleaner) deleteSecret(secretName, namespace string) error {
+func (h *Cleaner) deleteSecret(secretName, namespace string) error {
 	log.Info("start deleting secret", "name", secretName)
 	if err := h.client.Delete(context.TODO(), &v1.Secret{
 		ObjectMeta: metaV1.ObjectMeta{

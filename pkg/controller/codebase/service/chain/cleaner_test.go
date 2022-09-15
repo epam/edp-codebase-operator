@@ -1,10 +1,12 @@
 package chain
 
 import (
+	"context"
 	"os"
-	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	coreV1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -14,13 +16,18 @@ import (
 )
 
 func TestCleaner_ShouldPass(t *testing.T) {
-	dir, err := os.MkdirTemp("/tmp", "codebase")
-	if err != nil {
-		t.Fatalf("unable to create temp directory for testing")
-	}
-	defer os.RemoveAll(dir)
+	ctx := context.Background()
 
-	os.Setenv("WORKING_DIR", dir)
+	dir, err := os.MkdirTemp("/tmp", "codebase")
+	require.NoError(t, err, "unable to create temp directory for testing")
+
+	defer func() {
+		err = os.RemoveAll(dir)
+		require.NoError(t, err)
+	}()
+
+	err = os.Setenv("WORKING_DIR", dir)
+	require.NoError(t, err)
 
 	c := &codebaseApi.Codebase{
 		ObjectMeta: metaV1.ObjectMeta{
@@ -41,23 +48,25 @@ func TestCleaner_ShouldPass(t *testing.T) {
 
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, ssh).Build()
 
-	cl := Cleaner{
-		client: fakeCl,
-	}
+	cl := NewCleaner(fakeCl)
 
-	if err := cl.ServeRequest(c); err != nil {
-		t.Error("ServeRequest failed")
-	}
+	err = cl.ServeRequest(ctx, c)
+	assert.NoError(t, err)
 }
 
 func TestCleaner_ShouldNotFailedIfSecretNotFound(t *testing.T) {
-	dir, err := os.MkdirTemp("/tmp", "codebase")
-	if err != nil {
-		t.Fatalf("unable to create temp directory for testing")
-	}
-	defer os.RemoveAll(dir)
+	ctx := context.Background()
 
-	os.Setenv("WORKING_DIR", dir)
+	dir, err := os.MkdirTemp("/tmp", "codebase")
+	require.NoError(t, err, "unable to create temp directory for testing")
+
+	defer func() {
+		err = os.RemoveAll(dir)
+		require.NoError(t, err)
+	}()
+
+	err = os.Setenv("WORKING_DIR", dir)
+	require.NoError(t, err)
 
 	c := &codebaseApi.Codebase{
 		ObjectMeta: metaV1.ObjectMeta{
@@ -73,23 +82,25 @@ func TestCleaner_ShouldNotFailedIfSecretNotFound(t *testing.T) {
 
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, ssh).Build()
 
-	cl := Cleaner{
-		client: fakeCl,
-	}
+	cl := NewCleaner(fakeCl)
 
-	if err := cl.ServeRequest(c); err != nil {
-		t.Error("ServeRequest failed")
-	}
+	err = cl.ServeRequest(ctx, c)
+	assert.NoError(t, err)
 }
 
 func TestCleaner_ShouldFail(t *testing.T) {
-	dir, err := os.MkdirTemp("/tmp", "codebase")
-	if err != nil {
-		t.Fatalf("unable to create temp directory for testing")
-	}
-	defer os.RemoveAll(dir)
+	ctx := context.Background()
 
-	os.Setenv("WORKING_DIR", dir)
+	dir, err := os.MkdirTemp("/tmp", "codebase")
+	require.NoError(t, err, "unable to create temp directory for testing")
+
+	defer func() {
+		err = os.RemoveAll(dir)
+		require.NoError(t, err)
+	}()
+
+	err = os.Setenv("WORKING_DIR", dir)
+	require.NoError(t, err)
 
 	c := &codebaseApi.Codebase{
 		ObjectMeta: metaV1.ObjectMeta{
@@ -104,15 +115,10 @@ func TestCleaner_ShouldFail(t *testing.T) {
 
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c).Build()
 
-	cl := Cleaner{
-		client: fakeCl,
-	}
+	cl := NewCleaner(fakeCl)
 
-	err = cl.ServeRequest(c)
-	if err == nil {
-		t.Error("ServeRequest MUST fail")
-	}
-	if !strings.Contains(err.Error(), "unable to delete secret repository-codebase-fake-name-temp") {
-		t.Fatalf("wrong error returned: %s", err.Error())
-	}
+	err = cl.ServeRequest(ctx, c)
+
+	assert.NotNil(t, err)
+	assert.Contains(t, err.Error(), "unable to delete secret repository-codebase-fake-name-temp")
 }

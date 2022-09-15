@@ -1,13 +1,14 @@
 package chain
 
 import (
+	"context"
 	"fmt"
 	"os"
-	"strings"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	coreV1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -21,14 +22,21 @@ import (
 )
 
 func TestPutGitlabCiFile_ShouldPass(t *testing.T) {
-	dir, err := os.MkdirTemp("/tmp", "codebase")
-	if err != nil {
-		t.Fatalf("unable to create temp directory for testing")
-	}
-	defer os.RemoveAll(dir)
+	ctx := context.Background()
 
-	os.Setenv("WORKING_DIR", dir)
-	os.Setenv("PLATFORM_TYPE", "kubernetes")
+	dir, err := os.MkdirTemp("/tmp", "codebase")
+	require.NoError(t, err, "unable to create temp directory for testing")
+
+	defer func() {
+		err = os.RemoveAll(dir)
+		require.NoError(t, err)
+	}()
+
+	err = os.Setenv("WORKING_DIR", dir)
+	require.NoError(t, err)
+
+	err = os.Setenv("PLATFORM_TYPE", "kubernetes")
+	require.NoError(t, err)
 
 	ec := &edpCompApi.EDPComponent{
 		ObjectMeta: metaV1.ObjectMeta{
@@ -96,7 +104,8 @@ func TestPutGitlabCiFile_ShouldPass(t *testing.T) {
 
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, gs, ssh, cm, ec).Build()
 
-	os.Setenv("ASSETS_DIR", "../../../../../build")
+	err = os.Setenv("ASSETS_DIR", "../../../../../build")
+	require.NoError(t, err)
 
 	// it is expected that code is already landed before running this part of chain,
 	// so let's create it
@@ -109,13 +118,13 @@ func TestPutGitlabCiFile_ShouldPass(t *testing.T) {
 	mGit.On("CommitChanges", wd, "Add gitlab ci file").Return(nil)
 	mGit.On("PushChanges", "fake", fakeName, wd).Return(nil)
 
-	pg := PutGitlabCiFile{
-		client: fakeCl,
-		git:    mGit,
-		cr:     repository.NewK8SCodebaseRepository(fakeCl, c),
-	}
+	pg := NewPutGitlabCiFile(
+		fakeCl,
+		repository.NewK8SCodebaseRepository(fakeCl, c),
+		mGit,
+	)
 
-	err = pg.ServeRequest(c)
+	err = pg.ServeRequest(ctx, c)
 	assert.NoError(t, err)
 }
 
@@ -137,9 +146,11 @@ func TestParseTemplateMethod_ShouldFailToGetEdpComponent(t *testing.T) {
 	scheme.AddKnownTypes(coreV1.SchemeGroupVersion, ec)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(ec).Build()
 
-	ch := PutGitlabCiFile{
-		client: fakeCl,
-	}
+	ch := NewPutGitlabCiFile(
+		fakeCl,
+		nil,
+		nil,
+	)
 
 	c := &codebaseApi.Codebase{
 		ObjectMeta: metaV1.ObjectMeta{
@@ -160,15 +171,17 @@ func TestParseTemplateMethod_ShouldFailToGetEdpComponent(t *testing.T) {
 }
 
 func TestPushChangesMethod_ShouldBeExecutedSuccessfully(t *testing.T) {
-
 	mGit := new(mockGit.MockGit)
-	ch := PutGitlabCiFile{
-		git: mGit,
-	}
+	ch := NewPutGitlabCiFile(
+		nil,
+		nil,
+		mGit,
+	)
 	mGit.On("CommitChanges", "path", "Add gitlab ci file").Return(
 		nil)
 	mGit.On("PushChanges", "pkey", "user", "path").Return(
 		nil)
+
 	assert.NoError(t, ch.pushChanges("path", "pkey", "user", "branch"))
 }
 
@@ -187,9 +200,12 @@ func TestPutGitlabCiFile_gitlabCiFileExistsShouldReturnTrue(t *testing.T) {
 
 	repo := repository.NewK8SCodebaseRepository(fakeCl, c)
 
-	h := PutGitlabCiFile{
-		cr: repo,
-	}
+	h := NewPutGitlabCiFile(
+		nil,
+		repo,
+		nil,
+	)
+
 	got, err := h.gitlabCiFileExists(fakeCodebaseName, "edpName")
 	assert.True(t, got)
 	assert.Nil(t, err)
@@ -210,10 +226,14 @@ func TestPutGitlabCiFile_gitlabCiFileExistsShouldReturnFalse(t *testing.T) {
 
 	repo := repository.NewK8SCodebaseRepository(fakeCl, c)
 
-	h := PutGitlabCiFile{
-		cr: repo,
-	}
+	h := NewPutGitlabCiFile(
+		nil,
+		repo,
+		nil,
+	)
+
 	got, err := h.gitlabCiFileExists(fakeCodebaseName, "edpName")
+
 	assert.False(t, got)
 	assert.Nil(t, err)
 }
@@ -222,16 +242,18 @@ func TestPutGitlabCiFile_gitlabCiFileExistsShouldReturnError(t *testing.T) {
 	db, _, _ := sqlmock.New()
 	defer db.Close()
 
-	h := PutGitlabCiFile{
-		cr: repository.SqlCodebaseRepository{
+	h := NewPutGitlabCiFile(
+		nil,
+		repository.SqlCodebaseRepository{
 			DB: db,
 		},
-	}
+		nil,
+	)
+
 	got, err := h.gitlabCiFileExists(fakeCodebaseName, fakeEdpName)
+
 	assert.False(t, got)
-	if !strings.Contains(err.Error(), "couldn't get project_status value for fake_codebase_name codebase") {
-		t.Fatalf("wrong error returned: %s", err.Error())
-	}
+	assert.Contains(t, err.Error(), "couldn't get project_status value for fake_codebase_name codebase", "wrong error returned")
 }
 
 func TestParseTemplate_ShouldPass(t *testing.T) {
@@ -239,7 +261,11 @@ func TestParseTemplate_ShouldPass(t *testing.T) {
 	if err != nil {
 		t.Errorf("create tempDir: %v", err)
 	}
-	t.Cleanup(func() { os.RemoveAll(tempDir) })
+
+	t.Cleanup(func() {
+		err = os.RemoveAll(tempDir)
+		require.NoError(t, err)
+	})
 
 	data := struct {
 		CodebaseName   string

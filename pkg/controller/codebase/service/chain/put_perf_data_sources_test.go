@@ -1,6 +1,7 @@
 package chain
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -21,19 +22,19 @@ const (
 )
 
 func TestPutPerfDataSourcesChain_SkipCreatingPerfDataSource(t *testing.T) {
-	sources := PutPerfDataSources{
-		client: nil,
-	}
+	ctx := context.Background()
+	handler := NewPutPerfDataSources(nil)
 	c := &codebaseApi.Codebase{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name: "fake-name",
 		},
 		Spec: codebaseApi.CodebaseSpec{},
 	}
-	assert.NoError(t, sources.ServeRequest(c))
+	assert.NoError(t, handler.ServeRequest(ctx, c))
 }
 
 func TestPutPerfDataSourcesChain_JenkinsAndSonarDataSourcesShouldBeCreated(t *testing.T) {
+	ctx := context.Background()
 	pdss := &perfApi.PerfDataSourceSonar{}
 	pdsj := &perfApi.PerfDataSourceJenkins{}
 	pdsg := &perfApi.PerfDataSourceGitLab{}
@@ -83,11 +84,15 @@ func TestPutPerfDataSourcesChain_JenkinsAndSonarDataSourcesShouldBeCreated(t *te
 	scheme.AddKnownTypes(coreV1.SchemeGroupVersion, pdsj, pdss, pdsg, ecJenkins, ecSonar)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(pdsj, pdss, pdsg, ecJenkins, ecSonar, gs).Build()
 
-	assert.NoError(t, PutPerfDataSources{client: fakeCl}.ServeRequest(c))
+	handler := NewPutPerfDataSources(fakeCl)
+
+	err := handler.ServeRequest(ctx, c)
+
+	assert.NoError(t, err)
 }
 
 func TestPutPerfDataSourcesChain_ShouldNotFoundEdpComponent(t *testing.T) {
-
+	ctx := context.Background()
 	c := &codebaseApi.Codebase{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      fakeName,
@@ -104,5 +109,9 @@ func TestPutPerfDataSourcesChain_ShouldNotFoundEdpComponent(t *testing.T) {
 	scheme.AddKnownTypes(coreV1.SchemeGroupVersion, c)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c).Build()
 
-	assert.Error(t, PutPerfDataSources{client: fakeCl}.ServeRequest(c))
+	handler := NewPutPerfDataSources(fakeCl)
+
+	err := handler.ServeRequest(ctx, c)
+
+	assert.Error(t, err)
 }
