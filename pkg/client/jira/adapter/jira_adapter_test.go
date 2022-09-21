@@ -5,10 +5,11 @@ import (
 	"testing"
 
 	"github.com/andygrunwald/go-jira"
-	"github.com/epam/edp-codebase-operator/v2/pkg/client/jira/dto"
-	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/epam/edp-codebase-operator/v2/pkg/client/jira/dto"
+	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
 func TestGoJiraAdapter_Connected_True(t *testing.T) {

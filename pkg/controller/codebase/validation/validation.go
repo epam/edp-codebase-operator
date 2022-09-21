@@ -28,7 +28,7 @@ func IsCodebaseValid(cr *codebaseApi.Codebase) bool {
 
 func containSettings(slice []string, value string) bool {
 	for _, element := range slice {
-		if element == strings.ToLower(value) {
+		if strings.EqualFold(element, value) {
 			return true
 		}
 	}

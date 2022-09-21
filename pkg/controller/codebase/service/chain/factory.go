@@ -9,14 +9,14 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver"
 )
 
-//TODO: remove global variable log
+// TODO: remove global variable log
 var log = ctrl.Log.WithName("codebase_handler")
 
 func MakeGerritDefChain(c client.Client, cr repository.CodebaseRepository) handler.CodebaseHandler {
 	log.Info("chain is selected", "type", "gerrit")
 
 	ch := &chain{}
-	gp := gitserver.GitProvider{}
+	gp := &gitserver.GitProvider{}
 
 	ch.Use(
 		NewPutProjectGerrit(c, cr, gp),
@@ -35,7 +35,7 @@ func MakeThirdPartyVcsProviderDefChain(c client.Client, cr repository.CodebaseRe
 	log.Info("chain is selected", "type", "third party VCS provider")
 
 	ch := &chain{}
-	gp := gitserver.GitProvider{}
+	gp := &gitserver.GitProvider{}
 
 	ch.Use(
 		NewCloneGitProject(c, gp),
@@ -61,7 +61,7 @@ func MakeGitlabCiDefChain(c client.Client, cr repository.CodebaseRepository) han
 	log.Info("chain is selected", "type", "gitlab ci")
 
 	ch := &chain{}
-	gp := gitserver.GitProvider{}
+	gp := &gitserver.GitProvider{}
 
 	ch.Use(
 		NewCloneGitProject(c, gp),

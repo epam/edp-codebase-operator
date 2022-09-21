@@ -6,8 +6,9 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/epam/edp-codebase-operator/v2/pkg/model"
 	"github.com/pkg/errors"
+
+	"github.com/epam/edp-codebase-operator/v2/pkg/model"
 )
 
 func CopyHelmChartTemplates(deploymentScript, templatesDest, assetsDir string, config model.ConfigGoTemplating) error {

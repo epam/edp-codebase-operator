@@ -28,11 +28,11 @@ func NewPutGitlabCiFile(client client.Client, cr repository.CodebaseRepository, 
 	return &PutGitlabCiFile{client: client, cr: cr, git: git}
 }
 
-func (h *PutGitlabCiFile) ServeRequest(cxt context.Context, c *codebaseApi.Codebase) error {
+func (h *PutGitlabCiFile) ServeRequest(ctx context.Context, c *codebaseApi.Codebase) error {
 	rLog := log.WithValues("codebase_name", c.Name)
 	rLog.Info("start creating gitlab ci file...")
 
-	name, err := helper.GetEDPName(h.client, c.Namespace)
+	name, err := helper.GetEDPName(ctx, h.client, c.Namespace)
 	if err != nil {
 		setFailedFields(c, codebaseApi.PutGitlabCIFile, err.Error())
 		return err
@@ -135,19 +135,21 @@ func (h *PutGitlabCiFile) gitlabCiFileExists(codebaseName, edpName string) (bool
 		return false, errors.Wrapf(err, "couldn't get project_status value for %v codebase", codebaseName)
 	}
 
-	if util.ContainsString([]string{util.GitlabCiFilePushedStatus, util.ProjectVersionGoFilePushedStatus}, *ps) {
+	if util.ContainsString([]string{util.GitlabCiFilePushedStatus, util.ProjectVersionGoFilePushedStatus}, ps) {
 		return true, nil
 	}
 
 	return false, nil
 }
 
-func parseTemplate(templatePath, gitlabCiFile string, data interface{}) error {
-	var f, err = os.Create(gitlabCiFile)
+func parseTemplate(templatePath, gitlabCiFile string, data interface{}) (err error) {
+	f, err := os.Create(gitlabCiFile)
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+
+	defer util.CloseWithErrorCapture(&err, f, "failed to close gitlab CI file")
+
 	log.Info("file has been created.", "name", gitlabCiFile)
 
 	split := strings.Split(templatePath, "/")
@@ -156,11 +158,14 @@ func parseTemplate(templatePath, gitlabCiFile string, data interface{}) error {
 		return err
 	}
 
-	if err := tmpl.Execute(f, data); err != nil {
+	err = tmpl.Execute(f, data)
+	if err != nil {
 		return errors.Wrapf(err, "couldn't parse template %v", templatePath)
 	}
+
 	log.Info("template has been rendered", "path", gitlabCiFile)
-	return nil
+
+	return
 }
 
 func getEdpComponentName() string {

@@ -17,7 +17,7 @@ func CreateDefChain(client client.Client) handler.GitTagHandler {
 		next: DeleteGitTagCr{
 			client: client,
 		},
-		git: gitserver.GitProvider{},
+		git: &gitserver.GitProvider{},
 	}
 }
 

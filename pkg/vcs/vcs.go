@@ -5,12 +5,13 @@ import (
 	"log"
 	"net/url"
 
+	"github.com/pkg/errors"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	"github.com/epam/edp-codebase-operator/v2/pkg/model"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	"github.com/epam/edp-codebase-operator/v2/pkg/vcs/impl/bitbucket"
 	"github.com/epam/edp-codebase-operator/v2/pkg/vcs/impl/gitlab"
-	"github.com/pkg/errors"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type VCS interface {
@@ -76,13 +77,13 @@ func GetVcsConfig(client client.Client, us *model.UserSettings, codebaseName, na
 	}, nil
 }
 
-func СreateProjectInVcs(client client.Client, us *model.UserSettings, codebaseName, namespace string) error {
+func CreateProjectInVcs(client client.Client, us *model.UserSettings, codebaseName, namespace string) error {
 	vcsConf, err := GetVcsConfig(client, us, codebaseName, namespace)
 	if err != nil {
 		return err
 	}
 
-	vcsTool, err := CreateVCSClient(model.VCSTool(vcsConf.VcsToolName),
+	vcsTool, err := CreateVCSClient(vcsConf.VcsToolName,
 		vcsConf.ProjectVcsHostnameUrl, vcsConf.VcsUsername, vcsConf.VcsPassword)
 	if err != nil {
 		return errors.Wrap(err, "unable to create VCS client")

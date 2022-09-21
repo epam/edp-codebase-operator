@@ -5,13 +5,16 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 )
 
 func TestCleanTempDirectory_ShouldRemoveWithSuccessStatus(t *testing.T) {
-	os.Setenv("WORKING_DIR", "/tmp/1")
+	err := os.Setenv("WORKING_DIR", "/tmp/1")
+	require.NoError(t, err)
+
 	cb := &codebaseApi.CodebaseBranch{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "stub-name",
@@ -23,7 +26,8 @@ func TestCleanTempDirectory_ShouldRemoveWithSuccessStatus(t *testing.T) {
 		},
 	}
 	directory := CleanTempDirectory{}
-	err := directory.ServeRequest(cb)
+
+	err = directory.ServeRequest(cb)
 	assert.NoError(t, err)
 }
 

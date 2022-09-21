@@ -13,12 +13,11 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	"github.com/epam/edp-common/pkg/mock"
-
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/repository"
 	mockGit "github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver/mock"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
+	"github.com/epam/edp-common/pkg/mock"
 )
 
 func TestPutDeployConfigs_ShouldPass(t *testing.T) {

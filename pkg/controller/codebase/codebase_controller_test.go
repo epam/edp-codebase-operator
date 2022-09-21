@@ -9,6 +9,7 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	coreV1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -35,7 +36,9 @@ func TestControllerTestSuite(t *testing.T) {
 }
 
 func (s *ControllerTestSuite) SetupTest() {
-	os.Setenv("WORKING_DIR", "/tmp/1")
+	err := os.Setenv("WORKING_DIR", "/tmp/1")
+	require.NoError(s.T(), err)
+
 	s.scheme = runtime.NewScheme()
 	assert.NoError(s.T(), codebaseApi.AddToScheme(s.scheme))
 	assert.NoError(s.T(), jenkinsApi.AddToScheme(s.scheme))
@@ -46,7 +49,7 @@ func (s *ControllerTestSuite) TestReconcileCodebase_Reconcile_ShouldPassNotFound
 	c := &codebaseApi.Codebase{}
 	fakeCl := fake.NewClientBuilder().WithScheme(s.scheme).WithRuntimeObjects(c).Build()
 
-	//request
+	// request
 	req := reconcile.Request{
 		NamespacedName: types.NamespacedName{
 			Name:      "NewCodebase",
@@ -71,7 +74,7 @@ func (s *ControllerTestSuite) TestReconcileCodebase_Reconcile_ShouldFailNotFound
 	scheme := runtime.NewScheme()
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects().Build()
 
-	//request
+	// request
 	req := reconcile.Request{
 		NamespacedName: types.NamespacedName{
 			Name:      "NewCodebase",
@@ -107,7 +110,7 @@ func (s *ControllerTestSuite) TestReconcileCodebase_Reconcile_ShouldFailDeleteCo
 	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, &codebaseApi.Codebase{})
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c).Build()
 
-	//request
+	// request
 	req := reconcile.Request{
 		NamespacedName: types.NamespacedName{
 			Name:      "NewCodebase",
@@ -139,7 +142,7 @@ func (s *ControllerTestSuite) TestReconcileCodebase_Reconcile_ShouldPassOnInvali
 
 	fakeCl := fake.NewClientBuilder().WithScheme(s.scheme).WithRuntimeObjects(c).Build()
 
-	//request
+	// request
 	req := reconcile.Request{
 		NamespacedName: types.NamespacedName{
 			Name:      "NewCodebase",
@@ -174,7 +177,7 @@ func (s *ControllerTestSuite) TestReconcileCodebase_Reconcile_ShouldFailOnCreate
 
 	fakeCl := fake.NewClientBuilder().WithScheme(s.scheme).WithRuntimeObjects(c).Build()
 
-	//request
+	// request
 	req := reconcile.Request{
 		NamespacedName: types.NamespacedName{
 			Name:      "NewCodebase",
@@ -254,7 +257,7 @@ func (s *ControllerTestSuite) TestReconcileCodebase_Reconcile_ShouldPassOnJavaCr
 	secret := &coreV1.Secret{}
 	fakeCl := fake.NewClientBuilder().WithScheme(s.scheme).WithRuntimeObjects(c, cm, gs, jf, secret).Build()
 
-	//request
+	// request
 	req := reconcile.Request{
 		NamespacedName: types.NamespacedName{
 			Name:      "NewCodebase",
@@ -290,7 +293,7 @@ func (s *ControllerTestSuite) TestReconcileCodebase_Reconcile_ShouldDeleteCodeba
 
 	fakeCl := fake.NewClientBuilder().WithScheme(s.scheme).WithRuntimeObjects(c, cbl, jfl).Build()
 
-	//request
+	// request
 	req := reconcile.Request{
 		NamespacedName: types.NamespacedName{
 			Name:      "NewCodebase",
@@ -360,9 +363,16 @@ func (s *ControllerTestSuite) TestReconcileCodebase_getStrategyChain_ShouldPassI
 	assert.NotNil(t, ch)
 }
 
-func (s *ControllerTestSuite) TestReconcileCodebase_getStrategyChain_ShouldPassWothDb() {
-	db, _, _ := sqlmock.New()
-	defer db.Close()
+func (s *ControllerTestSuite) TestReconcileCodebase_getStrategyChain_ShouldPassWithDb() {
+	db, dbMock, err := sqlmock.New()
+	require.NoError(s.T(), err)
+
+	dbMock.ExpectClose()
+
+	defer func() {
+		err = db.Close()
+		require.NoError(s.T(), err)
+	}()
 
 	c := &codebaseApi.Codebase{}
 	fakeCl := fake.NewClientBuilder().WithScheme(s.scheme).WithRuntimeObjects(c).Build()

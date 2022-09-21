@@ -15,8 +15,9 @@ import (
 	"github.com/go-git/go-git/v5/config"
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	coreV1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -27,17 +28,17 @@ func setupSuite(tb testing.TB) (func(tb testing.TB), string) {
 	if err != nil {
 		tb.Error("Unable to generate test private key")
 	}
-	privkey_bytes := x509.MarshalPKCS1PrivateKey(pk)
-	privkey_pem := pem.EncodeToMemory(
+	privateKeyBytes := x509.MarshalPKCS1PrivateKey(pk)
+	privateKeyPem := pem.EncodeToMemory(
 		&pem.Block{
 			Type:  "RSA PRIVATE KEY",
-			Bytes: privkey_bytes,
+			Bytes: privateKeyBytes,
 		},
 	)
 	// Return a function to teardown the test
 	return func(tb testing.TB) {
 		log.Println("teardown suite")
-	}, string(privkey_pem)
+	}, string(privateKeyPem)
 }
 
 func TestGenerateReplicationConfig(t *testing.T) {
@@ -73,10 +74,13 @@ func TestSShInit_ShouldFailForIncorrectRSAPKey(t *testing.T) {
 
 func TestAddRemoteLinkToGerrit_ShouldPass(t *testing.T) {
 	dir, err := os.MkdirTemp("/tmp", "codebase")
-	if err != nil {
-		t.Fatal("unable to create temp directory for testing")
-	}
-	defer os.RemoveAll(dir)
+	require.NoError(t, err, "unable to create temp directory for testing")
+
+	defer func() {
+		err = os.RemoveAll(dir)
+		require.NoError(t, err)
+	}()
+
 	repo, err := git.PlainInit(dir, false)
 	if err != nil {
 		t.Error("Unable to create test git repo")
@@ -99,10 +103,13 @@ func TestAddRemoteLinkToGerrit_ShouldPass(t *testing.T) {
 
 func TestAddRemoteLinkToGerrit_ShouldPassWithErrRemoteNotFound(t *testing.T) {
 	dir, err := os.MkdirTemp("/tmp", "codebase")
-	if err != nil {
-		t.Fatal("unable to create temp directory for testing")
-	}
-	defer os.RemoveAll(dir)
+	require.NoError(t, err, "unable to create temp directory for testing")
+
+	defer func() {
+		err = os.RemoveAll(dir)
+		require.NoError(t, err)
+	}()
+
 	if _, err = git.PlainInit(dir, false); err != nil {
 		t.Error("Unable to create test git repo")
 	}
@@ -118,10 +125,13 @@ func TestAddRemoteLinkToGerrit_ShouldPassWithErrRemoteNotFound(t *testing.T) {
 
 func TestAddRemoteLinkToGerrit_ShouldFail(t *testing.T) {
 	dir, err := os.MkdirTemp("/tmp", "codebase")
-	if err != nil {
-		t.Fatal("unable to create temp directory for testing")
-	}
-	defer os.RemoveAll(dir)
+	require.NoError(t, err, "unable to create temp directory for testing")
+
+	defer func() {
+		err = os.RemoveAll(dir)
+		require.NoError(t, err)
+	}()
+
 	if _, err = git.PlainInit(dir, false); err != nil {
 		t.Error("Unable to create test git repo")
 	}
@@ -147,7 +157,7 @@ func TestSetupProjectReplication_ShouldFailToReloadGerritPlugin(t *testing.T) {
 	defer teardownSuite(t)
 
 	cmg := &coreV1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "gerrit",
 			Namespace: "fake-namespace",
 		},
@@ -161,8 +171,10 @@ func TestSetupProjectReplication_ShouldFailToReloadGerritPlugin(t *testing.T) {
 
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(cmg).Build()
 
-	os.Setenv("ASSETS_DIR", "../../build")
-	err := SetupProjectReplication(fakeCl, 22, "gerrit", idrsa, "fake-name",
+	err := os.Setenv("ASSETS_DIR", "../../build")
+	require.NoError(t, err)
+
+	err = SetupProjectReplication(fakeCl, 22, "gerrit", idrsa, "fake-name",
 		"fake-namespace", "vcs", logr.DiscardLogger{})
 	//TODO: mock sshclient and implement test that passes
 	assert.Error(t, err)
@@ -175,8 +187,10 @@ func TestSetupProjectReplication_ShouldFailToGetReplicationConfig(t *testing.T) 
 	scheme := runtime.NewScheme()
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects().Build()
 
-	os.Setenv("ASSETS_DIR", "/tmp")
-	err := SetupProjectReplication(fakeCl, 22, "gerrit", "idrsa", "fake-name",
+	err := os.Setenv("ASSETS_DIR", "/tmp")
+	require.NoError(t, err)
+
+	err = SetupProjectReplication(fakeCl, 22, "gerrit", "idrsa", "fake-name",
 		"fake-namespace", "vcs", logr.DiscardLogger{})
 	assert.Error(t, err)
 	if !strings.Contains(err.Error(), "Uable to generate replication config") {
@@ -192,8 +206,10 @@ func TestSetupProjectReplication_ShouldFailToGetConfigmap(t *testing.T) {
 
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(cmg).Build()
 
-	os.Setenv("ASSETS_DIR", "../../build")
-	err := SetupProjectReplication(fakeCl, 22, "gerrit", "idrsa", "fake-name",
+	err := os.Setenv("ASSETS_DIR", "../../build")
+	require.NoError(t, err)
+
+	err = SetupProjectReplication(fakeCl, 22, "gerrit", "idrsa", "fake-name",
 		"fake-namespace", "vcs", logr.DiscardLogger{})
 
 	assert.Error(t, err)
@@ -204,7 +220,7 @@ func TestSetupProjectReplication_ShouldFailToGetConfigmap(t *testing.T) {
 
 func TestSetupProjectReplication_ShouldFailToParseConfigmap(t *testing.T) {
 	cmg := &coreV1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "gerrit",
 			Namespace: "fake-namespace",
 		},
@@ -215,8 +231,10 @@ func TestSetupProjectReplication_ShouldFailToParseConfigmap(t *testing.T) {
 
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(cmg).Build()
 
-	os.Setenv("ASSETS_DIR", "../../build")
-	err := SetupProjectReplication(fakeCl, 22, "gerrit", "idrsa", "fake-name",
+	err := os.Setenv("ASSETS_DIR", "../../build")
+	require.NoError(t, err)
+
+	err = SetupProjectReplication(fakeCl, 22, "gerrit", "idrsa", "fake-name",
 		"fake-namespace", "vcs", logr.DiscardLogger{})
 
 	assert.Error(t, err)

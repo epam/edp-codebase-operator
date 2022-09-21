@@ -12,7 +12,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
 	"github.com/go-logr/logr"
@@ -21,6 +20,8 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
 type SSHCommand struct {

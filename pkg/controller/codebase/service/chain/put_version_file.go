@@ -3,6 +3,7 @@ package chain
 import (
 	"context"
 	"fmt"
+	"io/fs"
 	"os"
 	"strings"
 
@@ -32,16 +33,16 @@ func NewPutVersionFile(client client.Client, cr repository.CodebaseRepository, g
 	return &PutVersionFile{client: client, cr: cr, git: git}
 }
 
-func (h *PutVersionFile) ServeRequest(_ context.Context, c *codebaseApi.Codebase) error {
-	if strings.ToLower(c.Spec.Lang) != goLang ||
-		(strings.ToLower(c.Spec.Lang) == goLang && c.Spec.Versioning.Type == "edp") {
+func (h *PutVersionFile) ServeRequest(ctx context.Context, c *codebaseApi.Codebase) error {
+	if !strings.EqualFold(c.Spec.Lang, goLang) ||
+		(strings.EqualFold(c.Spec.Lang, goLang) && c.Spec.Versioning.Type == "edp") {
 		return nil
 	}
 
 	rLog := log.WithValues("codebase_name", c.Name)
 	rLog.Info("start putting VERSION file...")
 
-	name, err := helper.GetEDPName(h.client, c.Namespace)
+	name, err := helper.GetEDPName(ctx, h.client, c.Namespace)
 	if err != nil {
 		setFailedFields(c, codebaseApi.PutVersionFile, err.Error())
 		return err
@@ -81,7 +82,7 @@ func (h *PutVersionFile) versionFileExists(codebaseName, edpName string) (bool, 
 		return false, errors.Wrapf(err, "couldn't get project_status value for %v codebase", codebaseName)
 	}
 
-	if *ps == util.ProjectVersionGoFilePushedStatus {
+	if ps == util.ProjectVersionGoFilePushedStatus {
 		return true, nil
 	}
 
@@ -138,36 +139,47 @@ func (h *PutVersionFile) pushChanges(projectPath, privateKey, user string) error
 	return nil
 }
 
-func createFile(filePath string) error {
-	if _, err := os.Stat(filePath); os.IsExist(err) {
+func createFile(filePath string) (err error) {
+	_, err = os.Stat(filePath)
+	if errors.Is(err, fs.ErrExist) {
 		log.Info("File already exists. skip creating.", "name", filePath)
 		return nil
 	}
 
-	var file, err = os.Create(filePath)
+	// ignore all other errors
+	err = nil
+
+	file, err := os.Create(filePath)
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+
+	defer util.CloseWithErrorCapture(&err, file, "failed to close file: %s", filePath)
+
 	log.Info("File has been created.", "name", filePath)
-	return nil
+
+	return
 }
 
-func writeFile(filePath string) error {
-	var file, err = os.OpenFile(filePath, os.O_RDWR, 0644)
+func writeFile(filePath string) (err error) {
+	file, err := os.OpenFile(filePath, os.O_RDWR, 0644)
 	if err != nil {
 		return err
 	}
-	defer file.Close()
 
-	if _, err = file.WriteString(initVersion); err != nil {
+	defer util.CloseWithErrorCapture(&err, file, "failed to close file: %s", filePath)
+
+	_, err = file.WriteString(initVersion)
+	if err != nil {
 		return err
 	}
 
-	if err = file.Sync(); err != nil {
+	err = file.Sync()
+	if err != nil {
 		return err
 	}
 
 	log.Info("File has been updated.", "name", filePath)
-	return nil
+
+	return
 }

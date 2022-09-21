@@ -34,7 +34,7 @@ func (h *PutDeployConfigs) ServeRequest(ctx context.Context, c *codebaseApi.Code
 
 	rLog.Info("Start pushing configs...")
 
-	if err := h.tryToPushConfigs(c); err != nil {
+	if err := h.tryToPushConfigs(ctx, c); err != nil {
 		setFailedFields(c, codebaseApi.SetupDeploymentTemplates, err.Error())
 		return errors.Wrapf(err, "couldn't push deploy configs for %v codebase", c.Name)
 	}
@@ -42,8 +42,8 @@ func (h *PutDeployConfigs) ServeRequest(ctx context.Context, c *codebaseApi.Code
 	return nil
 }
 
-func (h *PutDeployConfigs) tryToPushConfigs(c *codebaseApi.Codebase) error {
-	edpN, err := helper.GetEDPName(h.client, c.Namespace)
+func (h *PutDeployConfigs) tryToPushConfigs(ctx context.Context, c *codebaseApi.Codebase) error {
+	edpN, err := helper.GetEDPName(ctx, h.client, c.Namespace)
 	if err != nil {
 		return errors.Wrap(err, "couldn't get edp name")
 	}
@@ -54,7 +54,7 @@ func (h *PutDeployConfigs) tryToPushConfigs(c *codebaseApi.Codebase) error {
 	}
 
 	var status = []string{util.ProjectTemplatesPushedStatus, util.ProjectVersionGoFilePushedStatus}
-	if util.ContainsString(status, *ps) {
+	if util.ContainsString(status, ps) {
 		log.Info("skip pushing templates to gerrit. templates already pushed", "name", c.Name)
 		return nil
 	}

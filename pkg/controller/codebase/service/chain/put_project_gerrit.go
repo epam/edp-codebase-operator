@@ -36,7 +36,7 @@ func (h *PutProjectGerrit) ServeRequest(ctx context.Context, c *codebaseApi.Code
 	rLog.Info("Start putting Codebase...")
 	rLog.Info("codebase data", "spec", c.Spec)
 
-	edpN, err := helper.GetEDPName(h.client, c.Namespace)
+	edpN, err := helper.GetEDPName(ctx, h.client, c.Namespace)
 	if err != nil {
 		setFailedFields(c, codebaseApi.GerritRepositoryProvisioning, err.Error())
 		return errors.Wrap(err, "couldn't get edp name")
@@ -49,12 +49,12 @@ func (h *PutProjectGerrit) ServeRequest(ctx context.Context, c *codebaseApi.Code
 	}
 
 	var status = []string{util.ProjectPushedStatus, util.ProjectTemplatesPushedStatus, util.ProjectVersionGoFilePushedStatus}
-	if util.ContainsString(status, *ps) {
+	if util.ContainsString(status, ps) {
 		log.Info("skip pushing to gerrit. project already pushed", "name", c.Name)
 		return nil
 	}
 
-	if err := h.setIntermediateSuccessFields(c, codebaseApi.GerritRepositoryProvisioning); err != nil {
+	if err := setIntermediateSuccessFields(ctx, h.client, c, codebaseApi.GerritRepositoryProvisioning); err != nil {
 		return errors.Wrapf(err, "an error has been occurred while updating %v Codebase status", c.Name)
 	}
 
@@ -133,7 +133,7 @@ func (h *PutProjectGerrit) tryToPushProjectToGerrit(c *codebaseApi.Codebase, ssh
 		}
 	}
 
-	if err := h.pushToGerrit(sshPort, idrsa, host, codebaseName, workDir, strategy); err != nil {
+	if err := h.pushToGerrit(sshPort, idrsa, host, codebaseName, workDir); err != nil {
 		return err
 	}
 	return nil
@@ -153,7 +153,7 @@ func (h *PutProjectGerrit) replaceDefaultBranch(directory, defaultBranchName, ne
 	return nil
 }
 
-func (h *PutProjectGerrit) pushToGerrit(sshPost int32, idrsa, host, codebaseName, directory string, strategy codebaseApi.Strategy) error {
+func (h *PutProjectGerrit) pushToGerrit(sshPost int32, idrsa, host, codebaseName, directory string) error {
 	log.Info("Start pushing project to Gerrit ", "codebase_name", codebaseName)
 	if err := gerrit.AddRemoteLinkToGerrit(directory, host, sshPost, codebaseName, log); err != nil {
 		return errors.Wrap(err, "couldn't add remote link to Gerrit")
@@ -204,33 +204,12 @@ func (h *PutProjectGerrit) tryToCloneRepo(repoUrl string, repositoryUsername *st
 func (h *PutProjectGerrit) tryToCreateProjectInVcs(us *model.UserSettings, codebaseName, namespace string) error {
 	log.Info("Start project creation in VCS", "codebase_name", codebaseName)
 	if us.VcsIntegrationEnabled {
-		if err := vcs.СreateProjectInVcs(h.client, us, codebaseName, namespace); err != nil {
+		if err := vcs.CreateProjectInVcs(h.client, us, codebaseName, namespace); err != nil {
 			return err
 		}
 		return nil
 	}
 	log.Info("VCS integration isn't enabled. Skip creation project in VCS")
-	return nil
-}
-
-func (h *PutProjectGerrit) setIntermediateSuccessFields(c *codebaseApi.Codebase, action codebaseApi.ActionType) error {
-	c.Status = codebaseApi.CodebaseStatus{
-		Status:          util.StatusInProgress,
-		Available:       false,
-		LastTimeUpdated: metaV1.Now(),
-		Action:          action,
-		Result:          codebaseApi.Success,
-		Username:        "system",
-		Value:           "inactive",
-		FailureCount:    c.Status.FailureCount,
-		Git:             c.Status.Git,
-	}
-
-	if err := h.client.Status().Update(context.TODO(), c); err != nil {
-		if err := h.client.Update(context.TODO(), c); err != nil {
-			return err
-		}
-	}
 	return nil
 }
 

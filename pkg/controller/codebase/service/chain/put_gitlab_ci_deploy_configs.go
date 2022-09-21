@@ -25,7 +25,7 @@ func NewPutGitlabCiDeployConfigs(client client.Client, cr repository.CodebaseRep
 	return &PutGitlabCiDeployConfigs{client: client, cr: cr, git: git}
 }
 
-func (h *PutGitlabCiDeployConfigs) ServeRequest(_ context.Context, c *codebaseApi.Codebase) error {
+func (h *PutGitlabCiDeployConfigs) ServeRequest(ctx context.Context, c *codebaseApi.Codebase) error {
 	rLog := log.WithValues("codebase_name", c.Name)
 	if c.Spec.DisablePutDeployTemplates {
 		rLog.Info("skip of putting deploy templates to codebase due to specified flag")
@@ -33,7 +33,7 @@ func (h *PutGitlabCiDeployConfigs) ServeRequest(_ context.Context, c *codebaseAp
 	}
 
 	rLog.Info("Start pushing configs...")
-	if err := h.tryToPushConfigs(c); err != nil {
+	if err := h.tryToPushConfigs(ctx, c); err != nil {
 		setFailedFields(c, codebaseApi.SetupDeploymentTemplates, err.Error())
 		return errors.Wrapf(err, "couldn't push deploy configs for %v codebase", c.Name)
 	}
@@ -41,8 +41,8 @@ func (h *PutGitlabCiDeployConfigs) ServeRequest(_ context.Context, c *codebaseAp
 	return nil
 }
 
-func (h *PutGitlabCiDeployConfigs) tryToPushConfigs(c *codebaseApi.Codebase) error {
-	name, err := helper.GetEDPName(h.client, c.Namespace)
+func (h *PutGitlabCiDeployConfigs) tryToPushConfigs(ctx context.Context, c *codebaseApi.Codebase) error {
+	name, err := helper.GetEDPName(ctx, h.client, c.Namespace)
 	if err != nil {
 		return errors.Wrap(err, "couldn't get edp name")
 	}
@@ -68,7 +68,7 @@ func (h *PutGitlabCiDeployConfigs) tryToPushConfigs(c *codebaseApi.Codebase) err
 		return err
 	}
 
-	if err := h.pushChanges(wd, c.Spec.GitServer, c.Namespace, c.Spec.DefaultBranch); err != nil {
+	if err := pushChangesToGit(h.client, h.git, wd, c); err != nil {
 		return err
 	}
 
@@ -80,33 +80,13 @@ func (h *PutGitlabCiDeployConfigs) tryToPushConfigs(c *codebaseApi.Codebase) err
 	return nil
 }
 
-func (h *PutGitlabCiDeployConfigs) pushChanges(projectPath, gitServerName, namespace, defaultBranch string) error {
-	gs, err := util.GetGitServer(h.client, gitServerName, namespace)
-	if err != nil {
-		return err
-	}
-
-	secret, err := util.GetSecret(h.client, gs.NameSshKeySecret, namespace)
-	if err != nil {
-		return errors.Wrapf(err, "an error has occurred while getting %v secret", gs.NameSshKeySecret)
-	}
-
-	k := string(secret.Data[util.PrivateSShKeyName])
-	u := gs.GitUser
-	if err := h.git.PushChanges(k, u, projectPath, defaultBranch); err != nil {
-		return errors.Wrapf(err, "an error has occurred while pushing changes for %v repo", projectPath)
-	}
-	log.Info("templates have been pushed")
-	return nil
-}
-
 func (h *PutGitlabCiDeployConfigs) skipTemplatePreparing(edpName, codebaseName, namespace string) (bool, error) {
 	ps, err := h.cr.SelectProjectStatusValue(codebaseName, edpName)
 	if err != nil {
 		return true, errors.Wrapf(err, "couldn't get project_status value for %v codebase", codebaseName)
 	}
 
-	if util.ContainsString([]string{util.ProjectTemplatesPushedStatus, util.ProjectVersionGoFilePushedStatus, util.GitlabCiFilePushedStatus}, *ps) {
+	if util.ContainsString([]string{util.ProjectTemplatesPushedStatus, util.ProjectVersionGoFilePushedStatus, util.GitlabCiFilePushedStatus}, ps) {
 		return true, nil
 	}
 	return false, nil

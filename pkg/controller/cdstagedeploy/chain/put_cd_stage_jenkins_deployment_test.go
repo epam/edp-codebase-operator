@@ -11,10 +11,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1"
-	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
-
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
+	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
 )
 
 func TestPutCDStageJenkinsDeployment_ServeRequest_ShouldPass(t *testing.T) {
@@ -106,7 +105,7 @@ func TestPutCDStageJenkinsDeployment_ServeRequest_ShouldFailWithExistingCR(t *te
 	err := jd.ServeRequest(cdsd)
 
 	assert.Error(t, err)
-	assert.ErrorIs(t, err, err.(*util.CDStageJenkinsDeploymentHasNotBeenProcessed))
+	assert.ErrorIs(t, err, err.(*util.CDStageJenkinsDeploymentHasNotBeenProcessedError))
 }
 
 func TestPutCDStageJenkinsDeployment_ServeRequest_ShouldFailGenerateLabels(t *testing.T) {

@@ -9,16 +9,16 @@ import (
 )
 
 func TestGitLab_CheckProjectExist(t *testing.T) {
-
 	httpmock.Reset()
 	httpmock.Activate()
 
 	httpmock.RegisterResponder("GET", "//%2Fapi%2Fv4%2Fprojects%2F%25252Fbackup%25252Ffake-name%3Fsimple=true/api/v4/projects/%252Fbackup%252Ffake-name?simple=true",
 		httpmock.NewJsonResponderOrPanic(200, ""))
 
-	g := GitLab{
+	g := &GitLab{
 		Client: *resty.DefaultClient,
 	}
+
 	r, err := g.CheckProjectExist("/backup", "fake-name")
 	assert.NoError(t, err)
 	assert.True(t, *r)
@@ -32,9 +32,10 @@ func TestGitLab_CheckProjectExist_ShouldFailToAuth(t *testing.T) {
 	httpmock.RegisterResponder("GET", "//%2Fapi%2Fv4%2Fprojects%2F%25252Fbackup%25252Ffake-name%3Fsimple=true/api/v4/projects/%252Fbackup%252Ffake-name?simple=true",
 		httpmock.NewJsonResponderOrPanic(401, ""))
 
-	g := GitLab{
+	g := &GitLab{
 		Client: *resty.DefaultClient,
 	}
+
 	r, err := g.CheckProjectExist("/backup", "fake-name")
 	assert.Error(t, err)
 	assert.Nil(t, r)
@@ -44,9 +45,11 @@ func TestGitLab_CheckProjectExist_ShouldFailToAuth(t *testing.T) {
 func TestGitLab_CheckProjectExist_ShouldFailToRequest(t *testing.T) {
 	httpmock.Reset()
 	httpmock.Activate()
-	g := GitLab{
+
+	g := &GitLab{
 		Client: *resty.DefaultClient,
 	}
+
 	r, err := g.CheckProjectExist("/backup", "fake-name")
 	assert.Error(t, err)
 	assert.Nil(t, r)

@@ -20,12 +20,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	edpComponentApi "github.com/epam/edp-component-operator/pkg/apis/v1/v1"
-	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
-
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/codebasebranch"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
+	edpComponentApi "github.com/epam/edp-component-operator/pkg/apis/v1/v1"
+	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
 )
 
 func TestReconcileCodebaseBranch_Reconcile_ShouldPassNotFoundCR(t *testing.T) {
@@ -35,7 +34,7 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldPassNotFoundCR(t *testing.T) {
 	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, c)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c).Build()
 
-	//request
+	// request
 	req := reconcile.Request{
 		NamespacedName: types.NamespacedName{
 			Name:      "NewCodebaseBranch",
@@ -59,7 +58,7 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldFailNotFound(t *testing.T) {
 	scheme := runtime.NewScheme()
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects().Build()
 
-	//request
+	// request
 	req := reconcile.Request{
 		NamespacedName: types.NamespacedName{
 			Name:      "NewCodebaseBranch",
@@ -98,7 +97,7 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldFailGetCodebase(t *testing.T) {
 	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, c)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c).Build()
 
-	//request
+	// request
 	req := reconcile.Request{
 		NamespacedName: types.NamespacedName{
 			Name:      "NewCodebaseBranch",
@@ -152,7 +151,7 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldFailDeleteCodebasebranch(t *tes
 	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, c, cb)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, cb).Build()
 
-	//request
+	// request
 	req := reconcile.Request{
 		NamespacedName: types.NamespacedName{
 			Name:      "NewCodebaseBranch",
@@ -212,7 +211,7 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldPassDeleteCodebasebranch(t *tes
 	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, c, cb)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, cb).Build()
 
-	//request
+	// request
 	req := reconcile.Request{
 		NamespacedName: types.NamespacedName{
 			Name:      "NewCodebaseBranch",
@@ -329,7 +328,7 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldPassWithDeleteJobFailure(t *tes
 			return buildRsp, nil
 		})
 
-	//request
+	// request
 	req := reconcile.Request{
 		NamespacedName: types.NamespacedName{
 			Name:      "NewCodebaseBranch",
@@ -462,7 +461,7 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldPassWithCreatingCIS(t *testing.
 			return buildRsp, nil
 		})
 
-	//request
+	// request
 	req := reconcile.Request{
 		NamespacedName: types.NamespacedName{
 			Name:      "NewCodebaseBranch",
@@ -542,7 +541,7 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldRequeueWithCodebaseNotReady(t *
 	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, c, cb, jf)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, cb, jf).Build()
 
-	//request
+	// request
 	req := reconcile.Request{
 		NamespacedName: types.NamespacedName{
 			Name:      "NewCodebaseBranch",
@@ -614,7 +613,7 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldInitBuildForEDPVersioning(t *te
 	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, c, cb, jf)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, cb, jf).Build()
 
-	//request
+	// request
 	req := reconcile.Request{
 		NamespacedName: types.NamespacedName{
 			Name:      "NewCodebaseBranch",

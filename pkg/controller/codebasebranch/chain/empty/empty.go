@@ -2,6 +2,7 @@ package empty
 
 import (
 	"errors"
+
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"

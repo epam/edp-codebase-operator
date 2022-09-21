@@ -14,9 +14,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1"
-	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
-
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
+	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
 )
 
 func TestReconcileCDStageDeploy_Reconcile_ShouldPass(t *testing.T) {
@@ -59,7 +58,7 @@ func TestReconcileCDStageDeploy_Reconcile_ShouldPass(t *testing.T) {
 	scheme.AddKnownTypes(jenkinsApi.SchemeGroupVersion, jcdsd)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(cdsd, s, jcdsd, j, jl).Build()
 
-	//request
+	// request
 	req := reconcile.Request{
 		NamespacedName: types.NamespacedName{
 			Name:      "NewCDStageDeploy",
@@ -84,7 +83,7 @@ func TestReconcileCDStageDeploy_Reconcile_ShouldFailToGetCDStageDeploy(t *testin
 
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects().Build()
 
-	//request
+	// request
 	req := reconcile.Request{
 		NamespacedName: types.NamespacedName{
 			Name:      "NewCDStageDeploy",
@@ -111,7 +110,7 @@ func TestReconcileCDStageDeploy_Reconcile_ShouldPassWithNoFoundCDStageDeploy(t *
 	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, cdsd)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(cdsd).Build()
 
-	//request
+	// request
 	req := reconcile.Request{
 		NamespacedName: types.NamespacedName{
 			Name:      "NewCDStageDeploy",
@@ -145,7 +144,7 @@ func TestReconcileCDStageDeploy_Reconcile_ShouldFailSetOwnerRef(t *testing.T) {
 	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, cdsd)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(cdsd).Build()
 
-	//request
+	// request
 	req := reconcile.Request{
 		NamespacedName: types.NamespacedName{
 			Name:      "NewCDStageDeploy",
@@ -192,7 +191,7 @@ func TestReconcileCDStageDeploy_Reconcile_ShouldFailServeRequest(t *testing.T) {
 	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, cdsd)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(cdsd, s).Build()
 
-	//request
+	// request
 	req := reconcile.Request{
 		NamespacedName: types.NamespacedName{
 			Name:      "NewCDStageDeploy",
@@ -247,7 +246,7 @@ func TestReconcileCDStageDeploy_Reconcile_ShouldFailServeRequestWithExistingCR(t
 	scheme.AddKnownTypes(jenkinsApi.SchemeGroupVersion, jcdsd)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(cdsd, jcdsd, s).Build()
 
-	//request
+	// request
 	req := reconcile.Request{
 		NamespacedName: types.NamespacedName{
 			Name:      "NewCDStageDeploy",

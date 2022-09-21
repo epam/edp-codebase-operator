@@ -10,6 +10,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	coreV1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -17,9 +18,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	edpCompApi "github.com/epam/edp-component-operator/pkg/apis/v1/v1"
-
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
+	edpCompApi "github.com/epam/edp-component-operator/pkg/apis/v1/v1"
 )
 
 func TestReconcileJiraServer_Reconcile_ShouldPassNotFound(t *testing.T) {
@@ -29,7 +29,7 @@ func TestReconcileJiraServer_Reconcile_ShouldPassNotFound(t *testing.T) {
 	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, j)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(j).Build()
 
-	//request
+	// request
 	req := reconcile.Request{
 		NamespacedName: types.NamespacedName{
 			Name:      "NewJira",
@@ -53,7 +53,7 @@ func TestReconcileJiraServer_Reconcile_ShouldFailNotFound(t *testing.T) {
 	scheme := runtime.NewScheme()
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects().Build()
 
-	//request
+	// request
 	req := reconcile.Request{
 		NamespacedName: types.NamespacedName{
 			Name:      "NewJira",
@@ -91,7 +91,7 @@ func TestReconcileJiraServer_Reconcile_ShouldFailInitJiraClientWithSecretNotFoun
 	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, j)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(j).Build()
 
-	//request
+	// request
 	req := reconcile.Request{
 		NamespacedName: types.NamespacedName{
 			Name:      "NewJira",
@@ -141,7 +141,7 @@ func TestReconcileJiraServer_Reconcile_ShouldFailToCreateNewJiraClient(t *testin
 	scheme.AddKnownTypes(coreV1.SchemeGroupVersion, s)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(j, s).Build()
 
-	//request
+	// request
 	req := reconcile.Request{
 		NamespacedName: types.NamespacedName{
 			Name:      "NewJira",
@@ -165,7 +165,9 @@ func TestReconcileJiraServer_Reconcile_ShouldFailToCreateNewJiraClient(t *testin
 }
 
 func TestReconcileJiraServer_Reconcile_ShouldPass(t *testing.T) {
-	os.Setenv("ASSETS_DIR", "../../../build")
+	err := os.Setenv("ASSETS_DIR", "../../../build")
+	require.NoError(t, err)
+
 	j := &codebaseApi.JiraServer{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "NewJira",
@@ -202,7 +204,7 @@ func TestReconcileJiraServer_Reconcile_ShouldPass(t *testing.T) {
 	httpmock.RegisterResponder("GET", "/j-api/rest/api/2/myself",
 		httpmock.NewJsonResponderOrPanic(200, &ju))
 
-	//request
+	// request
 	req := reconcile.Request{
 		NamespacedName: types.NamespacedName{
 			Name:      "NewJira",
@@ -223,7 +225,9 @@ func TestReconcileJiraServer_Reconcile_ShouldPass(t *testing.T) {
 }
 
 func TestReconcileJiraServer_Reconcile_ShouldFailToCreateEDPComponent(t *testing.T) {
-	os.Setenv("ASSETS_DIR", "../../../build")
+	err := os.Setenv("ASSETS_DIR", "../../../build")
+	require.NoError(t, err)
+
 	j := &codebaseApi.JiraServer{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "NewJira",
@@ -260,7 +264,7 @@ func TestReconcileJiraServer_Reconcile_ShouldFailToCreateEDPComponent(t *testing
 	httpmock.RegisterResponder("GET", "/j-api/rest/api/2/myself",
 		httpmock.NewJsonResponderOrPanic(200, &ju))
 
-	//request
+	// request
 	req := reconcile.Request{
 		NamespacedName: types.NamespacedName{
 			Name:      "NewJira",

@@ -5,7 +5,6 @@ import (
 	"strings"
 	"testing"
 
-	k8sMockClient "github.com/epam/edp-common/pkg/mock/controller-runtime/client"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -16,9 +15,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
-
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
+	k8sMockClient "github.com/epam/edp-common/pkg/mock/controller-runtime/client"
+	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
 )
 
 func TestPutCDStageDeploy_ShouldNotFailOnEmptyLables(t *testing.T) {

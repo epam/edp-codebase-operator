@@ -239,8 +239,15 @@ func TestPutGitlabCiFile_gitlabCiFileExistsShouldReturnFalse(t *testing.T) {
 }
 
 func TestPutGitlabCiFile_gitlabCiFileExistsShouldReturnError(t *testing.T) {
-	db, _, _ := sqlmock.New()
-	defer db.Close()
+	db, dbMock, err := sqlmock.New()
+	require.NoError(t, err)
+
+	dbMock.ExpectClose()
+
+	defer func() {
+		err = db.Close()
+		require.NoError(t, err)
+	}()
 
 	h := NewPutGitlabCiFile(
 		nil,

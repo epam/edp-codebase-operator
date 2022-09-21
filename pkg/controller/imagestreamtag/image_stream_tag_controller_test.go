@@ -23,7 +23,7 @@ func TestReconcileImageStreamTag_Reconcile_ShouldPassNotFound(t *testing.T) {
 	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, ist)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(ist).Build()
 
-	//request
+	// request
 	req := reconcile.Request{
 		NamespacedName: types.NamespacedName{
 			Name:      "IST",
@@ -46,7 +46,7 @@ func TestReconcileImageStreamTag_Reconcile_ShouldFailNotFound(t *testing.T) {
 	scheme := runtime.NewScheme()
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects().Build()
 
-	//request
+	// request
 	req := reconcile.Request{
 		NamespacedName: types.NamespacedName{
 			Name:      "IST",
@@ -84,7 +84,7 @@ func TestReconcileImageStreamTag_Reconcile_ShouldFail(t *testing.T) {
 	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, ist)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(ist).Build()
 
-	//request
+	// request
 	req := reconcile.Request{
 		NamespacedName: types.NamespacedName{
 			Name:      "IST",
@@ -128,7 +128,7 @@ func TestReconcileImageStreamTag_Reconcile_ShouldPass(t *testing.T) {
 	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, ist, cis)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(ist, cis).Build()
 
-	//request
+	// request
 	req := reconcile.Request{
 		NamespacedName: types.NamespacedName{
 			Name:      "IST",

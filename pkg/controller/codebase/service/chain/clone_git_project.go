@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
@@ -27,7 +26,7 @@ func NewCloneGitProject(client client.Client, git git.Git) *CloneGitProject {
 	return &CloneGitProject{client: client, git: git}
 }
 
-func (h *CloneGitProject) ServeRequest(_ context.Context, c *codebaseApi.Codebase) error {
+func (h *CloneGitProject) ServeRequest(ctx context.Context, c *codebaseApi.Codebase) error {
 	rLog := log.WithValues("codebase_name", c.Name)
 	rLog.Info("Start cloning project...")
 	if c.Spec.GitUrlPath != nil && *c.Spec.GitUrlPath == repoNotReady {
@@ -36,7 +35,7 @@ func (h *CloneGitProject) ServeRequest(_ context.Context, c *codebaseApi.Codebas
 	}
 
 	rLog.Info("codebase data", "spec", c.Spec)
-	if err := h.setIntermediateSuccessFields(c, codebaseApi.AcceptCodebaseRegistration); err != nil {
+	if err := setIntermediateSuccessFields(ctx, h.client, c, codebaseApi.AcceptCodebaseRegistration); err != nil {
 		return errors.Wrapf(err, "an error has been occurred while updating %v Codebase status", c.Name)
 	}
 
@@ -70,26 +69,5 @@ func (h *CloneGitProject) ServeRequest(_ context.Context, c *codebaseApi.Codebas
 		}
 	}
 	rLog.Info("end cloning project")
-	return nil
-}
-
-func (h *CloneGitProject) setIntermediateSuccessFields(c *codebaseApi.Codebase, action codebaseApi.ActionType) error {
-	c.Status = codebaseApi.CodebaseStatus{
-		Status:          util.StatusInProgress,
-		Available:       false,
-		LastTimeUpdated: metaV1.Now(),
-		Action:          action,
-		Result:          codebaseApi.Success,
-		Username:        "system",
-		Value:           "inactive",
-		FailureCount:    c.Status.FailureCount,
-		Git:             c.Status.Git,
-	}
-
-	if err := h.client.Status().Update(context.TODO(), c); err != nil {
-		if err := h.client.Update(context.TODO(), c); err != nil {
-			return err
-		}
-	}
 	return nil
 }

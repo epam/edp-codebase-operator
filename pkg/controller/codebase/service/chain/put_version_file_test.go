@@ -17,13 +17,12 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	perfApi "github.com/epam/edp-perf-operator/v2/pkg/apis/edp/v1alpha1"
-
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/helper"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/repository"
 	mockGit "github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver/mock"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
+	perfApi "github.com/epam/edp-perf-operator/v2/pkg/apis/edp/v1alpha1"
 )
 
 const (
@@ -45,8 +44,13 @@ func init() {
 }
 
 func TestVersionFileExists_VersionFileMustExist(t *testing.T) {
-	db, mock, _ := sqlmock.New()
-	defer db.Close()
+	db, dbMock, err := sqlmock.New()
+	require.NoError(t, err)
+
+	defer func() {
+		err = db.Close()
+		require.NoError(t, err)
+	}()
 
 	h := NewPutVersionFile(
 		nil,
@@ -56,24 +60,30 @@ func TestVersionFileExists_VersionFileMustExist(t *testing.T) {
 		nil,
 	)
 
-	mock.ExpectPrepare(regexp.QuoteMeta(
+	dbMock.ExpectPrepare(regexp.QuoteMeta(
 		fmt.Sprintf(`select project_status from "%v".codebase where name = $1 ;`, fakeEdpName)))
 
-	mock.ExpectQuery(regexp.QuoteMeta(
+	dbMock.ExpectQuery(regexp.QuoteMeta(
 		fmt.Sprintf(`select project_status from "%v".codebase where name = $1 ;`, fakeEdpName))).
 		WithArgs(fakeCodebaseName).
 		WillReturnRows(sqlmock.NewRows([]string{"project_status"}).
 			AddRow(util.ProjectVersionGoFilePushedStatus))
 
-	e, err := h.versionFileExists(fakeCodebaseName, fakeEdpName)
+	dbMock.ExpectClose()
 
+	e, err := h.versionFileExists(fakeCodebaseName, fakeEdpName)
 	assert.NoError(t, err)
 	assert.True(t, e)
 }
 
 func TestVersionFileExists_AnErrorOccursDueToInvalidInputParameter(t *testing.T) {
-	db, mock, _ := sqlmock.New()
-	defer db.Close()
+	db, dbMock, err := sqlmock.New()
+	require.NoError(t, err)
+
+	defer func() {
+		err = db.Close()
+		require.NoError(t, err)
+	}()
 
 	h := NewPutVersionFile(
 		nil,
@@ -83,18 +93,14 @@ func TestVersionFileExists_AnErrorOccursDueToInvalidInputParameter(t *testing.T)
 		nil,
 	)
 
-	mock.ExpectPrepare(regexp.QuoteMeta(
-		fmt.Sprintf(`select project_status from "%v".codebase where name = $1 ;`, fakeEdpName)))
+	dbMock.ExpectPrepare(
+		regexp.QuoteMeta(fmt.Sprintf(`select project_status from "%v".codebase where name = $1 ;`, fakeEdpName)),
+	).WillReturnError(assert.AnError)
 
-	mock.ExpectQuery(regexp.QuoteMeta(
-		fmt.Sprintf(`select project_status from "%v".codebase where name = $1 ;`, fakeInputParam))).
-		WithArgs(fakeCodebaseName).
-		WillReturnRows(sqlmock.NewRows([]string{"project_status"}).
-			AddRow(util.ProjectVersionGoFilePushedStatus))
+	dbMock.ExpectClose()
 
 	e, err := h.versionFileExists(fakeCodebaseName, fakeEdpName)
-
-	assert.Error(t, err)
+	assert.ErrorIs(t, err, assert.AnError)
 	assert.False(t, e)
 }
 
@@ -182,7 +188,7 @@ func TestTryToPutVersionFileMethod_MustBeFinishedSuccessfully(t *testing.T) {
 	testScheme.AddKnownTypes(v1K8s.SchemeGroupVersion, secret, cm)
 	fakeCl := fake.NewClientBuilder().WithScheme(testScheme).WithRuntimeObjects(gs, secret, cm).Build()
 
-	//mock methods of git interface
+	// mock methods of git interface
 	mGit := new(mockGit.MockGit)
 	mGit.On("CommitChanges", path, fmt.Sprintf("Add %v file", versionFileName)).Return(
 		nil)

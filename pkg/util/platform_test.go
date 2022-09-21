@@ -5,9 +5,9 @@ import (
 	"strings"
 	"testing"
 
-	k8sMockClient "github.com/epam/edp-common/pkg/mock/controller-runtime/client"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/apps/v1"
 	coreV1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -15,9 +15,9 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	edpComponentApi "github.com/epam/edp-component-operator/pkg/apis/v1/v1"
-
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
+	k8sMockClient "github.com/epam/edp-common/pkg/mock/controller-runtime/client"
+	edpComponentApi "github.com/epam/edp-component-operator/pkg/apis/v1/v1"
 )
 
 func TestGetGerritPort_ShouldFound(t *testing.T) {
@@ -454,7 +454,8 @@ func TestGetUserSettings_ShouldFailOnFindConfigmap(t *testing.T) {
 }
 
 func TestGetWatchNamespace_IsDefined(t *testing.T) {
-	os.Setenv("WATCH_NAMESPACE", "namespace")
+	err := os.Setenv("WATCH_NAMESPACE", "namespace")
+	require.NoError(t, err)
 
 	ns, err := GetWatchNamespace()
 	assert.Equal(t, ns, "namespace")
@@ -462,7 +463,9 @@ func TestGetWatchNamespace_IsDefined(t *testing.T) {
 }
 
 func TestGetWatchNamespace_NotDefined(t *testing.T) {
-	os.Unsetenv("WATCH_NAMESPACE")
+	err := os.Unsetenv("WATCH_NAMESPACE")
+	require.NoError(t, err)
+
 	ns, err := GetWatchNamespace()
 	assert.Equal(t, ns, "")
 	assert.Error(t, err)
@@ -472,21 +475,27 @@ func TestGetWatchNamespace_NotDefined(t *testing.T) {
 }
 
 func TestGetDebugMode_IsDefined(t *testing.T) {
-	os.Setenv("DEBUG_MODE", "true")
+	err := os.Setenv("DEBUG_MODE", "true")
+	require.NoError(t, err)
+
 	d, err := GetDebugMode()
 	assert.True(t, d)
 	assert.NoError(t, err)
 }
 
 func TestGetDebugMode_NotDefined(t *testing.T) {
-	os.Unsetenv("DEBUG_MODE")
+	err := os.Unsetenv("DEBUG_MODE")
+	require.NoError(t, err)
+
 	d, err := GetDebugMode()
 	assert.False(t, d)
 	assert.Nil(t, err)
 }
 
 func TestGetDebugMode_ShouldFailOnConvertToBool(t *testing.T) {
-	os.Setenv("DEBUG_MODE", "6")
+	err := os.Setenv("DEBUG_MODE", "6")
+	require.NoError(t, err)
+
 	d, err := GetDebugMode()
 	assert.False(t, d)
 	assert.Error(t, err)

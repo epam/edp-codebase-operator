@@ -13,13 +13,12 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
-	"github.com/epam/edp-jenkins-operator/v2/pkg/util/consts"
-
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/platform"
 	"github.com/epam/edp-codebase-operator/v2/pkg/model"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
+	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
+	"github.com/epam/edp-jenkins-operator/v2/pkg/util/consts"
 )
 
 type PutJenkinsFolder struct {
@@ -63,11 +62,7 @@ func (h *PutJenkinsFolder) ServeRequest(ctx context.Context, c *codebaseApi.Code
 		"JIRA_INTEGRATION_ENABLED": strconv.FormatBool(isJiraIntegrationEnabled(c.Spec.JiraServer)),
 		"PLATFORM_TYPE":            platform.GetPlatformType(),
 	}
-
-	jc, err := json.Marshal(jpm)
-	if err != nil {
-		return errors.Wrapf(err, "Can't marshal parameters %v into json string", jpm)
-	}
+	jc, _ := json.Marshal(jpm)
 
 	rLog.Info("start creating jenkins folder...")
 	if err := h.putJenkinsFolder(c, string(jc), jfn); err != nil {

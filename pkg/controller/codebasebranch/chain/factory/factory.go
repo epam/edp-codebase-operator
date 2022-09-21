@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebasebranch/chain/clean_tmp_directory"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebasebranch/chain/empty"
@@ -15,7 +16,6 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebasebranch/service"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var log = ctrl.Log.WithName("codebase_branch_factory")
@@ -43,7 +43,7 @@ func createGitlabCiDefChain(client client.Client) handler.CodebaseBranchHandler 
 	log.Info("chain is selected", "type", "gitlab ci chain")
 	return put_branch_in_git.PutBranchInGit{
 		Client: client,
-		Git:    gitserver.GitProvider{},
+		Git:    &gitserver.GitProvider{},
 		Next: update_perf_data_sources.UpdatePerfDataSources{
 			Next: put_codebase_image_stream.PutCodebaseImageStream{
 				Client: client,
@@ -58,7 +58,7 @@ func createGitlabCiDefChain(client client.Client) handler.CodebaseBranchHandler 
 }
 
 func GetDeletionChain(ciType string, client client.Client) handler.CodebaseBranchHandler {
-	if strings.ToLower(ciType) == util.GitlabCi {
+	if strings.EqualFold(ciType, util.GitlabCi) {
 		return empty.MakeChain("no deletion chain for gitlab ci", false)
 	}
 
@@ -73,7 +73,7 @@ func GetDeletionChain(ciType string, client client.Client) handler.CodebaseBranc
 }
 
 func GetChain(ciType string, client client.Client) handler.CodebaseBranchHandler {
-	if strings.ToLower(ciType) == util.GitlabCi {
+	if strings.EqualFold(ciType, util.GitlabCi) {
 		return createGitlabCiDefChain(client)
 	}
 	return createJenkinsDefChain(client)

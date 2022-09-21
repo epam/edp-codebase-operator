@@ -114,7 +114,7 @@ func (r *ReconcileJiraIssueMetadata) Reconcile(ctx context.Context, request reco
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	return reconcile.Result{RequeueAfter: duration * time.Minute}, nil
+	return reconcile.Result{RequeueAfter: duration}, nil
 }
 
 func lookup() string {

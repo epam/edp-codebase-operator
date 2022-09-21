@@ -5,16 +5,22 @@ import (
 	"os"
 	"testing"
 
-	"github.com/epam/edp-codebase-operator/v2/pkg/model"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/epam/edp-codebase-operator/v2/pkg/model"
 )
 
 func TestCopyTemplate_HelmTemplates_ShouldPass(t *testing.T) {
+	// ToDo: replace /tmp with t.TempDir()
 	testDir, err := os.MkdirTemp("/tmp", "codebase")
-	if err != nil {
-		t.Fatalf("unable to create temp directory for testing")
-	}
-	defer os.RemoveAll(testDir)
+	require.NoError(t, err, "unable to create temp directory for testing")
+
+	defer func() {
+		err = os.RemoveAll(testDir)
+		require.NoError(t, err)
+	}()
+
 	cf := model.ConfigGoTemplating{
 		Name:         "c-name",
 		PlatformType: "kubernetes",
@@ -24,7 +30,7 @@ func TestCopyTemplate_HelmTemplates_ShouldPass(t *testing.T) {
 	}
 
 	err = CopyTemplate(HelmChartDeploymentScriptType, testDir, "../../build", cf)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	chf := fmt.Sprintf("%v/deploy-templates/Chart.yaml", testDir)
 	_, err = os.Stat(chf)
@@ -41,10 +47,13 @@ func TestCopyTemplate_HelmTemplates_ShouldPass(t *testing.T) {
 
 func TestCopyTemplate_OpenShiftTemplates_ShouldPass(t *testing.T) {
 	testDir, err := os.MkdirTemp("/tmp", "codebase")
-	if err != nil {
-		t.Fatalf("unable to create temp directory for testing")
-	}
-	defer os.RemoveAll(testDir)
+	require.NoError(t, err, "unable to create temp directory for testing")
+
+	defer func() {
+		err = os.RemoveAll(testDir)
+		require.NoError(t, err)
+	}()
+
 	cf := model.ConfigGoTemplating{
 		Name:         "c-name",
 		PlatformType: "kubernetes",
@@ -54,7 +63,7 @@ func TestCopyTemplate_OpenShiftTemplates_ShouldPass(t *testing.T) {
 	}
 
 	err = CopyTemplate("openshift-template", testDir, "../../build", cf)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	chf := fmt.Sprintf("%v/deploy-templates/c-name.yaml", testDir)
 	_, err = os.Stat(chf)
@@ -71,10 +80,13 @@ func TestCopyTemplate_OpenShiftTemplates_ShouldPass(t *testing.T) {
 
 func TestCopyTemplate_ShouldNotOverwriteExistingDeploymentTemaplates(t *testing.T) {
 	testDir, err := os.MkdirTemp("/tmp", "codebase")
-	if err != nil {
-		t.Fatal("unable to create temp directory for testing")
-	}
-	defer os.RemoveAll(testDir)
+	require.NoError(t, err, "unable to create temp directory for testing")
+
+	defer func() {
+		err = os.RemoveAll(testDir)
+		require.NoError(t, err)
+	}()
+
 	cf := model.ConfigGoTemplating{}
 	if err = os.MkdirAll(fmt.Sprintf("%v/deploy-templates", testDir), 0775); err != nil {
 		t.Fatal("Unable to create deploy-templates dir")
@@ -86,10 +98,13 @@ func TestCopyTemplate_ShouldNotOverwriteExistingDeploymentTemaplates(t *testing.
 
 func TestCopyTemplate_ShouldFailOnUnsupportedDeploymemntType(t *testing.T) {
 	testDir, err := os.MkdirTemp("/tmp", "codebase")
-	if err != nil {
-		t.Fatal("unable to create temp directory for testing")
-	}
-	defer os.RemoveAll(testDir)
+	require.NoError(t, err, "unable to create temp directory for testing")
+
+	defer func() {
+		err = os.RemoveAll(testDir)
+		require.NoError(t, err)
+	}()
+
 	cf := model.ConfigGoTemplating{}
 
 	err = CopyTemplate("non-supported-deployment-type", testDir, "../../build", cf)

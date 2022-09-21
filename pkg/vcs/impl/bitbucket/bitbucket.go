@@ -25,7 +25,7 @@ type link struct {
 	Href string `json:"href"`
 }
 
-func (bitBucket *BitBucket) Init(url string, username string, password string) error {
+func (bitBucket *BitBucket) Init(url, username, password string) error {
 	client := resty.New()
 	client.SetRetryCount(3)
 	client.HostURL = url

@@ -1,9 +1,10 @@
 package chain
 
 import (
-	"github.com/epam/edp-codebase-operator/v2/pkg/controller/cdstagedeploy/chain/handler"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/epam/edp-codebase-operator/v2/pkg/controller/cdstagedeploy/chain/handler"
 )
 
 func CreateDefChain(client client.Client) handler.CDStageDeployHandler {

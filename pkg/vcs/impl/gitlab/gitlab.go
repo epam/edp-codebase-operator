@@ -14,7 +14,7 @@ type GitLab struct {
 	Client resty.Client
 }
 
-func (gitlab GitLab) CheckProjectExist(groupPath, projectName string) (*bool, error) {
+func (gitlab *GitLab) CheckProjectExist(groupPath, projectName string) (*bool, error) {
 	log.Printf("Start check does project already present in group path: %v, by project name: %v...",
 		groupPath, projectName)
 	projectPath := fmt.Sprintf("%v/%v", groupPath, projectName)
@@ -39,7 +39,7 @@ func (gitlab GitLab) CheckProjectExist(groupPath, projectName string) (*bool, er
 	return &exist, nil
 }
 
-func (gitlab GitLab) CreateProject(groupPath, projectName string) (string, error) {
+func (gitlab *GitLab) CreateProject(groupPath, projectName string) (string, error) {
 	log.Printf("Start creation project by name: %v in group path: %v...", projectName, groupPath)
 	id, err := gitlab.GetGroupIdByName(groupPath)
 	log.Printf("Id of specified group path: %v is: %v", groupPath, id)
@@ -125,6 +125,49 @@ func (gitlab *GitLab) Init(url string, username string, password string) error {
 	return nil
 }
 
+func (gitlab *GitLab) GetGroupIdByName(groupName string) (string, error) {
+	log.Printf("Start retriving group id by name: %v", groupName)
+	var result map[string]interface{}
+	resp, err := gitlab.Client.R().
+		SetQueryParam("simple", "true").
+		SetResult(&result).
+		SetPathParams(map[string]string{
+			"group-name": url.PathEscape(groupName),
+		}).
+		Get("/api/v4/groups/{group-name}")
+	if err != nil {
+		errorMsg := fmt.Sprintf("Unable get repository group id: %v", err)
+		log.Println(errorMsg)
+		return "", errors.New(errorMsg)
+	}
+	if resp.IsError() {
+		log.Println(resp.Status())
+		return "", errors.New(resp.Status())
+	}
+	log.Printf("HTTP Response by get group request: %v", result)
+	return simpleConvertFloatToString(result["id"].(float64)), nil
+}
+
+func (gitlab *GitLab) DeleteProject(projectId string) error {
+	log.Printf("Start project deletion by id: %v", projectId)
+	resp, err := gitlab.Client.R().
+		SetPathParams(map[string]string{
+			"project-id": projectId,
+		}).
+		Delete("/api/v4/projects/{project-id}")
+	log.Printf("Response received from by DELETE project request: %v", resp.String())
+	if err != nil {
+		errorMsg := fmt.Sprintf("Unable to delete project in GitLab: %v", err)
+		log.Println(errorMsg)
+		return errors.New(errorMsg)
+	}
+	if resp.IsError() {
+		log.Println(resp.Status())
+		return errors.New(resp.Status())
+	}
+	return nil
+}
+
 func tryToLoginWithPass(url, user, pass string) (*string, error) {
 	var result map[string]interface{}
 	resp, err := resty.R().
@@ -150,49 +193,6 @@ func tryToLoginWithPass(url, user, pass string) (*string, error) {
 	return &token, nil
 }
 
-func (gitlab GitLab) GetGroupIdByName(groupName string) (string, error) {
-	log.Printf("Start retriving group id by name: %v", groupName)
-	var result map[string]interface{}
-	resp, err := gitlab.Client.R().
-		SetQueryParam("simple", "true").
-		SetResult(&result).
-		SetPathParams(map[string]string{
-			"group-name": url.PathEscape(groupName),
-		}).
-		Get("/api/v4/groups/{group-name}")
-	if err != nil {
-		errorMsg := fmt.Sprintf("Unable get repository group id: %v", err)
-		log.Println(errorMsg)
-		return "", errors.New(errorMsg)
-	}
-	if resp.IsError() {
-		log.Println(resp.Status())
-		return "", errors.New(resp.Status())
-	}
-	log.Printf("HTTP Response by get group request: %v", result)
-	return simpleConvertFloatToString(result["id"].(float64)), nil
-}
-
 func simpleConvertFloatToString(number float64) string {
 	return strconv.FormatFloat(number, 'f', -1, 64)
-}
-
-func (gitlab GitLab) DeleteProject(projectId string) error {
-	log.Printf("Start project deletion by id: %v", projectId)
-	resp, err := gitlab.Client.R().
-		SetPathParams(map[string]string{
-			"project-id": projectId,
-		}).
-		Delete("/api/v4/projects/{project-id}")
-	log.Printf("Response received from by DELETE project request: %v", resp.String())
-	if err != nil {
-		errorMsg := fmt.Sprintf("Unable to delete project in GitLab: %v", err)
-		log.Println(errorMsg)
-		return errors.New(errorMsg)
-	}
-	if resp.IsError() {
-		log.Println(resp.Status())
-		return errors.New(resp.Status())
-	}
-	return nil
 }

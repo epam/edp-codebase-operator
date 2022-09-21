@@ -19,7 +19,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1"
-
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/cdstagedeploy/chain"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
@@ -83,7 +82,7 @@ func (r *ReconcileCDStageDeploy) Reconcile(ctx context.Context, request reconcil
 	if err := chain.CreateDefChain(r.client).ServeRequest(i); err != nil {
 		i.SetFailedStatus(err)
 		switch err.(type) {
-		case *util.CDStageJenkinsDeploymentHasNotBeenProcessed:
+		case *util.CDStageJenkinsDeploymentHasNotBeenProcessedError:
 			log.Error(err, "unable to continue autodeploy",
 				"pipe", i.Spec.Pipeline, "stage", i.Spec.Stage)
 			p := r.setReconcilationPeriod(i)

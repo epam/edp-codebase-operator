@@ -12,18 +12,18 @@ func NewCodebaseBranchReconcileError(msg string) error {
 	return &CodebaseBranchReconcileError{Message: msg}
 }
 
-type CDStageDeployHasNotBeenProcessed struct {
+type CDStageDeployHasNotBeenProcessedError struct {
 	Message string
 }
 
-func (e *CDStageDeployHasNotBeenProcessed) Error() string {
+func (e *CDStageDeployHasNotBeenProcessedError) Error() string {
 	return e.Message
 }
 
-type CDStageJenkinsDeploymentHasNotBeenProcessed struct {
+type CDStageJenkinsDeploymentHasNotBeenProcessedError struct {
 	Message string
 }
 
-func (e *CDStageJenkinsDeploymentHasNotBeenProcessed) Error() string {
+func (e *CDStageJenkinsDeploymentHasNotBeenProcessedError) Error() string {
 	return e.Message
 }

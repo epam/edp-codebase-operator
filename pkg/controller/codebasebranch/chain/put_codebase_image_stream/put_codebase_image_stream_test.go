@@ -12,9 +12,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	edpComponentApi "github.com/epam/edp-component-operator/pkg/apis/v1/v1"
-
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
+	edpComponentApi "github.com/epam/edp-component-operator/pkg/apis/v1/v1"
 )
 
 func TestPutCodebaseImageStream_ShouldCreateCisWithDefaultVersioningType(t *testing.T) {

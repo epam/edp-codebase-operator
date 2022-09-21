@@ -177,7 +177,7 @@ func (r *ReconcileCodebase) createCodebaseRepo(c *codebaseApi.Codebase) reposito
 }
 
 func (r *ReconcileCodebase) getCiChain(c *codebaseApi.Codebase, repo repository.CodebaseRepository) (cHand.CodebaseHandler, error) {
-	if strings.ToLower(c.Spec.CiTool) == util.GitlabCi {
+	if strings.EqualFold(c.Spec.CiTool, util.GitlabCi) {
 		return chain.MakeGitlabCiDefChain(r.client, repo), nil
 	}
 	return chain.MakeThirdPartyVcsProviderDefChain(r.client, repo), nil

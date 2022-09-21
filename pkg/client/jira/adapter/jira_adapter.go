@@ -2,11 +2,13 @@ package adapter
 
 import (
 	"fmt"
-	"github.com/andygrunwald/go-jira"
-	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	"regexp"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"strconv"
+
+	"github.com/andygrunwald/go-jira"
+	ctrl "sigs.k8s.io/controller-runtime"
+
+	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
 var log = ctrl.Log.WithName("gojira_adapter")

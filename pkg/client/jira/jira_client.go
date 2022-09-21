@@ -2,6 +2,7 @@ package jira
 
 import (
 	"github.com/andygrunwald/go-jira"
+
 	"github.com/epam/edp-codebase-operator/v2/pkg/client/jira/dto"
 )
 

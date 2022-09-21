@@ -28,7 +28,7 @@ func TestReconcileJiraIssueMetadata_Reconcile_ShouldPassNotFound(t *testing.T) {
 	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, ist)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(ist).Build()
 
-	//request
+	// request
 	req := reconcile.Request{
 		NamespacedName: types.NamespacedName{
 			Name:      "JIM",
@@ -51,7 +51,7 @@ func TestReconcileJiraIssueMetadata_Reconcile_ShouldFailNotFound(t *testing.T) {
 	scheme := runtime.NewScheme()
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects().Build()
 
-	//request
+	// request
 	req := reconcile.Request{
 		NamespacedName: types.NamespacedName{
 			Name:      "JIM",
@@ -85,7 +85,7 @@ func TestReconcileJiraIssueMetadata_Reconcile_ShouldFailToSetOwnerReference(t *t
 	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, ist)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(ist).Build()
 
-	//request
+	// request
 	req := reconcile.Request{
 		NamespacedName: types.NamespacedName{
 			Name:      "JIM",
@@ -132,7 +132,7 @@ func TestReconcileJiraIssueMetadata_Reconcile_ShouldFailJiraISDisabled(t *testin
 	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, ist, c)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(ist, c).Build()
 
-	//request
+	// request
 	req := reconcile.Request{
 		NamespacedName: types.NamespacedName{
 			Name:      "JIM",
@@ -183,7 +183,7 @@ func TestReconcileJiraIssueMetadata_Reconcile_ShouldFailGetJira(t *testing.T) {
 	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, ist, c, &codebaseApi.JiraServer{})
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(ist, c).Build()
 
-	//request
+	// request
 	req := reconcile.Request{
 		NamespacedName: types.NamespacedName{
 			Name:      "JIM",
@@ -241,7 +241,7 @@ func TestReconcileJiraIssueMetadata_Reconcile_ShouldPassJiraFoundButUnavailable(
 	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, ist, c, j)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(ist, c, j).Build()
 
-	//request
+	// request
 	req := reconcile.Request{
 		NamespacedName: types.NamespacedName{
 			Name:      "JIM",
@@ -299,7 +299,7 @@ func TestReconcileJiraIssueMetadata_Reconcile_ShouldFailInitJiraClient(t *testin
 	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, ist, c, j, &coreV1.Secret{})
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(ist, c, j).Build()
 
-	//request
+	// request
 	req := reconcile.Request{
 		NamespacedName: types.NamespacedName{
 			Name:      "JIM",
@@ -371,7 +371,7 @@ func TestReconcileJiraIssueMetadata_Reconcile_ShouldFailToCreateChain(t *testing
 	scheme.AddKnownTypes(coreV1.SchemeGroupVersion, s)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(ist, c, j, s).Build()
 
-	//request
+	// request
 	req := reconcile.Request{
 		NamespacedName: types.NamespacedName{
 			Name:      "JIM",
@@ -445,7 +445,7 @@ func TestReconcileJiraIssueMetadata_Reconcile_ShouldFailServeRequest(t *testing.
 	scheme.AddKnownTypes(coreV1.SchemeGroupVersion, s)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(ist, c, j, s).Build()
 
-	//request
+	// request
 	req := reconcile.Request{
 		NamespacedName: types.NamespacedName{
 			Name:      "JIM",
@@ -561,7 +561,7 @@ func TestReconcileJiraIssueMetadata_Reconcile_ShouldPass(t *testing.T) {
 	httpmock.RegisterResponder("POST", "/rest/api/2/issue/fake-issueId/remotelink",
 		httpmock.NewJsonResponderOrPanic(200, &jrl))
 
-	//request
+	// request
 	req := reconcile.Request{
 		NamespacedName: types.NamespacedName{
 			Name:      "JIM",
@@ -582,5 +582,5 @@ func TestReconcileJiraIssueMetadata_Reconcile_ShouldPass(t *testing.T) {
 	if err != nil {
 		t.Fatal("Unable to parse time")
 	}
-	assert.Equal(t, rec.RequeueAfter, duration*time.Minute)
+	assert.Equal(t, rec.RequeueAfter, duration)
 }

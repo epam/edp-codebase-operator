@@ -533,14 +533,14 @@ func TestPutProjectGerrit_pushToGerrit_ShouldPass(t *testing.T) {
 		git: mGit,
 	}
 
-	err = ppg.pushToGerrit(22, "idrsa", "fake-host", "c-name", dir, codebaseApi.Clone)
+	err = ppg.pushToGerrit(22, "idrsa", "fake-host", "c-name", dir)
 	assert.NoError(t, err)
 }
 
 func TestPutProjectGerrit_pushToGerrit_ShouldFailToAddRemoteLink(t *testing.T) {
 	ppg := NewPutProjectGerrit(nil, nil, nil)
 
-	err := ppg.pushToGerrit(22, "idrsa", "fake-host", "c-name", "/tmp", codebaseApi.Clone)
+	err := ppg.pushToGerrit(22, "idrsa", "fake-host", "c-name", "/tmp")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "couldn't add remote link to Gerrit")
 }
@@ -566,7 +566,7 @@ func TestPutProjectGerrit_pushToGerrit_ShouldFailOnPush(t *testing.T) {
 		mGit,
 	)
 
-	err = ppg.pushToGerrit(22, "idrsa", "fake-host", "c-name", dir, codebaseApi.Clone)
+	err = ppg.pushToGerrit(22, "idrsa", "fake-host", "c-name", dir)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "FATAL: PUSH")
 }

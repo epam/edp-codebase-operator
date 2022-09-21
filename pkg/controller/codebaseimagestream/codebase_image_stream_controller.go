@@ -13,9 +13,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebaseimagestream/chain"
-
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
+	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebaseimagestream/chain"
 )
 
 func NewReconcileCodebaseImageStream(client client.Client, log logr.Logger) *ReconcileCodebaseImageStream {

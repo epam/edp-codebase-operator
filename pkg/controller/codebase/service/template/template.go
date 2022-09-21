@@ -112,15 +112,17 @@ func getProjectUrl(c client.Client, s codebaseApi.CodebaseSpec, n string) (strin
 // Copy sonar configurations for JavaScript, Python, Go
 // It expects workDir - work dir, which contains codebase; td - template dir, which contains sonar.property file
 // It returns error in case of issue
-func copySonarConfigs(workDir, td string, config model.ConfigGoTemplating) error {
+func copySonarConfigs(workDir, td string, config model.ConfigGoTemplating) (err error) {
 	languagesForSonarTemplates := []string{util.LanguageJavascript, util.LanguagePython, util.LanguageGo}
 	if !util.CheckElementInArray(languagesForSonarTemplates, strings.ToLower(config.Lang)) {
-		return nil
+		return
 	}
 
 	sonarConfigPath := fmt.Sprintf("%v/sonar-project.properties", workDir)
 	log.Info("start copying sonar configs", "path", sonarConfigPath)
-	if _, err := os.Stat(sonarConfigPath); err == nil {
+
+	_, statErr := os.Stat(sonarConfigPath)
+	if statErr == nil {
 		return nil
 	}
 
@@ -128,7 +130,8 @@ func copySonarConfigs(workDir, td string, config model.ConfigGoTemplating) error
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+
+	defer util.CloseWithErrorCapture(&err, f, "failed to close sonar config file")
 
 	sonarTemplateName := fmt.Sprintf("%v-sonar-project.properties.tmpl", strings.ToLower(config.Lang))
 	sonarTemplateFile := fmt.Sprintf("%v/templates/sonar/%v", td, sonarTemplateName)
@@ -138,9 +141,12 @@ func copySonarConfigs(workDir, td string, config model.ConfigGoTemplating) error
 		return err
 	}
 
-	if err := tmpl.Execute(f, config); err != nil {
+	err = tmpl.Execute(f, config)
+	if err != nil {
 		return errors.Wrapf(err, "couldn't render Sonar configs fo %v app: %v", config.Lang, config.Name)
 	}
+
 	log.Info("Sonar configs has been copied", "codebase_name", config.Name)
-	return nil
+
+	return
 }

@@ -5,13 +5,14 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"github.com/stretchr/testify/require"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const kindName = "stub-kind"
 
 func TestGetOwnerReference_ShouldFindOwner(t *testing.T) {
-	refs := []v1.OwnerReference{
+	refs := []metaV1.OwnerReference{
 		{
 			Kind: kindName,
 		},
@@ -28,7 +29,7 @@ func TestGetOwnerReference_ShouldReturnErrorBecauseOfMissingOfPassedArg(t *testi
 }
 
 func TestGetOwnerReference_ShouldNotFindOwner(t *testing.T) {
-	refs := []v1.OwnerReference{
+	refs := []metaV1.OwnerReference{
 		{
 			Kind: "fake-another-kind",
 		},
@@ -61,8 +62,10 @@ func TestGetWorkDir(t *testing.T) {
 	}
 }
 
-func TestGetWorkDir_WithCustomPathSHouldWork(t *testing.T) {
-	os.Setenv("WORKING_DIR", "/CUSTOM_PATH")
+func TestGetWorkDir_WithCustomPathShouldWork(t *testing.T) {
+	err := os.Setenv("WORKING_DIR", "/CUSTOM_PATH")
+	require.NoError(t, err)
+
 	type args struct {
 		codebaseName string
 		namespace    string
@@ -85,7 +88,9 @@ func TestGetWorkDir_WithCustomPathSHouldWork(t *testing.T) {
 }
 
 func TestGetAssetsDir_ShouldPass(t *testing.T) {
-	os.Setenv("ASSETS_DIR", "/tmp")
+	err := os.Setenv("ASSETS_DIR", "/tmp")
+	require.NoError(t, err)
+
 	ad := GetAssetsDir()
 	assert.Equal(t, ad, "/tmp")
 }

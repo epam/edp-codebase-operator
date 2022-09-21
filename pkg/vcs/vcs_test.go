@@ -3,13 +3,14 @@ package vcs
 import (
 	"testing"
 
-	"github.com/epam/edp-codebase-operator/v2/pkg/model"
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
 	coreV1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+
+	"github.com/epam/edp-codebase-operator/v2/pkg/model"
 )
 
 func TestCreateVCSClient_ShouldPassForBitbucket(t *testing.T) {
@@ -62,11 +63,11 @@ func TestCreateProjectInVcs_ShouldPassToCreateRepo(t *testing.T) {
 		VcsSshPort:      "22",
 	}
 
-	err := СreateProjectInVcs(fakeCl, &us, "fake-name", "fake-namespace")
+	err := CreateProjectInVcs(fakeCl, &us, "fake-name", "fake-namespace")
 	assert.NoError(t, err)
 }
 
-func TestСreateProjectInVcs_ShouldFailToInitGitlabClient(t *testing.T) {
+func TestCreateProjectInVcs_ShouldFailToInitGitlabClient(t *testing.T) {
 	s := &coreV1.Secret{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "vcs-autouser-codebase-fake-name-temp",
@@ -97,11 +98,11 @@ func TestСreateProjectInVcs_ShouldFailToInitGitlabClient(t *testing.T) {
 		VcsSshPort:      "22",
 	}
 
-	err := СreateProjectInVcs(fakeCl, &us, "fake-name", "fake-namespace")
+	err := CreateProjectInVcs(fakeCl, &us, "fake-name", "fake-namespace")
 	assert.Error(t, err)
 }
 
-func TestСreateProjectInVcs_ShouldPassOnExistingProject(t *testing.T) {
+func TestCreateProjectInVcs_ShouldPassOnExistingProject(t *testing.T) {
 	s := &coreV1.Secret{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "vcs-autouser-codebase-fake-name-temp",
@@ -139,7 +140,7 @@ func TestСreateProjectInVcs_ShouldPassOnExistingProject(t *testing.T) {
 		VcsSshPort:      "22",
 	}
 
-	err := СreateProjectInVcs(fakeCl, &us, "fake-name", "fake-namespace")
+	err := CreateProjectInVcs(fakeCl, &us, "fake-name", "fake-namespace")
 	assert.NoError(t, err)
 }
 

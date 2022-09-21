@@ -10,11 +10,10 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	edpCompApi "github.com/epam/edp-component-operator/pkg/apis/v1/v1"
-	perfApi "github.com/epam/edp-perf-operator/v2/pkg/apis/edp/v1alpha1"
-
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
+	edpCompApi "github.com/epam/edp-component-operator/pkg/apis/v1/v1"
+	perfApi "github.com/epam/edp-perf-operator/v2/pkg/apis/edp/v1"
 )
 
 const (

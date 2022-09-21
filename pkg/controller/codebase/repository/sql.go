@@ -3,6 +3,8 @@ package repository
 import (
 	"database/sql"
 	"fmt"
+
+	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
 const (
@@ -14,26 +16,29 @@ type SqlCodebaseRepository struct {
 	DB *sql.DB
 }
 
-func (r SqlCodebaseRepository) SelectProjectStatusValue(name, schema string) (*string, error) {
+func (r SqlCodebaseRepository) SelectProjectStatusValue(name, schema string) (val string, err error) {
 	stmt, err := r.DB.Prepare(fmt.Sprintf(selectProjectStatusValue, schema))
 	if err != nil {
-		return nil, err
+		return "", err
 	}
-	defer stmt.Close()
 
-	var s *string
-	if err = stmt.QueryRow(name).Scan(&s); err != nil {
-		return nil, err
+	defer util.CloseWithErrorCapture(&err, stmt, "failed to close SQL prepared statement")
+
+	err = stmt.QueryRow(name).Scan(&val)
+	if err != nil {
+		return "", err
 	}
-	return s, nil
+
+	return
 }
 
-func (r SqlCodebaseRepository) UpdateProjectStatusValue(status, name, schema string) error {
+func (r SqlCodebaseRepository) UpdateProjectStatusValue(status, name, schema string) (err error) {
 	stmt, err := r.DB.Prepare(fmt.Sprintf(setProjectStatusValue, schema))
 	if err != nil {
 		return err
 	}
-	defer stmt.Close()
+
+	defer util.CloseWithErrorCapture(&err, stmt, "failed to close SQL prepared statement")
 
 	_, err = stmt.Exec(status, name)
 	return err

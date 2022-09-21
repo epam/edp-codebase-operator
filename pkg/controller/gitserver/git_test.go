@@ -5,9 +5,10 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/epam/edp-codebase-operator/v2/pkg/controller/platform"
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/epam/edp-codebase-operator/v2/pkg/controller/platform"
 )
 
 func TestGitProvider_CheckPermissions(t *testing.T) {

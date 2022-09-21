@@ -99,11 +99,11 @@ func TestPutGerritReplication_ShouldFailWhenReloadGerritPlugin(t *testing.T) {
 	pk, err := rsa.GenerateKey(rand.Reader, 128)
 	require.NoError(t, err, "unable to generate test private key")
 
-	privkeyBytes := x509.MarshalPKCS1PrivateKey(pk)
-	privkeyPem := pem.EncodeToMemory(
+	privateKeyBytes := x509.MarshalPKCS1PrivateKey(pk)
+	privateKeyPem := pem.EncodeToMemory(
 		&pem.Block{
 			Type:  "RSA PRIVATE KEY",
-			Bytes: privkeyBytes,
+			Bytes: privateKeyBytes,
 		},
 	)
 
@@ -113,7 +113,7 @@ func TestPutGerritReplication_ShouldFailWhenReloadGerritPlugin(t *testing.T) {
 			Namespace: fakeNamespace,
 		},
 		Data: map[string][]byte{
-			util.PrivateSShKeyName: privkeyPem,
+			util.PrivateSShKeyName: privateKeyPem,
 		},
 	}
 

@@ -10,7 +10,7 @@ const (
 	HelmIgnoreFile      = ".helmignore"
 	TestFile            = "test-connection.yaml"
 
-	//statuses
+	// statuses
 	StatusFailed     = "failed"
 	StatusFinished   = "created"
 	StatusInProgress = "in progress"
@@ -40,6 +40,6 @@ const (
 
 	VersioningTypeEDP = "edp"
 
-	//finalizers
+	// finalizers
 	ForegroundDeletionFinalizerName = "foregroundDeletion"
 )

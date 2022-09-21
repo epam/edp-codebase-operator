@@ -8,15 +8,14 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
-
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
+	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
 )
 
-type ErrorBranchesExists string
+type BranchesExistsError string
 
-func (e ErrorBranchesExists) Error() string {
+func (e BranchesExistsError) Error() string {
 	return string(e)
 }
 
@@ -42,7 +41,7 @@ func (h *DropJenkinsFolders) ServeRequest(ctx context.Context, c *codebaseApi.Co
 	for _, branch := range branchList.Items {
 		for _, owner := range branch.OwnerReferences {
 			if owner.Kind == c.Kind && owner.UID == c.UID {
-				return ErrorBranchesExists("can not delete jenkins folder while any codebase branches exists")
+				return BranchesExistsError("can not delete jenkins folder while any codebase branches exists")
 			}
 		}
 	}

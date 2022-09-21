@@ -10,9 +10,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
-
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
+	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
 )
 
 func TestDropJenkinsFolders_ServeRequest(t *testing.T) {
@@ -132,5 +131,5 @@ func TestDropJenkinsFolders_ServeRequest_ShouldFailCodebaseExists(t *testing.T) 
 	)
 
 	err := djf.ServeRequest(ctx, c)
-	assert.ErrorIs(t, err, ErrorBranchesExists(err.Error()))
+	assert.ErrorIs(t, err, BranchesExistsError(err.Error()))
 }

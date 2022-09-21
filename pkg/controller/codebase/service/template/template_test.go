@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	coreV1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -22,10 +23,12 @@ const (
 
 func TestPrepareTemplates_ShouldPass(t *testing.T) {
 	dir, err := os.MkdirTemp("/tmp", "codebase")
-	if err != nil {
-		t.Fatalf("unable to create temp directory for testing")
-	}
-	defer os.RemoveAll(dir)
+	require.NoError(t, err, "unable to create temp directory for testing")
+
+	defer func() {
+		err = os.RemoveAll(dir)
+		require.NoError(t, err)
+	}()
 
 	c := &codebaseApi.Codebase{
 		ObjectMeta: metaV1.ObjectMeta{
@@ -106,10 +109,12 @@ func TestPrepareTemplates_ShouldFailOnGetProjectUrl(t *testing.T) {
 
 func TestPrepareGitLabCITemplates(t *testing.T) {
 	dir, err := os.MkdirTemp("/tmp", "codebase")
-	if err != nil {
-		t.Fatalf("unable to create temp directory for testing")
-	}
-	defer os.RemoveAll(dir)
+	require.NoError(t, err, "unable to create temp directory for testing")
+
+	defer func() {
+		err = os.RemoveAll(dir)
+		require.NoError(t, err)
+	}()
 
 	c := &codebaseApi.Codebase{
 		ObjectMeta: metaV1.ObjectMeta{
@@ -154,7 +159,6 @@ func TestPrepareGitLabCITemplates(t *testing.T) {
 }
 
 func TestGetProjectUrl_ShouldPass(t *testing.T) {
-
 	c := &codebaseApi.Codebase{
 		Spec: codebaseApi.CodebaseSpec{
 			Type:       util.Application,
@@ -183,8 +187,7 @@ func TestGetProjectUrl_ShouldPass(t *testing.T) {
 	assert.Equal(t, url, "https://fake-name/fake/repo.git")
 }
 
-func TestGetProjectUrl_ShouldFailToGetGitserver(t *testing.T) {
-
+func TestGetProjectUrl_ShouldFailToGetGitServer(t *testing.T) {
 	c := &codebaseApi.Codebase{
 		Spec: codebaseApi.CodebaseSpec{
 			Type:       util.Application,
@@ -207,8 +210,7 @@ func TestGetProjectUrl_ShouldFailToGetGitserver(t *testing.T) {
 	}
 }
 
-func TestGetProjectUrl_ShouldFailWithUnsupportStrategy(t *testing.T) {
-
+func TestGetProjectUrl_ShouldFailWithUnsupportedStrategy(t *testing.T) {
 	c := &codebaseApi.Codebase{
 		Spec: codebaseApi.CodebaseSpec{
 			Type:     util.Application,

@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/epam/edp-common/pkg/mock"
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	coreV1 "k8s.io/api/core/v1"
@@ -18,6 +17,7 @@ import (
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
+	"github.com/epam/edp-common/pkg/mock"
 )
 
 func TestReconcileGitServer_Reconcile_ShouldPassNotFound(t *testing.T) {
@@ -27,7 +27,7 @@ func TestReconcileGitServer_Reconcile_ShouldPassNotFound(t *testing.T) {
 	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, gs)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(gs).Build()
 
-	//request
+	// request
 	req := reconcile.Request{
 		NamespacedName: types.NamespacedName{
 			Name:      "NewGitServer",
@@ -50,7 +50,7 @@ func TestReconcileGitServer_Reconcile_ShouldFailNotFound(t *testing.T) {
 	scheme := runtime.NewScheme()
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects().Build()
 
-	//request
+	// request
 	req := reconcile.Request{
 		NamespacedName: types.NamespacedName{
 			Name:      "NewGitServer",
@@ -87,7 +87,7 @@ func TestReconcileGitServer_Reconcile_ShouldFailToGetSecret(t *testing.T) {
 	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, gs)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(gs).Build()
 
-	//request
+	// request
 	req := reconcile.Request{
 		NamespacedName: types.NamespacedName{
 			Name:      "NewGitServer",

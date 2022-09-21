@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/pkg/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -13,7 +14,6 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/pkg/jenkins"
 	"github.com/epam/edp-codebase-operator/v2/pkg/model"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
-	"github.com/pkg/errors"
 )
 
 var log = ctrl.Log.WithName("codebase_branch_service")
@@ -124,10 +124,7 @@ func (s *CodebaseBranchServiceProvider) TriggerReleaseJob(cb *codebaseApi.Codeba
 }
 
 func (s *CodebaseBranchServiceProvider) convertCodebaseBranchSpecToParams(cb *codebaseApi.CodebaseBranch) (map[string]string, error) {
-	bts, err := json.Marshal(cb.Spec)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to encode codebase branch spec")
-	}
+	bts, _ := json.Marshal(cb.Spec)
 
 	var branchSpecMap map[string]interface{}
 	if err := json.Unmarshal(bts, &branchSpecMap); err != nil {
@@ -138,13 +135,12 @@ func (s *CodebaseBranchServiceProvider) convertCodebaseBranchSpecToParams(cb *co
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get codebase")
 	}
-	bts, err = json.Marshal(c.Spec)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to encode codebase spec")
-	}
+
+	bts, _ = json.Marshal(c.Spec)
 
 	var codebaseSpecMap map[string]interface{}
-	if err := json.Unmarshal(bts, &codebaseSpecMap); err != nil {
+	err = json.Unmarshal(bts, &codebaseSpecMap)
+	if err != nil {
 		return nil, errors.Wrap(err, "unable to decode codebase spec to map")
 	}
 
@@ -152,7 +148,7 @@ func (s *CodebaseBranchServiceProvider) convertCodebaseBranchSpecToParams(cb *co
 		codebaseSpecMap[k] = v
 	}
 
-	//example -> fromCommit: COMMIT_ID
+	// example -> fromCommit: COMMIT_ID
 	result := make(map[string]string)
 	for k, v := range cb.Spec.ReleaseJobParams {
 		strVal, ok := codebaseSpecMap[k].(string)

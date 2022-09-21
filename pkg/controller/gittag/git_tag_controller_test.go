@@ -23,7 +23,7 @@ func TestReconcileGitTag_Reconcile_ShouldPassNotFound(t *testing.T) {
 	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, gt)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(gt).Build()
 
-	//request
+	// request
 	req := reconcile.Request{
 		NamespacedName: types.NamespacedName{
 			Name:      "NewGT",
@@ -46,7 +46,7 @@ func TestReconcileGitTag_Reconcile_ShouldFailNotFound(t *testing.T) {
 	scheme := runtime.NewScheme()
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects().Build()
 
-	//request
+	// request
 	req := reconcile.Request{
 		NamespacedName: types.NamespacedName{
 			Name:      "NewGT",
@@ -83,7 +83,7 @@ func TestReconcileGitTag_Reconcile_ShouldFail(t *testing.T) {
 	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, gt)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(gt).Build()
 
-	//request
+	// request
 	req := reconcile.Request{
 		NamespacedName: types.NamespacedName{
 			Name:      "NewGT",

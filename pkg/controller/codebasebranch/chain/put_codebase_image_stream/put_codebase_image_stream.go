@@ -13,12 +13,11 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	edpComponentApi "github.com/epam/edp-component-operator/pkg/apis/v1/v1"
-
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebasebranch/chain/handler"
 	"github.com/epam/edp-codebase-operator/v2/pkg/model"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
+	edpComponentApi "github.com/epam/edp-component-operator/pkg/apis/v1/v1"
 )
 
 type PutCodebaseImageStream struct {

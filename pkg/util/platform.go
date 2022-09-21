@@ -12,10 +12,9 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	edpComponentApi "github.com/epam/edp-component-operator/pkg/apis/v1/v1"
-
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/model"
+	edpComponentApi "github.com/epam/edp-component-operator/pkg/apis/v1/v1"
 )
 
 const (
@@ -77,7 +76,7 @@ func GetVcsBasicAuthConfig(c client.Client, namespace string, secretName string)
 	if err != nil {
 		return "", "", errors.Wrapf(err, "Unable to get secret %v", secretName)
 	}
-	if string(secret.Data["username"]) == "" || string(secret.Data["password"]) == "" {
+	if len(secret.Data["username"]) == 0 || len(secret.Data["password"]) == 0 {
 		return "", "", errors.Errorf("username/password keys are not defined in Secret %v ", secretName)
 	}
 	return string(secret.Data["username"]), string(secret.Data["password"]), nil

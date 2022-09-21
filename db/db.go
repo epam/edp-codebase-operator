@@ -3,10 +3,12 @@ package db
 import (
 	"database/sql"
 	"fmt"
-	_ "github.com/lib/pq"
 	"os"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"strconv"
+
+	_ "github.com/lib/pq"
+
+	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 var log = ctrl.Log.WithName("db-connector")

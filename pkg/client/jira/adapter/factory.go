@@ -2,6 +2,7 @@ package adapter
 
 import (
 	gojira "github.com/andygrunwald/go-jira"
+
 	"github.com/epam/edp-codebase-operator/v2/pkg/client/jira"
 	"github.com/epam/edp-codebase-operator/v2/pkg/client/jira/dto"
 )

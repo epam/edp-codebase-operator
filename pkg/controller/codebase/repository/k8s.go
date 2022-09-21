@@ -24,9 +24,8 @@ func NewK8SCodebaseRepository(client client.Client, cr *codebaseApi.Codebase) Co
 
 // Retrieves status of git provisioning from codebase cr. To avoid additional call to Kubernetes, values from
 // inner field codebase are used. Input parameters are codebase and edp are ignored
-func (repo K8SCodebaseRepository) SelectProjectStatusValue(codebase, edp string) (*string, error) {
-	gs := repo.cr.Status.Git
-	return &gs, nil
+func (repo K8SCodebaseRepository) SelectProjectStatusValue(codebase, edp string) (string, error) {
+	return repo.cr.Status.Git, nil
 }
 
 // Sets the input value gitStatus to the corresponding field in Codebase CR. To avoid additional call to Kubernetes,

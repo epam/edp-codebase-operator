@@ -3,16 +3,20 @@ package platform
 import (
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestIsK8S_True(t *testing.T) {
-	os.Setenv("PLATFORM_TYPE", "kubernetes")
+	err := os.Setenv("PLATFORM_TYPE", "kubernetes")
+	require.NoError(t, err)
+
 	if !IsK8S() {
 		t.Error("Should fail")
 	}
 }
 
-func TestIsK8S_Flase(t *testing.T) {
+func TestIsK8S_False(t *testing.T) {
 	os.Clearenv()
 	if IsK8S() {
 		t.Error("Should fail")
@@ -20,7 +24,9 @@ func TestIsK8S_Flase(t *testing.T) {
 }
 
 func TestGetPlatformType_K8s(t *testing.T) {
-	os.Setenv("PLATFORM_TYPE", "kubernetes")
+	err := os.Setenv("PLATFORM_TYPE", "kubernetes")
+	require.NoError(t, err)
+
 	if GetPlatformType() == Openshift {
 		t.Error("Should fail")
 	}

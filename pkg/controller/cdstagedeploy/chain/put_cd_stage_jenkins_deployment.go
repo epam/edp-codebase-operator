@@ -11,11 +11,10 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
-	"github.com/epam/edp-jenkins-operator/v2/pkg/util/platform"
-
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
+	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
+	"github.com/epam/edp-jenkins-operator/v2/pkg/util/platform"
 )
 
 type PutCDStageJenkinsDeployment struct {
@@ -40,7 +39,7 @@ func (h PutCDStageJenkinsDeployment) ServeRequest(stageDeploy *codebaseApi.CDSta
 
 	if jd != nil {
 		h.log.Info("CDStageJenkinsDeployment already exists. skip creating.", "name", stageDeploy.Name)
-		return &util.CDStageJenkinsDeploymentHasNotBeenProcessed{
+		return &util.CDStageJenkinsDeploymentHasNotBeenProcessedError{
 			Message: fmt.Sprintf("%v has not been processed for previous version of application yet."+
 				" Check status of %v CDStageJenkinsDeployment resource to get more information.",
 				stageDeploy.Name, stageDeploy.Name),
