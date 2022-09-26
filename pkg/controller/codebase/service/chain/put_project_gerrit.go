@@ -136,6 +136,10 @@ func (h *PutProjectGerrit) tryToPushProjectToGerrit(c *codebaseApi.Codebase, ssh
 	if err := h.pushToGerrit(sshPort, idrsa, host, codebaseName, workDir); err != nil {
 		return err
 	}
+	// set remote head to default branch
+	if err := gerrit.SetHeadToBranch(sshPort, idrsa, host, codebaseName, branchName, log); err != nil {
+		return fmt.Errorf("set remote HEAD for codebase %v to default branch %v has been failed: %w", codebaseName, branchName, err)
+	}
 	return nil
 }
 
@@ -153,9 +157,9 @@ func (h *PutProjectGerrit) replaceDefaultBranch(directory, defaultBranchName, ne
 	return nil
 }
 
-func (h *PutProjectGerrit) pushToGerrit(sshPost int32, idrsa, host, codebaseName, directory string) error {
+func (h *PutProjectGerrit) pushToGerrit(sshPort int32, idrsa, host, codebaseName, directory string) error {
 	log.Info("Start pushing project to Gerrit ", "codebase_name", codebaseName)
-	if err := gerrit.AddRemoteLinkToGerrit(directory, host, sshPost, codebaseName, log); err != nil {
+	if err := gerrit.AddRemoteLinkToGerrit(directory, host, sshPort, codebaseName, log); err != nil {
 		return errors.Wrap(err, "couldn't add remote link to Gerrit")
 	}
 	// push branches

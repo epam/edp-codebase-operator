@@ -166,6 +166,26 @@ func CreateProject(port int32, idrsa, host, appName string, logger logr.Logger) 
 	return nil
 }
 
+// SetHeadToBranch sets remote git HEAD to specific branch using ssh Gerrit command
+func SetHeadToBranch(port int32, idrsa, host, appName, branchName string, logger logr.Logger) error {
+	command := fmt.Sprintf("gerrit set-head %v --new-head %v", appName, branchName)
+	cmd := &SSHCommand{
+		Path:   command,
+		Env:    []string{},
+		Stdin:  os.Stdin,
+		Stdout: os.Stdout,
+		Stderr: os.Stderr,
+	}
+
+	cl, err := SshInit(port, idrsa, host, logger)
+	if err != nil {
+		return err
+	}
+
+	_, err = cl.RunCommand(cmd)
+	return err
+}
+
 func AddRemoteLinkToGerrit(repoPath string, host string, port int32, appName string, logger logr.Logger) error {
 	remoteUrl := fmt.Sprintf("ssh://%v:%v/%v", host, port, appName)
 

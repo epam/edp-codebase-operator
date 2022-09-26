@@ -264,6 +264,21 @@ func TestCreateProject_ShouldFailToRunCommand(t *testing.T) {
 	assert.Contains(t, err.Error(), "failed to dial")
 }
 
+func TestSetHeadToBranch_ShouldFailToParseRSAKey(t *testing.T) {
+	err := SetHeadToBranch(22, "wrong-format-pkey", "host", "appName", "defBranch", logr.DiscardLogger{})
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "Unable to get Public Key from Private one")
+}
+
+func TestSetHeadToBranch_ShouldFailToRunCommand(t *testing.T) {
+	teardownSuite, idrsa := setupSuite(t)
+	defer teardownSuite(t)
+
+	err := SetHeadToBranch(22, idrsa, "host", "appName", "defBranch", logr.DiscardLogger{})
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to dial")
+}
+
 func TestCheckProjectExist_ShouldFailToParseRSAKey(t *testing.T) {
 	e, err := CheckProjectExist(22, "wrong-format-pkey", "host", "appName", logr.DiscardLogger{})
 	assert.Error(t, err)

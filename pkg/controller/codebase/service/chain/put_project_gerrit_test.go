@@ -193,7 +193,7 @@ func TestPutProjectGerrit_ShouldFailToRunSSHCommand(t *testing.T) {
 	assert.Contains(t, err.Error(), "unable to run ssh command")
 }
 
-func TestPutProjectGerrit_ShouldFailToGetConfgimap(t *testing.T) {
+func TestPutProjectGerrit_ShouldFailToGetConfigmap(t *testing.T) {
 	ctx := context.Background()
 	c := &codebaseApi.Codebase{
 		ObjectMeta: metaV1.ObjectMeta{
