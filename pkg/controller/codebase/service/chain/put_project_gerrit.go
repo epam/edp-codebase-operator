@@ -134,6 +134,10 @@ func (h PutProjectGerrit) tryToPushProjectToGerrit(c *codebaseApi.Codebase, sshP
 	if err := h.pushToGerrit(sshPort, idrsa, host, codebaseName, workDir, strategy); err != nil {
 		return err
 	}
+	// set remote head to default branch
+	if err := gerrit.SetHeadToBranch(sshPort, idrsa, host, codebaseName, branchName, log); err != nil {
+		return fmt.Errorf("set remote HEAD for codebase %v to default branch %v has been failed: %w", codebaseName, branchName, err)
+	}
 	return nil
 }
 
