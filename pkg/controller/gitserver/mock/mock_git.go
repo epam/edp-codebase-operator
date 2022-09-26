@@ -13,8 +13,8 @@ func (m *MockGit) CommitChanges(directory, commitMsg string) error {
 	return args.Error(0)
 }
 
-func (m *MockGit) PushChanges(key, user, directory string, pushArgs ...string) error {
-	args := m.Called(key, user, directory)
+func (m *MockGit) PushChanges(key, user, directory string, port int32, pushArgs ...string) error {
+	args := m.Called(key, user, directory, port)
 	return args.Error(0)
 }
 
@@ -33,8 +33,8 @@ func (m *MockGit) CloneRepository(repo string, user *string, pass *string, desti
 	return args.Error(0)
 }
 
-func (m *MockGit) CreateRemoteBranch(key, user, path, name string) error {
-	args := m.Called(key, user, path, name)
+func (m *MockGit) CreateRemoteBranch(key, user, path, name, fromcommit string, port int32) error {
+	args := m.Called(key, user, path, name, fromcommit, port)
 	return args.Error(0)
 }
 

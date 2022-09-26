@@ -25,7 +25,8 @@ func pushChangesToGit(c client.Client, g git.Git, projectPath string, cb *codeba
 
 	k := string(secret.Data[util.PrivateSShKeyName])
 	u := gs.GitUser
-	if err := g.PushChanges(k, u, projectPath, cb.Spec.DefaultBranch); err != nil {
+	p := gs.SshPort
+	if err := g.PushChanges(k, u, projectPath, p, cb.Spec.DefaultBranch); err != nil {
 		return errors.Wrapf(err, "an error has occurred while pushing changes for %v repo", projectPath)
 	}
 	log.Info("templates have been pushed")

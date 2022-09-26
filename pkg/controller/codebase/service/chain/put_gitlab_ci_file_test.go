@@ -117,7 +117,7 @@ func TestPutGitlabCiFile_ShouldPass(t *testing.T) {
 
 	mGit := new(mockGit.MockGit)
 	mGit.On("CommitChanges", wd, "Add gitlab ci file").Return(nil)
-	mGit.On("PushChanges", "fake", fakeName, wd).Return(nil)
+	mGit.On("PushChanges", "fake", fakeName, wd, gs.Spec.SshPort).Return(nil)
 
 	pg := NewPutGitlabCiFile(
 		fakeCl,
@@ -180,10 +180,10 @@ func TestPushChangesMethod_ShouldBeExecutedSuccessfully(t *testing.T) {
 	)
 	mGit.On("CommitChanges", "path", "Add gitlab ci file").Return(
 		nil)
-	mGit.On("PushChanges", "pkey", "user", "path").Return(
+	mGit.On("PushChanges", "pkey", "user", "path", int32(22)).Return(
 		nil)
 
-	assert.NoError(t, ch.pushChanges("path", "pkey", "user", "branch"))
+	assert.NoError(t, ch.pushChanges("path", "pkey", "user", "branch", 22))
 }
 
 func TestPutGitlabCiFile_gitlabCiFileExistsShouldReturnTrue(t *testing.T) {

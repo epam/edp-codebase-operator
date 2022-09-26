@@ -192,7 +192,7 @@ func TestTryToPutVersionFileMethod_MustBeFinishedSuccessfully(t *testing.T) {
 	mGit := new(mockGit.MockGit)
 	mGit.On("CommitChanges", path, fmt.Sprintf("Add %v file", versionFileName)).Return(
 		nil)
-	mGit.On("PushChanges", fakePrivateKey, fakeUser, path).Return(
+	mGit.On("PushChanges", fakePrivateKey, fakeUser, path, gs.Spec.SshPort).Return(
 		nil)
 	mGit.On("Checkout", util.GetPointerStringP(nil), util.GetPointerStringP(nil), path, "", true).Return(
 		nil)

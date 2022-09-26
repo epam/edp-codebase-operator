@@ -128,7 +128,7 @@ func TestPutGitlabCiDeployConfigs_ShouldPass(t *testing.T) {
 	mGit.On("GetCurrentBranchName", wd).Return("master", nil)
 	mGit.On("Checkout", &u, &p, wd, "fake-defaultBranch", false).Return(nil)
 	mGit.On("CommitChanges", wd, fmt.Sprintf("Add template for %v", c.Name)).Return(nil)
-	mGit.On("PushChanges", "fake", fakeName, wd).Return(nil)
+	mGit.On("PushChanges", "fake", fakeName, wd, port).Return(nil)
 
 	pdc := NewPutGitlabCiDeployConfigs(
 		fakeCl,

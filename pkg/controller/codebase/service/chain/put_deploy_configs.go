@@ -69,16 +69,13 @@ func (h *PutDeployConfigs) tryToPushConfigs(ctx context.Context, c *codebaseApi.
 	url := fmt.Sprintf("ssh://gerrit.%v:%v", c.Namespace, c.Name)
 	wd := util.GetWorkDir(c.Name, c.Namespace)
 	ad := util.GetAssetsDir()
+	sshPort, err := util.GetGerritPort(h.client, c.Namespace)
+	if err != nil {
+		setFailedFields(c, codebaseApi.SetupDeploymentTemplates, err.Error())
+		return errors.Wrap(err, "unable get gerrit port")
+	}
 
 	if !util.DoesDirectoryExist(wd) || util.IsDirectoryEmpty(wd) {
-		var sshPort *int32
-
-		sshPort, err = util.GetGerritPort(h.client, c.Namespace)
-		if err != nil {
-			setFailedFields(c, codebaseApi.SetupDeploymentTemplates, err.Error())
-			return errors.Wrap(err, "unable get gerrit port")
-		}
-
 		err = h.cloneProjectRepoFromGerrit(*sshPort, idrsa, url, wd, ad)
 		if err != nil {
 			return err
@@ -102,7 +99,7 @@ func (h *PutDeployConfigs) tryToPushConfigs(ctx context.Context, c *codebaseApi.
 		return err
 	}
 
-	if err := h.git.PushChanges(idrsa, u, wd, "--all"); err != nil {
+	if err := h.git.PushChanges(idrsa, u, wd, *sshPort, "--all"); err != nil {
 		return err
 	}
 

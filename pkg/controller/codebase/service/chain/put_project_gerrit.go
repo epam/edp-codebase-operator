@@ -177,11 +177,11 @@ func (h *PutProjectGerrit) pushToGerrit(sshPort int32, idrsa, host, codebaseName
 		return errors.Wrap(err, "couldn't add remote link to Gerrit")
 	}
 	// push branches
-	if err := h.git.PushChanges(idrsa, "project-creator", directory, "--all"); err != nil {
+	if err := h.git.PushChanges(idrsa, "project-creator", directory, sshPort, "--all"); err != nil {
 		return err
 	}
 	// push tags as well
-	if err := h.git.PushChanges(idrsa, "project-creator", directory, "--tags"); err != nil {
+	if err := h.git.PushChanges(idrsa, "project-creator", directory, sshPort, "--tags"); err != nil {
 		return err
 	}
 	return nil

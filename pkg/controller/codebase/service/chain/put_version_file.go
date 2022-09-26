@@ -123,19 +123,20 @@ func (h *PutVersionFile) tryToPutVersionFile(c *codebaseApi.Codebase, projectPat
 
 	k := string(secret.Data[util.PrivateSShKeyName])
 	u := gs.GitUser
-	if err := h.pushChanges(projectPath, k, u); err != nil {
+	p := gs.SshPort
+	if err := h.pushChanges(projectPath, k, u, p); err != nil {
 		return errors.Wrapf(err, "an error has occurred while pushing %v for %v codebase", versionFileName, c.Name)
 	}
 
 	return nil
 }
 
-func (h *PutVersionFile) pushChanges(projectPath, privateKey, user string) error {
+func (h *PutVersionFile) pushChanges(projectPath, privateKey, user string, port int32) error {
 	if err := h.git.CommitChanges(projectPath, fmt.Sprintf("Add %v file", versionFileName)); err != nil {
 		return err
 	}
 
-	if err := h.git.PushChanges(privateKey, user, projectPath, "--all"); err != nil {
+	if err := h.git.PushChanges(privateKey, user, projectPath, port, "--all"); err != nil {
 		return errors.Wrapf(err, "an error has occurred while pushing changes for %v project", projectPath)
 	}
 

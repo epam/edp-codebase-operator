@@ -57,9 +57,31 @@ func createGitlabCiDefChain(c client.Client) handler.CodebaseBranchHandler {
 	}
 }
 
+func createTektonDefChain(c client.Client) handler.CodebaseBranchHandler {
+	log.Info("chain is selected", "type", "tekton chain")
+	return put_branch_in_git.PutBranchInGit{
+		Client: c,
+		Git:    &gitserver.GitProvider{},
+		Next: update_perf_data_sources.UpdatePerfDataSources{
+			Next: put_codebase_image_stream.PutCodebaseImageStream{
+				Client: c,
+				Next:   clean_tmp_directory.CleanTempDirectory{},
+			},
+			Client: c,
+		},
+		Service: &service.CodebaseBranchServiceProvider{
+			Client: c,
+		},
+	}
+}
+
 func GetDeletionChain(ciType string, c client.Client) handler.CodebaseBranchHandler {
 	if strings.EqualFold(ciType, util.GitlabCi) {
 		return empty.MakeChain("no deletion chain for gitlab ci", false)
+	}
+
+	if strings.EqualFold(ciType, util.Tekton) {
+		return empty.MakeChain("no deletion chain for tekton", false)
 	}
 
 	return trigger_job.TriggerDeletionJob{
@@ -75,6 +97,9 @@ func GetDeletionChain(ciType string, c client.Client) handler.CodebaseBranchHand
 func GetChain(ciType string, c client.Client) handler.CodebaseBranchHandler {
 	if strings.EqualFold(ciType, util.GitlabCi) {
 		return createGitlabCiDefChain(c)
+	}
+	if strings.EqualFold(ciType, util.Tekton) {
+		return createTektonDefChain(c)
 	}
 	return createJenkinsDefChain(c)
 }

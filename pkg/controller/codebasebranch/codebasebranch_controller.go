@@ -129,7 +129,7 @@ func (r *ReconcileCodebaseBranch) Reconcile(ctx context.Context, request reconci
 		}
 	}
 
-	if err := r.setSuccessStatus(ctx, cb, codebaseApi.JenkinsConfiguration); err != nil {
+	if err := r.setSuccessStatus(ctx, cb, codebaseApi.CIConfiguration); err != nil {
 		return reconcile.Result{},
 			errors.Wrapf(err, "an error has been occurred while updating %v Codebase branch status", cb.Name)
 	}
@@ -195,7 +195,7 @@ func (r ReconcileCodebaseBranch) tryToDeleteCodebaseBranch(ctx context.Context, 
 		if err := r.client.Get(ctx, types.NamespacedName{Namespace: cb.Namespace, Name: cb.Name}, cb); err != nil {
 			return err
 		}
-		r.log.Info("Trying to remove finalizer from", "codenasebranch_name", cb.Name)
+		r.log.Info("Trying to remove finalizer from", "codebasebranch_name", cb.Name)
 		cb.ObjectMeta.Finalizers = util.RemoveString(cb.ObjectMeta.Finalizers, codebaseBranchOperatorFinalizerName)
 		err := r.client.Update(ctx, cb)
 

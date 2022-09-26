@@ -143,7 +143,7 @@ type ActionType string
 const (
 	AcceptCodebaseRegistration       ActionType = "accept_codebase_registration"
 	GerritRepositoryProvisioning     ActionType = "gerrit_repository_provisioning"
-	JenkinsConfiguration             ActionType = "jenkins_configuration"
+	CIConfiguration                  ActionType = "ci_configuration"
 	SetupDeploymentTemplates         ActionType = "setup_deployment_templates"
 	AcceptCodebaseBranchRegistration ActionType = "accept_codebase_branch_registration"
 	PutS2I                           ActionType = "put_s2i"

@@ -166,6 +166,9 @@ func (r *ReconcileCodebase) getStrategyChain(c *codebaseApi.Codebase) (cHand.Cod
 	if c.Spec.Strategy == util.ImportStrategy {
 		return r.getCiChain(c, repo)
 	}
+	if strings.EqualFold(c.Spec.CiTool, util.Tekton) {
+		return chain.MakeGerritTektonChain(r.client, repo), nil
+	}
 	return chain.MakeGerritDefChain(r.client, repo), nil
 }
 
@@ -179,6 +182,9 @@ func (r *ReconcileCodebase) createCodebaseRepo(c *codebaseApi.Codebase) reposito
 func (r *ReconcileCodebase) getCiChain(c *codebaseApi.Codebase, repo repository.CodebaseRepository) (cHand.CodebaseHandler, error) {
 	if strings.EqualFold(c.Spec.CiTool, util.GitlabCi) {
 		return chain.MakeGitlabCiDefChain(r.client, repo), nil
+	}
+	if strings.EqualFold(c.Spec.CiTool, util.Tekton) {
+		return chain.MakeTektonCiDefChain(r.client, repo), nil
 	}
 	return chain.MakeThirdPartyVcsProviderDefChain(r.client, repo), nil
 }
@@ -201,8 +207,10 @@ func (r *ReconcileCodebase) tryToDeleteCodebase(ctx context.Context, c *codebase
 		return nil, err
 	}
 
-	if err := chain.MakeDeletionChain(r.client).ServeRequest(ctx, c); err != nil {
-		return nil, errors.Wrap(err, "errors during deletion chain")
+	if c.Spec.CiTool != util.Tekton {
+		if err := chain.MakeDeletionChain(r.client).ServeRequest(ctx, c); err != nil {
+			return nil, errors.Wrap(err, "errors during deletion chain")
+		}
 	}
 
 	c.ObjectMeta.Finalizers = util.RemoveString(c.ObjectMeta.Finalizers, codebaseOperatorFinalizerName)

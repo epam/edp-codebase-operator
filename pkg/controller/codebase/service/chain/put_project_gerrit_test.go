@@ -527,7 +527,7 @@ func TestPutProjectGerrit_pushToGerrit_ShouldPass(t *testing.T) {
 	require.NoError(t, err, "unable to create test git repo")
 
 	mGit := new(mockGit.MockGit)
-	mGit.On("PushChanges", "idrsa", "project-creator", dir).Return(nil)
+	mGit.On("PushChanges", "idrsa", "project-creator", dir, int32(22)).Return(nil)
 
 	ppg := PutProjectGerrit{
 		git: mGit,
@@ -558,7 +558,7 @@ func TestPutProjectGerrit_pushToGerrit_ShouldFailOnPush(t *testing.T) {
 	require.NoError(t, err, "unable to create test git repo")
 
 	mGit := new(mockGit.MockGit)
-	mGit.On("PushChanges", "idrsa", "project-creator", dir).Return(errors.New("FATAL: PUSH"))
+	mGit.On("PushChanges", "idrsa", "project-creator", dir, int32(22)).Return(errors.New("FATAL: PUSH"))
 
 	ppg := NewPutProjectGerrit(
 		nil,

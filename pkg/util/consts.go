@@ -38,6 +38,8 @@ const (
 
 	GitlabCi = "gitlab ci"
 
+	Tekton = "tekton"
+
 	VersioningTypeEDP = "edp"
 
 	// finalizers.

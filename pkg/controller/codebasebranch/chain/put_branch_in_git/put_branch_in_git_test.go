@@ -70,6 +70,7 @@ func TestPutBranchInGit_ShouldBeExecutedSuccessfullyWithDefaultVersioning(t *tes
 		Spec: codebaseApi.CodebaseBranchSpec{
 			CodebaseName: fakeName,
 			BranchName:   fakeName,
+			FromCommit:   "commitsha",
 		},
 	}
 
@@ -86,7 +87,7 @@ func TestPutBranchInGit_ShouldBeExecutedSuccessfullyWithDefaultVersioning(t *tes
 		wd, port).Return(
 		nil)
 
-	mGit.On("CreateRemoteBranch", "", fakeName, wd, fakeName).Return(
+	mGit.On("CreateRemoteBranch", "", fakeName, wd, fakeName, "commitsha", port).Return(
 		nil)
 
 	err := PutBranchInGit{
@@ -208,6 +209,7 @@ func TestPutBranchInGit_ShouldBeExecutedSuccessfullyWithEdpVersioning(t *testing
 			CodebaseName: fakeName,
 			Version:      common.GetStringP("version3"),
 			BranchName:   fakeName,
+			FromCommit:   "",
 		},
 		Status: codebaseApi.CodebaseBranchStatus{
 			VersionHistory: []string{"version1", "version2"},
@@ -227,7 +229,7 @@ func TestPutBranchInGit_ShouldBeExecutedSuccessfullyWithEdpVersioning(t *testing
 		wd, port).Return(
 		nil)
 
-	mGit.On("CreateRemoteBranch", "", fakeName, wd, fakeName).Return(
+	mGit.On("CreateRemoteBranch", "", fakeName, wd, fakeName, "", port).Return(
 		nil)
 
 	err := PutBranchInGit{

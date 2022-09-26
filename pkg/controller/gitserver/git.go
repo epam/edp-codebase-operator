@@ -40,11 +40,11 @@ type GitSshData struct {
 
 type Git interface {
 	CommitChanges(directory, commitMsg string) error
-	PushChanges(key, user, directory string, pushParams ...string) error
+	PushChanges(key, user, directory string, port int32, pushParams ...string) error
 	CheckPermissions(repo string, user, pass *string) (accessible bool)
 	CloneRepositoryBySsh(key, user, repoUrl, destination string, port int32) error
 	CloneRepository(repo string, user *string, pass *string, destination string) error
-	CreateRemoteBranch(key, user, path, name string) error
+	CreateRemoteBranch(key, user, path, name, fromcommit string, port int32) error
 	CreateRemoteTag(key, user, path, branchName, name string) error
 	Fetch(key, user, path, branchName string) error
 	Checkout(user, pass *string, directory, branchName string, remote bool) error
@@ -76,7 +76,7 @@ func (gp *GitProvider) buildCommand(cmd string, params ...string) Command {
 
 var log = ctrl.Log.WithName("git-provider")
 
-func (gp *GitProvider) CreateRemoteBranch(key, user, p, name string) error {
+func (gp *GitProvider) CreateRemoteBranch(key, user, p, name, fromcommit string, port int32) error {
 	log.Info("start creating remote branch", "name", name)
 	r, err := git.PlainOpen(p)
 	if err != nil {
@@ -103,12 +103,19 @@ func (gp *GitProvider) CreateRemoteBranch(key, user, p, name string) error {
 		return err
 	}
 
+	if fromcommit != "" {
+		ref = plumbing.NewReferenceFromStrings(name, fromcommit)
+		if err != nil {
+			return err
+		}
+	}
+
 	newRef := plumbing.NewReferenceFromStrings(fmt.Sprintf("refs/heads/%v", name), ref.Hash().String())
 	if err := r.Storer.SetReference(newRef); err != nil {
 		return err
 	}
 
-	if err := gp.PushChanges(key, user, p); err != nil {
+	if err := gp.PushChanges(key, user, p, port, "--all"); err != nil {
 		return err
 	}
 	log.Info("branch has been created", "name", name)
@@ -187,7 +194,7 @@ func (gp *GitProvider) CreateChildBranch(directory, currentBranch, newBranch str
 	return nil
 }
 
-func (*GitProvider) PushChanges(key, user, directory string, pushParams ...string) (err error) {
+func (*GitProvider) PushChanges(key, user, directory string, port int32, pushParams ...string) (err error) {
 	log.Info("Start pushing changes", "directory", directory)
 	keyPath, err := initAuth(key, user)
 	if err != nil {
@@ -203,8 +210,8 @@ func (*GitProvider) PushChanges(key, user, directory string, pushParams ...strin
 	basePushParams = append(basePushParams, pushParams...)
 
 	pushCMD := exec.Command("git", basePushParams...)
-	pushCMD.Env = []string{fmt.Sprintf(`GIT_SSH_COMMAND=ssh -i %s -l %s -o StrictHostKeyChecking=no`, keyPath,
-		user), "GIT_SSH_VARIANT=ssh"}
+	pushCMD.Env = []string{fmt.Sprintf(`GIT_SSH_COMMAND=ssh -i %s -l %s -o StrictHostKeyChecking=no -p %d`, keyPath,
+		user, port), "GIT_SSH_VARIANT=ssh"}
 	pushCMD.Dir = directory
 	log.Info("pushCMD:", "is: ", basePushParams)
 	if bts, err := pushCMD.CombinedOutput(); err != nil {
@@ -417,7 +424,7 @@ func (gp *GitProvider) CreateRemoteTag(key, user, p, branchName, name string) er
 		return err
 	}
 
-	if err := gp.PushChanges(key, user, p); err != nil {
+	if err := gp.PushChanges(key, user, p, 22); err != nil {
 		return err
 	}
 	log.Info("tag has been created", "name", name)

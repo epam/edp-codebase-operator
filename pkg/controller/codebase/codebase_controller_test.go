@@ -363,6 +363,54 @@ func (s *ControllerTestSuite) TestReconcileCodebase_getStrategyChain_ShouldPassI
 	assert.NotNil(t, ch)
 }
 
+func (s *ControllerTestSuite) TestReconcileCodebase_getStrategyChain_ShouldPassCloneStrategyTekton() {
+	c := &codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      "NewCodebase",
+			Namespace: "namespace",
+		},
+		Spec: codebaseApi.CodebaseSpec{
+			Strategy: codebaseApi.Clone,
+			CiTool:   util.Tekton,
+		},
+	}
+	fakeCl := fake.NewClientBuilder().WithScheme(s.scheme).WithRuntimeObjects(c).Build()
+	r := ReconcileCodebase{
+		client: fakeCl,
+		log:    logr.DiscardLogger{},
+		scheme: s.scheme,
+	}
+	ch, err := r.getStrategyChain(c)
+
+	t := s.T()
+	assert.NoError(t, err)
+	assert.NotNil(t, ch)
+}
+
+func (s *ControllerTestSuite) TestReconcileCodebase_getStrategyChain_ShouldPassImportStrategyTekton() {
+	c := &codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      "NewCodebase",
+			Namespace: "namespace",
+		},
+		Spec: codebaseApi.CodebaseSpec{
+			Strategy: codebaseApi.Import,
+			CiTool:   util.Tekton,
+		},
+	}
+	fakeCl := fake.NewClientBuilder().WithScheme(s.scheme).WithRuntimeObjects(c).Build()
+	r := ReconcileCodebase{
+		client: fakeCl,
+		log:    logr.DiscardLogger{},
+		scheme: s.scheme,
+	}
+	ch, err := r.getStrategyChain(c)
+
+	t := s.T()
+	assert.NoError(t, err)
+	assert.NotNil(t, ch)
+}
+
 func (s *ControllerTestSuite) TestReconcileCodebase_getStrategyChain_ShouldPassWithDb() {
 	db, dbMock, err := sqlmock.New()
 	require.NoError(s.T(), err)

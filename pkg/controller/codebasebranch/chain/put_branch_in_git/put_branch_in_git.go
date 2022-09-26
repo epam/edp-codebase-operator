@@ -69,14 +69,19 @@ func (h PutBranchInGit) ServeRequest(cb *codebaseApi.CodebaseBranch) error {
 
 	wd := util.GetWorkDir(cb.Spec.CodebaseName, fmt.Sprintf("%v-%v", cb.Namespace, cb.Spec.BranchName))
 	if !checkDirectory(wd) {
-		ru := fmt.Sprintf("%v:%v", gs.GitHost, *c.Spec.GitUrlPath)
+		// we work with gerrit by default
+		ru := fmt.Sprintf("%v:%v", gs.GitHost, c.Name)
+		// may be it's third party VCS
+		if c.Spec.GitUrlPath != nil {
+			ru = fmt.Sprintf("%v:%v", gs.GitHost, *c.Spec.GitUrlPath)
+		}
 		if err := h.Git.CloneRepositoryBySsh(string(secret.Data[util.PrivateSShKeyName]), gs.GitUser, ru, wd, gs.SshPort); err != nil {
 			setFailedFields(cb, codebaseApi.PutBranchForGitlabCiCodebase, err.Error())
 			return err
 		}
 	}
 
-	if err := h.Git.CreateRemoteBranch(string(secret.Data[util.PrivateSShKeyName]), gs.GitUser, wd, cb.Spec.BranchName); err != nil {
+	if err := h.Git.CreateRemoteBranch(string(secret.Data[util.PrivateSShKeyName]), gs.GitUser, wd, cb.Spec.BranchName, cb.Spec.FromCommit, gs.SshPort); err != nil {
 		setFailedFields(cb, codebaseApi.PutBranchForGitlabCiCodebase, err.Error())
 		return err
 	}

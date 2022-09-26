@@ -129,7 +129,7 @@ func TestPutDeployConfigs_ShouldPass(t *testing.T) {
 	mGit.On("GetCurrentBranchName", wd).Return("master", nil)
 	mGit.On("Checkout", &u, &p, wd, "fake-defaultBranch", false).Return(nil)
 	mGit.On("CommitChanges", wd, fmt.Sprintf("Add deployment templates for %v", c.Name)).Return(nil)
-	mGit.On("PushChanges", "fake", "project-creator", wd).Return(nil)
+	mGit.On("PushChanges", "fake", "project-creator", wd, port).Return(nil)
 
 	pdc := NewPutDeployConfigs(
 		fakeCl,

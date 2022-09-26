@@ -31,6 +31,24 @@ func MakeGerritDefChain(c client.Client, cr repository.CodebaseRepository) handl
 	return ch
 }
 
+func MakeGerritTektonChain(c client.Client, cr repository.CodebaseRepository) handler.CodebaseHandler {
+	log.Info("chain is selected", "type", "gerrit")
+
+	ch := &chain{}
+	gp := &gitserver.GitProvider{}
+
+	ch.Use(
+		NewPutProjectGerrit(c, cr, gp),
+		NewPutGerritReplication(c),
+		NewPutPerfDataSources(c),
+		NewPutDeployConfigs(c, cr, gp),
+		NewPutVersionFile(c, cr, gp),
+		NewCleaner(c),
+	)
+
+	return ch
+}
+
 func MakeThirdPartyVcsProviderDefChain(c client.Client, cr repository.CodebaseRepository) handler.CodebaseHandler {
 	log.Info("chain is selected", "type", "third party VCS provider")
 
@@ -68,6 +86,23 @@ func MakeGitlabCiDefChain(c client.Client, cr repository.CodebaseRepository) han
 		NewPutPerfDataSources(c),
 		NewPutGitlabCiDeployConfigs(c, cr, gp),
 		NewPutGitlabCiFile(c, cr, gp),
+		NewPutVersionFile(c, cr, gp),
+		NewCleaner(c),
+	)
+
+	return ch
+}
+
+func MakeTektonCiDefChain(c client.Client, cr repository.CodebaseRepository) handler.CodebaseHandler {
+	log.Info("chain is selected", "type", "tekton")
+
+	ch := &chain{}
+	gp := &gitserver.GitProvider{}
+
+	ch.Use(
+		NewCloneGitProject(c, gp),
+		NewPutPerfDataSources(c),
+		NewPutDeployConfigsToGitProvider(c, cr, gp),
 		NewPutVersionFile(c, cr, gp),
 		NewCleaner(c),
 	)
