@@ -11,13 +11,13 @@ import (
 type Strategy string
 
 const (
-	// Create a new codebase
+	// Create a new codebase.
 	Create Strategy = "create"
 
-	// Clone an existing codebase
+	// Clone an existing codebase.
 	Clone Strategy = "clone"
 
-	// Import existing codebase
+	// Import existing codebase.
 	Import Strategy = "import"
 )
 
@@ -172,7 +172,7 @@ const (
 	Error Result = "error"
 )
 
-// CodebaseStatus defines the observed state of Codebase
+// CodebaseStatus defines the observed state of Codebase.
 type CodebaseStatus struct {
 	// This flag indicates neither Codebase are initialized and ready to work. Defaults to false.
 	Available bool `json:"available"`
@@ -214,7 +214,7 @@ type CodebaseStatus struct {
 // +kubebuilder:resource:shortName=cdbs
 // +kubebuilder:storageversion
 
-// Codebase is the Schema for the Codebases API
+// Codebase is the Schema for the Codebases API.
 type Codebase struct {
 	metaV1.TypeMeta   `json:",inline"`
 	metaV1.ObjectMeta `json:"metadata,omitempty"`
@@ -225,7 +225,7 @@ type Codebase struct {
 
 // +kubebuilder:object:root=true
 
-// CodebaseList contains a list of Codebases
+// CodebaseList contains a list of Codebases.
 type CodebaseList struct {
 	metaV1.TypeMeta `json:",inline"`
 	metaV1.ListMeta `json:"metadata,omitempty"`

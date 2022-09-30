@@ -110,7 +110,8 @@ func TestPutGitlabCiFile_ShouldPass(t *testing.T) {
 	// it is expected that code is already landed before running this part of chain,
 	// so let's create it
 	wd := util.GetWorkDir(fakeName, fakeNamespace)
-	if err := util.CreateDirectory(wd); err != nil {
+	err = util.CreateDirectory(wd)
+	if err != nil {
 		t.Error("Unable to create directory for testing")
 	}
 

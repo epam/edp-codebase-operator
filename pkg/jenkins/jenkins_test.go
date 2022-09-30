@@ -310,8 +310,9 @@ func TestJenkinsClient_IsJobRunning_JobFoundButError(t *testing.T) {
 }
 
 func TestGetJenkinsUrl_UrlOnly(t *testing.T) {
+	t.Parallel()
 
-	jspec := jenkinsApi.Jenkins{
+	jspec := &jenkinsApi.Jenkins{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
@@ -328,8 +329,9 @@ func TestGetJenkinsUrl_UrlOnly(t *testing.T) {
 }
 
 func TestGetJenkinsUrl_BasepathOnly(t *testing.T) {
+	t.Parallel()
 
-	jspec := jenkinsApi.Jenkins{
+	jspec := &jenkinsApi.Jenkins{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
@@ -345,8 +347,9 @@ func TestGetJenkinsUrl_BasepathOnly(t *testing.T) {
 }
 
 func TestGetJenkinsUrl_WithUrlAndBasepath(t *testing.T) {
+	t.Parallel()
 
-	jspec := jenkinsApi.Jenkins{
+	jspec := &jenkinsApi.Jenkins{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
@@ -365,8 +368,9 @@ func TestGetJenkinsUrl_WithUrlAndBasepath(t *testing.T) {
 }
 
 func TestGetJenkinsUrl_NoUrlNoBasepath(t *testing.T) {
+	t.Parallel()
 
-	jspec := jenkinsApi.Jenkins{
+	jspec := &jenkinsApi.Jenkins{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
@@ -379,7 +383,6 @@ func TestGetJenkinsUrl_NoUrlNoBasepath(t *testing.T) {
 }
 
 func TestGetJenkinsCreds_SecretExists(t *testing.T) {
-
 	s := &coreV1.Secret{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      "fake-admin-token",
@@ -407,7 +410,7 @@ func TestGetJenkinsCreds_SecretExists(t *testing.T) {
 	scheme.AddKnownTypes(coreV1.SchemeGroupVersion, s)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(s, jspec).Build()
 
-	jt, ju, err := GetJenkinsCreds(fakeCl, *jspec, fakeNamespace)
+	ju, jt, err := GetJenkinsCreds(fakeCl, jspec, fakeNamespace)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -416,7 +419,6 @@ func TestGetJenkinsCreds_SecretExists(t *testing.T) {
 }
 
 func TestGetJenkinsCreds_NoSecretExists(t *testing.T) {
-
 	jspec := &jenkinsApi.Jenkins{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      fakeName,
@@ -433,7 +435,7 @@ func TestGetJenkinsCreds_NoSecretExists(t *testing.T) {
 	scheme.AddKnownTypes(coreV1.SchemeGroupVersion, &coreV1.Secret{})
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(jspec).Build()
 
-	jt, ju, err := GetJenkinsCreds(fakeCl, *jspec, fakeNamespace)
+	ju, jt, err := GetJenkinsCreds(fakeCl, jspec, fakeNamespace)
 	if err == nil {
 		t.Fatal("no error returned")
 	}

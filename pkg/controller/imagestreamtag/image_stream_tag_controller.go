@@ -16,9 +16,9 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/imagestreamtag/chain"
 )
 
-func NewReconcileImageStreamTag(client client.Client, log logr.Logger) *ReconcileImageStreamTag {
+func NewReconcileImageStreamTag(c client.Client, log logr.Logger) *ReconcileImageStreamTag {
 	return &ReconcileImageStreamTag{
-		client: client,
+		client: c,
 		log:    log.WithName("image-stream-tag"),
 	}
 }

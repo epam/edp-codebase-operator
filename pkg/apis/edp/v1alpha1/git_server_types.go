@@ -6,7 +6,7 @@ import (
 
 // NOTE: json tags are required. Any new fields you add must have json tags for the fields to be serialized.
 
-// GitServerSpec defines the desired state of GitServer
+// GitServerSpec defines the desired state of GitServer.
 type GitServerSpec struct {
 	GitHost string `json:"gitHost"`
 
@@ -22,7 +22,7 @@ type GitServerSpec struct {
 	CreateCodeReviewPipeline bool `json:"createCodeReviewPipeline,omitempty"`
 }
 
-// GitServerStatus defines the observed state of GitServer
+// GitServerStatus defines the observed state of GitServer.
 type GitServerStatus struct {
 	// This flag indicates neither JiraServer are initialized and ready to work. Defaults to false.
 	Available bool `json:"available"`
@@ -58,7 +58,7 @@ type GitServerStatus struct {
 // +kubebuilder:resource:shortName=gs
 // +kubebuilder:deprecatedversion
 
-// GitServer is the Schema for the gitservers API
+// GitServer is the Schema for the gitservers API.
 type GitServer struct {
 	metaV1.TypeMeta   `json:",inline"`
 	metaV1.ObjectMeta `json:"metadata,omitempty"`
@@ -69,7 +69,7 @@ type GitServer struct {
 
 // +kubebuilder:object:root=true
 
-// GitServerList contains a list of GitServer
+// GitServerList contains a list of GitServer.
 type GitServerList struct {
 	metaV1.TypeMeta `json:",inline"`
 	metaV1.ListMeta `json:"metadata,omitempty"`

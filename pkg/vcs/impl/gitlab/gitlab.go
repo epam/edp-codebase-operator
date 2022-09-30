@@ -102,17 +102,17 @@ func (gitlab *GitLab) GetRepositorySshUrl(groupPath, projectName string) (string
 	return "", errors.New(errMsg)
 }
 
-func (gitlab *GitLab) Init(url string, username string, password string) error {
-	log.Printf("Start initialization of username: %v, by url: %v", username, url)
+func (gitlab *GitLab) Init(hostUrl, username, password string) error {
+	log.Printf("Start initialization of username: %v, by url: %v", username, hostUrl)
 	client := resty.New()
 	client.SetRetryCount(3)
-	client.HostURL = url
+	client.HostURL = hostUrl
 	client.AddRetryCondition(
 		func(response *resty.Response) (bool, error) {
 			return response.IsError(), nil
 		},
 	)
-	token, err := tryToLoginWithPass(url, username, password)
+	token, err := tryToLoginWithPass(hostUrl, username, password)
 	if err != nil {
 		log.Printf("Error has been occured tring login via password for user: %s", username)
 		return errors.Wrap(err, "Unable to login to Gitlab")
@@ -168,7 +168,7 @@ func (gitlab *GitLab) DeleteProject(projectId string) error {
 	return nil
 }
 
-func tryToLoginWithPass(url, user, pass string) (*string, error) {
+func tryToLoginWithPass(hostUrl, user, pass string) (*string, error) {
 	var result map[string]interface{}
 	resp, err := resty.R().
 		SetResult(&result).
@@ -177,7 +177,7 @@ func tryToLoginWithPass(url, user, pass string) (*string, error) {
 			"username":   user,
 			"password":   pass,
 		}).
-		Post(url + "/oauth/token")
+		Post(hostUrl + "/oauth/token")
 	if err != nil {
 		errorMsg := fmt.Sprintf("Unable to get GitLab access token: %v", err)
 		log.Println(errorMsg)

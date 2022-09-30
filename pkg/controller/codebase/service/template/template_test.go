@@ -182,7 +182,7 @@ func TestGetProjectUrl_ShouldPass(t *testing.T) {
 
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, gs).Build()
 
-	url, err := getProjectUrl(fakeCl, c.Spec, fakeNamespace)
+	url, err := getProjectUrl(fakeCl, &c.Spec, fakeNamespace)
 	assert.NoError(t, err)
 	assert.Equal(t, url, "https://fake-name/fake/repo.git")
 }
@@ -202,7 +202,7 @@ func TestGetProjectUrl_ShouldFailToGetGitServer(t *testing.T) {
 
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c).Build()
 
-	url, err := getProjectUrl(fakeCl, c.Spec, fakeNamespace)
+	url, err := getProjectUrl(fakeCl, &c.Spec, fakeNamespace)
 	assert.Error(t, err)
 	assert.Empty(t, url)
 	if !strings.Contains(err.Error(), "unable get git server") {
@@ -223,7 +223,7 @@ func TestGetProjectUrl_ShouldFailWithUnsupportedStrategy(t *testing.T) {
 
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c).Build()
 
-	url, err := getProjectUrl(fakeCl, c.Spec, fakeNamespace)
+	url, err := getProjectUrl(fakeCl, &c.Spec, fakeNamespace)
 	assert.Error(t, err)
 	assert.Empty(t, url)
 	if !strings.Contains(err.Error(), "unable get project url, caused by the unsupported strategy") {

@@ -22,8 +22,8 @@ const (
 	repoNotReady = "NOT_READY"
 )
 
-func NewCloneGitProject(client client.Client, git git.Git) *CloneGitProject {
-	return &CloneGitProject{client: client, git: git}
+func NewCloneGitProject(c client.Client, g git.Git) *CloneGitProject {
+	return &CloneGitProject{client: c, git: g}
 }
 
 func (h *CloneGitProject) ServeRequest(ctx context.Context, c *codebaseApi.Codebase) error {

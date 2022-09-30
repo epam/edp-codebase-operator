@@ -9,7 +9,9 @@ import (
 )
 
 func TestConvertToGitServer(t *testing.T) {
-	gs := ConvertToGitServer(codebaseApi.GitServer{
+	t.Parallel()
+
+	gs := ConvertToGitServer(&codebaseApi.GitServer{
 		Status: codebaseApi.GitServerStatus{
 			Status: "hello world",
 		},

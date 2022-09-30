@@ -15,7 +15,7 @@ var log = ctrl.Log.WithName("util")
 func CreateDirectory(path string) error {
 	log.Info("Creating directory", "path", path)
 	if _, err := os.Stat(path); os.IsNotExist(err) {
-		if err := os.MkdirAll(path, 0755); err != nil {
+		if err := os.MkdirAll(path, 0o755); err != nil {
 			return err
 		}
 	}
@@ -40,7 +40,7 @@ func CopyFiles(src, dest string) error {
 			return err
 		}
 
-		err = os.WriteFile(fmt.Sprintf("%s/%s", dest, f.Name()), input, 0755)
+		err = os.WriteFile(fmt.Sprintf("%s/%s", dest, f.Name()), input, 0o755)
 		if err != nil {
 			return err
 		}
@@ -59,7 +59,7 @@ func CopyFile(src, dest string) error {
 		return err
 	}
 
-	if err := os.WriteFile(dest, input, 0755); err != nil {
+	if err := os.WriteFile(dest, input, 0o755); err != nil {
 		return err
 	}
 	log.Info("File has been copied", "dest", dest)
@@ -100,11 +100,13 @@ func ReplaceStringInFile(file, oldLine, newLine string) error {
 		return err
 	}
 
-	output := bytes.Replace(input, []byte(oldLine), []byte(newLine), -1)
+	output := bytes.ReplaceAll(input, []byte(oldLine), []byte(newLine))
 
-	if err = os.WriteFile(file, output, 0666); err != nil {
+	err = os.WriteFile(file, output, 0o666)
+	if err != nil {
 		return err
 	}
+
 	return nil
 }
 

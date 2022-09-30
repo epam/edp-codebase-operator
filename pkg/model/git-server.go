@@ -41,12 +41,12 @@ type RepositoryData struct {
 	FolderToClone string
 }
 
-func ConvertToGitServer(k8sObj codebaseApi.GitServer) *GitServer {
+func ConvertToGitServer(k8sObj *codebaseApi.GitServer) *GitServer {
 	log.Info("Start converting GitServer", "data", k8sObj.Name)
 
 	spec := k8sObj.Spec
 
-	actionLog := convertGitServerActionLog(k8sObj.Status)
+	actionLog := convertGitServerActionLog(&k8sObj.Status)
 
 	return &GitServer{
 		GitHost:          spec.GitHost,
@@ -60,7 +60,7 @@ func ConvertToGitServer(k8sObj codebaseApi.GitServer) *GitServer {
 	}
 }
 
-func convertGitServerActionLog(status codebaseApi.GitServerStatus) *ActionLog {
+func convertGitServerActionLog(status *codebaseApi.GitServerStatus) *ActionLog {
 	return &ActionLog{
 		Event:           formatStatus(status.Status),
 		DetailedMessage: status.DetailedMessage,
@@ -72,5 +72,5 @@ func convertGitServerActionLog(status codebaseApi.GitServerStatus) *ActionLog {
 }
 
 func formatStatus(status string) string {
-	return strings.ToLower(strings.Replace(status, " ", "_", -1))
+	return strings.ToLower(strings.ReplaceAll(status, " ", "_"))
 }

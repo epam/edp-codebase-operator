@@ -66,20 +66,20 @@ linters:
 #    - funlen
     - gci
     - goconst
-#    - gocritic
-#    - govet
-#    - godot
-#    - gosimple
-#    - staticcheck
-#    - ineffassign
-#    - typecheck
+    - gocritic
+    - godot
+    - gosimple
+    - govet
+    - staticcheck
+    - ineffassign
+    - typecheck
 #    - revive
 #    - megacheck
 #    - forcetypeassert
 #    - gochecknoinits
 #    - wrapcheck
 #    - wsl
-#    - unused
+    - unused
 
   disabled:
     - gosec # Enable in future
@@ -374,3 +374,31 @@ linters-settings:
       unnamedResult:
         # whether to check exported functions
         checkExported: true
+
+  godot:
+    # comments to be checked: `declarations`, `toplevel`, or `all`
+    scope: declarations
+
+    # check that each sentence starts with a capital letter
+    capital: false
+
+  gosimple:
+    # Sxxxx checks in https://staticcheck.io/docs/configuration/options/#checks
+    checks: ["all"]
+
+  govet:
+    # report about shadowed variables
+    check-shadowing: true
+
+    # settings per analyzer
+    settings:
+      printf: # analyzer name, run `go tool vet help` to see all analyzers
+        funcs: # run `go tool vet help printf` to see available settings for `printf` analyzer
+          - (github.com/golangci/golangci-lint/pkg/logutils.Log).Infof
+          - (github.com/golangci/golangci-lint/pkg/logutils.Log).Warnf
+          - (github.com/golangci/golangci-lint/pkg/logutils.Log).Errorf
+          - (github.com/golangci/golangci-lint/pkg/logutils.Log).Fatalf
+
+  staticcheck:
+    # SAxxxx checks in https://staticcheck.io/docs/configuration/options/#checks
+    checks: ["all"]

@@ -17,9 +17,9 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebaseimagestream/chain"
 )
 
-func NewReconcileCodebaseImageStream(client client.Client, log logr.Logger) *ReconcileCodebaseImageStream {
+func NewReconcileCodebaseImageStream(c client.Client, log logr.Logger) *ReconcileCodebaseImageStream {
 	return &ReconcileCodebaseImageStream{
-		client: client,
+		client: c,
 		log:    log.WithName("codebase-image-stream"),
 	}
 }

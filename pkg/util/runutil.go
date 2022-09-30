@@ -10,6 +10,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
+//nolint:gocritic // This linter fails for ptrToRefParam check, we need to use a pointer for an interface, because we change error
 func CloseWithErrorCapture(err *error, closer io.Closer, format string, a ...interface{}) {
 	*err = multierr.Append(*err, errors.Wrapf(closer.Close(), format, a...))
 }

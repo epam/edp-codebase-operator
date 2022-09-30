@@ -21,8 +21,8 @@ type PutDeployConfigs struct {
 	git    git.Git
 }
 
-func NewPutDeployConfigs(client client.Client, cr repository.CodebaseRepository, git git.Git) *PutDeployConfigs {
-	return &PutDeployConfigs{client: client, cr: cr, git: git}
+func NewPutDeployConfigs(c client.Client, cr repository.CodebaseRepository, g git.Git) *PutDeployConfigs {
+	return &PutDeployConfigs{client: c, cr: cr, git: g}
 }
 
 func (h *PutDeployConfigs) ServeRequest(ctx context.Context, c *codebaseApi.Codebase) error {
@@ -71,12 +71,16 @@ func (h *PutDeployConfigs) tryToPushConfigs(ctx context.Context, c *codebaseApi.
 	ad := util.GetAssetsDir()
 
 	if !util.DoesDirectoryExist(wd) || util.IsDirectoryEmpty(wd) {
-		sshPort, err := util.GetGerritPort(h.client, c.Namespace)
+		var sshPort *int32
+
+		sshPort, err = util.GetGerritPort(h.client, c.Namespace)
 		if err != nil {
 			setFailedFields(c, codebaseApi.SetupDeploymentTemplates, err.Error())
 			return errors.Wrap(err, "unable get gerrit port")
 		}
-		if err := h.cloneProjectRepoFromGerrit(*sshPort, idrsa, url, wd, ad); err != nil {
+
+		err = h.cloneProjectRepoFromGerrit(*sshPort, idrsa, url, wd, ad)
+		if err != nil {
 			return err
 		}
 	}

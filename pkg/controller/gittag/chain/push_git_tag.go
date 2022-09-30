@@ -47,8 +47,10 @@ func (h PushGitTag) tryToPushTag(gt *codebaseApi.GitTag) error {
 	wd := util.GetWorkDir(c.Name, c.Namespace)
 	if !checkDirectory(wd) {
 		ru := fmt.Sprintf("%v:%v", gs.GitHost, *c.Spec.GitUrlPath)
-		if err := h.git.CloneRepositoryBySsh(string(secret.Data[util.PrivateSShKeyName]), gs.GitUser, ru, wd,
-			gs.SshPort); err != nil {
+		key := string(secret.Data[util.PrivateSShKeyName])
+
+		err = h.git.CloneRepositoryBySsh(key, gs.GitUser, ru, wd, gs.SshPort)
+		if err != nil {
 			return err
 		}
 	}

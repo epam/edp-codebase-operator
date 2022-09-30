@@ -11,7 +11,7 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/pkg/model"
 )
 
-func CopyHelmChartTemplates(deploymentScript, templatesDest, assetsDir string, config model.ConfigGoTemplating) error {
+func CopyHelmChartTemplates(deploymentScript, templatesDest, assetsDir string, config *model.ConfigGoTemplating) error {
 	log.Info("start handling Helm Chart templates", "codebase_name", config.Name)
 
 	templateBasePath := fmt.Sprintf("%v/templates/applications/%v/%v", assetsDir, deploymentScript, config.PlatformType)
@@ -74,11 +74,13 @@ func CopyHelmChartTemplates(deploymentScript, templatesDest, assetsDir string, c
 	}
 	log.Info("file were copied", "from", helmIgnoreFile, "to", templatesDest)
 
-	if err := renderTemplate(valuesFile, fmt.Sprintf("%v/%v", templateBasePath, ChartValuesTemplate), ChartValuesTemplate, config); err != nil {
+	err = renderTemplate(valuesFile, fmt.Sprintf("%v/%v", templateBasePath, ChartValuesTemplate), ChartValuesTemplate, config)
+	if err != nil {
 		return err
 	}
 
-	if err := renderTemplate(chartFile, fmt.Sprintf("%v/%v", templateBasePath, ChartTemplate), ChartTemplate, config); err != nil {
+	err = renderTemplate(chartFile, fmt.Sprintf("%v/%v", templateBasePath, ChartTemplate), ChartTemplate, config)
+	if err != nil {
 		return err
 	}
 
@@ -91,20 +93,24 @@ func CopyHelmChartTemplates(deploymentScript, templatesDest, assetsDir string, c
 		if file.IsDir() {
 			continue
 		}
-		if err := ReplaceStringInFile(fmt.Sprintf("%v/%v/%v", templatesDest, TemplateFolder, file.Name()), "REPLACE_IT", config.Name); err != nil {
+
+		err = ReplaceStringInFile(fmt.Sprintf("%v/%v/%v", templatesDest, TemplateFolder, file.Name()), "REPLACE_IT", config.Name)
+		if err != nil {
 			return err
 		}
 	}
 
-	if err := ReplaceStringInFile(fmt.Sprintf("%v/%v/%v/%v", templatesDest, TemplateFolder, TestFolder, TestFile), "REPLACE_IT", config.Name); err != nil {
+	err = ReplaceStringInFile(fmt.Sprintf("%v/%v/%v/%v", templatesDest, TemplateFolder, TestFolder, TestFile), "REPLACE_IT", config.Name)
+	if err != nil {
 		return err
 	}
 
 	log.Info("end handling Helm Chart templates", "codebase_name", config.Name)
+
 	return nil
 }
 
-func CopyOpenshiftTemplate(deploymentScript, templatesDest, assetsDir string, config model.ConfigGoTemplating) error {
+func CopyOpenshiftTemplate(deploymentScript, templatesDest, assetsDir string, config *model.ConfigGoTemplating) error {
 	log.Info("start handling Openshift template", "codebase_name", config.Name)
 
 	templateBasePath := fmt.Sprintf("%v/templates/applications/%v/%v", assetsDir, deploymentScript, strings.ToLower(config.Lang))
@@ -133,7 +139,7 @@ func CopyOpenshiftTemplate(deploymentScript, templatesDest, assetsDir string, co
 	return nil
 }
 
-func CopyTemplate(deploymentScript, workDir, assetsDir string, cf model.ConfigGoTemplating) error {
+func CopyTemplate(deploymentScript, workDir, assetsDir string, cf *model.ConfigGoTemplating) error {
 	templatesDest := fmt.Sprintf("%v/deploy-templates", workDir)
 	if DoesDirectoryExist(templatesDest) {
 		log.Info("deploy-templates folder already exists")
@@ -150,7 +156,7 @@ func CopyTemplate(deploymentScript, workDir, assetsDir string, cf model.ConfigGo
 	}
 }
 
-func renderTemplate(file *os.File, templateBasePath, templateName string, config model.ConfigGoTemplating) error {
+func renderTemplate(file *os.File, templateBasePath, templateName string, config *model.ConfigGoTemplating) error {
 	log.Info("start rendering deploy template", "path", templateBasePath)
 
 	tmpl, err := template.New(templateName).ParseFiles(templateBasePath)

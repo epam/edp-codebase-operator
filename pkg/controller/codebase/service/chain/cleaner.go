@@ -18,8 +18,8 @@ type Cleaner struct {
 	client client.Client
 }
 
-func NewCleaner(client client.Client) *Cleaner {
-	return &Cleaner{client: client}
+func NewCleaner(c client.Client) *Cleaner {
+	return &Cleaner{client: c}
 }
 
 func (h *Cleaner) ServeRequest(_ context.Context, c *codebaseApi.Codebase) error {

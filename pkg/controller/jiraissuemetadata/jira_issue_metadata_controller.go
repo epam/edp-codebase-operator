@@ -36,9 +36,9 @@ const (
 	errorStatus            = "error"
 )
 
-func NewReconcileJiraIssueMetadata(client client.Client, scheme *runtime.Scheme, log logr.Logger) *ReconcileJiraIssueMetadata {
+func NewReconcileJiraIssueMetadata(c client.Client, scheme *runtime.Scheme, log logr.Logger) *ReconcileJiraIssueMetadata {
 	return &ReconcileJiraIssueMetadata{
-		client: client,
+		client: c,
 		scheme: scheme,
 		log:    log.WithName("jira-issue-metadata"),
 	}
@@ -81,7 +81,7 @@ func (r *ReconcileJiraIssueMetadata) Reconcile(ctx context.Context, request reco
 		return reconcile.Result{}, err
 	}
 
-	js, err := r.getJiraServer(ctx, *i)
+	js, err := r.getJiraServer(ctx, i)
 	if err != nil {
 		setErrorStatus(i, err.Error())
 		return reconcile.Result{}, err
@@ -91,7 +91,7 @@ func (r *ReconcileJiraIssueMetadata) Reconcile(ctx context.Context, request reco
 		return reconcile.Result{RequeueAfter: r.setFailureCount(i)}, nil
 	}
 
-	jc, err := r.initJiraClient(*js)
+	jc, err := r.initJiraClient(js)
 	if err != nil {
 		setErrorStatus(i, err.Error())
 		return reconcile.Result{}, err
@@ -103,7 +103,8 @@ func (r *ReconcileJiraIssueMetadata) Reconcile(ctx context.Context, request reco
 		return reconcile.Result{}, err
 	}
 
-	if err := ch.ServeRequest(i); err != nil {
+	err = ch.ServeRequest(i)
+	if err != nil {
 		setErrorStatus(i, err.Error())
 		timeout := r.setFailureCount(i)
 		log.Error(err, "couldn't set jira issue metadata", "name", i.Name)
@@ -124,7 +125,7 @@ func lookup() string {
 	return defaultReconcilePeriod
 }
 
-// setFailureCount increments failure count and returns delay for next reconciliation
+// setFailureCount increments failure count and returns delay for next reconciliation.
 func (r *ReconcileJiraIssueMetadata) setFailureCount(metadata *codebaseApi.JiraIssueMetadata) time.Duration {
 	timeout := util.GetTimeout(metadata.Status.FailureCount, 500*time.Millisecond)
 	r.log.V(2).Info("wait for next reconcilation", "next reconcilation in", timeout)
@@ -160,7 +161,7 @@ func (r *ReconcileJiraIssueMetadata) updateStatus(ctx context.Context, instance 
 	}
 }
 
-func (r *ReconcileJiraIssueMetadata) initJiraClient(js codebaseApi.JiraServer) (*jira.Client, error) {
+func (r *ReconcileJiraIssueMetadata) initJiraClient(js *codebaseApi.JiraServer) (jira.Client, error) {
 	s, err := util.GetSecret(r.client, js.Spec.CredentialName, js.Namespace)
 	if err != nil {
 		return nil, errors.Wrapf(err, "couldn't get secret %v", js.Spec.CredentialName)
@@ -172,10 +173,10 @@ func (r *ReconcileJiraIssueMetadata) initJiraClient(js codebaseApi.JiraServer) (
 	if err != nil {
 		return nil, errors.Wrap(err, "couldn't create Jira client")
 	}
-	return &c, nil
+	return c, nil
 }
 
-func (r *ReconcileJiraIssueMetadata) getJiraServer(ctx context.Context, metadata codebaseApi.JiraIssueMetadata) (*codebaseApi.JiraServer, error) {
+func (r *ReconcileJiraIssueMetadata) getJiraServer(ctx context.Context, metadata *codebaseApi.JiraIssueMetadata) (*codebaseApi.JiraServer, error) {
 	ref, err := util.GetOwnerReference(codebaseKind, metadata.GetOwnerReferences())
 	if err != nil {
 		return nil, err

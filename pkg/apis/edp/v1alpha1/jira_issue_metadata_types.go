@@ -6,7 +6,7 @@ import (
 
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// JiraIssueMetadataSpec defines the desired state of JiraIssueMetadata
+// JiraIssueMetadataSpec defines the desired state of JiraIssueMetadata.
 type JiraIssueMetadataSpec struct {
 	// Name of Codebase associated with.
 	CodebaseName string `json:"codebaseName"`
@@ -24,7 +24,7 @@ type JiraIssueMetadataSpec struct {
 	Tickets []string `json:"tickets,omitempty"`
 }
 
-// JiraIssueMetadataStatus defines the observed state of JiraIssueMetadata
+// JiraIssueMetadataStatus defines the observed state of JiraIssueMetadata.
 type JiraIssueMetadataStatus struct {
 	// Information when the last time the action were performed.
 	LastTimeUpdated metaV1.Time `json:"last_time_updated"`
@@ -46,7 +46,7 @@ type JiraIssueMetadataStatus struct {
 // +kubebuilder:resource:shortName=jim,path=jiraissuemetadatas
 // +kubebuilder:deprecatedversion
 
-// JiraIssueMetadata is the Schema for the JiraIssueMetadatas API
+// JiraIssueMetadata is the Schema for the JiraIssueMetadatas API.
 type JiraIssueMetadata struct {
 	metaV1.TypeMeta   `json:",inline"`
 	metaV1.ObjectMeta `json:"metadata,omitempty"`
@@ -57,7 +57,7 @@ type JiraIssueMetadata struct {
 
 // +kubebuilder:object:root=true
 
-// JiraIssueMetadataList contains a list of JiraIssueMetadata
+// JiraIssueMetadataList contains a list of JiraIssueMetadata.
 type JiraIssueMetadataList struct {
 	metaV1.TypeMeta `json:",inline"`
 	metaV1.ListMeta `json:"metadata,omitempty"`

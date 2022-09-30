@@ -67,7 +67,7 @@ func (h PutCDStageDeploy) handleCodebaseImageStreamEnvLabels(imageStream *codeba
 func validateCbis(imageStream *codebaseApi.CodebaseImageStream, envLabel string, labelValueRegexp *regexp.Regexp) []string {
 	var errs []string
 
-	if len(imageStream.Spec.Codebase) == 0 {
+	if imageStream.Spec.Codebase == "" {
 		errs = append(errs, "codebase is not defined in spec ")
 	}
 	if len(imageStream.Spec.Tags) == 0 {
@@ -105,7 +105,7 @@ func (h PutCDStageDeploy) putCDStageDeploy(envLabel, namespace string, spec code
 }
 
 func generateCdStageDeployName(env, codebase string) string {
-	env = strings.Replace(env, "/", "-", -1)
+	env = strings.ReplaceAll(env, "/", "-")
 	return fmt.Sprintf("%v-%v", env, codebase)
 }
 

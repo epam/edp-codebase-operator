@@ -6,7 +6,7 @@ import (
 
 // NOTE: json tags are required. Any new fields you add must have json tags for the fields to be serialized.
 
-// JiraServerSpec defines the desired state of JiraServer
+// JiraServerSpec defines the desired state of JiraServer.
 type JiraServerSpec struct {
 	ApiUrl string `json:"apiUrl"`
 
@@ -15,7 +15,7 @@ type JiraServerSpec struct {
 	CredentialName string `json:"credentialName"`
 }
 
-// JiraServerStatus defines the observed state of JiraServer
+// JiraServerStatus defines the observed state of JiraServer.
 type JiraServerStatus struct {
 	// This flag indicates neither JiraServer are initialized and ready to work. Defaults to false.
 	Available bool `json:"available"`
@@ -37,7 +37,7 @@ type JiraServerStatus struct {
 // +kubebuilder:resource:shortName=jrs
 // +kubebuilder:storageversion
 
-// JiraServer is the Schema for the JiraServers API
+// JiraServer is the Schema for the JiraServers API.
 type JiraServer struct {
 	metaV1.TypeMeta   `json:",inline"`
 	metaV1.ObjectMeta `json:"metadata,omitempty"`
@@ -48,7 +48,7 @@ type JiraServer struct {
 
 // +kubebuilder:object:root=true
 
-// JiraServerList contains a list of JiraServers
+// JiraServerList contains a list of JiraServers.
 type JiraServerList struct {
 	metaV1.TypeMeta `json:",inline"`
 	metaV1.ListMeta `json:"metadata,omitempty"`

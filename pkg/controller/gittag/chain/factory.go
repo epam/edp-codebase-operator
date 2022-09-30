@@ -11,11 +11,11 @@ import (
 
 var log = ctrl.Log.WithName("git_tag_handler")
 
-func CreateDefChain(client client.Client) handler.GitTagHandler {
+func CreateDefChain(c client.Client) handler.GitTagHandler {
 	return PushGitTag{
-		client: client,
+		client: c,
 		next: DeleteGitTagCr{
-			client: client,
+			client: c,
 		},
 		git: &gitserver.GitProvider{},
 	}

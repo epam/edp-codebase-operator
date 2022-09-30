@@ -25,9 +25,9 @@ import (
 
 const statusError = "error"
 
-func NewReconcileJiraServer(client client.Client, scheme *runtime.Scheme, log logr.Logger) *ReconcileJiraServer {
+func NewReconcileJiraServer(c client.Client, scheme *runtime.Scheme, log logr.Logger) *ReconcileJiraServer {
 	return &ReconcileJiraServer{
-		client: client,
+		client: c,
 		scheme: scheme,
 		log:    log.WithName("jira-server"),
 	}
@@ -65,7 +65,7 @@ func (r *ReconcileJiraServer) Reconcile(ctx context.Context, request reconcile.R
 	}
 	defer r.updateStatus(ctx, i)
 
-	c, err := r.initJiraClient(*i)
+	c, err := r.initJiraClient(i)
 	if err != nil {
 		i.Status.Available = false
 		return reconcile.Result{}, err
@@ -89,16 +89,19 @@ func (r *ReconcileJiraServer) updateStatus(ctx context.Context, instance *codeba
 	}
 }
 
-func (r *ReconcileJiraServer) initJiraClient(jira codebaseApi.JiraServer) (jira.Client, error) {
-	s, err := util.GetSecret(r.client, jira.Spec.CredentialName, jira.Namespace)
+func (r *ReconcileJiraServer) initJiraClient(js *codebaseApi.JiraServer) (jira.Client, error) {
+	s, err := util.GetSecret(r.client, js.Spec.CredentialName, js.Namespace)
 	if err != nil {
-		return nil, errors.Wrapf(err, "couldn't get secret %v", jira.Spec.CredentialName)
+		return nil, errors.Wrapf(err, "couldn't get secret %v", js.Spec.CredentialName)
 	}
+
 	user := string(s.Data["username"])
 	pwd := string(s.Data["password"])
-	c, err := new(adapter.GoJiraAdapterFactory).New(dto.ConvertSpecToJiraServer(jira.Spec.ApiUrl, user, pwd))
+
+	c, err := new(adapter.GoJiraAdapterFactory).New(dto.ConvertSpecToJiraServer(js.Spec.ApiUrl, user, pwd))
 	if err != nil {
 		return nil, errors.Wrap(err, "couldn't create Jira client")
 	}
+
 	return c, nil
 }

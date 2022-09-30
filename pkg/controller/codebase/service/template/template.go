@@ -18,76 +18,76 @@ import (
 
 var log = ctrl.Log.WithName("template")
 
-func PrepareTemplates(client client.Client, c *codebaseApi.Codebase, workDir, assetsDir string) error {
-	log.Info("start preparing deploy templates", "codebase", c.Name)
+func PrepareTemplates(c client.Client, cb *codebaseApi.Codebase, workDir, assetsDir string) error {
+	log.Info("start preparing deploy templates", "codebase", cb.Name)
 
-	cf, err := buildTemplateConfig(client, c)
+	cf, err := buildTemplateConfig(c, cb)
 	if err != nil {
 		return err
 	}
 
-	if c.Spec.Type == util.Application {
-		if err := util.CopyTemplate(c.Spec.DeploymentScript, workDir, assetsDir, *cf); err != nil {
-			return errors.Wrapf(err, "an error has occurred while copying template for %v codebase", c.Name)
+	if cb.Spec.Type == util.Application {
+		if err := util.CopyTemplate(cb.Spec.DeploymentScript, workDir, assetsDir, cf); err != nil {
+			return errors.Wrapf(err, "an error has occurred while copying template for %v codebase", cb.Name)
 		}
 	}
 
-	if c.Spec.Strategy != util.ImportStrategy {
-		if err := copySonarConfigs(workDir, assetsDir, *cf); err != nil {
+	if cb.Spec.Strategy != util.ImportStrategy {
+		if err := copySonarConfigs(workDir, assetsDir, cf); err != nil {
 			return err
 		}
 	}
-	log.Info("end preparing deploy templates", "codebase", c.Name)
+	log.Info("end preparing deploy templates", "codebase", cb.Name)
 	return nil
 }
 
-func PrepareGitlabCITemplates(client client.Client, c *codebaseApi.Codebase, workDir, assetsDir string) error {
-	log.Info("start preparing deploy templates", "codebase", c.Name)
+func PrepareGitlabCITemplates(c client.Client, cb *codebaseApi.Codebase, workDir, assetsDir string) error {
+	log.Info("start preparing deploy templates", "codebase", cb.Name)
 
-	if c.Spec.Type != util.Application {
-		log.Info("codebase is not application. skip copying templates", "name", c.Name)
+	if cb.Spec.Type != util.Application {
+		log.Info("codebase is not application. skip copying templates", "name", cb.Name)
 		return nil
 	}
 
-	cf, err := buildTemplateConfig(client, c)
+	cf, err := buildTemplateConfig(c, cb)
 	if err != nil {
 		return err
 	}
 
-	if err := util.CopyTemplate(c.Spec.DeploymentScript, workDir, assetsDir, *cf); err != nil {
-		return errors.Wrapf(err, "an error has occurred while copying template for %v codebase", c.Name)
+	if err := util.CopyTemplate(cb.Spec.DeploymentScript, workDir, assetsDir, cf); err != nil {
+		return errors.Wrapf(err, "an error has occurred while copying template for %v codebase", cb.Name)
 	}
 
-	log.Info("end preparing deploy templates", "codebase", c.Name)
+	log.Info("end preparing deploy templates", "codebase", cb.Name)
 	return nil
 }
 
-func buildTemplateConfig(client client.Client, c *codebaseApi.Codebase) (*model.ConfigGoTemplating, error) {
-	log.Info("start creating template config", "codebase_name", c.Name)
-	us, err := util.GetUserSettings(client, c.Namespace)
+func buildTemplateConfig(c client.Client, cb *codebaseApi.Codebase) (*model.ConfigGoTemplating, error) {
+	log.Info("start creating template config", "codebase_name", cb.Name)
+	us, err := util.GetUserSettings(c, cb.Namespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable get user settings settings")
 	}
 
 	cf := model.ConfigGoTemplating{
-		Name:         c.Name,
+		Name:         cb.Name,
 		PlatformType: platform.GetPlatformType(),
-		Lang:         c.Spec.Lang,
+		Lang:         cb.Spec.Lang,
 		DnsWildcard:  us.DnsWildcard,
 	}
-	if c.Spec.Framework != nil {
-		cf.Framework = *c.Spec.Framework
+	if cb.Spec.Framework != nil {
+		cf.Framework = *cb.Spec.Framework
 	}
-	cf.GitURL, err = getProjectUrl(client, c.Spec, c.Namespace)
+	cf.GitURL, err = getProjectUrl(c, &cb.Spec, cb.Namespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable get project url")
 	}
 
-	log.Info("end creating template config", "codebase_name", c.Name)
+	log.Info("end creating template config", "codebase_name", cb.Name)
 	return &cf, nil
 }
 
-func getProjectUrl(c client.Client, s codebaseApi.CodebaseSpec, n string) (string, error) {
+func getProjectUrl(c client.Client, s *codebaseApi.CodebaseSpec, n string) (string, error) {
 	switch s.Strategy {
 	case "create":
 		p := util.BuildRepoUrl(s)
@@ -111,8 +111,8 @@ func getProjectUrl(c client.Client, s codebaseApi.CodebaseSpec, n string) (strin
 
 // Copy sonar configurations for JavaScript, Python, Go
 // It expects workDir - work dir, which contains codebase; td - template dir, which contains sonar.property file
-// It returns error in case of issue
-func copySonarConfigs(workDir, td string, config model.ConfigGoTemplating) (err error) {
+// It returns error in case of issue.
+func copySonarConfigs(workDir, td string, config *model.ConfigGoTemplating) (err error) {
 	languagesForSonarTemplates := []string{util.LanguageJavascript, util.LanguagePython, util.LanguageGo}
 	if !util.CheckElementInArray(languagesForSonarTemplates, strings.ToLower(config.Lang)) {
 		return

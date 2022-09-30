@@ -17,8 +17,8 @@ type PutGerritReplication struct {
 	client client.Client
 }
 
-func NewPutGerritReplication(client client.Client) *PutGerritReplication {
-	return &PutGerritReplication{client: client}
+func NewPutGerritReplication(c client.Client) *PutGerritReplication {
+	return &PutGerritReplication{client: c}
 }
 
 func (h *PutGerritReplication) ServeRequest(ctx context.Context, c *codebaseApi.Codebase) error {

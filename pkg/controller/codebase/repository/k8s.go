@@ -14,16 +14,16 @@ type K8SCodebaseRepository struct {
 }
 
 // Simple constructor for K8SCodebaseRepository. Codebase CR is used to avoid additional calls to K8S and error
-// with concurrent resource update
-func NewK8SCodebaseRepository(client client.Client, cr *codebaseApi.Codebase) CodebaseRepository {
+// with concurrent resource update.
+func NewK8SCodebaseRepository(c client.Client, cr *codebaseApi.Codebase) CodebaseRepository {
 	return K8SCodebaseRepository{
-		client: client,
+		client: c,
 		cr:     cr,
 	}
 }
 
 // Retrieves status of git provisioning from codebase cr. To avoid additional call to Kubernetes, values from
-// inner field codebase are used. Input parameters are codebase and edp are ignored
+// inner field codebase are used. Input parameters are codebase and edp are ignored.
 func (repo K8SCodebaseRepository) SelectProjectStatusValue(codebase, edp string) (string, error) {
 	return repo.cr.Status.Git, nil
 }

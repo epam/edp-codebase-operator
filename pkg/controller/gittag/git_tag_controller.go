@@ -16,9 +16,9 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/gittag/chain"
 )
 
-func NewReconcileGitTag(client client.Client, log logr.Logger) *ReconcileGitTag {
+func NewReconcileGitTag(c client.Client, log logr.Logger) *ReconcileGitTag {
 	return &ReconcileGitTag{
-		client: client,
+		client: c,
 		log:    log.WithName("git-tag"),
 	}
 }

@@ -24,8 +24,8 @@ type PutGitlabCiFile struct {
 	git    git.Git
 }
 
-func NewPutGitlabCiFile(client client.Client, cr repository.CodebaseRepository, git git.Git) *PutGitlabCiFile {
-	return &PutGitlabCiFile{client: client, cr: cr, git: git}
+func NewPutGitlabCiFile(c client.Client, cr repository.CodebaseRepository, g git.Git) *PutGitlabCiFile {
+	return &PutGitlabCiFile{client: c, cr: cr, git: g}
 }
 
 func (h *PutGitlabCiFile) ServeRequest(ctx context.Context, c *codebaseApi.Codebase) error {

@@ -5,7 +5,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -21,10 +20,10 @@ func TestDeleteJiraIssueMetadataCr_ServeRequest(t *testing.T) {
 		},
 	}
 
-	scheme.Scheme.AddKnownTypes(v1.SchemeGroupVersion, jim)
-	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, jim)
-	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(jim).Build()
+	scheme.Scheme.AddKnownTypes(metaV1.SchemeGroupVersion, jim)
+	newScheme := runtime.NewScheme()
+	newScheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, jim)
+	fakeCl := fake.NewClientBuilder().WithScheme(newScheme).WithRuntimeObjects(jim).Build()
 
 	dimcr := DeleteJiraIssueMetadataCr{
 		c: fakeCl,

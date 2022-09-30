@@ -25,8 +25,8 @@ type PutJenkinsFolder struct {
 	client client.Client
 }
 
-func NewPutJenkinsFolder(client client.Client) *PutJenkinsFolder {
-	return &PutJenkinsFolder{client: client}
+func NewPutJenkinsFolder(c client.Client) *PutJenkinsFolder {
+	return &PutJenkinsFolder{client: c}
 }
 
 func (h *PutJenkinsFolder) ServeRequest(ctx context.Context, c *codebaseApi.Codebase) error {

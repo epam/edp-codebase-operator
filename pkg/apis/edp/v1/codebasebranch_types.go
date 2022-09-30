@@ -6,7 +6,7 @@ import (
 
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// CodebaseBranchSpec defines the desired state of CodebaseBranch
+// CodebaseBranchSpec defines the desired state of CodebaseBranch.
 type CodebaseBranchSpec struct {
 	// Name of Codebase associated with.
 	CodebaseName string `json:"codebaseName"`
@@ -29,7 +29,7 @@ type CodebaseBranchSpec struct {
 	ReleaseJobParams map[string]string `json:"releaseJobParams,omitempty"`
 }
 
-// CodebaseBranchStatus defines the observed state of CodebaseBranch
+// CodebaseBranchStatus defines the observed state of CodebaseBranch.
 type CodebaseBranchStatus struct {
 	// Information when the last time the action were performed.
 	LastTimeUpdated metaV1.Time `json:"lastTimeUpdated"`
@@ -77,7 +77,7 @@ type CodebaseBranchStatus struct {
 // +kubebuilder:resource:shortName=cb
 // +kubebuilder:storageversion
 
-// CodebaseBranch is the Schema for the CodebaseBranches API
+// CodebaseBranch is the Schema for the CodebaseBranches API.
 type CodebaseBranch struct {
 	metaV1.TypeMeta   `json:",inline"`
 	metaV1.ObjectMeta `json:"metadata,omitempty"`
@@ -88,7 +88,7 @@ type CodebaseBranch struct {
 
 // +kubebuilder:object:root=true
 
-// CodebaseBranchList contains a list of CodebaseBranch
+// CodebaseBranchList contains a list of CodebaseBranch.
 type CodebaseBranchList struct {
 	metaV1.TypeMeta `json:",inline"`
 	metaV1.ListMeta `json:"metadata,omitempty"`

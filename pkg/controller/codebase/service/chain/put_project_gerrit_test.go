@@ -862,7 +862,7 @@ func TestPutProjectGerrit_tryToCloneShouldPassWithExistingRepo(t *testing.T) {
 		u = "user"
 		p = "pass"
 	)
-	err = os.MkdirAll(fmt.Sprintf("%v/.git", dir), 0775)
+	err = os.MkdirAll(fmt.Sprintf("%v/.git", dir), 0o775)
 	require.NoError(t, err, "unable to create .git directory for test")
 
 	ppg := NewPutProjectGerrit(nil, nil, nil)

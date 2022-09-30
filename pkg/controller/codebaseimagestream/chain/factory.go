@@ -9,9 +9,9 @@ import (
 
 var log = ctrl.Log.WithName("codebase-image-stream")
 
-func CreateDefChain(client client.Client) handler.CodebaseImageStreamHandler {
+func CreateDefChain(c client.Client) handler.CodebaseImageStreamHandler {
 	return PutCDStageDeploy{
-		client: client,
+		client: c,
 		log:    log.WithName("create-chain").WithName("put-cd-stage-deploy"),
 	}
 }

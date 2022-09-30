@@ -6,7 +6,7 @@ import (
 
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// CodebaseImageStreamSpec defines the desired state of CodebaseImageStream
+// CodebaseImageStreamSpec defines the desired state of CodebaseImageStream.
 type CodebaseImageStreamSpec struct {
 	// Name of Codebase associated with.
 	Codebase string `json:"codebase"`
@@ -25,7 +25,7 @@ type Tag struct {
 	Created string `json:"created"`
 }
 
-// CodebaseImageStreamStatus defines the observed state of CodebaseImageStream
+// CodebaseImageStreamStatus defines the observed state of CodebaseImageStream.
 type CodebaseImageStreamStatus struct {
 	// Detailed information regarding action result
 	// which were performed
@@ -41,7 +41,7 @@ type CodebaseImageStreamStatus struct {
 // +kubebuilder:resource:shortName=cbis
 // +kubebuilder:storageversion
 
-// CodebaseImageStream is the Schema for the CodebaseImageStreams API
+// CodebaseImageStream is the Schema for the CodebaseImageStreams API.
 type CodebaseImageStream struct {
 	metaV1.TypeMeta   `json:",inline"`
 	metaV1.ObjectMeta `json:"metadata,omitempty"`
@@ -52,7 +52,7 @@ type CodebaseImageStream struct {
 
 // +kubebuilder:object:root=true
 
-// CodebaseImageStreamList contains a list of CodebaseImageStreams
+// CodebaseImageStreamList contains a list of CodebaseImageStreams.
 type CodebaseImageStreamList struct {
 	metaV1.TypeMeta `json:",inline"`
 	metaV1.ListMeta `json:"metadata,omitempty"`

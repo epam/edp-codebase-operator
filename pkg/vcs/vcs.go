@@ -20,12 +20,12 @@ type VCS interface {
 	GetRepositorySshUrl(groupPath, projectName string) (string, error)
 }
 
-func CreateVCSClient(vcsToolName model.VCSTool, url string, username string, password string) (VCS, error) {
+func CreateVCSClient(vcsToolName model.VCSTool, u, username, password string) (VCS, error) {
 	switch vcsToolName {
 	case model.GitLab:
 		log.Print("Creating VCS for GitLab implementation...")
 		vcsClient := gitlab.GitLab{}
-		err := vcsClient.Init(url, username, password)
+		err := vcsClient.Init(u, username, password)
 		if err != nil {
 			return nil, err
 		}
@@ -33,7 +33,7 @@ func CreateVCSClient(vcsToolName model.VCSTool, url string, username string, pas
 	case model.BitBucket:
 		log.Print("Creating VCS for BitBucket implementation...")
 		vcsClient := bitbucket.BitBucket{}
-		err := vcsClient.Init(url, username, password)
+		err := vcsClient.Init(u, username, password)
 		if err != nil {
 			return nil, err
 		}
@@ -43,8 +43,8 @@ func CreateVCSClient(vcsToolName model.VCSTool, url string, username string, pas
 	}
 }
 
-func GetVcsConfig(client client.Client, us *model.UserSettings, codebaseName, namespace string) (*model.Vcs, error) {
-	vcsAutoUserLogin, vcsAutoUserPassword, err := util.GetVcsBasicAuthConfig(client, namespace,
+func GetVcsConfig(c client.Client, us *model.UserSettings, codebaseName, namespace string) (*model.Vcs, error) {
+	vcsAutoUserLogin, vcsAutoUserPassword, err := util.GetVcsBasicAuthConfig(c, namespace,
 		fmt.Sprintf("vcs-autouser-codebase-%v-temp", codebaseName))
 	if err != nil {
 		return nil, errors.Wrap(err, "Unable to get secret")
@@ -77,8 +77,8 @@ func GetVcsConfig(client client.Client, us *model.UserSettings, codebaseName, na
 	}, nil
 }
 
-func CreateProjectInVcs(client client.Client, us *model.UserSettings, codebaseName, namespace string) error {
-	vcsConf, err := GetVcsConfig(client, us, codebaseName, namespace)
+func CreateProjectInVcs(c client.Client, us *model.UserSettings, codebaseName, namespace string) error {
+	vcsConf, err := GetVcsConfig(c, us, codebaseName, namespace)
 	if err != nil {
 		return err
 	}

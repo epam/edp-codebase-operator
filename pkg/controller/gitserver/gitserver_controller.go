@@ -20,9 +20,9 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/pkg/model"
 )
 
-func NewReconcileGitServer(client client.Client, log logr.Logger) *ReconcileGitServer {
+func NewReconcileGitServer(c client.Client, log logr.Logger) *ReconcileGitServer {
 	return &ReconcileGitServer{
-		client: client,
+		client: c,
 		log:    log.WithName("git-server"),
 	}
 }
@@ -46,8 +46,8 @@ func (r *ReconcileGitServer) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func (r *ReconcileGitServer) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	log := r.log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
-	log.Info("Reconciling GitServer")
+	reconcilerLog := r.log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
+	reconcilerLog.Info("Reconciling GitServer")
 
 	instance := &codebaseApi.GitServer{}
 	err := r.client.Get(ctx, request.NamespacedName, instance)
@@ -61,9 +61,9 @@ func (r *ReconcileGitServer) Reconcile(ctx context.Context, request reconcile.Re
 		return reconcile.Result{}, err
 	}
 
-	gitServer := model.ConvertToGitServer(*instance)
+	gitServer := model.ConvertToGitServer(instance)
 
-	hasConnection, err := checkConnectionToGitServer(r.client, *gitServer)
+	hasConnection, err := checkConnectionToGitServer(r.client, gitServer)
 	if err != nil {
 		return reconcile.Result{}, errors.Wrap(err, fmt.Sprintf("an error has occurred while checking connection to Git Server %v", gitServer.GitHost))
 	}
@@ -73,21 +73,21 @@ func (r *ReconcileGitServer) Reconcile(ctx context.Context, request reconcile.Re
 	}
 
 	if !hasConnection {
-		log.Info("git server does not have connection, will try again later")
+		reconcilerLog.Info("git server does not have connection, will try again later")
 		return reconcile.Result{RequeueAfter: time.Second * 30}, nil
 	}
 
-	log.Info("Reconciling codebase has been finished")
+	reconcilerLog.Info("Reconciling codebase has been finished")
 
 	return reconcile.Result{}, nil
 }
 
-func (r *ReconcileGitServer) updateStatus(ctx context.Context, client client.Client, instance *codebaseApi.GitServer, hasConnection bool) error {
+func (r *ReconcileGitServer) updateStatus(ctx context.Context, c client.Client, instance *codebaseApi.GitServer, hasConnection bool) error {
 	instance.Status = generateStatus(hasConnection)
 
-	err := client.Status().Update(ctx, instance)
+	err := c.Status().Update(ctx, instance)
 	if err != nil {
-		_ = client.Update(ctx, instance)
+		_ = c.Update(ctx, instance)
 	}
 
 	r.log.Info("Status for GitServer is set up.")

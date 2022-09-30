@@ -12,28 +12,28 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
-func pushChangesToGit(client client.Client, git git.Git, projectPath string, c *codebaseApi.Codebase) error {
-	gs, err := util.GetGitServer(client, c.Spec.GitServer, c.Namespace)
+func pushChangesToGit(c client.Client, g git.Git, projectPath string, cb *codebaseApi.Codebase) error {
+	gs, err := util.GetGitServer(c, cb.Spec.GitServer, cb.Namespace)
 	if err != nil {
 		return err
 	}
 
-	secret, err := util.GetSecret(client, gs.NameSshKeySecret, c.Namespace)
+	secret, err := util.GetSecret(c, gs.NameSshKeySecret, cb.Namespace)
 	if err != nil {
 		return errors.Wrapf(err, "an error has occurred while getting %v secret", gs.NameSshKeySecret)
 	}
 
 	k := string(secret.Data[util.PrivateSShKeyName])
 	u := gs.GitUser
-	if err := git.PushChanges(k, u, projectPath, c.Spec.DefaultBranch); err != nil {
+	if err := g.PushChanges(k, u, projectPath, cb.Spec.DefaultBranch); err != nil {
 		return errors.Wrapf(err, "an error has occurred while pushing changes for %v repo", projectPath)
 	}
 	log.Info("templates have been pushed")
 	return nil
 }
 
-func setIntermediateSuccessFields(ctx context.Context, client client.Client, c *codebaseApi.Codebase, action codebaseApi.ActionType) error {
-	c.Status = codebaseApi.CodebaseStatus{
+func setIntermediateSuccessFields(ctx context.Context, c client.Client, cb *codebaseApi.Codebase, action codebaseApi.ActionType) error {
+	cb.Status = codebaseApi.CodebaseStatus{
 		Status:          util.StatusInProgress,
 		Available:       false,
 		LastTimeUpdated: metaV1.Now(),
@@ -41,12 +41,12 @@ func setIntermediateSuccessFields(ctx context.Context, client client.Client, c *
 		Result:          codebaseApi.Success,
 		Username:        "system",
 		Value:           "inactive",
-		FailureCount:    c.Status.FailureCount,
-		Git:             c.Status.Git,
+		FailureCount:    cb.Status.FailureCount,
+		Git:             cb.Status.Git,
 	}
 
-	if err := client.Status().Update(ctx, c); err != nil {
-		if err := client.Update(ctx, c); err != nil {
+	if err := c.Status().Update(ctx, cb); err != nil {
+		if err := c.Update(ctx, cb); err != nil {
 			return err
 		}
 	}

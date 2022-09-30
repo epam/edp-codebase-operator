@@ -10,10 +10,10 @@ import (
 type GoJiraAdapterFactory struct {
 }
 
-func (GoJiraAdapterFactory) New(jira dto.JiraServer) (jira.Client, error) {
-	rl := log.WithValues("jira dto", jira)
+func (GoJiraAdapterFactory) New(js dto.JiraServer) (jira.Client, error) {
+	rl := log.WithValues("jira dto", js)
 	rl.V(2).Info("start new Jira client creation")
-	client, err := initClient(jira)
+	client, err := initClient(js)
 	if err != nil {
 		return nil, err
 	}
@@ -23,12 +23,12 @@ func (GoJiraAdapterFactory) New(jira dto.JiraServer) (jira.Client, error) {
 	}, nil
 }
 
-func initClient(jira dto.JiraServer) (*gojira.Client, error) {
+func initClient(js dto.JiraServer) (*gojira.Client, error) {
 	tp := gojira.BasicAuthTransport{
-		Username: jira.User,
-		Password: jira.Pwd,
+		Username: js.User,
+		Password: js.Pwd,
 	}
-	client, err := gojira.NewClient(tp.Client(), jira.ApiUrl)
+	client, err := gojira.NewClient(tp.Client(), js.ApiUrl)
 	if err != nil {
 		return nil, err
 	}

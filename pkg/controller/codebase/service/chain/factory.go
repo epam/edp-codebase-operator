@@ -9,7 +9,7 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver"
 )
 
-// TODO: remove global variable log
+// TODO: remove global variable log.
 var log = ctrl.Log.WithName("codebase_handler")
 
 func MakeGerritDefChain(c client.Client, cr repository.CodebaseRepository) handler.CodebaseHandler {

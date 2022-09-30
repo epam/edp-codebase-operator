@@ -10,11 +10,11 @@ import (
 
 var log = ctrl.Log.WithName("image_stream_tag_handler")
 
-func CreateDefChain(client client.Client) handler.ImageStreamTagHandler {
+func CreateDefChain(c client.Client) handler.ImageStreamTagHandler {
 	return PutTagCodebaseImageStreamCr{
-		client: client,
+		client: c,
 		next: DeleteTagCodebaseImageStreamCr{
-			client: client,
+			client: c,
 		},
 	}
 }

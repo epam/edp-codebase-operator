@@ -47,12 +47,12 @@ const (
 	ReplicationConfigTemplateName = "replication-conf.tmpl"
 )
 
-func (client *SSHClient) RunCommand(cmd *SSHCommand) ([]byte, error) {
+func (s *SSHClient) RunCommand(cmd *SSHCommand) ([]byte, error) {
 	var session *ssh.Session
 	var connection *ssh.Client
 	var err error
 
-	if session, connection, err = client.NewSession(); err != nil {
+	if session, connection, err = s.NewSession(); err != nil {
 		return nil, err
 	}
 	defer func() {
@@ -72,8 +72,8 @@ func (client *SSHClient) RunCommand(cmd *SSHCommand) ([]byte, error) {
 	return commandOutput, err
 }
 
-func (client *SSHClient) NewSession() (*ssh.Session, *ssh.Client, error) {
-	connection, err := ssh.Dial("tcp", fmt.Sprintf("%s:%d", client.Host, client.Port), client.Config)
+func (s *SSHClient) NewSession() (*ssh.Session, *ssh.Client, error) {
+	connection, err := ssh.Dial("tcp", fmt.Sprintf("%s:%d", s.Host, s.Port), s.Config)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to dial: %s", err)
 	}
@@ -166,7 +166,7 @@ func CreateProject(port int32, idrsa, host, appName string, logger logr.Logger) 
 	return nil
 }
 
-// SetHeadToBranch sets remote git HEAD to specific branch using ssh Gerrit command
+// SetHeadToBranch sets remote git HEAD to specific branch using ssh Gerrit command.
 func SetHeadToBranch(port int32, idrsa, host, appName, branchName string, logger logr.Logger) error {
 	command := fmt.Sprintf("gerrit set-head %v --new-head %v", appName, branchName)
 	cmd := &SSHCommand{
@@ -186,7 +186,7 @@ func SetHeadToBranch(port int32, idrsa, host, appName, branchName string, logger
 	return err
 }
 
-func AddRemoteLinkToGerrit(repoPath string, host string, port int32, appName string, logger logr.Logger) error {
+func AddRemoteLinkToGerrit(repoPath, host string, port int32, appName string, logger logr.Logger) error {
 	remoteUrl := fmt.Sprintf("ssh://%v:%v/%v", host, port, appName)
 
 	r, err := git.PlainOpen(repoPath)
@@ -233,7 +233,7 @@ func generateReplicationConfig(templatePath, templateName string, params Replica
 	return renderedTemplate.String(), nil
 }
 
-func SetupProjectReplication(client client.Client, sshPort int32, host, idrsa, codebaseName, namespace,
+func SetupProjectReplication(c client.Client, sshPort int32, host, idrsa, codebaseName, namespace,
 	vcsSshUrl string, logger logr.Logger) error {
 	logger.Info("Start setup project replication for app", "codebase", codebaseName)
 
@@ -249,7 +249,7 @@ func SetupProjectReplication(client client.Client, sshPort int32, host, idrsa, c
 	}
 
 	gerritSettings := &v1.ConfigMap{}
-	err = client.Get(context.TODO(), types.NamespacedName{
+	err = c.Get(context.TODO(), types.NamespacedName{
 		Namespace: namespace,
 		Name:      "gerrit",
 	}, gerritSettings)
@@ -262,10 +262,12 @@ func SetupProjectReplication(client client.Client, sshPort int32, host, idrsa, c
 	}
 	gerritSettings.Data["replication.config"] = fmt.Sprintf("%v\n%v", replicaConfig, replicaConfigNew)
 
-	if err := client.Update(context.TODO(), gerritSettings); err != nil {
+	err = c.Update(context.TODO(), gerritSettings)
+	if err != nil {
 		log.Printf("Unable to update config map with replication config: %v", err)
 		return err
 	}
+
 	// TODO: refactor
 	log.Println("Waiting for gerrit replication config map appears in gerrit pod. Sleeping for 5 seconds...")
 	time.Sleep(5 * time.Second)
@@ -275,6 +277,7 @@ func SetupProjectReplication(client client.Client, sshPort int32, host, idrsa, c
 		log.Printf("Unable to reload replication plugin: %v", err)
 		return err
 	}
+
 	log.Printf("Replication configuration has been finished for app %v", codebaseName)
 
 	return nil

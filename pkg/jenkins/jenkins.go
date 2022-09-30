@@ -30,7 +30,7 @@ func (j JobNotFoundError) Error() string {
 	return string(j)
 }
 
-func Init(url string, username string, token string) (*JenkinsClient, error) {
+func Init(url, username, token string) (*JenkinsClient, error) {
 	log.Info("initializing new Jenkins client", "url", url, "username", username)
 	jenkins, err := gojenkins.CreateJenkins(http.DefaultClient, url, username, token).Init()
 	if err != nil {
@@ -58,7 +58,7 @@ func (c JenkinsClient) GetJob(name string, delay time.Duration, retryCount int) 
 	return nil, resultErr
 }
 
-func (c JenkinsClient) TriggerDeletionJob(branchName string, appName string) error {
+func (c JenkinsClient) TriggerDeletionJob(branchName, appName string) error {
 	jobName := fmt.Sprintf("%v/job/Delete-release-%v", appName, appName)
 	log.Info("Trying to trigger Deletion jenkins job", "name", jobName)
 
@@ -177,31 +177,38 @@ func GetJenkins(c client.Client, namespace string) (*jenkinsApi.Jenkins, error) 
 	return &jenkinsList.Items[0], nil
 }
 
-func GetJenkinsCreds(client client.Client, jenkins jenkinsApi.Jenkins, namespace string) (string, string, error) {
+func GetJenkinsCreds(c client.Client, jenkins *jenkinsApi.Jenkins, namespace string) (userName, password string, err error) {
 	annotationKey := fmt.Sprintf("%v/%v", jenkinsOperatorSpec.EdpAnnotationsPrefix, jenkinsOperatorSpec.JenkinsTokenAnnotationSuffix)
 	jenkinsTokenSecretName := jenkins.Annotations[annotationKey]
 
-	jenkinsTokenSecret, err := util.GetSecret(client, jenkinsTokenSecretName, namespace)
+	jenkinsTokenSecret, err := util.GetSecret(c, jenkinsTokenSecretName, namespace)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
 			return "", "", errors.Wrapf(err, "Secret %v in not found", jenkinsTokenSecretName)
 		}
 		return "", "", errors.Wrapf(err, "Getting secret %v failed", jenkinsTokenSecretName)
 	}
-	return string(jenkinsTokenSecret.Data["password"]), string(jenkinsTokenSecret.Data["username"]), nil
+
+	userName = string(jenkinsTokenSecret.Data["username"])
+	password = string(jenkinsTokenSecret.Data["password"])
+
+	return
 }
 
-func GetJenkinsUrl(jenkins jenkinsApi.Jenkins, namespace string) string {
-
+func GetJenkinsUrl(jenkins *jenkinsApi.Jenkins, namespace string) string {
 	log.Info("creating Jenkins url")
+
 	key := fmt.Sprintf("%v/%v", jenkinsOperatorSpec.EdpAnnotationsPrefix, "externalUrl")
 	url := jenkins.Annotations[key]
 	basePath := ""
+
 	if len(jenkins.Spec.BasePath) > 0 {
 		basePath = fmt.Sprintf("/%v", jenkins.Spec.BasePath)
 	}
-	if len(url) == 0 {
+
+	if url == "" {
 		return fmt.Sprintf("http://jenkins.%s:8080%v", namespace, basePath)
 	}
+
 	return url
 }

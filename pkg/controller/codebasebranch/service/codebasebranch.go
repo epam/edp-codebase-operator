@@ -97,7 +97,6 @@ func (s *CodebaseBranchServiceProvider) TriggerReleaseJob(cb *codebaseApi.Codeba
 		"COMMIT_ID":    cb.Spec.FromCommit,
 	}
 	if cb.Spec.ReleaseJobParams != nil && len(cb.Spec.ReleaseJobParams) > 0 {
-		var err error
 		params, err = s.convertCodebaseBranchSpecToParams(cb)
 		if err != nil {
 			return errors.Wrap(err, "unable to convert codebase branch spec to params map")
@@ -162,21 +161,26 @@ func (s *CodebaseBranchServiceProvider) convertCodebaseBranchSpecToParams(cb *co
 	return result, nil
 }
 
-func initJenkinsClient(client client.Client, namespace string) (*jenkins.JenkinsClient, error) {
-	j, err := jenkins.GetJenkins(client, namespace)
+func initJenkinsClient(c client.Client, namespace string) (*jenkins.JenkinsClient, error) {
+	j, err := jenkins.GetJenkins(c, namespace)
 	if err != nil {
 		return nil, err
 	}
-	jt, ju, err := jenkins.GetJenkinsCreds(client, *j, namespace)
+
+	ju, jt, err := jenkins.GetJenkinsCreds(c, j, namespace)
 	if err != nil {
 		return nil, err
 	}
-	jurl := jenkins.GetJenkinsUrl(*j, namespace)
+
+	jurl := jenkins.GetJenkinsUrl(j, namespace)
+
 	jc, err := jenkins.Init(jurl, ju, jt)
 	if err != nil {
 		return nil, err
 	}
+
 	log.V(2).Info("jenkins client has been created", "url", jurl, "user", ju)
+
 	return jc, nil
 }
 

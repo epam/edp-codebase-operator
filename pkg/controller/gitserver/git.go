@@ -76,9 +76,9 @@ func (gp *GitProvider) buildCommand(cmd string, params ...string) Command {
 
 var log = ctrl.Log.WithName("git-provider")
 
-func (gp *GitProvider) CreateRemoteBranch(key, user, path, name string) error {
+func (gp *GitProvider) CreateRemoteBranch(key, user, p, name string) error {
 	log.Info("start creating remote branch", "name", name)
-	r, err := git.PlainOpen(path)
+	r, err := git.PlainOpen(p)
 	if err != nil {
 		return err
 	}
@@ -108,7 +108,7 @@ func (gp *GitProvider) CreateRemoteBranch(key, user, path, name string) error {
 		return err
 	}
 
-	if err := gp.PushChanges(key, user, path); err != nil {
+	if err := gp.PushChanges(key, user, p); err != nil {
 		return err
 	}
 	log.Info("branch has been created", "name", name)
@@ -244,12 +244,12 @@ func (*GitProvider) CheckPermissions(repo string, user, pass *string) (accessibl
 	return true
 }
 
-func (*GitProvider) BareToNormal(path string) error {
-	if err := os.MkdirAll(fmt.Sprintf("%s/.git", path), 0777); err != nil {
+func (*GitProvider) BareToNormal(p string) error {
+	if err := os.MkdirAll(fmt.Sprintf("%s/.git", p), 0o777); err != nil {
 		return errors.Wrap(err, "unable to create .git folder")
 	}
 
-	files, err := os.ReadDir(path)
+	files, err := os.ReadDir(p)
 	if err != nil {
 		return errors.Wrap(err, "unable to list dir")
 	}
@@ -259,13 +259,13 @@ func (*GitProvider) BareToNormal(path string) error {
 			continue
 		}
 
-		if err := os.Rename(fmt.Sprintf("%s/%s", path, f.Name()),
-			fmt.Sprintf("%s/.git/%s", path, f.Name())); err != nil {
+		if err := os.Rename(fmt.Sprintf("%s/%s", p, f.Name()),
+			fmt.Sprintf("%s/.git/%s", p, f.Name())); err != nil {
 			return errors.Wrap(err, "unable to rename file")
 		}
 	}
 
-	gitDir := fmt.Sprintf("%s/.git", path)
+	gitDir := fmt.Sprintf("%s/.git", p)
 	cmd := exec.Command("git", "--git-dir", gitDir, "config", "--local",
 		"--bool", "core.bare", "false")
 	if bts, err := cmd.CombinedOutput(); err != nil {
@@ -279,7 +279,7 @@ func (*GitProvider) BareToNormal(path string) error {
 	}
 
 	cmd = exec.Command("git", "--git-dir", gitDir, "reset", "--hard")
-	cmd.Dir = path
+	cmd.Dir = p
 	if bts, err := cmd.CombinedOutput(); err != nil {
 		return errors.Wrapf(err, string(bts))
 	}
@@ -302,7 +302,8 @@ func (gp *GitProvider) CloneRepositoryBySsh(key, user, repoUrl, destination stri
 	cloneCMD := exec.Command("git", "clone", "--mirror", "--depth", "1", repoUrl, destination)
 	cloneCMD.Env = []string{fmt.Sprintf(`GIT_SSH_COMMAND=ssh -i %s -l %s -o StrictHostKeyChecking=no -p %d`,
 		keyPath, user, port), "GIT_SSH_VARIANT=ssh"}
-	if bytes, err := cloneCMD.CombinedOutput(); err != nil {
+	bytes, err := cloneCMD.CombinedOutput()
+	if err != nil {
 		return errors.Wrapf(err, "unable to clone repo by ssh, err: %s", string(bytes))
 	}
 
@@ -332,7 +333,7 @@ func (gp *GitProvider) CloneRepositoryBySsh(key, user, repoUrl, destination stri
 	return
 }
 
-func (gp *GitProvider) CloneRepository(repo string, user *string, pass *string, destination string) error {
+func (gp *GitProvider) CloneRepository(repo string, user, pass *string, destination string) error {
 	log.Info("Start cloning", "repository", repo)
 
 	if user != nil && pass != nil {
@@ -365,25 +366,28 @@ func (gp *GitProvider) CloneRepository(repo string, user *string, pass *string, 
 	}
 	log.Info("Result of `git fetch unshallow` command", "out", string(bts))
 
-	if err := gp.BareToNormal(destination); err != nil {
+	err = gp.BareToNormal(destination)
+	if err != nil {
 		return errors.Wrap(err, "unable to covert bare repo to normal")
 	}
 
 	fetchCMD = exec.Command("git", "--git-dir", path.Join(destination, ".git"), "pull", "origin",
 		"--unshallow", "--no-rebase")
+
 	bts, err = fetchCMD.CombinedOutput()
 	if err != nil && !strings.Contains(string(bts), "does not make sense") {
 		return errors.Wrapf(err, "unable to pull unshallow repo: %s", string(bts))
 	}
-	log.Info("Result of `git pull unshallow` command", "out", string(bts))
 
+	log.Info("Result of `git pull unshallow` command", "out", string(bts))
 	log.Info("End cloning", "repository", repo)
+
 	return nil
 }
 
-func (gp *GitProvider) CreateRemoteTag(key, user, path, branchName, name string) error {
+func (gp *GitProvider) CreateRemoteTag(key, user, p, branchName, name string) error {
 	log.Info("start creating remote tag", "name", name)
-	r, err := git.PlainOpen(path)
+	r, err := git.PlainOpen(p)
 	if err != nil {
 		return err
 	}
@@ -413,14 +417,14 @@ func (gp *GitProvider) CreateRemoteTag(key, user, path, branchName, name string)
 		return err
 	}
 
-	if err := gp.PushChanges(key, user, path); err != nil {
+	if err := gp.PushChanges(key, user, p); err != nil {
 		return err
 	}
 	log.Info("tag has been created", "name", name)
 	return nil
 }
 
-func (gp *GitProvider) Fetch(key, user, path, branchName string) (err error) {
+func (gp *GitProvider) Fetch(key, user, workDir, branchName string) (err error) {
 	log.Info("start fetching data", "name", branchName)
 
 	keyPath, err := initAuth(key, user)
@@ -432,11 +436,11 @@ func (gp *GitProvider) Fetch(key, user, path, branchName string) (err error) {
 		err = os.Remove(keyPath)
 	}()
 
-	cmd := exec.Command("git", "--git-dir", fmt.Sprintf("%s/.git", path), "fetch",
+	cmd := exec.Command("git", "--git-dir", fmt.Sprintf("%s/.git", workDir), "fetch",
 		fmt.Sprintf("refs/heads/%v:refs/heads/%v", branchName, branchName))
 	cmd.Env = []string{fmt.Sprintf(`GIT_SSH_COMMAND=ssh -i %s -l %s -o StrictHostKeyChecking=no`, keyPath, user),
 		"GIT_SSH_VARIANT=ssh"}
-	cmd.Dir = path
+	cmd.Dir = workDir
 	if bts, err := cmd.CombinedOutput(); err != nil {
 		return errors.Wrapf(err, "unable to push changes, err: %s", string(bts))
 	}
@@ -584,14 +588,14 @@ func initAuth(key, user string) (string, error) {
 		return "", errors.Wrap(err, "unable to close file")
 	}
 
-	if err := os.Chmod(keyFilePath, 0400); err != nil {
+	if err := os.Chmod(keyFilePath, 0o400); err != nil {
 		return "", errors.Wrap(err, "unable to chmod ssh key file")
 	}
 
 	return keyFilePath, nil
 }
 
-func checkConnectionToGitServer(c client.Client, gitServer model.GitServer) (bool, error) {
+func checkConnectionToGitServer(c client.Client, gitServer *model.GitServer) (bool, error) {
 	log.Info("Start CheckConnectionToGitServer method", "Git host", gitServer.GitHost)
 
 	sshSecret, err := util.GetSecret(c, gitServer.NameSshKeySecret, gitServer.Namespace)
@@ -629,7 +633,7 @@ func isGitServerAccessible(data GitSshData) bool {
 	return s != nil && c != nil
 }
 
-func extractSshData(gitServer model.GitServer, secret *v1.Secret) GitSshData {
+func extractSshData(gitServer *model.GitServer, secret *v1.Secret) GitSshData {
 	return GitSshData{
 		Host: gitServer.GitHost,
 		User: gitServer.GitUser,

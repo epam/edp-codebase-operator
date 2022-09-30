@@ -22,9 +22,9 @@ const (
 	debugModeEnvVar      = "DEBUG_MODE"
 )
 
-func GetUserSettings(client client.Client, namespace string) (*model.UserSettings, error) {
+func GetUserSettings(c client.Client, namespace string) (*model.UserSettings, error) {
 	us := &coreV1.ConfigMap{}
-	err := client.Get(context.TODO(), types.NamespacedName{
+	err := c.Get(context.TODO(), types.NamespacedName{
 		Namespace: namespace,
 		Name:      "edp-config",
 	}, us)
@@ -66,20 +66,26 @@ func getInt32P(val int32) *int32 {
 	return &val
 }
 
-func GetVcsBasicAuthConfig(c client.Client, namespace string, secretName string) (string, string, error) {
+func GetVcsBasicAuthConfig(c client.Client, namespace, secretName string) (userName, password string, err error) {
 	log.Info("Start getting secret", "name", secretName)
+
 	secret := &coreV1.Secret{}
-	err := c.Get(context.TODO(), types.NamespacedName{
+	err = c.Get(context.TODO(), types.NamespacedName{
 		Namespace: namespace,
 		Name:      secretName,
 	}, secret)
 	if err != nil {
 		return "", "", errors.Wrapf(err, "Unable to get secret %v", secretName)
 	}
+
 	if len(secret.Data["username"]) == 0 || len(secret.Data["password"]) == 0 {
 		return "", "", errors.Errorf("username/password keys are not defined in Secret %v ", secretName)
 	}
-	return string(secret.Data["username"]), string(secret.Data["password"]), nil
+
+	userName = string(secret.Data["username"])
+	password = string(secret.Data["password"])
+
+	return
 }
 
 func GetGitServer(c client.Client, name, namespace string) (*model.GitServer, error) {
@@ -88,7 +94,7 @@ func GetGitServer(c client.Client, name, namespace string) (*model.GitServer, er
 		return nil, errors.Wrapf(err, "an error has occurred while getting %v Git Server CR", name)
 	}
 
-	gs := model.ConvertToGitServer(*gitReq)
+	gs := model.ConvertToGitServer(gitReq)
 	return gs, nil
 }
 
@@ -119,9 +125,9 @@ func GetSecret(c client.Client, secretName, namespace string) (*coreV1.Secret, e
 	return secret, nil
 }
 
-func GetCodebase(client client.Client, name, namespace string) (*codebaseApi.Codebase, error) {
+func GetCodebase(c client.Client, name, namespace string) (*codebaseApi.Codebase, error) {
 	instance := &codebaseApi.Codebase{}
-	err := client.Get(context.TODO(), types.NamespacedName{
+	err := c.Get(context.TODO(), types.NamespacedName{
 		Namespace: namespace,
 		Name:      name,
 	}, instance)
@@ -145,7 +151,7 @@ func GetEdpComponent(c client.Client, name, namespace string) (*edpComponentApi.
 	return ec, nil
 }
 
-// GetWatchNamespace returns the namespace the operator should be watching for changes
+// GetWatchNamespace returns the namespace the operator should be watching for changes.
 func GetWatchNamespace() (string, error) {
 	ns, found := os.LookupEnv(watchNamespaceEnvVar)
 	if !found {
@@ -154,7 +160,7 @@ func GetWatchNamespace() (string, error) {
 	return ns, nil
 }
 
-// GetDebugMode returns the debug mode value
+// GetDebugMode returns the debug mode value.
 func GetDebugMode() (bool, error) {
 	mode, found := os.LookupEnv(debugModeEnvVar)
 	if !found {

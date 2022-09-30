@@ -29,8 +29,8 @@ const (
 	goLang          = "go"
 )
 
-func NewPutVersionFile(client client.Client, cr repository.CodebaseRepository, git git.Git) *PutVersionFile {
-	return &PutVersionFile{client: client, cr: cr, git: git}
+func NewPutVersionFile(c client.Client, cr repository.CodebaseRepository, g git.Git) *PutVersionFile {
+	return &PutVersionFile{client: c, cr: cr, git: g}
 }
 
 func (h *PutVersionFile) ServeRequest(ctx context.Context, c *codebaseApi.Codebase) error {
@@ -60,19 +60,22 @@ func (h *PutVersionFile) ServeRequest(ctx context.Context, c *codebaseApi.Codeba
 		return nil
 	}
 
-	if err := h.tryToPutVersionFile(c, util.GetWorkDir(c.Name, c.Namespace)); err != nil {
+	err = h.tryToPutVersionFile(c, util.GetWorkDir(c.Name, c.Namespace))
+	if err != nil {
 		setFailedFields(c, codebaseApi.PutVersionFile, err.Error())
 		return err
 	}
 
-	if err := h.cr.UpdateProjectStatusValue(util.ProjectVersionGoFilePushedStatus, c.Name, *name); err != nil {
-		err := errors.Wrapf(err, "couldn't set project_status %v value for %v codebase",
+	err = h.cr.UpdateProjectStatusValue(util.ProjectVersionGoFilePushedStatus, c.Name, *name)
+	if err != nil {
+		err = errors.Wrapf(err, "couldn't set project_status %v value for %v codebase",
 			util.ProjectVersionGoFilePushedStatus, c.Name)
 		setFailedFields(c, codebaseApi.PutVersionFile, err.Error())
 		return err
 	}
 
 	rLog.Info("end putting VERSION file...")
+
 	return nil
 }
 
@@ -162,7 +165,7 @@ func createFile(filePath string) (err error) {
 }
 
 func writeFile(filePath string) (err error) {
-	file, err := os.OpenFile(filePath, os.O_RDWR, 0644)
+	file, err := os.OpenFile(filePath, os.O_RDWR, 0o644)
 	if err != nil {
 		return err
 	}

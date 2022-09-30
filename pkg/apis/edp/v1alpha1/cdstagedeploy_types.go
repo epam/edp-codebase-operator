@@ -12,7 +12,7 @@ const (
 	failed = "failed"
 )
 
-// CDStageDeploySpec defines the desired state of CDStageDeploy
+// CDStageDeploySpec defines the desired state of CDStageDeploy.
 type CDStageDeploySpec struct {
 	// Name of related pipeline
 	Pipeline string `json:"pipeline"`
@@ -27,7 +27,7 @@ type CDStageDeploySpec struct {
 	Tags []jenkinsApi.Tag `json:"tags"`
 }
 
-// CDStageDeployStatus defines the observed state of CDStageDeploy
+// CDStageDeployStatus defines the observed state of CDStageDeploy.
 type CDStageDeployStatus struct {
 	// Specifies a current status of CDStageDeploy.
 	Status string `json:"status"`
@@ -44,7 +44,7 @@ type CDStageDeployStatus struct {
 // +kubebuilder:resource:shortName=csd,path=cdstagedeployments
 // +kubebuilder:deprecatedversion
 
-// CDStageDeploy is the Schema for the CDStageDeployments API
+// CDStageDeploy is the Schema for the CDStageDeployments API.
 type CDStageDeploy struct {
 	metaV1.TypeMeta   `json:",inline"`
 	metaV1.ObjectMeta `json:"metadata,omitempty"`
@@ -60,7 +60,7 @@ func (in *CDStageDeploy) SetFailedStatus(err error) {
 
 // +kubebuilder:object:root=true
 
-// CDStageDeployList contains a list of CDStageDeploy
+// CDStageDeployList contains a list of CDStageDeploy.
 type CDStageDeployList struct {
 	metaV1.TypeMeta `json:",inline"`
 	metaV1.ListMeta `json:"metadata,omitempty"`

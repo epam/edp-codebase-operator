@@ -7,9 +7,9 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/cdstagedeploy/chain/handler"
 )
 
-func CreateDefChain(client client.Client) handler.CDStageDeployHandler {
+func CreateDefChain(c client.Client) handler.CDStageDeployHandler {
 	return PutCDStageJenkinsDeployment{
-		client: client,
+		client: c,
 		log:    ctrl.Log.WithName("put-cd-stage-jenkins-deployment-controller"),
 	}
 }

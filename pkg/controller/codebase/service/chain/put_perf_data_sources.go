@@ -30,8 +30,8 @@ const (
 	gitLabDataSourceType  = "GitLab"
 )
 
-func NewPutPerfDataSources(client client.Client) *PutPerfDataSources {
-	return &PutPerfDataSources{client: client}
+func NewPutPerfDataSources(c client.Client) *PutPerfDataSources {
+	return &PutPerfDataSources{client: c}
 }
 
 func (h *PutPerfDataSources) ServeRequest(ctx context.Context, c *codebaseApi.Codebase) error {
@@ -229,7 +229,7 @@ func (h *PutPerfDataSources) getGitLabDataSourceConfig(codebase *codebaseApi.Cod
 }
 
 func modifyGitLink(host string) string {
-	if regexp.MustCompile(`^(https:\/\/)|^(http:\/\/)`).MatchString(host) {
+	if regexp.MustCompile(`^(https://)|^(http://)`).MatchString(host) {
 		return host
 	}
 	return fmt.Sprintf("https://%v", host)

@@ -33,7 +33,7 @@ const statusFinished = "finished"
 func (h PutJiraEDPComponent) ServeRequest(jira *codebaseApi.JiraServer) error {
 	rl := log.WithValues("jira server name", jira.Name)
 	rl.V(2).Info("start putting Jira EDP component...")
-	if err := h.createEDPComponentIfNotExists(*jira); err != nil {
+	if err := h.createEDPComponentIfNotExists(jira); err != nil {
 		return errors.Wrapf(err, "couldn't create EDP component %v", jira.Name)
 	}
 	jira.Status.Status = statusFinished
@@ -42,27 +42,27 @@ func (h PutJiraEDPComponent) ServeRequest(jira *codebaseApi.JiraServer) error {
 	return nextServeOrNil(h.next, jira)
 }
 
-func (h PutJiraEDPComponent) createEDPComponentIfNotExists(jira codebaseApi.JiraServer) error {
+func (h PutJiraEDPComponent) createEDPComponentIfNotExists(js *codebaseApi.JiraServer) error {
 	icon, err := getIcon()
 	if err != nil {
-		return errors.Wrapf(err, "couldn't encode icon %v", jira.Name)
+		return errors.Wrapf(err, "couldn't encode icon %v", js.Name)
 	}
 
 	c := &edpComponentApi.EDPComponent{
 		ObjectMeta: metaV1.ObjectMeta{
-			Name:      jira.Name,
-			Namespace: jira.Namespace,
+			Name:      js.Name,
+			Namespace: js.Namespace,
 		},
 		Spec: edpComponentApi.EDPComponentSpec{
 			Type:    edpComponentJiraType,
-			Url:     jira.Spec.RootUrl,
+			Url:     js.Spec.RootUrl,
 			Icon:    *icon,
 			Visible: true,
 		},
 	}
 	if err := h.client.Create(context.TODO(), c); err != nil {
 		if k8sErrors.IsAlreadyExists(err) {
-			log.V(2).Info("edp component already exists. skip creating...", "name", jira.Name)
+			log.V(2).Info("edp component already exists. skip creating...", "name", js.Name)
 			return nil
 		}
 		return err

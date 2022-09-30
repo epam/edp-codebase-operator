@@ -30,9 +30,9 @@ import (
 
 const codebaseOperatorFinalizerName = "codebase.operator.finalizer.name"
 
-func NewReconcileCodebase(client client.Client, scheme *runtime.Scheme, log logr.Logger) *ReconcileCodebase {
+func NewReconcileCodebase(c client.Client, scheme *runtime.Scheme, log logr.Logger) *ReconcileCodebase {
 	return &ReconcileCodebase{
-		client: client,
+		client: c,
 		scheme: scheme,
 		db:     db.GetConnection(),
 		log:    log.WithName("codebase"),
@@ -142,7 +142,7 @@ func (r *ReconcileCodebase) updateFinishStatus(ctx context.Context, c *codebaseA
 	return r.updateStatus(ctx, c)
 }
 
-// setFailureCount increments failure count and returns delay for next reconciliation
+// setFailureCount increments failure count and returns delay for next reconciliation.
 func (r *ReconcileCodebase) setFailureCount(c *codebaseApi.Codebase) time.Duration {
 	timeout := util.GetTimeout(c.Status.FailureCount, 10*time.Second)
 	r.log.V(2).Info("wait for next reconcilation", "next reconcilation in", timeout)

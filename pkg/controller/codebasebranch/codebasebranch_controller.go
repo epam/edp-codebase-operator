@@ -31,9 +31,9 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
-func NewReconcileCodebaseBranch(client client.Client, scheme *runtime.Scheme, log logr.Logger) *ReconcileCodebaseBranch {
+func NewReconcileCodebaseBranch(c client.Client, scheme *runtime.Scheme, log logr.Logger) *ReconcileCodebaseBranch {
 	return &ReconcileCodebaseBranch{
-		client: client,
+		client: c,
 		scheme: scheme,
 		log:    log.WithName("codebase-branch"),
 	}
@@ -219,7 +219,7 @@ func removeDirectoryIfExists(codebaseName, branchName, namespace string) error {
 	return nil
 }
 
-// setFailureCount increments failure count and returns delay for next reconciliation
+// setFailureCount increments failure count and returns delay for next reconciliation.
 func (r *ReconcileCodebaseBranch) setFailureCount(c *codebaseApi.CodebaseBranch) time.Duration {
 	timeout := util.GetTimeout(c.Status.FailureCount, 10*time.Second)
 	r.log.V(2).Info("wait for next reconcilation", "next reconcilation in", timeout)

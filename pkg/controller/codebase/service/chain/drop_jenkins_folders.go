@@ -38,8 +38,9 @@ func (h *DropJenkinsFolders) ServeRequest(ctx context.Context, c *codebaseApi.Co
 		return errors.Wrap(err, "unable to list codebase branches")
 	}
 
-	for _, branch := range branchList.Items {
-		for _, owner := range branch.OwnerReferences {
+	for i := 0; i < len(branchList.Items); i++ {
+		for j := 0; j < len(branchList.Items[i].OwnerReferences); j++ {
+			owner := branchList.Items[i].OwnerReferences[j]
 			if owner.Kind == c.Kind && owner.UID == c.UID {
 				return BranchesExistsError("can not delete jenkins folder while any codebase branches exists")
 			}
@@ -59,9 +60,10 @@ func (h *DropJenkinsFolders) ServeRequest(ctx context.Context, c *codebaseApi.Co
 		return errors.Wrap(err, "unable to list jenkins folders")
 	}
 
-	for i, v := range jenkinsFolderList.Items {
-		rLog.Info("trying to delete jenkins folder", "folder name", v.Name)
-		if err := h.k8sClient.Delete(ctx, &jenkinsFolderList.Items[i]); err != nil {
+	for i := 0; i < len(jenkinsFolderList.Items); i++ {
+		jf := jenkinsFolderList.Items[i]
+		rLog.Info("trying to delete jenkins folder", "folder name", jf.Name)
+		if err := h.k8sClient.Delete(ctx, &jf); err != nil {
 			return errors.Wrap(err, "unable to delete jenkins folder")
 		}
 	}

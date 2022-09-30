@@ -21,8 +21,8 @@ type PutDeployConfigsToGitProvider struct {
 	git    git.Git
 }
 
-func NewPutDeployConfigsToGitProvider(client client.Client, cr repository.CodebaseRepository, git git.Git) *PutDeployConfigsToGitProvider {
-	return &PutDeployConfigsToGitProvider{client: client, cr: cr, git: git}
+func NewPutDeployConfigsToGitProvider(c client.Client, cr repository.CodebaseRepository, g git.Git) *PutDeployConfigsToGitProvider {
+	return &PutDeployConfigsToGitProvider{client: c, cr: cr, git: g}
 }
 
 func (h *PutDeployConfigsToGitProvider) ServeRequest(ctx context.Context, c *codebaseApi.Codebase) error {

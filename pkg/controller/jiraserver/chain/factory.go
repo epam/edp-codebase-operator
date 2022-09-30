@@ -11,20 +11,20 @@ import (
 
 var log = ctrl.Log.WithName("jira_server_handler")
 
-func CreateDefChain(jc jira.Client, client client.Client) handler.JiraServerHandler {
+func CreateDefChain(jc jira.Client, c client.Client) handler.JiraServerHandler {
 	return CheckConnection{
 		next: PutJiraEDPComponent{
 			next:   nil,
-			client: client,
+			client: c,
 		},
 		client: jc,
 	}
 }
 
-func nextServeOrNil(next handler.JiraServerHandler, jira *codebaseApi.JiraServer) error {
+func nextServeOrNil(next handler.JiraServerHandler, js *codebaseApi.JiraServer) error {
 	if next != nil {
-		return next.ServeRequest(jira)
+		return next.ServeRequest(js)
 	}
-	log.Info("handling of JiraServer has been finished", "jira server name", jira.Name)
+	log.Info("handling of JiraServer has been finished", "jira server name", js.Name)
 	return nil
 }

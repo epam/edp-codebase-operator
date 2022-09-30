@@ -9,48 +9,64 @@ import (
 )
 
 func TestBuildRepoUrl_DatabaseIsNil(t *testing.T) {
+	t.Parallel()
+
 	expectedURL := "https://github.com/epmd-edp/java-maven-java11.git"
 	framework := "java11"
-	spec := codebaseApi.CodebaseSpec{
+	spec := &codebaseApi.CodebaseSpec{
 		Lang:      "Java",
 		BuildTool: "Maven",
 		Type:      "application",
 		Framework: &framework,
 	}
 	u := BuildRepoUrl(spec)
+
 	assert.Equal(t, expectedURL, u)
 }
 
 func TestBuildRepoUrl_FrameworkIsNil(t *testing.T) {
+	t.Parallel()
+
 	expectedURL := "https://github.com/epmd-edp/javascript-npm-react.git"
-	spec := codebaseApi.CodebaseSpec{
+	spec := &codebaseApi.CodebaseSpec{
 		Lang:      "javascript",
 		BuildTool: "npm",
 		Type:      "library",
 	}
 	u := BuildRepoUrl(spec)
+
 	assert.Equal(t, expectedURL, u)
 }
 
 func Test_tryGetRepoUrl_ShouldPass(t *testing.T) {
-	c := codebaseApi.CodebaseSpec{
+	t.Parallel()
+
+	c := &codebaseApi.CodebaseSpec{
 		Repository: &codebaseApi.Repository{
 			Url: "test",
 		},
 	}
+
 	s, err := tryGetRepoUrl(c)
+
 	assert.NoError(t, err)
 	assert.Equal(t, &c.Repository.Url, s)
 }
 
 func Test_tryGetRepoUrl_ShouldFail(t *testing.T) {
-	c := codebaseApi.CodebaseSpec{}
+	t.Parallel()
+
+	c := &codebaseApi.CodebaseSpec{}
+
 	s, err := tryGetRepoUrl(c)
+
 	assert.Error(t, err)
 	assert.Nil(t, s)
 }
 
 func TestGetRepoUrl_ShouldPass(t *testing.T) {
+	t.Parallel()
+
 	f := "java11"
 	r := "https://github.com/epmd-edp/java11-maven-java11.git"
 	c := codebaseApi.Codebase{
@@ -67,6 +83,8 @@ func TestGetRepoUrl_ShouldPass(t *testing.T) {
 }
 
 func TestGetRepoUrl_CloneShouldPass(t *testing.T) {
+	t.Parallel()
+
 	r := "link"
 	c := codebaseApi.Codebase{
 		Spec: codebaseApi.CodebaseSpec{

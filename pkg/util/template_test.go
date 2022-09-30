@@ -21,7 +21,7 @@ func TestCopyTemplate_HelmTemplates_ShouldPass(t *testing.T) {
 		require.NoError(t, err)
 	}()
 
-	cf := model.ConfigGoTemplating{
+	cf := &model.ConfigGoTemplating{
 		Name:         "c-name",
 		PlatformType: "kubernetes",
 		Lang:         "go",
@@ -54,7 +54,7 @@ func TestCopyTemplate_OpenShiftTemplates_ShouldPass(t *testing.T) {
 		require.NoError(t, err)
 	}()
 
-	cf := model.ConfigGoTemplating{
+	cf := &model.ConfigGoTemplating{
 		Name:         "c-name",
 		PlatformType: "kubernetes",
 		Lang:         "go",
@@ -87,8 +87,8 @@ func TestCopyTemplate_ShouldNotOverwriteExistingDeploymentTemaplates(t *testing.
 		require.NoError(t, err)
 	}()
 
-	cf := model.ConfigGoTemplating{}
-	if err = os.MkdirAll(fmt.Sprintf("%v/deploy-templates", testDir), 0775); err != nil {
+	cf := &model.ConfigGoTemplating{}
+	if err = os.MkdirAll(fmt.Sprintf("%v/deploy-templates", testDir), 0o775); err != nil {
 		t.Fatal("Unable to create deploy-templates dir")
 	}
 
@@ -105,7 +105,7 @@ func TestCopyTemplate_ShouldFailOnUnsupportedDeploymemntType(t *testing.T) {
 		require.NoError(t, err)
 	}()
 
-	cf := model.ConfigGoTemplating{}
+	cf := &model.ConfigGoTemplating{}
 
 	err = CopyTemplate("non-supported-deployment-type", testDir, "../../build", cf)
 	assert.Error(t, err)

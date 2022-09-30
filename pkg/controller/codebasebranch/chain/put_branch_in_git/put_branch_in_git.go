@@ -46,7 +46,8 @@ func (h PutBranchInGit) ServeRequest(cb *codebaseApi.CodebaseBranch) error {
 	}
 
 	if c.Spec.Versioning.Type == util.VersioningTypeEDP && hasNewVersion(cb) {
-		if err := h.processNewVersion(cb); err != nil {
+		err = h.processNewVersion(cb)
+		if err != nil {
 			err = errors.Wrapf(err, "couldn't process new version for %v branch", cb.Name)
 			setFailedFields(cb, codebaseApi.PutBranchForGitlabCiCodebase, err.Error())
 			return err

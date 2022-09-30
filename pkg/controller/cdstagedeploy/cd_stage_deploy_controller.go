@@ -24,9 +24,9 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
-func NewReconcileCDStageDeploy(client client.Client, scheme *runtime.Scheme, log logr.Logger) *ReconcileCDStageDeploy {
+func NewReconcileCDStageDeploy(c client.Client, scheme *runtime.Scheme, log logr.Logger) *ReconcileCDStageDeploy {
 	return &ReconcileCDStageDeploy{
-		client: client,
+		client: c,
 		scheme: scheme,
 		log:    log.WithName("cd-stage-deploy"),
 	}
@@ -69,7 +69,7 @@ func (r *ReconcileCDStageDeploy) Reconcile(ctx context.Context, request reconcil
 	}()
 
 	if err := r.setFinalizer(ctx, i); err != nil {
-		err := errors.Wrapf(err, "cannot set %v finalizer", util.ForegroundDeletionFinalizerName)
+		err = errors.Wrapf(err, "cannot set %v finalizer", util.ForegroundDeletionFinalizerName)
 		i.SetFailedStatus(err)
 		return reconcile.Result{}, err
 	}

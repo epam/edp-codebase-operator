@@ -17,7 +17,7 @@ type GoJiraAdapter struct {
 	client jira.Client
 }
 
-func (a GoJiraAdapter) Connected() (bool, error) {
+func (a *GoJiraAdapter) Connected() (bool, error) {
 	log.V(2).Info("start Connected method")
 	user, _, err := a.client.User.GetSelf()
 	if err != nil {
@@ -26,7 +26,7 @@ func (a GoJiraAdapter) Connected() (bool, error) {
 	return user != nil, nil
 }
 
-func (a GoJiraAdapter) GetIssueMetadata(projectKey string) (*jira.CreateMetaInfo, error) {
+func (a *GoJiraAdapter) GetIssueMetadata(projectKey string) (*jira.CreateMetaInfo, error) {
 	logv := log.WithValues("projectKey", projectKey)
 	logv.V(2).Info("start GetIssueMetadata method.")
 	meta, _, err := a.client.Issue.GetCreateMeta(projectKey)
@@ -37,31 +37,38 @@ func (a GoJiraAdapter) GetIssueMetadata(projectKey string) (*jira.CreateMetaInfo
 	return meta, nil
 }
 
-func (a GoJiraAdapter) GetIssueType(issueId string) (*string, error) {
+func (a *GoJiraAdapter) GetIssueType(issueId string) (*string, error) {
 	logv := log.WithValues("issueId", issueId)
 	logv.V(2).Info("start GetIssueType method.")
+
 	issue, _, err := a.client.Issue.Get(issueId, nil)
 	if err != nil {
 		return nil, err
 	}
+
 	logv.Info("end GetIssueType method.")
+
 	return util.GetStringP(issue.Fields.Type.Name), nil
 }
 
-func (a GoJiraAdapter) GetProjectInfo(issueId string) (*jira.Project, error) {
+func (a *GoJiraAdapter) GetProjectInfo(issueId string) (*jira.Project, error) {
 	logv := log.WithValues("issue", issueId)
 	logv.V(2).Info("start GetProjectInfo method.")
+
 	issueResp, _, err := a.client.Issue.Get(issueId, nil)
 	if err != nil {
 		return nil, err
 	}
+
 	logv.V(2).Info("project info has been fetched.", "id", issueResp.Fields.Project.ID)
+
 	return &issueResp.Fields.Project, nil
 }
 
-func (a GoJiraAdapter) CreateFixVersionValue(projectId int, versionName string) error {
+func (a *GoJiraAdapter) CreateFixVersionValue(projectId int, versionName string) error {
 	logv := log.WithValues("project id", projectId, "version name", versionName)
 	logv.V(2).Info("start CreateFixVersionValue method.")
+
 	_, _, err := a.client.Version.Create(&jira.Version{
 		Name:      versionName,
 		ProjectID: projectId,
@@ -69,11 +76,13 @@ func (a GoJiraAdapter) CreateFixVersionValue(projectId int, versionName string) 
 	if err != nil {
 		return err
 	}
+
 	logv.Info("fix version has been created.")
+
 	return nil
 }
 
-func (a GoJiraAdapter) CreateComponentValue(projectId int, componentName string) error {
+func (a *GoJiraAdapter) CreateComponentValue(projectId int, componentName string) error {
 	logv := log.WithValues("project id", projectId, "version name", componentName)
 	logv.V(2).Info("start CreateComponentValue method.")
 	project, _, err := a.client.Project.Get(strconv.Itoa(projectId))
@@ -93,17 +102,20 @@ func (a GoJiraAdapter) CreateComponentValue(projectId int, componentName string)
 	return nil
 }
 
-func (a GoJiraAdapter) ApplyTagsToIssue(issue string, tags map[string]interface{}) error {
+func (a *GoJiraAdapter) ApplyTagsToIssue(issue string, tags map[string]interface{}) error {
 	logv := log.WithValues("issue", issue, "tags", tags)
 	logv.V(2).Info("start ApplyTagsToIssue method.")
+
 	if _, err := a.client.Issue.UpdateIssue(issue, tags); err != nil {
 		return err
 	}
+
 	logv.Info("end ApplyTagsToIssue method.")
+
 	return nil
 }
 
-func (a GoJiraAdapter) CreateIssueLink(issueId, title, url string) error {
+func (a *GoJiraAdapter) CreateIssueLink(issueId, title, url string) error {
 	logv := log.WithValues("issueId", issueId, "title", title, "url", url)
 	logv.V(2).Info("start CreateIssueLink method.")
 	remoteLink := &jira.RemoteLink{
@@ -125,10 +137,12 @@ func (a GoJiraAdapter) CreateIssueLink(issueId, title, url string) error {
 	if err != nil {
 		return err
 	}
+
 	log.Info("end CreateIssueLink method.")
+
 	return nil
 }
 
 func getUrlFromUri(uri string) string {
-	return regexp.MustCompile(`^(?:https?:\/\/)?(?:[^@\/\n]+@)?(?:www\.)?([^:\/\n]+)`).FindAllString(uri, -1)[0]
+	return regexp.MustCompile(`^(?:https?://)?(?:[^@/\n]+@)?(?:www\.)?([^:/\n]+)`).FindAllString(uri, -1)[0]
 }

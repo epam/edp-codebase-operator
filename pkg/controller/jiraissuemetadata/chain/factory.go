@@ -14,40 +14,40 @@ var log = ctrl.Log.WithName("jira_issue_metadata_handler")
 
 const issuesLinks = "issuesLinks"
 
-func CreateChain(metadataPayload string, jiraClient *jira.Client, client client.Client) (handler.JiraIssueMetadataHandler, error) {
+func CreateChain(metadataPayload string, jiraClient jira.Client, c client.Client) (handler.JiraIssueMetadataHandler, error) {
 	payload, err := util.GetFieldsMap(metadataPayload, nil)
 	if err != nil {
 		return nil, err
 	}
 
 	if len(payload) == 1 && payload[issuesLinks] != nil {
-		return createWithoutApplyingTagsChain(jiraClient, client), nil
+		return createWithoutApplyingTagsChain(jiraClient, c), nil
 	}
 
-	return createDefChain(jiraClient, client), nil
+	return createDefChain(jiraClient, c), nil
 }
 
-func createDefChain(jiraClient *jira.Client, client client.Client) handler.JiraIssueMetadataHandler {
+func createDefChain(jiraClient jira.Client, c client.Client) handler.JiraIssueMetadataHandler {
 	return PutTagValue{
 		next: ApplyTagsToIssues{
 			next: PutIssueWebLink{
 				next: DeleteJiraIssueMetadataCr{
-					c: client,
+					c: c,
 				},
-				client: *jiraClient,
+				client: jiraClient,
 			},
-			client: *jiraClient,
+			client: jiraClient,
 		},
-		client: *jiraClient,
+		client: jiraClient,
 	}
 }
 
-func createWithoutApplyingTagsChain(jiraClient *jira.Client, client client.Client) handler.JiraIssueMetadataHandler {
+func createWithoutApplyingTagsChain(jiraClient jira.Client, c client.Client) handler.JiraIssueMetadataHandler {
 	return PutIssueWebLink{
 		next: DeleteJiraIssueMetadataCr{
-			c: client,
+			c: c,
 		},
-		client: *jiraClient,
+		client: jiraClient,
 	}
 }
 

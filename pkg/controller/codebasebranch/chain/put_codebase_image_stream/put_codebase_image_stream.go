@@ -7,7 +7,6 @@ import (
 
 	"github.com/pkg/errors"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -83,7 +82,7 @@ func (h PutCodebaseImageStream) createCodebaseImageStreamIfNotExists(name, image
 			APIVersion: "v2.edp.epam.com/v1",
 			Kind:       "CodebaseImageStream",
 		},
-		ObjectMeta: v1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 		},

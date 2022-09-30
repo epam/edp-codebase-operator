@@ -20,18 +20,18 @@ import (
 
 var log = ctrl.Log.WithName("codebase_branch_factory")
 
-func createJenkinsDefChain(client client.Client) handler.CodebaseBranchHandler {
+func createJenkinsDefChain(c client.Client) handler.CodebaseBranchHandler {
 	log.Info("chain is selected", "type", "jenkins chain")
 	return trigger_job.TriggerReleaseJob{
 		TriggerJob: trigger_job.TriggerJob{
-			Client: client,
+			Client: c,
 			Service: &service.CodebaseBranchServiceProvider{
-				Client: client,
+				Client: c,
 			},
 			Next: update_perf_data_sources.UpdatePerfDataSources{
-				Client: client,
+				Client: c,
 				Next: put_codebase_image_stream.PutCodebaseImageStream{
-					Client: client,
+					Client: c,
 					Next:   clean_tmp_directory.CleanTempDirectory{},
 				},
 			},
@@ -39,42 +39,42 @@ func createJenkinsDefChain(client client.Client) handler.CodebaseBranchHandler {
 	}
 }
 
-func createGitlabCiDefChain(client client.Client) handler.CodebaseBranchHandler {
+func createGitlabCiDefChain(c client.Client) handler.CodebaseBranchHandler {
 	log.Info("chain is selected", "type", "gitlab ci chain")
 	return put_branch_in_git.PutBranchInGit{
-		Client: client,
+		Client: c,
 		Git:    &gitserver.GitProvider{},
 		Next: update_perf_data_sources.UpdatePerfDataSources{
 			Next: put_codebase_image_stream.PutCodebaseImageStream{
-				Client: client,
+				Client: c,
 				Next:   clean_tmp_directory.CleanTempDirectory{},
 			},
-			Client: client,
+			Client: c,
 		},
 		Service: &service.CodebaseBranchServiceProvider{
-			Client: client,
+			Client: c,
 		},
 	}
 }
 
-func GetDeletionChain(ciType string, client client.Client) handler.CodebaseBranchHandler {
+func GetDeletionChain(ciType string, c client.Client) handler.CodebaseBranchHandler {
 	if strings.EqualFold(ciType, util.GitlabCi) {
 		return empty.MakeChain("no deletion chain for gitlab ci", false)
 	}
 
 	return trigger_job.TriggerDeletionJob{
 		TriggerJob: trigger_job.TriggerJob{
-			Client: client,
+			Client: c,
 			Service: &service.CodebaseBranchServiceProvider{
-				Client: client,
+				Client: c,
 			},
 		},
 	}
 }
 
-func GetChain(ciType string, client client.Client) handler.CodebaseBranchHandler {
+func GetChain(ciType string, c client.Client) handler.CodebaseBranchHandler {
 	if strings.EqualFold(ciType, util.GitlabCi) {
-		return createGitlabCiDefChain(client)
+		return createGitlabCiDefChain(c)
 	}
-	return createJenkinsDefChain(client)
+	return createJenkinsDefChain(c)
 }
