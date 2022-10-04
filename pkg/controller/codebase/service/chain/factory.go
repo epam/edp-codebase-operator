@@ -25,6 +25,7 @@ func MakeGerritDefChain(c client.Client, cr repository.CodebaseRepository) handl
 		NewPutDeployConfigs(c, cr, gp),
 		NewPutVersionFile(c, cr, gp),
 		NewPutJenkinsFolder(c),
+		NewPutDefaultCodeBaseBranch(c),
 		NewCleaner(c),
 	)
 
