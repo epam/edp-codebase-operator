@@ -103,7 +103,7 @@ func getGitServerCR(c client.Client, name, namespace string) (*codebaseApi.GitSe
 	instance := &codebaseApi.GitServer{}
 	if err := c.Get(context.TODO(), types.NamespacedName{Namespace: namespace, Name: name}, instance); err != nil {
 		if k8sErrors.IsNotFound(err) {
-			return nil, errors.Wrapf(err, "GitServer %v doesn't exist in k8s.", name)
+			return nil, errors.Wrapf(err, "GitServer %v doesn't exist in k8s", name)
 		}
 		return nil, errors.Wrapf(err, "Unable to get GitServer %v", name)
 	}

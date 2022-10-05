@@ -21,6 +21,10 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/pkg/vcs"
 )
 
+const (
+	logCodebaseNameKey = "codebase_name"
+)
+
 type PutProjectGerrit struct {
 	client client.Client
 	cr     repository.CodebaseRepository
@@ -32,7 +36,7 @@ func NewPutProjectGerrit(c client.Client, cr repository.CodebaseRepository, g gi
 }
 
 func (h *PutProjectGerrit) ServeRequest(ctx context.Context, c *codebaseApi.Codebase) error {
-	rLog := log.WithValues("codebase_name", c.Name)
+	rLog := log.WithValues(logCodebaseNameKey, c.Name)
 	rLog.Info("Start putting Codebase...")
 	rLog.Info("codebase data", "spec", c.Spec)
 
@@ -172,23 +176,27 @@ func (h *PutProjectGerrit) replaceDefaultBranch(directory, defaultBranchName, ne
 }
 
 func (h *PutProjectGerrit) pushToGerrit(sshPort int32, idrsa, host, codebaseName, directory string) error {
-	log.Info("Start pushing project to Gerrit ", "codebase_name", codebaseName)
+	log.Info("Start pushing project to Gerrit ", logCodebaseNameKey, codebaseName)
+
 	if err := gerrit.AddRemoteLinkToGerrit(directory, host, sshPort, codebaseName, log); err != nil {
 		return errors.Wrap(err, "couldn't add remote link to Gerrit")
 	}
+
 	// push branches
 	if err := h.git.PushChanges(idrsa, "project-creator", directory, sshPort, "--all"); err != nil {
 		return err
 	}
+
 	// push tags as well
 	if err := h.git.PushChanges(idrsa, "project-creator", directory, sshPort, "--tags"); err != nil {
 		return err
 	}
+
 	return nil
 }
 
-func (h *PutProjectGerrit) tryToCreateProjectInGerrit(sshPort int32, idrsa, host, codebaseName string) error {
-	log.Info("Start creating project in Gerrit", "codebase_name", codebaseName)
+func (*PutProjectGerrit) tryToCreateProjectInGerrit(sshPort int32, idrsa, host, codebaseName string) error {
+	log.Info("Start creating project in Gerrit", logCodebaseNameKey, codebaseName)
 	projectExist, err := gerrit.CheckProjectExist(sshPort, idrsa, host, codebaseName, log)
 	if err != nil {
 		return errors.Wrap(err, "couldn't versionFileExists project")
@@ -208,7 +216,7 @@ func (h *PutProjectGerrit) tryToCloneRepo(repoUrl string, repositoryUsername, re
 	log.Info("Start cloning repository", "src", repoUrl, "dest", workDir)
 
 	if util.DoesDirectoryExist(workDir + "/.git") {
-		log.Info("repository already exists", "codebase_name", codebaseName)
+		log.Info("repository already exists", logCodebaseNameKey, codebaseName)
 		return nil
 	}
 
@@ -220,7 +228,7 @@ func (h *PutProjectGerrit) tryToCloneRepo(repoUrl string, repositoryUsername, re
 }
 
 func (h *PutProjectGerrit) tryToCreateProjectInVcs(us *model.UserSettings, codebaseName, namespace string) error {
-	log.Info("Start project creation in VCS", "codebase_name", codebaseName)
+	log.Info("Start project creation in VCS", logCodebaseNameKey, codebaseName)
 	if us.VcsIntegrationEnabled {
 		if err := vcs.CreateProjectInVcs(h.client, us, codebaseName, namespace); err != nil {
 			return err
@@ -236,7 +244,7 @@ func (h *PutProjectGerrit) tryToSquashCommits(workDir, codebaseName string, stra
 		return nil
 	}
 
-	log.Info("Start squashing commits", "codebase_name", codebaseName)
+	log.Info("Start squashing commits", logCodebaseNameKey, codebaseName)
 	err := os.RemoveAll(workDir + "/.git")
 	if err != nil {
 		return errors.Wrapf(err, "an error has occurred while removing .git folder")
@@ -260,7 +268,7 @@ func (h *PutProjectGerrit) initialProjectProvisioning(c *codebaseApi.Codebase, r
 }
 
 func (h *PutProjectGerrit) emptyProjectProvisioning(wd, codebaseName string) error {
-	log.Info("Start initial provisioning for empty project", "codebase_name", codebaseName)
+	log.Info("Start initial provisioning for empty project", logCodebaseNameKey, codebaseName)
 
 	if err := h.git.Init(wd); err != nil {
 		return errors.Wrapf(err, "an error has occurred while creating empty git repository")
@@ -274,12 +282,14 @@ func (h *PutProjectGerrit) emptyProjectProvisioning(wd, codebaseName string) err
 }
 
 func (h *PutProjectGerrit) notEmptyProjectProvisioning(c *codebaseApi.Codebase, rLog logr.Logger, wd string) error {
-	log.Info("Start initial provisioning for non-empty project", "codebase_name", c.Name)
+	log.Info("Start initial provisioning for non-empty project", logCodebaseNameKey, c.Name)
+
 	ru, err := util.GetRepoUrl(c)
 	if err != nil {
 		setFailedFields(c, codebaseApi.GerritRepositoryProvisioning, err.Error())
 		return errors.Wrap(err, "couldn't build repo url")
 	}
+
 	rLog.Info("Repository URL with template has been retrieved", "url", *ru)
 
 	repu, repp, err := GetRepositoryCredentialsIfExists(c, h.client)

@@ -27,7 +27,7 @@ func (h DeleteGitTagCr) ServeRequest(gt *codebaseApi.GitTag) error {
 
 func (h DeleteGitTagCr) delete(tag *codebaseApi.GitTag) error {
 	if err := h.client.Delete(context.TODO(), tag); err != nil {
-		return errors.Wrapf(err, "couldn't remove git tag %v.", tag.Name)
+		return errors.Wrapf(err, "couldn't remove git tag %v", tag.Name)
 	}
 	log.Info("git tag has been removed", "name", tag.Name)
 	return nil

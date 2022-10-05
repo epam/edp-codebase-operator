@@ -27,11 +27,15 @@ func NewCloneGitProject(c client.Client, g git.Git) *CloneGitProject {
 }
 
 func (h *CloneGitProject) ServeRequest(ctx context.Context, c *codebaseApi.Codebase) error {
+	const defaultPostponeTime = 30 * time.Second
+
 	rLog := log.WithValues("codebase_name", c.Name)
+
 	rLog.Info("Start cloning project...")
+
 	if c.Spec.GitUrlPath != nil && *c.Spec.GitUrlPath == repoNotReady {
 		rLog.Info("postpone reconciliation, repo is not ready")
-		return PostponeError{Timeout: time.Second * 30}
+		return PostponeError{Timeout: defaultPostponeTime}
 	}
 
 	rLog.Info("codebase data", "spec", c.Spec)
@@ -68,6 +72,8 @@ func (h *CloneGitProject) ServeRequest(ctx context.Context, c *codebaseApi.Codeb
 			return errors.Wrapf(err, "an error has occurred while cloning repository %v", ru)
 		}
 	}
+
 	rLog.Info("end cloning project")
+
 	return nil
 }

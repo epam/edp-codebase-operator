@@ -127,9 +127,13 @@ func lookup() string {
 
 // setFailureCount increments failure count and returns delay for next reconciliation.
 func (r *ReconcileJiraIssueMetadata) setFailureCount(metadata *codebaseApi.JiraIssueMetadata) time.Duration {
-	timeout := util.GetTimeout(metadata.Status.FailureCount, 500*time.Millisecond)
-	r.log.V(2).Info("wait for next reconcilation", "next reconcilation in", timeout)
-	metadata.Status.FailureCount += 1
+	const timeoutDurationStep = 500 * time.Millisecond
+	timeout := util.GetTimeout(metadata.Status.FailureCount, timeoutDurationStep)
+
+	r.log.V(2).Info("wait for next reconciliation", "next reconciliation in", timeout)
+
+	metadata.Status.FailureCount++
+
 	return timeout
 }
 

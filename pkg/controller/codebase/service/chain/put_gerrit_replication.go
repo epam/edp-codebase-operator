@@ -21,7 +21,7 @@ func NewPutGerritReplication(c client.Client) *PutGerritReplication {
 	return &PutGerritReplication{client: c}
 }
 
-func (h *PutGerritReplication) ServeRequest(ctx context.Context, c *codebaseApi.Codebase) error {
+func (h *PutGerritReplication) ServeRequest(_ context.Context, c *codebaseApi.Codebase) error {
 	rLog := log.WithValues("codebase_name", c.Name)
 	rLog.Info("Start setting Gerrit replication...")
 

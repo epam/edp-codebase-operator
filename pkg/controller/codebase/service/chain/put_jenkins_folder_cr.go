@@ -29,7 +29,7 @@ func NewPutJenkinsFolder(c client.Client) *PutJenkinsFolder {
 	return &PutJenkinsFolder{client: c}
 }
 
-func (h *PutJenkinsFolder) ServeRequest(ctx context.Context, c *codebaseApi.Codebase) error {
+func (h *PutJenkinsFolder) ServeRequest(_ context.Context, c *codebaseApi.Codebase) error {
 	rLog := log.WithValues("codebase_name", c.Name)
 	jfn := fmt.Sprintf("%v-%v", c.Name, "codebase")
 	jfr, err := h.getJenkinsFolder(jfn, c.Namespace)

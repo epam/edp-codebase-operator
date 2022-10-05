@@ -18,7 +18,11 @@ import (
 
 var log = ctrl.Log.WithName("codebase_branch_service")
 
-const jenkinsJobSuccessStatus = "blue"
+const (
+	jenkinsJobSuccessStatus = "blue"
+	defaultTimeoutDuration  = 5 * time.Second
+	defaultRetryCount       = 50
+)
 
 type CodebaseBranchService interface {
 	AppendVersionToTheHistorySlice(*codebaseApi.CodebaseBranch) error
@@ -62,7 +66,7 @@ func (s *CodebaseBranchServiceProvider) TriggerDeletionJob(cb *codebaseApi.Codeb
 	rLog.Info("Deletion job has been triggered")
 
 	rj := fmt.Sprintf("%v/job/Delete-release-%v", cb.Spec.CodebaseName, cb.Spec.CodebaseName)
-	js, err := jc.GetJobStatus(rj, 5*time.Second, 50)
+	js, err := jc.GetJobStatus(rj, defaultTimeoutDuration, defaultRetryCount)
 	if err != nil {
 		return errors.Wrap(err, "unable to get deletion job status")
 	}
@@ -109,7 +113,7 @@ func (s *CodebaseBranchServiceProvider) TriggerReleaseJob(cb *codebaseApi.Codeba
 	rLog.Info("Release job has been triggered")
 
 	rj := fmt.Sprintf("%v/job/Create-release-%v", cb.Spec.CodebaseName, cb.Spec.CodebaseName)
-	js, err := jc.GetJobStatus(rj, 5*time.Second, 50)
+	js, err := jc.GetJobStatus(rj, defaultTimeoutDuration, defaultRetryCount)
 	if err != nil {
 		return err
 	}

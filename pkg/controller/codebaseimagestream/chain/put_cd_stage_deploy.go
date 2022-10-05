@@ -33,10 +33,13 @@ type cdStageDeployCommand struct {
 	Tags      []jenkinsApi.Tag
 }
 
-const dateLayout = "2006-01-02T15:04:05"
+const (
+	dateLayout = "2006-01-02T15:04:05"
+	logNameKey = "name"
+)
 
 func (h PutCDStageDeploy) ServeRequest(imageStream *codebaseApi.CodebaseImageStream) error {
-	log := h.log.WithValues("name", imageStream.Name)
+	log := h.log.WithValues(logNameKey, imageStream.Name)
 	log.Info("creating/updating CDStageDeploy.")
 	if err := h.handleCodebaseImageStreamEnvLabels(imageStream); err != nil {
 		return errors.Wrapf(err, "couldn't handle %v codebase image stream", imageStream.Name)
@@ -88,7 +91,7 @@ func (h PutCDStageDeploy) putCDStageDeploy(envLabel, namespace string, spec code
 	}
 
 	if stageDeploy != nil {
-		h.log.Info("CDStageDeploy already exists. skip creating.", "name", stageDeploy.Name)
+		h.log.Info("CDStageDeploy already exists. skip creating.", logNameKey, stageDeploy.Name)
 		return &util.CDStageDeployHasNotBeenProcessedError{
 			Message: fmt.Sprintf("%v has not been processed for previous version of application yet", name),
 		}
@@ -110,7 +113,7 @@ func generateCdStageDeployName(env, codebase string) string {
 }
 
 func (h PutCDStageDeploy) getCDStageDeploy(name, namespace string) (*codebaseApi.CDStageDeploy, error) {
-	h.log.Info("getting cd stage deploy", "name", name)
+	h.log.Info("getting cd stage deploy", logNameKey, name)
 	i := &codebaseApi.CDStageDeploy{}
 	nn := types.NamespacedName{
 		Namespace: namespace,
@@ -171,7 +174,7 @@ func getLastTag(tags []codebaseApi.Tag) (codebaseApi.Tag, error) {
 }
 
 func (h PutCDStageDeploy) create(command *cdStageDeployCommand) error {
-	log := h.log.WithValues("name", command.Name)
+	log := h.log.WithValues(logNameKey, command.Name)
 	log.Info("cd stage deploy is not present in cluster. start creating...")
 
 	stageDeploy := &codebaseApi.CDStageDeploy{
@@ -193,6 +196,8 @@ func (h PutCDStageDeploy) create(command *cdStageDeployCommand) error {
 	if err := h.client.Create(context.TODO(), stageDeploy); err != nil {
 		return err
 	}
+
 	log.Info("cd stage deploy has been created.")
+
 	return nil
 }

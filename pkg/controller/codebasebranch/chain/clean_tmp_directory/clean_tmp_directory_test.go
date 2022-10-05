@@ -25,7 +25,7 @@ func TestCleanTempDirectory_ShouldRemoveWithSuccessStatus(t *testing.T) {
 			BranchName:   "stub-branch-name",
 		},
 	}
-	directory := CleanTempDirectory{}
+	directory := &CleanTempDirectory{}
 
 	err = directory.ServeRequest(cb)
 	assert.NoError(t, err)

@@ -29,7 +29,6 @@ type TriggerJob struct {
 
 func (h TriggerJob) Trigger(cb *codebaseApi.CodebaseBranch, actionType codebaseApi.ActionType,
 	triggerFunc func(cb *codebaseApi.CodebaseBranch) error) error {
-
 	if err := h.SetIntermediateSuccessFields(cb, actionType); err != nil {
 		return err
 	}
@@ -90,7 +89,7 @@ func (h TriggerJob) SetIntermediateSuccessFields(cb *codebaseApi.CodebaseBranch,
 	return nil
 }
 
-func (h TriggerJob) SetFailedFields(cb *codebaseApi.CodebaseBranch, a codebaseApi.ActionType, message string) {
+func (TriggerJob) SetFailedFields(cb *codebaseApi.CodebaseBranch, a codebaseApi.ActionType, message string) {
 	cb.Status = codebaseApi.CodebaseBranchStatus{
 		Status:              util.StatusFailed,
 		LastTimeUpdated:     metaV1.Now(),

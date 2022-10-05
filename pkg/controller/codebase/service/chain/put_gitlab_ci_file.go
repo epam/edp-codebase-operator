@@ -124,10 +124,8 @@ func (h *PutGitlabCiFile) parseTemplate(c *codebaseApi.Codebase) error {
 		string(c.Spec.Versioning.Type),
 		component.Spec.Url,
 	}
-	if err := parseTemplate(tp, gitlabCiFile, data); err != nil {
-		return err
-	}
-	return nil
+
+	return parseTemplate(tp, gitlabCiFile, data)
 }
 
 func (h *PutGitlabCiFile) gitlabCiFileExists(codebaseName, edpName string) (bool, error) {

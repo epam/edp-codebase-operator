@@ -47,7 +47,7 @@ func (h *PutDeployConfigsToGitProvider) tryToPushConfigs(ctx context.Context, c 
 		return errors.Wrap(err, "couldn't get edp name")
 	}
 
-	skip, err := h.skipTemplatePreparing(*name, c.Name, c.Namespace)
+	skip, err := h.skipTemplatePreparing(*name, c.Name)
 	if err != nil {
 		return err
 	}
@@ -88,7 +88,7 @@ func (h *PutDeployConfigsToGitProvider) tryToPushConfigs(ctx context.Context, c 
 	return nil
 }
 
-func (h *PutDeployConfigsToGitProvider) skipTemplatePreparing(edpName, codebaseName, namespace string) (bool, error) {
+func (h *PutDeployConfigsToGitProvider) skipTemplatePreparing(edpName, codebaseName string) (bool, error) {
 	ps, err := h.cr.SelectProjectStatusValue(codebaseName, edpName)
 	if err != nil {
 		return true, errors.Wrapf(err, "couldn't get project_status value for %v codebase", codebaseName)

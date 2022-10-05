@@ -145,8 +145,11 @@ func (r *ReconcileCodebase) updateFinishStatus(ctx context.Context, c *codebaseA
 // setFailureCount increments failure count and returns delay for next reconciliation.
 func (r *ReconcileCodebase) setFailureCount(c *codebaseApi.Codebase) time.Duration {
 	timeout := util.GetTimeout(c.Status.FailureCount, 10*time.Second)
-	r.log.V(2).Info("wait for next reconcilation", "next reconcilation in", timeout)
-	c.Status.FailureCount += 1
+
+	r.log.V(2).Info("wait for next reconciliation", "next reconciliation in", timeout)
+
+	c.Status.FailureCount++
+
 	return timeout
 }
 

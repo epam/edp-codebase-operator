@@ -356,7 +356,7 @@ func TestGetGitServer_ShouldFailIfNotFound(t *testing.T) {
 	ggs, err := GetGitServer(fakeCl, "non-existing", "stub-namespace")
 	assert.Nil(t, ggs)
 	assert.Error(t, err)
-	if !strings.Contains(err.Error(), "GitServer non-existing doesn't exist in k8s.") {
+	if !strings.Contains(err.Error(), "GitServer non-existing doesn't exist in k8s") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
 }

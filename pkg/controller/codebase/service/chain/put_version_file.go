@@ -166,7 +166,9 @@ func createFile(filePath string) (err error) {
 }
 
 func writeFile(filePath string) (err error) {
-	file, err := os.OpenFile(filePath, os.O_RDWR, 0o644)
+	const readWritePermBits = 0o644
+
+	file, err := os.OpenFile(filePath, os.O_RDWR, readWritePermBits)
 	if err != nil {
 		return err
 	}

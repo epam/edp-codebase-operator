@@ -85,7 +85,7 @@ func (r *ReconcileCDStageDeploy) Reconcile(ctx context.Context, request reconcil
 		case *util.CDStageJenkinsDeploymentHasNotBeenProcessedError:
 			log.Error(err, "unable to continue autodeploy",
 				"pipe", i.Spec.Pipeline, "stage", i.Spec.Stage)
-			p := r.setReconcilationPeriod(i)
+			p := r.setReconciliationPeriod(i)
 			return reconcile.Result{RequeueAfter: p}, nil
 		default:
 			return reconcile.Result{}, err
@@ -96,10 +96,14 @@ func (r *ReconcileCDStageDeploy) Reconcile(ctx context.Context, request reconcil
 	return reconcile.Result{}, nil
 }
 
-func (r *ReconcileCDStageDeploy) setReconcilationPeriod(sd *codebaseApi.CDStageDeploy) time.Duration {
-	timeout := util.GetTimeout(sd.Status.FailureCount, 10*time.Second)
-	r.log.Info("wait for next reconcilation", "next reconcilation in", timeout)
-	sd.Status.FailureCount += 1
+func (r *ReconcileCDStageDeploy) setReconciliationPeriod(sd *codebaseApi.CDStageDeploy) time.Duration {
+	const timeoutDuration = 10 * time.Second
+	timeout := util.GetTimeout(sd.Status.FailureCount, timeoutDuration)
+
+	r.log.Info("wait for next reconciliation", "next reconciliation in", timeout)
+
+	sd.Status.FailureCount++
+
 	return timeout
 }
 

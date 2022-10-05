@@ -8,7 +8,7 @@ import (
 
 	"github.com/bndr/gojenkins"
 	"github.com/pkg/errors"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -31,14 +31,18 @@ func (j JobNotFoundError) Error() string {
 }
 
 func Init(url, username, token string) (*JenkinsClient, error) {
+	const defaultRetryCount = 60
+
 	log.Info("initializing new Jenkins client", "url", url, "username", username)
+
 	jenkins, err := gojenkins.CreateJenkins(http.DefaultClient, url, username, token).Init()
 	if err != nil {
 		return nil, err
 	}
+
 	return &JenkinsClient{
 		Jenkins:                  jenkins,
-		triggerReleaseRetryCount: 60,
+		triggerReleaseRetryCount: defaultRetryCount,
 	}, nil
 }
 
@@ -183,7 +187,7 @@ func GetJenkinsCreds(c client.Client, jenkins *jenkinsApi.Jenkins, namespace str
 
 	jenkinsTokenSecret, err := util.GetSecret(c, jenkinsTokenSecretName, namespace)
 	if err != nil {
-		if k8serrors.IsNotFound(err) {
+		if k8sErrors.IsNotFound(err) {
 			return "", "", errors.Wrapf(err, "Secret %v in not found", jenkinsTokenSecretName)
 		}
 		return "", "", errors.Wrapf(err, "Getting secret %v failed", jenkinsTokenSecretName)

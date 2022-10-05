@@ -10,12 +10,18 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
+const (
+	readWriteMode     = 0o666 // -rw-rw-rw- or drw-rw-rw-
+	dirPermissionBits = 0o755 // -rwxr-xr-x or drwxr-xr-x
+	logDestKey        = "dest"
+)
+
 var log = ctrl.Log.WithName("util")
 
 func CreateDirectory(path string) error {
 	log.Info("Creating directory", "path", path)
 	if _, err := os.Stat(path); os.IsNotExist(err) {
-		if err := os.MkdirAll(path, 0o755); err != nil {
+		if err := os.MkdirAll(path, dirPermissionBits); err != nil {
 			return err
 		}
 	}
@@ -24,7 +30,7 @@ func CreateDirectory(path string) error {
 }
 
 func CopyFiles(src, dest string) error {
-	log.Info("Start copying files", "src", src, "dest", dest)
+	log.Info("Start copying files", "src", src, logDestKey, dest)
 
 	files, err := os.ReadDir(src)
 	if err != nil {
@@ -40,29 +46,31 @@ func CopyFiles(src, dest string) error {
 			return err
 		}
 
-		err = os.WriteFile(fmt.Sprintf("%s/%s", dest, f.Name()), input, 0o755)
+		err = os.WriteFile(fmt.Sprintf("%s/%s", dest, f.Name()), input, dirPermissionBits)
 		if err != nil {
 			return err
 		}
 	}
 
-	log.Info("Files have been copied", "dest", dest)
+	log.Info("Files have been copied", logDestKey, dest)
 
 	return nil
 }
 
 func CopyFile(src, dest string) error {
-	log.Info("Start copying file", "src", src, "dest", dest)
+	log.Info("Start copying file", "src", src, logDestKey, dest)
 
 	input, err := os.ReadFile(src)
 	if err != nil {
 		return err
 	}
 
-	if err := os.WriteFile(dest, input, 0o755); err != nil {
+	if err := os.WriteFile(dest, input, dirPermissionBits); err != nil {
 		return err
 	}
-	log.Info("File has been copied", "dest", dest)
+
+	log.Info("File has been copied", logDestKey, dest)
+
 	return nil
 }
 
@@ -102,7 +110,7 @@ func ReplaceStringInFile(file, oldLine, newLine string) error {
 
 	output := bytes.ReplaceAll(input, []byte(oldLine), []byte(newLine))
 
-	err = os.WriteFile(file, output, 0o666)
+	err = os.WriteFile(file, output, readWriteMode)
 	if err != nil {
 		return err
 	}

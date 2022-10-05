@@ -29,7 +29,7 @@ func (h DeleteTagCodebaseImageStreamCr) ServeRequest(ist *codebaseApi.ImageStrea
 
 func (h DeleteTagCodebaseImageStreamCr) delete(tag *codebaseApi.ImageStreamTag) error {
 	if err := h.client.Delete(context.TODO(), tag); err != nil {
-		return errors.Wrapf(err, "couldn't remove image stream tag %v.", tag.Name)
+		return errors.Wrapf(err, "couldn't remove image stream tag %v", tag.Name)
 	}
 	log.Info("image stream tag has been removed", "name", tag.Name)
 	return nil

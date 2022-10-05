@@ -16,10 +16,12 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
+const codebaseKey = "codebase"
+
 var log = ctrl.Log.WithName("template")
 
 func PrepareTemplates(c client.Client, cb *codebaseApi.Codebase, workDir, assetsDir string) error {
-	log.Info("start preparing deploy templates", "codebase", cb.Name)
+	log.Info("start preparing deploy templates", codebaseKey, cb.Name)
 
 	cf, err := buildTemplateConfig(c, cb)
 	if err != nil {
@@ -37,12 +39,12 @@ func PrepareTemplates(c client.Client, cb *codebaseApi.Codebase, workDir, assets
 			return err
 		}
 	}
-	log.Info("end preparing deploy templates", "codebase", cb.Name)
+	log.Info("end preparing deploy templates", codebaseKey, cb.Name)
 	return nil
 }
 
 func PrepareGitlabCITemplates(c client.Client, cb *codebaseApi.Codebase, workDir, assetsDir string) error {
-	log.Info("start preparing deploy templates", "codebase", cb.Name)
+	log.Info("start preparing deploy templates", codebaseKey, cb.Name)
 
 	if cb.Spec.Type != util.Application {
 		log.Info("codebase is not application. skip copying templates", "name", cb.Name)
@@ -58,7 +60,7 @@ func PrepareGitlabCITemplates(c client.Client, cb *codebaseApi.Codebase, workDir
 		return errors.Wrapf(err, "an error has occurred while copying template for %v codebase", cb.Name)
 	}
 
-	log.Info("end preparing deploy templates", "codebase", cb.Name)
+	log.Info("end preparing deploy templates", codebaseKey, cb.Name)
 	return nil
 }
 

@@ -120,10 +120,13 @@ func (r *ReconcileCodebaseBranch) Reconcile(ctx context.Context, request reconci
 
 	cbChain := factory.GetChain(c.Spec.CiTool, r.client)
 	if err := cbChain.ServeRequest(cb); err != nil {
+		const defaultPostponeTime = 5 * time.Second
+
 		log.Error(err, "an error has occurred while handling codebase branch", "name", cb.Name)
+
 		switch err.(type) {
 		case *util.CodebaseBranchReconcileError:
-			return reconcile.Result{RequeueAfter: 5 * time.Second}, nil
+			return reconcile.Result{RequeueAfter: defaultPostponeTime}, nil
 		default:
 			return reconcile.Result{}, err
 		}
@@ -163,7 +166,7 @@ func (r *ReconcileCodebaseBranch) updateStatus(ctx context.Context, cb *codebase
 	return nil
 }
 
-func (r ReconcileCodebaseBranch) tryToDeleteCodebaseBranch(ctx context.Context, cb *codebaseApi.CodebaseBranch,
+func (r *ReconcileCodebaseBranch) tryToDeleteCodebaseBranch(ctx context.Context, cb *codebaseApi.CodebaseBranch,
 	deletionChain cbHandler.CodebaseBranchHandler) (*reconcile.Result, error) {
 	if cb.GetDeletionTimestamp().IsZero() {
 		if !util.ContainsString(cb.ObjectMeta.Finalizers, codebaseBranchOperatorFinalizerName) {
@@ -221,9 +224,13 @@ func removeDirectoryIfExists(codebaseName, branchName, namespace string) error {
 
 // setFailureCount increments failure count and returns delay for next reconciliation.
 func (r *ReconcileCodebaseBranch) setFailureCount(c *codebaseApi.CodebaseBranch) time.Duration {
-	timeout := util.GetTimeout(c.Status.FailureCount, 10*time.Second)
-	r.log.V(2).Info("wait for next reconcilation", "next reconcilation in", timeout)
-	c.Status.FailureCount += 1
+	const defaultDuration = 10 * time.Second
+	timeout := util.GetTimeout(c.Status.FailureCount, defaultDuration)
+
+	r.log.V(2).Info("wait for next reconciliation", "next reconciliation in", timeout)
+
+	c.Status.FailureCount++
+
 	return timeout
 }
 

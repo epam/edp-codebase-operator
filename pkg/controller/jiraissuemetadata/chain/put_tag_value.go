@@ -37,7 +37,7 @@ func (h PutTagValue) ServeRequest(metadata *codebaseApi.JiraIssueMetadata) error
 	}
 
 	if len(metadata.Spec.Tickets) == 0 {
-		return errors.New("JiraIssueMetadata is invalid. Tickets field cann't be empty.")
+		return errors.New("JiraIssueMetadata is invalid. Tickets field can't be empty")
 	}
 
 	if err := h.tryToCreateFieldValues(requestPayload, metadata.Spec.Tickets[0], createApiMap); err != nil {

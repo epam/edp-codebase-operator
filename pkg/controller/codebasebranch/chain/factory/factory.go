@@ -32,7 +32,7 @@ func createJenkinsDefChain(c client.Client) handler.CodebaseBranchHandler {
 				Client: c,
 				Next: put_codebase_image_stream.PutCodebaseImageStream{
 					Client: c,
-					Next:   clean_tmp_directory.CleanTempDirectory{},
+					Next:   &clean_tmp_directory.CleanTempDirectory{},
 				},
 			},
 		},
@@ -47,7 +47,7 @@ func createGitlabCiDefChain(c client.Client) handler.CodebaseBranchHandler {
 		Next: update_perf_data_sources.UpdatePerfDataSources{
 			Next: put_codebase_image_stream.PutCodebaseImageStream{
 				Client: c,
-				Next:   clean_tmp_directory.CleanTempDirectory{},
+				Next:   &clean_tmp_directory.CleanTempDirectory{},
 			},
 			Client: c,
 		},
@@ -65,7 +65,7 @@ func createTektonDefChain(c client.Client) handler.CodebaseBranchHandler {
 		Next: update_perf_data_sources.UpdatePerfDataSources{
 			Next: put_codebase_image_stream.PutCodebaseImageStream{
 				Client: c,
-				Next:   clean_tmp_directory.CleanTempDirectory{},
+				Next:   &clean_tmp_directory.CleanTempDirectory{},
 			},
 			Client: c,
 		},

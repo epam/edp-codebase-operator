@@ -140,7 +140,7 @@ func (h *PutPerfDataSources) createJenkinsDataSource(ctx context.Context, c *cod
 }
 
 func (h *PutPerfDataSources) createSonarDataSource(ctx context.Context, c *codebaseApi.Codebase, dataSourceType string) error {
-	config, err := h.getSonarDataSourceConfig(c.Spec.DefaultBranch, c.Name, c.Namespace)
+	config, err := h.getSonarDataSourceConfig(c.Name, c.Namespace)
 	if err != nil {
 		return err
 	}
@@ -203,7 +203,7 @@ func (h *PutPerfDataSources) getJenkinsDataSourceConfig(branch, codebase, namesp
 	}, nil
 }
 
-func (h *PutPerfDataSources) getSonarDataSourceConfig(branch, codebase, namespace string) (*perfAPi.DataSourceSonarConfig, error) {
+func (h *PutPerfDataSources) getSonarDataSourceConfig(codebase, namespace string) (*perfAPi.DataSourceSonarConfig, error) {
 	c, err := util.GetEdpComponent(h.client, sonarEdpComponentName, namespace)
 	if err != nil {
 		return nil, err

@@ -96,7 +96,9 @@ func SshInit(port int32, idrsa, host string, logger logr.Logger) (*SSHClient, er
 		Auth: []ssh.AuthMethod{
 			ssh.PublicKeys(pubkey),
 		},
-		HostKeyCallback: ssh.HostKeyCallback(func(hostname string, remote net.Addr, key ssh.PublicKey) error { return nil }),
+		HostKeyCallback: ssh.HostKeyCallback(func(hostname string, remote net.Addr, key ssh.PublicKey) error {
+			return nil
+		}),
 	}
 
 	cl := SSHClient{
@@ -269,8 +271,9 @@ func SetupProjectReplication(c client.Client, sshPort int32, host, idrsa, codeba
 	}
 
 	// TODO: refactor
+	const waitDuration = 5 * time.Second
 	log.Println("Waiting for gerrit replication config map appears in gerrit pod. Sleeping for 5 seconds...")
-	time.Sleep(5 * time.Second)
+	time.Sleep(waitDuration)
 
 	err = reloadReplicationPlugin(sshPort, idrsa, host, logger)
 	if err != nil {

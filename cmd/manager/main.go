@@ -45,8 +45,10 @@ var (
 )
 
 const (
+	port                                     = 9443
 	codebaseOperatorLock                     = "edp-codebase-operator-lock"
 	codebaseBranchMaxConcurrentReconcilesEnv = "CODEBASE_BRANCH_MAX_CONCURRENT_RECONCILES"
+	logFailCtrlCreateMessage                 = "unable to create controller"
 )
 
 func init() {
@@ -115,7 +117,7 @@ func main() {
 		Scheme:                 scheme,
 		MetricsBindAddress:     metricsAddr,
 		HealthProbeBindAddress: probeAddr,
-		Port:                   9443,
+		Port:                   port,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       codebaseOperatorLock,
 		MapperProvider: func(c *rest.Config) (meta.RESTMapper, error) {
@@ -145,43 +147,43 @@ func main() {
 	cbCtrl := codebasebranch.NewReconcileCodebaseBranch(mgr.GetClient(), mgr.GetScheme(), ctrlLog)
 	if err := cbCtrl.SetupWithManager(mgr,
 		getMaxConcurrentReconciles(codebaseBranchMaxConcurrentReconcilesEnv)); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "codebase-branch")
+		setupLog.Error(err, logFailCtrlCreateMessage, "controller", "codebase-branch")
 		os.Exit(1)
 	}
 
 	cisCtrl := codebaseimagestream.NewReconcileCodebaseImageStream(mgr.GetClient(), ctrlLog)
 	if err := cisCtrl.SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "codebase-image-stream")
+		setupLog.Error(err, logFailCtrlCreateMessage, "controller", "codebase-image-stream")
 		os.Exit(1)
 	}
 
 	gitServerCtrl := gitserver.NewReconcileGitServer(mgr.GetClient(), ctrlLog)
 	if err := gitServerCtrl.SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "git-server")
+		setupLog.Error(err, logFailCtrlCreateMessage, "controller", "git-server")
 		os.Exit(1)
 	}
 
 	gitTagCtrl := gittag.NewReconcileGitTag(mgr.GetClient(), ctrlLog)
 	if err := gitTagCtrl.SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "git-tag")
+		setupLog.Error(err, logFailCtrlCreateMessage, "controller", "git-tag")
 		os.Exit(1)
 	}
 
 	istCtrl := imagestreamtag.NewReconcileImageStreamTag(mgr.GetClient(), ctrlLog)
 	if err := istCtrl.SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "image-stream-tag")
+		setupLog.Error(err, logFailCtrlCreateMessage, "controller", "image-stream-tag")
 		os.Exit(1)
 	}
 
 	jimCtrl := jiraissuemetadata.NewReconcileJiraIssueMetadata(mgr.GetClient(), mgr.GetScheme(), ctrlLog)
 	if err := jimCtrl.SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "jira-issue-metadata")
+		setupLog.Error(err, logFailCtrlCreateMessage, "controller", "jira-issue-metadata")
 		os.Exit(1)
 	}
 
 	jsCtrl := jiraserver.NewReconcileJiraServer(mgr.GetClient(), mgr.GetScheme(), ctrlLog)
 	if err := jsCtrl.SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "jira-server")
+		setupLog.Error(err, logFailCtrlCreateMessage, "controller", "jira-server")
 		os.Exit(1)
 	}
 

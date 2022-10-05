@@ -3,6 +3,7 @@ package bitbucket
 import (
 	"fmt"
 	"log"
+	"net/http"
 	"strconv"
 
 	"github.com/pkg/errors"
@@ -25,9 +26,11 @@ type link struct {
 	Href string `json:"href"`
 }
 
+const retryCount = 3
+
 func (bitBucket *BitBucket) Init(url, username, password string) error {
 	client := resty.New()
-	client.SetRetryCount(3)
+	client.SetRetryCount(retryCount)
 	client.HostURL = url
 	client.AddRetryCondition(
 		func(response *resty.Response) (bool, error) {
@@ -63,17 +66,17 @@ func (bitBucket *BitBucket) getProject(groupPath, projectName string) (*project,
 		log.Println(errorMsg)
 		return nil, nil, errors.New(errorMsg)
 	}
-	if resp.StatusCode() == 401 {
+	if resp.StatusCode() == http.StatusUnauthorized {
 		errorMsg := "unauthorized"
 		log.Println(errorMsg)
 		return nil, nil, errors.New(errorMsg)
 	}
 	var exist bool
-	if resp.StatusCode() == 404 {
+	if resp.StatusCode() == http.StatusNotFound {
 		exist = false
 		return nil, &exist, nil
 	}
-	exist = resp.StatusCode() == 200
+	exist = resp.StatusCode() == http.StatusOK
 	return &result, &exist, nil
 }
 
@@ -106,7 +109,8 @@ func (bitBucket *BitBucket) CreateProject(groupPath, projectName string) (string
 }
 
 func simpleConvertFloatToString(number float64) string {
-	return strconv.FormatFloat(number, 'f', -1, 64)
+	const bitSize = 64
+	return strconv.FormatFloat(number, 'f', -1, bitSize)
 }
 
 func (bitBucket *BitBucket) GetRepositorySshUrl(groupPath, projectName string) (string, error) {

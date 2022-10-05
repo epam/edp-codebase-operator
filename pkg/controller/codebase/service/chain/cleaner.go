@@ -35,14 +35,14 @@ func (h *Cleaner) ServeRequest(_ context.Context, c *codebaseApi.Codebase) error
 
 func (h *Cleaner) tryToClean(c *codebaseApi.Codebase) error {
 	s := fmt.Sprintf("repository-codebase-%v-temp", c.Name)
+
 	if err := h.deleteSecret(s, c.Namespace); err != nil {
 		return errors.Wrapf(err, "unable to delete secret %v", s)
 	}
+
 	wd := util.GetWorkDir(c.Name, c.Namespace)
-	if err := deleteWorkDirectory(wd); err != nil {
-		return err
-	}
-	return nil
+
+	return deleteWorkDirectory(wd)
 }
 
 func (h *Cleaner) deleteSecret(secretName, namespace string) error {

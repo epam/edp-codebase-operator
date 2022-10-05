@@ -5,8 +5,10 @@ import (
 	"time"
 )
 
+const minFactor = 10
+
 func GetTimeout(factor int64, baseDuration time.Duration) time.Duration {
-	if factor < 10 {
+	if factor < minFactor {
 		return time.Duration(factor+1) * baseDuration
 	}
 

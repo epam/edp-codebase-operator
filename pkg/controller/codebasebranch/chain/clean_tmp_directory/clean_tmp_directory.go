@@ -16,7 +16,7 @@ type CleanTempDirectory struct {
 
 var log = ctrl.Log.WithName("clean-temp-directory-chain")
 
-func (h CleanTempDirectory) ServeRequest(cb *codebaseApi.CodebaseBranch) error {
+func (*CleanTempDirectory) ServeRequest(cb *codebaseApi.CodebaseBranch) error {
 	rl := log.WithValues("namespace", cb.Namespace, "codebase branch", cb.Name)
 	rl.Info("start CleanTempDirectory method...")
 

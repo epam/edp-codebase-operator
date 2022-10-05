@@ -3,6 +3,7 @@ package gitlab
 import (
 	"fmt"
 	"log"
+	"net/http"
 	"net/url"
 	"strconv"
 
@@ -30,12 +31,12 @@ func (gitlab *GitLab) CheckProjectExist(groupPath, projectName string) (*bool, e
 		log.Println(errorMsg)
 		return nil, errors.New(errorMsg)
 	}
-	if resp.StatusCode() == 401 {
+	if resp.StatusCode() == http.StatusUnauthorized {
 		errorMsg := "unauthorized"
 		log.Println(errorMsg)
 		return nil, errors.New(errorMsg)
 	}
-	exist := resp.StatusCode() == 200
+	exist := resp.StatusCode() == http.StatusOK
 	return &exist, nil
 }
 
@@ -103,23 +104,28 @@ func (gitlab *GitLab) GetRepositorySshUrl(groupPath, projectName string) (string
 }
 
 func (gitlab *GitLab) Init(hostUrl, username, password string) error {
+	const maxRetryCount = 3
+
 	log.Printf("Start initialization of username: %v, by url: %v", username, hostUrl)
+
 	client := resty.New()
-	client.SetRetryCount(3)
 	client.HostURL = hostUrl
+
+	client.SetRetryCount(maxRetryCount)
 	client.AddRetryCondition(
 		func(response *resty.Response) (bool, error) {
 			return response.IsError(), nil
 		},
 	)
+
 	token, err := tryToLoginWithPass(hostUrl, username, password)
 	if err != nil {
 		log.Printf("Error has been occured tring login via password for user: %s", username)
 		return errors.Wrap(err, "Unable to login to Gitlab")
-	} else {
-		log.Printf("Token for username: %v has been retrieved successfully", username)
-		client.Token = *token
 	}
+
+	log.Printf("Token for username: %v has been retrieved successfully", username)
+	client.Token = *token
 
 	gitlab.Client = *client
 	return nil
@@ -194,5 +200,6 @@ func tryToLoginWithPass(hostUrl, user, pass string) (*string, error) {
 }
 
 func simpleConvertFloatToString(number float64) string {
-	return strconv.FormatFloat(number, 'f', -1, 64)
+	const bitSize = 64
+	return strconv.FormatFloat(number, 'f', -1, bitSize)
 }
