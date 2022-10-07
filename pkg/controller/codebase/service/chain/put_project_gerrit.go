@@ -46,7 +46,7 @@ func (h *PutProjectGerrit) ServeRequest(ctx context.Context, c *codebaseApi.Code
 		return errors.Wrap(err, "couldn't get edp name")
 	}
 
-	ps, err := h.cr.SelectProjectStatusValue(c.Name, *edpN)
+	ps, err := h.cr.SelectProjectStatusValue(ctx, c.Name, *edpN)
 	if err != nil {
 		setFailedFields(c, codebaseApi.GerritRepositoryProvisioning, err.Error())
 		return errors.Wrapf(err, "couldn't get project_status value for %v codebase", c.Name)
@@ -100,7 +100,7 @@ func (h *PutProjectGerrit) ServeRequest(ctx context.Context, c *codebaseApi.Code
 		return errors.Wrapf(err, "push to gerrit for codebase %v has been failed", c.Name)
 	}
 
-	err = h.cr.UpdateProjectStatusValue(util.ProjectPushedStatus, c.Name, *edpN)
+	err = h.cr.UpdateProjectStatusValue(ctx, util.ProjectPushedStatus, c.Name, *edpN)
 	if err != nil {
 		setFailedFields(c, codebaseApi.GerritRepositoryProvisioning, err.Error())
 		return errors.Wrapf(err, "couldn't set project_status %v value for %v codebase",

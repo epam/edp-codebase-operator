@@ -38,7 +38,7 @@ func (h *PutGitlabCiFile) ServeRequest(ctx context.Context, c *codebaseApi.Codeb
 		return err
 	}
 
-	exists, err := h.gitlabCiFileExists(c.Name, *name)
+	exists, err := h.gitlabCiFileExists(ctx, c.Name, *name)
 	if err != nil {
 		setFailedFields(c, codebaseApi.PutGitlabCIFile, err.Error())
 		return err
@@ -54,7 +54,7 @@ func (h *PutGitlabCiFile) ServeRequest(ctx context.Context, c *codebaseApi.Codeb
 		return err
 	}
 
-	if err := h.cr.UpdateProjectStatusValue(util.GitlabCi, c.Name, *name); err != nil {
+	if err := h.cr.UpdateProjectStatusValue(ctx, util.GitlabCi, c.Name, *name); err != nil {
 		err = errors.Wrapf(err, "couldn't set project_status %v value for %v codebase", util.GitlabCi, c.Name)
 		setFailedFields(c, codebaseApi.PutGitlabCIFile, err.Error())
 		return err
@@ -128,8 +128,8 @@ func (h *PutGitlabCiFile) parseTemplate(c *codebaseApi.Codebase) error {
 	return parseTemplate(tp, gitlabCiFile, data)
 }
 
-func (h *PutGitlabCiFile) gitlabCiFileExists(codebaseName, edpName string) (bool, error) {
-	ps, err := h.cr.SelectProjectStatusValue(codebaseName, edpName)
+func (h *PutGitlabCiFile) gitlabCiFileExists(ctx context.Context, codebaseName, edpName string) (bool, error) {
+	ps, err := h.cr.SelectProjectStatusValue(ctx, codebaseName, edpName)
 	if err != nil {
 		return false, errors.Wrapf(err, "couldn't get project_status value for %v codebase", codebaseName)
 	}

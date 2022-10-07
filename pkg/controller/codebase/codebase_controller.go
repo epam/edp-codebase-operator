@@ -2,7 +2,6 @@ package codebase
 
 import (
 	"context"
-	"database/sql"
 	"reflect"
 	"strings"
 	"time"
@@ -19,7 +18,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	"github.com/epam/edp-codebase-operator/v2/db"
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/repository"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/service/chain"
@@ -34,7 +32,6 @@ func NewReconcileCodebase(c client.Client, scheme *runtime.Scheme, log logr.Logg
 	return &ReconcileCodebase{
 		client: c,
 		scheme: scheme,
-		db:     db.GetConnection(),
 		log:    log.WithName("codebase"),
 	}
 }
@@ -42,7 +39,6 @@ func NewReconcileCodebase(c client.Client, scheme *runtime.Scheme, log logr.Logg
 type ReconcileCodebase struct {
 	client      client.Client
 	scheme      *runtime.Scheme
-	db          *sql.DB
 	log         logr.Logger
 	chainGetter func(cr *codebaseApi.Codebase) (cHand.CodebaseHandler, error)
 }
@@ -176,10 +172,7 @@ func (r *ReconcileCodebase) getStrategyChain(c *codebaseApi.Codebase) (cHand.Cod
 }
 
 func (r *ReconcileCodebase) createCodebaseRepo(c *codebaseApi.Codebase) repository.CodebaseRepository {
-	if r.db == nil {
-		return repository.NewK8SCodebaseRepository(r.client, c)
-	}
-	return repository.SqlCodebaseRepository{DB: r.db}
+	return repository.NewK8SCodebaseRepository(r.client, c)
 }
 
 func (r *ReconcileCodebase) getCiChain(c *codebaseApi.Codebase, repo repository.CodebaseRepository) (cHand.CodebaseHandler, error) {

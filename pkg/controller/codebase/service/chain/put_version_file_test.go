@@ -3,10 +3,8 @@ package chain
 import (
 	"fmt"
 	"os"
-	"regexp"
 	"testing"
 
-	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/dchest/uniuri"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -19,7 +17,6 @@ import (
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/helper"
-	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/repository"
 	mockGit "github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver/mock"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	perfApi "github.com/epam/edp-perf-operator/v2/pkg/apis/edp/v1alpha1"
@@ -41,67 +38,6 @@ var path = "/tmp"
 func init() {
 	utilRuntime.Must(perfApi.AddToScheme(scheme.Scheme))
 	utilRuntime.Must(codebaseApi.AddToScheme(scheme.Scheme))
-}
-
-func TestVersionFileExists_VersionFileMustExist(t *testing.T) {
-	db, dbMock, err := sqlmock.New()
-	require.NoError(t, err)
-
-	defer func() {
-		err = db.Close()
-		require.NoError(t, err)
-	}()
-
-	h := NewPutVersionFile(
-		nil,
-		repository.SqlCodebaseRepository{
-			DB: db,
-		},
-		nil,
-	)
-
-	dbMock.ExpectPrepare(regexp.QuoteMeta(
-		fmt.Sprintf(`select project_status from "%v".codebase where name = $1 ;`, fakeEdpName)))
-
-	dbMock.ExpectQuery(regexp.QuoteMeta(
-		fmt.Sprintf(`select project_status from "%v".codebase where name = $1 ;`, fakeEdpName))).
-		WithArgs(fakeCodebaseName).
-		WillReturnRows(sqlmock.NewRows([]string{"project_status"}).
-			AddRow(util.ProjectVersionGoFilePushedStatus))
-
-	dbMock.ExpectClose()
-
-	e, err := h.versionFileExists(fakeCodebaseName, fakeEdpName)
-	assert.NoError(t, err)
-	assert.True(t, e)
-}
-
-func TestVersionFileExists_AnErrorOccursDueToInvalidInputParameter(t *testing.T) {
-	db, dbMock, err := sqlmock.New()
-	require.NoError(t, err)
-
-	defer func() {
-		err = db.Close()
-		require.NoError(t, err)
-	}()
-
-	h := NewPutVersionFile(
-		nil,
-		repository.SqlCodebaseRepository{
-			DB: db,
-		},
-		nil,
-	)
-
-	dbMock.ExpectPrepare(
-		regexp.QuoteMeta(fmt.Sprintf(`select project_status from "%v".codebase where name = $1 ;`, fakeEdpName)),
-	).WillReturnError(assert.AnError)
-
-	dbMock.ExpectClose()
-
-	e, err := h.versionFileExists(fakeCodebaseName, fakeEdpName)
-	assert.ErrorIs(t, err, assert.AnError)
-	assert.False(t, e)
 }
 
 func TestCreateFile_FileMustBeCreated(t *testing.T) {

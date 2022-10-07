@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -409,31 +408,6 @@ func (s *ControllerTestSuite) TestReconcileCodebase_getStrategyChain_ShouldPassI
 	t := s.T()
 	assert.NoError(t, err)
 	assert.NotNil(t, ch)
-}
-
-func (s *ControllerTestSuite) TestReconcileCodebase_getStrategyChain_ShouldPassWithDb() {
-	db, dbMock, err := sqlmock.New()
-	require.NoError(s.T(), err)
-
-	dbMock.ExpectClose()
-
-	defer func() {
-		err = db.Close()
-		require.NoError(s.T(), err)
-	}()
-
-	c := &codebaseApi.Codebase{}
-	fakeCl := fake.NewClientBuilder().WithScheme(s.scheme).WithRuntimeObjects(c).Build()
-	r := ReconcileCodebase{
-		client: fakeCl,
-		log:    logr.DiscardLogger{},
-		scheme: s.scheme,
-		db:     db,
-	}
-	repo := r.createCodebaseRepo(c)
-
-	t := s.T()
-	assert.NotNil(t, repo)
 }
 
 func (s *ControllerTestSuite) TestPostpone() {

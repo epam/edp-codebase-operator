@@ -48,7 +48,7 @@ func (h *PutVersionFile) ServeRequest(ctx context.Context, c *codebaseApi.Codeba
 		return err
 	}
 
-	exists, err := h.versionFileExists(c.Name, *name)
+	exists, err := h.versionFileExists(ctx, c.Name, *name)
 	if err != nil {
 		setFailedFields(c, codebaseApi.PutVersionFile, err.Error())
 		return err
@@ -66,7 +66,7 @@ func (h *PutVersionFile) ServeRequest(ctx context.Context, c *codebaseApi.Codeba
 		return err
 	}
 
-	err = h.cr.UpdateProjectStatusValue(util.ProjectVersionGoFilePushedStatus, c.Name, *name)
+	err = h.cr.UpdateProjectStatusValue(ctx, util.ProjectVersionGoFilePushedStatus, c.Name, *name)
 	if err != nil {
 		err = errors.Wrapf(err, "couldn't set project_status %v value for %v codebase",
 			util.ProjectVersionGoFilePushedStatus, c.Name)
@@ -79,8 +79,8 @@ func (h *PutVersionFile) ServeRequest(ctx context.Context, c *codebaseApi.Codeba
 	return nil
 }
 
-func (h *PutVersionFile) versionFileExists(codebaseName, edpName string) (bool, error) {
-	ps, err := h.cr.SelectProjectStatusValue(codebaseName, edpName)
+func (h *PutVersionFile) versionFileExists(ctx context.Context, codebaseName, edpName string) (bool, error) {
+	ps, err := h.cr.SelectProjectStatusValue(ctx, codebaseName, edpName)
 	if err != nil {
 		return false, errors.Wrapf(err, "couldn't get project_status value for %v codebase", codebaseName)
 	}

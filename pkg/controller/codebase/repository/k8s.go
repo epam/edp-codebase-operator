@@ -15,8 +15,8 @@ type K8SCodebaseRepository struct {
 
 // Simple constructor for K8SCodebaseRepository. Codebase CR is used to avoid additional calls to K8S and error
 // with concurrent resource update.
-func NewK8SCodebaseRepository(c client.Client, cr *codebaseApi.Codebase) CodebaseRepository {
-	return K8SCodebaseRepository{
+func NewK8SCodebaseRepository(c client.Client, cr *codebaseApi.Codebase) *K8SCodebaseRepository {
+	return &K8SCodebaseRepository{
 		client: c,
 		cr:     cr,
 	}
@@ -24,17 +24,17 @@ func NewK8SCodebaseRepository(c client.Client, cr *codebaseApi.Codebase) Codebas
 
 // Retrieves status of git provisioning from codebase cr. To avoid additional call to Kubernetes, values from
 // inner field codebase are used. Input parameters are codebase and edp are ignored.
-func (repo K8SCodebaseRepository) SelectProjectStatusValue(_, _ string) (string, error) {
-	return repo.cr.Status.Git, nil
+func (r *K8SCodebaseRepository) SelectProjectStatusValue(_ context.Context, codebase, edp string) (string, error) {
+	return r.cr.Status.Git, nil
 }
 
 // Sets the input value gitStatus to the corresponding field in Codebase CR. To avoid additional call to Kubernetes,
 // values from inner field codebase are used. Input parameters are codebase and edp are ignored.
-func (repo K8SCodebaseRepository) UpdateProjectStatusValue(gitStatus, _, _ string) error {
-	repo.cr.Status.Git = gitStatus
-	if err := repo.client.Status().Update(context.TODO(), repo.cr); err != nil {
+func (r *K8SCodebaseRepository) UpdateProjectStatusValue(ctx context.Context, gitStatus, _, _ string) error {
+	r.cr.Status.Git = gitStatus
+	if err := r.client.Status().Update(ctx, r.cr); err != nil {
 		// Used for backward compatibility
-		if err := repo.client.Update(context.TODO(), repo.cr); err != nil {
+		if err := r.client.Update(ctx, r.cr); err != nil {
 			return err
 		}
 	}

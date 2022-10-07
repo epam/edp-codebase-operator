@@ -6,7 +6,6 @@ import (
 	"os"
 	"testing"
 
-	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	coreV1 "k8s.io/api/core/v1"
@@ -187,6 +186,9 @@ func TestPushChangesMethod_ShouldBeExecutedSuccessfully(t *testing.T) {
 }
 
 func TestPutGitlabCiFile_gitlabCiFileExistsShouldReturnTrue(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
 	c := &codebaseApi.Codebase{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      fakeCodebaseName,
@@ -207,12 +209,16 @@ func TestPutGitlabCiFile_gitlabCiFileExistsShouldReturnTrue(t *testing.T) {
 		nil,
 	)
 
-	got, err := h.gitlabCiFileExists(fakeCodebaseName, "edpName")
+	got, err := h.gitlabCiFileExists(ctx, fakeCodebaseName, "edpName")
+
 	assert.True(t, got)
 	assert.Nil(t, err)
 }
 
 func TestPutGitlabCiFile_gitlabCiFileExistsShouldReturnFalse(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
 	c := &codebaseApi.Codebase{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      fakeCodebaseName,
@@ -233,35 +239,10 @@ func TestPutGitlabCiFile_gitlabCiFileExistsShouldReturnFalse(t *testing.T) {
 		nil,
 	)
 
-	got, err := h.gitlabCiFileExists(fakeCodebaseName, "edpName")
+	got, err := h.gitlabCiFileExists(ctx, fakeCodebaseName, "edpName")
 
 	assert.False(t, got)
 	assert.Nil(t, err)
-}
-
-func TestPutGitlabCiFile_gitlabCiFileExistsShouldReturnError(t *testing.T) {
-	db, dbMock, err := sqlmock.New()
-	require.NoError(t, err)
-
-	dbMock.ExpectClose()
-
-	defer func() {
-		err = db.Close()
-		require.NoError(t, err)
-	}()
-
-	h := NewPutGitlabCiFile(
-		nil,
-		repository.SqlCodebaseRepository{
-			DB: db,
-		},
-		nil,
-	)
-
-	got, err := h.gitlabCiFileExists(fakeCodebaseName, fakeEdpName)
-
-	assert.False(t, got)
-	assert.Contains(t, err.Error(), "couldn't get project_status value for fake_codebase_name codebase", "wrong error returned")
 }
 
 func TestParseTemplate_ShouldPass(t *testing.T) {

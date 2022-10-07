@@ -3,15 +3,6 @@ global:
   edpName: ""
   # -- platform type that can be "kubernetes" or "openshift"
   platform: "openshift"
-  database:
-    # -- Flag to enable/disable database deploy
-    enabled: true
-    # -- Database port
-    port: 5432
-    # -- Database host
-    host:
-    # -- Database name
-    name: "edp-db"
 
 # -- component name
 name: codebase-operator

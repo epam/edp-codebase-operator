@@ -19,7 +19,6 @@ package com.epam.edp.codebase {
         String buildTool
         Strategy strategy
         Repository repository
-        Database database
         String testReportFramework
         String gitServer
         String jiraServer

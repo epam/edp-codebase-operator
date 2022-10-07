@@ -48,7 +48,7 @@ func (h *PutDeployConfigs) tryToPushConfigs(ctx context.Context, c *codebaseApi.
 		return errors.Wrap(err, "couldn't get edp name")
 	}
 
-	ps, err := h.cr.SelectProjectStatusValue(c.Name, *edpN)
+	ps, err := h.cr.SelectProjectStatusValue(ctx, c.Name, *edpN)
 	if err != nil {
 		return errors.Wrapf(err, "couldn't get project_status value for %v codebase", c.Name)
 	}
@@ -103,7 +103,7 @@ func (h *PutDeployConfigs) tryToPushConfigs(ctx context.Context, c *codebaseApi.
 		return err
 	}
 
-	if err := h.cr.UpdateProjectStatusValue(util.ProjectTemplatesPushedStatus, c.Name, *edpN); err != nil {
+	if err := h.cr.UpdateProjectStatusValue(ctx, util.ProjectTemplatesPushedStatus, c.Name, *edpN); err != nil {
 		return errors.Wrapf(err, "couldn't set project_status %v value for %v codebase",
 			util.ProjectTemplatesPushedStatus, c.Name)
 	}

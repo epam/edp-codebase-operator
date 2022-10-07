@@ -26,10 +26,6 @@ A Helm chart for EDP Codebase Operator
 | envs[0].name | string | `"RECONCILATION_PERIOD"` |  |
 | envs[0].value | string | `"360"` |  |
 | envs[1] | object | `{"name":"CODEBASE_BRANCH_MAX_CONCURRENT_RECONCILES","value":"3"}` | Maximum number of parallel reconciliation codebasebranches |
-| global.database.enabled | bool | `true` | Flag to enable/disable database deploy |
-| global.database.host | string | `nil` | Database host |
-| global.database.name | string | `"edp-db"` | Database name |
-| global.database.port | int | `5432` | Database port |
 | global.edpName | string | `""` | namespace or a project name (in case of OpenShift) |
 | global.platform | string | `"openshift"` | platform type that can be "kubernetes" or "openshift" |
 | image.repository | string | `"epamedp/codebase-operator"` | EDP codebase-operator Docker image name. The released image can be found on [Dockerhub](https://hub.docker.com/r/epamedp/codebase-operator) |

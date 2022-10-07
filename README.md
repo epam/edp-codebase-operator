@@ -43,7 +43,7 @@ In order to install the Codebase Operator, follow the steps below:
 
 4. Install operator in the <edp-project> namespace with the helm command; find below the installation command example:
     ```bash
-    helm install codebase-operator epamedp/codebase-operator --version <chart_version> --namespace <edp-project> --set name=codebase-operator --set global.edpName=<edp-project> --set global.platform=<platform_type> --set global.database.name=<db-name> --set global.database.host=<db-name>.<namespace_name> --set global.database.port=<port> --set jira.integration=false
+    helm install codebase-operator epamedp/codebase-operator --version <chart_version> --namespace <edp-project> --set name=codebase-operator --set global.edpName=<edp-project> --set global.platform=<platform_type> --set jira.integration=false
     ```
 5. Check the <edp-project> namespace that should contain operator deployment with your operator in a running status.
 

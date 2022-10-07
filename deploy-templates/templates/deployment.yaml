@@ -40,28 +40,6 @@ spec:
               value: {{ .Values.name }}
             - name: PLATFORM_TYPE
               value: "{{ .Values.global.platform }}"
-            - name: DB_ENABLED
-              value: "{{ .Values.global.database.enabled }}"
-{{- if .Values.global.database.enabled }}
-            - name: DB_HOST
-              value: "{{ .Values.global.database.host }}"
-            - name: DB_PORT
-              value: "{{ .Values.global.database.port }}"
-            - name: DB_NAME
-              value: "{{ .Values.global.database.name }}"
-            - name: DB_USER
-              valueFrom:
-                secretKeyRef:
-                  name: db-admin-console
-                  key: username
-            - name: DB_PASS
-              valueFrom:
-                secretKeyRef:
-                  name: db-admin-console
-                  key: password
-            - name: DB_SSL_MODE
-              value: "disable"
-{{- end }}
 {{ toYaml .Values.envs | indent 12 }}
           resources:
 {{ toYaml .Values.resources | indent 12 }}
