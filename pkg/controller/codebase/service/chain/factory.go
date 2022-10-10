@@ -44,6 +44,7 @@ func MakeGerritTektonChain(c client.Client, cr repository.CodebaseRepository) ha
 		NewPutPerfDataSources(c),
 		NewPutDeployConfigs(c, cr, gp),
 		NewPutVersionFile(c, cr, gp),
+		NewPutDefaultCodeBaseBranch(c),
 		NewCleaner(c),
 	)
 
@@ -62,6 +63,7 @@ func MakeThirdPartyVcsProviderDefChain(c client.Client, cr repository.CodebaseRe
 		NewPutDeployConfigsToGitProvider(c, cr, gp),
 		NewPutVersionFile(c, cr, gp),
 		NewPutJenkinsFolder(c),
+		NewPutDefaultCodeBaseBranch(c),
 		NewCleaner(c),
 	)
 
@@ -88,6 +90,7 @@ func MakeGitlabCiDefChain(c client.Client, cr repository.CodebaseRepository) han
 		NewPutGitlabCiDeployConfigs(c, cr, gp),
 		NewPutGitlabCiFile(c, cr, gp),
 		NewPutVersionFile(c, cr, gp),
+		NewPutDefaultCodeBaseBranch(c),
 		NewCleaner(c),
 	)
 
@@ -105,6 +108,7 @@ func MakeTektonCiDefChain(c client.Client, cr repository.CodebaseRepository) han
 		NewPutPerfDataSources(c),
 		NewPutDeployConfigsToGitProvider(c, cr, gp),
 		NewPutVersionFile(c, cr, gp),
+		NewPutDefaultCodeBaseBranch(c),
 		NewCleaner(c),
 	)
 
