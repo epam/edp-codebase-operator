@@ -53,22 +53,39 @@ const (
 func (r *ReconcileCodebaseBranch) SetupWithManager(mgr ctrl.Manager, maxConcurrentReconciles int) error {
 	p := predicate.Funcs{
 		UpdateFunc: func(e event.UpdateEvent) bool {
-			oo := e.ObjectOld.(*codebaseApi.CodebaseBranch)
-			no := e.ObjectNew.(*codebaseApi.CodebaseBranch)
+			oo, ok := e.ObjectOld.(*codebaseApi.CodebaseBranch)
+			if !ok {
+				return false
+			}
+
+			no, ok := e.ObjectNew.(*codebaseApi.CodebaseBranch)
+			if !ok {
+				return false
+			}
+
 			if !reflect.DeepEqual(oo.Spec, no.Spec) {
 				return true
 			}
+
 			if no.DeletionTimestamp != nil {
 				return true
 			}
+
 			return false
 		},
 	}
-	return ctrl.NewControllerManagedBy(mgr).
-		For(&codebaseApi.CodebaseBranch{}, builder.WithPredicates(p)).WithOptions(controller.Options{
-		MaxConcurrentReconciles: maxConcurrentReconciles,
-	}).
+
+	err := ctrl.NewControllerManagedBy(mgr).
+		For(&codebaseApi.CodebaseBranch{}, builder.WithPredicates(p)).
+		WithOptions(controller.Options{
+			MaxConcurrentReconciles: maxConcurrentReconciles,
+		}).
 		Complete(r)
+	if err != nil {
+		return fmt.Errorf("failed to build CodebaseBranch controller: %w", err)
+	}
+
+	return nil
 }
 
 func (r *ReconcileCodebaseBranch) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
@@ -80,8 +97,10 @@ func (r *ReconcileCodebaseBranch) Reconcile(ctx context.Context, request reconci
 		if k8sErrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
 		}
-		return reconcile.Result{}, err
+
+		return reconcile.Result{}, fmt.Errorf("failed to fetch CodebaseBranch resource %q: %w", request.NamespacedName, err)
 	}
+
 	defer func() {
 		if err := r.updateStatus(ctx, cb); err != nil {
 			log.Error(err, "error on codebase branch update status")
@@ -90,7 +109,7 @@ func (r *ReconcileCodebaseBranch) Reconcile(ctx context.Context, request reconci
 
 	c, err := util.GetCodebase(r.client, cb.Spec.CodebaseName, cb.Namespace)
 	if err != nil {
-		return reconcile.Result{}, err
+		return reconcile.Result{}, fmt.Errorf("failed to fetch Codebase: %w", err)
 	}
 
 	if err = r.setOwnerRef(cb, c); err != nil {
@@ -106,6 +125,7 @@ func (r *ReconcileCodebaseBranch) Reconcile(ctx context.Context, request reconci
 	if err != nil {
 		return reconcile.Result{}, errors.Wrapf(err, "Unable to remove codebasebranch %v", cb.Name)
 	}
+
 	if result != nil {
 		return *result, nil
 	}
@@ -128,7 +148,7 @@ func (r *ReconcileCodebaseBranch) Reconcile(ctx context.Context, request reconci
 		case *util.CodebaseBranchReconcileError:
 			return reconcile.Result{RequeueAfter: defaultPostponeTime}, nil
 		default:
-			return reconcile.Result{}, err
+			return reconcile.Result{}, fmt.Errorf("failed to process default chain: %w", err)
 		}
 	}
 
@@ -138,6 +158,7 @@ func (r *ReconcileCodebaseBranch) Reconcile(ctx context.Context, request reconci
 	}
 
 	log.Info("Reconciling CodebaseBranch has been finished")
+
 	return reconcile.Result{}, nil
 }
 
@@ -153,6 +174,7 @@ func (r *ReconcileCodebaseBranch) setSuccessStatus(ctx context.Context, cb *code
 		LastSuccessfulBuild: cb.Status.LastSuccessfulBuild,
 		Build:               cb.Status.Build,
 	}
+
 	return r.updateStatus(ctx, cb)
 }
 
@@ -162,7 +184,9 @@ func (r *ReconcileCodebaseBranch) updateStatus(ctx context.Context, cb *codebase
 			return errors.Wrap(err, "ReconcileCodebaseBranch: couldn't update codebase branch status")
 		}
 	}
+
 	r.log.V(2).Info("codebase branch status has been updated", "name", cb.Name)
+
 	return nil
 }
 
@@ -175,6 +199,7 @@ func (r *ReconcileCodebaseBranch) tryToDeleteCodebaseBranch(ctx context.Context,
 				return &reconcile.Result{}, errors.Wrapf(err, "unable to add finalizer to %v", cb.Name)
 			}
 		}
+
 		return nil, nil
 	}
 
@@ -191,12 +216,13 @@ func (r *ReconcileCodebaseBranch) tryToDeleteCodebaseBranch(ctx context.Context,
 	if err := removeDirectoryIfExists(cb.Spec.CodebaseName, cb.Name, cb.Namespace); err != nil {
 		return &reconcile.Result{}, errors.Wrap(err, "unable to remove codebase branch directory")
 	}
+
 	err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		// Fetch the resource here; we need to refetch it on every try, since
 		// if we got a conflict on the last update attempt then we need to get
 		// the current version before making your own changes.
 		if err := r.client.Get(ctx, types.NamespacedName{Namespace: cb.Namespace, Name: cb.Name}, cb); err != nil {
-			return err
+			return err //nolint:wrapcheck // We have to return original error
 		}
 		r.log.Info("Trying to remove finalizer from", "codebasebranch_name", cb.Name)
 		cb.ObjectMeta.Finalizers = util.RemoveString(cb.ObjectMeta.Finalizers, codebaseBranchOperatorFinalizerName)
@@ -204,21 +230,23 @@ func (r *ReconcileCodebaseBranch) tryToDeleteCodebaseBranch(ctx context.Context,
 
 		// We have to return err itself here (not wrapped inside another error)
 		// so that RetryOnConflict can identify it correctly.
-		return err
+		return err //nolint:wrapcheck // We have to return original error
 	})
 	if err != nil {
 		// May be conflict if max retries were hit, or may be something unrelated
 		// like permissions or a network error
 		return &reconcile.Result{}, errors.Wrapf(err, "unable to remove finalizer from %v", cb.Name)
 	}
+
 	return &reconcile.Result{}, nil
 }
 
 func removeDirectoryIfExists(codebaseName, branchName, namespace string) error {
 	wd := util.GetWorkDir(codebaseName, fmt.Sprintf("%v-%v", namespace, branchName))
 	if err := util.RemoveDirectory(wd); err != nil {
-		return err
+		return fmt.Errorf("failed to remove directory %q: %w", wd, err)
 	}
+
 	return nil
 }
 
@@ -238,6 +266,7 @@ func (r *ReconcileCodebaseBranch) setOwnerRef(cb *codebaseApi.CodebaseBranch, c 
 	if err := controllerutil.SetControllerReference(c, cb, r.scheme); err != nil {
 		return errors.Wrap(err, "cannot set owner ref for CodebaseBranch CR")
 	}
+
 	return nil
 }
 

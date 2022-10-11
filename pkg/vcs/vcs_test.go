@@ -154,7 +154,6 @@ func TestGetVcsConfig_ShouldFailToGetSecret(t *testing.T) {
 }
 
 func TestGetVcsConfig_ShouldFailToUrl(t *testing.T) {
-
 	s := &coreV1.Secret{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "vcs-autouser-codebase-codebaseName-temp",

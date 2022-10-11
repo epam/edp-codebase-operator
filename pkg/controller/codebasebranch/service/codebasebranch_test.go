@@ -175,6 +175,7 @@ func TestCodebaseBranchService_TriggerDeletionJobFailed(t *testing.T) {
 
 	err := svc.TriggerDeletionJob(&cb)
 	assert.Error(t, err)
+
 	if errors.Cause(err) != JobFailedError(err.Error()) {
 		t.Fatal("wrong error returned")
 	}

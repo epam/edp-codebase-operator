@@ -1,12 +1,12 @@
-package gitserver
+package mocks
 
 import "github.com/stretchr/testify/mock"
 
-type commandMock struct {
+type CommandMock struct {
 	mock.Mock
 }
 
-func (c *commandMock) CombinedOutput() ([]byte, error) {
+func (c *CommandMock) CombinedOutput() ([]byte, error) {
 	called := c.Called()
 	if err := called.Error(1); err != nil {
 		return nil, err

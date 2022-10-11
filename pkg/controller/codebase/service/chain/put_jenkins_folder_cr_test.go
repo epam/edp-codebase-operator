@@ -60,7 +60,9 @@ func TestPutJenkinsFolder_ShouldCreateJenkinsFolder(t *testing.T) {
 	if err := pjf.ServeRequest(ctx, c); err != nil {
 		t.Error("ServeRequest failed for PutJenkinsFolder")
 	}
+
 	gjf := &jenkinsApi.JenkinsFolder{}
+
 	if err := fakeCl.Get(context.TODO(),
 		types.NamespacedName{
 			Name:      "fake-name-codebase",
@@ -69,6 +71,7 @@ func TestPutJenkinsFolder_ShouldCreateJenkinsFolder(t *testing.T) {
 		gjf); err != nil {
 		t.Error("Unable to get JenkinsFolder")
 	}
+
 	assert.Equal(t, gjf.Spec.Job.Name, "job-provisions/job/ci/job/ci")
 }
 
@@ -143,6 +146,7 @@ func TestPutJenkinsFolder_ShouldFailWhenGetGitServer(t *testing.T) {
 
 	err := pjf.ServeRequest(ctx, c)
 	assert.Error(t, err)
+
 	if !strings.Contains(err.Error(), "an error has occurred while getting fake-name Git Server CR") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
@@ -154,6 +158,7 @@ func Test_getRepositoryPath(t *testing.T) {
 		strategy     string
 		gitUrlPath   *string
 	}
+
 	tests := []struct {
 		name string
 		args args
@@ -162,6 +167,7 @@ func Test_getRepositoryPath(t *testing.T) {
 		{"Import strategy", args{"codebase-name", consts.ImportStrategy, util.GetStringP("url")}, "url"},
 		{"Clone strategy", args{"codebase-name", string(codebaseApi.Clone), util.GetStringP("url")}, "/codebase-name"},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := getRepositoryPath(tt.args.codebaseName, tt.args.strategy, tt.args.gitUrlPath); got != tt.want {

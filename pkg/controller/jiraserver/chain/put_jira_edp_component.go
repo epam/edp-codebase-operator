@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path"
 
 	"github.com/pkg/errors"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
@@ -33,16 +34,22 @@ const statusFinished = "finished"
 func (h PutJiraEDPComponent) ServeRequest(jira *codebaseApi.JiraServer) error {
 	rl := log.WithValues("jira server name", jira.Name)
 	rl.V(2).Info("start putting Jira EDP component...")
+
 	if err := h.createEDPComponentIfNotExists(jira); err != nil {
 		return errors.Wrapf(err, "couldn't create EDP component %v", jira.Name)
 	}
+
 	jira.Status.Status = statusFinished
 	jira.Status.DetailedMessage = ""
+
 	rl.Info("end putting Jira EDP component...")
+
 	return nextServeOrNil(h.next, jira)
 }
 
 func (h PutJiraEDPComponent) createEDPComponentIfNotExists(js *codebaseApi.JiraServer) error {
+	ctx := context.Background()
+
 	icon, err := getIcon()
 	if err != nil {
 		return errors.Wrapf(err, "couldn't encode icon %v", js.Name)
@@ -60,26 +67,37 @@ func (h PutJiraEDPComponent) createEDPComponentIfNotExists(js *codebaseApi.JiraS
 			Visible: true,
 		},
 	}
-	if err := h.client.Create(context.TODO(), c); err != nil {
+
+	err = h.client.Create(ctx, c)
+	if err != nil {
 		if k8sErrors.IsAlreadyExists(err) {
 			log.V(2).Info("edp component already exists. skip creating...", "name", js.Name)
+
 			return nil
 		}
-		return err
+
+		return fmt.Errorf("fail to create EDPComponent resource %q: %w", js.Name, err)
 	}
+
 	return nil
 }
 
 func getIcon() (*string, error) {
-	f, err := os.Open(fmt.Sprintf("%v/img/jira.svg", util.GetAssetsDir()))
+	p := path.Join(util.GetAssetsDir(), "img/jira.svg")
+
+	f, err := os.Open(p)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to open file: %w", err)
 	}
+
 	reader := bufio.NewReader(f)
+
 	content, err := io.ReadAll(reader)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to read all file content: %w", err)
 	}
+
 	encoded := base64.StdEncoding.EncodeToString(content)
+
 	return &encoded, nil
 }

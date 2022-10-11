@@ -2,6 +2,7 @@ package chain
 
 import (
 	"context"
+	"fmt"
 
 	ctrl "sigs.k8s.io/controller-runtime"
 
@@ -22,6 +23,7 @@ func (ch *chain) Use(handlers ...handler.CodebaseHandler) {
 
 func (ch *chain) ServeRequest(ctx context.Context, c *codebaseApi.Codebase) error {
 	chainLog.Info("starting codebase chain", "codebase_name", c.Name)
+
 	defer util.Timer("codebase_chain", log)()
 
 	for i := 0; i < len(ch.handlers); i++ {
@@ -31,7 +33,7 @@ func (ch *chain) ServeRequest(ctx context.Context, c *codebaseApi.Codebase) erro
 		if err != nil {
 			chainLog.Info("codebase chain finished with error", "codebase_name", c.Name)
 
-			return err
+			return fmt.Errorf("failed to serve handler: %w", err)
 		}
 	}
 

@@ -15,7 +15,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
-	mockGit "github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver/mock"
+	mockGit "github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver/mocks"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
@@ -85,8 +85,9 @@ func TestCloneGitProject_ShouldPass(t *testing.T) {
 
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(s, c, gs, ssh).Build()
 	mGit := new(mockGit.MockGit)
-	var port int32 = 22
+	port := int32(22)
 	wd := util.GetWorkDir(fakeName, fakeNamespace)
+
 	mGit.On("CloneRepositoryBySsh", "",
 		fakeName, fmt.Sprintf("ssh://%v:22%v", fakeName, fakeName),
 		wd, port).Return(
@@ -261,8 +262,9 @@ func TestCloneGitProject_CloneRepositoryBySshShouldFail(t *testing.T) {
 
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(s, c, gs, ssh).Build()
 	mGit := new(mockGit.MockGit)
-	var port int32 = 22
+	port := int32(22)
 	wd := util.GetWorkDir(fakeName, fakeNamespace)
+
 	mGit.On("CloneRepositoryBySsh", "",
 		fakeName, fmt.Sprintf("ssh://%v:22%v", fakeName, fakeName),
 		wd, port).Return(

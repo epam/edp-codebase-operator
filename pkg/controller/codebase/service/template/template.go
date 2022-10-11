@@ -39,7 +39,9 @@ func PrepareTemplates(c client.Client, cb *codebaseApi.Codebase, workDir, assets
 			return err
 		}
 	}
+
 	log.Info("end preparing deploy templates", codebaseKey, cb.Name)
+
 	return nil
 }
 
@@ -61,11 +63,13 @@ func PrepareGitlabCITemplates(c client.Client, cb *codebaseApi.Codebase, workDir
 	}
 
 	log.Info("end preparing deploy templates", codebaseKey, cb.Name)
+
 	return nil
 }
 
 func buildTemplateConfig(c client.Client, cb *codebaseApi.Codebase) (*model.ConfigGoTemplating, error) {
 	log.Info("start creating template config", "codebase_name", cb.Name)
+
 	us, err := util.GetUserSettings(c, cb.Namespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable get user settings settings")
@@ -77,15 +81,18 @@ func buildTemplateConfig(c client.Client, cb *codebaseApi.Codebase) (*model.Conf
 		Lang:         cb.Spec.Lang,
 		DnsWildcard:  us.DnsWildcard,
 	}
+
 	if cb.Spec.Framework != nil {
 		cf.Framework = *cb.Spec.Framework
 	}
+
 	cf.GitURL, err = getProjectUrl(c, &cb.Spec, cb.Namespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable get project url")
 	}
 
 	log.Info("end creating template config", "codebase_name", cb.Name)
+
 	return &cf, nil
 }
 
@@ -104,6 +111,7 @@ func getProjectUrl(c client.Client, s *codebaseApi.CodebaseSpec, n string) (stri
 		if err != nil {
 			return "", errors.Wrap(err, "unable get git server")
 		}
+
 		return fmt.Sprintf("https://%v%v", gs.GitHost, *s.GitUrlPath), nil
 
 	default:
@@ -130,7 +138,7 @@ func copySonarConfigs(workDir, td string, config *model.ConfigGoTemplating) (err
 
 	f, err := os.Create(sonarConfigPath)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create sonar config file: %w", err)
 	}
 
 	defer util.CloseWithErrorCapture(&err, f, "failed to close sonar config file")
@@ -140,7 +148,7 @@ func copySonarConfigs(workDir, td string, config *model.ConfigGoTemplating) (err
 
 	tmpl, err := template.New(sonarTemplateName).ParseFiles(sonarTemplateFile)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to parse sonar template file: %w", err)
 	}
 
 	err = tmpl.Execute(f, config)

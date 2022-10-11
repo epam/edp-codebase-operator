@@ -22,7 +22,7 @@ import (
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/repository"
-	mockGit "github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver/mock"
+	mockGit "github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver/mocks"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
@@ -169,10 +169,8 @@ func TestPutProjectGerrit_ShouldFailToRunSSHCommand(t *testing.T) {
 	err = os.Setenv("ASSETS_DIR", "../../../../../build")
 	require.NoError(t, err)
 
-	var (
-		u = "user"
-		p = "pass"
-	)
+	u := "user"
+	p := "pass"
 	wd := util.GetWorkDir(fakeName, fakeNamespace)
 
 	mGit := new(mockGit.MockGit)
@@ -217,7 +215,7 @@ func TestPutProjectGerrit_ShouldFailToGetConfigmap(t *testing.T) {
 
 	err := ppg.ServeRequest(ctx, c)
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "couldn't get edp name: configmaps \"edp-config\" not found")
+	assert.Contains(t, err.Error(), "configmaps \"edp-config\" not found")
 }
 
 func TestPutProjectGerrit_ShouldFailToCreateRepo(t *testing.T) {
@@ -715,10 +713,9 @@ func TestPutProjectGerrit_notEmptyProjectProvisioningShouldFailOnCheckPermission
 	scheme.AddKnownTypes(coreV1.SchemeGroupVersion, s)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, s).Build()
 
-	var (
-		u = "user"
-		p = "pass"
-	)
+	u := "user"
+	p := "pass"
+
 	mGit := new(mockGit.MockGit)
 	mGit.On("CheckPermissions", "link", &u, &p).Return(false)
 
@@ -756,19 +753,18 @@ func TestPutProjectGerrit_notEmptyProjectProvisioningShouldFailOnCloneRepo(t *te
 			"password": []byte("pass"),
 		},
 	}
+	wd := t.TempDir()
 	scheme := runtime.NewScheme()
 	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, c)
 	scheme.AddKnownTypes(coreV1.SchemeGroupVersion, s)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, s).Build()
 
-	var (
-		u = "user"
-		p = "pass"
-	)
+	u := "user"
+	p := "pass"
+
 	mGit := new(mockGit.MockGit)
 	mGit.On("CheckPermissions", "link", &u, &p).Return(true)
-	mGit.On("CloneRepository", "link",
-		&u, &p, "/tmp").Return(errors.New("FATAL: FAIL"))
+	mGit.On("CloneRepository", "link", &u, &p, wd).Return(errors.New("FATAL: FAIL"))
 
 	ppg := NewPutProjectGerrit(
 		fakeCl,
@@ -776,9 +772,9 @@ func TestPutProjectGerrit_notEmptyProjectProvisioningShouldFailOnCloneRepo(t *te
 		mGit,
 	)
 
-	err := ppg.notEmptyProjectProvisioning(c, logr.DiscardLogger{}, "/tmp")
+	err := ppg.notEmptyProjectProvisioning(c, logr.DiscardLogger{}, wd)
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "cloning template project has been failed: FATAL: FAIL")
+	assert.Contains(t, err.Error(), "cloning template project has been failed")
 }
 
 func TestPutProjectGerrit_notEmptyProjectProvisioningShouldFailOnSquash(t *testing.T) {
@@ -809,10 +805,9 @@ func TestPutProjectGerrit_notEmptyProjectProvisioningShouldFailOnSquash(t *testi
 	scheme.AddKnownTypes(coreV1.SchemeGroupVersion, s)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, s).Build()
 
-	var (
-		u = "user"
-		p = "pass"
-	)
+	u := "user"
+	p := "pass"
+
 	mGit := new(mockGit.MockGit)
 	mGit.On("CheckPermissions", "https://github.com/epmd-edp/--.git", &u, &p).Return(true)
 	mGit.On("CloneRepository", "https://github.com/epmd-edp/--.git",
@@ -858,10 +853,9 @@ func TestPutProjectGerrit_tryToCloneShouldPassWithExistingRepo(t *testing.T) {
 	_, err = git.PlainInit(dir, false)
 	require.NoError(t, err, "unable to create test git repo")
 
-	var (
-		u = "user"
-		p = "pass"
-	)
+	u := "user"
+	p := "pass"
+
 	err = os.MkdirAll(fmt.Sprintf("%v/.git", dir), 0o775)
 	require.NoError(t, err, "unable to create .git directory for test")
 
@@ -885,6 +879,7 @@ func TestReplaceDefaultBranch(t *testing.T) {
 	assert.NoError(t, err)
 
 	mGit.On("RemoveBranch", "foo", "bar").Return(errors.New("RemoveBranch fatal")).Once()
+
 	err = ppg.replaceDefaultBranch("foo", "bar", "baz")
 	assert.EqualError(t, err, "unable to remove master branch: RemoveBranch fatal")
 

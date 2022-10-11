@@ -37,10 +37,13 @@ func NewPutPerfDataSources(c client.Client) *PutPerfDataSources {
 func (h *PutPerfDataSources) ServeRequest(ctx context.Context, c *codebaseApi.Codebase) error {
 	rLog := log.WithValues("codebase_name", c.Name)
 	rLog.Info("start creating PERF data source cr...")
+
 	if err := h.tryToCreateDataSourceCr(ctx, c); err != nil {
 		return errors.Wrap(err, "couldn't create PerfDataSource CR")
 	}
+
 	rLog.Info("data source has been created")
+
 	return nil
 }
 
@@ -57,6 +60,7 @@ func (h *PutPerfDataSources) tryToCreateDataSourceCr(ctx context.Context, c *cod
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -70,46 +74,58 @@ func (h *PutPerfDataSources) getCreateFactory() map[string]func(context.Context,
 
 func (h *PutPerfDataSources) tryToCreateJenkinsDataSource(ctx context.Context, c *codebaseApi.Codebase, dataSourceType string) error {
 	ds := &perfAPi.PerfDataSourceJenkins{}
+	name := getDataSourceName(c.Name, dataSourceType)
+
 	err := h.client.Get(ctx, types.NamespacedName{
-		Name:      getDataSourceName(c.Name, dataSourceType),
+		Name:      name,
 		Namespace: c.Namespace,
 	}, ds)
 	if err != nil {
 		if k8sErrors.IsNotFound(err) {
 			return h.createJenkinsDataSource(ctx, c, dataSourceType)
 		}
-		return err
+
+		return fmt.Errorf("failed to fetch 'PerfDataSourceJenkins' resource %q: %w", name, err)
 	}
+
 	return nil
 }
 
 func (h *PutPerfDataSources) tryToCreateSonarDataSource(ctx context.Context, c *codebaseApi.Codebase, dataSourceType string) error {
 	ds := &perfAPi.PerfDataSourceSonar{}
+	name := getDataSourceName(c.Name, dataSourceType)
+
 	err := h.client.Get(ctx, types.NamespacedName{
-		Name:      getDataSourceName(c.Name, dataSourceType),
+		Name:      name,
 		Namespace: c.Namespace,
 	}, ds)
 	if err != nil {
 		if k8sErrors.IsNotFound(err) {
 			return h.createSonarDataSource(ctx, c, dataSourceType)
 		}
-		return err
+
+		return fmt.Errorf("failed to fetch 'PerfDataSourceSonar' resource %q: %w", name, err)
 	}
+
 	return nil
 }
 
 func (h *PutPerfDataSources) tryToCreateGitLabDataSource(ctx context.Context, c *codebaseApi.Codebase, dataSourceType string) error {
 	ds := &perfAPi.PerfDataSourceGitLab{}
+	name := getDataSourceName(c.Name, dataSourceType)
+
 	err := h.client.Get(ctx, types.NamespacedName{
-		Name:      getDataSourceName(c.Name, dataSourceType),
+		Name:      name,
 		Namespace: c.Namespace,
 	}, ds)
 	if err != nil {
 		if k8sErrors.IsNotFound(err) {
 			return h.createGitLabDataSource(ctx, c, dataSourceType)
 		}
-		return err
+
+		return fmt.Errorf("failed to fetch 'PerfDataSourceGitLab' resource %q: %w", name, err)
 	}
+
 	return nil
 }
 
@@ -136,6 +152,7 @@ func (h *PutPerfDataSources) createJenkinsDataSource(ctx context.Context, c *cod
 	if err != nil {
 		return errors.Wrapf(err, "couldn't create PERF Jenkins data source %v-%v", c.Name, dataSourceType)
 	}
+
 	return nil
 }
 
@@ -162,6 +179,7 @@ func (h *PutPerfDataSources) createSonarDataSource(ctx context.Context, c *codeb
 	if err != nil {
 		return errors.Wrapf(err, "couldn't create PERF Sonar data source %v-%v", c.Name, dataSourceType)
 	}
+
 	return nil
 }
 
@@ -188,13 +206,14 @@ func (h *PutPerfDataSources) createGitLabDataSource(ctx context.Context, c *code
 	if err != nil {
 		return errors.Wrapf(err, "couldn't create PERF GitLab data source %v-%v", c.Name, dataSourceType)
 	}
+
 	return nil
 }
 
 func (h *PutPerfDataSources) getJenkinsDataSourceConfig(branch, codebase, namespace string) (*perfAPi.DataSourceJenkinsConfig, error) {
 	c, err := util.GetEdpComponent(h.client, jenkinsEdpComponentName, namespace)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to fetch EDP Component: %w", err)
 	}
 
 	return &perfAPi.DataSourceJenkinsConfig{
@@ -206,7 +225,7 @@ func (h *PutPerfDataSources) getJenkinsDataSourceConfig(branch, codebase, namesp
 func (h *PutPerfDataSources) getSonarDataSourceConfig(codebase, namespace string) (*perfAPi.DataSourceSonarConfig, error) {
 	c, err := util.GetEdpComponent(h.client, sonarEdpComponentName, namespace)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to fetch EDP Component: %w", err)
 	}
 
 	return &perfAPi.DataSourceSonarConfig{
@@ -218,7 +237,7 @@ func (h *PutPerfDataSources) getSonarDataSourceConfig(codebase, namespace string
 func (h *PutPerfDataSources) getGitLabDataSourceConfig(codebase *codebaseApi.Codebase) (*perfAPi.DataSourceGitLabConfig, error) {
 	gs, err := util.GetGitServer(h.client, codebase.Spec.GitServer, codebase.Namespace)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to fetch Git Server: %w", err)
 	}
 
 	return &perfAPi.DataSourceGitLabConfig{
@@ -232,11 +251,13 @@ func modifyGitLink(host string) string {
 	if regexp.MustCompile(`^(https://)|^(http://)`).MatchString(host) {
 		return host
 	}
+
 	return fmt.Sprintf("https://%v", host)
 }
 
 func makeK8sDataSourceMeta(c *codebaseApi.Codebase, dataSourceType string) (metaV1.TypeMeta, metaV1.ObjectMeta) {
 	const apiVersion = "v2.edp.epam.com/v1"
+
 	objMeta := metaV1.ObjectMeta{
 		Name:      getDataSourceName(c.Name, dataSourceType),
 		Namespace: c.Namespace,

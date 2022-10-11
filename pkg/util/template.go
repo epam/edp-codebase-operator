@@ -32,21 +32,25 @@ func CopyHelmChartTemplates(deploymentScript, templatesDest, assetsDir string, c
 	log.Info(logDirCreatedMessage, logPathKey, templateBasePath)
 
 	valuesFileName := path.Join(templatesDest, "values.yaml")
+
 	valuesFile, err := os.Create(valuesFileName)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create Values file %q: %w", valuesFileName, err)
 	}
 
 	log.Info("file is created", "file", valuesFileName)
 
 	chartFileName := path.Join(templatesDest, "Chart.yaml")
+
 	chartFile, err := os.Create(chartFileName)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create chart file %q: %w", chartFileName, err)
 	}
+
 	log.Info("file is created", "file", chartFileName)
 
 	templateFolder := path.Join(templatesDest, TemplateFolder)
+
 	err = CreateDirectory(templateFolder)
 	if err != nil {
 		return err
@@ -55,6 +59,7 @@ func CopyHelmChartTemplates(deploymentScript, templatesDest, assetsDir string, c
 	log.Info(logDirCreatedMessage, logPathKey, templateFolder)
 
 	testFolder := path.Join(templatesDest, TemplateFolder, TestFolder)
+
 	err = CreateDirectory(testFolder)
 	if err != nil {
 		return err
@@ -63,25 +68,31 @@ func CopyHelmChartTemplates(deploymentScript, templatesDest, assetsDir string, c
 	log.Info(logDirCreatedMessage, logPathKey, testFolder)
 
 	templateSourceFolder := path.Join(templateBasePath, TemplateFolder)
+
 	err = CopyFiles(templateSourceFolder, templateFolder)
 	if err != nil {
 		return err
 	}
+
 	log.Info("files were copied", "from", templateSourceFolder, "to", templateFolder)
 
 	testsSourceFolder := path.Join(templateBasePath, TemplateFolder, TestFolder)
+
 	err = CopyFiles(testsSourceFolder, testFolder)
 	if err != nil {
 		return err
 	}
+
 	log.Info("files were copied", "from", testsSourceFolder, "to", testFolder)
 
 	helmIgnoreSource := path.Join(templateBasePath, HelmIgnoreFile)
 	helmIgnoreFile := path.Join(templatesDest, HelmIgnoreFile)
+
 	err = CopyFile(helmIgnoreSource, helmIgnoreFile)
 	if err != nil {
 		return err
 	}
+
 	log.Info("file were copied", "from", helmIgnoreFile, "to", templatesDest)
 
 	err = renderTemplate(valuesFile, path.Join(templateBasePath, ChartValuesTemplate), ChartValuesTemplate, config)
@@ -137,21 +148,27 @@ func CopyOpenshiftTemplate(deploymentScript, templatesDest, assetsDir string, co
 	log.Info(logDirCreatedMessage, logPathKey, templatesDest)
 
 	fp := path.Join(templatesDest, config.Name+".yaml")
+
 	f, err := os.Create(fp)
+	if err != nil {
+		return fmt.Errorf("failed to create openshift template file: %w", err)
+	}
+
+	log.Info("file is created", logPathKey, fp)
+
+	err = renderTemplate(f, path.Join(templateBasePath, templateName), templateName, config)
 	if err != nil {
 		return err
 	}
-	log.Info("file is created", logPathKey, fp)
 
-	if err := renderTemplate(f, path.Join(templateBasePath, templateName), templateName, config); err != nil {
-		return err
-	}
 	log.Info("end handling Openshift template", logCodebaseNameKey, config.Name)
+
 	return nil
 }
 
 func CopyTemplate(deploymentScript, workDir, assetsDir string, cf *model.ConfigGoTemplating) error {
 	templatesDest := path.Join(workDir, "deploy-templates")
+
 	if DoesDirectoryExist(templatesDest) {
 		log.Info("deploy-templates folder already exists")
 		return nil
@@ -178,6 +195,8 @@ func renderTemplate(file *os.File, templateBasePath, templateName string, config
 	if err := tmpl.Execute(file, config); err != nil {
 		return errors.Wrap(err, "unable to render codebase deploy template")
 	}
+
 	log.Info("template has been rendered", "codebase", config.Name)
+
 	return nil
 }

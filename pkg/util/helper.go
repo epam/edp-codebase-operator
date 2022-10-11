@@ -20,6 +20,7 @@ func GetWorkDir(codebaseName, namespace string) string {
 	if !ok {
 		return fmt.Sprintf("/home/codebase-operator/edp/%v/%v/%v/%v", namespace, codebaseName, "templates", codebaseName)
 	}
+
 	return fmt.Sprintf("%v/codebase-operator/edp/%v/%v/%v/%v", value, namespace, codebaseName, "templates", codebaseName)
 }
 
@@ -28,18 +29,22 @@ func GetAssetsDir() string {
 	if !ok {
 		panic("env variable ASSETS_DIR is missing")
 	}
+
 	return value
 }
 
 func GetOwnerReference(ownerKind string, ors []metav1.OwnerReference) (*metav1.OwnerReference, error) {
 	log.V(2).Info("finding owner", "kind", ownerKind)
+
 	if len(ors) == 0 {
 		return nil, fmt.Errorf("resource doesn't have %v owner reference", ownerKind)
 	}
+
 	for _, o := range ors {
 		if o.Kind == ownerKind {
 			return &o, nil
 		}
 	}
+
 	return nil, fmt.Errorf("resource doesn't have %v owner reference", ownerKind)
 }

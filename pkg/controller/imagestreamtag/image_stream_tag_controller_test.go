@@ -62,9 +62,11 @@ func TestReconcileImageStreamTag_Reconcile_ShouldFailNotFound(t *testing.T) {
 	res, err := r.Reconcile(context.TODO(), req)
 
 	assert.Error(t, err)
+
 	if !strings.Contains(err.Error(), "no kind is registered for the type v1.ImageStreamTag") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
+
 	assert.False(t, res.Requeue)
 }
 
@@ -100,9 +102,11 @@ func TestReconcileImageStreamTag_Reconcile_ShouldFail(t *testing.T) {
 	res, err := r.Reconcile(context.TODO(), req)
 
 	assert.Error(t, err)
+
 	if !strings.Contains(err.Error(), "couldn't add tag to codebase image stream cis") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
+
 	assert.False(t, res.Requeue)
 }
 
@@ -145,6 +149,7 @@ func TestReconcileImageStreamTag_Reconcile_ShouldPass(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.False(t, res.Requeue)
+
 	istResp := &codebaseApi.CodebaseImageStream{}
 	err = fakeCl.Get(context.TODO(),
 		types.NamespacedName{

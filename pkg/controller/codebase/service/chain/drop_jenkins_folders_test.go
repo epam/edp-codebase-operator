@@ -84,12 +84,14 @@ func TestDropJenkinsFolders_ServeRequest(t *testing.T) {
 		jfr); err != nil {
 		t.Error("Unable to get JenkinsFolder")
 	}
+
 	assert.Equal(t, jfr.Labels["codebase"], "another-codebase")
 
 	jflr := &jenkinsApi.JenkinsFolderList{}
 	if err := fakeCl.List(ctx, jflr); err != nil {
 		t.Error("Unable to get JenkinsFolder")
 	}
+
 	assert.Equal(t, len(jflr.Items), 1)
 }
 

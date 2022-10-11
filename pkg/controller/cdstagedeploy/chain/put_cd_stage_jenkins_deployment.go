@@ -38,7 +38,8 @@ func (h PutCDStageJenkinsDeployment) ServeRequest(stageDeploy *codebaseApi.CDSta
 	}
 
 	if jd != nil {
-		h.log.Info("CDStageJenkinsDeployment already exists. skip creating.", "name", stageDeploy.Name)
+		h.log.Info("CDStageJenkinsDeployment already exists. skip creating.")
+
 		return &util.CDStageJenkinsDeploymentHasNotBeenProcessedError{
 			Message: fmt.Sprintf("%v has not been processed for previous version of application yet."+
 				" Check status of %v CDStageJenkinsDeployment resource to get more information.",
@@ -49,29 +50,38 @@ func (h PutCDStageJenkinsDeployment) ServeRequest(stageDeploy *codebaseApi.CDSta
 	if err := h.create(stageDeploy); err != nil {
 		return errors.Wrapf(err, "couldn't create %v cd stage jenkins deployment", stageDeploy.Name)
 	}
+
 	log.Info("creating CDStageJenkinsDeployment has been finished.")
+
 	return nil
 }
 
 func (h PutCDStageJenkinsDeployment) getCDStageJenkinsDeployment(name, namespace string) (*jenkinsApi.CDStageJenkinsDeployment, error) {
-	h.log.Info("getting cd stage jenkins deployment", "name", name)
+	h.log.Info("getting cd stage jenkins deployment", "stageDeployment", name)
+
+	ctx := context.Background()
 	i := &jenkinsApi.CDStageJenkinsDeployment{}
 	nn := types.NamespacedName{
 		Namespace: namespace,
 		Name:      name,
 	}
-	if err := h.client.Get(context.TODO(), nn, i); err != nil {
+
+	if err := h.client.Get(ctx, nn, i); err != nil {
 		if k8sErrors.IsNotFound(err) {
 			return nil, nil
 		}
-		return nil, err
+
+		return nil, fmt.Errorf("failed to fetch 'CDStageJenkinsDeployment' resource %q: %w", name, err)
 	}
+
 	return i, nil
 }
 
 func (h PutCDStageJenkinsDeployment) create(stageDeploy *codebaseApi.CDStageDeploy) error {
 	log := h.log.WithValues("name", stageDeploy.Name)
 	log.Info("cd stage jenkins deployment is not present in cluster. start creating...")
+
+	ctx := context.Background()
 
 	labels, err := h.generateLabels(stageDeploy.Name, stageDeploy.Namespace)
 	if err != nil {
@@ -105,18 +115,21 @@ func (h PutCDStageJenkinsDeployment) create(stageDeploy *codebaseApi.CDStageDepl
 			Tags: tagsList,
 		},
 	}
-	if err := h.client.Create(context.TODO(), jdCommand); err != nil {
-		return err
+
+	err = h.client.Create(ctx, jdCommand)
+	if err != nil {
+		return fmt.Errorf("failed to create CDStageJenkinsDeployment resource: %w", err)
 	}
 
 	log.Info("cd stage jenkins deployment has been created.")
+
 	return nil
 }
 
 func (h PutCDStageJenkinsDeployment) generateLabels(cdStageDeployName, ns string) (map[string]string, error) {
 	ji, err := platform.GetFirstJenkinsInstance(h.client, ns)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to fetch jenkins instance from cluster: %w", err)
 	}
 
 	return map[string]string{

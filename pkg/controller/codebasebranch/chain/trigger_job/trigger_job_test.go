@@ -11,6 +11,7 @@ func Test_isJenkinsFolderAvailable(t *testing.T) {
 	type args struct {
 		jf *jenkinsApi.JenkinsFolder
 	}
+
 	tests := []struct {
 		name string
 		args args
@@ -20,6 +21,7 @@ func Test_isJenkinsFolderAvailable(t *testing.T) {
 		{"Jenkinsfolder is NOT available", args{jf: &jenkinsApi.JenkinsFolder{Status: jenkinsApi.JenkinsFolderStatus{Available: false}}}, false},
 		{"Jenkinsfolder is NOT available", args{jf: nil}, false},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := isJenkinsFolderAvailable(tt.args.jf); got != tt.want {
@@ -33,8 +35,9 @@ func Test_hasNewVersion(t *testing.T) {
 	type args struct {
 		b *codebaseApi.CodebaseBranch
 	}
-	var version1 string = "0.0.0-SNAPSHOT"
-	var version2 string = "1.0.0-SNAPSHOT"
+
+	version1 := "0.0.0-SNAPSHOT"
+	version2 := "1.0.0-SNAPSHOT"
 	tests := []struct {
 		name string
 		args args
@@ -63,6 +66,7 @@ func Test_hasNewVersion(t *testing.T) {
 				},
 			}, true},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := hasNewVersion(tt.args.b); got != tt.want {

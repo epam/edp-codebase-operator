@@ -55,6 +55,7 @@ func TestGetGerritPort_ShouldFailPortNotDefined(t *testing.T) {
 	port, err := GetGerritPort(fakeCl, "stub-namespace")
 	assert.Nil(t, port)
 	assert.Error(t, err)
+
 	if !strings.Contains(err.Error(), "ssh port is zero or not defined in gerrit GitServer CR") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
@@ -147,6 +148,7 @@ func TestGetEdpComponent_ShouldFail(t *testing.T) {
 
 	scheme := runtime.NewScheme()
 	scheme.AddKnownTypes(v1.SchemeGroupVersion, c)
+
 	mockErr := errors.New("FATAL")
 
 	mc.On("Get", types.NamespacedName{
@@ -194,6 +196,7 @@ func TestGetCodebase_ShouldFail(t *testing.T) {
 
 	scheme := runtime.NewScheme()
 	scheme.AddKnownTypes(v1.SchemeGroupVersion, c)
+
 	mockErr := errors.New("FATAL")
 
 	mc.On("Get", types.NamespacedName{
@@ -211,7 +214,6 @@ func TestGetCodebase_ShouldFail(t *testing.T) {
 }
 
 func TestGetSecret_ShouldPass(t *testing.T) {
-
 	secret := &coreV1.Secret{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "stub-name",
@@ -227,6 +229,7 @@ func TestGetSecret_ShouldPass(t *testing.T) {
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(secret).Build()
 
 	gs, err := GetSecret(fakeCl, "stub-name", "stub-namespace")
+
 	assert.Equal(t, gs.Name, "stub-name")
 	assert.NoError(t, err)
 }
@@ -244,15 +247,16 @@ func TestGetSecret_ShouldFail(t *testing.T) {
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(s).Build()
 
 	gs, err := GetSecret(fakeCl, "non-existing-stub-name", "stub-namespace")
+
 	assert.Nil(t, gs)
 	assert.Error(t, err)
+
 	if !strings.Contains(err.Error(), "secrets \"non-existing-stub-name\" not found") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
 }
 
 func TestGetVcsBasicAuthConfig_ShouldPass(t *testing.T) {
-
 	secret := &coreV1.Secret{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "stub-name",
@@ -289,13 +293,13 @@ func TestGetVcsBasicAuthConfig_ShouldFail(t *testing.T) {
 	assert.Equal(t, u, "")
 	assert.Equal(t, p, "")
 	assert.Error(t, err)
+
 	if !strings.Contains(err.Error(), "secrets \"non-existing-stub-name\" not found") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
 }
 
 func TestGetVcsBasicAuthConfig_ShouldFailIfUsernameOrPasswordIsNotDefined(t *testing.T) {
-
 	secret := &coreV1.Secret{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "stub-name",
@@ -313,6 +317,7 @@ func TestGetVcsBasicAuthConfig_ShouldFailIfUsernameOrPasswordIsNotDefined(t *tes
 	assert.Equal(t, u, "")
 	assert.Equal(t, p, "")
 	assert.Error(t, err)
+
 	if !strings.Contains(err.Error(), "username/password keys are not defined in Secret stub-name") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
@@ -356,6 +361,7 @@ func TestGetGitServer_ShouldFailIfNotFound(t *testing.T) {
 	ggs, err := GetGitServer(fakeCl, "non-existing", "stub-namespace")
 	assert.Nil(t, ggs)
 	assert.Error(t, err)
+
 	if !strings.Contains(err.Error(), "GitServer non-existing doesn't exist in k8s") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
@@ -407,6 +413,7 @@ func TestGetUserSettings_ShouldFailToConvertBoolVcsintegration(t *testing.T) {
 	model, err := GetUserSettings(fakeCl, "stub-namespace")
 	assert.Error(t, err)
 	assert.Nil(t, model)
+
 	if !strings.Contains(err.Error(), "strconv.ParseBool: parsing \"5\": invalid syntax") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
@@ -429,6 +436,7 @@ func TestGetUserSettings_ShouldFailToConvertBoolPerfintegration(t *testing.T) {
 	model, err := GetUserSettings(fakeCl, "stub-namespace")
 	assert.Error(t, err)
 	assert.Nil(t, model)
+
 	if !strings.Contains(err.Error(), "strconv.ParseBool: parsing \"\": invalid syntax") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
@@ -448,6 +456,7 @@ func TestGetUserSettings_ShouldFailOnFindConfigmap(t *testing.T) {
 	model, err := GetUserSettings(fakeCl, "another-namespace")
 	assert.Error(t, err)
 	assert.Nil(t, model)
+
 	if !strings.Contains(err.Error(), "configmaps \"edp-config\" not found") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
@@ -469,6 +478,7 @@ func TestGetWatchNamespace_NotDefined(t *testing.T) {
 	ns, err := GetWatchNamespace()
 	assert.Equal(t, ns, "")
 	assert.Error(t, err)
+
 	if !strings.Contains(err.Error(), "WATCH_NAMESPACE must be set") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
@@ -499,6 +509,7 @@ func TestGetDebugMode_ShouldFailOnConvertToBool(t *testing.T) {
 	d, err := GetDebugMode()
 	assert.False(t, d)
 	assert.Error(t, err)
+
 	if !strings.Contains(err.Error(), "strconv.ParseBool: parsing \"6\": invalid syntax") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}

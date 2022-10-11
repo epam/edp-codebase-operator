@@ -75,9 +75,11 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldFailNotFound(t *testing.T) {
 	res, err := r.Reconcile(context.TODO(), req)
 
 	assert.Error(t, err)
+
 	if !strings.Contains(err.Error(), "no kind is registered for the type v1.Codebase") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
+
 	assert.False(t, res.Requeue)
 }
 
@@ -86,6 +88,7 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldFailGetCodebase(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	c := &codebaseApi.CodebaseBranch{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "NewCodebaseBranch",
@@ -115,6 +118,7 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldFailGetCodebase(t *testing.T) {
 
 	assert.Error(t, err)
 	assert.False(t, res.Requeue)
+
 	if !strings.Contains(err.Error(), "Unable to get Codebase ") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
@@ -125,6 +129,7 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldFailDeleteCodebasebranch(t *tes
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	c := &codebaseApi.CodebaseBranch{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "NewCodebaseBranch",
@@ -169,6 +174,7 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldFailDeleteCodebasebranch(t *tes
 
 	assert.Error(t, err)
 	assert.False(t, res.Requeue)
+
 	if !strings.Contains(err.Error(), "Unable to remove codebasebranch NewCodebaseBranch") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
@@ -179,6 +185,7 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldPassDeleteCodebasebranch(t *tes
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	cb := &codebaseApi.CodebaseBranch{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "NewCodebaseBranch",
@@ -236,6 +243,7 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldPassWithDeleteJobFailure(t *tes
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	cb := &codebaseApi.CodebaseBranch{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "NewCodebaseBranch",
@@ -347,6 +355,7 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldPassWithDeleteJobFailure(t *tes
 	assert.NoError(t, err)
 	assert.False(t, res.Requeue)
 	assert.Equal(t, res.RequeueAfter, 10*time.Second)
+
 	cResp := &codebaseApi.CodebaseBranch{}
 	err = fakeCl.Get(context.TODO(),
 		types.NamespacedName{
@@ -363,6 +372,7 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldPassWithCreatingCIS(t *testing.
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	cb := &codebaseApi.CodebaseBranch{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "NewCodebaseBranch",
@@ -479,7 +489,9 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldPassWithCreatingCIS(t *testing.
 
 	assert.NoError(t, err)
 	assert.False(t, res.Requeue)
+
 	cResp := &codebaseApi.CodebaseImageStream{}
+
 	err = fakeCl.Get(context.TODO(),
 		types.NamespacedName{
 			Name:      "NewCodebase-master",
@@ -490,6 +502,7 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldPassWithCreatingCIS(t *testing.
 	assert.Equal(t, cResp.Spec.ImageName, "stub-url/namespace/NewCodebase")
 
 	gotCodebaseBranch := &codebaseApi.CodebaseBranch{}
+
 	err = fakeCl.Get(context.TODO(), types.NamespacedName{
 		Name:      "NewCodebaseBranch",
 		Namespace: "namespace",
@@ -497,6 +510,7 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldPassWithCreatingCIS(t *testing.
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	expectedLabels := map[string]string{
 		codebasebranch.LabelCodebaseName: "NewCodebase",
 	}
@@ -508,6 +522,7 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldRequeueWithCodebaseNotReady(t *
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	cb := &codebaseApi.CodebaseBranch{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "NewCodebaseBranch",
@@ -562,6 +577,7 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldRequeueWithCodebaseNotReady(t *
 	assert.Equal(t, res.RequeueAfter, 5*time.Second)
 
 	gotCodebaseBranch := &codebaseApi.CodebaseBranch{}
+
 	err = fakeCl.Get(context.TODO(), types.NamespacedName{
 		Name:      "NewCodebaseBranch",
 		Namespace: "namespace",
@@ -569,6 +585,7 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldRequeueWithCodebaseNotReady(t *
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	expectedLabels := map[string]string{
 		codebasebranch.LabelCodebaseName: "NewCodebase",
 	}

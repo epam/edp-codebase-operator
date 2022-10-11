@@ -66,9 +66,11 @@ func TestReconcileGitServer_Reconcile_ShouldFailNotFound(t *testing.T) {
 	res, err := r.Reconcile(context.TODO(), req)
 
 	assert.Error(t, err)
+
 	if !strings.Contains(err.Error(), "no kind is registered for the type v1.GitServer") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
+
 	assert.False(t, res.Requeue)
 }
 
@@ -103,9 +105,11 @@ func TestReconcileGitServer_Reconcile_ShouldFailToGetSecret(t *testing.T) {
 	res, err := r.Reconcile(context.TODO(), req)
 
 	assert.Error(t, err)
+
 	if !strings.Contains(err.Error(), "an error has occurred  while getting ssh-secret secret") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
+
 	assert.False(t, res.Requeue)
 }
 
@@ -239,6 +243,7 @@ func TestReconcileGitServer_ServerUnavailable(t *testing.T) {
 	res, err := r.Reconcile(context.TODO(), req)
 	assert.NoError(t, err)
 	assert.Equal(t, res.RequeueAfter, time.Second*30)
+
 	_, ok := logger.InfoMessages["git server does not have connection, will try again later"]
 	assert.True(t, ok)
 }

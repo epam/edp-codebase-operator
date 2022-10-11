@@ -21,7 +21,7 @@ func GetRepositoryCredentialsIfExists(cb *codebaseApi.Codebase, c client.Client)
 
 	repositoryUsername, repositoryPassword, err := util.GetVcsBasicAuthConfig(c, cb.Namespace, secret)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("failed to fetch VCS auth config: %w", err)
 	}
 
 	userName = &repositoryUsername
@@ -43,7 +43,7 @@ func CheckoutBranch(repository *string, projectPath, branchName string, g git.Gi
 
 	currentBranchName, err := g.GetCurrentBranchName(projectPath)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get current branch name: %w", err)
 	}
 
 	if currentBranchName == branchName {

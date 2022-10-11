@@ -22,6 +22,7 @@ var log = ctrl.Log.WithName("codebase_branch_factory")
 
 func createJenkinsDefChain(c client.Client) handler.CodebaseBranchHandler {
 	log.Info("chain is selected", "type", "jenkins chain")
+
 	return trigger_job.TriggerReleaseJob{
 		TriggerJob: trigger_job.TriggerJob{
 			Client: c,
@@ -41,6 +42,7 @@ func createJenkinsDefChain(c client.Client) handler.CodebaseBranchHandler {
 
 func createGitlabCiDefChain(c client.Client) handler.CodebaseBranchHandler {
 	log.Info("chain is selected", "type", "gitlab ci chain")
+
 	return put_branch_in_git.PutBranchInGit{
 		Client: c,
 		Git:    &gitserver.GitProvider{},
@@ -59,6 +61,7 @@ func createGitlabCiDefChain(c client.Client) handler.CodebaseBranchHandler {
 
 func createTektonDefChain(c client.Client) handler.CodebaseBranchHandler {
 	log.Info("chain is selected", "type", "tekton chain")
+
 	return put_branch_in_git.PutBranchInGit{
 		Client: c,
 		Git:    &gitserver.GitProvider{},
@@ -98,8 +101,10 @@ func GetChain(ciType string, c client.Client) handler.CodebaseBranchHandler {
 	if strings.EqualFold(ciType, util.GitlabCi) {
 		return createGitlabCiDefChain(c)
 	}
+
 	if strings.EqualFold(ciType, util.Tekton) {
 		return createTektonDefChain(c)
 	}
+
 	return createJenkinsDefChain(c)
 }

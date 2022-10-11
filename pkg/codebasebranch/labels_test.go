@@ -39,6 +39,7 @@ func TestAddCodebaseLabel_OK(t *testing.T) {
 	assert.NoError(t, err)
 
 	gotCodebaseBranch := &codebaseApi.CodebaseBranch{}
+
 	err = fakeK8sClient.Get(context.TODO(), types.NamespacedName{
 		Name:      cbBranchName_1,
 		Namespace: namespace,
@@ -46,6 +47,7 @@ func TestAddCodebaseLabel_OK(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	expectedLabels := map[string]string{
 		LabelCodebaseName: cbName_1,
 	}
@@ -79,6 +81,7 @@ func TestAddCodebaseLabel_LabelExists(t *testing.T) {
 	assert.NoError(t, err)
 
 	gotCodebaseBranch := &codebaseApi.CodebaseBranch{}
+
 	err = fakeK8sClient.Get(context.TODO(), types.NamespacedName{
 		Name:      cbBranchName_1,
 		Namespace: namespace,
@@ -86,6 +89,7 @@ func TestAddCodebaseLabel_LabelExists(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	expectedLabels := map[string]string{
 		LabelCodebaseName: cbName_1,
 	}

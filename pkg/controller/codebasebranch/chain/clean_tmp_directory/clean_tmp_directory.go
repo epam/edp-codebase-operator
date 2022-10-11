@@ -21,12 +21,15 @@ func (*CleanTempDirectory) ServeRequest(cb *codebaseApi.CodebaseBranch) error {
 	rl.Info("start CleanTempDirectory method...")
 
 	wd := util.GetWorkDir(cb.Spec.CodebaseName, fmt.Sprintf("%v-%v", cb.Namespace, cb.Spec.BranchName))
+
 	if err := deleteWorkDirectory(wd); err != nil {
 		setFailedFields(cb, codebaseApi.CleanData, err.Error())
+
 		return err
 	}
 
 	rl.Info("end CleanTempDirectory method...")
+
 	return nil
 }
 
@@ -34,7 +37,9 @@ func deleteWorkDirectory(dir string) error {
 	if err := util.RemoveDirectory(dir); err != nil {
 		return errors.Wrapf(err, "couldn't delete directory %v", dir)
 	}
+
 	log.Info("directory was cleaned", "path", dir)
+
 	return nil
 }
 

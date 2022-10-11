@@ -8,15 +8,15 @@ import (
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver/mocks"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/platform"
 )
 
 func TestGitProvider_CheckPermissions(t *testing.T) {
 	gp := GitProvider{}
-	var (
-		user = "user"
-		pass = "pass"
-	)
+	user := "user"
+	pass := "pass"
+
 	httpmock.Reset()
 	httpmock.Activate()
 
@@ -27,6 +27,7 @@ func TestGitProvider_CheckPermissions(t *testing.T) {
 
 	httpmock.RegisterResponder("GET", "http://repo.git/info/refs?service=git-upload-pack",
 		httpmock.NewBytesResponder(200, bts))
+
 	if !gp.CheckPermissions("http://repo.git", &user, &pass) {
 		t.Fatal("repo must be accessible")
 	}
@@ -34,10 +35,9 @@ func TestGitProvider_CheckPermissions(t *testing.T) {
 
 func TestGitProvider_CheckPermissions_NoRefs(t *testing.T) {
 	gp := GitProvider{}
-	var (
-		user = "user"
-		pass = "pass"
-	)
+	user := "user"
+	pass := "pass"
+
 	httpmock.Reset()
 	httpmock.Activate()
 
@@ -51,6 +51,7 @@ func TestGitProvider_CheckPermissions_NoRefs(t *testing.T) {
 
 	httpmock.RegisterResponder("GET", "http://repo.git/info/refs?service=git-upload-pack",
 		httpmock.NewBytesResponder(200, bts))
+
 	if gp.CheckPermissions("http://repo.git", &user, &pass) {
 		t.Fatal("repo must be not accessible")
 	}
@@ -72,7 +73,7 @@ func TestInitAuth(t *testing.T) {
 }
 
 func TestGitProvider_CreateChildBranch(t *testing.T) {
-	cm := commandMock{}
+	cm := mocks.CommandMock{}
 	gp := GitProvider{
 		commandBuilder: func(cmd string, params ...string) Command {
 			return &cm
@@ -80,11 +81,12 @@ func TestGitProvider_CreateChildBranch(t *testing.T) {
 	}
 
 	cm.On("CombinedOutput").Return([]byte("t"), nil)
+
 	err := gp.CreateChildBranch("dir", "br1", "br2")
 	assert.NoError(t, err)
 	cm.AssertExpectations(t)
 
-	cmError := commandMock{}
+	cmError := mocks.CommandMock{}
 	gp = GitProvider{
 		commandBuilder: func(cmd string, params ...string) Command {
 			return &cmError
@@ -92,13 +94,14 @@ func TestGitProvider_CreateChildBranch(t *testing.T) {
 	}
 
 	cmError.On("CombinedOutput").Return([]byte("t"), errors.New("fatal")).Once()
+
 	err = gp.CreateChildBranch("dir", "br1", "br2")
 	assert.Error(t, err)
 	assert.EqualError(t, err, "unable to checkout branch, err: : fatal")
 }
 
 func TestGitProvider_RemoveBranch(t *testing.T) {
-	cm := commandMock{}
+	cm := mocks.CommandMock{}
 	gp := GitProvider{
 		commandBuilder: func(cmd string, params ...string) Command {
 			return &cm
@@ -106,11 +109,12 @@ func TestGitProvider_RemoveBranch(t *testing.T) {
 	}
 
 	cm.On("CombinedOutput").Return([]byte("t"), nil)
+
 	err := gp.RemoveBranch("dir", "br1")
 	assert.NoError(t, err)
 	cm.AssertExpectations(t)
 
-	cmError := commandMock{}
+	cmError := mocks.CommandMock{}
 	gp = GitProvider{
 		commandBuilder: func(cmd string, params ...string) Command {
 			return &cmError
@@ -118,13 +122,14 @@ func TestGitProvider_RemoveBranch(t *testing.T) {
 	}
 
 	cmError.On("CombinedOutput").Return([]byte("t"), errors.New("fatal")).Once()
+
 	err = gp.RemoveBranch("dir", "br1")
 	assert.Error(t, err)
 	assert.EqualError(t, err, "unable to remove branch, err: : fatal")
 }
 
 func TestGitProvider_RenameBranch(t *testing.T) {
-	cm := commandMock{}
+	cm := mocks.CommandMock{}
 	gp := GitProvider{
 		commandBuilder: func(cmd string, params ...string) Command {
 			return &cm
@@ -132,11 +137,12 @@ func TestGitProvider_RenameBranch(t *testing.T) {
 	}
 
 	cm.On("CombinedOutput").Return([]byte("t"), nil)
+
 	err := gp.RenameBranch("dir", "br1", "br2")
 	assert.NoError(t, err)
 	cm.AssertExpectations(t)
 
-	cmError := commandMock{}
+	cmError := mocks.CommandMock{}
 	gp = GitProvider{
 		commandBuilder: func(cmd string, params ...string) Command {
 			return &cmError
@@ -144,6 +150,7 @@ func TestGitProvider_RenameBranch(t *testing.T) {
 	}
 
 	cmError.On("CombinedOutput").Return([]byte("t"), errors.New("fatal")).Once()
+
 	err = gp.RenameBranch("dir", "br1", "br2")
 	assert.Error(t, err)
 	assert.EqualError(t, err, "unable to checkout branch, err: : fatal")

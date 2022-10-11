@@ -12,15 +12,9 @@ import (
 )
 
 func TestCopyTemplate_HelmTemplates_ShouldPass(t *testing.T) {
-	// ToDo: replace /tmp with t.TempDir()
-	testDir, err := os.MkdirTemp("/tmp", "codebase")
-	require.NoError(t, err, "unable to create temp directory for testing")
+	t.Parallel()
 
-	defer func() {
-		err = os.RemoveAll(testDir)
-		require.NoError(t, err)
-	}()
-
+	testDir := t.TempDir()
 	cf := &model.ConfigGoTemplating{
 		Name:         "c-name",
 		PlatformType: "kubernetes",
@@ -29,31 +23,29 @@ func TestCopyTemplate_HelmTemplates_ShouldPass(t *testing.T) {
 		GitURL:       "https://example.com",
 	}
 
-	err = CopyTemplate(HelmChartDeploymentScriptType, testDir, "../../build", cf)
+	err := CopyTemplate(HelmChartDeploymentScriptType, testDir, "../../build", cf)
 	require.NoError(t, err)
 
 	chf := fmt.Sprintf("%v/deploy-templates/Chart.yaml", testDir)
+
 	_, err = os.Stat(chf)
 	if err != nil {
 		t.Fatalf("unable to check test file")
 	}
+
 	// read the whole file at once
 	b, err := os.ReadFile(chf)
 	if err != nil {
 		t.Fatalf("unable to read test file")
 	}
+
 	assert.Contains(t, string(b), "home: https://example.com")
 }
 
 func TestCopyTemplate_OpenShiftTemplates_ShouldPass(t *testing.T) {
-	testDir, err := os.MkdirTemp("/tmp", "codebase")
-	require.NoError(t, err, "unable to create temp directory for testing")
+	t.Parallel()
 
-	defer func() {
-		err = os.RemoveAll(testDir)
-		require.NoError(t, err)
-	}()
-
+	testDir := t.TempDir()
 	cf := &model.ConfigGoTemplating{
 		Name:         "c-name",
 		PlatformType: "kubernetes",
@@ -62,10 +54,11 @@ func TestCopyTemplate_OpenShiftTemplates_ShouldPass(t *testing.T) {
 		GitURL:       "https://example.com",
 	}
 
-	err = CopyTemplate("openshift-template", testDir, "../../build", cf)
+	err := CopyTemplate("openshift-template", testDir, "../../build", cf)
 	require.NoError(t, err)
 
 	chf := fmt.Sprintf("%v/deploy-templates/c-name.yaml", testDir)
+
 	_, err = os.Stat(chf)
 	if err != nil {
 		t.Fatalf("unable to check test file")
@@ -75,39 +68,33 @@ func TestCopyTemplate_OpenShiftTemplates_ShouldPass(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unable to read test file")
 	}
+
 	assert.Contains(t, string(b), "description: Openshift template for Go application/service deploying")
 }
 
 func TestCopyTemplate_ShouldNotOverwriteExistingDeploymentTemaplates(t *testing.T) {
-	testDir, err := os.MkdirTemp("/tmp", "codebase")
-	require.NoError(t, err, "unable to create temp directory for testing")
+	t.Parallel()
 
-	defer func() {
-		err = os.RemoveAll(testDir)
-		require.NoError(t, err)
-	}()
-
+	testDir := t.TempDir()
 	cf := &model.ConfigGoTemplating{}
-	if err = os.MkdirAll(fmt.Sprintf("%v/deploy-templates", testDir), 0o775); err != nil {
+
+	if err := os.MkdirAll(fmt.Sprintf("%v/deploy-templates", testDir), 0o775); err != nil {
 		t.Fatal("Unable to create deploy-templates dir")
 	}
 
-	err = CopyTemplate("openshift-template", testDir, "../../build", cf)
+	err := CopyTemplate("openshift-template", testDir, "../../build", cf)
+
 	assert.NoError(t, err)
 }
 
 func TestCopyTemplate_ShouldFailOnUnsupportedDeploymemntType(t *testing.T) {
-	testDir, err := os.MkdirTemp("/tmp", "codebase")
-	require.NoError(t, err, "unable to create temp directory for testing")
+	t.Parallel()
 
-	defer func() {
-		err = os.RemoveAll(testDir)
-		require.NoError(t, err)
-	}()
-
+	testDir := t.TempDir()
 	cf := &model.ConfigGoTemplating{}
 
-	err = CopyTemplate("non-supported-deployment-type", testDir, "../../build", cf)
+	err := CopyTemplate("non-supported-deployment-type", testDir, "../../build", cf)
+
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "Unsupported deployment type")
 }

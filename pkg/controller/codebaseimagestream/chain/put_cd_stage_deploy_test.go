@@ -176,7 +176,6 @@ func TestPutCDStageDeploy_CdstagedeployShouldFailOnSearch(t *testing.T) {
 	if !strings.Contains(err.Error(), "couldn't get pipeline-name-stage-name-cb-name cd stage deploy") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
-
 }
 
 func TestPutCDStageDeploy_ShouldFailWhenCdstagedeployExist(t *testing.T) {
@@ -322,6 +321,7 @@ func TestPutCDStageDeploy_ShouldFailWithIncorrectTagstimestamp(t *testing.T) {
 
 	err := chain.ServeRequest(cis)
 	assert.Error(t, err)
+
 	if !strings.Contains(err.Error(), "couldn't construct command to create pipeline-name-stage-name-cb-name cd stage deploy") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
@@ -391,6 +391,7 @@ func TestPutCDStageDeploy_ShouldFailWithInvalidTags(t *testing.T) {
 
 	_, err := getLastTag(cis)
 	assert.Error(t, err)
+
 	if !strings.Contains(err.Error(), "There are no valid tags") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
@@ -401,6 +402,7 @@ func Test_generateCdStageDeployName(t *testing.T) {
 		env      string
 		codebase string
 	}
+
 	tests := []struct {
 		name string
 		args args
@@ -410,6 +412,7 @@ func Test_generateCdStageDeployName(t *testing.T) {
 		{"2", args{"env/2", "codebase"}, "env-2-codebase"},
 		{"3", args{"env/1/1-2", "codebase"}, "env-1-1-2-codebase"},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := generateCdStageDeployName(tt.args.env, tt.args.codebase); got != tt.want {
@@ -490,6 +493,7 @@ func TestPutCDStageDeploy_ShouldFailToCreateCdstagedeploy(t *testing.T) {
 	}, &codebaseApi.CDStageDeploy{}).Return(fakeCl)
 
 	var createOpts []client.CreateOption
+
 	mc.On("Create", existingCdsd, createOpts).Return(mockErr)
 
 	chain := PutCDStageDeploy{
@@ -498,9 +502,7 @@ func TestPutCDStageDeploy_ShouldFailToCreateCdstagedeploy(t *testing.T) {
 	}
 
 	err := chain.ServeRequest(cis)
-	assert.Error(t, err)
 
-	if errors.Cause(err) != mockErr {
-		t.Fatal("wrong error returned")
-	}
+	assert.Error(t, err)
+	assert.ErrorIs(t, err, mockErr)
 }

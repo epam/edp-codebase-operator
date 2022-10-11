@@ -23,6 +23,7 @@ func IsCodebaseValid(cr *codebaseApi.Codebase) bool {
 		log.Info("Provided unsupported language", "language", cr.Spec.Lang)
 		return false
 	}
+
 	return true
 }
 
@@ -32,5 +33,6 @@ func containSettings(slice []string, value string) bool {
 			return true
 		}
 	}
+
 	return false
 }

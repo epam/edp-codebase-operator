@@ -2,6 +2,7 @@ package chain
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/pkg/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -15,7 +16,7 @@ import (
 func pushChangesToGit(c client.Client, g git.Git, projectPath string, cb *codebaseApi.Codebase) error {
 	gs, err := util.GetGitServer(c, cb.Spec.GitServer, cb.Namespace)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to fetch GitServer: %w", err)
 	}
 
 	secret, err := util.GetSecret(c, gs.NameSshKeySecret, cb.Namespace)
@@ -26,10 +27,13 @@ func pushChangesToGit(c client.Client, g git.Git, projectPath string, cb *codeba
 	k := string(secret.Data[util.PrivateSShKeyName])
 	u := gs.GitUser
 	p := gs.SshPort
+
 	if err := g.PushChanges(k, u, projectPath, p, cb.Spec.DefaultBranch); err != nil {
 		return errors.Wrapf(err, "an error has occurred while pushing changes for %v repo", projectPath)
 	}
+
 	log.Info("templates have been pushed")
+
 	return nil
 }
 
@@ -46,10 +50,15 @@ func setIntermediateSuccessFields(ctx context.Context, c client.Client, cb *code
 		Git:             cb.Status.Git,
 	}
 
-	if err := c.Status().Update(ctx, cb); err != nil {
-		if err := c.Update(ctx, cb); err != nil {
-			return err
-		}
+	err := c.Status().Update(ctx, cb)
+	if err != nil {
+		return fmt.Errorf("failed to update status field of %q resource 'Codebase': %w", cb.Name, err)
 	}
+
+	err = c.Update(ctx, cb)
+	if err != nil {
+		return fmt.Errorf("failed to update %q resource 'Codebase': %w", cb.Name, err)
+	}
+
 	return nil
 }

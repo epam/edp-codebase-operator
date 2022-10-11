@@ -36,10 +36,12 @@ func (h TriggerJob) Trigger(cb *codebaseApi.CodebaseBranch, actionType codebaseA
 	c, err := util.GetCodebase(h.Client, cb.Spec.CodebaseName, cb.Namespace)
 	if err != nil {
 		h.SetFailedFields(cb, actionType, err.Error())
-		return err
+
+		return fmt.Errorf("failed to fetch codebase resource: %w", err)
 	}
 
 	jfn := fmt.Sprintf("%v-%v", c.Name, "codebase")
+
 	jf, err := h.GetJenkinsFolder(jfn, c.Namespace)
 	if err != nil {
 		h.SetFailedFields(cb, actionType, err.Error())
@@ -49,25 +51,35 @@ func (h TriggerJob) Trigger(cb *codebaseApi.CodebaseBranch, actionType codebaseA
 	if !c.Status.Available || !isJenkinsFolderAvailable(jf) {
 		log.Info("couldn't start reconciling for branch. someone of codebase or jenkins folder is unavailable",
 			"codebase", c.Name, "branch", cb.Name)
+
 		return util.NewCodebaseBranchReconcileError(fmt.Sprintf("%v codebase and/or jenkinsfolder %v are/is unavailable", c.Name, jfn))
 	}
 
 	if c.Spec.Versioning.Type == util.VersioningTypeEDP && hasNewVersion(cb) {
-		if err := h.ProcessNewVersion(cb); err != nil {
+		err = h.ProcessNewVersion(cb)
+		if err != nil {
 			h.SetFailedFields(cb, actionType, err.Error())
+
 			return errors.Wrapf(err, "couldn't process new version for %v branch", cb.Name)
 		}
 	}
 
-	if err := triggerFunc(cb); err != nil {
+	err = triggerFunc(cb)
+	if err != nil {
 		h.SetFailedFields(cb, actionType, err.Error())
 		return err
 	}
 
-	return handler.NextServeOrNil(h.Next, cb)
+	err = handler.NextServeOrNil(h.Next, cb)
+	if err != nil {
+		return fmt.Errorf("failed to process next handler in chain: %w", err)
+	}
+
+	return nil
 }
 
 func (h TriggerJob) SetIntermediateSuccessFields(cb *codebaseApi.CodebaseBranch, action codebaseApi.ActionType) error {
+	ctx := context.Background()
 	cb.Status = codebaseApi.CodebaseBranchStatus{
 		Status:              model.StatusInit,
 		LastTimeUpdated:     metaV1.Now(),
@@ -81,11 +93,16 @@ func (h TriggerJob) SetIntermediateSuccessFields(cb *codebaseApi.CodebaseBranch,
 		FailureCount:        cb.Status.FailureCount,
 	}
 
-	if err := h.Client.Status().Update(context.TODO(), cb); err != nil {
-		if err := h.Client.Update(context.TODO(), cb); err != nil {
-			return errors.Wrapf(err, "SetIntermediateSuccessFields failed for %v branch", cb.Name)
-		}
+	err := h.Client.Status().Update(ctx, cb)
+	if err != nil {
+		return fmt.Errorf("failed to update CodebaseBranchStatus status field %q: %w", cb.Name, err)
 	}
+
+	err = h.Client.Update(ctx, cb)
+	if err != nil {
+		return fmt.Errorf("SetIntermediateSuccessFields failed for %v branch: %w", cb.Name, err)
+	}
+
 	return nil
 }
 
@@ -107,6 +124,7 @@ func (TriggerJob) SetFailedFields(cb *codebaseApi.CodebaseBranch, a codebaseApi.
 
 func (h TriggerJob) GetJenkinsFolder(name, namespace string) (*jenkinsApi.JenkinsFolder, error) {
 	i := &jenkinsApi.JenkinsFolder{}
+
 	err := h.Client.Get(context.TODO(), types.NamespacedName{
 		Namespace: namespace,
 		Name:      name,
@@ -115,21 +133,28 @@ func (h TriggerJob) GetJenkinsFolder(name, namespace string) (*jenkinsApi.Jenkin
 		if k8sErrors.IsNotFound(err) {
 			return nil, nil
 		}
+
 		return nil, errors.Wrapf(err, "failed to get jenkins folder %v", name)
 	}
+
 	return i, nil
 }
 
 func (h TriggerJob) ProcessNewVersion(b *codebaseApi.CodebaseBranch) error {
 	if err := h.Service.ResetBranchBuildCounter(b); err != nil {
-		return err
+		return fmt.Errorf("failed reset branch build counter: %w", err)
 	}
 
 	if err := h.Service.ResetBranchSuccessBuildCounter(b); err != nil {
-		return err
+		return fmt.Errorf("failed reset branch success build counter: %w", err)
 	}
 
-	return h.Service.AppendVersionToTheHistorySlice(b)
+	err := h.Service.AppendVersionToTheHistorySlice(b)
+	if err != nil {
+		return fmt.Errorf("failed to append version to resource: %w", err)
+	}
+
+	return nil
 }
 
 func hasNewVersion(b *codebaseApi.CodebaseBranch) bool {
@@ -140,5 +165,6 @@ func isJenkinsFolderAvailable(jf *jenkinsApi.JenkinsFolder) bool {
 	if jf == nil {
 		return false
 	}
+
 	return jf.Status.Available
 }

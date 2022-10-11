@@ -21,6 +21,7 @@ func TestDeleteJiraIssueMetadataCr_ServeRequest(t *testing.T) {
 	}
 
 	scheme.Scheme.AddKnownTypes(metaV1.SchemeGroupVersion, jim)
+
 	newScheme := runtime.NewScheme()
 	newScheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, jim)
 	fakeCl := fake.NewClientBuilder().WithScheme(newScheme).WithRuntimeObjects(jim).Build()

@@ -9,11 +9,16 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver"
 )
 
+const (
+	logTypeKey              = "type"
+	logChainSelectedMessage = "chain is selected"
+)
+
 // TODO: remove global variable log.
 var log = ctrl.Log.WithName("codebase_handler")
 
 func MakeGerritDefChain(c client.Client, cr repository.CodebaseRepository) handler.CodebaseHandler {
-	log.Info("chain is selected", "type", "gerrit")
+	log.Info(logChainSelectedMessage, logTypeKey, "gerrit")
 
 	ch := &chain{}
 	gp := &gitserver.GitProvider{}
@@ -33,7 +38,7 @@ func MakeGerritDefChain(c client.Client, cr repository.CodebaseRepository) handl
 }
 
 func MakeGerritTektonChain(c client.Client, cr repository.CodebaseRepository) handler.CodebaseHandler {
-	log.Info("chain is selected", "type", "gerrit")
+	log.Info(logChainSelectedMessage, logTypeKey, "gerrit")
 
 	ch := &chain{}
 	gp := &gitserver.GitProvider{}
@@ -52,7 +57,7 @@ func MakeGerritTektonChain(c client.Client, cr repository.CodebaseRepository) ha
 }
 
 func MakeThirdPartyVcsProviderDefChain(c client.Client, cr repository.CodebaseRepository) handler.CodebaseHandler {
-	log.Info("chain is selected", "type", "third party VCS provider")
+	log.Info(logChainSelectedMessage, logTypeKey, "third party VCS provider")
 
 	ch := &chain{}
 	gp := &gitserver.GitProvider{}
@@ -79,7 +84,7 @@ func MakeDeletionChain(c client.Client) handler.CodebaseHandler {
 }
 
 func MakeGitlabCiDefChain(c client.Client, cr repository.CodebaseRepository) handler.CodebaseHandler {
-	log.Info("chain is selected", "type", "gitlab ci")
+	log.Info(logChainSelectedMessage, logTypeKey, "gitlab ci")
 
 	ch := &chain{}
 	gp := &gitserver.GitProvider{}
@@ -98,7 +103,7 @@ func MakeGitlabCiDefChain(c client.Client, cr repository.CodebaseRepository) han
 }
 
 func MakeTektonCiDefChain(c client.Client, cr repository.CodebaseRepository) handler.CodebaseHandler {
-	log.Info("chain is selected", "type", "tekton")
+	log.Info(logChainSelectedMessage, logTypeKey, "tekton")
 
 	ch := &chain{}
 	gp := &gitserver.GitProvider{}

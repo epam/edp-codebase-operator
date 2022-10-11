@@ -48,17 +48,21 @@ const (
 )
 
 func (s *SSHClient) RunCommand(cmd *SSHCommand) ([]byte, error) {
-	var session *ssh.Session
-	var connection *ssh.Client
-	var err error
+	var (
+		session    *ssh.Session
+		connection *ssh.Client
+		err        error
+	)
 
 	if session, connection, err = s.NewSession(); err != nil {
 		return nil, err
 	}
+
 	defer func() {
 		if deferErr := session.Close(); deferErr != nil {
 			err = deferErr
 		}
+
 		if deferErr := connection.Close(); deferErr != nil {
 			err = deferErr
 		}
@@ -66,10 +70,10 @@ func (s *SSHClient) RunCommand(cmd *SSHCommand) ([]byte, error) {
 
 	commandOutput, err := session.Output(cmd.Path)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get ssh STD out: %w", err)
 	}
 
-	return commandOutput, err
+	return commandOutput, nil
 }
 
 func (s *SSHClient) NewSession() (*ssh.Session, *ssh.Client, error) {
@@ -91,6 +95,7 @@ func SshInit(port int32, idrsa, host string, logger logr.Logger) (*SSHClient, er
 	if err != nil {
 		return nil, errors.Wrap(err, "Unable to get Public Key from Private one")
 	}
+
 	sshConfig := &ssh.ClientConfig{
 		User: "project-creator",
 		Auth: []ssh.AuthMethod{
@@ -100,7 +105,6 @@ func SshInit(port int32, idrsa, host string, logger logr.Logger) (*SSHClient, er
 			return nil
 		}),
 	}
-
 	cl := SSHClient{
 		Config: sshConfig,
 		Host:   host,
@@ -165,6 +169,7 @@ func CreateProject(port int32, idrsa, host, appName string, logger logr.Logger) 
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -185,6 +190,7 @@ func SetHeadToBranch(port int32, idrsa, host, appName, branchName string, logger
 	}
 
 	_, err = cl.RunCommand(cmd)
+
 	return err
 }
 
@@ -195,6 +201,7 @@ func AddRemoteLinkToGerrit(repoPath, host string, port int32, appName string, lo
 	if err != nil {
 		return errors.Wrap(err, "Unable to open Git directory")
 	}
+
 	err = r.DeleteRemote("origin")
 	if err != nil && errors.Cause(err) != git.ErrRemoteNotFound {
 		return errors.Wrap(err, "Unable to delete remote origin")
@@ -217,27 +224,36 @@ func AddRemoteLinkToGerrit(repoPath, host string, port int32, appName string, lo
 func generateReplicationConfig(templatePath, templateName string, params ReplicationConfigParams) (string, error) {
 	log.Printf("Start generation replication config by template path: %v, template name: %v, with params: %+v",
 		templatePath, templateName, params)
+
 	replicationFullPath := fmt.Sprintf("%v/%v", templatePath, templateName)
+
 	var renderedTemplate bytes.Buffer
+
 	tmpl, err := template.New(templateName).
 		ParseFiles(replicationFullPath)
 	if err != nil {
 		log.Printf("Error has been occured during the parcing template by full path: %v", replicationFullPath)
-		return "", err
+		return "", fmt.Errorf("failed to parse template: %w", err)
 	}
+
 	err = tmpl.Execute(&renderedTemplate, params)
 	if err != nil {
 		log.Printf("Unable to render replication config: %v", err)
-		return "", err
+
+		return "", fmt.Errorf("failed to process template: %w", err)
 	}
+
 	log.Printf("Replication config has been generated successsfully"+
 		" by template path: %v, template name: %v, with params: %+v", templatePath, templateName, params)
+
 	return renderedTemplate.String(), nil
 }
 
 func SetupProjectReplication(c client.Client, sshPort int32, host, idrsa, codebaseName, namespace,
 	vcsSshUrl string, logger logr.Logger) error {
 	logger.Info("Start setup project replication for app", "codebase", codebaseName)
+
+	ctx := context.Background()
 
 	replicaConfigNew, err := generateReplicationConfig(
 		fmt.Sprintf("%v/templates/gerrit", util.GetAssetsDir()),
@@ -251,33 +267,39 @@ func SetupProjectReplication(c client.Client, sshPort int32, host, idrsa, codeba
 	}
 
 	gerritSettings := &v1.ConfigMap{}
-	err = c.Get(context.TODO(), types.NamespacedName{
+
+	err = c.Get(ctx, types.NamespacedName{
 		Namespace: namespace,
 		Name:      "gerrit",
 	}, gerritSettings)
 	if err != nil {
 		return errors.Wrapf(err, "couldn't get %v config map", "gerrit")
 	}
+
 	replicaConfig := gerritSettings.Data["replication.config"]
 	if replicaConfig == "" {
 		return errors.New("replication.config key is missing in gerrit ConfigMap")
 	}
+
 	gerritSettings.Data["replication.config"] = fmt.Sprintf("%v\n%v", replicaConfig, replicaConfigNew)
 
-	err = c.Update(context.TODO(), gerritSettings)
+	err = c.Update(ctx, gerritSettings)
 	if err != nil {
 		log.Printf("Unable to update config map with replication config: %v", err)
-		return err
+
+		return fmt.Errorf("failed to update 'ConfigMap' resource %q: %w", gerritSettings.Name, err)
 	}
 
 	// TODO: refactor
 	const waitDuration = 5 * time.Second
+
 	log.Println("Waiting for gerrit replication config map appears in gerrit pod. Sleeping for 5 seconds...")
 	time.Sleep(waitDuration)
 
 	err = reloadReplicationPlugin(sshPort, idrsa, host, logger)
 	if err != nil {
 		log.Printf("Unable to reload replication plugin: %v", err)
+
 		return err
 	}
 

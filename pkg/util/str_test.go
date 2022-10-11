@@ -7,6 +7,7 @@ func TestSearchVersion(t *testing.T) {
 		a []string
 		b string
 	}
+
 	tests := []struct {
 		name string
 		args args
@@ -16,6 +17,7 @@ func TestSearchVersion(t *testing.T) {
 		{"Should return false for len is zero", args{a: []string{}, b: "0-0-1"}, false},
 		{"Should return false for len is zero", args{a: []string{"fake", "found"}, b: "found"}, true},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := SearchVersion(tt.args.a, tt.args.b); got != tt.want {

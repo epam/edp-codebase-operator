@@ -6,6 +6,7 @@ func ContainsString(slice []string, s string) bool {
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -14,7 +15,9 @@ func RemoveString(slice []string, s string) (result []string) {
 		if item == s {
 			continue
 		}
+
 		result = append(result, item)
 	}
+
 	return
 }

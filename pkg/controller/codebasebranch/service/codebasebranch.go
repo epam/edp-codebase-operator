@@ -66,6 +66,7 @@ func (s *CodebaseBranchServiceProvider) TriggerDeletionJob(cb *codebaseApi.Codeb
 	rLog.Info("Deletion job has been triggered")
 
 	rj := fmt.Sprintf("%v/job/Delete-release-%v", cb.Spec.CodebaseName, cb.Spec.CodebaseName)
+
 	js, err := jc.GetJobStatus(rj, defaultTimeoutDuration, defaultRetryCount)
 	if err != nil {
 		return errors.Wrap(err, "unable to get deletion job status")
@@ -73,10 +74,12 @@ func (s *CodebaseBranchServiceProvider) TriggerDeletionJob(cb *codebaseApi.Codeb
 
 	if js != jenkinsJobSuccessStatus {
 		rLog.Info("failed to delete release", "deletion release job status", js)
+
 		return JobFailedError("deletion job failed")
 	}
 
 	rLog.Info("release has been deleted", "status", model.StatusFinished)
+
 	return nil
 }
 
@@ -94,6 +97,7 @@ func (s *CodebaseBranchServiceProvider) TriggerReleaseJob(cb *codebaseApi.Codeba
 	if err != nil {
 		return errors.Wrap(err, "couldn't create jenkins client")
 	}
+
 	rLog.V(2).Info("start creating release for codebase")
 
 	params := map[string]string{
@@ -110,19 +114,24 @@ func (s *CodebaseBranchServiceProvider) TriggerReleaseJob(cb *codebaseApi.Codeba
 	if err = jc.TriggerReleaseJob(cb.Spec.CodebaseName, params); err != nil {
 		return errors.Wrap(err, "unable to trigger release job")
 	}
+
 	rLog.Info("Release job has been triggered")
 
 	rj := fmt.Sprintf("%v/job/Create-release-%v", cb.Spec.CodebaseName, cb.Spec.CodebaseName)
+
 	js, err := jc.GetJobStatus(rj, defaultTimeoutDuration, defaultRetryCount)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to fetch Jenkins job status: %w", err)
 	}
 
 	if js != jenkinsJobSuccessStatus {
 		rLog.Info("failed to create release", "release job status", js)
+
 		return nil
 	}
+
 	rLog.Info("release has been created", "status", model.StatusFinished)
+
 	return nil
 }
 
@@ -142,6 +151,7 @@ func (s *CodebaseBranchServiceProvider) convertCodebaseBranchSpecToParams(cb *co
 	bts, _ = json.Marshal(c.Spec)
 
 	var codebaseSpecMap map[string]interface{}
+
 	err = json.Unmarshal(bts, &codebaseSpecMap)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to decode codebase spec to map")
@@ -153,6 +163,7 @@ func (s *CodebaseBranchServiceProvider) convertCodebaseBranchSpecToParams(cb *co
 
 	// example -> fromCommit: COMMIT_ID
 	result := make(map[string]string)
+
 	for k, v := range cb.Spec.ReleaseJobParams {
 		strVal, ok := codebaseSpecMap[k].(string)
 		if !ok {
@@ -168,19 +179,19 @@ func (s *CodebaseBranchServiceProvider) convertCodebaseBranchSpecToParams(cb *co
 func initJenkinsClient(c client.Client, namespace string) (*jenkins.JenkinsClient, error) {
 	j, err := jenkins.GetJenkins(c, namespace)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create jenkins client: %w", err)
 	}
 
 	ju, jt, err := jenkins.GetJenkinsCreds(c, j, namespace)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to fetch jenkins credentials: %w", err)
 	}
 
 	jurl := jenkins.GetJenkinsUrl(j, namespace)
 
 	jc, err := jenkins.Init(jurl, ju, jt)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to ini jenkins client: %w", err)
 	}
 
 	log.V(2).Info("jenkins client has been created", "url", jurl, "user", ju)
@@ -192,8 +203,10 @@ func (s *CodebaseBranchServiceProvider) AppendVersionToTheHistorySlice(b *codeba
 	if b.Spec.Version == nil {
 		return nil
 	}
+
 	v := b.Spec.Version
 	b.Status.VersionHistory = append(b.Status.VersionHistory, *v)
+
 	return s.updateStatus(b)
 }
 
@@ -201,7 +214,9 @@ func (s *CodebaseBranchServiceProvider) ResetBranchBuildCounter(cb *codebaseApi.
 	if cb.Status.Build == nil {
 		return nil
 	}
+
 	cb.Status.Build = util.GetStringP("0")
+
 	return s.updateStatus(cb)
 }
 
@@ -211,15 +226,18 @@ func (s *CodebaseBranchServiceProvider) ResetBranchSuccessBuildCounter(cb *codeb
 	}
 
 	cb.Status.LastSuccessfulBuild = nil
+
 	return s.updateStatus(cb)
 }
 
 func (s *CodebaseBranchServiceProvider) updateStatus(cb *codebaseApi.CodebaseBranch) error {
 	if err := s.Client.Status().Update(context.TODO(), cb); err != nil {
-		if err := s.Client.Update(context.TODO(), cb); err != nil {
+		if err = s.Client.Update(context.TODO(), cb); err != nil {
 			return errors.Wrap(err, "CodebaseBranchServiceProvider: couldn't update codebase branch status")
 		}
 	}
+
 	log.V(2).Info("codebase branch status has been updated", "name", cb.Name)
+
 	return nil
 }

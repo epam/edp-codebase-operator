@@ -2,6 +2,7 @@ package imagestreamtag
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/go-logr/logr"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
@@ -31,14 +32,28 @@ type ReconcileImageStreamTag struct {
 func (r *ReconcileImageStreamTag) SetupWithManager(mgr ctrl.Manager) error {
 	p := predicate.Funcs{
 		UpdateFunc: func(e event.UpdateEvent) bool {
-			oldObject := e.ObjectOld.(*codebaseApi.ImageStreamTag)
-			newObject := e.ObjectNew.(*codebaseApi.ImageStreamTag)
+			oldObject, ok := e.ObjectOld.(*codebaseApi.ImageStreamTag)
+			if !ok {
+				return false
+			}
+
+			newObject, ok := e.ObjectNew.(*codebaseApi.ImageStreamTag)
+			if !ok {
+				return false
+			}
+
 			return oldObject.Status == newObject.Status
 		},
 	}
-	return ctrl.NewControllerManagedBy(mgr).
+
+	err := ctrl.NewControllerManagedBy(mgr).
 		For(&codebaseApi.ImageStreamTag{}, builder.WithPredicates(p)).
 		Complete(r)
+	if err != nil {
+		return fmt.Errorf("failed to build ImageStreamTag controller: %w", err)
+	}
+
+	return nil
 }
 
 func (r *ReconcileImageStreamTag) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
@@ -50,15 +65,18 @@ func (r *ReconcileImageStreamTag) Reconcile(ctx context.Context, request reconci
 		if k8sErrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
 		}
-		return reconcile.Result{}, err
+
+		return reconcile.Result{}, fmt.Errorf("failed to fetch ImageStreamTag resource %q: %w", request.NamespacedName, err)
 	}
 
 	istChain := chain.CreateDefChain(r.client)
 	if err := istChain.ServeRequest(ist); err != nil {
 		log.Error(err, err.Error())
-		return reconcile.Result{}, err
+
+		return reconcile.Result{}, fmt.Errorf("failed to process `Default chain`: %w", err)
 	}
 
 	log.Info("Reconciling ImageStreamTag has been finished")
+
 	return reconcile.Result{}, nil
 }

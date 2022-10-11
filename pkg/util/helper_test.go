@@ -44,6 +44,7 @@ func TestGetWorkDir(t *testing.T) {
 		codebaseName string
 		namespace    string
 	}
+
 	tests := []struct {
 		name string
 		args args
@@ -53,6 +54,7 @@ func TestGetWorkDir(t *testing.T) {
 		{"2", args{codebaseName: "cb-name", namespace: "stub-namespace"}, "/home/codebase-operator/edp/stub-namespace/cb-name/templates/cb-name"},
 		{"3", args{codebaseName: "demo", namespace: "stub-namespace"}, "/home/codebase-operator/edp/stub-namespace/demo/templates/demo"},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := GetWorkDir(tt.args.codebaseName, tt.args.namespace); got != tt.want {
@@ -70,6 +72,7 @@ func TestGetWorkDir_WithCustomPathShouldWork(t *testing.T) {
 		codebaseName string
 		namespace    string
 	}
+
 	tests := []struct {
 		name string
 		args args
@@ -78,6 +81,7 @@ func TestGetWorkDir_WithCustomPathShouldWork(t *testing.T) {
 		{"1", args{codebaseName: "test", namespace: "fake-ns"}, "/CUSTOM_PATH/codebase-operator/edp/fake-ns/test/templates/test"},
 		{"2", args{codebaseName: "cb-name", namespace: "fake-ns"}, "/CUSTOM_PATH/codebase-operator/edp/fake-ns/cb-name/templates/cb-name"},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := GetWorkDir(tt.args.codebaseName, tt.args.namespace); got != tt.want {

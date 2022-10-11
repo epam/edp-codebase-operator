@@ -43,6 +43,7 @@ func tryGetRepoUrl(spec *codebaseApi.CodebaseSpec) (*string, error) {
 	if spec.Repository == nil {
 		return nil, errors.New("repository cannot be nil for specified strategy")
 	}
+
 	return &spec.Repository.Url, nil
 }
 

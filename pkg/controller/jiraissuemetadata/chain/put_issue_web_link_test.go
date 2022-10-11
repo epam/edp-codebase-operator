@@ -55,6 +55,7 @@ func TestPutIssueWebLink_ServeRequest_ShouldFail(t *testing.T) {
 
 	err := piwl.ServeRequest(jim)
 	assert.Error(t, err)
+
 	if !strings.Contains(err.Error(), "issuesLinks is a mandatory field in payload") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}

@@ -24,10 +24,12 @@ import (
 
 func setupSuite(tb testing.TB) (func(tb testing.TB), string) {
 	log.Println("setup suite")
+
 	pk, err := rsa.GenerateKey(rand.Reader, 128)
 	if err != nil {
 		tb.Error("Unable to generate test private key")
 	}
+
 	privateKeyBytes := x509.MarshalPKCS1PrivateKey(pk)
 	privateKeyPem := pem.EncodeToMemory(
 		&pem.Block{
@@ -35,6 +37,7 @@ func setupSuite(tb testing.TB) (func(tb testing.TB), string) {
 			Bytes: privateKeyBytes,
 		},
 	)
+
 	// Return a function to teardown the test
 	return func(tb testing.TB) {
 		log.Println("teardown suite")
@@ -85,6 +88,7 @@ func TestAddRemoteLinkToGerrit_ShouldPass(t *testing.T) {
 	if err != nil {
 		t.Error("Unable to create test git repo")
 	}
+
 	if _, err = repo.CreateRemote(&config.RemoteConfig{
 		Name: "origin",
 		URLs: []string{"https://example.com"},
@@ -94,10 +98,12 @@ func TestAddRemoteLinkToGerrit_ShouldPass(t *testing.T) {
 
 	err = AddRemoteLinkToGerrit(dir, "fake-host", 22, "appName", logr.DiscardLogger{})
 	assert.NoError(t, err)
+
 	b, err := os.ReadFile(fmt.Sprintf("%v/.git/config", dir))
 	if err != nil {
 		t.Error("Unable to read test file with git config")
 	}
+
 	assert.Contains(t, string(b), "[remote \"origin\"]\n\turl = ssh://fake-host:22/appName")
 }
 
@@ -116,10 +122,12 @@ func TestAddRemoteLinkToGerrit_ShouldPassWithErrRemoteNotFound(t *testing.T) {
 
 	err = AddRemoteLinkToGerrit(dir, "fake-host", 22, "appName", logr.DiscardLogger{})
 	assert.NoError(t, err)
+
 	b, err := os.ReadFile(fmt.Sprintf("%v/.git/config", dir))
 	if err != nil {
 		t.Error("Unable to read test file with git config")
 	}
+
 	assert.Contains(t, string(b), "[remote \"origin\"]\n\turl = ssh://fake-host:22/appName")
 }
 
@@ -138,12 +146,13 @@ func TestAddRemoteLinkToGerrit_ShouldFail(t *testing.T) {
 
 	err = AddRemoteLinkToGerrit(dir, "fake-host", 22, "appName", logr.DiscardLogger{})
 	assert.NoError(t, err)
+
 	b, err := os.ReadFile(fmt.Sprintf("%v/.git/config", dir))
 	if err != nil {
 		t.Error("Unable to read test file with git config")
 	}
-	assert.Contains(t, string(b), "[remote \"origin\"]\n\turl = ssh://fake-host:22/appName")
 
+	assert.Contains(t, string(b), "[remote \"origin\"]\n\turl = ssh://fake-host:22/appName")
 }
 
 func TestAddRemoteLinkToGerrit_ShouldFailToOpenGit(t *testing.T) {
@@ -178,6 +187,7 @@ func TestSetupProjectReplication_ShouldFailToReloadGerritPlugin(t *testing.T) {
 		"fake-namespace", "vcs", logr.DiscardLogger{})
 	//TODO: mock sshclient and implement test that passes
 	assert.Error(t, err)
+
 	if !strings.Contains(err.Error(), "failed to dial:") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
@@ -193,6 +203,7 @@ func TestSetupProjectReplication_ShouldFailToGetReplicationConfig(t *testing.T) 
 	err = SetupProjectReplication(fakeCl, 22, "gerrit", "idrsa", "fake-name",
 		"fake-namespace", "vcs", logr.DiscardLogger{})
 	assert.Error(t, err)
+
 	if !strings.Contains(err.Error(), "Uable to generate replication config") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
@@ -213,6 +224,7 @@ func TestSetupProjectReplication_ShouldFailToGetConfigmap(t *testing.T) {
 		"fake-namespace", "vcs", logr.DiscardLogger{})
 
 	assert.Error(t, err)
+
 	if !strings.Contains(err.Error(), "couldn't get gerrit config map") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
@@ -238,6 +250,7 @@ func TestSetupProjectReplication_ShouldFailToParseConfigmap(t *testing.T) {
 		"fake-namespace", "vcs", logr.DiscardLogger{})
 
 	assert.Error(t, err)
+
 	if !strings.Contains(err.Error(), "replication.config key is missing in gerrit ConfigMap") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}

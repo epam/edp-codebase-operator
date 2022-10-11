@@ -37,7 +37,8 @@ func (h PutBranchInGit) ServeRequest(cb *codebaseApi.CodebaseBranch) error {
 	c, err := util.GetCodebase(h.Client, cb.Spec.CodebaseName, cb.Namespace)
 	if err != nil {
 		setFailedFields(cb, codebaseApi.PutBranchForGitlabCiCodebase, err.Error())
-		return err
+
+		return fmt.Errorf("failed to fetch Codebase: %w", err)
 	}
 
 	if !c.Status.Available {
@@ -49,7 +50,9 @@ func (h PutBranchInGit) ServeRequest(cb *codebaseApi.CodebaseBranch) error {
 		err = h.processNewVersion(cb)
 		if err != nil {
 			err = errors.Wrapf(err, "couldn't process new version for %v branch", cb.Name)
+
 			setFailedFields(cb, codebaseApi.PutBranchForGitlabCiCodebase, err.Error())
+
 			return err
 		}
 	}
@@ -57,13 +60,15 @@ func (h PutBranchInGit) ServeRequest(cb *codebaseApi.CodebaseBranch) error {
 	gs, err := util.GetGitServer(h.Client, c.Spec.GitServer, c.Namespace)
 	if err != nil {
 		setFailedFields(cb, codebaseApi.PutBranchForGitlabCiCodebase, err.Error())
-		return err
+
+		return fmt.Errorf("failed to fetch GitServer: %w", err)
 	}
 
 	secret, err := util.GetSecret(h.Client, gs.NameSshKeySecret, c.Namespace)
 	if err != nil {
 		err = errors.Wrapf(err, "an error has occurred while getting %v secret", gs.NameSshKeySecret)
 		setFailedFields(cb, codebaseApi.PutBranchForGitlabCiCodebase, err.Error())
+
 		return err
 	}
 
@@ -75,21 +80,34 @@ func (h PutBranchInGit) ServeRequest(cb *codebaseApi.CodebaseBranch) error {
 		if c.Spec.GitUrlPath != nil {
 			ru = fmt.Sprintf("%v:%v", gs.GitHost, *c.Spec.GitUrlPath)
 		}
-		if err := h.Git.CloneRepositoryBySsh(string(secret.Data[util.PrivateSShKeyName]), gs.GitUser, ru, wd, gs.SshPort); err != nil {
+
+		err = h.Git.CloneRepositoryBySsh(string(secret.Data[util.PrivateSShKeyName]), gs.GitUser, ru, wd, gs.SshPort)
+		if err != nil {
 			setFailedFields(cb, codebaseApi.PutBranchForGitlabCiCodebase, err.Error())
-			return err
+
+			return fmt.Errorf("failed to clone repository: %w", err)
 		}
 	}
 
-	if err := h.Git.CreateRemoteBranch(string(secret.Data[util.PrivateSShKeyName]), gs.GitUser, wd, cb.Spec.BranchName, cb.Spec.FromCommit, gs.SshPort); err != nil {
+	err = h.Git.CreateRemoteBranch(string(secret.Data[util.PrivateSShKeyName]), gs.GitUser, wd, cb.Spec.BranchName, cb.Spec.FromCommit, gs.SshPort)
+	if err != nil {
 		setFailedFields(cb, codebaseApi.PutBranchForGitlabCiCodebase, err.Error())
-		return err
+
+		return fmt.Errorf("failed to create remove branch: %w", err)
 	}
+
 	rl.Info("end PutBranchInGit method...")
-	return handler.NextServeOrNil(h.Next, cb)
+
+	err = handler.NextServeOrNil(h.Next, cb)
+	if err != nil {
+		return fmt.Errorf("failed to process next handler in chain: %w", err)
+	}
+
+	return nil
 }
 
 func (h PutBranchInGit) setIntermediateSuccessFields(cb *codebaseApi.CodebaseBranch, action codebaseApi.ActionType) error {
+	ctx := context.Background()
 	cb.Status = codebaseApi.CodebaseBranchStatus{
 		Status:              model.StatusInit,
 		LastTimeUpdated:     metaV1.Now(),
@@ -102,11 +120,16 @@ func (h PutBranchInGit) setIntermediateSuccessFields(cb *codebaseApi.CodebaseBra
 		Build:               cb.Status.Build,
 	}
 
-	if err := h.Client.Status().Update(context.TODO(), cb); err != nil {
-		if err := h.Client.Update(context.TODO(), cb); err != nil {
-			return err
-		}
+	err := h.Client.Status().Update(ctx, cb)
+	if err != nil {
+		return fmt.Errorf("failed to update CodebaseBranch status field %q: %w", cb.Name, err)
 	}
+
+	err = h.Client.Update(ctx, cb)
+	if err != nil {
+		return fmt.Errorf("failed to update CodebaseBranch resource %q: %w", cb.Name, err)
+	}
+
 	return nil
 }
 
@@ -130,15 +153,22 @@ func checkDirectory(path string) bool {
 }
 
 func (h PutBranchInGit) processNewVersion(b *codebaseApi.CodebaseBranch) error {
-	if err := h.Service.ResetBranchBuildCounter(b); err != nil {
-		return err
+	err := h.Service.ResetBranchBuildCounter(b)
+	if err != nil {
+		return fmt.Errorf("failed to reset bulid counterL %w", err)
 	}
 
-	if err := h.Service.ResetBranchSuccessBuildCounter(b); err != nil {
-		return err
+	err = h.Service.ResetBranchSuccessBuildCounter(b)
+	if err != nil {
+		return fmt.Errorf("failed to reset success bulid counter: %w", err)
 	}
 
-	return h.Service.AppendVersionToTheHistorySlice(b)
+	err = h.Service.AppendVersionToTheHistorySlice(b)
+	if err != nil {
+		return fmt.Errorf("failed to append version to hitory slice: %w", err)
+	}
+
+	return nil
 }
 
 func hasNewVersion(b *codebaseApi.CodebaseBranch) bool {

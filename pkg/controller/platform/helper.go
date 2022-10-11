@@ -14,6 +14,7 @@ func lookup() string {
 	if value, ok := os.LookupEnv(ptKey); ok {
 		return value
 	}
+
 	return defaultPt
 }
 

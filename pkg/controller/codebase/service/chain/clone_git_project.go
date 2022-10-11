@@ -39,15 +39,19 @@ func (h *CloneGitProject) ServeRequest(ctx context.Context, c *codebaseApi.Codeb
 	}
 
 	rLog.Info("codebase data", "spec", c.Spec)
+
 	if err := setIntermediateSuccessFields(ctx, h.client, c, codebaseApi.AcceptCodebaseRegistration); err != nil {
 		return errors.Wrapf(err, "an error has been occurred while updating %v Codebase status", c.Name)
 	}
 
 	wd := util.GetWorkDir(c.Name, c.Namespace)
+
 	log.Info("Setting path for local Git folder", "path", wd)
+
 	if err := util.CreateDirectory(wd); err != nil {
 		setFailedFields(c, codebaseApi.ImportProject, err.Error())
-		return err
+
+		return fmt.Errorf("failed to create directory %q: %w", wd, err)
 	}
 
 	gs, err := util.GetGitServer(h.client, c.Spec.GitServer, c.Namespace)

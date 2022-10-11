@@ -2,6 +2,7 @@ package jiraserver
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
@@ -42,14 +43,28 @@ type ReconcileJiraServer struct {
 func (r *ReconcileJiraServer) SetupWithManager(mgr ctrl.Manager) error {
 	p := predicate.Funcs{
 		UpdateFunc: func(e event.UpdateEvent) bool {
-			oldObject := e.ObjectOld.(*codebaseApi.JiraServer)
-			newObject := e.ObjectNew.(*codebaseApi.JiraServer)
+			oldObject, ok := e.ObjectOld.(*codebaseApi.JiraServer)
+			if !ok {
+				return false
+			}
+
+			newObject, ok := e.ObjectNew.(*codebaseApi.JiraServer)
+			if !ok {
+				return false
+			}
+
 			return oldObject.Status == newObject.Status
 		},
 	}
-	return ctrl.NewControllerManagedBy(mgr).
+
+	err := ctrl.NewControllerManagedBy(mgr).
 		For(&codebaseApi.JiraServer{}, builder.WithPredicates(p)).
 		Complete(r)
+	if err != nil {
+		return fmt.Errorf("failed to build JiraServer controller: %w", err)
+	}
+
+	return nil
 }
 
 func (r *ReconcileJiraServer) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
@@ -61,8 +76,10 @@ func (r *ReconcileJiraServer) Reconcile(ctx context.Context, request reconcile.R
 		if k8sErrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
 		}
-		return reconcile.Result{}, err
+
+		return reconcile.Result{}, fmt.Errorf("failed to fetch JiraServer resource %q: %w", request.NamespacedName, err)
 	}
+
 	defer r.updateStatus(ctx, i)
 
 	c, err := r.initJiraClient(i)
@@ -75,14 +92,18 @@ func (r *ReconcileJiraServer) Reconcile(ctx context.Context, request reconcile.R
 	if err := jiraHandler.ServeRequest(i); err != nil {
 		i.Status.Status = statusError
 		i.Status.DetailedMessage = err.Error()
-		return reconcile.Result{}, err
+
+		return reconcile.Result{}, fmt.Errorf("failed serving default chain: %w", err)
 	}
+
 	log.Info("Reconciling JiraServer has been finished")
+
 	return reconcile.Result{}, nil
 }
 
 func (r *ReconcileJiraServer) updateStatus(ctx context.Context, instance *codebaseApi.JiraServer) {
 	instance.Status.LastTimeUpdated = metaV1.Now()
+
 	err := r.client.Status().Update(ctx, instance)
 	if err != nil {
 		_ = r.client.Update(ctx, instance)

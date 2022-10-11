@@ -32,6 +32,7 @@ func NewPutJenkinsFolder(c client.Client) *PutJenkinsFolder {
 func (h *PutJenkinsFolder) ServeRequest(_ context.Context, c *codebaseApi.Codebase) error {
 	rLog := log.WithValues("codebase_name", c.Name)
 	jfn := fmt.Sprintf("%v-%v", c.Name, "codebase")
+
 	jfr, err := h.getJenkinsFolder(jfn, c.Namespace)
 	if err != nil {
 		return err
@@ -44,7 +45,7 @@ func (h *PutJenkinsFolder) ServeRequest(_ context.Context, c *codebaseApi.Codeba
 
 	gs, err := util.GetGitServer(h.client, c.Spec.GitServer, c.Namespace)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to fetch Git Server: %w", err)
 	}
 
 	path := getRepositoryPath(c.Name, string(c.Spec.Strategy), c.Spec.GitUrlPath)
@@ -65,11 +66,14 @@ func (h *PutJenkinsFolder) ServeRequest(_ context.Context, c *codebaseApi.Codeba
 	jc, _ := json.Marshal(jpm)
 
 	rLog.Info("start creating jenkins folder...")
+
 	if err := h.putJenkinsFolder(c, string(jc), jfn); err != nil {
 		setFailedFields(c, codebaseApi.PutJenkinsFolder, err.Error())
 		return err
 	}
+
 	rLog.Info("end creating jenkins folder...")
+
 	return nil
 }
 
@@ -101,6 +105,7 @@ func (h *PutJenkinsFolder) putJenkinsFolder(c *codebaseApi.Codebase, jc, jfn str
 	if err := h.client.Create(context.TODO(), jf); err != nil {
 		return errors.Wrapf(err, "couldn't create jenkins folder %v", "name")
 	}
+
 	return nil
 }
 
@@ -110,12 +115,15 @@ func (h *PutJenkinsFolder) getJenkinsFolder(name, namespace string) (*jenkinsApi
 		Name:      name,
 	}
 	i := &jenkinsApi.JenkinsFolder{}
+
 	if err := h.client.Get(context.TODO(), nsn, i); err != nil {
 		if k8sErrors.IsNotFound(err) {
 			return nil, nil
 		}
+
 		return nil, errors.Wrapf(err, "failed to get instance by owner %v", name)
 	}
+
 	return i, nil
 }
 
@@ -123,12 +131,14 @@ func getRepositoryPath(codebaseName, strategy string, gitUrlPath *string) string
 	if strategy == consts.ImportStrategy {
 		return *gitUrlPath
 	}
+
 	return "/" + codebaseName
 }
 
 func generateSshLink(repoPath string, gs *model.GitServer) string {
 	l := fmt.Sprintf("ssh://%v@%v:%v%v", gs.GitUser, gs.GitHost, gs.SshPort, repoPath)
 	log.Info("generated SSH link", "link", l)
+
 	return l
 }
 

@@ -1,6 +1,8 @@
 package chain
 
 import (
+	"fmt"
+
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -17,7 +19,7 @@ const issuesLinks = "issuesLinks"
 func CreateChain(metadataPayload string, jiraClient jira.Client, c client.Client) (handler.JiraIssueMetadataHandler, error) {
 	payload, err := util.GetFieldsMap(metadataPayload, nil)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to parse fields map from payload: %w", err)
 	}
 
 	if len(payload) == 1 && payload[issuesLinks] != nil {
@@ -52,9 +54,16 @@ func createWithoutApplyingTagsChain(jiraClient jira.Client, c client.Client) han
 }
 
 func nextServeOrNil(next handler.JiraIssueMetadataHandler, metadata *codebaseApi.JiraIssueMetadata) error {
-	if next != nil {
-		return next.ServeRequest(metadata)
+	if next == nil {
+		log.Info("handling of JiraIssueMetadata has been finished", "name", metadata.Name)
+
+		return nil
 	}
-	log.Info("handling of JiraIssueMetadata has been finished", "name", metadata.Name)
+
+	err := next.ServeRequest(metadata)
+	if err != nil {
+		return fmt.Errorf("failed to process next handler: %w", err)
+	}
+
 	return nil
 }

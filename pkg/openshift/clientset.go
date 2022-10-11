@@ -20,19 +20,24 @@ func CreateOpenshiftClients() *ClientSet {
 		clientcmd.NewDefaultClientConfigLoadingRules(),
 		&clientcmd.ConfigOverrides{},
 	)
+
 	restConfig, err := config.ClientConfig()
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	coreClient, err := coreV1Client.NewForConfig(restConfig)
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	imageClient, err := imageV1Client.NewForConfig(restConfig)
 	if err != nil {
 		log.Fatalf("[ERROR] %s", err)
 	}
+
 	log.Print("Openshift clients was successfully created")
+
 	return &ClientSet{
 		CoreClient:  coreClient,
 		ImageClient: imageClient,

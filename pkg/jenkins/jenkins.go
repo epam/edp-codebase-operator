@@ -37,7 +37,7 @@ func Init(url, username, token string) (*JenkinsClient, error) {
 
 	jenkins, err := gojenkins.CreateJenkins(http.DefaultClient, url, username, token).Init()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create Jenkins client: %w", err)
 	}
 
 	return &JenkinsClient{
@@ -48,6 +48,7 @@ func Init(url, username, token string) (*JenkinsClient, error) {
 
 func (c JenkinsClient) GetJob(name string, delay time.Duration, retryCount int) (*gojenkins.Job, error) {
 	var resultErr error
+
 	for i := 0; i < retryCount; i++ {
 		job, err := c.Jenkins.GetJob(name)
 		if err == nil {
@@ -55,6 +56,7 @@ func (c JenkinsClient) GetJob(name string, delay time.Duration, retryCount int) 
 		}
 
 		resultErr = err
+
 		log.Info("Job is currently doesn't exist", "name", name, "delay", delay, "attempts lasts", retryCount-i)
 		time.Sleep(delay)
 	}
@@ -73,7 +75,7 @@ func (c JenkinsClient) TriggerDeletionJob(branchName, appName string) error {
 
 	lastBuild, err := job.GetLastBuild()
 	if err != nil && err.Error() != "404" {
-		return err
+		return fmt.Errorf("failed to fetch Jenkins Job build: %w", err)
 	}
 
 	if (lastBuild != nil && lastBuild.IsRunning()) || job.Raw.InQueue {
@@ -92,7 +94,7 @@ func (c JenkinsClient) TriggerDeletionJob(branchName, appName string) error {
 
 func (c JenkinsClient) TriggerReleaseJob(appName string, params map[string]string) error {
 	jobName := fmt.Sprintf("%v/job/Create-release-%v", appName, appName)
-	log.Info("Trying to trigger Release jenkins job", "name", jobName)
+	log.Info("Trying to trigger Release jenkins job", "jobName", jobName)
 
 	if _, err := c.GetJob(jobName, time.Second, c.triggerReleaseRetryCount); err != nil {
 		return errors.Wrapf(err, "unable to get job %s", jobName)
@@ -107,31 +109,37 @@ func (c JenkinsClient) TriggerReleaseJob(appName string, params map[string]strin
 
 func (c JenkinsClient) GetJobStatus(name string, delay time.Duration, retryCount int) (string, error) {
 	time.Sleep(delay)
+
 	for i := 0; i < retryCount; i++ {
 		isQueued, qErr := c.IsJobQueued(name)
 		isRunning, rErr := c.IsJobRunning(name)
+
 		if qErr != nil || rErr != nil {
 			job, err := c.Jenkins.GetJob(name)
 			if err != nil {
 				return "", errors.Wrap(err, "job not found")
 			}
+
 			if job.Raw.Color == "notbuilt" {
-				log.Info("Job didn't start yet", "name", name, "delay", delay, "attempts lasts", retryCount-i)
+				log.Info("Job didn't start yet", "jobName", name, "delay", delay, "attempts lasts", retryCount-i)
 				time.Sleep(delay)
+
 				continue
 			}
 		}
-		if (isRunning != nil && *isRunning) || (isQueued != nil && *isQueued) {
-			log.Info("Job is running", "name", name, "delay", delay, "attempts lasts", retryCount-i)
-			time.Sleep(delay)
-		} else {
+
+		if !(isRunning != nil && *isRunning) && !(isQueued != nil && *isQueued) {
 			job, err := c.Jenkins.GetJob(name)
 			if err != nil {
-				return "", err
+				return "", fmt.Errorf("failed to get Jenkins Job: %w", err)
 			}
 
 			return job.Raw.Color, nil
 		}
+
+		log.Info("Job is running", "jobName", name, "delay", delay, "attempts lasts", retryCount-i)
+
+		time.Sleep(delay)
 	}
 
 	return "", errors.Errorf("Job %v has not been finished after specified delay", name)
@@ -140,12 +148,12 @@ func (c JenkinsClient) GetJobStatus(name string, delay time.Duration, retryCount
 func (c JenkinsClient) IsJobQueued(name string) (*bool, error) {
 	job, err := c.Jenkins.GetJob(name)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get Jenkins Job: %w", err)
 	}
 
 	isQueued, err := job.IsQueued()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to check if Jenkins Job is queued: %w", err)
 	}
 
 	return &isQueued, nil
@@ -154,12 +162,12 @@ func (c JenkinsClient) IsJobQueued(name string) (*bool, error) {
 func (c JenkinsClient) IsJobRunning(name string) (*bool, error) {
 	job, err := c.Jenkins.GetJob(name)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get Jenkins Job: %w", err)
 	}
 
 	isRunning, err := job.IsRunning()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to check if Jenkins Job is bulding: %w", err)
 	}
 
 	return &isRunning, nil
@@ -190,6 +198,7 @@ func GetJenkinsCreds(c client.Client, jenkins *jenkinsApi.Jenkins, namespace str
 		if k8sErrors.IsNotFound(err) {
 			return "", "", errors.Wrapf(err, "Secret %v in not found", jenkinsTokenSecretName)
 		}
+
 		return "", "", errors.Wrapf(err, "Getting secret %v failed", jenkinsTokenSecretName)
 	}
 

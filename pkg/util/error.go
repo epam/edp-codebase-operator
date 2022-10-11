@@ -8,7 +8,7 @@ func (e *CodebaseBranchReconcileError) Error() string {
 	return e.Message
 }
 
-func NewCodebaseBranchReconcileError(msg string) error {
+func NewCodebaseBranchReconcileError(msg string) *CodebaseBranchReconcileError {
 	return &CodebaseBranchReconcileError{Message: msg}
 }
 

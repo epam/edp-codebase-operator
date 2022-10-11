@@ -2,6 +2,7 @@ package codebasebranch
 
 import (
 	"context"
+	"fmt"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -22,7 +23,15 @@ func AddCodebaseLabel(ctx context.Context, k8sClient client.Client, codebaseBran
 	if newLabels == nil {
 		newLabels = make(map[string]string)
 	}
+
 	newLabels[codebaseNameLabel] = codebaseName
+
 	codebaseBranch.SetLabels(newLabels)
-	return k8sClient.Update(ctx, codebaseBranch)
+
+	err := k8sClient.Update(ctx, codebaseBranch)
+	if err != nil {
+		return fmt.Errorf("failed to update k8s resource label: %w", err)
+	}
+
+	return nil
 }

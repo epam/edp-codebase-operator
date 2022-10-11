@@ -67,9 +67,11 @@ func TestReconcileJiraIssueMetadata_Reconcile_ShouldFailNotFound(t *testing.T) {
 	res, err := r.Reconcile(context.TODO(), req)
 
 	assert.Error(t, err)
+
 	if !strings.Contains(err.Error(), "no kind is registered for the type v1.JiraIssueMetadata") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
+
 	assert.False(t, res.Requeue)
 }
 
@@ -101,9 +103,11 @@ func TestReconcileJiraIssueMetadata_Reconcile_ShouldFailToSetOwnerReference(t *t
 	res, err := r.Reconcile(context.TODO(), req)
 
 	assert.Error(t, err)
+
 	if !strings.Contains(err.Error(), "no kind is registered for the type v1.Codebase") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
+
 	assert.False(t, res.Requeue)
 }
 
@@ -149,9 +153,11 @@ func TestReconcileJiraIssueMetadata_Reconcile_ShouldFailJiraISDisabled(t *testin
 	res, err := r.Reconcile(context.TODO(), req)
 
 	assert.Error(t, err)
+
 	if !strings.Contains(err.Error(), "codebase codebase has disabled jira integration. skip JiraIssueMetadata JIM reconcilation") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
+
 	assert.False(t, res.Requeue)
 }
 
@@ -200,9 +206,11 @@ func TestReconcileJiraIssueMetadata_Reconcile_ShouldFailGetJira(t *testing.T) {
 	res, err := r.Reconcile(context.TODO(), req)
 
 	assert.Error(t, err)
+
 	if !strings.Contains(err.Error(), "jiraservers.v2.edp.epam.com \"jira\" not found") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
+
 	assert.False(t, res.Requeue)
 }
 
@@ -317,6 +325,7 @@ func TestReconcileJiraIssueMetadata_Reconcile_ShouldFailInitJiraClient(t *testin
 
 	assert.Error(t, err)
 	assert.False(t, res.Requeue)
+
 	if !strings.Contains(err.Error(), "couldn't get secret jira-sercret") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
@@ -389,6 +398,7 @@ func TestReconcileJiraIssueMetadata_Reconcile_ShouldFailToCreateChain(t *testing
 
 	assert.Error(t, err)
 	assert.False(t, res.Requeue)
+
 	if !strings.Contains(err.Error(), "unexpected end of JSON input") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
@@ -518,6 +528,7 @@ func TestReconcileJiraIssueMetadata_Reconcile_ShouldPass(t *testing.T) {
 
 	httpmock.Reset()
 	httpmock.Activate()
+
 	ji := jira.Issue{
 		Fields: &jira.IssueFields{
 			Project: jira.Project{
@@ -578,9 +589,11 @@ func TestReconcileJiraIssueMetadata_Reconcile_ShouldPass(t *testing.T) {
 	rec, err := r.Reconcile(context.TODO(), req)
 	assert.NoError(t, err)
 	assert.False(t, rec.Requeue)
+
 	duration, err := time.ParseDuration(defaultReconcilePeriod + "m")
 	if err != nil {
 		t.Fatal("Unable to parse time")
 	}
+
 	assert.Equal(t, rec.RequeueAfter, duration)
 }

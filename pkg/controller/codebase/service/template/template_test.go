@@ -102,6 +102,7 @@ func TestPrepareTemplates_ShouldFailOnGetProjectUrl(t *testing.T) {
 
 	err := PrepareTemplates(fakeCl, c, "/tmp", "../../../../../build")
 	assert.Error(t, err)
+
 	if !strings.Contains(err.Error(), "unable get project url") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
@@ -205,6 +206,7 @@ func TestGetProjectUrl_ShouldFailToGetGitServer(t *testing.T) {
 	url, err := getProjectUrl(fakeCl, &c.Spec, fakeNamespace)
 	assert.Error(t, err)
 	assert.Empty(t, url)
+
 	if !strings.Contains(err.Error(), "unable get git server") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
@@ -226,6 +228,7 @@ func TestGetProjectUrl_ShouldFailWithUnsupportedStrategy(t *testing.T) {
 	url, err := getProjectUrl(fakeCl, &c.Spec, fakeNamespace)
 	assert.Error(t, err)
 	assert.Empty(t, url)
+
 	if !strings.Contains(err.Error(), "unable get project url, caused by the unsupported strategy") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}

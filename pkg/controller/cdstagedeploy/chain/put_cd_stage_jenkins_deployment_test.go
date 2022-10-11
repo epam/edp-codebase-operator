@@ -60,6 +60,7 @@ func TestPutCDStageJenkinsDeployment_ServeRequest_ShouldPass(t *testing.T) {
 		client: fakeCl,
 		log:    logr.DiscardLogger{},
 	}
+
 	err := jd.ServeRequest(cdsd)
 	assert.NoError(t, err)
 }
@@ -102,10 +103,12 @@ func TestPutCDStageJenkinsDeployment_ServeRequest_ShouldFailWithExistingCR(t *te
 		client: fakeCl,
 		log:    logr.DiscardLogger{},
 	}
-	err := jd.ServeRequest(cdsd)
 
+	err := jd.ServeRequest(cdsd)
 	assert.Error(t, err)
-	assert.ErrorIs(t, err, err.(*util.CDStageJenkinsDeploymentHasNotBeenProcessedError))
+
+	_, ok := err.(*util.CDStageJenkinsDeploymentHasNotBeenProcessedError)
+	assert.True(t, ok, "wrong type of error")
 }
 
 func TestPutCDStageJenkinsDeployment_ServeRequest_ShouldFailGenerateLabels(t *testing.T) {
@@ -143,8 +146,10 @@ func TestPutCDStageJenkinsDeployment_ServeRequest_ShouldFailGenerateLabels(t *te
 		client: fakeCl,
 		log:    logr.DiscardLogger{},
 	}
+
 	err := jd.ServeRequest(cdsd)
 	assert.Error(t, err)
+
 	if !strings.Contains(err.Error(), "couldn't generate labels") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
@@ -165,8 +170,10 @@ func TestPutCDStageJenkinsDeployment_ServeRequest_ShouldFailGetJenkinsDeployment
 		client: fakeCl,
 		log:    logr.DiscardLogger{},
 	}
+
 	err := jd.ServeRequest(cdsd)
 	assert.Error(t, err)
+
 	if !strings.Contains(err.Error(), "couldn't get NewCDStageDeploy cd stage jenkins deployment") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}

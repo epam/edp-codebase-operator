@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
+	"path"
 
 	"github.com/pkg/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -18,14 +19,17 @@ const (
 
 var log = ctrl.Log.WithName("util")
 
-func CreateDirectory(path string) error {
-	log.Info("Creating directory", "path", path)
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		if err := os.MkdirAll(path, dirPermissionBits); err != nil {
-			return err
+func CreateDirectory(dirPath string) error {
+	log.Info("Creating directory", "path", dirPath)
+
+	if _, err := os.Stat(dirPath); os.IsNotExist(err) {
+		if err = os.MkdirAll(dirPath, dirPermissionBits); err != nil {
+			return fmt.Errorf("failed to make directory: %w", err)
 		}
 	}
-	log.Info("Directory has been created", "path", path)
+
+	log.Info("Directory has been created", "path", dirPath)
+
 	return nil
 }
 
@@ -34,21 +38,28 @@ func CopyFiles(src, dest string) error {
 
 	files, err := os.ReadDir(src)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to read a content of directory %q: %w", src, err)
 	}
 
 	for _, f := range files {
 		if f.IsDir() {
 			continue
 		}
-		input, err := os.ReadFile(src + "/" + f.Name())
+
+		fp := path.Join(src, f.Name())
+
+		var input []byte
+
+		input, err = os.ReadFile(fp)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to read a file %q: %w", fp, err)
 		}
 
-		err = os.WriteFile(fmt.Sprintf("%s/%s", dest, f.Name()), input, dirPermissionBits)
+		destFp := path.Join(dest, f.Name())
+
+		err = os.WriteFile(destFp, input, dirPermissionBits)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to write to file %q: %w", destFp, err)
 		}
 	}
 
@@ -62,11 +73,12 @@ func CopyFile(src, dest string) error {
 
 	input, err := os.ReadFile(src)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to read a file %q: %w", src, err)
 	}
 
-	if err := os.WriteFile(dest, input, dirPermissionBits); err != nil {
-		return err
+	err = os.WriteFile(dest, input, dirPermissionBits)
+	if err != nil {
+		return fmt.Errorf("failed to write to file %q: %w", dest, err)
 	}
 
 	log.Info("File has been copied", logDestKey, dest)
@@ -74,45 +86,52 @@ func CopyFile(src, dest string) error {
 	return nil
 }
 
-func DoesDirectoryExist(path string) bool {
-	if _, err := os.Stat(path); err != nil {
+func DoesDirectoryExist(dirPath string) bool {
+	if _, err := os.Stat(dirPath); err != nil {
 		if os.IsNotExist(err) {
 			return false
 		}
+
 		log.Error(err, "unable to check directory")
+
 		return false
 	}
+
 	return true
 }
 
-func RemoveDirectory(path string) error {
-	if err := os.RemoveAll(path); err != nil {
-		return errors.Wrapf(err, "couldn't remove directory %v", path)
+func RemoveDirectory(dirPath string) error {
+	if err := os.RemoveAll(dirPath); err != nil {
+		return errors.Wrapf(err, "couldn't remove directory %q", dirPath)
 	}
-	log.Info("directory has been cleaned", "directory", path)
+
+	log.Info("directory has been cleaned", "directory", dirPath)
+
 	return nil
 }
 
-func IsDirectoryEmpty(path string) bool {
-	files, err := os.ReadDir(path)
+func IsDirectoryEmpty(dirPath string) bool {
+	files, err := os.ReadDir(dirPath)
 	if err != nil {
 		log.Error(err, "unable to check directory")
+
 		return false
 	}
+
 	return len(files) == 0
 }
 
 func ReplaceStringInFile(file, oldLine, newLine string) error {
 	input, err := os.ReadFile(file)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to read a file %q: %w", file, err)
 	}
 
 	output := bytes.ReplaceAll(input, []byte(oldLine), []byte(newLine))
 
 	err = os.WriteFile(file, output, readWriteMode)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to write to file %q: %w", file, err)
 	}
 
 	return nil
@@ -121,7 +140,8 @@ func ReplaceStringInFile(file, oldLine, newLine string) error {
 func GetListFilesInDirectory(src string) ([]fs.DirEntry, error) {
 	files, err := os.ReadDir(src)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to read a content of directory %q: %w", src, err)
 	}
+
 	return files, nil
 }

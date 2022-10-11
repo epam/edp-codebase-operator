@@ -24,5 +24,6 @@ func (h DeleteJiraIssueMetadataCr) ServeRequest(metadata *codebaseApi.JiraIssueM
 	}
 
 	logv.Info("Jira issue metadata cr has been deleted.")
+
 	return nextServeOrNil(h.next, metadata)
 }

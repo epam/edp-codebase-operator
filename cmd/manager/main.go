@@ -36,7 +36,7 @@ import (
 	buildInfo "github.com/epam/edp-common/pkg/config"
 	edpCompApi "github.com/epam/edp-component-operator/pkg/apis/v1/v1"
 	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
-	perfAPi "github.com/epam/edp-perf-operator/v2/pkg/apis/edp/v1alpha1"
+	perfAPi "github.com/epam/edp-perf-operator/v2/pkg/apis/edp/v1"
 )
 
 var (
@@ -50,22 +50,6 @@ const (
 	codebaseBranchMaxConcurrentReconcilesEnv = "CODEBASE_BRANCH_MAX_CONCURRENT_RECONCILES"
 	logFailCtrlCreateMessage                 = "unable to create controller"
 )
-
-func init() {
-	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
-
-	utilruntime.Must(codebaseApiV1Alpha1.AddToScheme(scheme))
-
-	utilruntime.Must(codebaseApiV1.AddToScheme(scheme))
-
-	utilruntime.Must(cdPipeApi.AddToScheme(scheme))
-
-	utilruntime.Must(edpCompApi.AddToScheme(scheme))
-
-	utilruntime.Must(jenkinsApi.AddToScheme(scheme))
-
-	utilruntime.Must(perfAPi.AddToScheme(scheme))
-}
 
 func main() {
 	var (
@@ -106,6 +90,14 @@ func main() {
 		"platform", v.Platform,
 	)
 
+	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
+	utilruntime.Must(codebaseApiV1Alpha1.AddToScheme(scheme))
+	utilruntime.Must(codebaseApiV1.AddToScheme(scheme))
+	utilruntime.Must(cdPipeApi.AddToScheme(scheme))
+	utilruntime.Must(edpCompApi.AddToScheme(scheme))
+	utilruntime.Must(jenkinsApi.AddToScheme(scheme))
+	utilruntime.Must(perfAPi.AddToScheme(scheme))
+
 	ns, err := util.GetWatchNamespace()
 	if err != nil {
 		setupLog.Error(err, "unable to get watch namespace")
@@ -113,6 +105,7 @@ func main() {
 	}
 
 	cfg := ctrl.GetConfigOrDie()
+
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
 		Scheme:                 scheme,
 		MetricsBindAddress:     metricsAddr,
@@ -198,6 +191,7 @@ func main() {
 	}
 
 	setupLog.Info("starting manager")
+
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)

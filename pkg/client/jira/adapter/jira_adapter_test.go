@@ -27,27 +27,35 @@ func TestGoJiraAdapter_Connected_True(t *testing.T) {
 	if err != nil {
 		t.Fatal("Unable to create Jira Client")
 	}
+
 	c, err := jc.Connected()
+
 	assert.NoError(t, err)
 	assert.True(t, c)
 }
 
 func TestGoJiraAdapter_Connected_False(t *testing.T) {
 	httpmock.Reset()
+
 	jc, err := new(GoJiraAdapterFactory).New(dto.ConvertSpecToJiraServer("j-api", "user", "pwd"))
 	if err != nil {
 		t.Fatal("Unable to create Jira Client")
 	}
+
 	c, err := jc.Connected()
+
 	assert.Error(t, err)
 	assert.False(t, c)
 }
 
 func TestGoJiraAdapter_UnableCreateJiraClient(t *testing.T) {
 	httpmock.Reset()
+
 	jc, err := new(GoJiraAdapterFactory).New(dto.ConvertSpecToJiraServer("htt\\p://", "user", "pwd"))
+
 	assert.Error(t, err)
 	assert.Nil(t, jc)
+
 	if !strings.Contains(err.Error(), "parse \"htt\\\\p://\"") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
@@ -68,7 +76,9 @@ func TestGoJiraAdapter_GetIssueMetadata_Pass(t *testing.T) {
 	if err != nil {
 		t.Fatal("Unable to create Jira Client")
 	}
+
 	meta, err := jc.GetIssueMetadata("project_key")
+
 	assert.NoError(t, err)
 	assert.Equal(t, meta.Expand, "expand")
 }
@@ -80,7 +90,9 @@ func TestGoJiraAdapter_GetIssueMetadata_Fail(t *testing.T) {
 	if err != nil {
 		t.Fatal("Unable to create Jira Client")
 	}
+
 	meta, err := jc.GetIssueMetadata("issueId")
+
 	assert.Error(t, err)
 	assert.Nil(t, meta)
 }
@@ -105,7 +117,9 @@ func TestGoJiraAdapter_GetIssueType_Pass(t *testing.T) {
 	if err != nil {
 		t.Fatal("Unable to create Jira Client")
 	}
+
 	issue, err := jc.GetIssueType("issueId")
+
 	assert.NoError(t, err)
 	assert.Equal(t, issue, util.GetStringP("bug"))
 }
@@ -117,7 +131,9 @@ func TestGoJiraAdapter_GetIssueType_Fail(t *testing.T) {
 	if err != nil {
 		t.Fatal("Unable to create Jira Client")
 	}
+
 	issue, err := jc.GetIssueType("issueId")
+
 	assert.Error(t, err)
 	assert.Nil(t, issue)
 }
@@ -142,7 +158,9 @@ func TestGoJiraAdapter_GetProjectInfo_Pass(t *testing.T) {
 	if err != nil {
 		t.Fatal("Unable to create Jira Client")
 	}
+
 	jp, err := jc.GetProjectInfo("issueId")
+
 	assert.NoError(t, err)
 	assert.Equal(t, jp.Name, "test")
 }
@@ -154,7 +172,9 @@ func TestGoJiraAdapter_GetProjectInfo_Fail(t *testing.T) {
 	if err != nil {
 		t.Fatal("Unable to create Jira Client")
 	}
+
 	jp, err := jc.GetProjectInfo("issueId")
+
 	assert.Error(t, err)
 	assert.Nil(t, jp)
 }
@@ -172,7 +192,9 @@ func TestGoJiraAdapter_CreateFixVersionValue_Pass(t *testing.T) {
 	if err != nil {
 		t.Fatal("Unable to create Jira Client")
 	}
+
 	err = jc.CreateFixVersionValue(1, "100")
+
 	assert.NoError(t, err)
 }
 
@@ -189,7 +211,9 @@ func TestGoJiraAdapter_CreateFixVersionValue_Fail(t *testing.T) {
 	if err != nil {
 		t.Fatal("Unable to create Jira Client")
 	}
+
 	err = jc.CreateFixVersionValue(1, "100")
+
 	assert.Error(t, err)
 }
 
@@ -209,7 +233,9 @@ func TestGoJiraAdapter_CreateComponentValue_Pass(t *testing.T) {
 	if err != nil {
 		t.Fatal("Unable to create Jira Client")
 	}
+
 	err = jc.CreateComponentValue(1, "100")
+
 	assert.NoError(t, err)
 }
 
@@ -226,7 +252,9 @@ func TestGoJiraAdapter_CreateComponentValue_FailToGetProject(t *testing.T) {
 	if err != nil {
 		t.Fatal("Unable to create Jira Client")
 	}
+
 	err = jc.CreateComponentValue(1, "100")
+
 	assert.Error(t, err)
 }
 
@@ -243,7 +271,9 @@ func TestGoJiraAdapter_CreateComponentValue_FailToCreateComponent(t *testing.T) 
 	if err != nil {
 		t.Fatal("Unable to create Jira Client")
 	}
+
 	err = jc.CreateComponentValue(1, "100")
+
 	assert.Error(t, err)
 }
 
@@ -263,20 +293,26 @@ func TestGoJiraAdapter_ApplyTagsToIssue_Pass(t *testing.T) {
 	if err != nil {
 		t.Fatal("Unable to create Jira Client")
 	}
+
 	err = jc.ApplyTagsToIssue("jiraId", params)
+
 	assert.NoError(t, err)
 }
 
 func TestGoJiraAdapter_ApplyTagsToIssue_Fail(t *testing.T) {
 	httpmock.Reset()
+
 	params := map[string]interface{}{
 		"update": "test",
 	}
+
 	jc, err := new(GoJiraAdapterFactory).New(dto.ConvertSpecToJiraServer("j-api", "user", "pwd"))
 	if err != nil {
 		t.Fatal("Unable to create Jira Client")
 	}
+
 	err = jc.ApplyTagsToIssue("jiraId", params)
+
 	assert.Error(t, err)
 }
 
@@ -293,7 +329,9 @@ func TestGoJiraAdapter_CreateIssueLink_Pass(t *testing.T) {
 	if err != nil {
 		t.Fatal("Unable to create Jira Client")
 	}
+
 	err = jc.CreateIssueLink("jiraId", "title", "url")
+
 	assert.NoError(t, err)
 }
 
@@ -304,6 +342,8 @@ func TestGoJiraAdapter_CreateIssueLink_Fail(t *testing.T) {
 	if err != nil {
 		t.Fatal("Unable to create Jira Client")
 	}
+
 	err = jc.CreateIssueLink("jiraId", "title", "url")
+
 	assert.Error(t, err)
 }

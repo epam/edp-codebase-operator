@@ -2,6 +2,7 @@ package gittag
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/go-logr/logr"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
@@ -31,14 +32,28 @@ type ReconcileGitTag struct {
 func (r *ReconcileGitTag) SetupWithManager(mgr ctrl.Manager) error {
 	p := predicate.Funcs{
 		UpdateFunc: func(e event.UpdateEvent) bool {
-			oldObject := e.ObjectOld.(*codebaseApi.GitTag)
-			newObject := e.ObjectNew.(*codebaseApi.GitTag)
+			oldObject, ok := e.ObjectOld.(*codebaseApi.GitTag)
+			if !ok {
+				return false
+			}
+
+			newObject, ok := e.ObjectNew.(*codebaseApi.GitTag)
+			if !ok {
+				return false
+			}
+
 			return oldObject.Status == newObject.Status
 		},
 	}
-	return ctrl.NewControllerManagedBy(mgr).
+
+	err := ctrl.NewControllerManagedBy(mgr).
 		For(&codebaseApi.GitTag{}, builder.WithPredicates(p)).
 		Complete(r)
+	if err != nil {
+		return fmt.Errorf("failed to build GitTag controller: %w", err)
+	}
+
+	return nil
 }
 
 func (r *ReconcileGitTag) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
@@ -50,15 +65,18 @@ func (r *ReconcileGitTag) Reconcile(ctx context.Context, request reconcile.Reque
 		if k8sErrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
 		}
-		return reconcile.Result{}, err
+
+		return reconcile.Result{}, fmt.Errorf("failed to fetch GitTag resource %q: %w", request.NamespacedName, err)
 	}
 
 	gtChain := chain.CreateDefChain(r.client)
 	if err := gtChain.ServeRequest(gt); err != nil {
 		log.Error(err, err.Error())
-		return reconcile.Result{}, err
+
+		return reconcile.Result{}, fmt.Errorf("failed to process `Default chain`: %w", err)
 	}
 
 	log.Info("Reconciling GitTag has been finished")
+
 	return reconcile.Result{}, nil
 }

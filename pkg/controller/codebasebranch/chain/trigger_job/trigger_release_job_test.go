@@ -147,6 +147,7 @@ func TestTriggerReleaseJob_ShouldFailWhenTriggerJobReturnsErr(t *testing.T) {
 
 	err := trj.ServeRequest(cb)
 	assert.Error(t, err)
+
 	if !strings.Contains(err.Error(), "FATAL ERROR") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
@@ -210,6 +211,7 @@ func TestTriggerReleaseJob_ShouldFailOnCodebaseNotFound(t *testing.T) {
 
 	err := trj.ServeRequest(cb)
 	assert.Error(t, err)
+
 	if !strings.Contains(err.Error(), "Unable to get Codebase non-existing-stub-name: codebases.apps \"non-existing-stub-name\" not found") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
@@ -275,13 +277,13 @@ func TestTriggerReleaseJob_ShouldFailOnJenkinsfolderNotFound(t *testing.T) {
 
 	err := trj.ServeRequest(cb)
 	assert.Error(t, err)
+
 	if !strings.Contains(err.Error(), "c-stub-name codebase and/or jenkinsfolder c-stub-name-codebase are/is unavailable") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
 }
 
-func TestTriggerReleaseJob_ShouldFailOnSetintermediatestatus(t *testing.T) {
-
+func TestTriggerReleaseJob_ShouldFailOnSetIntermediateStatus(t *testing.T) {
 	cb := &codebaseApi.CodebaseBranch{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "cb-stub-name",
@@ -306,11 +308,12 @@ func TestTriggerReleaseJob_ShouldFailOnSetintermediatestatus(t *testing.T) {
 	}
 
 	err := trj.ServeRequest(cb)
+
 	assert.Error(t, err)
-	if !strings.Contains(err.Error(), "SetIntermediateSuccessFields failed for cb-stub-name branch") {
+
+	if !strings.Contains(err.Error(), `failed to update CodebaseBranchStatus status field "cb-stub-name"`) {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
-
 }
 
 func TestTriggerReleaseJob_ShouldPassEDPVersioningAndHasNewVersion(t *testing.T) {
@@ -461,6 +464,7 @@ func TestTriggerReleaseJob_ShouldFailEDPVersioningAndHasNewVersion(t *testing.T)
 
 	err := trj.ServeRequest(cb)
 	assert.Error(t, err)
+
 	if !strings.Contains(err.Error(), "FATAL ERROR") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}

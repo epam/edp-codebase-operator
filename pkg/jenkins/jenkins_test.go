@@ -10,6 +10,7 @@ import (
 	"github.com/jarcoal/httpmock"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	coreV1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -25,12 +26,12 @@ const (
 
 func TestJenkinsClient_TriggerReleaseJob_JobNotFound(t *testing.T) {
 	httpClient := http.Client{}
+
 	httpmock.ActivateNonDefault(&httpClient)
 	httpmock.RegisterResponder("GET", "j-url/api/json", httpmock.NewStringResponder(200, ""))
+
 	jenkins, err := gojenkins.CreateJenkins(&httpClient, "j-url", "j-username", "j-token").Init()
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	jc := JenkinsClient{
 		Jenkins:                  jenkins,
@@ -41,9 +42,7 @@ func TestJenkinsClient_TriggerReleaseJob_JobNotFound(t *testing.T) {
 		httpmock.NewStringResponder(404, ""))
 
 	err = jc.TriggerReleaseJob("codebase", map[string]string{"foo": "bar"})
-	if err == nil {
-		t.Fatal("no error returned")
-	}
+	require.NotNil(t, err)
 
 	if !strings.Contains(err.Error(), "unable to get job") {
 		t.Fatalf("wrong error returned: %s", err.Error())
@@ -52,12 +51,12 @@ func TestJenkinsClient_TriggerReleaseJob_JobNotFound(t *testing.T) {
 
 func TestJenkinsClient_TriggerReleaseJob_UnableToBuild(t *testing.T) {
 	httpClient := http.Client{}
+
 	httpmock.ActivateNonDefault(&httpClient)
 	httpmock.RegisterResponder("GET", "j-url/api/json", httpmock.NewStringResponder(200, ""))
+
 	jenkins, err := gojenkins.CreateJenkins(&httpClient, "j-url", "j-username", "j-token").Init()
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	jc := JenkinsClient{
 		Jenkins:                  jenkins,
@@ -78,9 +77,7 @@ func TestJenkinsClient_TriggerReleaseJob_UnableToBuild(t *testing.T) {
 		httpmock.NewStringResponder(500, ""))
 
 	err = jc.TriggerReleaseJob("codebase", map[string]string{"foo": "bar"})
-	if err == nil {
-		t.Fatal("no error returned")
-	}
+	require.NotNil(t, err)
 
 	if !strings.Contains(err.Error(), "Couldn't trigger") {
 		t.Fatalf("wrong error returned: %s", err.Error())
@@ -89,12 +86,12 @@ func TestJenkinsClient_TriggerReleaseJob_UnableToBuild(t *testing.T) {
 
 func TestJenkinsClient_TriggerReleaseJob(t *testing.T) {
 	httpClient := http.Client{}
+
 	httpmock.ActivateNonDefault(&httpClient)
 	httpmock.RegisterResponder("GET", "j-url/api/json", httpmock.NewStringResponder(200, ""))
+
 	jenkins, err := gojenkins.CreateJenkins(&httpClient, "j-url", "j-username", "j-token").Init()
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	jc := JenkinsClient{
 		Jenkins: jenkins,
@@ -123,12 +120,12 @@ func TestJenkinsClient_TriggerReleaseJob(t *testing.T) {
 func TestJenkinsClient_IsJobQueued_True(t *testing.T) {
 	// TODO: Move shared code to SetupTest() to meet DRY concept
 	httpClient := http.Client{}
+
 	httpmock.ActivateNonDefault(&httpClient)
 	httpmock.RegisterResponder("GET", "j-url/api/json", httpmock.NewStringResponder(200, ""))
+
 	jenkins, err := gojenkins.CreateJenkins(&httpClient, "j-url", "j-username", "j-token").Init()
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	jc := JenkinsClient{
 		Jenkins: jenkins,
@@ -140,20 +137,18 @@ func TestJenkinsClient_IsJobQueued_True(t *testing.T) {
 		httpmock.NewJsonResponderOrPanic(200, &jrsp))
 
 	isQueued, err := jc.IsJobQueued("queued-job")
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 	assert.True(t, *isQueued)
 }
 
 func TestJenkinsClient_IsJobQueued_False(t *testing.T) {
 	httpClient := http.Client{}
+
 	httpmock.ActivateNonDefault(&httpClient)
 	httpmock.RegisterResponder("GET", "j-url/api/json", httpmock.NewStringResponder(200, ""))
+
 	jenkins, err := gojenkins.CreateJenkins(&httpClient, "j-url", "j-username", "j-token").Init()
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	jc := JenkinsClient{
 		Jenkins: jenkins,
@@ -165,20 +160,18 @@ func TestJenkinsClient_IsJobQueued_False(t *testing.T) {
 		httpmock.NewJsonResponderOrPanic(200, &jrsp))
 
 	isQueued, err := jc.IsJobQueued("non-queued-job")
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 	assert.False(t, *isQueued)
 }
 
 func TestJenkinsClient_IsJobQueued_JobNotFound(t *testing.T) {
 	httpClient := http.Client{}
+
 	httpmock.ActivateNonDefault(&httpClient)
 	httpmock.RegisterResponder("GET", "j-url/api/json", httpmock.NewStringResponder(200, ""))
+
 	jenkins, err := gojenkins.CreateJenkins(&httpClient, "j-url", "j-username", "j-token").Init()
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	jc := JenkinsClient{
 		Jenkins: jenkins,
@@ -188,9 +181,7 @@ func TestJenkinsClient_IsJobQueued_JobNotFound(t *testing.T) {
 		httpmock.NewStringResponder(404, ""))
 
 	isQueued, err := jc.IsJobQueued("not-found-job")
-	if err == nil {
-		t.Fatal("no error returned")
-	}
+	require.NotNil(t, err)
 
 	if !strings.Contains(err.Error(), "404") {
 		t.Fatalf("wrong error returned: %s", err.Error())
@@ -201,12 +192,12 @@ func TestJenkinsClient_IsJobQueued_JobNotFound(t *testing.T) {
 
 func TestJenkinsClient_IsJobRunning_True(t *testing.T) {
 	httpClient := http.Client{}
+
 	httpmock.ActivateNonDefault(&httpClient)
 	httpmock.RegisterResponder("GET", "j-url/api/json", httpmock.NewStringResponder(200, ""))
+
 	jenkins, err := gojenkins.CreateJenkins(&httpClient, "j-url", "j-username", "j-token").Init()
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	jc := JenkinsClient{
 		Jenkins: jenkins,
@@ -221,20 +212,18 @@ func TestJenkinsClient_IsJobRunning_True(t *testing.T) {
 		httpmock.NewJsonResponderOrPanic(200, &brsp))
 
 	isRunning, err := jc.IsJobRunning("running-job")
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 	assert.True(t, *isRunning)
 }
 
 func TestJenkinsClient_IsJobRunning_False(t *testing.T) {
 	httpClient := http.Client{}
+
 	httpmock.ActivateNonDefault(&httpClient)
 	httpmock.RegisterResponder("GET", "j-url/api/json", httpmock.NewStringResponder(200, ""))
+
 	jenkins, err := gojenkins.CreateJenkins(&httpClient, "j-url", "j-username", "j-token").Init()
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	jc := JenkinsClient{
 		Jenkins: jenkins,
@@ -249,20 +238,18 @@ func TestJenkinsClient_IsJobRunning_False(t *testing.T) {
 		httpmock.NewJsonResponderOrPanic(200, &brsp))
 
 	isRunning, err := jc.IsJobRunning("not-running-job")
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 	assert.False(t, *isRunning)
 }
 
 func TestJenkinsClient_IsJobRunning_JobNotFound(t *testing.T) {
 	httpClient := http.Client{}
+
 	httpmock.ActivateNonDefault(&httpClient)
 	httpmock.RegisterResponder("GET", "j-url/api/json", httpmock.NewStringResponder(200, ""))
+
 	jenkins, err := gojenkins.CreateJenkins(&httpClient, "j-url", "j-username", "j-token").Init()
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	jc := JenkinsClient{
 		Jenkins: jenkins,
@@ -272,9 +259,7 @@ func TestJenkinsClient_IsJobRunning_JobNotFound(t *testing.T) {
 		httpmock.NewStringResponder(404, ""))
 
 	isRunning, err := jc.IsJobRunning("not-found-job")
-	if err == nil {
-		t.Fatal("no error returned")
-	}
+	require.NotNil(t, err)
 
 	if !strings.Contains(err.Error(), "404") {
 		t.Fatalf("wrong error returned: %s", err.Error())
@@ -285,12 +270,12 @@ func TestJenkinsClient_IsJobRunning_JobNotFound(t *testing.T) {
 
 func TestJenkinsClient_IsJobRunning_JobFoundButError(t *testing.T) {
 	httpClient := http.Client{}
+
 	httpmock.ActivateNonDefault(&httpClient)
 	httpmock.RegisterResponder("GET", "j-url/api/json", httpmock.NewStringResponder(200, ""))
+
 	jenkins, err := gojenkins.CreateJenkins(&httpClient, "j-url", "j-username", "j-token").Init()
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	jc := JenkinsClient{
 		Jenkins: jenkins,
@@ -393,7 +378,6 @@ func TestGetJenkinsCreds_SecretExists(t *testing.T) {
 			"password": []byte("j-token"),
 		},
 	}
-
 	jspec := &jenkinsApi.Jenkins{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      fakeName,
@@ -411,9 +395,7 @@ func TestGetJenkinsCreds_SecretExists(t *testing.T) {
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(s, jspec).Build()
 
 	ju, jt, err := GetJenkinsCreds(fakeCl, jspec, fakeNamespace)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 	assert.Equal(t, "j-token", jt)
 	assert.Equal(t, "j-user", ju)
 }
@@ -436,13 +418,12 @@ func TestGetJenkinsCreds_NoSecretExists(t *testing.T) {
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(jspec).Build()
 
 	ju, jt, err := GetJenkinsCreds(fakeCl, jspec, fakeNamespace)
-	if err == nil {
-		t.Fatal("no error returned")
-	}
+	require.NotNil(t, err)
 
 	if !strings.Contains(err.Error(), "Secret non-existing-secret in not found") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
+
 	assert.Empty(t, jt)
 	assert.Empty(t, ju)
 }
@@ -451,18 +432,19 @@ func TestGetJenkins_ShouldFailWhenNotFound(t *testing.T) {
 	jl := &jenkinsApi.JenkinsList{}
 	scheme := runtime.NewScheme()
 	scheme.AddKnownTypes(v1.SchemeGroupVersion, jl)
+
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(jl).Build()
 
 	j, err := GetJenkins(fakeCl, fakeNamespace)
 	assert.Nil(t, j)
 	assert.Error(t, err)
+
 	if !strings.Contains(err.Error(), "jenkins installation is not found in namespace fake-namespace") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
 }
 
 func TestGetJenkins_ShouldPass(t *testing.T) {
-
 	j := &jenkinsApi.Jenkins{}
 	jl := &jenkinsApi.JenkinsList{
 		Items: []jenkinsApi.Jenkins{
@@ -476,6 +458,7 @@ func TestGetJenkins_ShouldPass(t *testing.T) {
 	}
 	scheme := runtime.NewScheme()
 	scheme.AddKnownTypes(v1.SchemeGroupVersion, j, jl)
+
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(j, jl).Build()
 
 	j, err := GetJenkins(fakeCl, fakeNamespace)
@@ -485,12 +468,12 @@ func TestGetJenkins_ShouldPass(t *testing.T) {
 
 func TestJenkinsClient_TriggerDeletionJob_JobNotFound(t *testing.T) {
 	httpClient := http.Client{}
+
 	httpmock.ActivateNonDefault(&httpClient)
 	httpmock.RegisterResponder("GET", "j-url/api/json", httpmock.NewStringResponder(200, ""))
+
 	jenkins, err := gojenkins.CreateJenkins(&httpClient, "j-url", "j-username", "j-token").Init()
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	jc := JenkinsClient{
 		Jenkins:                  jenkins,
@@ -501,9 +484,7 @@ func TestJenkinsClient_TriggerDeletionJob_JobNotFound(t *testing.T) {
 		httpmock.NewStringResponder(404, ""))
 
 	err = jc.TriggerDeletionJob("master", "codebase")
-	if err == nil {
-		t.Fatal("no error returned")
-	}
+	require.NotNil(t, err)
 
 	if errors.Cause(err) != JobNotFoundError(err.Error()) {
 		t.Fatal("wrong error returned")
@@ -512,8 +493,10 @@ func TestJenkinsClient_TriggerDeletionJob_JobNotFound(t *testing.T) {
 
 func TestJenkinsClient_TriggerDeletionJob_LastBuildNotFoundIssue(t *testing.T) {
 	httpClient := http.Client{}
+
 	httpmock.ActivateNonDefault(&httpClient)
 	httpmock.RegisterResponder("GET", "j-url/api/json", httpmock.NewStringResponder(200, ""))
+
 	jenkins, err := gojenkins.CreateJenkins(&httpClient, "j-url", "j-username", "j-token").Init()
 	if err != nil {
 		t.Fatal(err)
@@ -528,9 +511,7 @@ func TestJenkinsClient_TriggerDeletionJob_LastBuildNotFoundIssue(t *testing.T) {
 		httpmock.NewStringResponder(200, ""))
 
 	err = jc.TriggerDeletionJob("master", "codebase")
-	if err == nil {
-		t.Fatal("no error returned")
-	}
+	require.NotNil(t, err)
 
 	if !strings.Contains(err.Error(), "no responder found") {
 		t.Fatalf("wrong error returned: %s", err.Error())
@@ -539,18 +520,17 @@ func TestJenkinsClient_TriggerDeletionJob_LastBuildNotFoundIssue(t *testing.T) {
 
 func TestJenkinsClient_TriggerDeletionJob_ShouldPass(t *testing.T) {
 	httpClient := http.Client{}
+
 	httpmock.ActivateNonDefault(&httpClient)
 	httpmock.RegisterResponder("GET", "j-url/api/json", httpmock.NewStringResponder(200, ""))
+
 	jenkins, err := gojenkins.CreateJenkins(&httpClient, "j-url", "j-username", "j-token").Init()
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	jc := JenkinsClient{
 		Jenkins:                  jenkins,
 		triggerReleaseRetryCount: 1,
 	}
-
 	jrsp := gojenkins.JobResponse{
 		InQueue: false,
 		LastBuild: gojenkins.JobBuild{
@@ -562,10 +542,8 @@ func TestJenkinsClient_TriggerDeletionJob_ShouldPass(t *testing.T) {
 
 	httpmock.RegisterResponder("GET", "j-url/job/codebase/job/Delete-release-codebase/api/json",
 		httpmock.NewJsonResponderOrPanic(200, &jrsp))
-
 	httpmock.RegisterResponder("GET", "j-url/job/codebase/job/Delete-release-codebase/10/api/json?depth=1",
 		httpmock.NewJsonResponderOrPanic(200, &brsp))
-
 	httpmock.RegisterResponder("GET", "j-url/crumbIssuer/api/json/api/json",
 		httpmock.NewStringResponder(404, ""))
 
@@ -584,8 +562,10 @@ func TestJenkinsClient_TriggerDeletionJob_ShouldPass(t *testing.T) {
 
 func TestJenkinsClient_TriggerDeletionJob_ShouldFailOnJobBuildFailure(t *testing.T) {
 	httpClient := http.Client{}
+
 	httpmock.ActivateNonDefault(&httpClient)
 	httpmock.RegisterResponder("GET", "j-url/api/json", httpmock.NewStringResponder(200, ""))
+
 	jenkins, err := gojenkins.CreateJenkins(&httpClient, "j-url", "j-username", "j-token").Init()
 	if err != nil {
 		t.Fatal(err)
@@ -595,7 +575,6 @@ func TestJenkinsClient_TriggerDeletionJob_ShouldFailOnJobBuildFailure(t *testing
 		Jenkins:                  jenkins,
 		triggerReleaseRetryCount: 1,
 	}
-
 	jrsp := gojenkins.JobResponse{
 		InQueue: false,
 		LastBuild: gojenkins.JobBuild{
@@ -607,20 +586,15 @@ func TestJenkinsClient_TriggerDeletionJob_ShouldFailOnJobBuildFailure(t *testing
 
 	httpmock.RegisterResponder("GET", "j-url/job/codebase/job/Delete-release-codebase/api/json",
 		httpmock.NewJsonResponderOrPanic(200, &jrsp))
-
 	httpmock.RegisterResponder("GET", "j-url/job/codebase/job/Delete-release-codebase/10/api/json?depth=1",
 		httpmock.NewJsonResponderOrPanic(200, &brsp))
-
 	httpmock.RegisterResponder("GET", "j-url/crumbIssuer/api/json/api/json",
 		httpmock.NewStringResponder(404, ""))
-
 	httpmock.RegisterResponder("POST", "j-url/job/codebase/job/Delete-release-codebase/build",
 		httpmock.NewStringResponder(500, ""))
 
 	err = jc.TriggerDeletionJob("master", "codebase")
-	if err == nil {
-		t.Fatal("no error returned")
-	}
+	require.NotNil(t, err)
 
 	if !strings.Contains(err.Error(), "unable to build job") {
 		t.Fatalf("wrong error returned: %s", err.Error())
@@ -630,9 +604,12 @@ func TestJenkinsClient_TriggerDeletionJob_ShouldFailOnJobBuildFailure(t *testing
 func TestJenkinsClient_GetJobStatus_ShouldPass(t *testing.T) {
 	httpmock.Reset()
 	httpmock.Activate()
+
 	httpClient := http.Client{}
+
 	httpmock.ActivateNonDefault(&httpClient)
 	httpmock.RegisterResponder("GET", "j-url/api/json", httpmock.NewStringResponder(200, ""))
+
 	jenkins, err := gojenkins.CreateJenkins(&httpClient, "j-url", "j-username", "j-token").Init()
 	if err != nil {
 		t.Fatal(err)
@@ -654,18 +631,19 @@ func TestJenkinsClient_GetJobStatus_ShouldPass(t *testing.T) {
 		httpmock.NewJsonResponderOrPanic(200, &brsp))
 
 	js, err := jc.GetJobStatus("job-name", 1*time.Millisecond, 1)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 	assert.Equal(t, js, "Green")
 }
 
 func TestJenkinsClient_GetJobStatus_ShouldFailWithJobNotFound(t *testing.T) {
 	httpmock.Reset()
 	httpmock.Activate()
+
 	httpClient := http.Client{}
+
 	httpmock.ActivateNonDefault(&httpClient)
 	httpmock.RegisterResponder("GET", "j-url/api/json", httpmock.NewStringResponder(404, ""))
+
 	jenkins, err := gojenkins.CreateJenkins(&httpClient, "j-url", "j-username", "j-token").Init()
 	if err != nil {
 		t.Fatal(err)
@@ -684,9 +662,12 @@ func TestJenkinsClient_GetJobStatus_ShouldFailWithJobNotFound(t *testing.T) {
 func TestJenkinsClient_GetJobStatus_ShouldFailOnTimeout(t *testing.T) {
 	httpmock.Reset()
 	httpmock.Activate()
+
 	httpClient := http.Client{}
+
 	httpmock.ActivateNonDefault(&httpClient)
 	httpmock.RegisterResponder("GET", "j-url/api/json", httpmock.NewStringResponder(200, ""))
+
 	jenkins, err := gojenkins.CreateJenkins(&httpClient, "j-url", "j-username", "j-token").Init()
 	if err != nil {
 		t.Fatal(err)
@@ -716,9 +697,12 @@ func TestJenkinsClient_GetJobStatus_ShouldFailOnTimeout(t *testing.T) {
 func TestJenkinsClient_GetJobStatus_ShouldFailOnNotbuilt(t *testing.T) {
 	httpmock.Reset()
 	httpmock.Activate()
+
 	httpClient := http.Client{}
+
 	httpmock.ActivateNonDefault(&httpClient)
 	httpmock.RegisterResponder("GET", "j-url/api/json", httpmock.NewStringResponder(200, ""))
+
 	jenkins, err := gojenkins.CreateJenkins(&httpClient, "j-url", "j-username", "j-token").Init()
 	if err != nil {
 		t.Fatal(err)

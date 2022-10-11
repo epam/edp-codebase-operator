@@ -20,12 +20,12 @@ func TestGitLab_CheckProjectExist(t *testing.T) {
 	}
 
 	r, err := g.CheckProjectExist("/backup", "fake-name")
+
 	assert.NoError(t, err)
 	assert.True(t, *r)
 }
 
 func TestGitLab_CheckProjectExist_ShouldFailToAuth(t *testing.T) {
-
 	httpmock.Reset()
 	httpmock.Activate()
 
@@ -37,6 +37,7 @@ func TestGitLab_CheckProjectExist_ShouldFailToAuth(t *testing.T) {
 	}
 
 	r, err := g.CheckProjectExist("/backup", "fake-name")
+
 	assert.Error(t, err)
 	assert.Nil(t, r)
 	assert.Contains(t, err.Error(), "unauthorized")
@@ -51,13 +52,13 @@ func TestGitLab_CheckProjectExist_ShouldFailToRequest(t *testing.T) {
 	}
 
 	r, err := g.CheckProjectExist("/backup", "fake-name")
+
 	assert.Error(t, err)
 	assert.Nil(t, r)
 	assert.Contains(t, err.Error(), "Unable to check project")
 }
 
 func TestGitLab_Init(t *testing.T) {
-
 	httpmock.Reset()
 	httpmock.Activate()
 
@@ -73,11 +74,11 @@ func TestGitLab_Init(t *testing.T) {
 	}
 
 	err := g.Init("https://gitlab.example.com", "user", "pass")
+
 	assert.NoError(t, err)
 }
 
 func TestGitLab_Init_ShouldFail(t *testing.T) {
-
 	httpmock.Reset()
 	httpmock.Activate()
 
@@ -93,16 +94,17 @@ func TestGitLab_Init_ShouldFail(t *testing.T) {
 	}
 
 	err := g.Init("//", "user", "pass")
+
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "Unable to get GitLab access token: Post")
 }
 
 func TestGitLab_Init_ShouldGetError(t *testing.T) {
-
 	httpmock.Reset()
 	httpmock.Activate()
 
 	jr := "GiLab is Unavailable"
+
 	httpmock.RegisterResponder("POST", "https://gitlab.example.com/oauth/token",
 		httpmock.NewJsonResponderOrPanic(500, &jr))
 
@@ -111,12 +113,12 @@ func TestGitLab_Init_ShouldGetError(t *testing.T) {
 	}
 
 	err := g.Init("https://gitlab.example.com", "user", "pass")
+
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "GiLab is Unavailable")
 }
 
 func TestGitLab_DeleteProject_ShouldPass(t *testing.T) {
-
 	httpmock.Reset()
 	httpmock.Activate()
 
@@ -128,11 +130,11 @@ func TestGitLab_DeleteProject_ShouldPass(t *testing.T) {
 	}
 
 	err := g.DeleteProject("fake-project")
+
 	assert.NoError(t, err)
 }
 
 func TestGitLab_DeleteProject_ShouldPassWithError(t *testing.T) {
-
 	httpmock.Reset()
 	httpmock.Activate()
 
@@ -144,6 +146,7 @@ func TestGitLab_DeleteProject_ShouldPassWithError(t *testing.T) {
 	}
 
 	err := g.DeleteProject("fake-project")
+
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "404")
 }
@@ -151,17 +154,18 @@ func TestGitLab_DeleteProject_ShouldPassWithError(t *testing.T) {
 func TestGitLab_DeleteProject_ShouldFail(t *testing.T) {
 	httpmock.Reset()
 	httpmock.Activate()
+
 	g := GitLab{
 		Client: *resty.DefaultClient,
 	}
 
 	err := g.DeleteProject("fake-project")
+
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "Unable to delete project in GitLab")
 }
 
 func TestGitLab_CreateProject_ShouldPass(t *testing.T) {
-
 	httpmock.Reset()
 	httpmock.Activate()
 
@@ -180,12 +184,12 @@ func TestGitLab_CreateProject_ShouldPass(t *testing.T) {
 	}
 
 	r, err := g.CreateProject("fake-group", "fake-project")
+
 	assert.NoError(t, err)
 	assert.Equal(t, r, "4")
 }
 
 func TestGitLab_CreateProject_ShouldFailToGetGroupIdByName(t *testing.T) {
-
 	httpmock.Reset()
 	httpmock.Activate()
 
@@ -201,12 +205,12 @@ func TestGitLab_CreateProject_ShouldFailToGetGroupIdByName(t *testing.T) {
 	}
 
 	r, err := g.CreateProject("fake-group", "fake-project")
+
 	assert.Error(t, err)
 	assert.Equal(t, r, "")
 }
 
 func TestGitLab_CreateProject_ShouldFail(t *testing.T) {
-
 	httpmock.Reset()
 	httpmock.Activate()
 
@@ -225,13 +229,13 @@ func TestGitLab_CreateProject_ShouldFail(t *testing.T) {
 	}
 
 	r, err := g.CreateProject("fake-group", "fake-project")
+
 	assert.Error(t, err)
 	assert.Equal(t, r, "")
 	assert.Contains(t, err.Error(), "FAILED")
 }
 
 func TestGitLab_CreateProject_ShouldFailOnCreate(t *testing.T) {
-
 	httpmock.Reset()
 	httpmock.Activate()
 

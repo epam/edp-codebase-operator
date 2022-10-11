@@ -26,9 +26,11 @@ func (e Chain) ServeRequest(*codebaseApi.CodebaseBranch) error {
 	if e.returnError {
 		err := errors.New(e.logMessage)
 		log.Error(err, err.Error())
+
 		return err
 	}
 
 	log.Info(e.logMessage)
+
 	return nil
 }

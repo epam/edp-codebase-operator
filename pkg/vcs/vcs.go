@@ -24,19 +24,25 @@ func CreateVCSClient(vcsToolName model.VCSTool, u, username, password string) (V
 	switch vcsToolName {
 	case model.GitLab:
 		log.Print("Creating VCS for GitLab implementation...")
+
 		vcsClient := gitlab.GitLab{}
+
 		err := vcsClient.Init(u, username, password)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to init client for GitLab: %w", err)
 		}
+
 		return &vcsClient, nil
 	case model.BitBucket:
 		log.Print("Creating VCS for BitBucket implementation...")
+
 		vcsClient := bitbucket.BitBucket{}
+
 		err := vcsClient.Init(u, username, password)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to init client for BitBucket: %w", err)
 		}
+
 		return &vcsClient, nil
 	default:
 		return nil, fmt.Errorf("invalid VCS tool. Currently we do not support %v", vcsToolName)
@@ -52,10 +58,11 @@ func GetVcsConfig(c client.Client, us *model.UserSettings, codebaseName, namespa
 
 	vcsGroupNameUrl, err := url.Parse(us.VcsGroupNameUrl)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to parse url %q: %w", us.VcsGroupNameUrl, err)
 	}
 
 	projectVcsHostnameUrl := fmt.Sprintf("%v://%v", vcsGroupNameUrl.Scheme, vcsGroupNameUrl.Host)
+
 	vcsTool, err := CreateVCSClient(us.VcsToolName, projectVcsHostnameUrl, vcsAutoUserLogin, vcsAutoUserPassword)
 	if err != nil {
 		return nil, err
@@ -63,7 +70,7 @@ func GetVcsConfig(c client.Client, us *model.UserSettings, codebaseName, namespa
 
 	vcsSshUrl, err := vcsTool.GetRepositorySshUrl(vcsGroupNameUrl.Path[1:len(vcsGroupNameUrl.Path)], codebaseName)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get repository ssh url: %w", err)
 	}
 
 	return &model.Vcs{
@@ -91,17 +98,19 @@ func CreateProjectInVcs(c client.Client, us *model.UserSettings, codebaseName, n
 
 	e, err := vcsTool.CheckProjectExist(vcsConf.ProjectVcsGroupPath, codebaseName)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to check if project exists: %w", err)
 	}
 
 	if *e {
 		log.Printf("couldn't copy project to your VCS group. Repository %v is already exists in %v", codebaseName, vcsConf.ProjectVcsGroupPath)
 		return nil
 	}
+
 	_, err = vcsTool.CreateProject(vcsConf.ProjectVcsGroupPath, codebaseName)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create project: %w", err)
 	}
+
 	vcsConf.VcsSshUrl, err = vcsTool.GetRepositorySshUrl(vcsConf.ProjectVcsGroupPath, codebaseName)
 	if err != nil {
 		return errors.Wrap(err, "Unable to get repository ssh url")

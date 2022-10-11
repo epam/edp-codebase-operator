@@ -26,6 +26,7 @@ const (
 
 func (h PutTagValue) ServeRequest(metadata *codebaseApi.JiraIssueMetadata) error {
 	log.Info("start creating field values in Jira project.")
+
 	requestPayload, err := util.GetFieldsMap(metadata.Spec.Payload, []string{issuesLinksKey, jiraLabelFieldName})
 	if err != nil {
 		return errors.Wrap(err, "couldn't get map with Jira field values")
@@ -45,6 +46,7 @@ func (h PutTagValue) ServeRequest(metadata *codebaseApi.JiraIssueMetadata) error
 	}
 
 	log.Info("end creating field values in Jira project.")
+
 	return nextServeOrNil(h.next, metadata)
 }
 
@@ -73,32 +75,47 @@ func (h PutTagValue) tryToCreateFieldValues(requestPayload map[string]interface{
 			continue
 		}
 
-		allowedValues := fieldProperties.(map[string]interface{})["allowedValues"].([]interface{})
-		val := v.(string)
+		allowedValues, ok := fieldProperties.(map[string]interface{})["allowedValues"].([]interface{})
+		if !ok {
+			return fmt.Errorf("wrong type of value: '%v'", fieldProperties)
+		}
+
+		val, ok := v.(string)
+		if !ok {
+			return fmt.Errorf("wrong type of value, '%v' is not string", v)
+		}
+
 		if !doesJiraContainValue(val, allowedValues) {
 			log.Info("Jira doesn't contain value field. try to create.", "value", val)
-			id, err := strconv.Atoi(projectInfo.ID)
+
+			var id int
+
+			id, err = strconv.Atoi(projectInfo.ID)
 			if err != nil {
-				return err
+				return fmt.Errorf("failed to parse to int project ID: %w", err)
 			}
-			if err := createApiMap[k](id, val); err != nil {
+
+			err = createApiMap[k](id, val)
+			if err != nil {
 				return errors.Wrapf(err, "couldn't create value %v for %v field", val, k)
 			}
 		}
 	}
+
 	return nil
 }
 
 func (h PutTagValue) getIssueTypes(projectId, projectKey string) ([]*goJira.MetaIssueType, error) {
 	issueMetadata, err := h.client.GetIssueMetadata(projectKey)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to fetch Jira issue metadata: %w", err)
 	}
 
 	metaProject := findProject(issueMetadata.Projects, projectId)
 	if metaProject == nil {
 		return nil, fmt.Errorf("project with %v was not found", projectId)
 	}
+
 	return metaProject.IssueTypes, nil
 }
 
@@ -108,6 +125,7 @@ func findProject(projects []*goJira.MetaProject, id string) *goJira.MetaProject 
 			return p
 		}
 	}
+
 	return nil
 }
 
@@ -117,14 +135,21 @@ func findIssueMetaInfo(types []*goJira.MetaIssueType, issueType string) tcontain
 			return t.Fields
 		}
 	}
+
 	return nil
 }
 
 func doesJiraContainValue(value string, values []interface{}) bool {
 	for _, v := range values {
-		if value == v.(map[string]interface{})["name"] {
+		m, ok := v.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		if value == m["name"] {
 			return true
 		}
 	}
+
 	return false
 }

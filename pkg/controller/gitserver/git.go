@@ -30,8 +30,27 @@ import (
 )
 
 const (
-	gitCMD    = "git"
-	gitDirArg = "--git-dir"
+	gitCMD          = "git"
+	gitDirName      = ".git"
+	gitDirArg       = "--git-dir"
+	gitBranchArg    = "branch"
+	gitCheckoutArg  = "checkout"
+	getFetchArg     = "fetch"
+	gitOriginArg    = "origin"
+	gitUnshallowArg = "--unshallow"
+
+	gitSshVariantEnv = "GIT_SSH_VARIANT=ssh"
+)
+
+const defaultSshPort = 22
+
+const (
+	logBranchNameKey = "branchName"
+	logDirectoryKey  = "directory"
+	logRepositoryKey = "repository"
+	logOutKey        = "out"
+
+	errPlainOpenTmpl = "failed to open git directory %q: %w"
 )
 
 type GitSshData struct {
@@ -80,16 +99,16 @@ func (gp *GitProvider) buildCommand(cmd string, params ...string) Command {
 var log = ctrl.Log.WithName("git-provider")
 
 func (gp *GitProvider) CreateRemoteBranch(key, user, p, name, fromcommit string, port int32) error {
-	log.Info("start creating remote branch", "name", name)
+	log.Info("start creating remote branch", logBranchNameKey, name)
 
 	r, err := git.PlainOpen(p)
 	if err != nil {
-		return err
+		return fmt.Errorf(errPlainOpenTmpl, p, err)
 	}
 
 	branches, err := r.Branches()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get branches iterator: %w", err)
 	}
 
 	exists, err := isBranchExists(name, branches)
@@ -98,49 +117,56 @@ func (gp *GitProvider) CreateRemoteBranch(key, user, p, name, fromcommit string,
 	}
 
 	if exists {
-		log.Info("branch already exists. skip creating", "name", name)
+		log.Info("branch already exists. skip creating", logBranchNameKey, name)
 		return nil
 	}
 
 	ref, err := r.Head()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get git HEAD reference: %w", err)
 	}
 
 	if fromcommit != "" {
 		ref = plumbing.NewReferenceFromStrings(name, fromcommit)
+
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to create a reference from name: %w", err)
 		}
 	}
 
 	newRef := plumbing.NewReferenceFromStrings(fmt.Sprintf("refs/heads/%v", name), ref.Hash().String())
-	if err := r.Storer.SetReference(newRef); err != nil {
+
+	err = r.Storer.SetReference(newRef)
+	if err != nil {
+		return fmt.Errorf("failed to set refference: %w", err)
+	}
+
+	err = gp.PushChanges(key, user, p, port, "--all")
+	if err != nil {
 		return err
 	}
 
-	if err := gp.PushChanges(key, user, p, port, "--all"); err != nil {
-		return err
-	}
-	log.Info("branch has been created", "name", name)
+	log.Info("branch has been created", logBranchNameKey, name)
+
 	return nil
 }
 
 func (*GitProvider) CommitChanges(directory, commitMsg string) error {
-	log.Info("Start committing changes", "directory", directory)
+	log.Info("Start committing changes", logDirectoryKey, directory)
+
 	r, err := git.PlainOpen(directory)
 	if err != nil {
-		return err
+		return fmt.Errorf(errPlainOpenTmpl, directory, err)
 	}
 
 	w, err := r.Worktree()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get git worktree: %w", err)
 	}
 
 	_, err = w.Add(".")
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to add files to the index: %w", err)
 	}
 
 	_, err = w.Commit(commitMsg, &git.CommitOptions{
@@ -151,14 +177,18 @@ func (*GitProvider) CommitChanges(directory, commitMsg string) error {
 		},
 	})
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to commit: %w", err)
 	}
-	log.Info("Changes have been commited", "directory", directory)
+
+	log.Info("Changes have been committed", logDirectoryKey, directory)
+
 	return nil
 }
 
 func (gp *GitProvider) RemoveBranch(directory, branchName string) error {
-	cmd := gp.buildCommand(gitCMD, gitDirArg, fmt.Sprintf("%s/.git", directory), "branch", "-D", branchName)
+	gitDir := path.Join(directory, gitDirName)
+	cmd := gp.buildCommand(gitCMD, gitDirArg, gitDir, gitBranchArg, "-D", branchName)
+
 	if bts, err := cmd.CombinedOutput(); err != nil {
 		return errors.Wrapf(err, "unable to remove branch, err: %s", string(bts))
 	}
@@ -167,14 +197,14 @@ func (gp *GitProvider) RemoveBranch(directory, branchName string) error {
 }
 
 func (gp *GitProvider) RenameBranch(directory, currentName, newName string) error {
-	cmd := gp.buildCommand(gitCMD, gitDirArg, fmt.Sprintf("%s/.git", directory), "checkout",
-		currentName)
+	gitDir := path.Join(directory, gitDirName)
+	cmd := gp.buildCommand(gitCMD, gitDirArg, gitDir, gitCheckoutArg, currentName)
+
 	if bts, err := cmd.CombinedOutput(); err != nil {
 		return errors.Wrapf(err, "unable to checkout branch, err: %s", string(bts))
 	}
 
-	cmd = gp.buildCommand(gitCMD, gitDirArg, fmt.Sprintf("%s/.git", directory), "branch", "-m",
-		newName)
+	cmd = gp.buildCommand(gitCMD, gitDirArg, gitDir, gitBranchArg, "-m", newName)
 	if bts, err := cmd.CombinedOutput(); err != nil {
 		return errors.Wrapf(err, "unable to rename branch, err: %s", string(bts))
 	}
@@ -183,14 +213,14 @@ func (gp *GitProvider) RenameBranch(directory, currentName, newName string) erro
 }
 
 func (gp *GitProvider) CreateChildBranch(directory, currentBranch, newBranch string) error {
-	cmd := gp.buildCommand(gitCMD, gitDirArg, fmt.Sprintf("%s/.git", directory), "checkout",
-		currentBranch)
+	gitDir := path.Join(directory, gitDirName)
+	cmd := gp.buildCommand(gitCMD, gitDirArg, gitDir, gitCheckoutArg, currentBranch)
+
 	if bts, err := cmd.CombinedOutput(); err != nil {
 		return errors.Wrapf(err, "unable to checkout branch, err: %s", string(bts))
 	}
 
-	cmd = gp.buildCommand(gitCMD, gitDirArg, fmt.Sprintf("%s/.git", directory), "checkout", "-b",
-		newBranch)
+	cmd = gp.buildCommand(gitCMD, gitDirArg, gitDir, gitCheckoutArg, "-b", newBranch)
 	if bts, err := cmd.CombinedOutput(); err != nil {
 		return errors.Wrapf(err, "unable to rename branch, err: %s", string(bts))
 	}
@@ -199,7 +229,8 @@ func (gp *GitProvider) CreateChildBranch(directory, currentBranch, newBranch str
 }
 
 func (*GitProvider) PushChanges(key, user, directory string, port int32, pushParams ...string) (err error) {
-	log.Info("Start pushing changes", "directory", directory)
+	log.Info("Start pushing changes", logDirectoryKey, directory)
+
 	keyPath, err := initAuth(key, user)
 	if err != nil {
 		return err
@@ -209,25 +240,32 @@ func (*GitProvider) PushChanges(key, user, directory string, port int32, pushPar
 		err = os.Remove(keyPath)
 	}()
 
-	basePushParams := []string{gitDirArg, fmt.Sprintf("%s/.git", directory),
-		"push", "origin"}
+	gitDir := path.Join(directory, gitDirName)
+	basePushParams := []string{gitDirArg, gitDir, "push", gitOriginArg}
 	basePushParams = append(basePushParams, pushParams...)
 
 	pushCMD := exec.Command(gitCMD, basePushParams...)
-	pushCMD.Env = []string{fmt.Sprintf(`GIT_SSH_COMMAND=ssh -i %s -l %s -o StrictHostKeyChecking=no -p %d`, keyPath,
-		user, port), "GIT_SSH_VARIANT=ssh"}
+	pushCMD.Env = []string{
+		fmt.Sprintf(`GIT_SSH_COMMAND=ssh -i %s -l %s -o StrictHostKeyChecking=no -p %d`, keyPath,
+			user, port),
+		gitSshVariantEnv,
+	}
 	pushCMD.Dir = directory
+
 	log.Info("pushCMD:", "is: ", basePushParams)
+
 	if bts, err := pushCMD.CombinedOutput(); err != nil {
 		return errors.Wrapf(err, "unable to push changes, err: %s", string(bts))
 	}
 
-	log.Info("Changes has been pushed", "directory", directory)
+	log.Info("Changes has been pushed", logDirectoryKey, directory)
+
 	return
 }
 
 func (*GitProvider) CheckPermissions(repo string, user, pass *string) (accessible bool) {
-	log.Info("checking permissions", "user", user, "repository", repo)
+	log.Info("checking permissions", "user", user, logRepositoryKey, repo)
+
 	if user == nil || pass == nil {
 		return true
 	}
@@ -237,6 +275,7 @@ func (*GitProvider) CheckPermissions(repo string, user, pass *string) (accessibl
 		Name: "origin",
 		URLs: []string{repo},
 	})
+
 	rfs, err := remote.List(&git.ListOptions{
 		Auth: &http.BasicAuth{
 			Username: *user,
@@ -258,7 +297,9 @@ func (*GitProvider) CheckPermissions(repo string, user, pass *string) (accessibl
 func (*GitProvider) BareToNormal(p string) error {
 	const readWriteExecutePermBits = 0o777
 
-	if err := os.MkdirAll(fmt.Sprintf("%s/.git", p), readWriteExecutePermBits); err != nil {
+	gitDir := path.Join(p, gitDirName)
+
+	if err := os.MkdirAll(gitDir, readWriteExecutePermBits); err != nil {
 		return errors.Wrap(err, "unable to create .git folder")
 	}
 
@@ -268,17 +309,18 @@ func (*GitProvider) BareToNormal(p string) error {
 	}
 
 	for _, f := range files {
-		if f.Name() == ".git" {
+		if f.Name() == gitDirName {
 			continue
 		}
 
-		if err := os.Rename(fmt.Sprintf("%s/%s", p, f.Name()),
-			fmt.Sprintf("%s/.git/%s", p, f.Name())); err != nil {
+		oldPath := path.Join(p, f.Name())
+		newPath := path.Join(p, gitDirName, f.Name())
+
+		if err := os.Rename(oldPath, newPath); err != nil {
 			return errors.Wrap(err, "unable to rename file")
 		}
 	}
 
-	gitDir := fmt.Sprintf("%s/.git", p)
 	cmd := exec.Command(gitCMD, gitDirArg, gitDir, "config", "--local",
 		"--bool", "core.bare", "false")
 	if bts, err := cmd.CombinedOutput(); err != nil {
@@ -293,6 +335,7 @@ func (*GitProvider) BareToNormal(p string) error {
 
 	cmd = exec.Command(gitCMD, gitDirArg, gitDir, "reset", "--hard")
 	cmd.Dir = p
+
 	if bts, err := cmd.CombinedOutput(); err != nil {
 		return errors.Wrapf(err, string(bts))
 	}
@@ -301,7 +344,7 @@ func (*GitProvider) BareToNormal(p string) error {
 }
 
 func (gp *GitProvider) CloneRepositoryBySsh(key, user, repoUrl, destination string, port int32) (err error) {
-	log.Info("Start cloning", "repository", repoUrl)
+	log.Info("Start cloning", logRepositoryKey, repoUrl)
 
 	keyPath, err := initAuth(key, user)
 	if err != nil {
@@ -314,40 +357,46 @@ func (gp *GitProvider) CloneRepositoryBySsh(key, user, repoUrl, destination stri
 
 	cloneCMD := exec.Command(gitCMD, "clone", "--mirror", "--depth", "1", repoUrl, destination)
 	cloneCMD.Env = []string{fmt.Sprintf(`GIT_SSH_COMMAND=ssh -i %s -l %s -o StrictHostKeyChecking=no -p %d`,
-		keyPath, user, port), "GIT_SSH_VARIANT=ssh"}
+		keyPath, user, port), gitSshVariantEnv}
+
 	bytes, err := cloneCMD.CombinedOutput()
 	if err != nil {
 		return errors.Wrapf(err, "unable to clone repo by ssh, err: %s", string(bytes))
 	}
 
-	fetchCMD := exec.Command(gitCMD, gitDirArg, destination, "fetch", "--unshallow")
+	fetchCMD := exec.Command(gitCMD, gitDirArg, destination, getFetchArg, gitUnshallowArg)
 	fetchCMD.Env = cloneCMD.Env
+
 	bts, err := fetchCMD.CombinedOutput()
 	if err != nil {
 		return errors.Wrapf(err, "unable to fetch unshallow repo: %s", string(bts))
 	}
-	log.Info("Result of `git fetch unshallow` command", "out", string(bts))
+
+	log.Info("Result of `git fetch unshallow` command", logOutKey, string(bts))
 
 	err = gp.BareToNormal(destination)
 	if err != nil {
 		return errors.Wrap(err, "unable to covert bare repo to normal")
 	}
 
-	fetchCMD = exec.Command(gitCMD, gitDirArg, path.Join(destination, ".git"), "pull", "origin",
-		"--unshallow", "--no-rebase")
+	gitDir := path.Join(destination, ".git")
+	fetchCMD = exec.Command(gitCMD, gitDirArg, gitDir, "pull", gitOriginArg, gitUnshallowArg, "--no-rebase")
 	fetchCMD.Env = cloneCMD.Env
 	bts, err = fetchCMD.CombinedOutput()
+
 	if err != nil && !strings.Contains(string(bts), "does not make sense") {
 		return errors.Wrapf(err, "unable to pull unshallow repo: %s", string(bts))
 	}
-	log.Info("Result of `git pull unshallow` command", "out", string(bts))
 
-	log.Info("End cloning", "repository", repoUrl)
+	log.Info("Result of `git pull unshallow` command", logOutKey, string(bts))
+
+	log.Info("End cloning", logRepositoryKey, repoUrl)
+
 	return
 }
 
 func (gp *GitProvider) CloneRepository(repo string, user, pass *string, destination string) error {
-	log.Info("Start cloning", "repository", repo)
+	log.Info("Start cloning", logRepositoryKey, repo)
 
 	const httpClientErrors = 400
 
@@ -356,6 +405,7 @@ func (gp *GitProvider) CloneRepository(repo string, user, pass *string, destinat
 		if err != nil {
 			return errors.Wrap(err, "unable to parse repo url")
 		}
+
 		u.User = url.UserPassword(*user, *pass)
 		repo = u.String()
 	} else {
@@ -374,42 +424,45 @@ func (gp *GitProvider) CloneRepository(repo string, user, pass *string, destinat
 		return errors.Wrapf(err, "unable to clone repo: %s", string(bts))
 	}
 
-	fetchCMD := exec.Command(gitCMD, gitDirArg, destination, "fetch", "--unshallow")
+	fetchCMD := exec.Command(gitCMD, gitDirArg, destination, getFetchArg, gitUnshallowArg)
+
 	bts, err := fetchCMD.CombinedOutput()
 	if err != nil {
 		return errors.Wrapf(err, "unable to fetch unshallow repo: %s", string(bts))
 	}
-	log.Info("Result of `git fetch unshallow` command", "out", string(bts))
+
+	log.Info("Result of `git fetch unshallow` command", logOutKey, string(bts))
 
 	err = gp.BareToNormal(destination)
 	if err != nil {
 		return errors.Wrap(err, "unable to covert bare repo to normal")
 	}
 
-	fetchCMD = exec.Command(gitCMD, gitDirArg, path.Join(destination, ".git"), "pull", "origin",
-		"--unshallow", "--no-rebase")
+	gitDir := path.Join(destination, gitDirName)
+	fetchCMD = exec.Command(gitCMD, gitDirArg, gitDir, "pull", gitOriginArg, gitUnshallowArg, "--no-rebase")
 
 	bts, err = fetchCMD.CombinedOutput()
 	if err != nil && !strings.Contains(string(bts), "does not make sense") {
 		return errors.Wrapf(err, "unable to pull unshallow repo: %s", string(bts))
 	}
 
-	log.Info("Result of `git pull unshallow` command", "out", string(bts))
-	log.Info("End cloning", "repository", repo)
+	log.Info("Result of `git pull unshallow` command", logOutKey, string(bts))
+	log.Info("End cloning", logRepositoryKey, repo)
 
 	return nil
 }
 
 func (gp *GitProvider) CreateRemoteTag(key, user, p, branchName, name string) error {
-	log.Info("start creating remote tag", "name", name)
+	log.Info("start creating remote tag", "tagName", name)
+
 	r, err := git.PlainOpen(p)
 	if err != nil {
-		return err
+		return fmt.Errorf(errPlainOpenTmpl, p, err)
 	}
 
 	tags, err := r.Tags()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get git tags: %w", err)
 	}
 
 	exists, err := isTagExists(name, tags)
@@ -418,29 +471,34 @@ func (gp *GitProvider) CreateRemoteTag(key, user, p, branchName, name string) er
 	}
 
 	if exists {
-		log.Info("tag already exists. skip creating", "name", name)
+		log.Info("tag already exists. skip creating", "tagName", name)
 		return nil
 	}
 
 	ref, err := r.Reference(plumbing.ReferenceName(fmt.Sprintf("refs/heads/%v", branchName)), false)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get reference: %w", err)
 	}
 
 	newRef := plumbing.NewReferenceFromStrings(fmt.Sprintf("refs/tags/%v", name), ref.Hash().String())
-	if err := r.Storer.SetReference(newRef); err != nil {
+
+	err = r.Storer.SetReference(newRef)
+	if err != nil {
+		return fmt.Errorf("failed to set refference: %w", err)
+	}
+
+	err = gp.PushChanges(key, user, p, defaultSshPort)
+	if err != nil {
 		return err
 	}
 
-	if err := gp.PushChanges(key, user, p, 22); err != nil {
-		return err
-	}
-	log.Info("tag has been created", "name", name)
+	log.Info("tag has been created", "tagName", name)
+
 	return nil
 }
 
 func (*GitProvider) Fetch(key, user, workDir, branchName string) (err error) {
-	log.Info("start fetching data", "name", branchName)
+	log.Info("start fetching data", logBranchNameKey, branchName)
 
 	keyPath, err := initAuth(key, user)
 	if err != nil {
@@ -451,32 +509,38 @@ func (*GitProvider) Fetch(key, user, workDir, branchName string) (err error) {
 		err = os.Remove(keyPath)
 	}()
 
-	cmd := exec.Command(gitCMD, gitDirArg, fmt.Sprintf("%s/.git", workDir), "fetch",
-		fmt.Sprintf("refs/heads/%v:refs/heads/%v", branchName, branchName))
-	cmd.Env = []string{fmt.Sprintf(`GIT_SSH_COMMAND=ssh -i %s -l %s -o StrictHostKeyChecking=no`, keyPath, user),
-		"GIT_SSH_VARIANT=ssh"}
+	gitDir := path.Join(workDir, gitDirName)
+	cmd := exec.Command(gitCMD, gitDirArg, gitDir, getFetchArg, fmt.Sprintf("refs/heads/%v:refs/heads/%v", branchName, branchName))
+	cmd.Env = []string{
+		fmt.Sprintf(`GIT_SSH_COMMAND=ssh -i %s -l %s -o StrictHostKeyChecking=no`, keyPath, user),
+		gitSshVariantEnv,
+	}
 	cmd.Dir = workDir
+
 	if bts, err := cmd.CombinedOutput(); err != nil {
 		return errors.Wrapf(err, "unable to push changes, err: %s", string(bts))
 	}
 
-	log.Info("end fetching data", "name", branchName)
+	log.Info("end fetching data", logBranchNameKey, branchName)
+
 	return
 }
 
 func (*GitProvider) Checkout(user, pass *string, directory, branchName string, remote bool) error {
-	log.Info("trying to checkout to branch", "name", branchName)
+	log.Info("trying to checkout to branch", logBranchNameKey, branchName)
+
 	r, err := git.PlainOpen(directory)
 	if err != nil {
-		return err
+		return fmt.Errorf(errPlainOpenTmpl, directory, err)
 	}
 
 	w, err := r.Worktree()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get git worktree: %w", err)
 	}
 
 	createBranchOrNot := true
+
 	if remote {
 		gfo := &git.FetchOptions{RefSpecs: []config.RefSpec{"refs/*:refs/*"}}
 		if user != nil && pass != nil {
@@ -508,33 +572,40 @@ func (*GitProvider) Checkout(user, pass *string, directory, branchName string, r
 		Create: createBranchOrNot,
 	})
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to checkout git branch: %w", err)
 	}
+
 	return nil
 }
 
 func (*GitProvider) GetCurrentBranchName(directory string) (string, error) {
 	log.Info("trying to get current git branch")
+
 	r, err := git.PlainOpen(directory)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf(errPlainOpenTmpl, directory, err)
 	}
 
 	ref, err := r.Head()
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to get HEAD refference: %w", err)
 	}
+
 	branchName := strings.ReplaceAll(ref.Name().String(), "refs/heads/", "")
+
 	return branchName, nil
 }
 
 func (*GitProvider) Init(directory string) error {
 	log.Info("start creating git repository")
+
 	_, err := git.PlainInit(directory, false)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to init Git repository: %w", err)
 	}
+
 	log.Info("git repository has been created")
+
 	return nil
 }
 
@@ -550,24 +621,31 @@ func (*GitProvider) CheckoutRemoteBranchBySSH(key, user, gitPath, remoteBranchNa
 		err = os.Remove(keyPath)
 	}()
 
+	gitDir := path.Join(gitPath, ".git")
+
 	// running git fetch --update-head-ok
-	cmdFetch := exec.Command(gitCMD, gitDirArg, path.Join(gitPath, ".git"), "fetch", "--update-head-ok")
-	cmdFetch.Env = []string{fmt.Sprintf(`GIT_SSH_COMMAND=ssh -i %s -l %s -o StrictHostKeyChecking=no`, keyPath, user),
-		"GIT_SSH_VARIANT=ssh"}
+	cmdFetch := exec.Command(gitCMD, gitDirArg, gitDir, getFetchArg, "--update-head-ok")
+	cmdFetch.Env = []string{
+		fmt.Sprintf(`GIT_SSH_COMMAND=ssh -i %s -l %s -o StrictHostKeyChecking=no`, keyPath, user),
+		gitSshVariantEnv,
+	}
 	cmdFetch.Dir = gitPath
+
 	if bts, err := cmdFetch.CombinedOutput(); err != nil {
 		return errors.Wrapf(err, "unable to fetch branches, err: %s", string(bts))
 	}
 
 	// here we expect that remote branch exists otherwise return error
 	// git checkout -b remoteBranchName remoteBranchName
-	cmdCheckout := exec.Command(gitCMD, gitDirArg, path.Join(gitPath, ".git"), "checkout", remoteBranchName)
+	cmdCheckout := exec.Command(gitCMD, gitDirArg, gitDir, gitCheckoutArg, remoteBranchName)
 	cmdCheckout.Dir = gitPath
+
 	if bts, err := cmdCheckout.CombinedOutput(); err != nil {
 		return errors.Wrapf(err, "unable to checkout to branch, err: %s", string(bts))
 	}
 
 	log.Info("end checkout to", "branch", remoteBranchName)
+
 	return nil
 }
 
@@ -578,8 +656,10 @@ func isBranchExists(name string, branches storer.ReferenceIter) (bool, error) {
 			if err.Error() == "EOF" {
 				return false, nil
 			}
-			return false, err
+
+			return false, fmt.Errorf("failed to get next branch iterator: %w", err)
 		}
+
 		if b.Name().Short() == name {
 			return true, nil
 		}
@@ -628,19 +708,24 @@ func checkConnectionToGitServer(c client.Client, gitServer *model.GitServer) (bo
 
 	a := isGitServerAccessible(gitSshData)
 	log.Info("Git server", "accessible", a)
+
 	return a, nil
 }
 
 func isGitServerAccessible(data GitSshData) bool {
 	log.Info("Start executing IsGitServerAccessible method to check connection to server", "host", data.Host)
+
 	sshClient, err := sshInitFromSecret(data, log)
 	if err != nil {
 		log.Info(fmt.Sprintf("An error has occurred while initing SSH client. Check data in Git Server resource and secret: %v", err))
 		return false
 	}
 
-	var s *ssh.Session
-	var c *ssh.Client
+	var (
+		s *ssh.Session
+		c *ssh.Client
+	)
+
 	if s, c, err = sshClient.NewSession(); err != nil {
 		log.Info(fmt.Sprintf("An error has occurred while connecting to server. Check data in Git Server resource and secret: %v", err))
 		return false
@@ -686,6 +771,7 @@ func publicKey(key string) ssh.AuthMethod {
 	if err != nil {
 		panic(err)
 	}
+
 	return ssh.PublicKeys(signer)
 }
 
@@ -696,8 +782,10 @@ func isTagExists(name string, tags storer.ReferenceIter) (bool, error) {
 			if err.Error() == "EOF" {
 				return false, nil
 			}
-			return false, err
+
+			return false, fmt.Errorf("failed to get next reference iterator: %w", err)
 		}
+
 		if t.Name().Short() == name {
 			return true, nil
 		}
@@ -705,12 +793,15 @@ func isTagExists(name string, tags storer.ReferenceIter) (bool, error) {
 }
 
 func checkBranchExistence(user, pass *string, branchName string, r git.Repository) (bool, error) {
-	log.Info("checking if branch exist", "branchName", branchName)
+	log.Info("checking if branch exist", logBranchNameKey, branchName)
+
 	remote, err := r.Remote("origin")
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("failed to get GIT remove origin: %w", err)
 	}
+
 	glo := &git.ListOptions{}
+
 	if user != nil && pass != nil {
 		glo = &git.ListOptions{Auth: &http.BasicAuth{
 			Username: *user,
@@ -721,21 +812,26 @@ func checkBranchExistence(user, pass *string, branchName string, r git.Repositor
 
 	refList, err := remote.List(glo)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("failed to get references on the remote repository: %w", err)
 	}
+
 	existBranchOrNot := true
 	refPrefix := "refs/heads/"
+
 	for _, ref := range refList {
 		refName := ref.Name().String()
 		if !strings.HasPrefix(refName, refPrefix) {
 			continue
 		}
+
 		b := refName[len(refPrefix):]
 		if b == branchName {
 			existBranchOrNot = false
 			break
 		}
 	}
-	log.Info("branch existence status", "branchName", branchName, "existBranchOrNot", existBranchOrNot)
+
+	log.Info("branch existence status", logBranchNameKey, branchName, "existBranchOrNot", existBranchOrNot)
+
 	return existBranchOrNot, nil
 }

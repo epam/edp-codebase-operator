@@ -155,7 +155,6 @@ func TestPutCodebaseImageStream_ShouldNotFindEdpComponent(t *testing.T) {
 
 func TestPutCodebaseImageStream_ShouldFailToGetCodebase(t *testing.T) {
 	c := &codebaseApi.Codebase{}
-
 	cb := &codebaseApi.CodebaseBranch{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "stub-name",
@@ -176,6 +175,7 @@ func TestPutCodebaseImageStream_ShouldFailToGetCodebase(t *testing.T) {
 
 	err := cisChain.ServeRequest(cb)
 	assert.Error(t, err)
+
 	if !strings.Contains(err.Error(), "Unable to get Codebase stub-name") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}

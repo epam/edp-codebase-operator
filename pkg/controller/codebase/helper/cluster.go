@@ -22,12 +22,13 @@ func GetEDPName(ctx context.Context, k8sClient client.Client, namespace string) 
 		Name:      EDPConfigCM,
 	}, cm)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to fetch 'ConfigMap' resource %q: %w", EDPConfigCM, err)
 	}
 
 	r := cm.Data[EDPNameKey]
 	if r == "" {
 		return nil, fmt.Errorf("there is not key %v in cm %v", EDPNameKey, EDPConfigCM)
 	}
+
 	return &r, nil
 }

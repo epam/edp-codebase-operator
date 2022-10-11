@@ -1,6 +1,8 @@
 package chain
 
 import (
+	"fmt"
+
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -22,9 +24,16 @@ func CreateDefChain(c client.Client) handler.GitTagHandler {
 }
 
 func nextServeOrNil(next handler.GitTagHandler, gt *codebaseApi.GitTag) error {
-	if next != nil {
-		return next.ServeRequest(gt)
+	if next == nil {
+		log.Info("handling of GitTag has been finished", "name", gt.Name)
+
+		return nil
 	}
-	log.Info("handling of GitTag has been finished", "name", gt.Name)
+
+	err := next.ServeRequest(gt)
+	if err != nil {
+		return fmt.Errorf("failed to process handler in a chain: %w", err)
+	}
+
 	return nil
 }

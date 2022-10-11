@@ -45,7 +45,7 @@ func (h *PutVersionFile) ServeRequest(ctx context.Context, c *codebaseApi.Codeba
 	name, err := helper.GetEDPName(ctx, h.client, c.Namespace)
 	if err != nil {
 		setFailedFields(c, codebaseApi.PutVersionFile, err.Error())
-		return err
+		return fmt.Errorf("failed to get EDP name: %w", err)
 	}
 
 	exists, err := h.versionFileExists(ctx, c.Name, *name)
@@ -71,6 +71,7 @@ func (h *PutVersionFile) ServeRequest(ctx context.Context, c *codebaseApi.Codeba
 		err = errors.Wrapf(err, "couldn't set project_status %v value for %v codebase",
 			util.ProjectVersionGoFilePushedStatus, c.Name)
 		setFailedFields(c, codebaseApi.PutVersionFile, err.Error())
+
 		return err
 	}
 
@@ -104,7 +105,7 @@ func (h *PutVersionFile) tryToPutVersionFile(c *codebaseApi.Codebase, projectPat
 
 	gs, err := util.GetGitServer(h.client, c.Spec.GitServer, c.Namespace)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get GitServer: %w", err)
 	}
 
 	secret, err := util.GetSecret(h.client, gs.NameSshKeySecret, c.Namespace)
@@ -124,6 +125,7 @@ func (h *PutVersionFile) tryToPutVersionFile(c *codebaseApi.Codebase, projectPat
 	k := string(secret.Data[util.PrivateSShKeyName])
 	u := gs.GitUser
 	p := gs.SshPort
+
 	if err := h.pushChanges(projectPath, k, u, p); err != nil {
 		return errors.Wrapf(err, "an error has occurred while pushing %v for %v codebase", versionFileName, c.Name)
 	}
@@ -133,7 +135,7 @@ func (h *PutVersionFile) tryToPutVersionFile(c *codebaseApi.Codebase, projectPat
 
 func (h *PutVersionFile) pushChanges(projectPath, privateKey, user string, port int32) error {
 	if err := h.git.CommitChanges(projectPath, fmt.Sprintf("Add %v file", versionFileName)); err != nil {
-		return err
+		return fmt.Errorf("failed to commit changes to Git server: %w", err)
 	}
 
 	if err := h.git.PushChanges(privateKey, user, projectPath, port, "--all"); err != nil {
@@ -146,7 +148,7 @@ func (h *PutVersionFile) pushChanges(projectPath, privateKey, user string, port 
 func createFile(filePath string) (err error) {
 	_, err = os.Stat(filePath)
 	if errors.Is(err, fs.ErrExist) {
-		log.Info("File already exists. skip creating.", "name", filePath)
+		log.Info("File already exists. skip creating.", "filePath", filePath)
 		return nil
 	}
 
@@ -155,12 +157,12 @@ func createFile(filePath string) (err error) {
 
 	file, err := os.Create(filePath)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create file %q: %w", filePath, err)
 	}
 
 	defer util.CloseWithErrorCapture(&err, file, "failed to close file: %s", filePath)
 
-	log.Info("File has been created.", "name", filePath)
+	log.Info("File has been created.", "filePath", filePath)
 
 	return
 }
@@ -170,22 +172,22 @@ func writeFile(filePath string) (err error) {
 
 	file, err := os.OpenFile(filePath, os.O_RDWR, readWritePermBits)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to open file %q: %w", filePath, err)
 	}
 
 	defer util.CloseWithErrorCapture(&err, file, "failed to close file: %s", filePath)
 
 	_, err = file.WriteString(initVersion)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to writeS file %q: %w", filePath, err)
 	}
 
 	err = file.Sync()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to commit file %q: %w", filePath, err)
 	}
 
-	log.Info("File has been updated.", "name", filePath)
+	log.Info("File has been updated.", "filePath", filePath)
 
 	return
 }

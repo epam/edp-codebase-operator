@@ -44,9 +44,15 @@ func (r *ReconcileCDStageDeploy) SetupWithManager(mgr ctrl.Manager) error {
 			return false
 		},
 	}
-	return ctrl.NewControllerManagedBy(mgr).
+
+	err := ctrl.NewControllerManagedBy(mgr).
 		For(&codebaseApi.CDStageDeploy{}, builder.WithPredicates(p)).
 		Complete(r)
+	if err != nil {
+		return fmt.Errorf("failed to build CDStageDeploy controller: %w", err)
+	}
+
+	return nil
 }
 
 func (r *ReconcileCDStageDeploy) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
@@ -59,7 +65,8 @@ func (r *ReconcileCDStageDeploy) Reconcile(ctx context.Context, request reconcil
 		if k8sErrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
 		}
-		return reconcile.Result{}, err
+
+		return reconcile.Result{}, fmt.Errorf("failed to fetch CDStageDeploy resource %q: %w", request.NamespacedName, err)
 	}
 
 	defer func() {
@@ -71,6 +78,7 @@ func (r *ReconcileCDStageDeploy) Reconcile(ctx context.Context, request reconcil
 	if err := r.setFinalizer(ctx, i); err != nil {
 		err = errors.Wrapf(err, "cannot set %v finalizer", util.ForegroundDeletionFinalizerName)
 		i.SetFailedStatus(err)
+
 		return reconcile.Result{}, err
 	}
 
@@ -81,18 +89,22 @@ func (r *ReconcileCDStageDeploy) Reconcile(ctx context.Context, request reconcil
 
 	if err := chain.CreateDefChain(r.client).ServeRequest(i); err != nil {
 		i.SetFailedStatus(err)
+
 		switch err.(type) {
 		case *util.CDStageJenkinsDeploymentHasNotBeenProcessedError:
 			log.Error(err, "unable to continue autodeploy",
 				"pipe", i.Spec.Pipeline, "stage", i.Spec.Stage)
+
 			p := r.setReconciliationPeriod(i)
+
 			return reconcile.Result{RequeueAfter: p}, nil
 		default:
-			return reconcile.Result{}, err
+			return reconcile.Result{}, fmt.Errorf("failed to process default chain: %w", err)
 		}
 	}
 
 	log.Info("reconciling has been finished.")
+
 	return reconcile.Result{}, nil
 }
 
@@ -108,11 +120,16 @@ func (r *ReconcileCDStageDeploy) setReconciliationPeriod(sd *codebaseApi.CDStage
 }
 
 func (r *ReconcileCDStageDeploy) updateStatus(ctx context.Context, stageDeploy *codebaseApi.CDStageDeploy) error {
-	if err := r.client.Status().Update(ctx, stageDeploy); err != nil {
-		if err := r.client.Update(ctx, stageDeploy); err != nil {
-			return err
-		}
+	err := r.client.Status().Update(ctx, stageDeploy)
+	if err != nil {
+		return fmt.Errorf("failed to update status field of k8s resource: %w", err)
 	}
+
+	err = r.client.Update(ctx, stageDeploy)
+	if err != nil {
+		return fmt.Errorf("failed to update k8s resource: %w", err)
+	}
+
 	return nil
 }
 
@@ -121,31 +138,49 @@ func (r *ReconcileCDStageDeploy) setOwnerRef(ctx context.Context, stageDeploy *c
 	if err != nil {
 		return err
 	}
-	if err := controllerutil.SetControllerReference(s, stageDeploy, r.scheme); err != nil {
-		return err
+
+	err = controllerutil.SetControllerReference(s, stageDeploy, r.scheme)
+	if err != nil {
+		return fmt.Errorf("failed to set controller reference: %w", err)
 	}
-	return r.client.Update(context.TODO(), stageDeploy)
+
+	err = r.client.Update(ctx, stageDeploy)
+	if err != nil {
+		return fmt.Errorf("failed to update k8s resource: %w", err)
+	}
+
+	return nil
 }
 
 func (r *ReconcileCDStageDeploy) setFinalizer(ctx context.Context, stageDeploy *codebaseApi.CDStageDeploy) error {
 	if !stageDeploy.GetDeletionTimestamp().IsZero() {
 		return nil
 	}
+
 	if !util.ContainsString(stageDeploy.ObjectMeta.Finalizers, util.ForegroundDeletionFinalizerName) {
 		stageDeploy.ObjectMeta.Finalizers = append(stageDeploy.ObjectMeta.Finalizers, util.ForegroundDeletionFinalizerName)
 	}
-	return r.client.Update(ctx, stageDeploy)
+
+	err := r.client.Update(ctx, stageDeploy)
+	if err != nil {
+		return fmt.Errorf("failed to update k8s resource: %w", err)
+	}
+
+	return nil
 }
 
 func (r *ReconcileCDStageDeploy) getCDStage(ctx context.Context, name, namespace string) (*cdPipeApi.Stage, error) {
 	r.log.Info("getting cd stage", "name", name)
+
 	i := &cdPipeApi.Stage{}
 	nn := types.NamespacedName{
 		Namespace: namespace,
 		Name:      name,
 	}
+
 	if err := r.client.Get(ctx, nn, i); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to fetch k8s resource: %w", err)
 	}
+
 	return i, nil
 }

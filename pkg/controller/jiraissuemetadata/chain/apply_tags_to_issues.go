@@ -16,6 +16,7 @@ type ApplyTagsToIssues struct {
 
 func (h ApplyTagsToIssues) ServeRequest(metadata *codebaseApi.JiraIssueMetadata) error {
 	log.Info("start applying tags to issues.")
+
 	requestPayload, err := util.GetFieldsMap(metadata.Spec.Payload, []string{issuesLinksKey})
 	if err != nil {
 		return errors.Wrap(err, "couldn't get map with Jira field values")
@@ -27,32 +28,42 @@ func (h ApplyTagsToIssues) ServeRequest(metadata *codebaseApi.JiraIssueMetadata)
 			return errors.Wrapf(err, "couldn't apply tags to issue %v", ticket)
 		}
 	}
+
 	log.Info("end applying tags to issues.")
+
 	return nextServeOrNil(h.next, metadata)
 }
 
 func createRequestBody(requestPayload map[string]interface{}) map[string]interface{} {
-	params := map[string]interface{}{
-		"update": map[string]interface{}{},
-	}
+	updateField := map[string]interface{}{}
 
 	for k, v := range requestPayload {
+		strVal, ok := v.(string)
+		if !ok {
+			continue
+		}
+
 		if k == "labels" {
-			params["update"].(map[string]interface{})[k] = []map[string]interface{}{
+			updateField[k] = []map[string]interface{}{
 				{
-					"add": v.(string),
+					"add": strVal,
 				},
 			}
-		} else {
-			params["update"].(map[string]interface{})[k] = []map[string]interface{}{
-				{"add": struct {
-					Name string `json:"name"`
-				}{
-					v.(string),
-				},
-				},
-			}
+
+			continue
+		}
+
+		updateField[k] = []map[string]interface{}{
+			{"add": struct {
+				Name string `json:"name"`
+			}{
+				strVal,
+			},
+			},
 		}
 	}
-	return params
+
+	return map[string]interface{}{
+		"update": updateField,
+	}
 }

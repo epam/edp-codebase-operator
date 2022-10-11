@@ -438,6 +438,7 @@ func (s *ControllerTestSuite) TestPostpone() {
 	cloneCb.Labels = map[string]string{"app.edp.epam.com/codebaseType": "application"}
 	cloneCb.Finalizers = []string{"codebase.operator.finalizer.name", "foregroundDeletion"}
 	handlerMock.On("ServeRequest", ctx, cloneCb).Return(chain.PostponeError{Timeout: time.Second})
+
 	r := ReconcileCodebase{
 		client: fakeCl,
 		log:    logr.DiscardLogger{},

@@ -41,10 +41,13 @@ const (
 func (h PutCDStageDeploy) ServeRequest(imageStream *codebaseApi.CodebaseImageStream) error {
 	log := h.log.WithValues(logNameKey, imageStream.Name)
 	log.Info("creating/updating CDStageDeploy.")
+
 	if err := h.handleCodebaseImageStreamEnvLabels(imageStream); err != nil {
 		return errors.Wrapf(err, "couldn't handle %v codebase image stream", imageStream.Name)
 	}
+
 	log.Info("creating/updating CDStageDeploy has been finished.")
+
 	return nil
 }
 
@@ -60,10 +63,12 @@ func (h PutCDStageDeploy) handleCodebaseImageStreamEnvLabels(imageStream *codeba
 		if errs := validateCbis(imageStream, envLabel, labelValueRegexp); len(errs) != 0 {
 			return errors.New(strings.Join(errs, "; "))
 		}
+
 		if err := h.putCDStageDeploy(envLabel, imageStream.Namespace, imageStream.Spec); err != nil {
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -73,6 +78,7 @@ func validateCbis(imageStream *codebaseApi.CodebaseImageStream, envLabel string,
 	if imageStream.Spec.Codebase == "" {
 		errs = append(errs, "codebase is not defined in spec ")
 	}
+
 	if len(imageStream.Spec.Tags) == 0 {
 		errs = append(errs, "tags are not defined in spec ")
 	}
@@ -80,11 +86,13 @@ func validateCbis(imageStream *codebaseApi.CodebaseImageStream, envLabel string,
 	if !labelValueRegexp.MatchString(envLabel) {
 		errs = append(errs, "Label must be in format cd-pipeline-name/stage-name")
 	}
+
 	return errs
 }
 
 func (h PutCDStageDeploy) putCDStageDeploy(envLabel, namespace string, spec codebaseApi.CodebaseImageStreamSpec) error {
 	name := generateCdStageDeployName(envLabel, spec.Codebase)
+
 	stageDeploy, err := h.getCDStageDeploy(name, namespace)
 	if err != nil {
 		return errors.Wrapf(err, "couldn't get %v cd stage deploy", name)
@@ -92,6 +100,7 @@ func (h PutCDStageDeploy) putCDStageDeploy(envLabel, namespace string, spec code
 
 	if stageDeploy != nil {
 		h.log.Info("CDStageDeploy already exists. skip creating.", logNameKey, stageDeploy.Name)
+
 		return &util.CDStageDeployHasNotBeenProcessedError{
 			Message: fmt.Sprintf("%v has not been processed for previous version of application yet", name),
 		}
@@ -101,9 +110,11 @@ func (h PutCDStageDeploy) putCDStageDeploy(envLabel, namespace string, spec code
 	if err != nil {
 		return errors.Wrapf(err, "couldn't construct command to create %v cd stage deploy", name)
 	}
+
 	if err := h.create(cdsd); err != nil {
 		return errors.Wrapf(err, "couldn't create %v cd stage deploy", name)
 	}
+
 	return nil
 }
 
@@ -114,17 +125,22 @@ func generateCdStageDeployName(env, codebase string) string {
 
 func (h PutCDStageDeploy) getCDStageDeploy(name, namespace string) (*codebaseApi.CDStageDeploy, error) {
 	h.log.Info("getting cd stage deploy", logNameKey, name)
+
+	ctx := context.Background()
 	i := &codebaseApi.CDStageDeploy{}
 	nn := types.NamespacedName{
 		Namespace: namespace,
 		Name:      name,
 	}
-	if err := h.client.Get(context.TODO(), nn, i); err != nil {
+
+	if err := h.client.Get(ctx, nn, i); err != nil {
 		if k8sErrors.IsNotFound(err) {
 			return nil, nil
 		}
-		return nil, err
+
+		return nil, fmt.Errorf("failed to fetch CDStageDeploy resource %q: %w", name, err)
 	}
+
 	return i, nil
 }
 
@@ -159,6 +175,7 @@ func getLastTag(tags []codebaseApi.Tag) (codebaseApi.Tag, error) {
 		latestTag     codebaseApi.Tag
 		latestTagTime = time.Time{}
 	)
+
 	for i, s := range tags {
 		if current, err := time.Parse(dateLayout, tags[i].Created); err == nil {
 			if current.After(latestTagTime) {
@@ -167,9 +184,11 @@ func getLastTag(tags []codebaseApi.Tag) (codebaseApi.Tag, error) {
 			}
 		}
 	}
+
 	if latestTag.Name == "" {
 		return latestTag, errors.New("There are no valid tags")
 	}
+
 	return latestTag, nil
 }
 
@@ -177,6 +196,7 @@ func (h PutCDStageDeploy) create(command *cdStageDeployCommand) error {
 	log := h.log.WithValues(logNameKey, command.Name)
 	log.Info("cd stage deploy is not present in cluster. start creating...")
 
+	ctx := context.Background()
 	stageDeploy := &codebaseApi.CDStageDeploy{
 		TypeMeta: metaV1.TypeMeta{
 			APIVersion: util.V2APIVersion,
@@ -193,8 +213,10 @@ func (h PutCDStageDeploy) create(command *cdStageDeployCommand) error {
 			Tags:     command.Tags,
 		},
 	}
-	if err := h.client.Create(context.TODO(), stageDeploy); err != nil {
-		return err
+
+	err := h.client.Create(ctx, stageDeploy)
+	if err != nil {
+		return fmt.Errorf("failed to create CDStageDeploy reasource %q: %w", command.Name, err)
 	}
 
 	log.Info("cd stage deploy has been created.")

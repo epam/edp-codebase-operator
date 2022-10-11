@@ -70,9 +70,11 @@ func TestReconcileJiraServer_Reconcile_ShouldFailNotFound(t *testing.T) {
 	res, err := r.Reconcile(context.TODO(), req)
 
 	assert.Error(t, err)
+
 	if !strings.Contains(err.Error(), "no kind is registered for the type v1.JiraServer") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
+
 	assert.False(t, res.Requeue)
 }
 
@@ -109,6 +111,7 @@ func TestReconcileJiraServer_Reconcile_ShouldFailInitJiraClientWithSecretNotFoun
 
 	assert.Error(t, err)
 	assert.False(t, res.Requeue)
+
 	if !strings.Contains(err.Error(), "couldn't get secret jira-secret") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
@@ -159,6 +162,7 @@ func TestReconcileJiraServer_Reconcile_ShouldFailToCreateNewJiraClient(t *testin
 
 	assert.Error(t, err)
 	assert.False(t, res.Requeue)
+
 	if !strings.Contains(err.Error(), "couldn't create Jira client") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
@@ -282,6 +286,7 @@ func TestReconcileJiraServer_Reconcile_ShouldFailToCreateEDPComponent(t *testing
 
 	assert.Error(t, err)
 	assert.False(t, res.Requeue)
+
 	if !strings.Contains(err.Error(), "couldn't create EDP component NewJira") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}

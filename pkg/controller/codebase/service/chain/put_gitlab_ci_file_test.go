@@ -2,8 +2,8 @@ package chain
 
 import (
 	"context"
-	"fmt"
 	"os"
+	"path"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -15,7 +15,7 @@ import (
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/repository"
-	mockGit "github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver/mock"
+	mockGit "github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver/mocks"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	edpCompApi "github.com/epam/edp-component-operator/pkg/apis/v1/v1"
 )
@@ -109,6 +109,7 @@ func TestPutGitlabCiFile_ShouldPass(t *testing.T) {
 	// it is expected that code is already landed before running this part of chain,
 	// so let's create it
 	wd := util.GetWorkDir(fakeName, fakeNamespace)
+
 	err = util.CreateDirectory(wd)
 	if err != nil {
 		t.Error("Unable to create directory for testing")
@@ -177,10 +178,9 @@ func TestPushChangesMethod_ShouldBeExecutedSuccessfully(t *testing.T) {
 		nil,
 		mGit,
 	)
-	mGit.On("CommitChanges", "path", "Add gitlab ci file").Return(
-		nil)
-	mGit.On("PushChanges", "pkey", "user", "path", int32(22)).Return(
-		nil)
+
+	mGit.On("CommitChanges", "path", "Add gitlab ci file").Return(nil)
+	mGit.On("PushChanges", "pkey", "user", "path", int32(22)).Return(nil)
 
 	assert.NoError(t, ch.pushChanges("path", "pkey", "user", "branch", 22))
 }
@@ -246,16 +246,11 @@ func TestPutGitlabCiFile_gitlabCiFileExistsShouldReturnFalse(t *testing.T) {
 }
 
 func TestParseTemplate_ShouldPass(t *testing.T) {
-	tempDir, err := os.MkdirTemp("/tmp/", "temp")
-	if err != nil {
-		t.Errorf("create tempDir: %v", err)
-	}
+	t.Parallel()
 
-	t.Cleanup(func() {
-		err = os.RemoveAll(tempDir)
-		require.NoError(t, err)
-	})
-
+	tempDir := t.TempDir()
+	gitlabCIFile := path.Join(tempDir, "test.yaml")
+	templatePath := "../../../../../build/templates/gitlabci/kubernetes/java11-maven.tmpl"
 	data := struct {
 		CodebaseName   string
 		Namespace      string
@@ -268,6 +263,6 @@ func TestParseTemplate_ShouldPass(t *testing.T) {
 		"url",
 	}
 
-	err = parseTemplate("../../../../../build/templates/gitlabci/kubernetes/java11-maven.tmpl", fmt.Sprintf("%v/test.yaml", tempDir), data)
+	err := parseTemplate(templatePath, gitlabCIFile, data)
 	assert.NoError(t, err)
 }

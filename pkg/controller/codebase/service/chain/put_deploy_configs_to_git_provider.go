@@ -27,17 +27,21 @@ func NewPutDeployConfigsToGitProvider(c client.Client, cr repository.CodebaseRep
 
 func (h *PutDeployConfigsToGitProvider) ServeRequest(ctx context.Context, c *codebaseApi.Codebase) error {
 	rLog := log.WithValues("codebase_name", c.Name)
+
 	if c.Spec.DisablePutDeployTemplates {
 		rLog.Info("skip of putting deploy templates to codebase due to specified flag")
 		return nil
 	}
 
 	rLog.Info("Start pushing configs...")
+
 	if err := h.tryToPushConfigs(ctx, c); err != nil {
 		setFailedFields(c, codebaseApi.SetupDeploymentTemplates, err.Error())
 		return errors.Wrapf(err, "couldn't push deploy configs for %v codebase", c.Name)
 	}
+
 	rLog.Info("end pushing configs to remote git server")
+
 	return nil
 }
 
@@ -59,21 +63,25 @@ func (h *PutDeployConfigsToGitProvider) tryToPushConfigs(ctx context.Context, c 
 
 	wd := util.GetWorkDir(c.Name, c.Namespace)
 	ad := util.GetAssetsDir()
+
 	ru, err := util.GetRepoUrl(c)
 	if err != nil {
 		return errors.Wrap(err, "couldn't build repo url")
 	}
 
-	if err := CheckoutBranch(ru, wd, c.Spec.DefaultBranch, h.git, c, h.client); err != nil {
+	err = CheckoutBranch(ru, wd, c.Spec.DefaultBranch, h.git, c, h.client)
+	if err != nil {
 		return errors.Wrapf(err, "checkout default branch %v in Git put_deploy_config has been failed", c.Spec.DefaultBranch)
 	}
 
-	if err := template.PrepareTemplates(h.client, c, wd, ad); err != nil {
-		return err
+	err = template.PrepareTemplates(h.client, c, wd, ad)
+	if err != nil {
+		return fmt.Errorf("failed to prepare templates: %w", err)
 	}
 
-	if err := h.git.CommitChanges(wd, fmt.Sprintf("Add deployment templates for %v", c.Name)); err != nil {
-		return err
+	err = h.git.CommitChanges(wd, fmt.Sprintf("Add deployment templates for %v", c.Name))
+	if err != nil {
+		return fmt.Errorf("failed to commit changes: %w", err)
 	}
 
 	if err := pushChangesToGit(h.client, h.git, wd, c); err != nil {
@@ -97,5 +105,6 @@ func (h *PutDeployConfigsToGitProvider) skipTemplatePreparing(ctx context.Contex
 	if util.ContainsString([]string{util.ProjectTemplatesPushedStatus, util.ProjectVersionGoFilePushedStatus}, ps) {
 		return true, nil
 	}
+
 	return false, nil
 }

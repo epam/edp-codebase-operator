@@ -53,14 +53,28 @@ type ReconcileJiraIssueMetadata struct {
 func (r *ReconcileJiraIssueMetadata) SetupWithManager(mgr ctrl.Manager) error {
 	p := predicate.Funcs{
 		UpdateFunc: func(e event.UpdateEvent) bool {
-			oo := e.ObjectOld.(*codebaseApi.JiraIssueMetadata)
-			no := e.ObjectNew.(*codebaseApi.JiraIssueMetadata)
+			oo, ok := e.ObjectOld.(*codebaseApi.JiraIssueMetadata)
+			if !ok {
+				return false
+			}
+
+			no, ok := e.ObjectNew.(*codebaseApi.JiraIssueMetadata)
+			if !ok {
+				return false
+			}
+
 			return !reflect.DeepEqual(oo.Spec, no.Spec)
 		},
 	}
-	return ctrl.NewControllerManagedBy(mgr).
+
+	err := ctrl.NewControllerManagedBy(mgr).
 		For(&codebaseApi.JiraIssueMetadata{}, builder.WithPredicates(p)).
 		Complete(r)
+	if err != nil {
+		return fmt.Errorf("failed to build JiraIssueMetadata controller: %w", err)
+	}
+
+	return nil
 }
 
 func (r *ReconcileJiraIssueMetadata) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
@@ -72,8 +86,10 @@ func (r *ReconcileJiraIssueMetadata) Reconcile(ctx context.Context, request reco
 		if k8sErrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
 		}
-		return reconcile.Result{}, err
+
+		return reconcile.Result{}, fmt.Errorf("failed to fetch JiraIssueMetadata resource %q: %w", request.NamespacedName, err)
 	}
+
 	defer r.updateStatus(ctx, i)
 
 	if err := r.setOwnerRef(ctx, i); err != nil {
@@ -86,6 +102,7 @@ func (r *ReconcileJiraIssueMetadata) Reconcile(ctx context.Context, request reco
 		setErrorStatus(i, err.Error())
 		return reconcile.Result{}, err
 	}
+
 	if !js.Status.Available {
 		log.Info("Waiting for Jira server become available.", "name", js.Name)
 		return reconcile.Result{RequeueAfter: r.setFailureCount(i)}, nil
@@ -100,7 +117,7 @@ func (r *ReconcileJiraIssueMetadata) Reconcile(ctx context.Context, request reco
 	ch, err := chain.CreateChain(i.Spec.Payload, jc, r.client)
 	if err != nil {
 		setErrorStatus(i, err.Error())
-		return reconcile.Result{}, err
+		return reconcile.Result{}, fmt.Errorf("failed to configure `CreateChain`: %w", err)
 	}
 
 	err = ch.ServeRequest(i)
@@ -108,13 +125,15 @@ func (r *ReconcileJiraIssueMetadata) Reconcile(ctx context.Context, request reco
 		setErrorStatus(i, err.Error())
 		timeout := r.setFailureCount(i)
 		log.Error(err, "couldn't set jira issue metadata", "name", i.Name)
+
 		return reconcile.Result{RequeueAfter: timeout}, nil
 	}
 
 	duration, err := time.ParseDuration(lookup() + "m")
 	if err != nil {
-		return reconcile.Result{}, err
+		return reconcile.Result{}, fmt.Errorf("failed to parse time duration: %w", err)
 	}
+
 	return reconcile.Result{RequeueAfter: duration}, nil
 }
 
@@ -122,6 +141,7 @@ func lookup() string {
 	if value, ok := os.LookupEnv(reconcilePeriod); ok {
 		return value
 	}
+
 	return defaultReconcilePeriod
 }
 
@@ -139,17 +159,19 @@ func (r *ReconcileJiraIssueMetadata) setFailureCount(metadata *codebaseApi.JiraI
 
 func (r *ReconcileJiraIssueMetadata) setOwnerRef(ctx context.Context, metadata *codebaseApi.JiraIssueMetadata) error {
 	c := &codebaseApi.Codebase{}
+
 	err := r.client.Get(ctx, types.NamespacedName{
 		Namespace: metadata.Namespace,
 		Name:      metadata.Spec.CodebaseName,
 	}, c)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to fetch Codebase resource %q: %w", metadata.Spec.CodebaseName, err)
 	}
 
 	if err := controllerutil.SetControllerReference(c, metadata, r.scheme); err != nil {
 		return errors.Wrap(err, "cannot set owner ref for JiraIssueMetadata CR")
 	}
+
 	return nil
 }
 
@@ -157,8 +179,10 @@ func setErrorStatus(metadata *codebaseApi.JiraIssueMetadata, msg string) {
 	metadata.Status.Status = errorStatus
 	metadata.Status.DetailedMessage = msg
 }
+
 func (r *ReconcileJiraIssueMetadata) updateStatus(ctx context.Context, instance *codebaseApi.JiraIssueMetadata) {
 	instance.Status.LastTimeUpdated = metaV1.Now()
+
 	err := r.client.Status().Update(ctx, instance)
 	if err != nil {
 		_ = r.client.Update(ctx, instance)
@@ -173,26 +197,29 @@ func (r *ReconcileJiraIssueMetadata) initJiraClient(js *codebaseApi.JiraServer) 
 
 	user := string(s.Data["username"])
 	pwd := string(s.Data["password"])
+
 	c, err := new(adapter.GoJiraAdapterFactory).New(dto.ConvertSpecToJiraServer(js.Spec.ApiUrl, user, pwd))
 	if err != nil {
 		return nil, errors.Wrap(err, "couldn't create Jira client")
 	}
+
 	return c, nil
 }
 
 func (r *ReconcileJiraIssueMetadata) getJiraServer(ctx context.Context, metadata *codebaseApi.JiraIssueMetadata) (*codebaseApi.JiraServer, error) {
 	ref, err := util.GetOwnerReference(codebaseKind, metadata.GetOwnerReferences())
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to fetch OwnerReference: %w", err)
 	}
 
 	c := &codebaseApi.Codebase{}
+
 	err = r.client.Get(ctx, types.NamespacedName{
 		Namespace: metadata.Namespace,
 		Name:      ref.Name,
 	}, c)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to fetch Codebase resource %q: %w", ref.Name, err)
 	}
 
 	if c.Spec.JiraServer == nil {
@@ -200,13 +227,15 @@ func (r *ReconcileJiraIssueMetadata) getJiraServer(ctx context.Context, metadata
 			c.Name, metadata.Name)
 	}
 
+	jiraServerName := *c.Spec.JiraServer
 	server := &codebaseApi.JiraServer{}
+
 	err = r.client.Get(ctx, types.NamespacedName{
 		Namespace: metadata.Namespace,
-		Name:      *c.Spec.JiraServer,
+		Name:      jiraServerName,
 	}, server)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to fetch JiraServer resource %q: %w", jiraServerName, err)
 	}
 
 	return server, nil

@@ -15,7 +15,7 @@ import (
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/repository"
-	mockGit "github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver/mock"
+	mockGit "github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver/mocks"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	"github.com/epam/edp-common/pkg/mock"
 )
@@ -113,11 +113,9 @@ func TestPutDeployConfigs_ShouldPass(t *testing.T) {
 	err = os.Setenv("ASSETS_DIR", "../../../../../build")
 	require.NoError(t, err)
 
-	var (
-		port int32 = 22
-		u          = "user"
-		p          = "pass"
-	)
+	port := int32(22)
+	u := "user"
+	p := "pass"
 	wd := util.GetWorkDir(fakeName, fakeNamespace)
 
 	mGit := new(mockGit.MockGit)

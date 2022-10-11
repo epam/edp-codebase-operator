@@ -35,7 +35,8 @@ func (h *PutGitlabCiFile) ServeRequest(ctx context.Context, c *codebaseApi.Codeb
 	name, err := helper.GetEDPName(ctx, h.client, c.Namespace)
 	if err != nil {
 		setFailedFields(c, codebaseApi.PutGitlabCIFile, err.Error())
-		return err
+
+		return fmt.Errorf("failed to fetch EDP Name: %w", err)
 	}
 
 	exists, err := h.gitlabCiFileExists(ctx, c.Name, *name)
@@ -57,10 +58,12 @@ func (h *PutGitlabCiFile) ServeRequest(ctx context.Context, c *codebaseApi.Codeb
 	if err := h.cr.UpdateProjectStatusValue(ctx, util.GitlabCi, c.Name, *name); err != nil {
 		err = errors.Wrapf(err, "couldn't set project_status %v value for %v codebase", util.GitlabCi, c.Name)
 		setFailedFields(c, codebaseApi.PutGitlabCIFile, err.Error())
+
 		return err
 	}
 
 	rLog.Info("end creating gitlab ci file...")
+
 	return nil
 }
 
@@ -71,7 +74,7 @@ func (h *PutGitlabCiFile) tryToPutGitlabCIFile(c *codebaseApi.Codebase) error {
 
 	gs, err := util.GetGitServer(h.client, c.Spec.GitServer, c.Namespace)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to fetch GitServer: %w", err)
 	}
 
 	secret, err := util.GetSecret(h.client, gs.NameSshKeySecret, c.Namespace)
@@ -82,15 +85,17 @@ func (h *PutGitlabCiFile) tryToPutGitlabCIFile(c *codebaseApi.Codebase) error {
 	k := string(secret.Data[util.PrivateSShKeyName])
 	u := gs.GitUser
 	p := gs.SshPort
+
 	if err := h.pushChanges(util.GetWorkDir(c.Name, c.Namespace), k, u, c.Spec.DefaultBranch, p); err != nil {
 		return errors.Wrapf(err, "an error has occurred while pushing %v for %v codebase", versionFileName, c.Name)
 	}
+
 	return nil
 }
 
 func (h *PutGitlabCiFile) pushChanges(projectPath, privateKey, user, defaultBranch string, port int32) error {
 	if err := h.git.CommitChanges(projectPath, fmt.Sprintf("Add %v file", util.GitlabCi)); err != nil {
-		return err
+		return fmt.Errorf("failed to commit changes: %w", err)
 	}
 
 	if err := h.git.PushChanges(privateKey, user, projectPath, port, defaultBranch); err != nil {
@@ -110,7 +115,7 @@ func (h *PutGitlabCiFile) parseTemplate(c *codebaseApi.Codebase) error {
 
 	component, err := util.GetEdpComponent(h.client, getEdpComponentName(), c.Namespace)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to fetch EdpComponent: %w", err)
 	}
 
 	data := struct {
@@ -144,7 +149,7 @@ func (h *PutGitlabCiFile) gitlabCiFileExists(ctx context.Context, codebaseName, 
 func parseTemplate(templatePath, gitlabCiFile string, data interface{}) (err error) {
 	f, err := os.Create(gitlabCiFile)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create GitlabCI file %q: %w", gitlabCiFile, err)
 	}
 
 	defer util.CloseWithErrorCapture(&err, f, "failed to close gitlab CI file")
@@ -152,9 +157,10 @@ func parseTemplate(templatePath, gitlabCiFile string, data interface{}) (err err
 	log.Info("file has been created.", "name", gitlabCiFile)
 
 	split := strings.Split(templatePath, "/")
+
 	tmpl, err := template.New(split[len(split)-1]).ParseFiles(templatePath)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to parse template: %w", err)
 	}
 
 	err = tmpl.Execute(f, data)
@@ -171,5 +177,6 @@ func getEdpComponentName() string {
 	if platform.IsK8S() {
 		return platform.K8S
 	}
+
 	return platform.Openshift
 }

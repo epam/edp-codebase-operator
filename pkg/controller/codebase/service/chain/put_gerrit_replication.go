@@ -29,7 +29,9 @@ func (h *PutGerritReplication) ServeRequest(_ context.Context, c *codebaseApi.Co
 		setFailedFields(c, codebaseApi.GerritRepositoryProvisioning, err.Error())
 		return errors.Wrapf(err, "setup Gerrit replication for codebase %v has been failed", c.Name)
 	}
+
 	rLog.Info("Gerrit replication section finished successfully")
+
 	return nil
 }
 
@@ -51,7 +53,7 @@ func (h *PutGerritReplication) tryToSetupGerritReplication(codebaseName, namespa
 
 	vcsConf, err := vcs.GetVcsConfig(h.client, us, codebaseName, namespace)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to fetch VCS config: %w", err)
 	}
 
 	s, err := util.GetSecret(h.client, "gerrit-project-creator", namespace)
@@ -61,6 +63,11 @@ func (h *PutGerritReplication) tryToSetupGerritReplication(codebaseName, namespa
 
 	idrsa := string(s.Data[util.PrivateSShKeyName])
 	host := fmt.Sprintf("gerrit.%v", namespace)
-	return gerrit.SetupProjectReplication(h.client, *port, host, idrsa, codebaseName, namespace, vcsConf.VcsSshUrl,
-		log)
+
+	err = gerrit.SetupProjectReplication(h.client, *port, host, idrsa, codebaseName, namespace, vcsConf.VcsSshUrl, log)
+	if err != nil {
+		return fmt.Errorf("failed to setup project replication: %w", err)
+	}
+
+	return nil
 }

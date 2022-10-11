@@ -18,10 +18,11 @@ func (h CheckConnection) ServeRequest(js *codebaseApi.JiraServer) error {
 	rl.V(2).Info("start checking connection...")
 
 	connected, err := h.checkConnection()
-	js.Status.Available = err == nil && connected
 	if err != nil {
 		return err
 	}
+
+	js.Status.Available = err == nil && connected
 
 	rl.Info("end checking connection...")
 

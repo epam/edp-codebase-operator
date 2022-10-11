@@ -2,6 +2,7 @@ package codebaseimagestream
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 
 	"github.com/go-logr/logr"
@@ -35,17 +36,32 @@ func (r *ReconcileCodebaseImageStream) SetupWithManager(mgr ctrl.Manager) error 
 			return false
 		},
 		UpdateFunc: func(e event.UpdateEvent) bool {
-			oo := e.ObjectOld.(*codebaseApi.CodebaseImageStream)
-			on := e.ObjectNew.(*codebaseApi.CodebaseImageStream)
+			oo, ok := e.ObjectOld.(*codebaseApi.CodebaseImageStream)
+			if !ok {
+				return false
+			}
+
+			on, ok := e.ObjectNew.(*codebaseApi.CodebaseImageStream)
+			if !ok {
+				return false
+			}
+
 			if !reflect.DeepEqual(oo.Spec.Tags, on.Spec.Tags) && on.ObjectMeta.Labels != nil {
 				return true
 			}
+
 			return false
 		},
 	}
-	return ctrl.NewControllerManagedBy(mgr).
+
+	err := ctrl.NewControllerManagedBy(mgr).
 		For(&codebaseApi.CodebaseImageStream{}, builder.WithPredicates(p)).
 		Complete(r)
+	if err != nil {
+		return fmt.Errorf("failed to build CodebaseImageStream controller: %w", err)
+	}
+
+	return nil
 }
 
 func (r *ReconcileCodebaseImageStream) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
@@ -54,17 +70,20 @@ func (r *ReconcileCodebaseImageStream) Reconcile(ctx context.Context, request re
 	log.Info("Reconciling has been started.")
 
 	i := &codebaseApi.CodebaseImageStream{}
+
 	if err := r.client.Get(ctx, request.NamespacedName, i); err != nil {
 		if k8sErrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
 		}
-		return reconcile.Result{}, err
+
+		return reconcile.Result{}, fmt.Errorf("failed to fetch CodebaseImageStream %q: %w", request.Name, err)
 	}
 
 	if err := chain.CreateDefChain(r.client).ServeRequest(i); err != nil {
-		return reconcile.Result{}, err
+		return reconcile.Result{}, fmt.Errorf("fail during CodebaseImageStream default chain: %w", err)
 	}
 
 	log.Info("reconciling has been finished.")
+
 	return reconcile.Result{}, nil
 }

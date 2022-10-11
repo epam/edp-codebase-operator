@@ -12,7 +12,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
-	mockGit "github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver/mock"
+	mockGit "github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver/mocks"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
@@ -64,8 +64,10 @@ func TestGetRepositoryCredentialsIfExists_ShouldFail(t *testing.T) {
 	scheme := runtime.NewScheme()
 	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, c)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c).Build()
+
 	_, _, err := GetRepositoryCredentialsIfExists(c, fakeCl)
 	assert.Error(t, err)
+
 	if !strings.Contains(err.Error(), "Unable to get secret repository-codebase-fake-name-temp") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
@@ -92,6 +94,7 @@ func TestCheckoutBranch_ShouldFailOnGetSecret(t *testing.T) {
 
 	err := CheckoutBranch(util.GetStringP("repo"), "project-path", "branch", mGit, c, fakeCl)
 	assert.Error(t, err)
+
 	if !strings.Contains(err.Error(), "Unable to get secret repository-codebase-fake-name-temp") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
@@ -120,8 +123,10 @@ func TestCheckoutBranch_ShouldFailOnCheckPermission(t *testing.T) {
 		},
 	}
 	scheme := runtime.NewScheme()
+
 	scheme.AddKnownTypes(coreV1.SchemeGroupVersion, s)
 	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, c)
+
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(s, c).Build()
 
 	mGit := new(mockGit.MockGit)
@@ -129,6 +134,7 @@ func TestCheckoutBranch_ShouldFailOnCheckPermission(t *testing.T) {
 
 	err := CheckoutBranch(util.GetStringP("repo"), "project-path", "branch", mGit, c, fakeCl)
 	assert.Error(t, err)
+
 	if !strings.Contains(err.Error(), "user user cannot get access to the repository repo") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
@@ -167,17 +173,16 @@ func TestCheckoutBranch_ShouldFailOnGetCurrentBranchName(t *testing.T) {
 
 	err := CheckoutBranch(util.GetStringP("repo"), "project-path", "branch", mGit, c, fakeCl)
 	assert.Error(t, err)
+
 	if !strings.Contains(err.Error(), "FATAL:FAILED") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
 }
 
 func TestCheckoutBranch_ShouldFailOnCheckout(t *testing.T) {
-	var (
-		repo = "repo"
-		u    = "user"
-		p    = "pass"
-	)
+	repo := "repo"
+	u := "user"
+	p := "pass"
 	c := &codebaseApi.Codebase{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "fake-name",
@@ -212,17 +217,16 @@ func TestCheckoutBranch_ShouldFailOnCheckout(t *testing.T) {
 
 	err := CheckoutBranch(&repo, "project-path", "branch", mGit, c, fakeCl)
 	assert.Error(t, err)
+
 	if !strings.Contains(err.Error(), "FATAL:FAILED") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
 }
 
 func TestCheckoutBranch_ShouldPassForCloneStrategy(t *testing.T) {
-	var (
-		repo = "repo"
-		u    = "user"
-		p    = "pass"
-	)
+	repo := "repo"
+	u := "user"
+	p := "pass"
 	c := &codebaseApi.Codebase{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "fake-name",

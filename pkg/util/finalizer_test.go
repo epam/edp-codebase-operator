@@ -10,6 +10,7 @@ func TestContainsString(t *testing.T) {
 		slice []string
 		s     string
 	}
+
 	tests := []struct {
 		name string
 		args args
@@ -18,6 +19,7 @@ func TestContainsString(t *testing.T) {
 		{"Contains_string", args{[]string{"foo", "bar", "buz"}, "bar"}, true},
 		{"No_string", args{[]string{"foo", "bar", "buz"}, "asd"}, false},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := ContainsString(tt.args.slice, tt.args.s); got != tt.want {
@@ -32,6 +34,7 @@ func TestRemoveString(t *testing.T) {
 		slice []string
 		s     string
 	}
+
 	tests := []struct {
 		name       string
 		args       args
@@ -40,6 +43,7 @@ func TestRemoveString(t *testing.T) {
 		{"Remove_existing_string", args{[]string{"foo", "bar", "buz"}, "bar"}, []string{"foo", "buz"}},
 		{"Nothing_to_remove", args{[]string{"foo", "bar", "buz"}, "asd"}, []string{"foo", "bar", "buz"}},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if gotResult := RemoveString(tt.args.slice, tt.args.s); !reflect.DeepEqual(gotResult, tt.wantResult) {

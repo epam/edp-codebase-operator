@@ -13,7 +13,7 @@ import (
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebasebranch/service"
-	"github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver/mock"
+	gitServerMocks "github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver/mocks"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	"github.com/epam/edp-perf-operator/v2/pkg/util/common"
 )
@@ -79,16 +79,14 @@ func TestPutBranchInGit_ShouldBeExecutedSuccessfullyWithDefaultVersioning(t *tes
 	scheme.AddKnownTypes(coreV1.SchemeGroupVersion, s)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, gs, cb, s).Build()
 
-	mGit := new(mock.MockGit)
-	var port int32 = 22
+	mGit := new(gitServerMocks.MockGit)
+	port := int32(22)
 	wd := util.GetWorkDir(fakeName, fmt.Sprintf("%v-%v", fakeNamespace, fakeName))
+
 	mGit.On("CloneRepositoryBySsh", "",
 		fakeName, fmt.Sprintf("%v:%v", fakeName, fakeName),
-		wd, port).Return(
-		nil)
-
-	mGit.On("CreateRemoteBranch", "", fakeName, wd, fakeName, "commitsha", port).Return(
-		nil)
+		wd, port).Return(nil)
+	mGit.On("CreateRemoteBranch", "", fakeName, wd, fakeName, "commitsha", port).Return(nil)
 
 	err := PutBranchInGit{
 		Client: fakeCl,
@@ -117,9 +115,11 @@ func TestPutBranchInGit_CodebaseShouldNotBeFound(t *testing.T) {
 	}.ServeRequest(cb)
 
 	assert.Error(t, err)
+
 	if !strings.Contains(err.Error(), "Unable to get Codebase fake-name") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
+
 	assert.Equal(t, codebaseApi.PutBranchForGitlabCiCodebase, cb.Status.Action)
 }
 
@@ -155,7 +155,8 @@ func TestPutBranchInGit_ShouldThrowCodebaseBranchReconcileError(t *testing.T) {
 		Client: fakeCl,
 	}.ServeRequest(cb)
 
-	assert.ErrorIs(t, err, err.(*util.CodebaseBranchReconcileError))
+	_, ok := err.(*util.CodebaseBranchReconcileError)
+	assert.True(t, ok, "wrong type of error")
 }
 
 func TestPutBranchInGit_ShouldBeExecutedSuccessfullyWithEdpVersioning(t *testing.T) {
@@ -221,16 +222,14 @@ func TestPutBranchInGit_ShouldBeExecutedSuccessfullyWithEdpVersioning(t *testing
 	scheme.AddKnownTypes(coreV1.SchemeGroupVersion, s)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, gs, cb, s).Build()
 
-	mGit := new(mock.MockGit)
-	var port int32 = 22
-	wd := util.GetWorkDir(fakeName, fmt.Sprintf("%v-%v", fakeNamespace, fakeName))
-	mGit.On("CloneRepositoryBySsh", "",
-		fakeName, fmt.Sprintf("%v:%v", fakeName, fakeName),
-		wd, port).Return(
-		nil)
+	mGit := new(gitServerMocks.MockGit)
 
-	mGit.On("CreateRemoteBranch", "", fakeName, wd, fakeName, "", port).Return(
-		nil)
+	port := int32(22)
+	wd := util.GetWorkDir(fakeName, fmt.Sprintf("%v-%v", fakeNamespace, fakeName))
+
+	mGit.On("CloneRepositoryBySsh", "", fakeName, fmt.Sprintf("%v:%v", fakeName, fakeName), wd, port).
+		Return(nil)
+	mGit.On("CreateRemoteBranch", "", fakeName, wd, fakeName, "", port).Return(nil)
 
 	err := PutBranchInGit{
 		Client: fakeCl,
@@ -244,7 +243,6 @@ func TestPutBranchInGit_ShouldBeExecutedSuccessfullyWithEdpVersioning(t *testing
 }
 
 func TestPutBranchInGit_ShouldFailToSetIntermediateStatus(t *testing.T) {
-
 	cb := &codebaseApi.CodebaseBranch{}
 
 	scheme := runtime.NewScheme()
@@ -294,6 +292,7 @@ func TestPutBranchInGit_GitServerShouldNotBeFound(t *testing.T) {
 	}.ServeRequest(cb)
 
 	assert.Error(t, err)
+
 	if !strings.Contains(err.Error(), "an error has occurred while getting fake-name Git Server CR") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
@@ -347,6 +346,7 @@ func TestPutBranchInGit_SecretShouldNotBeFound(t *testing.T) {
 	}.ServeRequest(cb)
 
 	assert.Error(t, err)
+
 	if !strings.Contains(err.Error(), "Unable to get secret fake-name") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}

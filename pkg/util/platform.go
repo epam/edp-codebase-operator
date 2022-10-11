@@ -23,22 +23,27 @@ const (
 )
 
 func GetUserSettings(c client.Client, namespace string) (*model.UserSettings, error) {
+	ctx := context.Background()
 	us := &coreV1.ConfigMap{}
-	err := c.Get(context.TODO(), types.NamespacedName{
+
+	err := c.Get(ctx, types.NamespacedName{
 		Namespace: namespace,
 		Name:      "edp-config",
 	}, us)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to fetch 'edp-config' resource: %w", err)
 	}
+
 	vcsIntegrationEnabled, err := strconv.ParseBool(us.Data["vcs_integration_enabled"])
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to parse 'vcs_integration_enabled' as boolean: %w", err)
 	}
+
 	perfIntegrationEnabled, err := strconv.ParseBool(us.Data["perf_integration_enabled"])
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to parse 'perf_integration_enabled' as boolean: %w", err)
 	}
+
 	return &model.UserSettings{
 		DnsWildcard:            us.Data["dns_wildcard"],
 		EdpName:                us.Data["edp_name"],
@@ -56,9 +61,11 @@ func GetGerritPort(c client.Client, namespace string) (*int32, error) {
 	if err != nil {
 		return nil, errors.Wrapf(err, "an error has occurred while getting %v Git Server CR", "gerrit")
 	}
+
 	if gs.Spec.SshPort == 0 {
 		return nil, errors.New("ssh port is zero or not defined in gerrit GitServer CR")
 	}
+
 	return getInt32P(gs.Spec.SshPort), nil
 }
 
@@ -70,6 +77,7 @@ func GetVcsBasicAuthConfig(c client.Client, namespace, secretName string) (userN
 	log.Info("Start getting secret", "name", secretName)
 
 	secret := &coreV1.Secret{}
+
 	err = c.Get(context.TODO(), types.NamespacedName{
 		Namespace: namespace,
 		Name:      secretName,
@@ -95,25 +103,32 @@ func GetGitServer(c client.Client, name, namespace string) (*model.GitServer, er
 	}
 
 	gs := model.ConvertToGitServer(gitReq)
+
 	return gs, nil
 }
 
 func getGitServerCR(c client.Client, name, namespace string) (*codebaseApi.GitServer, error) {
 	log.Info("Start fetching GitServer resource from k8s", "name", name, "namespace", namespace)
+
 	instance := &codebaseApi.GitServer{}
 	if err := c.Get(context.TODO(), types.NamespacedName{Namespace: namespace, Name: name}, instance); err != nil {
 		if k8sErrors.IsNotFound(err) {
 			return nil, errors.Wrapf(err, "GitServer %v doesn't exist in k8s", name)
 		}
+
 		return nil, errors.Wrapf(err, "Unable to get GitServer %v", name)
 	}
+
 	log.Info("Git Server instance has been received", "name", name)
+
 	return instance, nil
 }
 
 func GetSecret(c client.Client, secretName, namespace string) (*coreV1.Secret, error) {
 	log.Info("Start fetching Secret resource from k8s", "secret name", secretName, "namespace", namespace)
+
 	secret := &coreV1.Secret{}
+
 	err := c.Get(context.TODO(), types.NamespacedName{
 		Namespace: namespace,
 		Name:      secretName,
@@ -121,17 +136,19 @@ func GetSecret(c client.Client, secretName, namespace string) (*coreV1.Secret, e
 	if err != nil {
 		return nil, errors.Wrapf(err, "Unable to get secret %v", secretName)
 	}
+
 	log.Info("Secret has been fetched", "secret name", secretName, "namespace", namespace)
+
 	return secret, nil
 }
 
 func GetCodebase(c client.Client, name, namespace string) (*codebaseApi.Codebase, error) {
 	instance := &codebaseApi.Codebase{}
+
 	err := c.Get(context.TODO(), types.NamespacedName{
 		Namespace: namespace,
 		Name:      name,
 	}, instance)
-
 	if err != nil {
 		return nil, errors.Wrapf(err, "Unable to get Codebase %v", name)
 	}
@@ -141,6 +158,7 @@ func GetCodebase(c client.Client, name, namespace string) (*codebaseApi.Codebase
 
 func GetEdpComponent(c client.Client, name, namespace string) (*edpComponentApi.EDPComponent, error) {
 	ec := &edpComponentApi.EDPComponent{}
+
 	err := c.Get(context.TODO(), types.NamespacedName{
 		Name:      name,
 		Namespace: namespace,
@@ -148,6 +166,7 @@ func GetEdpComponent(c client.Client, name, namespace string) (*edpComponentApi.
 	if err != nil {
 		return nil, errors.Wrapf(err, "Unable to get EDPComponent %v", name)
 	}
+
 	return ec, nil
 }
 
@@ -157,6 +176,7 @@ func GetWatchNamespace() (string, error) {
 	if !found {
 		return "", fmt.Errorf("%s must be set", watchNamespaceEnvVar)
 	}
+
 	return ns, nil
 }
 
@@ -169,7 +189,8 @@ func GetDebugMode() (bool, error) {
 
 	b, err := strconv.ParseBool(mode)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("failed to parse env value as boolean: %w", err)
 	}
+
 	return b, nil
 }

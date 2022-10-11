@@ -3,6 +3,7 @@ package chain
 import (
 	"fmt"
 	"os"
+	"path"
 	"testing"
 
 	"github.com/dchest/uniuri"
@@ -17,7 +18,7 @@ import (
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/helper"
-	mockGit "github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver/mock"
+	mockGit "github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver/mocks"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	perfApi "github.com/epam/edp-perf-operator/v2/pkg/apis/edp/v1alpha1"
 )
@@ -30,10 +31,7 @@ const (
 
 	fakePrivateKey = "fake_private_key"
 	fakeUser       = "fake_user"
-	fakeInputParam = "fake_input_param"
 )
-
-var path = "/tmp"
 
 func init() {
 	utilRuntime.Must(perfApi.AddToScheme(scheme.Scheme))
@@ -41,8 +39,11 @@ func init() {
 }
 
 func TestCreateFile_FileMustBeCreated(t *testing.T) {
-	p := fmt.Sprintf("%v/%v", path, uniuri.NewLen(5))
+	t.Parallel()
+
+	p := path.Join(t.TempDir(), uniuri.NewLen(5))
 	err := createFile(p)
+
 	defer clear(p)
 
 	assert.NoError(t, err)
@@ -55,7 +56,7 @@ func TestCreateFile_MethodMustThrowAnException(t *testing.T) {
 }
 
 func TestWriteFile_DataMustBeWritten(t *testing.T) {
-	p := fmt.Sprintf("%v/%v", path, uniuri.NewLen(5))
+	p := path.Join(t.TempDir(), uniuri.NewLen(5))
 
 	err := createFile(p)
 	require.NoError(t, err)
@@ -67,7 +68,7 @@ func TestWriteFile_DataMustBeWritten(t *testing.T) {
 }
 
 func TestWriteFile_MethodMustThrowAnException(t *testing.T) {
-	p := fmt.Sprintf("%v/%v", path, uniuri.NewLen(5))
+	p := path.Join(t.TempDir(), uniuri.NewLen(5))
 
 	err := createFile(p)
 	require.NoError(t, err)
@@ -78,13 +79,14 @@ func TestWriteFile_MethodMustThrowAnException(t *testing.T) {
 	assert.Error(t, err)
 }
 
-func clear(path string) {
-	if err := os.Remove(path); err != nil {
+func clear(p string) {
+	if err := os.Remove(p); err != nil {
 		os.Exit(1)
 	}
 }
 
 func TestTryToPutVersionFileMethod_MustBeFinishedSuccessfully(t *testing.T) {
+	tmpDir := t.TempDir()
 	gs := &codebaseApi.GitServer{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      fakeGitServerName,
@@ -126,13 +128,13 @@ func TestTryToPutVersionFileMethod_MustBeFinishedSuccessfully(t *testing.T) {
 
 	// mock methods of git interface
 	mGit := new(mockGit.MockGit)
-	mGit.On("CommitChanges", path, fmt.Sprintf("Add %v file", versionFileName)).Return(
+	mGit.On("CommitChanges", tmpDir, fmt.Sprintf("Add %v file", versionFileName)).Return(
 		nil)
-	mGit.On("PushChanges", fakePrivateKey, fakeUser, path, gs.Spec.SshPort).Return(
+	mGit.On("PushChanges", fakePrivateKey, fakeUser, tmpDir, gs.Spec.SshPort).Return(
 		nil)
-	mGit.On("Checkout", util.GetPointerStringP(nil), util.GetPointerStringP(nil), path, "", true).Return(
+	mGit.On("Checkout", util.GetPointerStringP(nil), util.GetPointerStringP(nil), tmpDir, "", true).Return(
 		nil)
-	mGit.On("GetCurrentBranchName", path).Return(
+	mGit.On("GetCurrentBranchName", tmpDir).Return(
 		"", nil)
 	mGit.On("CheckPermissions", "https://github.com/epmd-edp/go-go-go.git", util.GetPointerStringP(nil), util.GetPointerStringP(nil)).Return(
 		true)
@@ -159,8 +161,7 @@ func TestTryToPutVersionFileMethod_MustBeFinishedSuccessfully(t *testing.T) {
 		},
 	}
 
-	err := h.tryToPutVersionFile(c, path)
-	defer clear(fmt.Sprintf("%v/VERSION", path))
+	err := h.tryToPutVersionFile(c, tmpDir)
 
 	assert.NoError(t, err)
 }

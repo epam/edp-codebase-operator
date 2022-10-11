@@ -51,6 +51,7 @@ func (h *DropJenkinsFolders) ServeRequest(ctx context.Context, c *codebaseApi.Co
 	if err != nil {
 		return errors.Wrap(err, "couldn't parse label selector")
 	}
+
 	options := &client.ListOptions{
 		LabelSelector: selector,
 	}
@@ -63,11 +64,13 @@ func (h *DropJenkinsFolders) ServeRequest(ctx context.Context, c *codebaseApi.Co
 	for i := 0; i < len(jenkinsFolderList.Items); i++ {
 		jf := jenkinsFolderList.Items[i]
 		rLog.Info("trying to delete jenkins folder", "folder name", jf.Name)
+
 		if err := h.k8sClient.Delete(ctx, &jf); err != nil {
 			return errors.Wrap(err, "unable to delete jenkins folder")
 		}
 	}
 
 	rLog.Info("done deleting child jenkins folders")
+
 	return nil
 }

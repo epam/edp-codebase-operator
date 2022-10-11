@@ -62,9 +62,11 @@ func TestReconcileCodebaseImageStream_Reconcile_ShouldFailNotFound(t *testing.T)
 	res, err := r.Reconcile(context.TODO(), req)
 
 	assert.Error(t, err)
+
 	if !strings.Contains(err.Error(), "no kind is registered for the type v1.CodebaseImageStream") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
+
 	assert.False(t, res.Requeue)
 }
 
@@ -131,6 +133,7 @@ func TestReconcileCodebaseImageStream_Reconcile_ShouldFail(t *testing.T) {
 
 	assert.Error(t, err)
 	assert.False(t, res.Requeue)
+
 	if !strings.Contains(err.Error(), "couldn't handle NewCIS codebase image stream") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}

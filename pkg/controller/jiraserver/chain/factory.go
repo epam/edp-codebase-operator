@@ -1,6 +1,8 @@
 package chain
 
 import (
+	"fmt"
+
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -22,9 +24,15 @@ func CreateDefChain(jc jira.Client, c client.Client) handler.JiraServerHandler {
 }
 
 func nextServeOrNil(next handler.JiraServerHandler, js *codebaseApi.JiraServer) error {
-	if next != nil {
-		return next.ServeRequest(js)
+	if next == nil {
+		log.Info("handling of JiraServer has been finished", "jira server name", js.Name)
+		return nil
 	}
-	log.Info("handling of JiraServer has been finished", "jira server name", js.Name)
+
+	err := next.ServeRequest(js)
+	if err != nil {
+		return fmt.Errorf("failed to process next handler in a chain: %w", err)
+	}
+
 	return nil
 }

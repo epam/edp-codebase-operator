@@ -26,6 +26,10 @@ type link struct {
 	Href string `json:"href"`
 }
 
+type repository struct {
+	ID int `json:"id"`
+}
+
 const retryCount = 3
 
 func (bitBucket *BitBucket) Init(url, username, password string) error {
@@ -49,11 +53,13 @@ func (bitBucket *BitBucket) CheckProjectExist(groupPath, projectName string) (*b
 	if err != nil {
 		return nil, err
 	}
+
 	return exist, nil
 }
 
 func (bitBucket *BitBucket) getProject(groupPath, projectName string) (*project, *bool, error) {
 	var result project
+
 	resp, err := bitBucket.Client.R().
 		SetResult(&result).
 		SetPathParams(map[string]string{
@@ -64,24 +70,31 @@ func (bitBucket *BitBucket) getProject(groupPath, projectName string) (*project,
 	if err != nil {
 		errorMsg := fmt.Sprintf("Unable to read project: %v", err)
 		log.Println(errorMsg)
+
 		return nil, nil, errors.New(errorMsg)
 	}
+
 	if resp.StatusCode() == http.StatusUnauthorized {
 		errorMsg := "unauthorized"
 		log.Println(errorMsg)
+
 		return nil, nil, errors.New(errorMsg)
 	}
+
 	var exist bool
 	if resp.StatusCode() == http.StatusNotFound {
 		exist = false
 		return nil, &exist, nil
 	}
+
 	exist = resp.StatusCode() == http.StatusOK
+
 	return &result, &exist, nil
 }
 
 func (bitBucket *BitBucket) CreateProject(groupPath, projectName string) (string, error) {
-	var result map[string]interface{}
+	var result repository
+
 	resp, err := bitBucket.Client.R().
 		SetResult(&result).
 		SetHeader("Content-Type", "application/json").
@@ -93,24 +106,21 @@ func (bitBucket *BitBucket) CreateProject(groupPath, projectName string) (string
 			"groupPath": groupPath,
 		}).
 		Post("/rest/api/1.0/projects/{groupPath}/repos")
-
 	if err != nil {
 		errorMsg := fmt.Sprintf("Unable to create project in Bitbucket: %v", err)
 		log.Println(errorMsg)
+
 		return "", errors.New(errorMsg)
 	}
 
 	if resp.IsError() {
 		errorMsg := resp.String()
 		log.Println(errorMsg)
+
 		return "", errors.New(errorMsg)
 	}
-	return simpleConvertFloatToString(result["id"].(float64)), nil
-}
 
-func simpleConvertFloatToString(number float64) string {
-	const bitSize = 64
-	return strconv.FormatFloat(number, 'f', -1, bitSize)
+	return strconv.Itoa(result.ID), nil
 }
 
 func (bitBucket *BitBucket) GetRepositorySshUrl(groupPath, projectName string) (string, error) {
@@ -118,11 +128,12 @@ func (bitBucket *BitBucket) GetRepositorySshUrl(groupPath, projectName string) (
 	if err != nil {
 		return "", err
 	}
+
 	if !*exist {
 		return "", errors.Errorf("project %v, does not exist in group %v", projectName, groupPath)
 	}
-	sshLink, err := getSshLink(*pr)
 
+	sshLink, err := getSshLink(*pr)
 	if err != nil {
 		return "", err
 	}
@@ -137,6 +148,7 @@ func getSshLink(pr project) (*string, error) {
 			return &el.Href, nil
 		}
 	}
+
 	return nil, errors.New("ssh link has not be found")
 }
 
@@ -147,15 +159,18 @@ func (bitBucket *BitBucket) DeleteProject(groupPath, projectName string) error {
 			"projectName": projectName,
 		}).
 		Delete("/rest/api/1.0/projects/{groupPath}/repos/{projectName}")
-
 	if err != nil {
 		errorMsg := fmt.Sprintf("Unable to delete project in Bitbucket: %v", err)
 		log.Println(errorMsg)
+
 		return errors.New(errorMsg)
 	}
+
 	if resp.IsError() {
 		log.Println(resp.Status())
+
 		return errors.New(resp.Status())
 	}
+
 	return nil
 }

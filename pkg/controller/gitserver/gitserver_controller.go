@@ -35,14 +35,28 @@ type ReconcileGitServer struct {
 func (r *ReconcileGitServer) SetupWithManager(mgr ctrl.Manager) error {
 	p := predicate.Funcs{
 		UpdateFunc: func(e event.UpdateEvent) bool {
-			oldObject := e.ObjectOld.(*codebaseApi.GitServer)
-			newObject := e.ObjectNew.(*codebaseApi.GitServer)
+			oldObject, ok := e.ObjectOld.(*codebaseApi.GitServer)
+			if !ok {
+				return false
+			}
+
+			newObject, ok := e.ObjectNew.(*codebaseApi.GitServer)
+			if !ok {
+				return false
+			}
+
 			return oldObject.Status == newObject.Status
 		},
 	}
-	return ctrl.NewControllerManagedBy(mgr).
+
+	err := ctrl.NewControllerManagedBy(mgr).
 		For(&codebaseApi.GitServer{}, builder.WithPredicates(p)).
 		Complete(r)
+	if err != nil {
+		return fmt.Errorf("failed to build GitServer controller: %w", err)
+	}
+
+	return nil
 }
 
 func (r *ReconcileGitServer) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
@@ -50,6 +64,7 @@ func (r *ReconcileGitServer) Reconcile(ctx context.Context, request reconcile.Re
 	reconcilerLog.Info("Reconciling GitServer")
 
 	instance := &codebaseApi.GitServer{}
+
 	err := r.client.Get(ctx, request.NamespacedName, instance)
 	if err != nil {
 		if k8sErrors.IsNotFound(err) {
@@ -58,7 +73,8 @@ func (r *ReconcileGitServer) Reconcile(ctx context.Context, request reconcile.Re
 			// Return and don't requeue
 			return reconcile.Result{}, nil
 		}
-		return reconcile.Result{}, err
+
+		return reconcile.Result{}, fmt.Errorf("failed to fetch resource %q: %w", request.NamespacedName, err)
 	}
 
 	gitServer := model.ConvertToGitServer(instance)
@@ -73,8 +89,11 @@ func (r *ReconcileGitServer) Reconcile(ctx context.Context, request reconcile.Re
 	}
 
 	if !hasConnection {
+		const requeueTime = 30 * time.Second
+
 		reconcilerLog.Info("git server does not have connection, will try again later")
-		return reconcile.Result{RequeueAfter: time.Second * 30}, nil
+
+		return reconcile.Result{RequeueAfter: requeueTime}, nil
 	}
 
 	reconcilerLog.Info("Reconciling codebase has been finished")
