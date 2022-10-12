@@ -353,5 +353,6 @@ func setFailedFields(c *codebaseApi.Codebase, a codebaseApi.ActionType, message 
 		Value:           "failed",
 		FailureCount:    c.Status.FailureCount,
 		Git:             c.Status.Git,
+		WebHookID:       c.Status.WebHookID,
 	}
 }

@@ -3,7 +3,6 @@ package chain
 import (
 	"context"
 	"fmt"
-	"regexp"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -243,16 +242,8 @@ func (h *PutPerfDataSources) getGitLabDataSourceConfig(codebase *codebaseApi.Cod
 	return &perfAPi.DataSourceGitLabConfig{
 		Repositories: []string{(*codebase.Spec.GitUrlPath)[1:]},
 		Branches:     []string{codebase.Spec.DefaultBranch},
-		Url:          modifyGitLink(gs.GitHost),
+		Url:          getHostWithProtocol(gs.GitHost),
 	}, nil
-}
-
-func modifyGitLink(host string) string {
-	if regexp.MustCompile(`^(https://)|^(http://)`).MatchString(host) {
-		return host
-	}
-
-	return fmt.Sprintf("https://%v", host)
 }
 
 func makeK8sDataSourceMeta(c *codebaseApi.Codebase, dataSourceType string) (metaV1.TypeMeta, metaV1.ObjectMeta) {

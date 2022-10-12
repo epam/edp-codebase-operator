@@ -150,6 +150,7 @@ const (
 	PutJenkinsFolder                 ActionType = "put_jenkins_folder"
 	CleanData                        ActionType = "clean_data"
 	ImportProject                    ActionType = "import_project"
+	PutWebHook                       ActionType = "put_web_hook"
 	PutVersionFile                   ActionType = "put_version_file"
 	PutGitlabCIFile                  ActionType = "put_gitlab_ci_file"
 	PutBranchForGitlabCiCodebase     ActionType = "put_branch_for_gitlab_ci_codebase"
@@ -207,6 +208,10 @@ type CodebaseStatus struct {
 
 	// Specifies a status of action for git.
 	Git string `json:"git"`
+
+	// Stores ID of webhook which was created for a codebase.
+	// +optional
+	WebHookID int `json:"webHookID,omitempty"`
 }
 
 // +kubebuilder:object:root=true

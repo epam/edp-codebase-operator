@@ -21,7 +21,7 @@ spec:
     schema:
       openAPIV3Schema:
         description: CodebaseImageStream is the Schema for the CodebaseImageStreams
-          API
+          API.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -36,7 +36,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: CodebaseImageStreamSpec defines the desired state of CodebaseImageStream
+            description: CodebaseImageStreamSpec defines the desired state of CodebaseImageStream.
             properties:
               codebase:
                 description: Name of Codebase associated with.
@@ -64,7 +64,7 @@ spec:
             - imageName
             type: object
           status:
-            description: CodebaseImageStreamStatus defines the observed state of CodebaseImageStream
+            description: CodebaseImageStreamStatus defines the observed state of CodebaseImageStream.
             properties:
               detailed_message:
                 description: Detailed information regarding action result which were
@@ -88,7 +88,7 @@ spec:
     schema:
       openAPIV3Schema:
         description: CodebaseImageStream is the Schema for the CodebaseImageStreams
-          API
+          API.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -103,7 +103,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: CodebaseImageStreamSpec defines the desired state of CodebaseImageStream
+            description: CodebaseImageStreamSpec defines the desired state of CodebaseImageStream.
             properties:
               codebase:
                 description: Name of Codebase associated with.
@@ -131,7 +131,7 @@ spec:
             - imageName
             type: object
           status:
-            description: CodebaseImageStreamStatus defines the observed state of CodebaseImageStream
+            description: CodebaseImageStreamStatus defines the observed state of CodebaseImageStream.
             properties:
               detailed_message:
                 description: Detailed information regarding action result which were

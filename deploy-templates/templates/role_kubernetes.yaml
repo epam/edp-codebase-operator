@@ -88,4 +88,12 @@ rules:
     - get
     - list
     - update
+- apiGroups:
+    - networking.k8s.io
+  resources:
+    - ingresses
+  verbs:
+    - get
+    - list
+    - watch
 {{ end }}

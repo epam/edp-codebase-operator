@@ -3,6 +3,7 @@ package chain
 import (
 	"context"
 	"fmt"
+	"regexp"
 
 	"github.com/pkg/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -12,6 +13,8 @@ import (
 	git "github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
+
+var protocolRegexp = regexp.MustCompile(`^(https://)|^(http://)`)
 
 func pushChangesToGit(c client.Client, g git.Git, projectPath string, cb *codebaseApi.Codebase) error {
 	gs, err := util.GetGitServer(c, cb.Spec.GitServer, cb.Namespace)
@@ -48,6 +51,7 @@ func setIntermediateSuccessFields(ctx context.Context, c client.Client, cb *code
 		Value:           "inactive",
 		FailureCount:    cb.Status.FailureCount,
 		Git:             cb.Status.Git,
+		WebHookID:       cb.Status.WebHookID,
 	}
 
 	err := c.Status().Update(ctx, cb)
@@ -61,4 +65,23 @@ func setIntermediateSuccessFields(ctx context.Context, c client.Client, cb *code
 	}
 
 	return nil
+}
+
+func getHostWithProtocol(host string) string {
+	if protocolRegexp.MatchString(host) {
+		return host
+	}
+
+	return fmt.Sprintf("https://%v", host)
+}
+
+// getGitServerURL returns git server url with protocol.
+func getGitServerURL(gitServer *codebaseApi.GitServer) string {
+	url := getHostWithProtocol(gitServer.Spec.GitHost)
+
+	if gitServer.Spec.HttpsPort != 0 {
+		url = fmt.Sprintf("%s:%d", url, gitServer.Spec.HttpsPort)
+	}
+
+	return url
 }

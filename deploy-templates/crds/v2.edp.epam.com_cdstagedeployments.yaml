@@ -20,7 +20,7 @@ spec:
   - name: v1
     schema:
       openAPIV3Schema:
-        description: CDStageDeploy is the Schema for the CDStageDeployments API
+        description: CDStageDeploy is the Schema for the CDStageDeployments API.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -35,7 +35,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: CDStageDeploySpec defines the desired state of CDStageDeploy
+            description: CDStageDeploySpec defines the desired state of CDStageDeploy.
             properties:
               pipeline:
                 description: Name of related pipeline
@@ -74,7 +74,7 @@ spec:
             - tags
             type: object
           status:
-            description: CDStageDeployStatus defines the observed state of CDStageDeploy
+            description: CDStageDeployStatus defines the observed state of CDStageDeploy.
             properties:
               failureCount:
                 description: Amount of times, operator fail to serve with existing
@@ -101,7 +101,7 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: CDStageDeploy is the Schema for the CDStageDeployments API
+        description: CDStageDeploy is the Schema for the CDStageDeployments API.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -116,7 +116,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: CDStageDeploySpec defines the desired state of CDStageDeploy
+            description: CDStageDeploySpec defines the desired state of CDStageDeploy.
             properties:
               pipeline:
                 description: Name of related pipeline
@@ -155,7 +155,7 @@ spec:
             - tags
             type: object
           status:
-            description: CDStageDeployStatus defines the observed state of CDStageDeploy
+            description: CDStageDeployStatus defines the observed state of CDStageDeploy.
             properties:
               failureCount:
                 description: Amount of times, operator fail to serve with existing

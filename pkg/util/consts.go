@@ -16,7 +16,12 @@ const (
 	StatusInProgress = "in progress"
 	CodebaseLabelKey = "codebase"
 
+	// PrivateSShKeyName is a field in secret created for the git server that stores id_rsa.
 	PrivateSShKeyName = "id_rsa"
+	// GitServerSecretTokenField is a field in secret created for the git server that stores GitLab/GitHub token.
+	GitServerSecretTokenField = "token"
+	// GitServerSecretWebhookSecretField is a field in secret created for the git server that stores secret token for webhook.
+	GitServerSecretWebhookSecretField = "secretString"
 
 	ImportStrategy     = "import"
 	Application        = "application"

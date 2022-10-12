@@ -20,7 +20,7 @@ spec:
   - name: v1
     schema:
       openAPIV3Schema:
-        description: JiraServer is the Schema for the JiraServers API
+        description: JiraServer is the Schema for the JiraServers API.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -35,7 +35,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: JiraServerSpec defines the desired state of JiraServer
+            description: JiraServerSpec defines the desired state of JiraServer.
             properties:
               apiUrl:
                 type: string
@@ -49,7 +49,7 @@ spec:
             - rootUrl
             type: object
           status:
-            description: JiraServerStatus defines the observed state of JiraServer
+            description: JiraServerStatus defines the observed state of JiraServer.
             properties:
               available:
                 description: This flag indicates neither JiraServer are initialized
@@ -80,7 +80,7 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: JiraServer is the Schema for the JiraServers API
+        description: JiraServer is the Schema for the JiraServers API.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -95,7 +95,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: JiraServerSpec defines the desired state of JiraServer
+            description: JiraServerSpec defines the desired state of JiraServer.
             properties:
               apiUrl:
                 type: string
@@ -109,7 +109,7 @@ spec:
             - rootUrl
             type: object
           status:
-            description: JiraServerStatus defines the observed state of JiraServer
+            description: JiraServerStatus defines the observed state of JiraServer.
             properties:
               available:
                 description: This flag indicates neither JiraServer are initialized

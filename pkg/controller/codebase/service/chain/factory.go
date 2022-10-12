@@ -1,12 +1,16 @@
 package chain
 
 import (
+	"github.com/go-resty/resty/v2"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/repository"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/service/chain/handler"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver"
+	"github.com/epam/edp-codebase-operator/v2/pkg/util"
+	"github.com/epam/edp-codebase-operator/v2/pkg/vcs"
 )
 
 const (
@@ -75,10 +79,16 @@ func MakeThirdPartyVcsProviderDefChain(c client.Client, cr repository.CodebaseRe
 	return ch
 }
 
-func MakeDeletionChain(c client.Client) handler.CodebaseHandler {
+func MakeDeletionChain(c client.Client, codebase *codebaseApi.Codebase) handler.CodebaseHandler {
 	ch := &chain{}
 
-	ch.Use(NewDropJenkinsFolders(c))
+	if codebase.Spec.CiTool == util.Tekton {
+		NewDeleteGitlabWebHook(c, vcs.NewGitLabClient(resty.New()))
+	}
+
+	if codebase.Spec.CiTool != util.Tekton {
+		ch.Use(NewDropJenkinsFolders(c))
+	}
 
 	return ch
 }
@@ -109,6 +119,7 @@ func MakeTektonCiDefChain(c client.Client, cr repository.CodebaseRepository) han
 	gp := &gitserver.GitProvider{}
 
 	ch.Use(
+		NewPutGitlabWebHook(c, vcs.NewGitLabClient(resty.New())),
 		NewCloneGitProject(c, gp),
 		NewPutPerfDataSources(c),
 		NewPutDeployConfigsToGitProvider(c, cr, gp),

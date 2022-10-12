@@ -20,7 +20,7 @@ spec:
   - name: v1
     schema:
       openAPIV3Schema:
-        description: CodebaseBranch is the Schema for the CodebaseBranches API
+        description: CodebaseBranch is the Schema for the CodebaseBranches API.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -35,7 +35,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: CodebaseBranchSpec defines the desired state of CodebaseBranch
+            description: CodebaseBranchSpec defines the desired state of CodebaseBranch.
             properties:
               branchName:
                 description: Name of a branch.
@@ -65,7 +65,7 @@ spec:
             - release
             type: object
           status:
-            description: CodebaseBranchStatus defines the observed state of CodebaseBranch
+            description: CodebaseBranchStatus defines the observed state of CodebaseBranch.
             properties:
               action:
                 description: The last Action was performed.
@@ -128,7 +128,7 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: CodebaseBranch is the Schema for the CodebaseBranches API
+        description: CodebaseBranch is the Schema for the CodebaseBranches API.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -143,7 +143,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: CodebaseBranchSpec defines the desired state of CodebaseBranch
+            description: CodebaseBranchSpec defines the desired state of CodebaseBranch.
             properties:
               branchName:
                 description: Name of a branch.
@@ -173,7 +173,7 @@ spec:
             - release
             type: object
           status:
-            description: CodebaseBranchStatus defines the observed state of CodebaseBranch
+            description: CodebaseBranchStatus defines the observed state of CodebaseBranch.
             properties:
               action:
                 description: The last Action was performed.

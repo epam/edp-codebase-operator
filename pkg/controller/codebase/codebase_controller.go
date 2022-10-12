@@ -156,6 +156,7 @@ func (r *ReconcileCodebase) updateFinishStatus(ctx context.Context, c *codebaseA
 		Value:           "active",
 		FailureCount:    0,
 		Git:             c.Status.Git,
+		WebHookID:       c.Status.WebHookID,
 	}
 
 	return r.updateStatus(ctx, c)
@@ -237,10 +238,8 @@ func (r *ReconcileCodebase) tryToDeleteCodebase(ctx context.Context, c *codebase
 		return nil, err
 	}
 
-	if c.Spec.CiTool != util.Tekton {
-		if err := chain.MakeDeletionChain(r.client).ServeRequest(ctx, c); err != nil {
-			return nil, errors.Wrap(err, "errors during deletion chain")
-		}
+	if err := chain.MakeDeletionChain(r.client, c).ServeRequest(ctx, c); err != nil {
+		return nil, errors.Wrap(err, "errors during deletion chain")
 	}
 
 	c.ObjectMeta.Finalizers = util.RemoveString(c.ObjectMeta.Finalizers, codebaseOperatorFinalizerName)

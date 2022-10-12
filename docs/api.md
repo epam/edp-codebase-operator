@@ -38,7 +38,7 @@ Resource Types:
 
 
 
-CDStageDeploy is the Schema for the CDStageDeployments API
+CDStageDeploy is the Schema for the CDStageDeployments API.
 
 <table>
     <thead>
@@ -70,14 +70,14 @@ CDStageDeploy is the Schema for the CDStageDeployments API
         <td><b><a href="#cdstagedeployspec">spec</a></b></td>
         <td>object</td>
         <td>
-          CDStageDeploySpec defines the desired state of CDStageDeploy<br/>
+          CDStageDeploySpec defines the desired state of CDStageDeploy.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#cdstagedeploystatus">status</a></b></td>
         <td>object</td>
         <td>
-          CDStageDeployStatus defines the observed state of CDStageDeploy<br/>
+          CDStageDeployStatus defines the observed state of CDStageDeploy.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -89,7 +89,7 @@ CDStageDeploy is the Schema for the CDStageDeployments API
 
 
 
-CDStageDeploySpec defines the desired state of CDStageDeploy
+CDStageDeploySpec defines the desired state of CDStageDeploy.
 
 <table>
     <thead>
@@ -205,7 +205,7 @@ Specifies a latest available tag
 
 
 
-CDStageDeployStatus defines the observed state of CDStageDeploy
+CDStageDeployStatus defines the observed state of CDStageDeploy.
 
 <table>
     <thead>
@@ -250,7 +250,7 @@ CDStageDeployStatus defines the observed state of CDStageDeploy
 
 
 
-CodebaseBranch is the Schema for the CodebaseBranches API
+CodebaseBranch is the Schema for the CodebaseBranches API.
 
 <table>
     <thead>
@@ -282,14 +282,14 @@ CodebaseBranch is the Schema for the CodebaseBranches API
         <td><b><a href="#codebasebranchspec">spec</a></b></td>
         <td>object</td>
         <td>
-          CodebaseBranchSpec defines the desired state of CodebaseBranch<br/>
+          CodebaseBranchSpec defines the desired state of CodebaseBranch.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#codebasebranchstatus">status</a></b></td>
         <td>object</td>
         <td>
-          CodebaseBranchStatus defines the observed state of CodebaseBranch<br/>
+          CodebaseBranchStatus defines the observed state of CodebaseBranch.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -301,7 +301,7 @@ CodebaseBranch is the Schema for the CodebaseBranches API
 
 
 
-CodebaseBranchSpec defines the desired state of CodebaseBranch
+CodebaseBranchSpec defines the desired state of CodebaseBranch.
 
 <table>
     <thead>
@@ -363,7 +363,7 @@ CodebaseBranchSpec defines the desired state of CodebaseBranch
 
 
 
-CodebaseBranchStatus defines the observed state of CodebaseBranch
+CodebaseBranchStatus defines the observed state of CodebaseBranch.
 
 <table>
     <thead>
@@ -468,7 +468,7 @@ CodebaseBranchStatus defines the observed state of CodebaseBranch
 
 
 
-CodebaseImageStream is the Schema for the CodebaseImageStreams API
+CodebaseImageStream is the Schema for the CodebaseImageStreams API.
 
 <table>
     <thead>
@@ -500,14 +500,14 @@ CodebaseImageStream is the Schema for the CodebaseImageStreams API
         <td><b><a href="#codebaseimagestreamspec">spec</a></b></td>
         <td>object</td>
         <td>
-          CodebaseImageStreamSpec defines the desired state of CodebaseImageStream<br/>
+          CodebaseImageStreamSpec defines the desired state of CodebaseImageStream.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#codebaseimagestreamstatus">status</a></b></td>
         <td>object</td>
         <td>
-          CodebaseImageStreamStatus defines the observed state of CodebaseImageStream<br/>
+          CodebaseImageStreamStatus defines the observed state of CodebaseImageStream.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -519,7 +519,7 @@ CodebaseImageStream is the Schema for the CodebaseImageStreams API
 
 
 
-CodebaseImageStreamSpec defines the desired state of CodebaseImageStream
+CodebaseImageStreamSpec defines the desired state of CodebaseImageStream.
 
 <table>
     <thead>
@@ -594,7 +594,7 @@ CodebaseImageStreamSpec defines the desired state of CodebaseImageStream
 
 
 
-CodebaseImageStreamStatus defines the observed state of CodebaseImageStream
+CodebaseImageStreamStatus defines the observed state of CodebaseImageStream.
 
 <table>
     <thead>
@@ -632,7 +632,7 @@ CodebaseImageStreamStatus defines the observed state of CodebaseImageStream
 
 
 
-Codebase is the Schema for the Codebases API
+Codebase is the Schema for the Codebases API.
 
 <table>
     <thead>
@@ -671,7 +671,7 @@ Codebase is the Schema for the Codebases API
         <td><b><a href="#codebasestatus">status</a></b></td>
         <td>object</td>
         <td>
-          CodebaseStatus defines the observed state of Codebase<br/>
+          CodebaseStatus defines the observed state of Codebase.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -968,7 +968,7 @@ CodebaseSpec defines the desired state of Codebase.
 
 
 
-CodebaseStatus defines the observed state of Codebase
+CodebaseStatus defines the observed state of Codebase.
 
 <table>
     <thead>
@@ -1055,6 +1055,13 @@ CodebaseStatus defines the observed state of Codebase
           Detailed information regarding action result which were performed<br/>
         </td>
         <td>false</td>
+      </tr><tr>
+        <td><b>webHookID</b></td>
+        <td>integer</td>
+        <td>
+          Stores ID of webhook which was created for a codebase.<br/>
+        </td>
+        <td>false</td>
       </tr></tbody>
 </table>
 
@@ -1066,7 +1073,7 @@ CodebaseStatus defines the observed state of Codebase
 
 
 
-GitServer is the Schema for the gitservers API
+GitServer is the Schema for the gitservers API.
 
 <table>
     <thead>
@@ -1098,14 +1105,14 @@ GitServer is the Schema for the gitservers API
         <td><b><a href="#gitserverspec">spec</a></b></td>
         <td>object</td>
         <td>
-          GitServerSpec defines the desired state of GitServer<br/>
+          GitServerSpec defines the desired state of GitServer.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#gitserverstatus">status</a></b></td>
         <td>object</td>
         <td>
-          GitServerStatus defines the observed state of GitServer<br/>
+          GitServerStatus defines the observed state of GitServer.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -1117,7 +1124,7 @@ GitServer is the Schema for the gitservers API
 
 
 
-GitServerSpec defines the desired state of GitServer
+GitServerSpec defines the desired state of GitServer.
 
 <table>
     <thead>
@@ -1176,7 +1183,7 @@ GitServerSpec defines the desired state of GitServer
 
 
 
-GitServerStatus defines the observed state of GitServer
+GitServerStatus defines the observed state of GitServer.
 
 <table>
     <thead>
@@ -1256,7 +1263,7 @@ GitServerStatus defines the observed state of GitServer
 
 
 
-GitTag is the Schema for the GitTags API
+GitTag is the Schema for the GitTags API.
 
 <table>
     <thead>
@@ -1288,14 +1295,14 @@ GitTag is the Schema for the GitTags API
         <td><b><a href="#gittagspec">spec</a></b></td>
         <td>object</td>
         <td>
-          GitTagSpec defines the desired state of GitTag<br/>
+          GitTagSpec defines the desired state of GitTag.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>status</b></td>
         <td>object</td>
         <td>
-          GitTagStatus defines the observed state of GitTag<br/>
+          GitTagStatus defines the observed state of GitTag.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -1307,7 +1314,7 @@ GitTag is the Schema for the GitTags API
 
 
 
-GitTagSpec defines the desired state of GitTag
+GitTagSpec defines the desired state of GitTag.
 
 <table>
     <thead>
@@ -1350,7 +1357,7 @@ GitTagSpec defines the desired state of GitTag
 
 
 
-ImageStreamTag is the Schema for the ImageStreamTags API
+ImageStreamTag is the Schema for the ImageStreamTags API.
 
 <table>
     <thead>
@@ -1382,14 +1389,14 @@ ImageStreamTag is the Schema for the ImageStreamTags API
         <td><b><a href="#imagestreamtagspec">spec</a></b></td>
         <td>object</td>
         <td>
-          ImageStreamTagSpec defines the desired state of ImageStreamTag<br/>
+          ImageStreamTagSpec defines the desired state of ImageStreamTag.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>status</b></td>
         <td>object</td>
         <td>
-          ImageStreamTagStatus defines the observed state of ImageStreamTag<br/>
+          ImageStreamTagStatus defines the observed state of ImageStreamTag.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -1401,7 +1408,7 @@ ImageStreamTag is the Schema for the ImageStreamTags API
 
 
 
-ImageStreamTagSpec defines the desired state of ImageStreamTag
+ImageStreamTagSpec defines the desired state of ImageStreamTag.
 
 <table>
     <thead>
@@ -1437,7 +1444,7 @@ ImageStreamTagSpec defines the desired state of ImageStreamTag
 
 
 
-JiraIssueMetadata is the Schema for the JiraIssueMetadatas API
+JiraIssueMetadata is the Schema for the JiraIssueMetadatas API.
 
 <table>
     <thead>
@@ -1469,14 +1476,14 @@ JiraIssueMetadata is the Schema for the JiraIssueMetadatas API
         <td><b><a href="#jiraissuemetadataspec">spec</a></b></td>
         <td>object</td>
         <td>
-          JiraIssueMetadataSpec defines the desired state of JiraIssueMetadata<br/>
+          JiraIssueMetadataSpec defines the desired state of JiraIssueMetadata.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#jiraissuemetadatastatus">status</a></b></td>
         <td>object</td>
         <td>
-          JiraIssueMetadataStatus defines the observed state of JiraIssueMetadata<br/>
+          JiraIssueMetadataStatus defines the observed state of JiraIssueMetadata.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -1488,7 +1495,7 @@ JiraIssueMetadata is the Schema for the JiraIssueMetadatas API
 
 
 
-JiraIssueMetadataSpec defines the desired state of JiraIssueMetadata
+JiraIssueMetadataSpec defines the desired state of JiraIssueMetadata.
 
 <table>
     <thead>
@@ -1536,7 +1543,7 @@ JiraIssueMetadataSpec defines the desired state of JiraIssueMetadata
 
 
 
-JiraIssueMetadataStatus defines the observed state of JiraIssueMetadata
+JiraIssueMetadataStatus defines the observed state of JiraIssueMetadata.
 
 <table>
     <thead>
@@ -1590,7 +1597,7 @@ JiraIssueMetadataStatus defines the observed state of JiraIssueMetadata
 
 
 
-JiraServer is the Schema for the JiraServers API
+JiraServer is the Schema for the JiraServers API.
 
 <table>
     <thead>
@@ -1622,14 +1629,14 @@ JiraServer is the Schema for the JiraServers API
         <td><b><a href="#jiraserverspec">spec</a></b></td>
         <td>object</td>
         <td>
-          JiraServerSpec defines the desired state of JiraServer<br/>
+          JiraServerSpec defines the desired state of JiraServer.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#jiraserverstatus">status</a></b></td>
         <td>object</td>
         <td>
-          JiraServerStatus defines the observed state of JiraServer<br/>
+          JiraServerStatus defines the observed state of JiraServer.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -1641,7 +1648,7 @@ JiraServer is the Schema for the JiraServers API
 
 
 
-JiraServerSpec defines the desired state of JiraServer
+JiraServerSpec defines the desired state of JiraServer.
 
 <table>
     <thead>
@@ -1682,7 +1689,7 @@ JiraServerSpec defines the desired state of JiraServer
 
 
 
-JiraServerStatus defines the observed state of JiraServer
+JiraServerStatus defines the observed state of JiraServer.
 
 <table>
     <thead>
@@ -1759,7 +1766,7 @@ Resource Types:
 
 
 
-CDStageDeploy is the Schema for the CDStageDeployments API
+CDStageDeploy is the Schema for the CDStageDeployments API.
 
 <table>
     <thead>
@@ -1791,14 +1798,14 @@ CDStageDeploy is the Schema for the CDStageDeployments API
         <td><b><a href="#cdstagedeployspec-1">spec</a></b></td>
         <td>object</td>
         <td>
-          CDStageDeploySpec defines the desired state of CDStageDeploy<br/>
+          CDStageDeploySpec defines the desired state of CDStageDeploy.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#cdstagedeploystatus-1">status</a></b></td>
         <td>object</td>
         <td>
-          CDStageDeployStatus defines the observed state of CDStageDeploy<br/>
+          CDStageDeployStatus defines the observed state of CDStageDeploy.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -1810,7 +1817,7 @@ CDStageDeploy is the Schema for the CDStageDeployments API
 
 
 
-CDStageDeploySpec defines the desired state of CDStageDeploy
+CDStageDeploySpec defines the desired state of CDStageDeploy.
 
 <table>
     <thead>
@@ -1926,7 +1933,7 @@ Specifies a latest available tag
 
 
 
-CDStageDeployStatus defines the observed state of CDStageDeploy
+CDStageDeployStatus defines the observed state of CDStageDeploy.
 
 <table>
     <thead>
@@ -1971,7 +1978,7 @@ CDStageDeployStatus defines the observed state of CDStageDeploy
 
 
 
-CodebaseBranch is the Schema for the CodebaseBranches API
+CodebaseBranch is the Schema for the CodebaseBranches API.
 
 <table>
     <thead>
@@ -2003,14 +2010,14 @@ CodebaseBranch is the Schema for the CodebaseBranches API
         <td><b><a href="#codebasebranchspec-1">spec</a></b></td>
         <td>object</td>
         <td>
-          CodebaseBranchSpec defines the desired state of CodebaseBranch<br/>
+          CodebaseBranchSpec defines the desired state of CodebaseBranch.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#codebasebranchstatus-1">status</a></b></td>
         <td>object</td>
         <td>
-          CodebaseBranchStatus defines the observed state of CodebaseBranch<br/>
+          CodebaseBranchStatus defines the observed state of CodebaseBranch.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -2022,7 +2029,7 @@ CodebaseBranch is the Schema for the CodebaseBranches API
 
 
 
-CodebaseBranchSpec defines the desired state of CodebaseBranch
+CodebaseBranchSpec defines the desired state of CodebaseBranch.
 
 <table>
     <thead>
@@ -2084,7 +2091,7 @@ CodebaseBranchSpec defines the desired state of CodebaseBranch
 
 
 
-CodebaseBranchStatus defines the observed state of CodebaseBranch
+CodebaseBranchStatus defines the observed state of CodebaseBranch.
 
 <table>
     <thead>
@@ -2189,7 +2196,7 @@ CodebaseBranchStatus defines the observed state of CodebaseBranch
 
 
 
-CodebaseImageStream is the Schema for the CodebaseImageStreams API
+CodebaseImageStream is the Schema for the CodebaseImageStreams API.
 
 <table>
     <thead>
@@ -2221,14 +2228,14 @@ CodebaseImageStream is the Schema for the CodebaseImageStreams API
         <td><b><a href="#codebaseimagestreamspec-1">spec</a></b></td>
         <td>object</td>
         <td>
-          CodebaseImageStreamSpec defines the desired state of CodebaseImageStream<br/>
+          CodebaseImageStreamSpec defines the desired state of CodebaseImageStream.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#codebaseimagestreamstatus-1">status</a></b></td>
         <td>object</td>
         <td>
-          CodebaseImageStreamStatus defines the observed state of CodebaseImageStream<br/>
+          CodebaseImageStreamStatus defines the observed state of CodebaseImageStream.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -2240,7 +2247,7 @@ CodebaseImageStream is the Schema for the CodebaseImageStreams API
 
 
 
-CodebaseImageStreamSpec defines the desired state of CodebaseImageStream
+CodebaseImageStreamSpec defines the desired state of CodebaseImageStream.
 
 <table>
     <thead>
@@ -2315,7 +2322,7 @@ CodebaseImageStreamSpec defines the desired state of CodebaseImageStream
 
 
 
-CodebaseImageStreamStatus defines the observed state of CodebaseImageStream
+CodebaseImageStreamStatus defines the observed state of CodebaseImageStream.
 
 <table>
     <thead>
@@ -2353,7 +2360,7 @@ CodebaseImageStreamStatus defines the observed state of CodebaseImageStream
 
 
 
-Codebase is the Schema for the Codebases API
+Codebase is the Schema for the Codebases API.
 
 <table>
     <thead>
@@ -2392,7 +2399,7 @@ Codebase is the Schema for the Codebases API
         <td><b><a href="#codebasestatus-1">status</a></b></td>
         <td>object</td>
         <td>
-          CodebaseStatus defines the observed state of Codebase<br/>
+          CodebaseStatus defines the observed state of Codebase.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -2689,7 +2696,7 @@ CodebaseSpec defines the desired state of Codebase.
 
 
 
-CodebaseStatus defines the observed state of Codebase
+CodebaseStatus defines the observed state of Codebase.
 
 <table>
     <thead>
@@ -2787,7 +2794,7 @@ CodebaseStatus defines the observed state of Codebase
 
 
 
-GitServer is the Schema for the gitservers API
+GitServer is the Schema for the gitservers API.
 
 <table>
     <thead>
@@ -2819,14 +2826,14 @@ GitServer is the Schema for the gitservers API
         <td><b><a href="#gitserverspec-1">spec</a></b></td>
         <td>object</td>
         <td>
-          GitServerSpec defines the desired state of GitServer<br/>
+          GitServerSpec defines the desired state of GitServer.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#gitserverstatus-1">status</a></b></td>
         <td>object</td>
         <td>
-          GitServerStatus defines the observed state of GitServer<br/>
+          GitServerStatus defines the observed state of GitServer.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -2838,7 +2845,7 @@ GitServer is the Schema for the gitservers API
 
 
 
-GitServerSpec defines the desired state of GitServer
+GitServerSpec defines the desired state of GitServer.
 
 <table>
     <thead>
@@ -2904,7 +2911,7 @@ GitServerSpec defines the desired state of GitServer
 
 
 
-GitServerStatus defines the observed state of GitServer
+GitServerStatus defines the observed state of GitServer.
 
 <table>
     <thead>
@@ -2984,7 +2991,7 @@ GitServerStatus defines the observed state of GitServer
 
 
 
-GitTag is the Schema for the GitTags API
+GitTag is the Schema for the GitTags API.
 
 <table>
     <thead>
@@ -3016,14 +3023,14 @@ GitTag is the Schema for the GitTags API
         <td><b><a href="#gittagspec-1">spec</a></b></td>
         <td>object</td>
         <td>
-          GitTagSpec defines the desired state of GitTag<br/>
+          GitTagSpec defines the desired state of GitTag.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>status</b></td>
         <td>object</td>
         <td>
-          GitTagStatus defines the observed state of GitTag<br/>
+          GitTagStatus defines the observed state of GitTag.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -3035,7 +3042,7 @@ GitTag is the Schema for the GitTags API
 
 
 
-GitTagSpec defines the desired state of GitTag
+GitTagSpec defines the desired state of GitTag.
 
 <table>
     <thead>
@@ -3078,7 +3085,7 @@ GitTagSpec defines the desired state of GitTag
 
 
 
-ImageStreamTag is the Schema for the ImageStreamTags API
+ImageStreamTag is the Schema for the ImageStreamTags API.
 
 <table>
     <thead>
@@ -3110,14 +3117,14 @@ ImageStreamTag is the Schema for the ImageStreamTags API
         <td><b><a href="#imagestreamtagspec-1">spec</a></b></td>
         <td>object</td>
         <td>
-          ImageStreamTagSpec defines the desired state of ImageStreamTag<br/>
+          ImageStreamTagSpec defines the desired state of ImageStreamTag.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>status</b></td>
         <td>object</td>
         <td>
-          ImageStreamTagStatus defines the observed state of ImageStreamTag<br/>
+          ImageStreamTagStatus defines the observed state of ImageStreamTag.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -3129,7 +3136,7 @@ ImageStreamTag is the Schema for the ImageStreamTags API
 
 
 
-ImageStreamTagSpec defines the desired state of ImageStreamTag
+ImageStreamTagSpec defines the desired state of ImageStreamTag.
 
 <table>
     <thead>
@@ -3165,7 +3172,7 @@ ImageStreamTagSpec defines the desired state of ImageStreamTag
 
 
 
-JiraIssueMetadata is the Schema for the JiraIssueMetadatas API
+JiraIssueMetadata is the Schema for the JiraIssueMetadatas API.
 
 <table>
     <thead>
@@ -3197,14 +3204,14 @@ JiraIssueMetadata is the Schema for the JiraIssueMetadatas API
         <td><b><a href="#jiraissuemetadataspec-1">spec</a></b></td>
         <td>object</td>
         <td>
-          JiraIssueMetadataSpec defines the desired state of JiraIssueMetadata<br/>
+          JiraIssueMetadataSpec defines the desired state of JiraIssueMetadata.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#jiraissuemetadatastatus-1">status</a></b></td>
         <td>object</td>
         <td>
-          JiraIssueMetadataStatus defines the observed state of JiraIssueMetadata<br/>
+          JiraIssueMetadataStatus defines the observed state of JiraIssueMetadata.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -3216,7 +3223,7 @@ JiraIssueMetadata is the Schema for the JiraIssueMetadatas API
 
 
 
-JiraIssueMetadataSpec defines the desired state of JiraIssueMetadata
+JiraIssueMetadataSpec defines the desired state of JiraIssueMetadata.
 
 <table>
     <thead>
@@ -3264,7 +3271,7 @@ JiraIssueMetadataSpec defines the desired state of JiraIssueMetadata
 
 
 
-JiraIssueMetadataStatus defines the observed state of JiraIssueMetadata
+JiraIssueMetadataStatus defines the observed state of JiraIssueMetadata.
 
 <table>
     <thead>
@@ -3318,7 +3325,7 @@ JiraIssueMetadataStatus defines the observed state of JiraIssueMetadata
 
 
 
-JiraServer is the Schema for the JiraServers API
+JiraServer is the Schema for the JiraServers API.
 
 <table>
     <thead>
@@ -3350,14 +3357,14 @@ JiraServer is the Schema for the JiraServers API
         <td><b><a href="#jiraserverspec-1">spec</a></b></td>
         <td>object</td>
         <td>
-          JiraServerSpec defines the desired state of JiraServer<br/>
+          JiraServerSpec defines the desired state of JiraServer.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#jiraserverstatus-1">status</a></b></td>
         <td>object</td>
         <td>
-          JiraServerStatus defines the observed state of JiraServer<br/>
+          JiraServerStatus defines the observed state of JiraServer.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -3369,7 +3376,7 @@ JiraServer is the Schema for the JiraServers API
 
 
 
-JiraServerSpec defines the desired state of JiraServer
+JiraServerSpec defines the desired state of JiraServer.
 
 <table>
     <thead>
@@ -3410,7 +3417,7 @@ JiraServerSpec defines the desired state of JiraServer
 
 
 
-JiraServerStatus defines the observed state of JiraServer
+JiraServerStatus defines the observed state of JiraServer.
 
 <table>
     <thead>

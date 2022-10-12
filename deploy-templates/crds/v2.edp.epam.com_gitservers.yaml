@@ -20,7 +20,7 @@ spec:
   - name: v1
     schema:
       openAPIV3Schema:
-        description: GitServer is the Schema for the gitservers API
+        description: GitServer is the Schema for the gitservers API.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -35,7 +35,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: GitServerSpec defines the desired state of GitServer
+            description: GitServerSpec defines the desired state of GitServer.
             properties:
               gitHost:
                 type: string
@@ -57,7 +57,7 @@ spec:
             - sshPort
             type: object
           status:
-            description: GitServerStatus defines the observed state of GitServer
+            description: GitServerStatus defines the observed state of GitServer.
             properties:
               action:
                 description: The last Action was performed.
@@ -105,7 +105,7 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: GitServer is the Schema for the gitservers API
+        description: GitServer is the Schema for the gitservers API.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -120,7 +120,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: GitServerSpec defines the desired state of GitServer
+            description: GitServerSpec defines the desired state of GitServer.
             properties:
               createCodeReviewPipeline:
                 type: boolean
@@ -144,7 +144,7 @@ spec:
             - sshPort
             type: object
           status:
-            description: GitServerStatus defines the observed state of GitServer
+            description: GitServerStatus defines the observed state of GitServer.
             properties:
               action:
                 description: The last Action was performed.

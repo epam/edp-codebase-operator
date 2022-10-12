@@ -20,7 +20,7 @@ spec:
   - name: v1
     schema:
       openAPIV3Schema:
-        description: Codebase is the Schema for the Codebases API
+        description: Codebase is the Schema for the Codebases API.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -157,7 +157,7 @@ spec:
             - versioning
             type: object
           status:
-            description: CodebaseStatus defines the observed state of Codebase
+            description: CodebaseStatus defines the observed state of Codebase.
             properties:
               action:
                 description: The last Action was performed.
@@ -198,6 +198,9 @@ spec:
               value:
                 description: Specifies a current state of Codebase.
                 type: string
+              webHookID:
+                description: Stores ID of webhook which was created for a codebase.
+                type: integer
             required:
             - action
             - available
@@ -218,7 +221,7 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: Codebase is the Schema for the Codebases API
+        description: Codebase is the Schema for the Codebases API.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -355,7 +358,7 @@ spec:
             - versioning
             type: object
           status:
-            description: CodebaseStatus defines the observed state of Codebase
+            description: CodebaseStatus defines the observed state of Codebase.
             properties:
               action:
                 description: The last Action was performed.

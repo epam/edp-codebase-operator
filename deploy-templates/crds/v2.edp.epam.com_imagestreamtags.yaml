@@ -20,7 +20,7 @@ spec:
   - name: v1
     schema:
       openAPIV3Schema:
-        description: ImageStreamTag is the Schema for the ImageStreamTags API
+        description: ImageStreamTag is the Schema for the ImageStreamTags API.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -35,7 +35,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: ImageStreamTagSpec defines the desired state of ImageStreamTag
+            description: ImageStreamTagSpec defines the desired state of ImageStreamTag.
             properties:
               codebaseImageStreamName:
                 type: string
@@ -46,7 +46,7 @@ spec:
             - tag
             type: object
           status:
-            description: ImageStreamTagStatus defines the observed state of ImageStreamTag
+            description: ImageStreamTagStatus defines the observed state of ImageStreamTag.
             type: object
         type: object
     served: true
@@ -57,7 +57,7 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: ImageStreamTag is the Schema for the ImageStreamTags API
+        description: ImageStreamTag is the Schema for the ImageStreamTags API.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -72,7 +72,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: ImageStreamTagSpec defines the desired state of ImageStreamTag
+            description: ImageStreamTagSpec defines the desired state of ImageStreamTag.
             properties:
               codebaseImageStreamName:
                 type: string
@@ -83,7 +83,7 @@ spec:
             - tag
             type: object
           status:
-            description: ImageStreamTagStatus defines the observed state of ImageStreamTag
+            description: ImageStreamTagStatus defines the observed state of ImageStreamTag.
             type: object
         type: object
     served: true

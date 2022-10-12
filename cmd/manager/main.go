@@ -9,6 +9,7 @@ import (
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
+	networkingV1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -97,6 +98,7 @@ func main() {
 	utilruntime.Must(edpCompApi.AddToScheme(scheme))
 	utilruntime.Must(jenkinsApi.AddToScheme(scheme))
 	utilruntime.Must(perfAPi.AddToScheme(scheme))
+	utilruntime.Must(networkingV1.AddToScheme(scheme))
 
 	ns, err := util.GetWatchNamespace()
 	if err != nil {
