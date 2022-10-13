@@ -25,6 +25,7 @@ rules:
     - codebaseimagestreams
     - codebaseimagestreams/status
     - codebaseimagestreams/finalizers
+    - configmaps
     - edpcomponents
     - edpcomponents/finalizers
     - edpcomponents/status
@@ -76,7 +77,6 @@ rules:
     - stages
     - stages/finalizers
     - stages/status
-    - events
   verbs:
     - '*'
 - apiGroups:
@@ -84,10 +84,13 @@ rules:
   resources:
     - leases
   verbs:
-    - create
     - get
     - list
+    - watch
+    - create
     - update
+    - patch
+    - delete
 - apiGroups:
     - networking.k8s.io
   resources:
@@ -96,4 +99,11 @@ rules:
     - get
     - list
     - watch
+- apiGroups:
+    - ""
+  resources:
+    - events
+  verbs:
+    - create
+    - patch
 {{ end }}
