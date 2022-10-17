@@ -805,7 +805,7 @@ CodebaseSpec defines the desired state of Codebase.
         <td><b>gitUrlPath</b></td>
         <td>string</td>
         <td>
-          A link to external git server, used for "import" strategy.<br/>
+          A relative path for git repository, used for "import" strategy. Should start from /. Example: /company/api-app.<br/>
         </td>
         <td>false</td>
       </tr><tr>

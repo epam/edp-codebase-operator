@@ -1,6 +1,8 @@
 package v1
 
 import (
+	"strings"
+
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -80,7 +82,7 @@ type CodebaseSpec struct {
 	// Example: "gerrit".
 	GitServer string `json:"gitServer"`
 
-	// A link to external git server, used for "import" strategy.
+	// A relative path for git repository, used for "import" strategy. Should start from /. Example: /company/api-app.
 	// +nullable
 	// +optional
 	GitUrlPath *string `json:"gitUrlPath,omitempty"`
@@ -136,6 +138,16 @@ type CodebaseSpec struct {
 	// Controller must skip step "put deploy templates" in action chain.
 	// +optional
 	DisablePutDeployTemplates bool `json:"disablePutDeployTemplates,omitempty"`
+}
+
+// GetProjectID returns project id from GitUrlPath codebase spec. It removes the leading slash.
+func (in *CodebaseSpec) GetProjectID() string {
+	id := in.GitUrlPath
+	if id == nil {
+		return ""
+	}
+
+	return strings.TrimPrefix(*id, "/")
 }
 
 type ActionType string

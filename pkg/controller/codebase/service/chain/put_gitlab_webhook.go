@@ -63,7 +63,7 @@ func (s *PutGitlabWebHook) ServeRequest(ctx context.Context, codebase *codebaseA
 		return err
 	}
 
-	projectID := *codebase.Spec.GitUrlPath
+	projectID := codebase.Spec.GetProjectID()
 
 	gitHost := getGitServerURL(gitServer)
 

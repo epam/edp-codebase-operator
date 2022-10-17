@@ -55,7 +55,7 @@ func (s *DeleteGitlabWebHook) ServeRequest(ctx context.Context, codebase *codeba
 		return nil
 	}
 
-	projectID := *codebase.Spec.GitUrlPath
+	projectID := codebase.Spec.GetProjectID()
 
 	gitHost := getGitServerURL(gitServer)
 

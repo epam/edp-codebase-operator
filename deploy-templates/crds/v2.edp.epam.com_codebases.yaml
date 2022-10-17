@@ -77,7 +77,8 @@ spec:
                   "gerrit".'
                 type: string
               gitUrlPath:
-                description: A link to external git server, used for "import" strategy.
+                description: 'A relative path for git repository, used for "import"
+                  strategy. Should start from /. Example: /company/api-app.'
                 nullable: true
                 type: string
               jenkinsSlave:

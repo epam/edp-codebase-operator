@@ -83,7 +83,7 @@ func MakeDeletionChain(c client.Client, codebase *codebaseApi.Codebase) handler.
 	ch := &chain{}
 
 	if codebase.Spec.CiTool == util.Tekton {
-		NewDeleteGitlabWebHook(c, vcs.NewGitLabClient(resty.New()))
+		ch.Use(NewDeleteGitlabWebHook(c, vcs.NewGitLabClient(resty.New())))
 	}
 
 	if codebase.Spec.CiTool != util.Tekton {
