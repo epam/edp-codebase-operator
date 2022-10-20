@@ -10,7 +10,6 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebase/service/chain/handler"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
-	"github.com/epam/edp-codebase-operator/v2/pkg/vcs"
 )
 
 const (
@@ -83,7 +82,7 @@ func MakeDeletionChain(c client.Client, codebase *codebaseApi.Codebase) handler.
 	ch := &chain{}
 
 	if codebase.Spec.CiTool == util.Tekton {
-		ch.Use(NewDeleteGitlabWebHook(c, vcs.NewGitLabClient(resty.New())))
+		ch.Use(NewDeleteWebHook(c, resty.New()))
 	}
 
 	if codebase.Spec.CiTool != util.Tekton {
@@ -119,7 +118,7 @@ func MakeTektonCiDefChain(c client.Client, cr repository.CodebaseRepository) han
 	gp := &gitserver.GitProvider{}
 
 	ch.Use(
-		NewPutGitlabWebHook(c, vcs.NewGitLabClient(resty.New())),
+		NewPutWebHook(c, resty.New()),
 		NewCloneGitProject(c, gp),
 		NewPutPerfDataSources(c),
 		NewPutDeployConfigsToGitProvider(c, cr, gp),

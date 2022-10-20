@@ -20,10 +20,9 @@ import (
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/platform"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
-	"github.com/epam/edp-codebase-operator/v2/pkg/vcs"
 )
 
-func TestDeleteGitlabWebHook_ServeRequest(t *testing.T) {
+func TestDeleteWebHook_ServeRequest(t *testing.T) {
 	logger := &platform.LoggerMock{}
 	ctrl.SetLogger(logger)
 
@@ -40,7 +39,7 @@ func TestDeleteGitlabWebHook_ServeRequest(t *testing.T) {
 
 	const namespace = "test-ns"
 
-	gitURL := "test-git-url-path"
+	gitURL := "test-owner/test-repo"
 	fakeUrlRegexp := regexp.MustCompile(`.*`)
 
 	tests := []struct {
@@ -51,7 +50,7 @@ func TestDeleteGitlabWebHook_ServeRequest(t *testing.T) {
 		hasError   bool
 	}{
 		{
-			name: "success",
+			name: "success gitlab",
 			codebase: &codebaseApi.Codebase{
 				ObjectMeta: metaV1.ObjectMeta{
 					Namespace: namespace,
@@ -76,6 +75,51 @@ func TestDeleteGitlabWebHook_ServeRequest(t *testing.T) {
 						GitUser:          "git",
 						HttpsPort:        443,
 						NameSshKeySecret: "test-secret",
+						GitProvider:      codebaseApi.GitProviderGitlab,
+					},
+				},
+				&coreV1.Secret{
+					ObjectMeta: metaV1.ObjectMeta{
+						Namespace: namespace,
+						Name:      "test-secret",
+					},
+					Data: map[string][]byte{
+						util.GitServerSecretTokenField: []byte("test-token"),
+					},
+				},
+			},
+			responder: func(t *testing.T) {
+				responder := httpmock.NewStringResponder(http.StatusOK, "")
+				httpmock.RegisterRegexpResponder(http.MethodDelete, fakeUrlRegexp, responder)
+			},
+		},
+		{
+			name: "success github",
+			codebase: &codebaseApi.Codebase{
+				ObjectMeta: metaV1.ObjectMeta{
+					Namespace: namespace,
+					Name:      "test-codebase",
+				},
+				Spec: codebaseApi.CodebaseSpec{
+					GitServer:  "test-git-server",
+					GitUrlPath: &gitURL,
+				},
+				Status: codebaseApi.CodebaseStatus{
+					WebHookID: 1,
+				},
+			},
+			k8sObjects: []client.Object{
+				&codebaseApi.GitServer{
+					ObjectMeta: metaV1.ObjectMeta{
+						Namespace: namespace,
+						Name:      "test-git-server",
+					},
+					Spec: codebaseApi.GitServerSpec{
+						GitHost:          "fake.gitlab.com",
+						GitUser:          "git",
+						HttpsPort:        443,
+						NameSshKeySecret: "test-secret",
+						GitProvider:      codebaseApi.GitProviderGithub,
 					},
 				},
 				&coreV1.Secret{
@@ -134,6 +178,7 @@ func TestDeleteGitlabWebHook_ServeRequest(t *testing.T) {
 						GitUser:          "git",
 						HttpsPort:        443,
 						NameSshKeySecret: "test-secret",
+						GitProvider:      codebaseApi.GitProviderGitlab,
 					},
 				},
 				&coreV1.Secret{
@@ -151,6 +196,48 @@ func TestDeleteGitlabWebHook_ServeRequest(t *testing.T) {
 				httpmock.RegisterRegexpResponder(http.MethodDelete, fakeUrlRegexp, responder)
 			},
 			hasError: true,
+		},
+		{
+			name: "fail to get git provider",
+			codebase: &codebaseApi.Codebase{
+				ObjectMeta: metaV1.ObjectMeta{
+					Namespace: namespace,
+					Name:      "test-codebase",
+				},
+				Spec: codebaseApi.CodebaseSpec{
+					GitServer:  "test-git-server",
+					GitUrlPath: &gitURL,
+				},
+				Status: codebaseApi.CodebaseStatus{
+					WebHookID: 1,
+				},
+			},
+			k8sObjects: []client.Object{
+				&codebaseApi.GitServer{
+					ObjectMeta: metaV1.ObjectMeta{
+						Namespace: namespace,
+						Name:      "test-git-server",
+					},
+					Spec: codebaseApi.GitServerSpec{
+						GitHost:          "fake.gitlab.com",
+						GitUser:          "git",
+						HttpsPort:        443,
+						NameSshKeySecret: "test-secret",
+						GitProvider:      codebaseApi.GitProviderGerrit,
+					},
+				},
+				&coreV1.Secret{
+					ObjectMeta: metaV1.ObjectMeta{
+						Namespace: namespace,
+						Name:      "test-secret",
+					},
+					Data: map[string][]byte{
+						util.GitServerSecretTokenField: []byte("test-token"),
+					},
+				},
+			},
+			responder: func(t *testing.T) {},
+			hasError:  true,
 		},
 		{
 			name: "project not found",
@@ -177,6 +264,7 @@ func TestDeleteGitlabWebHook_ServeRequest(t *testing.T) {
 						GitUser:          "git",
 						HttpsPort:        443,
 						NameSshKeySecret: "test-secret",
+						GitProvider:      codebaseApi.GitProviderGitlab,
 					},
 				},
 				&coreV1.Secret{
@@ -218,6 +306,7 @@ func TestDeleteGitlabWebHook_ServeRequest(t *testing.T) {
 						GitUser:          "git",
 						HttpsPort:        443,
 						NameSshKeySecret: "test-secret",
+						GitProvider:      codebaseApi.GitProviderGitlab,
 					},
 				},
 				&coreV1.Secret{
@@ -257,6 +346,7 @@ func TestDeleteGitlabWebHook_ServeRequest(t *testing.T) {
 						GitUser:          "git",
 						HttpsPort:        443,
 						NameSshKeySecret: "test-secret",
+						GitProvider:      codebaseApi.GitProviderGitlab,
 					},
 				},
 			},
@@ -290,7 +380,7 @@ func TestDeleteGitlabWebHook_ServeRequest(t *testing.T) {
 			tt.responder(t)
 
 			k8sClient := fake.NewClientBuilder().WithScheme(schema).WithObjects(tt.k8sObjects...).Build()
-			s := NewDeleteGitlabWebHook(k8sClient, vcs.NewGitLabClient(restyClient))
+			s := NewDeleteWebHook(k8sClient, restyClient)
 
 			assert.NoError(t, s.ServeRequest(context.Background(), tt.codebase))
 			assert.Equalf(t, tt.hasError, logger.LastError() != nil, "expected error: %v, got: %v", tt.hasError, logger.LastError())

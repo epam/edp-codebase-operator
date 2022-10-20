@@ -4,29 +4,30 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/go-resty/resty/v2"
 	coreV1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
+	"github.com/epam/edp-codebase-operator/v2/pkg/gitprovider"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
-	"github.com/epam/edp-codebase-operator/v2/pkg/vcs"
 )
 
-// DeleteGitlabWebHook is a chain element to delete webhook.
-type DeleteGitlabWebHook struct {
-	client       client.Client
-	gitLabClient *vcs.GitLabClient
+// DeleteWebHook is a chain element to delete webhook.
+type DeleteWebHook struct {
+	client      client.Client
+	restyClient *resty.Client
 }
 
-// NewDeleteGitlabWebHook creates DeleteGitlabWebHook instance.
-func NewDeleteGitlabWebHook(k8sClient client.Client, gitLabClient *vcs.GitLabClient) *DeleteGitlabWebHook {
-	return &DeleteGitlabWebHook{client: k8sClient, gitLabClient: gitLabClient}
+// NewDeleteWebHook creates DeleteWebHook instance.
+func NewDeleteWebHook(k8sClient client.Client, restyClient *resty.Client) *DeleteWebHook {
+	return &DeleteWebHook{client: k8sClient, restyClient: restyClient}
 }
 
-// ServeRequest deletes Gitlab webhook.
-func (s *DeleteGitlabWebHook) ServeRequest(ctx context.Context, codebase *codebaseApi.Codebase) error {
+// ServeRequest deletes webhook.
+func (s *DeleteWebHook) ServeRequest(ctx context.Context, codebase *codebaseApi.Codebase) error {
 	rLog := log.WithValues("codebase name", codebase.Name)
-	rLog.Info("Start deleting Gitlab webhook...")
+	rLog.Info("Start deleting webhook...")
 
 	if codebase.Status.WebHookID == 0 {
 		rLog.Info("Webhook ID is empty. Skip deleting webhook.")
@@ -55,11 +56,17 @@ func (s *DeleteGitlabWebHook) ServeRequest(ctx context.Context, codebase *codeba
 		return nil
 	}
 
+	gitProvider, err := gitprovider.NewProvider(gitServer, s.restyClient)
+	if err != nil {
+		rLog.Error(err, "Failed to delete webhook: unable to create git provider.")
+
+		return nil
+	}
+
 	projectID := codebase.Spec.GetProjectID()
+	gitHost := getGitProviderAPIURL(gitServer)
 
-	gitHost := getGitServerURL(gitServer)
-
-	err = s.gitLabClient.DeleteWebHook(
+	err = gitProvider.DeleteWebHook(
 		ctx,
 		gitHost,
 		string(secret.Data[util.GitServerSecretTokenField]),
@@ -72,12 +79,12 @@ func (s *DeleteGitlabWebHook) ServeRequest(ctx context.Context, codebase *codeba
 		return nil
 	}
 
-	rLog.Info("Gitlab webhook has been deleted successfully.")
+	rLog.Info("Webhook has been deleted successfully.")
 
 	return nil
 }
 
-func (s *DeleteGitlabWebHook) getGitServerSecret(ctx context.Context, secretName, namespace string) (*coreV1.Secret, error) {
+func (s *DeleteWebHook) getGitServerSecret(ctx context.Context, secretName, namespace string) (*coreV1.Secret, error) {
 	secret := &coreV1.Secret{}
 	if err := s.client.Get(ctx, client.ObjectKey{Name: secretName, Namespace: namespace}, secret); err != nil {
 		return nil, fmt.Errorf("unable to get %v secret: %w", secretName, err)

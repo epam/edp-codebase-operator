@@ -19,10 +19,9 @@ import (
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
-	"github.com/epam/edp-codebase-operator/v2/pkg/vcs"
 )
 
-func TestPutGitlabWebHook_ServeRequest(t *testing.T) {
+func TestPutWebHook_ServeRequest(t *testing.T) {
 	restyClient := resty.New()
 	httpmock.ActivateNonDefault(restyClient.GetClient())
 
@@ -38,7 +37,7 @@ func TestPutGitlabWebHook_ServeRequest(t *testing.T) {
 
 	const namespace = "test-ns"
 
-	gitURL := "test-git-url-path"
+	gitURL := "test-owner/test-repo"
 	fakeUrlRegexp := regexp.MustCompile(`.*`)
 
 	tests := []struct {
@@ -49,7 +48,7 @@ func TestPutGitlabWebHook_ServeRequest(t *testing.T) {
 		wantErr    assert.ErrorAssertionFunc
 	}{
 		{
-			name: "success",
+			name: "success gitlab",
 			codebase: &codebaseApi.Codebase{
 				ObjectMeta: metaV1.ObjectMeta{
 					Namespace:       namespace,
@@ -79,6 +78,7 @@ func TestPutGitlabWebHook_ServeRequest(t *testing.T) {
 						GitUser:          "git",
 						HttpsPort:        443,
 						NameSshKeySecret: "test-secret",
+						GitProvider:      codebaseApi.GitProviderGitlab,
 					},
 				},
 				&coreV1.Secret{
@@ -92,6 +92,58 @@ func TestPutGitlabWebHook_ServeRequest(t *testing.T) {
 					},
 				},
 				fakeIngress(namespace, gitLabIngressName, "fake.gitlab.com"),
+			},
+			responder: func(t *testing.T) {
+				responder := httpmock.NewStringResponder(http.StatusOK, "")
+				httpmock.RegisterRegexpResponder(http.MethodPost, fakeUrlRegexp, responder)
+			},
+			wantErr: assert.NoError,
+		},
+		{
+			name: "success github",
+			codebase: &codebaseApi.Codebase{
+				ObjectMeta: metaV1.ObjectMeta{
+					Namespace:       namespace,
+					Name:            "test-codebase",
+					ResourceVersion: "1",
+				},
+				Spec: codebaseApi.CodebaseSpec{
+					GitServer:  "test-git-server",
+					GitUrlPath: &gitURL,
+				},
+			},
+			k8sObjects: []client.Object{
+				&codebaseApi.Codebase{
+					ObjectMeta: metaV1.ObjectMeta{
+						Namespace:       namespace,
+						Name:            "test-codebase",
+						ResourceVersion: "1",
+					},
+				},
+				&codebaseApi.GitServer{
+					ObjectMeta: metaV1.ObjectMeta{
+						Namespace: namespace,
+						Name:      "test-git-server",
+					},
+					Spec: codebaseApi.GitServerSpec{
+						GitHost:          "fake.github.com",
+						GitUser:          "git",
+						HttpsPort:        443,
+						NameSshKeySecret: "test-secret",
+						GitProvider:      codebaseApi.GitProviderGithub,
+					},
+				},
+				&coreV1.Secret{
+					ObjectMeta: metaV1.ObjectMeta{
+						Namespace: namespace,
+						Name:      "test-secret",
+					},
+					Data: map[string][]byte{
+						util.GitServerSecretTokenField:         []byte("test-token"),
+						util.GitServerSecretWebhookSecretField: []byte("test-webhook-secret"),
+					},
+				},
+				fakeIngress(namespace, gitHubIngressName, "fake.github.com"),
 			},
 			responder: func(t *testing.T) {
 				responder := httpmock.NewStringResponder(http.StatusOK, "")
@@ -130,6 +182,7 @@ func TestPutGitlabWebHook_ServeRequest(t *testing.T) {
 						GitUser:          "git",
 						HttpsPort:        443,
 						NameSshKeySecret: "test-secret",
+						GitProvider:      codebaseApi.GitProviderGitlab,
 					},
 				},
 				&coreV1.Secret{
@@ -176,6 +229,7 @@ func TestPutGitlabWebHook_ServeRequest(t *testing.T) {
 						GitUser:          "git",
 						HttpsPort:        443,
 						NameSshKeySecret: "test-secret",
+						GitProvider:      codebaseApi.GitProviderGitlab,
 					},
 				},
 				&coreV1.Secret{
@@ -229,6 +283,7 @@ func TestPutGitlabWebHook_ServeRequest(t *testing.T) {
 						GitUser:          "git",
 						HttpsPort:        443,
 						NameSshKeySecret: "test-secret",
+						GitProvider:      codebaseApi.GitProviderGitlab,
 					},
 				},
 				&coreV1.Secret{
@@ -254,7 +309,7 @@ func TestPutGitlabWebHook_ServeRequest(t *testing.T) {
 			wantErr: assert.NoError,
 		},
 		{
-			name: "skip creating webhook - github git server",
+			name: "skip creating webhook - unsupported git provider",
 			codebase: &codebaseApi.Codebase{
 				ObjectMeta: metaV1.ObjectMeta{
 					Namespace: namespace,
@@ -276,6 +331,7 @@ func TestPutGitlabWebHook_ServeRequest(t *testing.T) {
 						GitUser:          "git",
 						HttpsPort:        443,
 						NameSshKeySecret: "test-secret",
+						GitProvider:      codebaseApi.GitProviderGerrit,
 					},
 				},
 			},
@@ -309,6 +365,7 @@ func TestPutGitlabWebHook_ServeRequest(t *testing.T) {
 						GitUser:          "git",
 						HttpsPort:        443,
 						NameSshKeySecret: "test-secret",
+						GitProvider:      codebaseApi.GitProviderGitlab,
 					},
 				},
 				&coreV1.Secret{
@@ -352,6 +409,7 @@ func TestPutGitlabWebHook_ServeRequest(t *testing.T) {
 						GitUser:          "git",
 						HttpsPort:        443,
 						NameSshKeySecret: "test-secret",
+						GitProvider:      codebaseApi.GitProviderGitlab,
 					},
 				},
 				&coreV1.Secret{
@@ -372,7 +430,7 @@ func TestPutGitlabWebHook_ServeRequest(t *testing.T) {
 			wantErr: assert.Error,
 		},
 		{
-			name: "failed to get getVCSUrl - no rules",
+			name: "failed to get getWebHookUrl - no rules",
 			codebase: &codebaseApi.Codebase{
 				ObjectMeta: metaV1.ObjectMeta{
 					Namespace: namespace,
@@ -394,6 +452,7 @@ func TestPutGitlabWebHook_ServeRequest(t *testing.T) {
 						GitUser:          "git",
 						HttpsPort:        443,
 						NameSshKeySecret: "test-secret",
+						GitProvider:      codebaseApi.GitProviderGitlab,
 					},
 				},
 				&coreV1.Secret{
@@ -416,7 +475,7 @@ func TestPutGitlabWebHook_ServeRequest(t *testing.T) {
 			wantErr:   assert.Error,
 		},
 		{
-			name: "failed to get getVCSUrl - no ingress",
+			name: "failed to get getWebHookUrl - no ingress",
 			codebase: &codebaseApi.Codebase{
 				ObjectMeta: metaV1.ObjectMeta{
 					Namespace: namespace,
@@ -438,6 +497,7 @@ func TestPutGitlabWebHook_ServeRequest(t *testing.T) {
 						GitUser:          "git",
 						HttpsPort:        443,
 						NameSshKeySecret: "test-secret",
+						GitProvider:      codebaseApi.GitProviderGitlab,
 					},
 				},
 				&coreV1.Secret{
@@ -476,6 +536,7 @@ func TestPutGitlabWebHook_ServeRequest(t *testing.T) {
 						GitUser:          "git",
 						HttpsPort:        443,
 						NameSshKeySecret: "test-secret",
+						GitProvider:      codebaseApi.GitProviderGitlab,
 					},
 				},
 				&coreV1.Secret{
@@ -511,6 +572,7 @@ func TestPutGitlabWebHook_ServeRequest(t *testing.T) {
 						GitUser:          "git",
 						HttpsPort:        443,
 						NameSshKeySecret: "test-secret",
+						GitProvider:      codebaseApi.GitProviderGitlab,
 					},
 				},
 			},
@@ -539,6 +601,7 @@ func TestPutGitlabWebHook_ServeRequest(t *testing.T) {
 						GitUser:          "git",
 						HttpsPort:        443,
 						NameSshKeySecret: "test-secret",
+						GitProvider:      codebaseApi.GitProviderGitlab,
 					},
 				},
 				&coreV1.Secret{
@@ -577,7 +640,7 @@ func TestPutGitlabWebHook_ServeRequest(t *testing.T) {
 			tt.responder(t)
 
 			k8sClient := fake.NewClientBuilder().WithScheme(schema).WithObjects(tt.k8sObjects...).Build()
-			s := NewPutGitlabWebHook(k8sClient, vcs.NewGitLabClient(restyClient))
+			s := NewPutWebHook(k8sClient, restyClient)
 
 			tt.wantErr(t, s.ServeRequest(context.Background(), tt.codebase))
 		})

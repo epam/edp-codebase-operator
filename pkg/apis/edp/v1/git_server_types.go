@@ -4,7 +4,11 @@ import (
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// NOTE: json tags are required. Any new fields you add must have json tags for the fields to be serialized.
+const (
+	GitProviderGerrit = "gerrit"
+	GitProviderGithub = "github"
+	GitProviderGitlab = "gitlab"
+)
 
 // GitServerSpec defines the desired state of GitServer.
 type GitServerSpec struct {
@@ -17,6 +21,12 @@ type GitServerSpec struct {
 	SshPort int32 `json:"sshPort"`
 
 	NameSshKeySecret string `json:"nameSshKeySecret"`
+
+	// GitProvider is a git provider type. It can be gerrit, github or gitlab. Default value is gerrit.
+	// +kubebuilder:validation:Enum=gerrit;gitlab;github
+	// +kubebuilder:default:=gerrit
+	// +optional
+	GitProvider string `json:"gitProvider,omitempty"`
 }
 
 // GitServerStatus defines the observed state of GitServer.

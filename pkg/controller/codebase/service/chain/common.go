@@ -75,9 +75,19 @@ func getHostWithProtocol(host string) string {
 	return fmt.Sprintf("https://%v", host)
 }
 
-// getGitServerURL returns git server url with protocol.
-func getGitServerURL(gitServer *codebaseApi.GitServer) string {
+// getGitProviderAPIURL returns git server url with protocol.
+func getGitProviderAPIURL(gitServer *codebaseApi.GitServer) string {
 	url := getHostWithProtocol(gitServer.Spec.GitHost)
+
+	if gitServer.Spec.GitProvider == codebaseApi.GitProviderGithub {
+		// GitHub API url is different for enterprise and other versions
+		// see: https://docs.github.com/en/get-started/learning-about-github/about-versions-of-github-docs#github-enterprise-server
+		if url == "https://github.com" {
+			return "https://api.github.com"
+		}
+
+		url = fmt.Sprintf("%s/api/v3", url)
+	}
 
 	if gitServer.Spec.HttpsPort != 0 {
 		url = fmt.Sprintf("%s:%d", url, gitServer.Spec.HttpsPort)
