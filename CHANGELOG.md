@@ -1,6 +1,48 @@
 <a name="unreleased"></a>
 ## [Unreleased]
 
+### Features
+
+- Add support for Tekton Tool [EPMDEDP-10641](https://jiraeu.epam.com/browse/EPMDEDP-10641)
+- Implement webhook GitLab integration as a part of codebase onboarding [EPMDEDP-10708](https://jiraeu.epam.com/browse/EPMDEDP-10708)
+- Implement default branch provisioning by codebase controller [EPMDEDP-10733](https://jiraeu.epam.com/browse/EPMDEDP-10733)
+- Implement GitHub Webhook integration for codebase [EPMDEDP-10743](https://jiraeu.epam.com/browse/EPMDEDP-10743)
+
+### Bug Fixes
+
+- Warnings from go-critic [EPMDEDP-10542](https://jiraeu.epam.com/browse/EPMDEDP-10542)
+- Add golangci-lint config file [EPMDEDP-10542](https://jiraeu.epam.com/browse/EPMDEDP-10542)
+- Golangci-lint errors [EPMDEDP-10542](https://jiraeu.epam.com/browse/EPMDEDP-10542)
+- Remove slash from CodebaseSpec.GitUrlPath for the webhook creation [EPMDEDP-10708](https://jiraeu.epam.com/browse/EPMDEDP-10708)
+- GitHub webhook events names [EPMDEDP-10743](https://jiraeu.epam.com/browse/EPMDEDP-10743)
+- Fix permissions for configmap in leader election [EPMDEDP-10802](https://jiraeu.epam.com/browse/EPMDEDP-10802)
+
+### Code Refactoring
+
+- Use single chain [EPMDEDP-10498](https://jiraeu.epam.com/browse/EPMDEDP-10498)
+- Resolve `revive` lint warnings [EPMDEDP-10542](https://jiraeu.epam.com/browse/EPMDEDP-10542)
+- Partially resolve golangci-lint warnings [EPMDEDP-10542](https://jiraeu.epam.com/browse/EPMDEDP-10542)
+- Enable two more golangci-lint rules [EPMDEDP-10542](https://jiraeu.epam.com/browse/EPMDEDP-10542)
+- Set remote git HEAD to default branch in Gerrit [EPMDEDP-10658](https://jiraeu.epam.com/browse/EPMDEDP-10658)
+- Create default codebasebranch for other flows [EPMDEDP-10733](https://jiraeu.epam.com/browse/EPMDEDP-10733)
+- Remove SQL DB repository [EPMDEDP-10751](https://jiraeu.epam.com/browse/EPMDEDP-10751)
+
+### Routine
+
+- Update current development version [EPMDEDP-10274](https://jiraeu.epam.com/browse/EPMDEDP-10274)
+- Upgrade git package to version 2.36.3-r0 [EPMDEDP-10743](https://jiraeu.epam.com/browse/EPMDEDP-10743)
+
+
+<a name="v2.13.1"></a>
+## [v2.13.1] - 2022-10-28
+### Code Refactoring
+
+- Set remote git HEAD to default branch in Gerrit [EPMDEDP-10810](https://jiraeu.epam.com/browse/EPMDEDP-10810)
+
+### Routine
+
+- Upgrade git package to version 2.36.3-r0 [EPMDEDP-10743](https://jiraeu.epam.com/browse/EPMDEDP-10743)
+
 
 <a name="v2.13.0"></a>
 ## [v2.13.0] - 2022-08-26
@@ -221,7 +263,8 @@ Jenkins pipelines for code-review, build, create-release flow.
 - [MDTUDDM-673] Save git status in the intermediate operations
 
 
-[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.13.0...HEAD
+[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.13.1...HEAD
+[v2.13.1]: https://github.com/epam/edp-codebase-operator/compare/v2.13.0...v2.13.1
 [v2.13.0]: https://github.com/epam/edp-codebase-operator/compare/v2.12.0...v2.13.0
 [v2.12.0]: https://github.com/epam/edp-codebase-operator/compare/v2.11.0...v2.12.0
 [v2.11.0]: https://github.com/epam/edp-codebase-operator/compare/v2.10.1...v2.11.0
