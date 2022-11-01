@@ -2,6 +2,7 @@ package gitserver
 
 import (
 	"fmt"
+	"io/ioutil"
 	netHttp "net/http"
 	"net/url"
 	"os"
@@ -229,7 +230,7 @@ func (gp *GitProvider) CreateChildBranch(directory, currentBranch, newBranch str
 	return nil
 }
 
-func (*GitProvider) PushChanges(key, user, directory string, port int32, pushParams ...string) (err error) {
+func (*GitProvider) PushChanges(key, user, directory string, port int32, pushParams ...string) error {
 	log.Info("Start pushing changes", logDirectoryKey, directory)
 
 	keyPath, err := initAuth(key, user)
@@ -238,8 +239,8 @@ func (*GitProvider) PushChanges(key, user, directory string, port int32, pushPar
 	}
 
 	defer func() {
-		if cleanKeyErr := os.Remove(keyPath); err != nil {
-			log.Error(cleanKeyErr, errRemoveSHHKeyFile)
+		if err = os.Remove(keyPath); err != nil {
+			log.Error(err, errRemoveSHHKeyFile)
 		}
 	}()
 
@@ -263,7 +264,7 @@ func (*GitProvider) PushChanges(key, user, directory string, port int32, pushPar
 
 	log.Info("Changes has been pushed", logDirectoryKey, directory)
 
-	return
+	return nil
 }
 
 func (*GitProvider) CheckPermissions(repo string, user, pass *string) (accessible bool) {
@@ -346,7 +347,7 @@ func (*GitProvider) BareToNormal(p string) error {
 	return nil
 }
 
-func (gp *GitProvider) CloneRepositoryBySsh(key, user, repoUrl, destination string, port int32) (err error) {
+func (gp *GitProvider) CloneRepositoryBySsh(key, user, repoUrl, destination string, port int32) error {
 	log.Info("Start cloning", logRepositoryKey, repoUrl)
 
 	keyPath, err := initAuth(key, user)
@@ -355,8 +356,8 @@ func (gp *GitProvider) CloneRepositoryBySsh(key, user, repoUrl, destination stri
 	}
 
 	defer func() {
-		if cleanKeyErr := os.Remove(keyPath); err != nil {
-			log.Error(cleanKeyErr, errRemoveSHHKeyFile)
+		if err = os.Remove(keyPath); err != nil {
+			log.Error(err, errRemoveSHHKeyFile)
 		}
 	}()
 
@@ -397,7 +398,7 @@ func (gp *GitProvider) CloneRepositoryBySsh(key, user, repoUrl, destination stri
 
 	log.Info("End cloning", logRepositoryKey, repoUrl)
 
-	return
+	return nil
 }
 
 func (gp *GitProvider) CloneRepository(repo string, user, pass *string, destination string) error {
@@ -502,7 +503,7 @@ func (gp *GitProvider) CreateRemoteTag(key, user, p, branchName, name string) er
 	return nil
 }
 
-func (*GitProvider) Fetch(key, user, workDir, branchName string) (err error) {
+func (*GitProvider) Fetch(key, user, workDir, branchName string) error {
 	log.Info("start fetching data", logBranchNameKey, branchName)
 
 	keyPath, err := initAuth(key, user)
@@ -511,8 +512,8 @@ func (*GitProvider) Fetch(key, user, workDir, branchName string) (err error) {
 	}
 
 	defer func() {
-		if cleanKeyErr := os.Remove(keyPath); err != nil {
-			log.Error(cleanKeyErr, errRemoveSHHKeyFile)
+		if err = os.Remove(keyPath); err != nil {
+			log.Error(err, errRemoveSHHKeyFile)
 		}
 	}()
 
@@ -530,7 +531,7 @@ func (*GitProvider) Fetch(key, user, workDir, branchName string) (err error) {
 
 	log.Info("end fetching data", logBranchNameKey, branchName)
 
-	return
+	return nil
 }
 
 func (*GitProvider) Checkout(user, pass *string, directory, branchName string, remote bool) error {
@@ -616,7 +617,7 @@ func (*GitProvider) Init(directory string) error {
 	return nil
 }
 
-func (*GitProvider) CheckoutRemoteBranchBySSH(key, user, gitPath, remoteBranchName string) (err error) {
+func (*GitProvider) CheckoutRemoteBranchBySSH(key, user, gitPath, remoteBranchName string) error {
 	log.Info("start checkout to", "branch", remoteBranchName)
 
 	keyPath, err := initAuth(key, user)
@@ -625,8 +626,8 @@ func (*GitProvider) CheckoutRemoteBranchBySSH(key, user, gitPath, remoteBranchNa
 	}
 
 	defer func() {
-		if cleanKeyErr := os.Remove(keyPath); err != nil {
-			log.Error(cleanKeyErr, errRemoveSHHKeyFile)
+		if err = os.Remove(keyPath); err != nil {
+			log.Error(err, errRemoveSHHKeyFile)
 		}
 	}()
 
@@ -678,7 +679,7 @@ func isBranchExists(name string, branches storer.ReferenceIter) (bool, error) {
 func initAuth(key, user string) (string, error) {
 	log.Info("Initializing auth", "user", user)
 
-	keyFile, err := os.Create(fmt.Sprintf("%s/sshkey_%d", os.TempDir(), time.Now().Unix()))
+	keyFile, err := ioutil.TempFile("", "sshkey")
 	if err != nil {
 		return "", errors.Wrap(err, "unable to create temp file for ssh key")
 	}
