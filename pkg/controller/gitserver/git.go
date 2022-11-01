@@ -50,7 +50,8 @@ const (
 	logRepositoryKey = "repository"
 	logOutKey        = "out"
 
-	errPlainOpenTmpl = "failed to open git directory %q: %w"
+	errPlainOpenTmpl    = "failed to open git directory %q: %w"
+	errRemoveSHHKeyFile = "unable to remove key file"
 )
 
 type GitSshData struct {
@@ -237,7 +238,9 @@ func (*GitProvider) PushChanges(key, user, directory string, port int32, pushPar
 	}
 
 	defer func() {
-		err = os.Remove(keyPath)
+		if cleanKeyErr := os.Remove(keyPath); err != nil {
+			log.Error(cleanKeyErr, errRemoveSHHKeyFile)
+		}
 	}()
 
 	gitDir := path.Join(directory, gitDirName)
@@ -352,7 +355,9 @@ func (gp *GitProvider) CloneRepositoryBySsh(key, user, repoUrl, destination stri
 	}
 
 	defer func() {
-		err = os.Remove(keyPath)
+		if cleanKeyErr := os.Remove(keyPath); err != nil {
+			log.Error(cleanKeyErr, errRemoveSHHKeyFile)
+		}
 	}()
 
 	cloneCMD := exec.Command(gitCMD, "clone", "--mirror", "--depth", "1", repoUrl, destination)
@@ -506,7 +511,9 @@ func (*GitProvider) Fetch(key, user, workDir, branchName string) (err error) {
 	}
 
 	defer func() {
-		err = os.Remove(keyPath)
+		if cleanKeyErr := os.Remove(keyPath); err != nil {
+			log.Error(cleanKeyErr, errRemoveSHHKeyFile)
+		}
 	}()
 
 	gitDir := path.Join(workDir, gitDirName)
@@ -618,7 +625,9 @@ func (*GitProvider) CheckoutRemoteBranchBySSH(key, user, gitPath, remoteBranchNa
 	}
 
 	defer func() {
-		err = os.Remove(keyPath)
+		if cleanKeyErr := os.Remove(keyPath); err != nil {
+			log.Error(cleanKeyErr, errRemoveSHHKeyFile)
+		}
 	}()
 
 	gitDir := path.Join(gitPath, ".git")
