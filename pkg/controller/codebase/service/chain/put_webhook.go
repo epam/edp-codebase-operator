@@ -96,7 +96,7 @@ func (s *PutWebHook) ServeRequest(ctx context.Context, codebase *codebaseApi.Cod
 		return s.processCodebaseError(codebase, err)
 	}
 
-	webHook, err := gitProvider.CreateWebHook(
+	webHook, err := gitProvider.CreateWebHookIfNotExists(
 		ctx,
 		gitHost,
 		string(secret.Data[util.GitServerSecretTokenField]),

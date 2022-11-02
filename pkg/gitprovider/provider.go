@@ -19,6 +19,14 @@ type GitWebHookProvider interface {
 		webHookSecret,
 		webHookURL string,
 	) (*WebHook, error)
+	CreateWebHookIfNotExists(
+		ctx context.Context,
+		githubURL,
+		token,
+		projectID,
+		webHookSecret,
+		webHookURL string,
+	) (*WebHook, error)
 	GetWebHook(
 		ctx context.Context,
 		gitProviderURL,
@@ -26,6 +34,12 @@ type GitWebHookProvider interface {
 		projectID string,
 		webHookID int,
 	) (*WebHook, error)
+	GetWebHooks(
+		ctx context.Context,
+		githubURL,
+		token,
+		projectID string,
+	) ([]*WebHook, error)
 	DeleteWebHook(
 		ctx context.Context,
 		gitProviderURL,

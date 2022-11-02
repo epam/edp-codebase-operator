@@ -2,6 +2,7 @@ package chain
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"regexp"
 	"testing"
@@ -41,11 +42,12 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 	fakeUrlRegexp := regexp.MustCompile(`.*`)
 
 	tests := []struct {
-		name       string
-		codebase   *codebaseApi.Codebase
-		k8sObjects []client.Object
-		responder  func(t *testing.T)
-		wantErr    assert.ErrorAssertionFunc
+		name        string
+		codebase    *codebaseApi.Codebase
+		k8sObjects  []client.Object
+		responder   func(t *testing.T)
+		wantErr     require.ErrorAssertionFunc
+		errContains string
 	}{
 		{
 			name: "success gitlab",
@@ -94,10 +96,13 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 				fakeIngress(namespace, gitLabIngressName, "fake.gitlab.com"),
 			},
 			responder: func(t *testing.T) {
-				responder := httpmock.NewStringResponder(http.StatusOK, "")
-				httpmock.RegisterRegexpResponder(http.MethodPost, fakeUrlRegexp, responder)
+				POSTResponder := httpmock.NewStringResponder(http.StatusOK, "")
+				httpmock.RegisterRegexpResponder(http.MethodPost, fakeUrlRegexp, POSTResponder)
+
+				GETResponder := httpmock.NewStringResponder(http.StatusOK, "")
+				httpmock.RegisterRegexpResponder(http.MethodGet, fakeUrlRegexp, GETResponder)
 			},
-			wantErr: assert.NoError,
+			wantErr: require.NoError,
 		},
 		{
 			name: "success github",
@@ -146,10 +151,70 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 				fakeIngress(namespace, gitHubIngressName, "fake.github.com"),
 			},
 			responder: func(t *testing.T) {
-				responder := httpmock.NewStringResponder(http.StatusOK, "")
-				httpmock.RegisterRegexpResponder(http.MethodPost, fakeUrlRegexp, responder)
+				POSTResponder := httpmock.NewStringResponder(http.StatusOK, "")
+				httpmock.RegisterRegexpResponder(http.MethodPost, fakeUrlRegexp, POSTResponder)
+
+				GETResponder := httpmock.NewStringResponder(http.StatusOK, "")
+				httpmock.RegisterRegexpResponder(http.MethodGet, fakeUrlRegexp, GETResponder)
 			},
-			wantErr: assert.NoError,
+			wantErr: require.NoError,
+		},
+		{
+			name: "success use existing webhook",
+			codebase: &codebaseApi.Codebase{
+				ObjectMeta: metaV1.ObjectMeta{
+					Namespace:       namespace,
+					Name:            "test-codebase",
+					ResourceVersion: "1",
+				},
+				Spec: codebaseApi.CodebaseSpec{
+					GitServer:  "test-git-server",
+					GitUrlPath: &gitURL,
+				},
+			},
+			k8sObjects: []client.Object{
+				&codebaseApi.Codebase{
+					ObjectMeta: metaV1.ObjectMeta{
+						Namespace:       namespace,
+						Name:            "test-codebase",
+						ResourceVersion: "1",
+					},
+				},
+				&codebaseApi.GitServer{
+					ObjectMeta: metaV1.ObjectMeta{
+						Namespace: namespace,
+						Name:      "test-git-server",
+					},
+					Spec: codebaseApi.GitServerSpec{
+						GitHost:          "fake.gitlab.com",
+						GitUser:          "git",
+						HttpsPort:        443,
+						NameSshKeySecret: "test-secret",
+						GitProvider:      codebaseApi.GitProviderGitlab,
+					},
+				},
+				&coreV1.Secret{
+					ObjectMeta: metaV1.ObjectMeta{
+						Namespace: namespace,
+						Name:      "test-secret",
+					},
+					Data: map[string][]byte{
+						util.GitServerSecretTokenField:         []byte("test-token"),
+						util.GitServerSecretWebhookSecretField: []byte("test-webhook-secret"),
+					},
+				},
+				fakeIngress(namespace, gitLabIngressName, "fake.gitlab.com"),
+			},
+			responder: func(t *testing.T) {
+				getHookResponder, err := httpmock.NewJsonResponder(http.StatusNotFound, map[string]string{"message": "404 Not Found"})
+				require.NoError(t, err)
+				httpmock.RegisterRegexpResponder(http.MethodGet, regexp.MustCompile(`.*999$`), getHookResponder)
+
+				getHooksResponder, err := httpmock.NewJsonResponder(http.StatusOK, []map[string]interface{}{{"id": 1, "url": "https://fake.gitlab.com"}})
+				require.NoError(t, err)
+				httpmock.RegisterRegexpResponder(http.MethodGet, regexp.MustCompile(`.*hooks$`), getHooksResponder)
+			},
+			wantErr: require.NoError,
 		},
 		{
 			name: "success - no webhook secret token",
@@ -197,10 +262,13 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 				fakeIngress(namespace, gitLabIngressName, "fake.gitlab.com"),
 			},
 			responder: func(t *testing.T) {
-				responder := httpmock.NewStringResponder(http.StatusOK, "")
-				httpmock.RegisterRegexpResponder(http.MethodPost, fakeUrlRegexp, responder)
+				POSTResponder := httpmock.NewStringResponder(http.StatusOK, "")
+				httpmock.RegisterRegexpResponder(http.MethodPost, fakeUrlRegexp, POSTResponder)
+
+				GETResponder := httpmock.NewStringResponder(http.StatusOK, "")
+				httpmock.RegisterRegexpResponder(http.MethodGet, fakeUrlRegexp, GETResponder)
 			},
-			wantErr: assert.NoError,
+			wantErr: require.NoError,
 		},
 		{
 			name: "success - webhook already exists",
@@ -247,7 +315,7 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 				require.NoError(t, err)
 				httpmock.RegisterRegexpResponder(http.MethodGet, fakeUrlRegexp, responder)
 			},
-			wantErr: assert.NoError,
+			wantErr: require.NoError,
 		},
 		{
 			name: "success - webhookID exists but webhook does not",
@@ -299,14 +367,18 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 				fakeIngress(namespace, gitLabIngressName, "fake.gitlab.com"),
 			},
 			responder: func(t *testing.T) {
-				getResponder, err := httpmock.NewJsonResponder(http.StatusNotFound, map[string]string{"message": "404 Not Found"})
+				getHookResponder, err := httpmock.NewJsonResponder(http.StatusNotFound, map[string]string{"message": "404 Not Found"})
 				require.NoError(t, err)
-				httpmock.RegisterRegexpResponder(http.MethodGet, fakeUrlRegexp, getResponder)
+				httpmock.RegisterRegexpResponder(http.MethodGet, regexp.MustCompile(`.*999$`), getHookResponder)
+
+				getHooksResponder, err := httpmock.NewJsonResponder(http.StatusOK, []map[string]interface{}{})
+				require.NoError(t, err)
+				httpmock.RegisterRegexpResponder(http.MethodGet, regexp.MustCompile(`.*hooks$`), getHooksResponder)
 
 				postResponder := httpmock.NewStringResponder(http.StatusOK, "")
 				httpmock.RegisterRegexpResponder(http.MethodPost, fakeUrlRegexp, postResponder)
 			},
-			wantErr: assert.NoError,
+			wantErr: require.NoError,
 		},
 		{
 			name: "skip creating webhook - unsupported git provider",
@@ -336,7 +408,7 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 				},
 			},
 			responder: func(t *testing.T) {},
-			wantErr:   assert.NoError,
+			wantErr:   require.NoError,
 		},
 		{
 			name: "failed to get webhook",
@@ -384,7 +456,8 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 				require.NoError(t, err)
 				httpmock.RegisterRegexpResponder(http.MethodGet, fakeUrlRegexp, getResponder)
 			},
-			wantErr: assert.Error,
+			wantErr:     require.Error,
+			errContains: "unable to get webhook",
 		},
 		{
 			name: "failed to create webhook",
@@ -427,7 +500,8 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 				responder := httpmock.NewStringResponder(http.StatusInternalServerError, "")
 				httpmock.RegisterRegexpResponder(http.MethodPost, fakeUrlRegexp, responder)
 			},
-			wantErr: assert.Error,
+			wantErr:     require.Error,
+			errContains: "unable to create",
 		},
 		{
 			name: "failed to get getWebHookUrl - no rules",
@@ -471,8 +545,9 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 					},
 				},
 			},
-			responder: func(t *testing.T) {},
-			wantErr:   assert.Error,
+			responder:   func(t *testing.T) {},
+			wantErr:     require.Error,
+			errContains: "doesn't have rules",
 		},
 		{
 			name: "failed to get getWebHookUrl - no ingress",
@@ -510,8 +585,9 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 					},
 				},
 			},
-			responder: func(t *testing.T) {},
-			wantErr:   assert.Error,
+			responder:   func(t *testing.T) {},
+			wantErr:     require.Error,
+			errContains: fmt.Sprintf("unable to get %s ingress", gitLabIngressName),
 		},
 		{
 			name: "failed to get secret - no required field",
@@ -546,8 +622,9 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 					},
 				},
 			},
-			responder: func(t *testing.T) {},
-			wantErr:   assert.Error,
+			responder:   func(t *testing.T) {},
+			wantErr:     require.Error,
+			errContains: fmt.Sprintf("unable to get %s field", util.GitServerSecretTokenField),
 		},
 		{
 			name: "failed to get secret",
@@ -576,11 +653,12 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 					},
 				},
 			},
-			responder: func(t *testing.T) {},
-			wantErr:   assert.Error,
+			responder:   func(t *testing.T) {},
+			wantErr:     require.Error,
+			errContains: "unable to get test-secret",
 		},
 		{
-			name: "project not found",
+			name: "project ID not found",
 			codebase: &codebaseApi.Codebase{
 				ObjectMeta: metaV1.ObjectMeta{
 					Namespace: namespace,
@@ -614,8 +692,9 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 					},
 				},
 			},
-			responder: func(t *testing.T) {},
-			wantErr:   assert.Error,
+			responder:   func(t *testing.T) {},
+			wantErr:     require.Error,
+			errContains: "unable to get project ID for codebase",
 		},
 		{
 			name: "git server not found",
@@ -628,9 +707,10 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 					GitServer: "test-git-server",
 				},
 			},
-			k8sObjects: []client.Object{},
-			responder:  func(t *testing.T) {},
-			wantErr:    assert.Error,
+			k8sObjects:  []client.Object{},
+			responder:   func(t *testing.T) {},
+			wantErr:     require.Error,
+			errContains: "unable to get git server",
 		},
 	}
 
@@ -642,7 +722,11 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 			k8sClient := fake.NewClientBuilder().WithScheme(schema).WithObjects(tt.k8sObjects...).Build()
 			s := NewPutWebHook(k8sClient, restyClient)
 
-			tt.wantErr(t, s.ServeRequest(context.Background(), tt.codebase))
+			gotErr := s.ServeRequest(context.Background(), tt.codebase)
+			tt.wantErr(t, gotErr)
+			if tt.errContains != "" {
+				assert.Contains(t, gotErr.Error(), tt.errContains)
+			}
 		})
 	}
 }

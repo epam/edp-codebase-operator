@@ -219,3 +219,181 @@ func TestGitHubClient_DeleteWebHook(t *testing.T) {
 		})
 	}
 }
+
+func TestGitHubClient_GetWebHooks(t *testing.T) {
+	restyClient := resty.New()
+	httpmock.ActivateNonDefault(restyClient.GetClient())
+
+	defer httpmock.DeactivateAndReset()
+
+	fakeUrlRegexp := regexp.MustCompile(`.*`)
+
+	tests := []struct {
+		name        string
+		projectID   string
+		respStatus  int
+		resBody     interface{}
+		want        []*WebHook
+		wantErr     require.ErrorAssertionFunc
+		errIs       error
+		errContains string
+	}{
+		{
+			name:       "success",
+			projectID:  "owner/repo",
+			respStatus: http.StatusOK,
+			resBody:    []map[string]interface{}{{"id": 1, "config": map[string]string{"url": "https://example.com"}}},
+			want:       []*WebHook{{ID: 1, URL: "https://example.com"}},
+			wantErr:    require.NoError,
+		},
+		{
+			name:        "invalid project ID",
+			projectID:   "owner-repo",
+			respStatus:  http.StatusOK,
+			resBody:     []map[string]interface{}{{"id": 1, "config": map[string]string{"url": "https://example.com"}}},
+			wantErr:     require.Error,
+			errContains: "invalid project ID",
+		},
+		{
+			name:       "empty response",
+			projectID:  "owner/repo",
+			respStatus: http.StatusOK,
+			resBody:    []map[string]interface{}{},
+			want:       []*WebHook{},
+			wantErr:    require.NoError,
+		},
+		{
+			name:        "response failure",
+			projectID:   "owner/repo",
+			respStatus:  http.StatusBadRequest,
+			resBody:     map[string]interface{}{"message": "bad request"},
+			wantErr:     require.Error,
+			errContains: "unable to get GitHub web hooks",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			httpmock.Reset()
+
+			responder, err := httpmock.NewJsonResponder(tt.respStatus, tt.resBody)
+			require.NoError(t, err)
+			httpmock.RegisterRegexpResponder(http.MethodGet, fakeUrlRegexp, responder)
+
+			c := NewGitHubClient(restyClient)
+
+			got, err := c.GetWebHooks(context.Background(), "url", "token", tt.projectID)
+
+			tt.wantErr(t, err)
+			if tt.errIs != nil {
+				assert.ErrorIs(t, err, tt.errIs)
+			}
+			if tt.errContains != "" {
+				assert.Contains(t, err.Error(), tt.errContains)
+			}
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestGitHubClient_CreateWebHookIfNotExists(t *testing.T) {
+	fakeUrlRegexp := regexp.MustCompile(`.*`)
+	restyClient := resty.New()
+	httpmock.ActivateNonDefault(restyClient.GetClient())
+
+	defer httpmock.DeactivateAndReset()
+
+	tests := []struct {
+		name           string
+		projectID      string
+		webHookURL     string
+		GETRespStatus  int
+		GETResBody     interface{}
+		POSTRespStatus int
+		POSTResBody    interface{}
+		want           *WebHook
+		wantErr        require.ErrorAssertionFunc
+		errContains    string
+	}{
+		{
+			name:           "success - create new web hook",
+			projectID:      "owner/repo",
+			GETRespStatus:  http.StatusOK,
+			GETResBody:     []map[string]interface{}{},
+			POSTRespStatus: http.StatusCreated,
+			POSTResBody:    map[string]interface{}{"id": 1, "config": map[string]string{"url": "https://example.com"}},
+			want:           &WebHook{ID: 1, URL: "https://example.com"},
+			wantErr:        require.NoError,
+		},
+		{
+			name:           "success - use already existing web hook",
+			projectID:      "owner/repo",
+			webHookURL:     "https://example.com",
+			GETRespStatus:  http.StatusOK,
+			GETResBody:     []map[string]interface{}{{"id": 1, "config": map[string]string{"url": "https://example.com"}}},
+			POSTRespStatus: http.StatusCreated,
+			POSTResBody:    map[string]interface{}{"id": 2, "config": map[string]string{"url": "https://example.com"}},
+			want:           &WebHook{ID: 1, URL: "https://example.com"},
+			wantErr:        require.NoError,
+		},
+		{
+			name:           "success - create new web hook with different URL",
+			projectID:      "owner/repo",
+			webHookURL:     "https://example.com",
+			GETRespStatus:  http.StatusOK,
+			GETResBody:     []map[string]interface{}{{"id": 2, "config": map[string]string{"url": "https://provider.com"}}},
+			POSTRespStatus: http.StatusCreated,
+			POSTResBody:    map[string]interface{}{"id": 1, "config": map[string]string{"url": "https://example.com"}},
+			want:           &WebHook{ID: 1, URL: "https://example.com"},
+			wantErr:        require.NoError,
+		},
+		{
+			name:          "get webhooks response failure",
+			projectID:     "owner/repo",
+			GETRespStatus: http.StatusBadRequest,
+			GETResBody:    map[string]interface{}{"message": "bad request"},
+			wantErr:       require.Error,
+			errContains:   "unable to get GitHub web hooks",
+		},
+		{
+			name:           "create webhooks response failure",
+			projectID:      "owner/repo",
+			GETRespStatus:  http.StatusOK,
+			GETResBody:     []map[string]interface{}{},
+			POSTRespStatus: http.StatusBadRequest,
+			POSTResBody:    map[string]interface{}{"message": "bad request"},
+			wantErr:        require.Error,
+		},
+		{
+			name:        "invalid projectID",
+			projectID:   "owner-repo",
+			wantErr:     require.Error,
+			errContains: "invalid project ID",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			httpmock.Reset()
+
+			GETResponder, err := httpmock.NewJsonResponder(tt.GETRespStatus, tt.GETResBody)
+			require.NoError(t, err)
+			httpmock.RegisterRegexpResponder(http.MethodGet, fakeUrlRegexp, GETResponder)
+
+			POSTResponder, err := httpmock.NewJsonResponder(tt.POSTRespStatus, tt.POSTResBody)
+			require.NoError(t, err)
+			httpmock.RegisterRegexpResponder(http.MethodPost, fakeUrlRegexp, POSTResponder)
+
+			c := NewGitHubClient(restyClient)
+
+			got, err := c.CreateWebHookIfNotExists(context.Background(), "url", "token", tt.projectID, "secret", tt.webHookURL)
+
+			tt.wantErr(t, err)
+			if tt.errContains != "" {
+				assert.Contains(t, err.Error(), tt.errContains)
+			}
+
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}

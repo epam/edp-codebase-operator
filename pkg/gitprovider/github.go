@@ -21,6 +21,11 @@ type GitHubClient struct {
 	restyClient *resty.Client
 }
 
+const (
+	repoPathParam  = "repo"
+	ownerPathParam = "owner"
+)
+
 // NewGitHubClient creates a new GitHub client.
 func NewGitHubClient(restyClient *resty.Client) *GitHubClient {
 	restyClient.SetRetryCount(retryCount)
@@ -66,8 +71,8 @@ func (c *GitHubClient) CreateWebHook(
 			},
 		}).
 		SetPathParams(map[string]string{
-			"owner": owner,
-			"repo":  repo,
+			ownerPathParam: owner,
+			repoPathParam:  repo,
 		}).
 		SetResult(webHook).
 		Post("/repos/{owner}/{repo}/hooks")
@@ -81,6 +86,30 @@ func (c *GitHubClient) CreateWebHook(
 	}
 
 	return convertWebhook(webHook), nil
+}
+
+// CreateWebHookIfNotExists checks if a webhook with a given URL exists in the project.
+// If a webhook exists function returns it. If not, creates a new one.
+func (c *GitHubClient) CreateWebHookIfNotExists(
+	ctx context.Context,
+	githubURL,
+	token,
+	projectID,
+	webHookSecret,
+	webHookURL string,
+) (*WebHook, error) {
+	webHooks, err := c.GetWebHooks(ctx, githubURL, token, projectID)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, webHook := range webHooks {
+		if webHook.URL == webHookURL {
+			return webHook, nil
+		}
+	}
+
+	return c.CreateWebHook(ctx, githubURL, token, projectID, webHookSecret, webHookURL)
 }
 
 // GetWebHook gets a webhook by ID for the given project.
@@ -104,9 +133,9 @@ func (c *GitHubClient) GetWebHook(
 		SetContext(ctx).
 		SetAuthToken(token).
 		SetPathParams(map[string]string{
-			"owner":   owner,
-			"repo":    repo,
-			"hook-id": strconv.Itoa(webHookID),
+			ownerPathParam: owner,
+			repoPathParam:  repo,
+			"hook-id":      strconv.Itoa(webHookID),
 		}).
 		SetResult(webHook).
 		Get("/repos/{owner}/{repo}/hooks/{hook-id}")
@@ -124,6 +153,49 @@ func (c *GitHubClient) GetWebHook(
 	}
 
 	return convertWebhook(webHook), nil
+}
+
+// GetWebHooks gets a webhooks by the given project.
+func (c *GitHubClient) GetWebHooks(
+	ctx context.Context,
+	githubURL,
+	token,
+	projectID string,
+) ([]*WebHook, error) {
+	owner, repo, err := parseProjectID(projectID)
+	if err != nil {
+		return nil, err
+	}
+
+	c.restyClient.HostURL = githubURL
+
+	var gitHubWebHooks []*gitHubWebHook
+
+	resp, err := c.restyClient.
+		R().
+		SetContext(ctx).
+		SetAuthToken(token).
+		SetPathParams(map[string]string{
+			ownerPathParam: owner,
+			repoPathParam:  repo,
+		}).
+		SetResult(&gitHubWebHooks).
+		Get("/repos/{owner}/{repo}/hooks")
+
+	if err != nil {
+		return nil, fmt.Errorf("unable to get GitHub web hooks: %w", err)
+	}
+
+	if resp.IsError() {
+		return nil, fmt.Errorf("unable to get GitHub web hooks: %s", resp.String())
+	}
+
+	webHooks := make([]*WebHook, len(gitHubWebHooks))
+	for i, webHook := range gitHubWebHooks {
+		webHooks[i] = convertWebhook(webHook)
+	}
+
+	return webHooks, nil
 }
 
 // DeleteWebHook deletes webhook by ID for the given project.
@@ -146,9 +218,9 @@ func (c *GitHubClient) DeleteWebHook(
 		SetContext(ctx).
 		SetAuthToken(token).
 		SetPathParams(map[string]string{
-			"owner":   owner,
-			"repo":    repo,
-			"hook-id": strconv.Itoa(webHookID),
+			ownerPathParam: owner,
+			repoPathParam:  repo,
+			"hook-id":      strconv.Itoa(webHookID),
 		}).
 		Delete("/repos/{owner}/{repo}/hooks/{hook-id}")
 

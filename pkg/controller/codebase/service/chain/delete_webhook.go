@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/go-resty/resty/v2"
+	"github.com/pkg/errors"
 	coreV1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -74,6 +75,12 @@ func (s *DeleteWebHook) ServeRequest(ctx context.Context, codebase *codebaseApi.
 		codebase.Status.WebHookID,
 	)
 	if err != nil {
+		if errors.Is(err, gitprovider.ErrWebHookNotFound) {
+			rLog.Info("Webhook was not found. Skip deleting webhook.")
+
+			return nil
+		}
+
 		rLog.Error(err, "Failed to delete webhook.")
 
 		return nil
