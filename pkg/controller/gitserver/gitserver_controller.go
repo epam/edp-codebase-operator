@@ -81,6 +81,10 @@ func (r *ReconcileGitServer) Reconcile(ctx context.Context, request reconcile.Re
 
 	hasConnection, err := checkConnectionToGitServer(r.client, gitServer)
 	if err != nil {
+		if updateErr := r.updateStatus(ctx, r.client, instance, hasConnection); updateErr != nil {
+			reconcilerLog.Error(updateErr, "failed to update GitServer status")
+		}
+
 		return reconcile.Result{}, errors.Wrap(err, fmt.Sprintf("an error has occurred while checking connection to Git Server %v", gitServer.GitHost))
 	}
 

@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	coreV1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -246,4 +247,59 @@ func TestReconcileGitServer_ServerUnavailable(t *testing.T) {
 
 	_, ok := logger.InfoMessages["git server does not have connection, will try again later"]
 	assert.True(t, ok)
+}
+
+func TestReconcileGitServer_InvalidSSHKey(t *testing.T) {
+	scheme := runtime.NewScheme()
+	err := coreV1.AddToScheme(scheme)
+	require.NoError(t, err)
+
+	err = codebaseApi.AddToScheme(scheme)
+	require.NoError(t, err)
+
+	gs := &codebaseApi.GitServer{
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      "NewGitServer",
+			Namespace: "namespace",
+		},
+		Spec: codebaseApi.GitServerSpec{
+			GitHost:          "g-host",
+			NameSshKeySecret: "ssh-secret",
+		},
+	}
+
+	secret := &coreV1.Secret{
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      "ssh-secret",
+			Namespace: gs.Namespace,
+		},
+		Data: map[string][]byte{
+			util.PrivateSShKeyName: []byte("invalid-ssh-key"),
+		},
+	}
+
+	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(gs, secret).Build()
+
+	logger := mock.Logger{}
+
+	r := ReconcileGitServer{
+		client: fakeCl,
+		log:    &logger,
+	}
+
+	req := reconcile.Request{
+		NamespacedName: types.NamespacedName{
+			Name:      gs.Name,
+			Namespace: gs.Namespace,
+		},
+	}
+
+	_, err = r.Reconcile(context.Background(), req)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "unable to parse private key")
+
+	gotGitServer := &codebaseApi.GitServer{}
+	err = fakeCl.Get(context.Background(), req.NamespacedName, gotGitServer)
+	require.NoError(t, err)
+	assert.False(t, gotGitServer.Status.Available)
 }

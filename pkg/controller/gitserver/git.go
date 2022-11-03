@@ -716,19 +716,23 @@ func checkConnectionToGitServer(c client.Client, gitServer *model.GitServer) (bo
 
 	log.Info("Data from request is extracted", "host", gitSshData.Host, "port", gitSshData.Port)
 
-	a := isGitServerAccessible(gitSshData)
-	log.Info("Git server", "accessible", a)
+	accessible, err := isGitServerAccessible(gitSshData)
+	if err != nil {
+		return false, fmt.Errorf("an error has occurred while checking connection to git server: %w", err)
+	}
 
-	return a, nil
+	log.Info("Git server", "accessible", accessible)
+
+	return accessible, nil
 }
 
-func isGitServerAccessible(data GitSshData) bool {
+func isGitServerAccessible(data GitSshData) (bool, error) {
 	log.Info("Start executing IsGitServerAccessible method to check connection to server", "host", data.Host)
 
 	sshClient, err := sshInitFromSecret(data, log)
 	if err != nil {
 		log.Info(fmt.Sprintf("An error has occurred while initing SSH client. Check data in Git Server resource and secret: %v", err))
-		return false
+		return false, err
 	}
 
 	var (
@@ -738,13 +742,13 @@ func isGitServerAccessible(data GitSshData) bool {
 
 	if s, c, err = sshClient.NewSession(); err != nil {
 		log.Info(fmt.Sprintf("An error has occurred while connecting to server. Check data in Git Server resource and secret: %v", err))
-		return false
+		return false, nil
 	}
 
 	defer util.CloseWithLogOnErr(log, s, "failed to close ssh client session")
 	defer util.CloseWithLogOnErr(log, c, "failed to close ssh client connection")
 
-	return s != nil && c != nil
+	return s != nil && c != nil, nil
 }
 
 func extractSshData(gitServer *model.GitServer, secret *v1.Secret) GitSshData {
@@ -756,16 +760,21 @@ func extractSshData(gitServer *model.GitServer, secret *v1.Secret) GitSshData {
 	}
 }
 
-func sshInitFromSecret(data GitSshData, logger logr.Logger) (gerrit.SSHClient, error) {
+func sshInitFromSecret(data GitSshData, logger logr.Logger) (*gerrit.SSHClient, error) {
+	sshAuth, err := publicKey(data.Key)
+	if err != nil {
+		return nil, err
+	}
+
 	sshConfig := &ssh.ClientConfig{
 		User: data.User,
 		Auth: []ssh.AuthMethod{
-			publicKey(data.Key),
+			sshAuth,
 		},
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
 
-	cl := gerrit.SSHClient{
+	cl := &gerrit.SSHClient{
 		Config: sshConfig,
 		Host:   data.Host,
 		Port:   data.Port,
@@ -776,13 +785,13 @@ func sshInitFromSecret(data GitSshData, logger logr.Logger) (gerrit.SSHClient, e
 	return cl, nil
 }
 
-func publicKey(key string) ssh.AuthMethod {
+func publicKey(key string) (ssh.AuthMethod, error) {
 	signer, err := ssh.ParsePrivateKey([]byte(key))
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("unable to parse private key: %w", err)
 	}
 
-	return ssh.PublicKeys(signer)
+	return ssh.PublicKeys(signer), nil
 }
 
 func isTagExists(name string, tags storer.ReferenceIter) (bool, error) {
