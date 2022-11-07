@@ -12,6 +12,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
+	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebasebranch/chain"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebasebranch/chain/handler"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebasebranch/service"
 	"github.com/epam/edp-codebase-operator/v2/pkg/model"
@@ -55,13 +56,11 @@ func (h TriggerJob) Trigger(cb *codebaseApi.CodebaseBranch, actionType codebaseA
 		return util.NewCodebaseBranchReconcileError(fmt.Sprintf("%v codebase and/or jenkinsfolder %v are/is unavailable", c.Name, jfn))
 	}
 
-	if c.Spec.Versioning.Type == util.VersioningTypeEDP && hasNewVersion(cb) {
-		err = h.ProcessNewVersion(cb)
-		if err != nil {
-			h.SetFailedFields(cb, actionType, err.Error())
+	err = h.ProcessNewVersion(cb, c)
+	if err != nil {
+		h.SetFailedFields(cb, actionType, err.Error())
 
-			return errors.Wrapf(err, "couldn't process new version for %v branch", cb.Name)
-		}
+		return fmt.Errorf("couldn't process new version for %v branch: %w", cb.Name, err)
 	}
 
 	err = triggerFunc(cb)
@@ -140,25 +139,34 @@ func (h TriggerJob) GetJenkinsFolder(name, namespace string) (*jenkinsApi.Jenkin
 	return i, nil
 }
 
-func (h TriggerJob) ProcessNewVersion(b *codebaseApi.CodebaseBranch) error {
-	if err := h.Service.ResetBranchBuildCounter(b); err != nil {
+func (h TriggerJob) ProcessNewVersion(codebaseBranch *codebaseApi.CodebaseBranch, codeBase *codebaseApi.Codebase) error {
+	if codeBase.Spec.Versioning.Type != util.VersioningTypeEDP {
+		return nil
+	}
+
+	hasVersion, err := chain.HasNewVersion(codebaseBranch)
+	if err != nil {
+		return fmt.Errorf("couldn't check if branch %v has new version: %w", codebaseBranch.Name, err)
+	}
+
+	if !hasVersion {
+		return nil
+	}
+
+	if err = h.Service.ResetBranchBuildCounter(codebaseBranch); err != nil {
 		return fmt.Errorf("failed reset branch build counter: %w", err)
 	}
 
-	if err := h.Service.ResetBranchSuccessBuildCounter(b); err != nil {
+	if err = h.Service.ResetBranchSuccessBuildCounter(codebaseBranch); err != nil {
 		return fmt.Errorf("failed reset branch success build counter: %w", err)
 	}
 
-	err := h.Service.AppendVersionToTheHistorySlice(b)
+	err = h.Service.AppendVersionToTheHistorySlice(codebaseBranch)
 	if err != nil {
 		return fmt.Errorf("failed to append version to resource: %w", err)
 	}
 
 	return nil
-}
-
-func hasNewVersion(b *codebaseApi.CodebaseBranch) bool {
-	return !util.SearchVersion(b.Status.VersionHistory, *b.Spec.Version)
 }
 
 func isJenkinsFolderAvailable(jf *jenkinsApi.JenkinsFolder) bool {

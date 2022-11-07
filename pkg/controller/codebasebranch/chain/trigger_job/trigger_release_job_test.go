@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/apps/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -468,4 +469,70 @@ func TestTriggerReleaseJob_ShouldFailEDPVersioningAndHasNewVersion(t *testing.T)
 	if !strings.Contains(err.Error(), "FATAL ERROR") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
+}
+
+func TestTriggerReleaseJob_ShouldFailNoEDPVersion(t *testing.T) {
+	codeBase := &codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      "c-stub-name",
+			Namespace: "stub-namespace",
+		},
+		Spec: codebaseApi.CodebaseSpec{
+			Versioning: codebaseApi.Versioning{
+				Type: "edp",
+			},
+		},
+		Status: codebaseApi.CodebaseStatus{
+			Available: true,
+		},
+	}
+
+	codeBaseBranch := &codebaseApi.CodebaseBranch{
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      "cb-stub-name",
+			Namespace: "stub-namespace",
+		},
+		Spec: codebaseApi.CodebaseBranchSpec{
+			BranchName:   "stub-name",
+			CodebaseName: "c-stub-name",
+		},
+	}
+
+	jenkinsFolder := &jenkinsApi.JenkinsFolder{
+		TypeMeta: metaV1.TypeMeta{
+			APIVersion: util.V2APIVersion,
+			Kind:       util.JenkinsFolderKind,
+		},
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      "c-stub-name-codebase",
+			Namespace: codeBase.Namespace,
+		},
+		Spec: jenkinsApi.JenkinsFolderSpec{
+			Job: &jenkinsApi.Job{
+				Name:   "job-provisions/job/ci/job/name",
+				Config: "jenkins-config",
+			},
+		},
+		Status: jenkinsApi.JenkinsFolderStatus{
+			Available: true,
+		},
+	}
+
+	scheme := runtime.NewScheme()
+	scheme.AddKnownTypes(v1.SchemeGroupVersion, codeBase, codeBaseBranch, jenkinsFolder)
+	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(codeBase, codeBaseBranch, jenkinsFolder).Build()
+	ms := &service.MockCodebasebranch{}
+
+	ms.On("TriggerReleaseJob", codeBaseBranch).Return(nil)
+
+	job := TriggerReleaseJob{
+		TriggerJob: TriggerJob{
+			Client:  fakeCl,
+			Service: ms,
+		},
+	}
+
+	err := job.ServeRequest(codeBaseBranch)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "doesn't have version")
 }

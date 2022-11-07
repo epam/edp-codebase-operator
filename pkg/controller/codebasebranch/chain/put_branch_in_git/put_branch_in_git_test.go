@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	coreV1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -350,4 +351,79 @@ func TestPutBranchInGit_SecretShouldNotBeFound(t *testing.T) {
 	if !strings.Contains(err.Error(), "Unable to get secret fake-name") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
+}
+
+func TestPutBranchInGit_ShouldFailNoEDPVersion(t *testing.T) {
+	codeBase := &codebaseApi.Codebase{
+		ObjectMeta: v1.ObjectMeta{
+			Name:      fakeName,
+			Namespace: fakeNamespace,
+		},
+		Spec: codebaseApi.CodebaseSpec{
+			GitServer:  fakeName,
+			GitUrlPath: common.GetStringP(fakeName),
+			Versioning: codebaseApi.Versioning{
+				Type: "edp",
+			},
+		},
+		Status: codebaseApi.CodebaseStatus{
+			Available: true,
+		},
+	}
+
+	gitServer := &codebaseApi.GitServer{
+		ObjectMeta: v1.ObjectMeta{
+			Name:      fakeName,
+			Namespace: fakeNamespace,
+		},
+		Spec: codebaseApi.GitServerSpec{
+			NameSshKeySecret: fakeName,
+			GitHost:          fakeName,
+			SshPort:          22,
+			GitUser:          fakeName,
+		},
+	}
+
+	secret := &coreV1.Secret{
+		ObjectMeta: v1.ObjectMeta{
+			Name:      fakeName,
+			Namespace: fakeNamespace,
+		},
+		Data: map[string][]byte{
+			"keyName": []byte("fake"),
+		},
+	}
+
+	codeBaseBranch := &codebaseApi.CodebaseBranch{
+		ObjectMeta: v1.ObjectMeta{
+			Name:      fakeName,
+			Namespace: fakeNamespace,
+		},
+		Spec: codebaseApi.CodebaseBranchSpec{
+			CodebaseName: fakeName,
+			BranchName:   fakeName,
+		},
+	}
+
+	scheme := runtime.NewScheme()
+	scheme.AddKnownTypes(v1.SchemeGroupVersion, codeBase, gitServer, codeBaseBranch)
+	scheme.AddKnownTypes(coreV1.SchemeGroupVersion, secret)
+	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(codeBase, gitServer, codeBaseBranch, secret).Build()
+
+	mGit := &gitServerMocks.MockGit{}
+	port := int32(22)
+	wd := util.GetWorkDir(fakeName, fmt.Sprintf("%v-%v", fakeNamespace, fakeName))
+
+	mGit.On("CloneRepositoryBySsh", "",
+		fakeName, fmt.Sprintf("%v:%v", fakeName, fakeName),
+		wd, port).Return(nil)
+	mGit.On("CreateRemoteBranch", "", fakeName, wd, fakeName, "commitsha", port).Return(nil)
+
+	err := PutBranchInGit{
+		Client: fakeCl,
+		Git:    mGit,
+	}.ServeRequest(codeBaseBranch)
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "doesn't have version")
 }

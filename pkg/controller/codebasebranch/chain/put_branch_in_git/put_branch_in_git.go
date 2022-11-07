@@ -10,6 +10,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
+	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebasebranch/chain"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebasebranch/chain/handler"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/codebasebranch/service"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver"
@@ -46,15 +47,13 @@ func (h PutBranchInGit) ServeRequest(cb *codebaseApi.CodebaseBranch) error {
 		return util.NewCodebaseBranchReconcileError(fmt.Sprintf("%v codebase is unavailable", c.Name))
 	}
 
-	if c.Spec.Versioning.Type == util.VersioningTypeEDP && hasNewVersion(cb) {
-		err = h.processNewVersion(cb)
-		if err != nil {
-			err = errors.Wrapf(err, "couldn't process new version for %v branch", cb.Name)
+	err = h.processNewVersion(cb, c)
+	if err != nil {
+		err = fmt.Errorf("couldn't process new version for %s branch: %w", cb.Name, err)
 
-			setFailedFields(cb, codebaseApi.PutBranchForGitlabCiCodebase, err.Error())
+		setFailedFields(cb, codebaseApi.PutBranchForGitlabCiCodebase, err.Error())
 
-			return err
-		}
+		return err
 	}
 
 	gs, err := util.GetGitServer(h.Client, c.Spec.GitServer, c.Namespace)
@@ -152,25 +151,34 @@ func checkDirectory(path string) bool {
 	return util.DoesDirectoryExist(path) && !util.IsDirectoryEmpty(path)
 }
 
-func (h PutBranchInGit) processNewVersion(b *codebaseApi.CodebaseBranch) error {
-	err := h.Service.ResetBranchBuildCounter(b)
+func (h PutBranchInGit) processNewVersion(codebaseBranch *codebaseApi.CodebaseBranch, codeBase *codebaseApi.Codebase) error {
+	if codeBase.Spec.Versioning.Type != util.VersioningTypeEDP {
+		return nil
+	}
+
+	hasVersion, err := chain.HasNewVersion(codebaseBranch)
+	if err != nil {
+		return fmt.Errorf("couldn't check if branch %v has new version: %w", codebaseBranch.Name, err)
+	}
+
+	if !hasVersion {
+		return nil
+	}
+
+	err = h.Service.ResetBranchBuildCounter(codebaseBranch)
 	if err != nil {
 		return fmt.Errorf("failed to reset bulid counterL %w", err)
 	}
 
-	err = h.Service.ResetBranchSuccessBuildCounter(b)
+	err = h.Service.ResetBranchSuccessBuildCounter(codebaseBranch)
 	if err != nil {
 		return fmt.Errorf("failed to reset success bulid counter: %w", err)
 	}
 
-	err = h.Service.AppendVersionToTheHistorySlice(b)
+	err = h.Service.AppendVersionToTheHistorySlice(codebaseBranch)
 	if err != nil {
 		return fmt.Errorf("failed to append version to hitory slice: %w", err)
 	}
 
 	return nil
-}
-
-func hasNewVersion(b *codebaseApi.CodebaseBranch) bool {
-	return !util.SearchVersion(b.Status.VersionHistory, *b.Spec.Version)
 }
