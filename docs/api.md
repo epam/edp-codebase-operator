@@ -1143,13 +1143,6 @@ GitServerSpec defines the desired state of GitServer.
         </td>
         <td>true</td>
       </tr><tr>
-        <td><b>gitUser</b></td>
-        <td>string</td>
-        <td>
-          <br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
         <td><b>httpsPort</b></td>
         <td>integer</td>
         <td>
@@ -1182,6 +1175,15 @@ GitServerSpec defines the desired state of GitServer.
           <br/>
             <i>Enum</i>: gerrit, gitlab, github<br/>
             <i>Default</i>: gerrit<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>gitUser</b></td>
+        <td>string</td>
+        <td>
+          GitUser is a user name for git server.<br/>
+          <br/>
+            <i>Default</i>: git<br/>
         </td>
         <td>false</td>
       </tr></tbody>

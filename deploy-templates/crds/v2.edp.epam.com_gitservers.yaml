@@ -49,6 +49,8 @@ spec:
                 - github
                 type: string
               gitUser:
+                default: git
+                description: GitUser is a user name for git server.
                 type: string
               httpsPort:
                 format: int32
@@ -60,7 +62,6 @@ spec:
                 type: integer
             required:
             - gitHost
-            - gitUser
             - httpsPort
             - nameSshKeySecret
             - sshPort

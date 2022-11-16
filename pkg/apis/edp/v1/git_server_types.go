@@ -14,6 +14,9 @@ const (
 type GitServerSpec struct {
 	GitHost string `json:"gitHost"`
 
+	// GitUser is a user name for git server.
+	// +kubebuilder:default:=git
+	// +optional
 	GitUser string `json:"gitUser"`
 
 	HttpsPort int32 `json:"httpsPort"`
