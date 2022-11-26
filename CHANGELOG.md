@@ -7,6 +7,7 @@
 - Implement webhook GitLab integration as a part of codebase onboarding [EPMDEDP-10708](https://jiraeu.epam.com/browse/EPMDEDP-10708)
 - Implement default branch provisioning by codebase controller [EPMDEDP-10733](https://jiraeu.epam.com/browse/EPMDEDP-10733)
 - Implement GitHub Webhook integration for codebase [EPMDEDP-10743](https://jiraeu.epam.com/browse/EPMDEDP-10743)
+- GitServer - make gitUser optional with the default value git [EPMDEDP-11026](https://jiraeu.epam.com/browse/EPMDEDP-11026)
 
 ### Bug Fixes
 
@@ -16,6 +17,11 @@
 - Remove slash from CodebaseSpec.GitUrlPath for the webhook creation [EPMDEDP-10708](https://jiraeu.epam.com/browse/EPMDEDP-10708)
 - GitHub webhook events names [EPMDEDP-10743](https://jiraeu.epam.com/browse/EPMDEDP-10743)
 - Fix permissions for configmap in leader election [EPMDEDP-10802](https://jiraeu.epam.com/browse/EPMDEDP-10802)
+- Use an already created webhook [EPMDEDP-10844](https://jiraeu.epam.com/browse/EPMDEDP-10844)
+- CodebaseBranch with empty version may produce panic [EPMDEDP-10883](https://jiraeu.epam.com/browse/EPMDEDP-10883)
+- Concurrent write ssh key to the same file [EPMDEDP-10892](https://jiraeu.epam.com/browse/EPMDEDP-10892)
+- Do not ignore git command errors [EPMDEDP-10892](https://jiraeu.epam.com/browse/EPMDEDP-10892)
+- Set GitServer unavailable status if the ssh key is invalid [EPMDEDP-10914](https://jiraeu.epam.com/browse/EPMDEDP-10914)
 
 ### Code Refactoring
 
@@ -31,6 +37,9 @@
 
 - Update current development version [EPMDEDP-10274](https://jiraeu.epam.com/browse/EPMDEDP-10274)
 - Upgrade git package to version 2.36.3-r0 [EPMDEDP-10743](https://jiraeu.epam.com/browse/EPMDEDP-10743)
+- Update current development version [EPMDEDP-10805](https://jiraeu.epam.com/browse/EPMDEDP-10805)
+- Update Changelog [EPMDEDP-11010](https://jiraeu.epam.com/browse/EPMDEDP-11010)
+- Remove deprecated Dotnet 2.1 support [EPMDEDP-11024](https://jiraeu.epam.com/browse/EPMDEDP-11024)
 
 
 <a name="v2.13.1"></a>
