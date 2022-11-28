@@ -687,7 +687,9 @@ func initAuth(key, user string) (string, error) {
 	keyFileInfo, _ := keyFile.Stat()
 	keyFilePath := path.Join(os.TempDir(), keyFileInfo.Name())
 
-	if _, err = keyFile.WriteString(key); err != nil {
+	// write the key to the file with a new line at the end to avoid ssh errors on git commands
+	// if the new line already exists, adding the new line will not cause any issues
+	if _, err = keyFile.WriteString(fmt.Sprintf("%s%s", key, "\n")); err != nil {
 		return "", errors.Wrap(err, "unable to write ssh key")
 	}
 

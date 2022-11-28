@@ -3,10 +3,12 @@ package gitserver
 import (
 	"encoding/base64"
 	"errors"
+	"os"
 	"testing"
 
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/gitserver/mocks"
 	"github.com/epam/edp-codebase-operator/v2/pkg/controller/platform"
@@ -177,6 +179,55 @@ func Test_publicKey(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			_, err := publicKey(tt.key)
 			tt.wantErr(t, err)
+		})
+	}
+}
+
+func Test_initAuth(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		key     string
+		want    string
+		wantErr require.ErrorAssertionFunc
+	}{
+		{
+			name: "success without empty line in the end",
+			key: `-----KEY-----
+some-key
+-----END-----`,
+			want: `-----KEY-----
+some-key
+-----END-----
+`,
+			wantErr: require.NoError,
+		},
+		{
+			name: "success with empty line in the end",
+			key: `-----KEY-----
+some-key
+-----END-----
+`,
+			want: `-----KEY-----
+some-key
+-----END-----
+
+`,
+			wantErr: require.NoError,
+		},
+	}
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			got, err := initAuth(tt.key, "user")
+			tt.wantErr(t, err)
+
+			gotKey, err := os.ReadFile(got)
+			require.NoError(t, err)
+			assert.Equal(t, tt.want, string(gotKey))
 		})
 	}
 }
