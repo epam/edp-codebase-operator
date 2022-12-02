@@ -13,6 +13,7 @@ import (
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
@@ -302,4 +303,45 @@ func TestReconcileGitServer_InvalidSSHKey(t *testing.T) {
 	err = fakeCl.Get(context.Background(), req.NamespacedName, gotGitServer)
 	require.NoError(t, err)
 	assert.False(t, gotGitServer.Status.Available)
+}
+
+func TestNewReconcileGitServer(t *testing.T) {
+	t.Parallel()
+
+	type args struct {
+		c client.Client
+	}
+
+	tests := []struct {
+		name string
+		args args
+	}{
+		{
+			name: "should create new reconciler",
+			args: args{
+				c: fake.NewClientBuilder().
+					WithScheme(runtime.NewScheme()).
+					Build(),
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			log := logr.Discard()
+
+			want := &ReconcileGitServer{
+				client: tt.args.c,
+				log:    log,
+			}
+
+			got := NewReconcileGitServer(tt.args.c, log)
+
+			assert.Equal(t, want, got)
+		})
+	}
 }

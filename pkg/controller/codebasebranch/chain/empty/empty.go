@@ -22,7 +22,7 @@ func MakeChain(logMessage string, returnError bool) Chain {
 	}
 }
 
-func (e Chain) ServeRequest(*codebaseApi.CodebaseBranch) error {
+func (e Chain) ServeRequest(_ *codebaseApi.CodebaseBranch) error {
 	if e.returnError {
 		err := errors.New(e.logMessage)
 		log.Error(err, err.Error())

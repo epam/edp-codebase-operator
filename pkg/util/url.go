@@ -49,6 +49,7 @@ func tryGetRepoUrl(spec *codebaseApi.CodebaseSpec) (*string, error) {
 
 func BuildRepoUrl(spec *codebaseApi.CodebaseSpec) string {
 	log.Info("Start building repo url", "base url", GithubDomain, "spec", spec)
+
 	return strings.ToLower(fmt.Sprintf("%v/%v-%v-%v.git", GithubDomain, spec.Lang, spec.BuildTool,
 		getFrameworkOrDefault(spec)))
 }

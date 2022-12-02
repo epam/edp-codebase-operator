@@ -12,8 +12,8 @@ import (
 // case the caller should not continue.
 func GenerateRandomBytes(n int) ([]byte, error) {
 	b := make([]byte, n)
-	_, err := rand.Read(b)
 
+	_, err := rand.Read(b)
 	if err != nil {
 		return nil, fmt.Errorf("error reading from crypto/rand: %w", err)
 	}

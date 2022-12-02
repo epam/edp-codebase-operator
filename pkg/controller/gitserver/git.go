@@ -2,7 +2,6 @@ package gitserver
 
 import (
 	"fmt"
-	"io/ioutil"
 	netHttp "net/http"
 	"net/url"
 	"os"
@@ -284,7 +283,8 @@ func (*GitProvider) CheckPermissions(repo string, user, pass *string) (accessibl
 		Auth: &http.BasicAuth{
 			Username: *user,
 			Password: *pass,
-		}})
+		},
+	})
 	if err != nil {
 		log.Error(err, fmt.Sprintf("User %v do not have access to %v repository", user, repo))
 		return false
@@ -679,7 +679,7 @@ func isBranchExists(name string, branches storer.ReferenceIter) (bool, error) {
 func initAuth(key, user string) (string, error) {
 	log.Info("Initializing auth", "user", user)
 
-	keyFile, err := ioutil.TempFile("", "sshkey")
+	keyFile, err := os.CreateTemp("", "sshkey")
 	if err != nil {
 		return "", errors.Wrap(err, "unable to create temp file for ssh key")
 	}
@@ -824,10 +824,11 @@ func checkBranchExistence(user, pass *string, branchName string, r git.Repositor
 	glo := &git.ListOptions{}
 
 	if user != nil && pass != nil {
-		glo = &git.ListOptions{Auth: &http.BasicAuth{
-			Username: *user,
-			Password: *pass,
-		},
+		glo = &git.ListOptions{
+			Auth: &http.BasicAuth{
+				Username: *user,
+				Password: *pass,
+			},
 		}
 	}
 

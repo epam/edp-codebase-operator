@@ -6,10 +6,6 @@ import (
 )
 
 func SearchVersion(a []string, b string) bool {
-	if len(a) == 0 {
-		return false
-	}
-
 	for _, v := range a {
 		if v == b {
 			return true
@@ -27,10 +23,8 @@ func GetFieldsMap(payload string, keysToDelete []string) (map[string]interface{}
 		return nil, fmt.Errorf("failed to unmarshal json payload: %w", err)
 	}
 
-	for k := range requestPayload {
-		if keysToDelete != nil && ContainsString(keysToDelete, k) {
-			delete(requestPayload, k)
-		}
+	for _, key := range keysToDelete {
+		delete(requestPayload, key)
 	}
 
 	return requestPayload, nil

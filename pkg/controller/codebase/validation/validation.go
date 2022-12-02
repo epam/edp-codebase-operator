@@ -16,11 +16,15 @@ var allowedCodebaseSettings = map[string][]string{
 }
 
 func IsCodebaseValid(cr *codebaseApi.Codebase) bool {
-	if !(containSettings(allowedCodebaseSettings["add_repo_strategy"], string(cr.Spec.Strategy))) {
+	if !containSettings(allowedCodebaseSettings["add_repo_strategy"], string(cr.Spec.Strategy)) {
 		log.Info("Provided unsupported repository strategy", "strategy", string(cr.Spec.Strategy))
+
 		return false
-	} else if !(containSettings(allowedCodebaseSettings["language"], cr.Spec.Lang)) {
+	}
+
+	if !containSettings(allowedCodebaseSettings["language"], cr.Spec.Lang) {
 		log.Info("Provided unsupported language", "language", cr.Spec.Lang)
+
 		return false
 	}
 

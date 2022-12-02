@@ -6,37 +6,75 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const kindName = "stub-kind"
+func TestGetOwnerReference(t *testing.T) {
+	t.Parallel()
 
-func TestGetOwnerReference_ShouldFindOwner(t *testing.T) {
-	refs := []metaV1.OwnerReference{
+	type args struct {
+		ownerKind string
+		ors       []metav1.OwnerReference
+	}
+
+	tests := []struct {
+		name    string
+		args    args
+		want    *metav1.OwnerReference
+		wantErr require.ErrorAssertionFunc
+	}{
 		{
-			Kind: kindName,
+			name: "should find owner",
+			args: args{
+				ownerKind: "stub-kind",
+				ors: []metav1.OwnerReference{
+					{
+						Kind: "stub-kind",
+					},
+				},
+			},
+			want: &metav1.OwnerReference{
+				Kind: "stub-kind",
+			},
+			wantErr: require.NoError,
+		},
+		{
+			name: "should return error because of the nil refs",
+			args: args{
+				ownerKind: "stub-kind",
+				ors:       nil,
+			},
+			want:    nil,
+			wantErr: require.Error,
+		},
+		{
+			name: "should not find owner",
+			args: args{
+				ownerKind: "stub-kind",
+				ors: []metav1.OwnerReference{
+					{
+						Kind: "not-a-stub-kind",
+					},
+				},
+			},
+			want:    nil,
+			wantErr: require.Error,
 		},
 	}
-	ref, err := GetOwnerReference(kindName, refs)
-	assert.NoError(t, err)
-	assert.Equal(t, kindName, ref.Kind)
-}
 
-func TestGetOwnerReference_ShouldReturnErrorBecauseOfMissingOfPassedArg(t *testing.T) {
-	ref, err := GetOwnerReference(kindName, nil)
-	assert.Error(t, err)
-	assert.Nil(t, ref)
-}
+	for _, tt := range tests {
+		tt := tt
 
-func TestGetOwnerReference_ShouldNotFindOwner(t *testing.T) {
-	refs := []metaV1.OwnerReference{
-		{
-			Kind: "fake-another-kind",
-		},
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			got, err := GetOwnerReference(tt.args.ownerKind, tt.args.ors)
+
+			tt.wantErr(t, err)
+
+			assert.Equal(t, tt.want, got)
+		})
 	}
-	ref, err := GetOwnerReference(kindName, refs)
-	assert.Error(t, err)
-	assert.Nil(t, ref)
 }
 
 func TestGetWorkDir(t *testing.T) {
@@ -50,16 +88,28 @@ func TestGetWorkDir(t *testing.T) {
 		args args
 		want string
 	}{
-		{"1", args{codebaseName: "test", namespace: "stub-namespace"}, "/home/codebase-operator/edp/stub-namespace/test/templates/test"},
-		{"2", args{codebaseName: "cb-name", namespace: "stub-namespace"}, "/home/codebase-operator/edp/stub-namespace/cb-name/templates/cb-name"},
-		{"3", args{codebaseName: "demo", namespace: "stub-namespace"}, "/home/codebase-operator/edp/stub-namespace/demo/templates/demo"},
+		{
+			name: "1",
+			args: args{codebaseName: "test", namespace: "stub-namespace"},
+			want: "/home/codebase-operator/edp/stub-namespace/test/templates/test",
+		},
+		{
+			name: "2",
+			args: args{codebaseName: "cb-name", namespace: "stub-namespace"},
+			want: "/home/codebase-operator/edp/stub-namespace/cb-name/templates/cb-name",
+		},
+		{
+			name: "3",
+			args: args{codebaseName: "demo", namespace: "stub-namespace"},
+			want: "/home/codebase-operator/edp/stub-namespace/demo/templates/demo",
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := GetWorkDir(tt.args.codebaseName, tt.args.namespace); got != tt.want {
-				t.Errorf("GetWorkDir() = %v, want %v", got, tt.want)
-			}
+			got := GetWorkDir(tt.args.codebaseName, tt.args.namespace)
+
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
@@ -78,15 +128,23 @@ func TestGetWorkDir_WithCustomPathShouldWork(t *testing.T) {
 		args args
 		want string
 	}{
-		{"1", args{codebaseName: "test", namespace: "fake-ns"}, "/CUSTOM_PATH/codebase-operator/edp/fake-ns/test/templates/test"},
-		{"2", args{codebaseName: "cb-name", namespace: "fake-ns"}, "/CUSTOM_PATH/codebase-operator/edp/fake-ns/cb-name/templates/cb-name"},
+		{
+			name: "1",
+			args: args{codebaseName: "test", namespace: "fake-ns"},
+			want: "/CUSTOM_PATH/codebase-operator/edp/fake-ns/test/templates/test",
+		},
+		{
+			name: "2",
+			args: args{codebaseName: "cb-name", namespace: "fake-ns"},
+			want: "/CUSTOM_PATH/codebase-operator/edp/fake-ns/cb-name/templates/cb-name",
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := GetWorkDir(tt.args.codebaseName, tt.args.namespace); got != tt.want {
-				t.Errorf("GetWorkDir() = %v, want %v", got, tt.want)
-			}
+			got := GetWorkDir(tt.args.codebaseName, tt.args.namespace)
+
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }

@@ -7,35 +7,63 @@ import (
 )
 
 func TestCodebaseSpec_GetProjectID(t *testing.T) {
+	t.Parallel()
+
+	type fields struct {
+		GitUrlPath func() *string
+	}
+
 	tests := []struct {
-		name       string
-		gitUrlPath func() *string
-		want       string
+		name   string
+		fields fields
+		want   string
 	}{
 		{
-			name: "should remove prefix from git url",
-			gitUrlPath: func() *string {
-				p := "/group/proj1"
+			name: "should remove prefix from the git url",
+			fields: fields{
+				GitUrlPath: func() *string {
+					p := "/group/proj1"
 
-				return &p
+					return &p
+				},
 			},
 			want: "group/proj1",
 		},
 		{
 			name: "should skip prefix removal if git url doesn't contain prefix",
-			gitUrlPath: func() *string {
-				p := "group/proj1"
+			fields: fields{
+				GitUrlPath: func() *string {
+					p := "group/proj1"
 
-				return &p
+					return &p
+				},
 			},
 			want: "group/proj1",
+		},
+		{
+			name: "should return empty string if GitUrlPath returns nil",
+			fields: fields{
+				GitUrlPath: func() *string {
+					return nil
+				},
+			},
+			want: "",
 		},
 	}
 
 	for _, tt := range tests {
+		tt := tt
+
 		t.Run(tt.name, func(t *testing.T) {
-			c := &CodebaseSpec{GitUrlPath: tt.gitUrlPath()}
-			assert.Equal(t, tt.want, c.GetProjectID())
+			t.Parallel()
+
+			in := &CodebaseSpec{
+				GitUrlPath: tt.fields.GitUrlPath(),
+			}
+
+			got := in.GetProjectID()
+
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
