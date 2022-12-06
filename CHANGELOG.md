@@ -1,6 +1,9 @@
 <a name="unreleased"></a>
 ## [Unreleased]
 
+
+<a name="v2.14.0"></a>
+## [v2.14.0] - 2022-11-28
 ### Features
 
 - Add support for Tekton Tool [EPMDEDP-10641](https://jiraeu.epam.com/browse/EPMDEDP-10641)
@@ -22,6 +25,7 @@
 - Concurrent write ssh key to the same file [EPMDEDP-10892](https://jiraeu.epam.com/browse/EPMDEDP-10892)
 - Do not ignore git command errors [EPMDEDP-10892](https://jiraeu.epam.com/browse/EPMDEDP-10892)
 - Set GitServer unavailable status if the ssh key is invalid [EPMDEDP-10914](https://jiraeu.epam.com/browse/EPMDEDP-10914)
+- Add empty line to git server private key [EPMDEDP-10982](https://jiraeu.epam.com/browse/EPMDEDP-10982)
 
 ### Code Refactoring
 
@@ -40,6 +44,11 @@
 - Update current development version [EPMDEDP-10805](https://jiraeu.epam.com/browse/EPMDEDP-10805)
 - Update Changelog [EPMDEDP-11010](https://jiraeu.epam.com/browse/EPMDEDP-11010)
 - Remove deprecated Dotnet 2.1 support [EPMDEDP-11024](https://jiraeu.epam.com/browse/EPMDEDP-11024)
+
+### Documentation
+
+- Update Readme [EPMDEDP-11008](https://jiraeu.epam.com/browse/EPMDEDP-11008)
+- Update Readme [EPMDEDP-11008](https://jiraeu.epam.com/browse/EPMDEDP-11008)
 
 
 <a name="v2.13.1"></a>
@@ -272,7 +281,8 @@ Jenkins pipelines for code-review, build, create-release flow.
 - [MDTUDDM-673] Save git status in the intermediate operations
 
 
-[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.13.1...HEAD
+[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.14.0...HEAD
+[v2.14.0]: https://github.com/epam/edp-codebase-operator/compare/v2.13.1...v2.14.0
 [v2.13.1]: https://github.com/epam/edp-codebase-operator/compare/v2.13.0...v2.13.1
 [v2.13.0]: https://github.com/epam/edp-codebase-operator/compare/v2.12.0...v2.13.0
 [v2.12.0]: https://github.com/epam/edp-codebase-operator/compare/v2.11.0...v2.12.0
