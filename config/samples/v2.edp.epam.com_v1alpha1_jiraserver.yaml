@@ -1,0 +1,12 @@
+apiVersion: v2.edp.epam.com.edp.epam.com/v1alpha1
+kind: JiraServer
+metadata:
+  labels:
+    app.kubernetes.io/name: jiraserver
+    app.kubernetes.io/instance: jiraserver-sample
+    app.kubernetes.io/part-of: edp-codebase-operator
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: edp-codebase-operator
+  name: jiraserver-sample
+spec:
+  # TODO(user): Add fields here

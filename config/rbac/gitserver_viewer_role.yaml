@@ -1,0 +1,27 @@
+# permissions for end users to view gitservers.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: gitserver-viewer-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: edp-codebase-operator
+    app.kubernetes.io/part-of: edp-codebase-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: gitserver-viewer-role
+rules:
+- apiGroups:
+  - v2.edp.epam.com.edp.epam.com
+  resources:
+  - gitservers
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - v2.edp.epam.com.edp.epam.com
+  resources:
+  - gitservers/status
+  verbs:
+  - get

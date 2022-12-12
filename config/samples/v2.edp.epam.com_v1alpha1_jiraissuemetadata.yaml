@@ -1,0 +1,12 @@
+apiVersion: v2.edp.epam.com.edp.epam.com/v1alpha1
+kind: JiraIssueMetadata
+metadata:
+  labels:
+    app.kubernetes.io/name: jiraissuemetadata
+    app.kubernetes.io/instance: jiraissuemetadata-sample
+    app.kubernetes.io/part-of: edp-codebase-operator
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: edp-codebase-operator
+  name: jiraissuemetadata-sample
+spec:
+  # TODO(user): Add fields here

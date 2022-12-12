@@ -1,0 +1,31 @@
+# permissions for end users to edit jiraissuemetadata.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: jiraissuemetadata-editor-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: edp-codebase-operator
+    app.kubernetes.io/part-of: edp-codebase-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: jiraissuemetadata-editor-role
+rules:
+- apiGroups:
+  - v2.edp.epam.com.edp.epam.com
+  resources:
+  - jiraissuemetadata
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - v2.edp.epam.com.edp.epam.com
+  resources:
+  - jiraissuemetadata/status
+  verbs:
+  - get

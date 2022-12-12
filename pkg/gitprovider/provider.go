@@ -6,7 +6,7 @@ import (
 
 	"github.com/go-resty/resty/v2"
 
-	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 )
 
 // GitWebHookProvider is an interface for Git web hook provider.

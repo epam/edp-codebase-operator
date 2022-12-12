@@ -61,7 +61,7 @@ func TestSShInit_ShouldPass(t *testing.T) {
 	teardownSuite, idrsa := setupSuite(t)
 	defer teardownSuite(t)
 
-	g, err := SshInit(22, idrsa, "fake-host", logr.DiscardLogger{})
+	g, err := SshInit(22, idrsa, "fake-host", logr.Discard())
 	assert.NoError(t, err)
 	assert.Equal(t, g.Config.User, "project-creator")
 	assert.Equal(t, g.Host, "fake-host")
@@ -69,7 +69,7 @@ func TestSShInit_ShouldPass(t *testing.T) {
 }
 
 func TestSShInit_ShouldFailForIncorrectRSAPKey(t *testing.T) {
-	gc, err := SshInit(22, "idrsa", "fake-host", logr.DiscardLogger{})
+	gc, err := SshInit(22, "idrsa", "fake-host", logr.Discard())
 	assert.Error(t, err)
 	assert.Nil(t, gc)
 	assert.Contains(t, err.Error(), "Unable to get Public Key from Private one")
@@ -96,7 +96,7 @@ func TestAddRemoteLinkToGerrit_ShouldPass(t *testing.T) {
 		t.Error("Unable to create remote")
 	}
 
-	err = AddRemoteLinkToGerrit(dir, "fake-host", 22, "appName", logr.DiscardLogger{})
+	err = AddRemoteLinkToGerrit(dir, "fake-host", 22, "appName", logr.Discard())
 	assert.NoError(t, err)
 
 	b, err := os.ReadFile(fmt.Sprintf("%v/.git/config", dir))
@@ -120,7 +120,7 @@ func TestAddRemoteLinkToGerrit_ShouldPassWithErrRemoteNotFound(t *testing.T) {
 		t.Error("Unable to create test git repo")
 	}
 
-	err = AddRemoteLinkToGerrit(dir, "fake-host", 22, "appName", logr.DiscardLogger{})
+	err = AddRemoteLinkToGerrit(dir, "fake-host", 22, "appName", logr.Discard())
 	assert.NoError(t, err)
 
 	b, err := os.ReadFile(fmt.Sprintf("%v/.git/config", dir))
@@ -144,7 +144,7 @@ func TestAddRemoteLinkToGerrit_ShouldFail(t *testing.T) {
 		t.Error("Unable to create test git repo")
 	}
 
-	err = AddRemoteLinkToGerrit(dir, "fake-host", 22, "appName", logr.DiscardLogger{})
+	err = AddRemoteLinkToGerrit(dir, "fake-host", 22, "appName", logr.Discard())
 	assert.NoError(t, err)
 
 	b, err := os.ReadFile(fmt.Sprintf("%v/.git/config", dir))
@@ -156,7 +156,7 @@ func TestAddRemoteLinkToGerrit_ShouldFail(t *testing.T) {
 }
 
 func TestAddRemoteLinkToGerrit_ShouldFailToOpenGit(t *testing.T) {
-	err := AddRemoteLinkToGerrit("/tmp/1", "fake-host", 22, "appName", logr.DiscardLogger{})
+	err := AddRemoteLinkToGerrit("/tmp/1", "fake-host", 22, "appName", logr.Discard())
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "Unable to open Git directory")
 }
@@ -184,7 +184,7 @@ func TestSetupProjectReplication_ShouldFailToReloadGerritPlugin(t *testing.T) {
 	require.NoError(t, err)
 
 	err = SetupProjectReplication(fakeCl, 22, "gerrit", idrsa, "fake-name",
-		"fake-namespace", "vcs", logr.DiscardLogger{})
+		"fake-namespace", "vcs", logr.Discard())
 	//TODO: mock sshclient and implement test that passes
 	assert.Error(t, err)
 
@@ -201,7 +201,7 @@ func TestSetupProjectReplication_ShouldFailToGetReplicationConfig(t *testing.T) 
 	require.NoError(t, err)
 
 	err = SetupProjectReplication(fakeCl, 22, "gerrit", "idrsa", "fake-name",
-		"fake-namespace", "vcs", logr.DiscardLogger{})
+		"fake-namespace", "vcs", logr.Discard())
 	assert.Error(t, err)
 
 	if !strings.Contains(err.Error(), "Uable to generate replication config") {
@@ -221,7 +221,7 @@ func TestSetupProjectReplication_ShouldFailToGetConfigmap(t *testing.T) {
 	require.NoError(t, err)
 
 	err = SetupProjectReplication(fakeCl, 22, "gerrit", "idrsa", "fake-name",
-		"fake-namespace", "vcs", logr.DiscardLogger{})
+		"fake-namespace", "vcs", logr.Discard())
 
 	assert.Error(t, err)
 
@@ -247,7 +247,7 @@ func TestSetupProjectReplication_ShouldFailToParseConfigmap(t *testing.T) {
 	require.NoError(t, err)
 
 	err = SetupProjectReplication(fakeCl, 22, "gerrit", "idrsa", "fake-name",
-		"fake-namespace", "vcs", logr.DiscardLogger{})
+		"fake-namespace", "vcs", logr.Discard())
 
 	assert.Error(t, err)
 
@@ -257,13 +257,13 @@ func TestSetupProjectReplication_ShouldFailToParseConfigmap(t *testing.T) {
 }
 
 func TestReloadReplicationPlugin_ShouldFailToParseRSAKey(t *testing.T) {
-	err := reloadReplicationPlugin(22, "wrong-format-pkey", "host", logr.DiscardLogger{})
+	err := reloadReplicationPlugin(22, "wrong-format-pkey", "host", logr.Discard())
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "Unable to get Public Key from Private one")
 }
 
 func TestCreateProject_ShouldFailToParseRSAKey(t *testing.T) {
-	err := CreateProject(22, "wrong-format-pkey", "host", "appName", logr.DiscardLogger{})
+	err := CreateProject(22, "wrong-format-pkey", "host", "appName", logr.Discard())
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "Unable to get Public Key from Private one")
 }
@@ -272,13 +272,13 @@ func TestCreateProject_ShouldFailToRunCommand(t *testing.T) {
 	teardownSuite, idrsa := setupSuite(t)
 	defer teardownSuite(t)
 
-	err := CreateProject(22, idrsa, "host", "appName", logr.DiscardLogger{})
+	err := CreateProject(22, idrsa, "host", "appName", logr.Discard())
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to dial")
 }
 
 func TestSetHeadToBranch_ShouldFailToParseRSAKey(t *testing.T) {
-	err := SetHeadToBranch(22, "wrong-format-pkey", "host", "appName", "defBranch", logr.DiscardLogger{})
+	err := SetHeadToBranch(22, "wrong-format-pkey", "host", "appName", "defBranch", logr.Discard())
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "Unable to get Public Key from Private one")
 }
@@ -287,13 +287,13 @@ func TestSetHeadToBranch_ShouldFailToRunCommand(t *testing.T) {
 	teardownSuite, idrsa := setupSuite(t)
 	defer teardownSuite(t)
 
-	err := SetHeadToBranch(22, idrsa, "host", "appName", "defBranch", logr.DiscardLogger{})
+	err := SetHeadToBranch(22, idrsa, "host", "appName", "defBranch", logr.Discard())
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to dial")
 }
 
 func TestCheckProjectExist_ShouldFailToParseRSAKey(t *testing.T) {
-	e, err := CheckProjectExist(22, "wrong-format-pkey", "host", "appName", logr.DiscardLogger{})
+	e, err := CheckProjectExist(22, "wrong-format-pkey", "host", "appName", logr.Discard())
 	assert.Error(t, err)
 	assert.Nil(t, e)
 	assert.Contains(t, err.Error(), "Unable to get Public Key from Private one")
@@ -303,7 +303,7 @@ func TestCheckProjectExist_ShouldFailToRunCommand(t *testing.T) {
 	teardownSuite, idrsa := setupSuite(t)
 	defer teardownSuite(t)
 
-	e, err := CheckProjectExist(22, idrsa, "host", "appName", logr.DiscardLogger{})
+	e, err := CheckProjectExist(22, idrsa, "host", "appName", logr.Discard())
 	assert.Error(t, err)
 	assert.Nil(t, e)
 	assert.Contains(t, err.Error(), "failed to dial")

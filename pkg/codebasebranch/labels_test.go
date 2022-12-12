@@ -10,7 +10,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 )
 
 func TestAddCodebaseLabel_OK(t *testing.T) {
@@ -32,7 +32,7 @@ func TestAddCodebaseLabel_OK(t *testing.T) {
 	}
 
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, codebaseBranch)
+	scheme.AddKnownTypes(codebaseApi.GroupVersion, codebaseBranch)
 	fakeK8sClient := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(codebaseBranch).Build()
 
 	err := AddCodebaseLabel(ctx, fakeK8sClient, codebaseBranch, cbName_1)
@@ -74,7 +74,7 @@ func TestAddCodebaseLabel_LabelExists(t *testing.T) {
 	}
 
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(codebaseApi.SchemeGroupVersion, codebaseBranch)
+	scheme.AddKnownTypes(codebaseApi.GroupVersion, codebaseBranch)
 	fakeK8sClient := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(codebaseBranch).Build()
 
 	err := AddCodebaseLabel(ctx, fakeK8sClient, codebaseBranch, cbName_1)

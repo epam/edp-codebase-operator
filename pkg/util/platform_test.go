@@ -5,18 +5,15 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/apps/v1"
 	coreV1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
-	k8sMockClient "github.com/epam/edp-common/pkg/mock/controller-runtime/client"
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	edpComponentApi "github.com/epam/edp-component-operator/pkg/apis/v1/v1"
 )
 
@@ -85,38 +82,6 @@ func TestGetGerritPort_ShouldNotFound(t *testing.T) {
 	}
 }
 
-func TestGetGerritPort_ShouldFailToGetPort(t *testing.T) {
-	mc := k8sMockClient.Client{}
-
-	gs := &codebaseApi.GitServer{
-		ObjectMeta: metaV1.ObjectMeta{
-			Name:      "stub-gerrit",
-			Namespace: "stub-namespace",
-		},
-		Spec: codebaseApi.GitServerSpec{
-			SshPort: 22,
-		},
-	}
-
-	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1.SchemeGroupVersion, gs)
-
-	mockErr := errors.New("FATAL")
-
-	mc.On("Get", types.NamespacedName{
-		Namespace: "stub-namespace",
-		Name:      "gerrit",
-	}, &codebaseApi.GitServer{}).Return(mockErr)
-
-	port, err := GetGerritPort(&mc, "stub-namespace")
-	assert.Nil(t, port)
-	assert.Error(t, err)
-
-	if errors.Cause(err) != mockErr {
-		t.Fatal("wrong error returned")
-	}
-}
-
 func TestGetEdpComponent_ShouldPass(t *testing.T) {
 	c := &edpComponentApi.EDPComponent{
 		ObjectMeta: metaV1.ObjectMeta{
@@ -135,36 +100,6 @@ func TestGetEdpComponent_ShouldPass(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestGetEdpComponent_ShouldFail(t *testing.T) {
-	mc := k8sMockClient.Client{}
-
-	c := &edpComponentApi.EDPComponent{
-		ObjectMeta: metaV1.ObjectMeta{
-			Name:      "stub-name",
-			Namespace: "stub-namespace",
-		},
-		Spec: edpComponentApi.EDPComponentSpec{},
-	}
-
-	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1.SchemeGroupVersion, c)
-
-	mockErr := errors.New("FATAL")
-
-	mc.On("Get", types.NamespacedName{
-		Namespace: "stub-namespace",
-		Name:      "stub-name",
-	}, &edpComponentApi.EDPComponent{}).Return(mockErr)
-
-	edc, err := GetEdpComponent(&mc, "stub-name", "stub-namespace")
-	assert.Error(t, err)
-	assert.Nil(t, edc)
-
-	if errors.Cause(err) != mockErr {
-		t.Fatal("wrong error returned")
-	}
-}
-
 func TestGetCodebase_ShouldPass(t *testing.T) {
 	c := &codebaseApi.Codebase{
 		ObjectMeta: metaV1.ObjectMeta{
@@ -181,36 +116,6 @@ func TestGetCodebase_ShouldPass(t *testing.T) {
 	cb, err := GetCodebase(fakeCl, "stub-name", "stub-namespace")
 	assert.Equal(t, cb.Name, "stub-name")
 	assert.NoError(t, err)
-}
-
-func TestGetCodebase_ShouldFail(t *testing.T) {
-	mc := k8sMockClient.Client{}
-
-	c := &codebaseApi.Codebase{
-		ObjectMeta: metaV1.ObjectMeta{
-			Name:      "stub-name",
-			Namespace: "stub-namespace",
-		},
-		Spec: codebaseApi.CodebaseSpec{},
-	}
-
-	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1.SchemeGroupVersion, c)
-
-	mockErr := errors.New("FATAL")
-
-	mc.On("Get", types.NamespacedName{
-		Namespace: "stub-namespace",
-		Name:      "stub-name",
-	}, &codebaseApi.Codebase{}).Return(mockErr)
-
-	cb, err := GetCodebase(&mc, "stub-name", "stub-namespace")
-	assert.Error(t, err)
-	assert.Nil(t, cb)
-
-	if errors.Cause(err) != mockErr {
-		t.Fatal("wrong error returned")
-	}
 }
 
 func TestGetSecret_ShouldPass(t *testing.T) {

@@ -1,0 +1,249 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: manager-role
+rules:
+- apiGroups:
+  - v2.edp.epam.com.edp.epam.com
+  resources:
+  - jiraissuemetadata
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - v2.edp.epam.com.edp.epam.com
+  resources:
+  - jiraissuemetadata/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - v2.edp.epam.com.edp.epam.com
+  resources:
+  - jiraissuemetadata/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - v2.edp.epam.com.edp.epam.com
+  resources:
+  - jiraservers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - v2.edp.epam.com.edp.epam.com
+  resources:
+  - jiraservers/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - v2.edp.epam.com.edp.epam.com
+  resources:
+  - jiraservers/status
+  verbs:
+  - get
+  - patch
+  - update
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  creationTimestamp: null
+  name: manager-role
+  namespace: placeholder
+rules:
+- apiGroups:
+  - v2.edp.epam.com.edp.epam.com
+  resources:
+  - cdstagedeploys
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - v2.edp.epam.com.edp.epam.com
+  resources:
+  - cdstagedeploys/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - v2.edp.epam.com.edp.epam.com
+  resources:
+  - cdstagedeploys/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - v2.edp.epam.com.edp.epam.com
+  resources:
+  - codebasebranches
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - v2.edp.epam.com.edp.epam.com
+  resources:
+  - codebasebranches/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - v2.edp.epam.com.edp.epam.com
+  resources:
+  - codebasebranches/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - v2.edp.epam.com.edp.epam.com
+  resources:
+  - codebaseimagestreams
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - v2.edp.epam.com.edp.epam.com
+  resources:
+  - codebaseimagestreams/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - v2.edp.epam.com.edp.epam.com
+  resources:
+  - codebaseimagestreams/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - v2.edp.epam.com.edp.epam.com
+  resources:
+  - codebases
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - v2.edp.epam.com.edp.epam.com
+  resources:
+  - codebases/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - v2.edp.epam.com.edp.epam.com
+  resources:
+  - codebases/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - v2.edp.epam.com.edp.epam.com
+  resources:
+  - gitservers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - v2.edp.epam.com.edp.epam.com
+  resources:
+  - gitservers/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - v2.edp.epam.com.edp.epam.com
+  resources:
+  - gitservers/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - v2.edp.epam.com.edp.epam.com
+  resources:
+  - gittags
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - v2.edp.epam.com.edp.epam.com
+  resources:
+  - gittags/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - v2.edp.epam.com.edp.epam.com
+  resources:
+  - gittags/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - v2.edp.epam.com.edp.epam.com
+  resources:
+  - imagestreamtags
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - v2.edp.epam.com.edp.epam.com
+  resources:
+  - imagestreamtags/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - v2.edp.epam.com.edp.epam.com
+  resources:
+  - imagestreamtags/status
+  verbs:
+  - get
+  - patch
+  - update
