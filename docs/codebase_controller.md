@@ -6,7 +6,7 @@ The main purpose of a codebase controller is to watch changes in the respective 
  
 Explore the main steps performed in the reconcile loop on the diagram below:
 
-![arch](http://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/epam/edp-codebase-operator/master/documentation/puml/codebase_chain.puml)
+![arch](http://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/epam/edp-codebase-operator/master/docs/puml/codebase_chain.puml)
                                                    
 There are three strategies: import, create and clone. Selecting the strategy depends on the project needs. 
 The diagram above displays two branches (flows) that represents the difference between the strategies:
@@ -43,4 +43,4 @@ enabled if the vcs_integration_enabled field in the edp-config config map is set
 
 ### Related Articles
 
-- [Codebase Branch Controller](../documentation/codebase_branch_controller.md)
+- [Codebase Branch Controller](codebase_branch_controller.md)

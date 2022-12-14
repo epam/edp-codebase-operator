@@ -55,10 +55,10 @@ Development versions are also available, please refer to the [snapshot helm char
 
 ### Related Articles
 
-- [Architecture Scheme of Codebase Operator](documentation/arch.md)
-- [Codebase Controller Overview](documentation/codebase_controller.md)
-- [Codebase Branch Controller](documentation/codebase_branch_controller.md)
+- [Architecture Scheme of Codebase Operator](docs/arch.md)
+- [Codebase Controller Overview](docs/codebase_controller.md)
+- [Codebase Branch Controller](docs/codebase_branch_controller.md)
 - [Install EDP](https://epam.github.io/edp-install/operator-guide/install-edp/)
-- [Git Server Controller](documentation/git_server_controller.md)
-- [Jira Server Controller](documentation/jira_server_controller.md)
-- [Jira Issue Metadata Controller](documentation/jira_issue_metadata_controller.md)
+- [Git Server Controller](docs/git_server_controller.md)
+- [Jira Server Controller](docs/jira_server_controller.md)
+- [Jira Issue Metadata Controller](docs/jira_issue_metadata_controller.md)

@@ -8,7 +8,7 @@ The main purpose of a Jira Issue Metadata controller is to watch changes in the 
  
 Inspect the main steps performed in the reconcile loop on the diagram below:
 
-![arch](http://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/epam/edp-codebase-operator/master/documentation/puml/jira_issue_metadata.puml&raw=true)
+![arch](http://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/epam/edp-codebase-operator/master/docs/puml/jira_issue_metadata.puml&raw=true)
 
 The diagram above displays the following steps:
 
