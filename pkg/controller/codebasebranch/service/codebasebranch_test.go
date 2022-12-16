@@ -9,6 +9,7 @@ import (
 	"github.com/jarcoal/httpmock"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/apps/v1"
 	coreV1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -52,7 +53,9 @@ func TestCodebaseBranchService_TriggerReleaseJob(t *testing.T) {
 	httpmock.RegisterResponder("GET", "http://jenkins.:8080/api/json",
 		httpmock.NewStringResponder(200, ""))
 
-	jrsp := gojenkins.JobResponse{}
+	jrsp := gojenkins.JobResponse{
+		Color: jenkinsJobSuccessStatus,
+	}
 
 	httpmock.RegisterResponder("GET", "http://jenkins.:8080/job/codebase/job/Create-release-codebase/api/json",
 		httpmock.NewJsonResponderOrPanic(200, &jrsp))
@@ -70,6 +73,60 @@ func TestCodebaseBranchService_TriggerReleaseJob(t *testing.T) {
 	if err := svc.TriggerReleaseJob(&cb); err != nil {
 		t.Fatalf("%+v", err)
 	}
+}
+
+func TestCodebaseBranchService_TriggerReleaseJobFailedJob(t *testing.T) {
+	codebaseBranch := codebaseApi.CodebaseBranch{
+		Spec: codebaseApi.CodebaseBranchSpec{
+			CodebaseName: "codebase",
+			ReleaseJobParams: map[string]string{
+				"codebaseName": "RELEASE_NAME",
+				"fromCommit":   "COMMIT_ID",
+				"gitServer":    "GIT_SERVER",
+			},
+		},
+		Status: codebaseApi.CodebaseBranchStatus{
+			Status: model.StatusInit,
+		},
+	}
+	codebase := codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
+			Name: "codebase",
+		},
+	}
+
+	secret := coreV1.Secret{}
+	jenkins := jenkinsApi.Jenkins{}
+	scheme.Scheme.AddKnownTypes(v1.SchemeGroupVersion, &codebaseBranch, &jenkins, &jenkinsApi.JenkinsList{}, &codebase)
+	cl := fake.NewClientBuilder().WithRuntimeObjects(&codebaseBranch, &jenkins, &secret, &codebase).Build()
+	svc := CodebaseBranchServiceProvider{
+		Client: cl,
+	}
+
+	httpmock.Activate()
+	httpmock.RegisterResponder("GET", "http://jenkins.:8080/api/json",
+		httpmock.NewStringResponder(200, ""))
+
+	jobResponse := gojenkins.JobResponse{
+		Color: "red",
+	}
+
+	httpmock.RegisterResponder("GET", "http://jenkins.:8080/job/codebase/job/Create-release-codebase/api/json",
+		httpmock.NewJsonResponderOrPanic(200, &jobResponse))
+	httpmock.RegisterResponder("GET", "http://jenkins.:8080/crumbIssuer/api/json/api/json",
+		httpmock.NewStringResponder(404, ""))
+
+	buildRsp := httpmock.NewStringResponse(200, "")
+	buildRsp.Header.Add("Location", "/1")
+
+	httpmock.RegisterResponder("POST", "http://jenkins.:8080/job/codebase/job/Create-release-codebase/build",
+		func(request *http.Request) (*http.Response, error) {
+			return buildRsp, nil
+		})
+
+	err := svc.TriggerReleaseJob(&codebaseBranch)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to create release, job status: red")
 }
 
 func TestCodebaseBranchService_TriggerDeletionJob(t *testing.T) {

@@ -108,6 +108,20 @@ func (gp *GitProvider) CreateRemoteBranch(key, user, p, name, fromcommit string,
 		return fmt.Errorf(errPlainOpenTmpl, p, err)
 	}
 
+	ref, err := r.Head()
+	if err != nil {
+		return fmt.Errorf("failed to get git HEAD reference: %w", err)
+	}
+
+	if fromcommit != "" {
+		_, err = r.CommitObject(plumbing.NewHash(fromcommit))
+		if err != nil {
+			return fmt.Errorf("failed to get commit %s: %w", fromcommit, err)
+		}
+
+		ref = plumbing.NewReferenceFromStrings(name, fromcommit)
+	}
+
 	branches, err := r.Branches()
 	if err != nil {
 		return fmt.Errorf("failed to get branches iterator: %w", err)
@@ -121,19 +135,6 @@ func (gp *GitProvider) CreateRemoteBranch(key, user, p, name, fromcommit string,
 	if exists {
 		log.Info("branch already exists. skip creating", logBranchNameKey, name)
 		return nil
-	}
-
-	ref, err := r.Head()
-	if err != nil {
-		return fmt.Errorf("failed to get git HEAD reference: %w", err)
-	}
-
-	if fromcommit != "" {
-		ref = plumbing.NewReferenceFromStrings(name, fromcommit)
-
-		if err != nil {
-			return fmt.Errorf("failed to create a reference from name: %w", err)
-		}
 	}
 
 	newRef := plumbing.NewReferenceFromStrings(fmt.Sprintf("refs/heads/%v", name), ref.Hash().String())
