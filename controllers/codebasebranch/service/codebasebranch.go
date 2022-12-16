@@ -125,9 +125,7 @@ func (s *CodebaseBranchServiceProvider) TriggerReleaseJob(cb *codebaseApi.Codeba
 	}
 
 	if js != jenkinsJobSuccessStatus {
-		rLog.Info("failed to create release", "release job status", js)
-
-		return nil
+		return fmt.Errorf("failed to create release, job status: %s", js)
 	}
 
 	rLog.Info("release has been created", "status", model.StatusFinished)
