@@ -6,6 +6,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/epam/edp-codebase-operator/v2/controllers/codebasebranch/chain"
 	"github.com/epam/edp-codebase-operator/v2/controllers/codebasebranch/chain/clean_tmp_directory"
 	"github.com/epam/edp-codebase-operator/v2/controllers/codebasebranch/chain/empty"
 	"github.com/epam/edp-codebase-operator/v2/controllers/codebasebranch/chain/handler"
@@ -23,17 +24,22 @@ var log = ctrl.Log.WithName("codebase_branch_factory")
 func createJenkinsDefChain(c client.Client) handler.CodebaseBranchHandler {
 	log.Info("chain is selected", "type", "jenkins chain")
 
-	return trigger_job.TriggerReleaseJob{
-		TriggerJob: trigger_job.TriggerJob{
-			Client: c,
-			Service: &service.CodebaseBranchServiceProvider{
+	return chain.CheckCommitHashExists{
+		Client: c,
+		Git:    &gitserver.GitProvider{},
+		Log:    ctrl.Log.WithName("check_commit_hash_exists"),
+		Next: trigger_job.TriggerReleaseJob{
+			TriggerJob: trigger_job.TriggerJob{
 				Client: c,
-			},
-			Next: update_perf_data_sources.UpdatePerfDataSources{
-				Client: c,
-				Next: put_codebase_image_stream.PutCodebaseImageStream{
+				Service: &service.CodebaseBranchServiceProvider{
 					Client: c,
-					Next:   &clean_tmp_directory.CleanTempDirectory{},
+				},
+				Next: update_perf_data_sources.UpdatePerfDataSources{
+					Client: c,
+					Next: put_codebase_image_stream.PutCodebaseImageStream{
+						Client: c,
+						Next:   &clean_tmp_directory.CleanTempDirectory{},
+					},
 				},
 			},
 		},

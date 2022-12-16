@@ -75,3 +75,9 @@ func (m *MockGit) RemoveBranch(directory, branchName string) error {
 func (m *MockGit) RenameBranch(directory, currentName, newName string) error {
 	return m.Called(directory, currentName, newName).Error(0)
 }
+
+func (m *MockGit) CommitExists(directory, hash string) (bool, error) {
+	args := m.Called(directory, hash)
+
+	return args.Bool(0), args.Error(1)
+}

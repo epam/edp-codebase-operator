@@ -168,6 +168,7 @@ const (
 	PutBranchForGitlabCiCodebase     ActionType = "put_branch_for_gitlab_ci_codebase"
 	PutCodebaseImageStream           ActionType = "put_codebase_image_stream"
 	TriggerReleaseJob                ActionType = "trigger_release_job"
+	CheckCommitHashExists            ActionType = "check_commit_hash_exists"
 	TriggerDeletionJob               ActionType = "trigger_deletion_job"
 	PerfDataSourceCrUpdate           ActionType = "perf_data_source_cr_update"
 )

@@ -149,12 +149,12 @@ func (r *ReconcileCodebaseBranch) Reconcile(ctx context.Context, request reconci
 
 		log.Error(err, "an error has occurred while handling codebase branch", "name", cb.Name)
 
-		switch err.(type) {
-		case *util.CodebaseBranchReconcileError:
+		reconcileErr := util.NewCodebaseBranchReconcileError("error")
+		if errors.As(err, &reconcileErr) {
 			return reconcile.Result{RequeueAfter: defaultPostponeTime}, nil
-		default:
-			return reconcile.Result{}, fmt.Errorf("failed to process default chain: %w", err)
 		}
+
+		return reconcile.Result{RequeueAfter: r.setFailureCount(cb)}, fmt.Errorf("failed to process default chain: %w", err)
 	}
 
 	if err := r.setSuccessStatus(ctx, cb, codebaseApi.CIConfiguration); err != nil {
@@ -185,6 +185,10 @@ func (r *ReconcileCodebaseBranch) setSuccessStatus(ctx context.Context, cb *code
 
 func (r *ReconcileCodebaseBranch) updateStatus(ctx context.Context, cb *codebaseApi.CodebaseBranch) error {
 	if err := r.client.Status().Update(ctx, cb); err != nil {
+		if err != nil {
+			r.log.Error(err, "failed to update CodebaseBranch status", "name", cb.Name)
+		}
+
 		if err := r.client.Update(ctx, cb); err != nil {
 			return errors.Wrap(err, "ReconcileCodebaseBranch: couldn't update codebase branch status")
 		}

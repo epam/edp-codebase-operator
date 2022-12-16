@@ -1,6 +1,7 @@
 package gitserver
 
 import (
+	goerrors "errors"
 	"fmt"
 	netHttp "net/http"
 	"net/url"
@@ -77,6 +78,7 @@ type Git interface {
 	RemoveBranch(directory, branchName string) error
 	RenameBranch(directory, currentName, newName string) error
 	CreateChildBranch(directory, currentBranch, newBranch string) error
+	CommitExists(directory, hash string) (bool, error)
 }
 
 type Command interface {
@@ -658,6 +660,25 @@ func (*GitProvider) CheckoutRemoteBranchBySSH(key, user, gitPath, remoteBranchNa
 	log.Info("end checkout to", "branch", remoteBranchName)
 
 	return nil
+}
+
+// CommitExists checks if a commit exists in the repository.
+func (*GitProvider) CommitExists(directory, hash string) (bool, error) {
+	r, err := git.PlainOpen(directory)
+	if err != nil {
+		return false, fmt.Errorf(errPlainOpenTmpl, directory, err)
+	}
+
+	commit, err := r.CommitObject(plumbing.NewHash(hash))
+	if err != nil {
+		if goerrors.Is(err, plumbing.ErrObjectNotFound) {
+			return false, nil
+		}
+
+		return false, fmt.Errorf("failed to get commit object: %w", err)
+	}
+
+	return commit != nil, nil
 }
 
 func isBranchExists(name string, branches storer.ReferenceIter) (bool, error) {

@@ -15,3 +15,8 @@ func HasNewVersion(codebaseBranch *codebaseApi.CodebaseBranch) (bool, error) {
 
 	return !util.SearchVersion(codebaseBranch.Status.VersionHistory, *codebaseBranch.Spec.Version), nil
 }
+
+// DirectoryExistsNotEmpty checks if directory exists and not empty.
+func DirectoryExistsNotEmpty(path string) bool {
+	return util.DoesDirectoryExist(path) && !util.IsDirectoryEmpty(path)
+}
