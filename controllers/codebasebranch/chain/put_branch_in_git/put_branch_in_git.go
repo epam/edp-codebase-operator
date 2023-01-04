@@ -144,6 +144,7 @@ func setFailedFields(cb *codebaseApi.CodebaseBranch, a codebaseApi.ActionType, m
 		VersionHistory:      cb.Status.VersionHistory,
 		LastSuccessfulBuild: cb.Status.LastSuccessfulBuild,
 		Build:               cb.Status.Build,
+		FailureCount:        cb.Status.FailureCount,
 	}
 }
 
