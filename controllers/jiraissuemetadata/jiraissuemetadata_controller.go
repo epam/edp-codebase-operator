@@ -83,9 +83,9 @@ func (r *ReconcileJiraIssueMetadata) SetupWithManager(mgr ctrl.Manager) error {
 	return nil
 }
 
-//+kubebuilder:rbac:groups=v2.edp.epam.com.edp.epam.com,resources=jiraissuemetadata,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=v2.edp.epam.com.edp.epam.com,resources=jiraissuemetadata/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=v2.edp.epam.com.edp.epam.com,resources=jiraissuemetadata/finalizers,verbs=update
+//+kubebuilder:rbac:groups=v2.edp.epam.com,resources=jiraissuemetadatas,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=v2.edp.epam.com,resources=jiraissuemetadatas/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=v2.edp.epam.com,resources=jiraissuemetadatas/finalizers,verbs=update
 
 // Reconcile reads that state of the cluster for a JiraIssueMetadata object and makes changes based on the state.
 func (r *ReconcileJiraIssueMetadata) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {

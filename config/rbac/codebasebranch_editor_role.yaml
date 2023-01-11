@@ -12,7 +12,7 @@ metadata:
   name: codebasebranch-editor-role
 rules:
 - apiGroups:
-  - v2.edp.epam.com.edp.epam.com
+  - v2.edp.epam.com
   resources:
   - codebasebranches
   verbs:
@@ -24,7 +24,7 @@ rules:
   - update
   - watch
 - apiGroups:
-  - v2.edp.epam.com.edp.epam.com
+  - v2.edp.epam.com
   resources:
   - codebasebranches/status
   verbs:

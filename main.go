@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"os"
 	"strconv"
@@ -34,6 +35,7 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/controllers/jiraissuemetadata"
 	"github.com/epam/edp-codebase-operator/v2/controllers/jiraserver"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
+	"github.com/epam/edp-codebase-operator/v2/pkg/webhook"
 	buildInfo "github.com/epam/edp-common/pkg/config"
 	edpCompApi "github.com/epam/edp-component-operator/pkg/apis/v1/v1"
 	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
@@ -128,59 +130,68 @@ func main() {
 	ctrlLog := ctrl.Log.WithName("controllers")
 
 	cdStageDeployCtrl := cdstagedeploy.NewReconcileCDStageDeploy(mgr.GetClient(), mgr.GetScheme(), ctrlLog)
-	if err := cdStageDeployCtrl.SetupWithManager(mgr); err != nil {
+	if err = cdStageDeployCtrl.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "cd-stage-deploy")
 		os.Exit(1)
 	}
 
 	codebaseCtrl := codebase.NewReconcileCodebase(mgr.GetClient(), mgr.GetScheme(), ctrlLog)
-	if err := codebaseCtrl.SetupWithManager(mgr); err != nil {
+	if err = codebaseCtrl.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "codebase")
 		os.Exit(1)
 	}
 
 	cbCtrl := codebasebranch.NewReconcileCodebaseBranch(mgr.GetClient(), mgr.GetScheme(), ctrlLog)
-	if err := cbCtrl.SetupWithManager(mgr,
+	if err = cbCtrl.SetupWithManager(mgr,
 		getMaxConcurrentReconciles(codebaseBranchMaxConcurrentReconcilesEnv)); err != nil {
 		setupLog.Error(err, logFailCtrlCreateMessage, "controller", "codebase-branch")
 		os.Exit(1)
 	}
 
 	cisCtrl := codebaseimagestream.NewReconcileCodebaseImageStream(mgr.GetClient(), ctrlLog)
-	if err := cisCtrl.SetupWithManager(mgr); err != nil {
+	if err = cisCtrl.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, logFailCtrlCreateMessage, "controller", "codebase-image-stream")
 		os.Exit(1)
 	}
 
 	gitServerCtrl := gitserver.NewReconcileGitServer(mgr.GetClient(), ctrlLog)
-	if err := gitServerCtrl.SetupWithManager(mgr); err != nil {
+	if err = gitServerCtrl.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, logFailCtrlCreateMessage, "controller", "git-server")
 		os.Exit(1)
 	}
 
 	gitTagCtrl := gittag.NewReconcileGitTag(mgr.GetClient(), ctrlLog)
-	if err := gitTagCtrl.SetupWithManager(mgr); err != nil {
+	if err = gitTagCtrl.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, logFailCtrlCreateMessage, "controller", "git-tag")
 		os.Exit(1)
 	}
 
 	istCtrl := imagestreamtag.NewReconcileImageStreamTag(mgr.GetClient(), ctrlLog)
-	if err := istCtrl.SetupWithManager(mgr); err != nil {
+	if err = istCtrl.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, logFailCtrlCreateMessage, "controller", "image-stream-tag")
 		os.Exit(1)
 	}
 
 	jimCtrl := jiraissuemetadata.NewReconcileJiraIssueMetadata(mgr.GetClient(), mgr.GetScheme(), ctrlLog)
-	if err := jimCtrl.SetupWithManager(mgr); err != nil {
+	if err = jimCtrl.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, logFailCtrlCreateMessage, "controller", "jira-issue-metadata")
 		os.Exit(1)
 	}
 
 	jsCtrl := jiraserver.NewReconcileJiraServer(mgr.GetClient(), mgr.GetScheme(), ctrlLog)
-	if err := jsCtrl.SetupWithManager(mgr); err != nil {
+	if err = jsCtrl.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, logFailCtrlCreateMessage, "controller", "jira-server")
 		os.Exit(1)
 	}
+
+	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
+		if err = webhook.RegisterValidationWebHook(context.Background(), mgr, ns); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "Codebase")
+			os.Exit(1)
+		}
+	}
+
+	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
 		setupLog.Error(err, "unable to set up health check")

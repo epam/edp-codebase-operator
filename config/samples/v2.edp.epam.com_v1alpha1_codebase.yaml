@@ -1,4 +1,4 @@
-apiVersion: v2.edp.epam.com.edp.epam.com/v1alpha1
+apiVersion: v2.edp.epam.com/v1alpha1
 kind: Codebase
 metadata:
   labels:

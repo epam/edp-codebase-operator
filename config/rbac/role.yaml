@@ -6,9 +6,9 @@ metadata:
   name: manager-role
 rules:
 - apiGroups:
-  - v2.edp.epam.com.edp.epam.com
+  - v2.edp.epam.com
   resources:
-  - jiraissuemetadata
+  - jiraissuemetadatas
   verbs:
   - create
   - delete
@@ -18,21 +18,21 @@ rules:
   - update
   - watch
 - apiGroups:
-  - v2.edp.epam.com.edp.epam.com
+  - v2.edp.epam.com
   resources:
-  - jiraissuemetadata/finalizers
+  - jiraissuemetadatas/finalizers
   verbs:
   - update
 - apiGroups:
-  - v2.edp.epam.com.edp.epam.com
+  - v2.edp.epam.com
   resources:
-  - jiraissuemetadata/status
+  - jiraissuemetadatas/status
   verbs:
   - get
   - patch
   - update
 - apiGroups:
-  - v2.edp.epam.com.edp.epam.com
+  - v2.edp.epam.com
   resources:
   - jiraservers
   verbs:
@@ -44,13 +44,13 @@ rules:
   - update
   - watch
 - apiGroups:
-  - v2.edp.epam.com.edp.epam.com
+  - v2.edp.epam.com
   resources:
   - jiraservers/finalizers
   verbs:
   - update
 - apiGroups:
-  - v2.edp.epam.com.edp.epam.com
+  - v2.edp.epam.com
   resources:
   - jiraservers/status
   verbs:
@@ -66,9 +66,9 @@ metadata:
   namespace: placeholder
 rules:
 - apiGroups:
-  - v2.edp.epam.com.edp.epam.com
+  - v2.edp.epam.com
   resources:
-  - cdstagedeploys
+  - cdstagedeployments
   verbs:
   - create
   - delete
@@ -78,21 +78,21 @@ rules:
   - update
   - watch
 - apiGroups:
-  - v2.edp.epam.com.edp.epam.com
+  - v2.edp.epam.com
   resources:
-  - cdstagedeploys/finalizers
+  - cdstagedeployments/finalizers
   verbs:
   - update
 - apiGroups:
-  - v2.edp.epam.com.edp.epam.com
+  - v2.edp.epam.com
   resources:
-  - cdstagedeploys/status
+  - cdstagedeployments/status
   verbs:
   - get
   - patch
   - update
 - apiGroups:
-  - v2.edp.epam.com.edp.epam.com
+  - v2.edp.epam.com
   resources:
   - codebasebranches
   verbs:
@@ -104,13 +104,13 @@ rules:
   - update
   - watch
 - apiGroups:
-  - v2.edp.epam.com.edp.epam.com
+  - v2.edp.epam.com
   resources:
   - codebasebranches/finalizers
   verbs:
   - update
 - apiGroups:
-  - v2.edp.epam.com.edp.epam.com
+  - v2.edp.epam.com
   resources:
   - codebasebranches/status
   verbs:
@@ -118,7 +118,7 @@ rules:
   - patch
   - update
 - apiGroups:
-  - v2.edp.epam.com.edp.epam.com
+  - v2.edp.epam.com
   resources:
   - codebaseimagestreams
   verbs:
@@ -130,13 +130,13 @@ rules:
   - update
   - watch
 - apiGroups:
-  - v2.edp.epam.com.edp.epam.com
+  - v2.edp.epam.com
   resources:
   - codebaseimagestreams/finalizers
   verbs:
   - update
 - apiGroups:
-  - v2.edp.epam.com.edp.epam.com
+  - v2.edp.epam.com
   resources:
   - codebaseimagestreams/status
   verbs:
@@ -144,7 +144,7 @@ rules:
   - patch
   - update
 - apiGroups:
-  - v2.edp.epam.com.edp.epam.com
+  - v2.edp.epam.com
   resources:
   - codebases
   verbs:
@@ -156,13 +156,13 @@ rules:
   - update
   - watch
 - apiGroups:
-  - v2.edp.epam.com.edp.epam.com
+  - v2.edp.epam.com
   resources:
   - codebases/finalizers
   verbs:
   - update
 - apiGroups:
-  - v2.edp.epam.com.edp.epam.com
+  - v2.edp.epam.com
   resources:
   - codebases/status
   verbs:
@@ -170,7 +170,7 @@ rules:
   - patch
   - update
 - apiGroups:
-  - v2.edp.epam.com.edp.epam.com
+  - v2.edp.epam.com
   resources:
   - gitservers
   verbs:
@@ -182,13 +182,13 @@ rules:
   - update
   - watch
 - apiGroups:
-  - v2.edp.epam.com.edp.epam.com
+  - v2.edp.epam.com
   resources:
   - gitservers/finalizers
   verbs:
   - update
 - apiGroups:
-  - v2.edp.epam.com.edp.epam.com
+  - v2.edp.epam.com
   resources:
   - gitservers/status
   verbs:
@@ -196,7 +196,7 @@ rules:
   - patch
   - update
 - apiGroups:
-  - v2.edp.epam.com.edp.epam.com
+  - v2.edp.epam.com
   resources:
   - gittags
   verbs:
@@ -208,13 +208,13 @@ rules:
   - update
   - watch
 - apiGroups:
-  - v2.edp.epam.com.edp.epam.com
+  - v2.edp.epam.com
   resources:
   - gittags/finalizers
   verbs:
   - update
 - apiGroups:
-  - v2.edp.epam.com.edp.epam.com
+  - v2.edp.epam.com
   resources:
   - gittags/status
   verbs:
@@ -222,7 +222,7 @@ rules:
   - patch
   - update
 - apiGroups:
-  - v2.edp.epam.com.edp.epam.com
+  - v2.edp.epam.com
   resources:
   - imagestreamtags
   verbs:
@@ -234,13 +234,13 @@ rules:
   - update
   - watch
 - apiGroups:
-  - v2.edp.epam.com.edp.epam.com
+  - v2.edp.epam.com
   resources:
   - imagestreamtags/finalizers
   verbs:
   - update
 - apiGroups:
-  - v2.edp.epam.com.edp.epam.com
+  - v2.edp.epam.com
   resources:
   - imagestreamtags/status
   verbs:

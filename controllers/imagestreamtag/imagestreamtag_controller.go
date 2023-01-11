@@ -63,9 +63,9 @@ func (r *ReconcileImageStreamTag) SetupWithManager(mgr ctrl.Manager) error {
 	return nil
 }
 
-//+kubebuilder:rbac:groups=v2.edp.epam.com.edp.epam.com,namespace=placeholder,resources=imagestreamtags,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=v2.edp.epam.com.edp.epam.com,namespace=placeholder,resources=imagestreamtags/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=v2.edp.epam.com.edp.epam.com,namespace=placeholder,resources=imagestreamtags/finalizers,verbs=update
+//+kubebuilder:rbac:groups=v2.edp.epam.com,namespace=placeholder,resources=imagestreamtags,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=v2.edp.epam.com,namespace=placeholder,resources=imagestreamtags/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=v2.edp.epam.com,namespace=placeholder,resources=imagestreamtags/finalizers,verbs=update
 
 // Reconcile reads that state of the cluster for a ImageStreamTag object and makes changes based on the state.
 func (r *ReconcileImageStreamTag) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {

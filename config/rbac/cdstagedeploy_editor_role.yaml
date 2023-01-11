@@ -1,4 +1,4 @@
-# permissions for end users to edit cdstagedeploys.
+# permissions for end users to edit cdstagedeployments.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -12,9 +12,9 @@ metadata:
   name: cdstagedeploy-editor-role
 rules:
 - apiGroups:
-  - v2.edp.epam.com.edp.epam.com
+  - v2.edp.epam.com
   resources:
-  - cdstagedeploys
+  - cdstagedeployments
   verbs:
   - create
   - delete
@@ -24,8 +24,8 @@ rules:
   - update
   - watch
 - apiGroups:
-  - v2.edp.epam.com.edp.epam.com
+  - v2.edp.epam.com
   resources:
-  - cdstagedeploys/status
+  - cdstagedeployments/status
   verbs:
   - get

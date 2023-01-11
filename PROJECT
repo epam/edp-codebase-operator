@@ -12,7 +12,7 @@ resources:
     namespaced: true
   controller: true
   domain: edp.epam.com
-  group: v2.edp.epam.com
+  group: v2
   kind: CDStageDeploy
   path: github.com/epam/edp-codebase-operator/api/v1alpha1
   version: v1alpha1
@@ -21,7 +21,16 @@ resources:
     namespaced: true
   controller: true
   domain: edp.epam.com
-  group: v2.edp.epam.com
+  group: v2
+  kind: CDStageDeploy
+  path: github.com/epam/edp-codebase-operator/api/v1
+  version: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: edp.epam.com
+  group: v2
   kind: CodebaseBranch
   path: github.com/epam/edp-codebase-operator/api/v1alpha1
   version: v1alpha1
@@ -30,7 +39,16 @@ resources:
     namespaced: true
   controller: true
   domain: edp.epam.com
-  group: v2.edp.epam.com
+  group: v2
+  kind: CodebaseBranch
+  path: github.com/epam/edp-codebase-operator/api/v1
+  version: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: edp.epam.com
+  group: v2
   kind: CodebaseImageStream
   path: github.com/epam/edp-codebase-operator/api/v1alpha1
   version: v1alpha1
@@ -39,7 +57,16 @@ resources:
     namespaced: true
   controller: true
   domain: edp.epam.com
-  group: v2.edp.epam.com
+  group: v2
+  kind: CodebaseImageStream
+  path: github.com/epam/edp-codebase-operator/api/v1
+  version: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: edp.epam.com
+  group: v2
   kind: Codebase
   path: github.com/epam/edp-codebase-operator/api/v1alpha1
   version: v1alpha1
@@ -48,7 +75,19 @@ resources:
     namespaced: true
   controller: true
   domain: edp.epam.com
-  group: v2.edp.epam.com
+  group: v2
+  kind: Codebase
+  path: github.com/epam/edp-codebase-operator/api/v1
+  version: v1
+  webhooks:
+    validation: true
+    webhookVersion: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: edp.epam.com
+  group: v2
   kind: GitServer
   path: github.com/epam/edp-codebase-operator/api/v1alpha1
   version: v1alpha1
@@ -57,7 +96,16 @@ resources:
     namespaced: true
   controller: true
   domain: edp.epam.com
-  group: v2.edp.epam.com
+  group: v2
+  kind: GitServer
+  path: github.com/epam/edp-codebase-operator/api/v1
+  version: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: edp.epam.com
+  group: v2
   kind: GitTag
   path: github.com/epam/edp-codebase-operator/api/v1alpha1
   version: v1alpha1
@@ -66,7 +114,16 @@ resources:
     namespaced: true
   controller: true
   domain: edp.epam.com
-  group: v2.edp.epam.com
+  group: v2
+  kind: GitTag
+  path: github.com/epam/edp-codebase-operator/api/v1
+  version: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: edp.epam.com
+  group: v2
   kind: ImageStreamTag
   path: github.com/epam/edp-codebase-operator/api/v1alpha1
   version: v1alpha1
@@ -75,7 +132,16 @@ resources:
     namespaced: true
   controller: true
   domain: edp.epam.com
-  group: v2.edp.epam.com
+  group: v2
+  kind: ImageStreamTag
+  path: github.com/epam/edp-codebase-operator/api/v1
+  version: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: edp.epam.com
+  group: v2
   kind: JiraIssueMetadata
   path: github.com/epam/edp-codebase-operator/api/v1alpha1
   version: v1alpha1
@@ -84,8 +150,26 @@ resources:
     namespaced: true
   controller: true
   domain: edp.epam.com
-  group: v2.edp.epam.com
+  group: v2
+  kind: JiraIssueMetadata
+  path: github.com/epam/edp-codebase-operator/api/v1
+  version: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: edp.epam.com
+  group: v2
   kind: JiraServer
   path: github.com/epam/edp-codebase-operator/api/v1alpha1
   version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: edp.epam.com
+  group: v2
+  kind: JiraServer
+  path: github.com/epam/edp-codebase-operator/api/v1
+  version: v1
 version: "3"

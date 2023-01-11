@@ -1,4 +1,4 @@
-# permissions for end users to view cdstagedeploys.
+# permissions for end users to view cdstagedeployments.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -12,16 +12,16 @@ metadata:
   name: cdstagedeploy-viewer-role
 rules:
 - apiGroups:
-  - v2.edp.epam.com.edp.epam.com
+  - v2.edp.epam.com
   resources:
-  - cdstagedeploys
+  - cdstagedeployments
   verbs:
   - get
   - list
   - watch
 - apiGroups:
-  - v2.edp.epam.com.edp.epam.com
+  - v2.edp.epam.com
   resources:
-  - cdstagedeploys/status
+  - cdstagedeployments/status
   verbs:
   - get

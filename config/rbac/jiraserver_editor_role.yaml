@@ -12,7 +12,7 @@ metadata:
   name: jiraserver-editor-role
 rules:
 - apiGroups:
-  - v2.edp.epam.com.edp.epam.com
+  - v2.edp.epam.com
   resources:
   - jiraservers
   verbs:
@@ -24,7 +24,7 @@ rules:
   - update
   - watch
 - apiGroups:
-  - v2.edp.epam.com.edp.epam.com
+  - v2.edp.epam.com
   resources:
   - jiraservers/status
   verbs:

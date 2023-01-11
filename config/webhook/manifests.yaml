@@ -1,0 +1,27 @@
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  creationTimestamp: null
+  name: validating-webhook-configuration
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-v2-edp-epam-com-v1-codebase
+  failurePolicy: Fail
+  name: vcodebase.kb.io
+  rules:
+  - apiGroups:
+    - v2.edp.epam.com
+    apiVersions:
+    - v1,v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - codebases
+  sideEffects: None

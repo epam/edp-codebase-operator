@@ -1,4 +1,4 @@
-# permissions for end users to view jiraissuemetadata.
+# permissions for end users to view jiraissuemetadatas.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -12,16 +12,16 @@ metadata:
   name: jiraissuemetadata-viewer-role
 rules:
 - apiGroups:
-  - v2.edp.epam.com.edp.epam.com
+  - v2.edp.epam.com
   resources:
-  - jiraissuemetadata
+  - jiraissuemetadatas
   verbs:
   - get
   - list
   - watch
 - apiGroups:
-  - v2.edp.epam.com.edp.epam.com
+  - v2.edp.epam.com
   resources:
-  - jiraissuemetadata/status
+  - jiraissuemetadatas/status
   verbs:
   - get

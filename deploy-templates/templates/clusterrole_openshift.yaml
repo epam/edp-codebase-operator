@@ -1,0 +1,17 @@
+{{- if eq .Values.global.platform "openshift" -}}
+apiVersion: authorization.openshift.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    {{- include "codebase-operator.labels" . | nindent 4 }}
+  name: edp-{{ .Values.name }}-{{ .Values.global.edpName }}
+rules:
+- apiGroups:
+    - admissionregistration.k8s.io
+  resources:
+    - validatingwebhookconfigurations
+  verbs:
+    - get
+    - update
+    - patch
+{{- end -}}

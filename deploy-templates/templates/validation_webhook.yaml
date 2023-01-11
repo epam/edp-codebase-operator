@@ -1,0 +1,34 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  labels:
+    {{- include "codebase-operator.labels" . | nindent 4 }}
+  name: edp-codebase-operator-validating-webhook-configuration-{{ .Values.global.edpName }}
+webhooks:
+  - admissionReviewVersions:
+      - v1
+    clientConfig:
+      service:
+        name: edp-codebase-operator-webhook-service
+        namespace: {{ .Values.global.edpName }}
+        path: /validate-v2-edp-epam-com-v1-codebase
+    failurePolicy: Fail
+    name: vcodebase.kb.io
+    namespaceSelector:
+      matchExpressions:
+        - key: kubernetes.io/metadata.name
+          operator: In
+          values:
+            - {{ .Values.global.edpName }}
+    rules:
+      - apiGroups:
+          - v2.edp.epam.com
+        apiVersions:
+          - v1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - codebases
+        scope: Namespaced
+    sideEffects: None

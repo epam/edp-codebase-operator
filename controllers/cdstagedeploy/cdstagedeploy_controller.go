@@ -61,9 +61,9 @@ func (r *ReconcileCDStageDeploy) SetupWithManager(mgr ctrl.Manager) error {
 	return nil
 }
 
-//+kubebuilder:rbac:groups=v2.edp.epam.com.edp.epam.com,namespace=placeholder,resources=cdstagedeploys,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=v2.edp.epam.com.edp.epam.com,namespace=placeholder,resources=cdstagedeploys/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=v2.edp.epam.com.edp.epam.com,namespace=placeholder,resources=cdstagedeploys/finalizers,verbs=update
+//+kubebuilder:rbac:groups=v2.edp.epam.com,namespace=placeholder,resources=cdstagedeployments,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=v2.edp.epam.com,namespace=placeholder,resources=cdstagedeployments/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=v2.edp.epam.com,namespace=placeholder,resources=cdstagedeployments/finalizers,verbs=update
 
 // Reconcile reads that state of the cluster for a CDStageDeploy object and makes changes based on the state.
 func (r *ReconcileCDStageDeploy) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
