@@ -1,12 +1,12 @@
 module github.com/epam/edp-codebase-operator/v2
 
-go 1.18
+go 1.19
 
 require (
 	github.com/andygrunwald/go-jira v1.14.0
 	github.com/bndr/gojenkins v0.2.1-0.20181125150310-de43c03cf849
 	github.com/dchest/uniuri v0.0.0-20160212164326-8902c56451e9
-	github.com/epam/edp-cd-pipeline-operator/v2 v2.3.0-58.0.20220615152459-3b84bce15819
+	github.com/epam/edp-cd-pipeline-operator/v2 v2.3.0-58.0.20230112082439-bb4d64291a98
 	github.com/epam/edp-common v0.0.0-20211206180607-3e1ca60d6e4a
 	github.com/epam/edp-component-operator v0.1.1-0.20220520092339-3063cc593800
 	github.com/epam/edp-jenkins-operator/v2 v2.3.0-130.0.20221209164505-c0636e3fd200
@@ -87,11 +87,11 @@ require (
 	github.com/xanzy/ssh-agent v0.3.0 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
 	go.uber.org/zap v1.21.0 // indirect
-	golang.org/x/net v0.0.0-20220722155237-a158d28d115b // indirect
+	golang.org/x/net v0.2.0 // indirect
 	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8 // indirect
-	golang.org/x/sys v0.0.0-20220928140112-f11e5e49a4ec // indirect
-	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 // indirect
-	golang.org/x/text v0.3.7 // indirect
+	golang.org/x/sys v0.2.0 // indirect
+	golang.org/x/term v0.2.0 // indirect
+	golang.org/x/text v0.4.0 // indirect
 	golang.org/x/time v0.0.0-20220609170525-579cf78fd858 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.2.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
