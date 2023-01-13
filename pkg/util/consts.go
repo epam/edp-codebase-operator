@@ -47,6 +47,9 @@ const (
 
 	VersioningTypeEDP = "edp"
 
+	// PauseAnnotation is a key for pause annotation that disables custom resource reconciliation.
+	PauseAnnotation = "edp.epam.com/paused"
+
 	// finalizers.
 	ForegroundDeletionFinalizerName = "foregroundDeletion"
 )

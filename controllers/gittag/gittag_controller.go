@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
+	predicateLib "github.com/operator-framework/operator-lib/predicate"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -15,6 +16,7 @@ import (
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	"github.com/epam/edp-codebase-operator/v2/controllers/gittag/chain"
+	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
 func NewReconcileGitTag(c client.Client, log logr.Logger) *ReconcileGitTag {
@@ -46,8 +48,13 @@ func (r *ReconcileGitTag) SetupWithManager(mgr ctrl.Manager) error {
 		},
 	}
 
-	err := ctrl.NewControllerManagedBy(mgr).
-		For(&codebaseApi.GitTag{}, builder.WithPredicates(p)).
+	pause, err := predicateLib.NewPause(util.PauseAnnotation)
+	if err != nil {
+		return fmt.Errorf("unable to create pause predicate: %w", err)
+	}
+
+	err = ctrl.NewControllerManagedBy(mgr).
+		For(&codebaseApi.GitTag{}, builder.WithPredicates(p), builder.WithPredicates(pause)).
 		Complete(r)
 	if err != nil {
 		return fmt.Errorf("failed to build GitTag controller: %w", err)

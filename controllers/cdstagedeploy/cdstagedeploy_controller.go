@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
+	predicateLib "github.com/operator-framework/operator-lib/predicate"
 	"github.com/pkg/errors"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -45,8 +46,13 @@ func (r *ReconcileCDStageDeploy) SetupWithManager(mgr ctrl.Manager) error {
 		},
 	}
 
-	err := ctrl.NewControllerManagedBy(mgr).
-		For(&codebaseApi.CDStageDeploy{}, builder.WithPredicates(p)).
+	pause, err := predicateLib.NewPause(util.PauseAnnotation)
+	if err != nil {
+		return fmt.Errorf("unable to create pause predicate: %w", err)
+	}
+
+	err = ctrl.NewControllerManagedBy(mgr).
+		For(&codebaseApi.CDStageDeploy{}, builder.WithPredicates(p), builder.WithPredicates(pause)).
 		Complete(r)
 	if err != nil {
 		return fmt.Errorf("failed to build CDStageDeploy controller: %w", err)
