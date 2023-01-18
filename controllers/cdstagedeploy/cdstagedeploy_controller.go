@@ -52,7 +52,7 @@ func (r *ReconcileCDStageDeploy) SetupWithManager(mgr ctrl.Manager) error {
 	}
 
 	err = ctrl.NewControllerManagedBy(mgr).
-		For(&codebaseApi.CDStageDeploy{}, builder.WithPredicates(p), builder.WithPredicates(pause)).
+		For(&codebaseApi.CDStageDeploy{}, builder.WithPredicates(p, pause)).
 		Complete(r)
 	if err != nil {
 		return fmt.Errorf("failed to build CDStageDeploy controller: %w", err)

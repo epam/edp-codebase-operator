@@ -82,7 +82,7 @@ func (r *ReconcileCodebaseBranch) SetupWithManager(mgr ctrl.Manager, maxConcurre
 	}
 
 	err = ctrl.NewControllerManagedBy(mgr).
-		For(&codebaseApi.CodebaseBranch{}, builder.WithPredicates(p), builder.WithPredicates(pause)).
+		For(&codebaseApi.CodebaseBranch{}, builder.WithPredicates(p, pause)).
 		WithOptions(controller.Options{
 			MaxConcurrentReconciles: maxConcurrentReconciles,
 		}).

@@ -76,7 +76,7 @@ func (r *ReconcileCodebase) SetupWithManager(mgr ctrl.Manager) error {
 	}
 
 	err = ctrl.NewControllerManagedBy(mgr).
-		For(&codebaseApi.Codebase{}, builder.WithPredicates(p), builder.WithPredicates(pause)).
+		For(&codebaseApi.Codebase{}, builder.WithPredicates(p, pause)).
 		Complete(r)
 	if err != nil {
 		return fmt.Errorf("failed to build Codebase controller: %w", err)

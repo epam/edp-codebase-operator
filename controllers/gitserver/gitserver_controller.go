@@ -57,7 +57,7 @@ func (r *ReconcileGitServer) SetupWithManager(mgr ctrl.Manager) error {
 	}
 
 	err = ctrl.NewControllerManagedBy(mgr).
-		For(&codebaseApi.GitServer{}, builder.WithPredicates(p), builder.WithPredicates(pause)).
+		For(&codebaseApi.GitServer{}, builder.WithPredicates(p, pause)).
 		Complete(r)
 	if err != nil {
 		return fmt.Errorf("failed to build GitServer controller: %w", err)
