@@ -103,6 +103,17 @@ func (r *ReconcileCodebase) Reconcile(ctx context.Context, request reconcile.Req
 		return reconcile.Result{}, fmt.Errorf("failed to fetch Codebase resource %q: %w", request.NamespacedName, err)
 	}
 
+	if c.Spec.Strategy == util.ImportStrategy {
+		updated, err := r.trimGitFromImportUrl(ctx, c)
+		if err != nil {
+			return reconcile.Result{}, fmt.Errorf("failed to trim \".git\" from url: %w", err)
+		}
+
+		if updated {
+			return reconcile.Result{}, nil
+		}
+	}
+
 	defer func() {
 		if err := r.updateStatus(ctx, c); err != nil {
 			log.Error(err, "error during status updating")
@@ -110,12 +121,12 @@ func (r *ReconcileCodebase) Reconcile(ctx context.Context, request reconcile.Req
 	}()
 
 	if err := r.setFinalizers(ctx, c); err != nil {
-		return reconcile.Result{}, errors.Wrap(err, "unable to set finalizers")
+		return reconcile.Result{}, fmt.Errorf("failed to set finalizers: %w", err)
 	}
 
 	result, err := r.tryToDeleteCodebase(ctx, c)
 	if err != nil {
-		return reconcile.Result{}, errors.Wrap(err, "an error has occurred while trying to delete codebase")
+		return reconcile.Result{}, fmt.Errorf("failed to try to delete codebase: %w", err)
 	}
 
 	if result != nil {
@@ -128,12 +139,12 @@ func (r *ReconcileCodebase) Reconcile(ctx context.Context, request reconcile.Req
 
 	err = r.initLabels(ctx, c)
 	if err != nil {
-		return reconcile.Result{}, errors.Wrap(err, "fail to init labels for codebase")
+		return reconcile.Result{}, fmt.Errorf("failed to init labels for codebase: %w", err)
 	}
 
 	ch, err := r.getChain(c)
 	if err != nil {
-		return reconcile.Result{}, errors.Wrap(err, "an error has occurred while selecting chain")
+		return reconcile.Result{}, fmt.Errorf("failed to select chain: %w", err)
 	}
 
 	if err := ch.ServeRequest(ctx, c); err != nil {
@@ -148,12 +159,31 @@ func (r *ReconcileCodebase) Reconcile(ctx context.Context, request reconcile.Req
 	}
 
 	if err := r.updateFinishStatus(ctx, c); err != nil {
-		return reconcile.Result{}, errors.Wrapf(err, "an error has been occurred while updating %v Codebase status", c.Name)
+		return reconcile.Result{}, fmt.Errorf("failed to update %v Codebase status: %w", c.Name, err)
 	}
 
 	log.Info("Reconciling codebase has been finished")
 
 	return reconcile.Result{}, nil
+}
+
+// trimGitFromImportUrl removes all the trailing ".git" suffixes at the end of the git url path, if there are any.
+// If it removes anything, it returns true.
+func (r *ReconcileCodebase) trimGitFromImportUrl(ctx context.Context, codebase *codebaseApi.Codebase) (bool, error) {
+	if codebase.Spec.GitUrlPath == nil || !strings.HasSuffix(*codebase.Spec.GitUrlPath, ".git") {
+		return false, nil
+	}
+
+	patch := client.MergeFrom(codebase.DeepCopy())
+
+	newGitUrlPath := util.TrimGitFromURL(*codebase.Spec.GitUrlPath)
+	codebase.Spec.GitUrlPath = &newGitUrlPath
+
+	if err := r.client.Patch(ctx, codebase, patch); err != nil {
+		return false, fmt.Errorf("failed to patch Codebase after trimming .git: %w", err)
+	}
+
+	return true, nil
 }
 
 func (r *ReconcileCodebase) updateFinishStatus(ctx context.Context, c *codebaseApi.Codebase) error {
@@ -250,7 +280,7 @@ func (r *ReconcileCodebase) tryToDeleteCodebase(ctx context.Context, c *codebase
 	}
 
 	if err := chain.MakeDeletionChain(r.client, c).ServeRequest(ctx, c); err != nil {
-		return nil, errors.Wrap(err, "errors during deletion chain")
+		return nil, fmt.Errorf("failed to make deletion chain: %w", err)
 	}
 
 	c.ObjectMeta.Finalizers = util.RemoveString(c.ObjectMeta.Finalizers, codebaseOperatorFinalizerName)
@@ -286,7 +316,7 @@ func (r *ReconcileCodebase) setFinalizers(ctx context.Context, c *codebaseApi.Co
 func removeDirectoryIfExists(codebaseName, namespace string) error {
 	wd := util.GetWorkDir(codebaseName, namespace)
 	if err := util.RemoveDirectory(wd); err != nil {
-		return errors.Wrap(err, "unable to remove directory if exists")
+		return fmt.Errorf("failed to remove directory %s: %w", wd, err)
 	}
 
 	return nil

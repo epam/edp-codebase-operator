@@ -19,7 +19,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
-	edpCompApi "github.com/epam/edp-component-operator/pkg/apis/v1/v1"
+	edpCompApi "github.com/epam/edp-component-operator/api/v1"
 )
 
 func TestReconcileJiraServer_Reconcile_ShouldPassNotFound(t *testing.T) {

@@ -23,7 +23,7 @@ import (
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/codebasebranch"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
-	edpComponentApi "github.com/epam/edp-component-operator/pkg/apis/v1/v1"
+	edpComponentApi "github.com/epam/edp-component-operator/api/v1"
 	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
 )
 

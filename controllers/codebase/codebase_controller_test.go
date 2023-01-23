@@ -128,7 +128,7 @@ func (s *ControllerTestSuite) TestReconcileCodebase_Reconcile_ShouldFailDeleteCo
 	t := s.T()
 	assert.Error(t, err)
 	assert.False(t, res.Requeue)
-	assert.Contains(t, err.Error(), "an error has occurred while trying to delete codebase")
+	assert.Contains(t, err.Error(), "failed to try to delete codebase")
 }
 
 func (s *ControllerTestSuite) TestReconcileCodebase_Reconcile_ShouldPassOnInvalidCodebase() {
@@ -454,4 +454,198 @@ func (s *ControllerTestSuite) TestPostpone() {
 	assert.Equal(s.T(), res.RequeueAfter, time.Second)
 
 	handlerMock.AssertExpectations(s.T())
+}
+
+func (s *ControllerTestSuite) TestReconcileCodebase_trimGitFromImportUrl() {
+	t := s.T()
+
+	t.Parallel()
+
+	type args struct {
+		codebase *codebaseApi.Codebase
+	}
+
+	tests := []struct {
+		name         string
+		args         args
+		want         bool
+		wantCodebase *codebaseApi.Codebase
+		wantErr      require.ErrorAssertionFunc
+	}{
+		{
+			name: "should trim .git and patch the Codebase resource",
+			args: args{
+				codebase: &codebaseApi.Codebase{
+					TypeMeta: metaV1.TypeMeta{
+						Kind:       "Codebase",
+						APIVersion: "v2.edp.epam.com/v1",
+					},
+					ObjectMeta: metaV1.ObjectMeta{
+						Name:            "NewCodebase",
+						Namespace:       "default",
+						ResourceVersion: "1",
+					},
+					Spec: codebaseApi.CodebaseSpec{
+						Strategy:   util.ImportStrategy,
+						GitUrlPath: util.GetStringP("/some/test/path.git"),
+					},
+				},
+			},
+			want: true,
+			wantCodebase: &codebaseApi.Codebase{
+				TypeMeta: metaV1.TypeMeta{
+					Kind:       "Codebase",
+					APIVersion: "v2.edp.epam.com/v1",
+				},
+				ObjectMeta: metaV1.ObjectMeta{
+					Name:            "NewCodebase",
+					Namespace:       "default",
+					ResourceVersion: "2",
+				},
+				Spec: codebaseApi.CodebaseSpec{
+					Strategy:   util.ImportStrategy,
+					GitUrlPath: util.GetStringP("/some/test/path"),
+				},
+			},
+			wantErr: require.NoError,
+		},
+		{
+			name: "should trim multiple .git and patch the Codebase resource",
+			args: args{
+				codebase: &codebaseApi.Codebase{
+					TypeMeta: metaV1.TypeMeta{
+						Kind:       "Codebase",
+						APIVersion: "v2.edp.epam.com/v1",
+					},
+					ObjectMeta: metaV1.ObjectMeta{
+						Name:            "NewCodebase",
+						Namespace:       "default",
+						ResourceVersion: "1",
+					},
+					Spec: codebaseApi.CodebaseSpec{
+						Strategy:   util.ImportStrategy,
+						GitUrlPath: util.GetStringP("/some/test/path.git.git.git"),
+					},
+				},
+			},
+			want: true,
+			wantCodebase: &codebaseApi.Codebase{
+				TypeMeta: metaV1.TypeMeta{
+					Kind:       "Codebase",
+					APIVersion: "v2.edp.epam.com/v1",
+				},
+				ObjectMeta: metaV1.ObjectMeta{
+					Name:            "NewCodebase",
+					Namespace:       "default",
+					ResourceVersion: "2",
+				},
+				Spec: codebaseApi.CodebaseSpec{
+					Strategy:   util.ImportStrategy,
+					GitUrlPath: util.GetStringP("/some/test/path"),
+				},
+			},
+			wantErr: require.NoError,
+		},
+		{
+			name: "should not update because of no .git suffix",
+			args: args{
+				codebase: &codebaseApi.Codebase{
+					TypeMeta: metaV1.TypeMeta{
+						Kind:       "Codebase",
+						APIVersion: "v2.edp.epam.com/v1",
+					},
+					ObjectMeta: metaV1.ObjectMeta{
+						Name:            "NewCodebase",
+						Namespace:       "default",
+						ResourceVersion: "1",
+					},
+					Spec: codebaseApi.CodebaseSpec{
+						Strategy:   util.ImportStrategy,
+						GitUrlPath: util.GetStringP("/some/test/path"),
+					},
+				},
+			},
+			want: false,
+			wantCodebase: &codebaseApi.Codebase{
+				TypeMeta: metaV1.TypeMeta{
+					Kind:       "Codebase",
+					APIVersion: "v2.edp.epam.com/v1",
+				},
+				ObjectMeta: metaV1.ObjectMeta{
+					Name:            "NewCodebase",
+					Namespace:       "default",
+					ResourceVersion: "1",
+				},
+				Spec: codebaseApi.CodebaseSpec{
+					Strategy:   util.ImportStrategy,
+					GitUrlPath: util.GetStringP("/some/test/path"),
+				},
+			},
+			wantErr: require.NoError,
+		},
+		{
+			name: "should not update because of nil GitUrlPath",
+			args: args{
+				codebase: &codebaseApi.Codebase{
+					TypeMeta: metaV1.TypeMeta{
+						Kind:       "Codebase",
+						APIVersion: "v2.edp.epam.com/v1",
+					},
+					ObjectMeta: metaV1.ObjectMeta{
+						Name:            "NewCodebase",
+						Namespace:       "default",
+						ResourceVersion: "1",
+					},
+					Spec: codebaseApi.CodebaseSpec{
+						Strategy:   util.ImportStrategy,
+						GitUrlPath: nil,
+					},
+				},
+			},
+			want: false,
+			wantCodebase: &codebaseApi.Codebase{
+				TypeMeta: metaV1.TypeMeta{
+					Kind:       "Codebase",
+					APIVersion: "v2.edp.epam.com/v1",
+				},
+				ObjectMeta: metaV1.ObjectMeta{
+					Name:            "NewCodebase",
+					Namespace:       "default",
+					ResourceVersion: "1",
+				},
+				Spec: codebaseApi.CodebaseSpec{
+					Strategy:   util.ImportStrategy,
+					GitUrlPath: nil,
+				},
+			},
+			wantErr: require.NoError,
+		},
+	}
+
+	ctx := context.Background()
+
+	for _, tt := range tests {
+		tt := tt
+
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			testClient := fake.NewClientBuilder().
+				WithScheme(s.scheme).
+				WithObjects(tt.args.codebase).
+				Build()
+
+			r := &ReconcileCodebase{
+				client: testClient,
+				scheme: s.scheme,
+				log:    logr.Discard(),
+			}
+
+			got, err := r.trimGitFromImportUrl(ctx, tt.args.codebase)
+
+			tt.wantErr(t, err)
+			require.Equal(t, tt.want, got)
+			require.Equal(t, tt.wantCodebase, tt.args.codebase)
+		})
+	}
 }

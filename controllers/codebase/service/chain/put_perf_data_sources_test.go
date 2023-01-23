@@ -12,7 +12,7 @@ import (
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
-	edpCompApi "github.com/epam/edp-component-operator/pkg/apis/v1/v1"
+	edpCompApi "github.com/epam/edp-component-operator/api/v1"
 	perfApi "github.com/epam/edp-perf-operator/v2/pkg/apis/edp/v1"
 )
 

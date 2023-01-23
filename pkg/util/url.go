@@ -22,6 +22,14 @@ var lf = map[string]string{
 	"container":       "docker",
 }
 
+func TrimGitFromURL(url string) string {
+	for strings.HasSuffix(url, ".git") {
+		url = strings.TrimSuffix(url, ".git")
+	}
+
+	return url
+}
+
 func GetRepoUrl(c *codebaseApi.Codebase) (*string, error) {
 	log.Info("Setup repo url", "codebase_name", c.Name)
 

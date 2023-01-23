@@ -16,7 +16,7 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/controllers/codebasebranch/chain/handler"
 	"github.com/epam/edp-codebase-operator/v2/pkg/model"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
-	edpComponentApi "github.com/epam/edp-component-operator/pkg/apis/v1/v1"
+	edpComponentApi "github.com/epam/edp-component-operator/api/v1"
 )
 
 type PutCodebaseImageStream struct {

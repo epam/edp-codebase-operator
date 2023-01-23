@@ -17,7 +17,7 @@ import (
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	"github.com/epam/edp-codebase-operator/v2/controllers/jiraserver/chain/handler"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
-	edpComponentApi "github.com/epam/edp-component-operator/pkg/apis/v1/v1"
+	edpComponentApi "github.com/epam/edp-component-operator/api/v1"
 )
 
 const (

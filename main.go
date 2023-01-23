@@ -37,7 +37,7 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	"github.com/epam/edp-codebase-operator/v2/pkg/webhook"
 	buildInfo "github.com/epam/edp-common/pkg/config"
-	edpCompApi "github.com/epam/edp-component-operator/pkg/apis/v1/v1"
+	edpCompApi "github.com/epam/edp-component-operator/api/v1"
 	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
 	perfAPi "github.com/epam/edp-perf-operator/v2/pkg/apis/edp/v1"
 )

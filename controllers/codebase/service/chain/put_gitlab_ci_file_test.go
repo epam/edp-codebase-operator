@@ -17,7 +17,7 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/controllers/codebase/repository"
 	mockGit "github.com/epam/edp-codebase-operator/v2/controllers/gitserver/mocks"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
-	edpCompApi "github.com/epam/edp-component-operator/pkg/apis/v1/v1"
+	edpCompApi "github.com/epam/edp-component-operator/api/v1"
 )
 
 func TestPutGitlabCiFile_ShouldPass(t *testing.T) {

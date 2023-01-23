@@ -14,7 +14,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
-	edpComponentApi "github.com/epam/edp-component-operator/pkg/apis/v1/v1"
+	edpComponentApi "github.com/epam/edp-component-operator/api/v1"
 )
 
 func TestGetGerritPort_ShouldFound(t *testing.T) {

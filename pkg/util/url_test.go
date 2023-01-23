@@ -187,3 +187,56 @@ func TestGetRepoUrl(t *testing.T) {
 		})
 	}
 }
+
+func TestTrimGitFromURL(t *testing.T) {
+	t.Parallel()
+
+	type args struct {
+		url string
+	}
+
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "should trim .git",
+			args: args{
+				url: "some/git/path.git",
+			},
+			want: "some/git/path",
+		},
+		{
+			name: "should trim all .git from the end",
+			args: args{
+				url: "some/git/path.git.git.git",
+			},
+			want: "some/git/path",
+		},
+		{
+			name: "should not trim .gti",
+			args: args{
+				url: "some/git/path.gti",
+			},
+			want: "some/git/path.gti",
+		},
+		{
+			name: "should not trim .git from inside the path",
+			args: args{
+				url: "some/.git/path",
+			},
+			want: "some/.git/path",
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			assert.Equal(t, tt.want, TrimGitFromURL(tt.args.url))
+		})
+	}
+}
