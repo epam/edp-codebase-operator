@@ -2,8 +2,19 @@
 ## [Unreleased]
 
 
+<a name="v2.14.1"></a>
+## [v2.14.1] - 2023-01-23
+### Bug Fixes
+
+- Set unsuccessful status for Codebasebranch if commit hash is invalid [EPMDEDP-11189](https://jiraeu.epam.com/browse/EPMDEDP-11189)
+
+### Routine
+
+- Update git package version to 2.36.4-r0 [EPMDEDP-11260](https://jiraeu.epam.com/browse/EPMDEDP-11260)
+
+
 <a name="v2.14.0"></a>
-## [v2.14.0] - 2022-11-28
+## [v2.14.0] - 2022-12-06
 ### Features
 
 - Add support for Tekton Tool [EPMDEDP-10641](https://jiraeu.epam.com/browse/EPMDEDP-10641)
@@ -281,7 +292,8 @@ Jenkins pipelines for code-review, build, create-release flow.
 - [MDTUDDM-673] Save git status in the intermediate operations
 
 
-[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.14.0...HEAD
+[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.14.1...HEAD
+[v2.14.1]: https://github.com/epam/edp-codebase-operator/compare/v2.14.0...v2.14.1
 [v2.14.0]: https://github.com/epam/edp-codebase-operator/compare/v2.13.1...v2.14.0
 [v2.13.1]: https://github.com/epam/edp-codebase-operator/compare/v2.13.0...v2.13.1
 [v2.13.0]: https://github.com/epam/edp-codebase-operator/compare/v2.12.0...v2.13.0
