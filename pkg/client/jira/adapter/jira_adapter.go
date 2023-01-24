@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
+	"strings"
 
 	"github.com/andygrunwald/go-jira"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -52,9 +53,13 @@ func (a GoJiraAdapter) GetIssueType(issueId string) (string, error) {
 func (a GoJiraAdapter) GetProjectInfo(issueId string) (*jira.Project, error) {
 	logv := log.WithValues("issue", issueId)
 	logv.V(2).Info("start GetProjectInfo method.")
-	issueResp, _, err := a.client.Issue.Get(issueId, nil)
+	issueResp, httpResp, err := a.client.Issue.Get(issueId, nil)
+	if httpResp != nil && httpResp.StatusCode == 404 {
+		return nil, ErrNotFound
+	}
+
 	if err != nil {
-		if err.Error() == "404" {
+		if strings.Contains(err.Error(), "404") {
 			return nil, ErrNotFound
 		}
 
