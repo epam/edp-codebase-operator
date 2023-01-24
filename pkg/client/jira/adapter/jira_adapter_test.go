@@ -157,6 +157,29 @@ func TestGoJiraAdapter_GetProjectInfo_Fail(t *testing.T) {
 	assert.Nil(t, jp)
 }
 
+func TestGoJiraAdapter_GetProjectInfo_Fail_IssueNotFound(t *testing.T) {
+	httpmock.Reset()
+
+	httpmock.Activate()
+
+	jc, err := new(GoJiraAdapterFactory).New(dto.ConvertSpecToJiraServer("j-api", "user", "pwd"))
+	if err != nil {
+		t.Fatal("Unable to create Jira Client")
+	}
+
+	httpmock.RegisterResponder("GET", "/j-api/rest/api/2/issue/issueId",
+		httpmock.NewStringResponder(404, "not found"))
+
+	_, err = jc.GetProjectInfo("issueId")
+	assert.ErrorIs(t, err, ErrNotFound)
+
+	httpmock.RegisterResponder("GET", "/j-api/rest/api/2/issue/issueId",
+		httpmock.NewStringResponder(200, "not found: 404"))
+
+	_, err = jc.GetProjectInfo("issueId")
+	assert.ErrorIs(t, err, ErrNotFound)
+}
+
 func TestGoJiraAdapter_CreateFixVersionValue_Pass(t *testing.T) {
 	httpmock.Reset()
 	httpmock.Activate()

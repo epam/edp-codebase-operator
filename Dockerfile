@@ -13,6 +13,7 @@ RUN apk add --no-cache ca-certificates=20220614-r0 \
 
 RUN adduser -h ${HOME} -s /bin/ash -D -u ${USER_UID} codebase-operator
 
+
 COPY build/bin ${ASSETS_DIR}
 COPY --chmod=0775 build/templates ${ASSETS_DIR}/templates
 COPY build/configs ${ASSETS_DIR}/configs
