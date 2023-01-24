@@ -4,8 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"regexp"
 	"strconv"
+	"strings"
 
 	"github.com/andygrunwald/go-jira"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -70,9 +72,14 @@ func (a *GoJiraAdapter) GetProjectInfo(issueId string) (*jira.Project, error) {
 
 	ctx := context.Background()
 
-	issueResp, _, err := a.client.Issue.GetWithContext(ctx, issueId, nil)
+	issueResp, httpResp, err := a.client.Issue.GetWithContext(ctx, issueId, nil)
+
+	if httpResp != nil && httpResp.StatusCode == http.StatusNotFound {
+		return nil, ErrNotFound
+	}
+
 	if err != nil {
-		if err.Error() == "404" {
+		if strings.Contains(err.Error(), "404") {
 			return nil, ErrNotFound
 		}
 
