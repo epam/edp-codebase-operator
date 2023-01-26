@@ -13,7 +13,7 @@ import (
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
-	perfAPi "github.com/epam/edp-perf-operator/v2/pkg/apis/edp/v1"
+	perfAPi "github.com/epam/edp-perf-operator/v2/api/v1"
 )
 
 type PutPerfDataSources struct {

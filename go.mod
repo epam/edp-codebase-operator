@@ -3,8 +3,9 @@ module github.com/epam/edp-codebase-operator/v2
 go 1.19
 
 replace (
-	github.com/epam/edp-cd-pipeline-operator/v2 v2.13.0 => github.com/epam/edp-cd-pipeline-operator/v2 v2.3.0-58.0.20230112082439-bb4d64291a98
-	github.com/epam/edp-component-operator v0.13.0 => github.com/epam/edp-component-operator v0.1.1-0.20230118145658-7283b2b5cbf9
+	github.com/epam/edp-cd-pipeline-operator/v2 v2.13.0 => github.com/epam/edp-cd-pipeline-operator/v2 v2.3.0-58.0.20230125151029-744b0fbb137f
+	github.com/epam/edp-component-operator => github.com/epam/edp-component-operator v0.1.1-0.20230118145658-7283b2b5cbf9
+	github.com/epam/edp-perf-operator/v2 v2.12.0 => github.com/epam/edp-perf-operator/v2 v2.0.0-20230125131439-17d2df0b44eb
 	github.com/kubernetes-incubator/reference-docs => github.com/kubernetes-sigs/reference-docs v0.0.0-20170929004150-fcf65347b256
 	github.com/markbates/inflect => github.com/markbates/inflect v1.0.4
 )
@@ -13,11 +14,11 @@ require (
 	github.com/andygrunwald/go-jira v1.14.0
 	github.com/bndr/gojenkins v0.2.1-0.20181125150310-de43c03cf849
 	github.com/dchest/uniuri v0.0.0-20160212164326-8902c56451e9
-	github.com/epam/edp-cd-pipeline-operator/v2 v2.3.0-58.0.20230112082439-bb4d64291a98
+	github.com/epam/edp-cd-pipeline-operator/v2 v2.3.0-58.0.20230125151029-744b0fbb137f
 	github.com/epam/edp-common v0.0.0-20230104131608-33d095012fe8
-	github.com/epam/edp-component-operator v0.1.1-0.20230118145658-7283b2b5cbf9
-	github.com/epam/edp-jenkins-operator/v2 v2.13.1
-	github.com/epam/edp-perf-operator/v2 v2.12.0
+	github.com/epam/edp-component-operator v0.12.0
+	github.com/epam/edp-jenkins-operator/v2 v2.13.2
+	github.com/epam/edp-perf-operator/v2 v2.0.0-20230125131439-17d2df0b44eb
 	github.com/go-git/go-git/v5 v5.4.3-0.20210630082519-b4368b2a2ca4
 	github.com/go-logr/logr v1.2.3
 	github.com/go-resty/resty/v2 v2.6.0
@@ -102,8 +103,8 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/apiextensions-apiserver v0.26.1 // indirect
 	k8s.io/component-base v0.26.1 // indirect
-	k8s.io/klog/v2 v2.80.2-0.20221028030830-9ae4992afb54 // indirect
-	k8s.io/kube-openapi v0.0.0-20230118215034-64b6bb138190 // indirect
+	k8s.io/klog/v2 v2.90.0 // indirect
+	k8s.io/kube-openapi v0.0.0-20230123231816-1cb3ae25d79a // indirect
 	k8s.io/utils v0.0.0-20230115233650-391b47cb4029 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect

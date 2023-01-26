@@ -10,7 +10,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1"
+	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
@@ -52,7 +52,7 @@ func TestPutCDStageJenkinsDeployment_ServeRequest_ShouldPass(t *testing.T) {
 	scheme := runtime.NewScheme()
 	scheme.AddKnownTypes(metaV1.SchemeGroupVersion, jl, j)
 	scheme.AddKnownTypes(codebaseApi.GroupVersion, cdsd)
-	scheme.AddKnownTypes(cdPipeApi.SchemeGroupVersion, s)
+	scheme.AddKnownTypes(cdPipeApi.GroupVersion, s)
 	scheme.AddKnownTypes(jenkinsApi.SchemeGroupVersion, jcdsd)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(cdsd, s, jcdsd, j, jl).Build()
 
@@ -94,7 +94,7 @@ func TestPutCDStageJenkinsDeployment_ServeRequest_ShouldFailWithExistingCR(t *te
 	}
 
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(cdPipeApi.SchemeGroupVersion, s)
+	scheme.AddKnownTypes(cdPipeApi.GroupVersion, s)
 	scheme.AddKnownTypes(codebaseApi.GroupVersion, cdsd)
 	scheme.AddKnownTypes(jenkinsApi.SchemeGroupVersion, jcdsd)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(cdsd, jcdsd, s).Build()
@@ -138,7 +138,7 @@ func TestPutCDStageJenkinsDeployment_ServeRequest_ShouldFailGenerateLabels(t *te
 	scheme := runtime.NewScheme()
 	scheme.AddKnownTypes(metaV1.SchemeGroupVersion, jl, j)
 	scheme.AddKnownTypes(codebaseApi.GroupVersion, cdsd)
-	scheme.AddKnownTypes(cdPipeApi.SchemeGroupVersion, s)
+	scheme.AddKnownTypes(cdPipeApi.GroupVersion, s)
 	scheme.AddKnownTypes(jenkinsApi.SchemeGroupVersion, jcdsd)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(cdsd, s, jcdsd, j, jl).Build()
 

@@ -15,7 +15,7 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/controllers/codebasebranch/chain/handler"
 	"github.com/epam/edp-codebase-operator/v2/pkg/model"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
-	perfApi "github.com/epam/edp-perf-operator/v2/pkg/apis/edp/v1"
+	perfApi "github.com/epam/edp-perf-operator/v2/api/v1"
 )
 
 type UpdatePerfDataSources struct {

@@ -15,7 +15,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1"
+	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
 )
@@ -100,7 +100,7 @@ func TestReconcileCDStageDeploy_Reconcile(t *testing.T) {
 
 					scheme.AddKnownTypes(metaV1.SchemeGroupVersion, env.jl, env.j)
 					scheme.AddKnownTypes(codebaseApi.GroupVersion, env.cdsd)
-					scheme.AddKnownTypes(cdPipeApi.SchemeGroupVersion, env.s)
+					scheme.AddKnownTypes(cdPipeApi.GroupVersion, env.s)
 					scheme.AddKnownTypes(jenkinsApi.SchemeGroupVersion, env.jcdsd)
 
 					return scheme
@@ -265,7 +265,7 @@ func TestReconcileCDStageDeploy_Reconcile(t *testing.T) {
 				scheme: func(env env) *runtime.Scheme {
 					scheme := runtime.NewScheme()
 
-					scheme.AddKnownTypes(cdPipeApi.SchemeGroupVersion, env.s)
+					scheme.AddKnownTypes(cdPipeApi.GroupVersion, env.s)
 					scheme.AddKnownTypes(codebaseApi.GroupVersion, env.cdsd)
 
 					return scheme
@@ -330,7 +330,7 @@ func TestReconcileCDStageDeploy_Reconcile(t *testing.T) {
 				scheme: func(env env) *runtime.Scheme {
 					scheme := runtime.NewScheme()
 
-					scheme.AddKnownTypes(cdPipeApi.SchemeGroupVersion, env.s)
+					scheme.AddKnownTypes(cdPipeApi.GroupVersion, env.s)
 					scheme.AddKnownTypes(codebaseApi.GroupVersion, env.cdsd)
 					scheme.AddKnownTypes(jenkinsApi.SchemeGroupVersion, env.jcdsd)
 
