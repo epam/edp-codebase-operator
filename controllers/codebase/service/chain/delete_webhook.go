@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/go-logr/logr"
 	"github.com/go-resty/resty/v2"
 	"github.com/pkg/errors"
 	coreV1 "k8s.io/api/core/v1"
@@ -18,16 +19,17 @@ import (
 type DeleteWebHook struct {
 	client      client.Client
 	restyClient *resty.Client
+	log         logr.Logger
 }
 
 // NewDeleteWebHook creates DeleteWebHook instance.
-func NewDeleteWebHook(k8sClient client.Client, restyClient *resty.Client) *DeleteWebHook {
-	return &DeleteWebHook{client: k8sClient, restyClient: restyClient}
+func NewDeleteWebHook(k8sClient client.Client, restyClient *resty.Client, log logr.Logger) *DeleteWebHook {
+	return &DeleteWebHook{client: k8sClient, restyClient: restyClient, log: log}
 }
 
 // ServeRequest deletes webhook.
 func (s *DeleteWebHook) ServeRequest(ctx context.Context, codebase *codebaseApi.Codebase) error {
-	rLog := log.WithValues("codebase name", codebase.Name)
+	rLog := s.log.WithValues("codebase name", codebase.Name)
 	rLog.Info("Start deleting webhook...")
 
 	if codebase.Status.WebHookID == 0 {

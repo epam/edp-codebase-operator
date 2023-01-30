@@ -13,7 +13,6 @@ import (
 	coreV1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
@@ -23,11 +22,6 @@ import (
 )
 
 func TestDeleteWebHook_ServeRequest(t *testing.T) {
-	logger := platform.NewLoggerMock()
-	loggerSink, ok := logger.GetSink().(*platform.LoggerMock)
-	require.True(t, ok)
-	ctrl.SetLogger(logger)
-
 	restyClient := resty.New()
 	httpmock.ActivateNonDefault(restyClient.GetClient())
 
@@ -382,7 +376,12 @@ func TestDeleteWebHook_ServeRequest(t *testing.T) {
 			tt.responder(t)
 
 			k8sClient := fake.NewClientBuilder().WithScheme(schema).WithObjects(tt.k8sObjects...).Build()
-			s := NewDeleteWebHook(k8sClient, restyClient)
+
+			logger := platform.NewLoggerMock()
+			loggerSink, ok := logger.GetSink().(*platform.LoggerMock)
+			require.True(t, ok)
+
+			s := NewDeleteWebHook(k8sClient, restyClient, logger)
 
 			assert.NoError(t, s.ServeRequest(context.Background(), tt.codebase))
 			assert.Equalf(t, tt.hasError, loggerSink.LastError() != nil, "expected error: %v, got: %v", tt.hasError, loggerSink.LastError())

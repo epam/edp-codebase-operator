@@ -25,6 +25,7 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/controllers/codebase/service/chain"
 	cHand "github.com/epam/edp-codebase-operator/v2/controllers/codebase/service/chain/handler"
 	validate "github.com/epam/edp-codebase-operator/v2/controllers/codebase/validation"
+	"github.com/epam/edp-codebase-operator/v2/pkg/objectmodifier"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
@@ -32,9 +33,10 @@ const codebaseOperatorFinalizerName = "codebase.operator.finalizer.name"
 
 func NewReconcileCodebase(c client.Client, scheme *runtime.Scheme, log logr.Logger) *ReconcileCodebase {
 	return &ReconcileCodebase{
-		client: c,
-		scheme: scheme,
-		log:    log.WithName("codebase"),
+		client:   c,
+		scheme:   scheme,
+		log:      log.WithName("codebase"),
+		modifier: objectmodifier.NewCodebaseModifier(c),
 	}
 }
 
@@ -43,6 +45,7 @@ type ReconcileCodebase struct {
 	scheme      *runtime.Scheme
 	log         logr.Logger
 	chainGetter func(cr *codebaseApi.Codebase) (cHand.CodebaseHandler, error)
+	modifier    *objectmodifier.CodebaseModifier
 }
 
 func (r *ReconcileCodebase) SetupWithManager(mgr ctrl.Manager) error {
@@ -94,8 +97,8 @@ func (r *ReconcileCodebase) Reconcile(ctx context.Context, request reconcile.Req
 	log := r.log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
 	log.Info("Reconciling Codebase")
 
-	c := &codebaseApi.Codebase{}
-	if err := r.client.Get(ctx, request.NamespacedName, c); err != nil {
+	codebase := &codebaseApi.Codebase{}
+	if err := r.client.Get(ctx, request.NamespacedName, codebase); err != nil {
 		if k8sErrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
 		}
@@ -103,28 +106,28 @@ func (r *ReconcileCodebase) Reconcile(ctx context.Context, request reconcile.Req
 		return reconcile.Result{}, fmt.Errorf("failed to fetch Codebase resource %q: %w", request.NamespacedName, err)
 	}
 
-	if c.Spec.Strategy == util.ImportStrategy {
-		updated, err := r.trimGitFromImportUrl(ctx, c)
-		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("failed to trim \".git\" from url: %w", err)
-		}
+	patched, err := r.modifier.Apply(ctx, codebase)
+	if err != nil {
+		return reconcile.Result{}, fmt.Errorf("failed to apply codebase changes: %w", err)
+	}
 
-		if updated {
-			return reconcile.Result{}, nil
-		}
+	if patched {
+		log.Info("codebase default values has been patched")
+
+		return reconcile.Result{}, nil
 	}
 
 	defer func() {
-		if err := r.updateStatus(ctx, c); err != nil {
+		if err = r.updateStatus(ctx, codebase); err != nil {
 			log.Error(err, "error during status updating")
 		}
 	}()
 
-	if err := r.setFinalizers(ctx, c); err != nil {
+	if err = r.setFinalizers(ctx, codebase); err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to set finalizers: %w", err)
 	}
 
-	result, err := r.tryToDeleteCodebase(ctx, c)
+	result, err := r.tryToDeleteCodebase(ctx, codebase)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to try to delete codebase: %w", err)
 	}
@@ -133,57 +136,38 @@ func (r *ReconcileCodebase) Reconcile(ctx context.Context, request reconcile.Req
 		return *result, nil
 	}
 
-	if !validate.IsCodebaseValid(c) {
+	if !validate.IsCodebaseValid(codebase) {
 		return reconcile.Result{}, nil
 	}
 
-	err = r.initLabels(ctx, c)
+	err = r.initLabels(ctx, codebase)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to init labels for codebase: %w", err)
 	}
 
-	ch, err := r.getChain(c)
+	ch, err := r.getChain(codebase)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to select chain: %w", err)
 	}
 
-	if err := ch.ServeRequest(ctx, c); err != nil {
+	if err := ch.ServeRequest(ctx, codebase); err != nil {
 		if pErr, ok := errors.Cause(err).(chain.PostponeError); ok {
 			return reconcile.Result{RequeueAfter: pErr.Timeout}, nil
 		}
 
-		timeout := r.setFailureCount(c)
-		log.Error(err, "an error has occurred while handling codebase", "name", c.Name)
+		timeout := r.setFailureCount(codebase)
+		log.Error(err, "an error has occurred while handling codebase", "name", codebase.Name)
 
 		return reconcile.Result{RequeueAfter: timeout}, nil
 	}
 
-	if err := r.updateFinishStatus(ctx, c); err != nil {
-		return reconcile.Result{}, fmt.Errorf("failed to update %v Codebase status: %w", c.Name, err)
+	if err := r.updateFinishStatus(ctx, codebase); err != nil {
+		return reconcile.Result{}, fmt.Errorf("failed to update %v Codebase status: %w", codebase.Name, err)
 	}
 
 	log.Info("Reconciling codebase has been finished")
 
 	return reconcile.Result{}, nil
-}
-
-// trimGitFromImportUrl removes all the trailing ".git" suffixes at the end of the git url path, if there are any.
-// If it removes anything, it returns true.
-func (r *ReconcileCodebase) trimGitFromImportUrl(ctx context.Context, codebase *codebaseApi.Codebase) (bool, error) {
-	if codebase.Spec.GitUrlPath == nil || !strings.HasSuffix(*codebase.Spec.GitUrlPath, ".git") {
-		return false, nil
-	}
-
-	patch := client.MergeFrom(codebase.DeepCopy())
-
-	newGitUrlPath := util.TrimGitFromURL(*codebase.Spec.GitUrlPath)
-	codebase.Spec.GitUrlPath = &newGitUrlPath
-
-	if err := r.client.Patch(ctx, codebase, patch); err != nil {
-		return false, fmt.Errorf("failed to patch Codebase after trimming .git: %w", err)
-	}
-
-	return true, nil
 }
 
 func (r *ReconcileCodebase) updateFinishStatus(ctx context.Context, c *codebaseApi.Codebase) error {

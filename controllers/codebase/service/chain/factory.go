@@ -82,7 +82,7 @@ func MakeDeletionChain(c client.Client, codebase *codebaseApi.Codebase) handler.
 	ch := &chain{}
 
 	if codebase.Spec.CiTool == util.Tekton {
-		ch.Use(NewDeleteWebHook(c, resty.New()))
+		ch.Use(NewDeleteWebHook(c, resty.New(), log))
 	}
 
 	if codebase.Spec.CiTool != util.Tekton {

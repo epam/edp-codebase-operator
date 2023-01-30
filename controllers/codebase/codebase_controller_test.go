@@ -21,6 +21,7 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/controllers/codebase/service/chain"
 	"github.com/epam/edp-codebase-operator/v2/controllers/codebase/service/chain/handler"
 	chainMocks "github.com/epam/edp-codebase-operator/v2/controllers/codebase/service/chain/mocks"
+	"github.com/epam/edp-codebase-operator/v2/pkg/objectmodifier"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
 )
@@ -104,6 +105,9 @@ func (s *ControllerTestSuite) TestReconcileCodebase_Reconcile_ShouldFailDeleteCo
 				Time: metaV1.Now().Time,
 			},
 		},
+		Spec: codebaseApi.CodebaseSpec{
+			GitUrlPath: util.GetStringP("/url"),
+		},
 	}
 	scheme := runtime.NewScheme()
 	scheme.AddKnownTypes(codebaseApi.GroupVersion, &codebaseApi.Codebase{})
@@ -117,13 +121,9 @@ func (s *ControllerTestSuite) TestReconcileCodebase_Reconcile_ShouldFailDeleteCo
 		},
 	}
 
-	r := ReconcileCodebase{
-		client: fakeCl,
-		log:    logr.Discard(),
-		scheme: scheme,
-	}
+	r := NewReconcileCodebase(fakeCl, scheme, logr.Discard())
 
-	res, err := r.Reconcile(context.TODO(), req)
+	res, err := r.Reconcile(context.Background(), req)
 
 	t := s.T()
 	assert.Error(t, err)
@@ -149,11 +149,7 @@ func (s *ControllerTestSuite) TestReconcileCodebase_Reconcile_ShouldPassOnInvali
 		},
 	}
 
-	r := ReconcileCodebase{
-		client: fakeCl,
-		log:    logr.Discard(),
-		scheme: s.scheme,
-	}
+	r := NewReconcileCodebase(fakeCl, s.scheme, logr.Discard())
 
 	res, err := r.Reconcile(context.TODO(), req)
 
@@ -169,14 +165,14 @@ func (s *ControllerTestSuite) TestReconcileCodebase_Reconcile_ShouldFailOnCreate
 			Namespace: "namespace",
 		},
 		Spec: codebaseApi.CodebaseSpec{
-			Strategy: codebaseApi.Create,
-			Lang:     "go",
+			Strategy:   codebaseApi.Create,
+			Lang:       "go",
+			GitUrlPath: util.GetStringP("/url"),
 		},
 	}
 
 	fakeCl := fake.NewClientBuilder().WithScheme(s.scheme).WithRuntimeObjects(c).Build()
 
-	// request
 	req := reconcile.Request{
 		NamespacedName: types.NamespacedName{
 			Name:      "NewCodebase",
@@ -184,11 +180,7 @@ func (s *ControllerTestSuite) TestReconcileCodebase_Reconcile_ShouldFailOnCreate
 		},
 	}
 
-	r := ReconcileCodebase{
-		client: fakeCl,
-		log:    logr.Discard(),
-		scheme: s.scheme,
-	}
+	r := NewReconcileCodebase(fakeCl, s.scheme, logr.Discard())
 
 	res, err := r.Reconcile(context.TODO(), req)
 
@@ -264,11 +256,7 @@ func (s *ControllerTestSuite) TestReconcileCodebase_Reconcile_ShouldPassOnJavaCr
 		},
 	}
 
-	r := ReconcileCodebase{
-		client: fakeCl,
-		log:    logr.Discard(),
-		scheme: s.scheme,
-	}
+	r := NewReconcileCodebase(fakeCl, s.scheme, logr.Discard())
 
 	res, err := r.Reconcile(context.TODO(), req)
 
@@ -286,6 +274,9 @@ func (s *ControllerTestSuite) TestReconcileCodebase_Reconcile_ShouldDeleteCodeba
 				Time: metaV1.Now().Time,
 			},
 		},
+		Spec: codebaseApi.CodebaseSpec{
+			GitUrlPath: util.GetStringP("/test"),
+		},
 	}
 	cbl := &codebaseApi.CodebaseBranchList{}
 	jfl := &jenkinsApi.JenkinsFolderList{}
@@ -300,11 +291,7 @@ func (s *ControllerTestSuite) TestReconcileCodebase_Reconcile_ShouldDeleteCodeba
 		},
 	}
 
-	r := ReconcileCodebase{
-		client: fakeCl,
-		log:    logr.Discard(),
-		scheme: s.scheme,
-	}
+	r := NewReconcileCodebase(fakeCl, s.scheme, logr.Discard())
 
 	res, err := r.Reconcile(context.TODO(), req)
 
@@ -423,10 +410,11 @@ func (s *ControllerTestSuite) TestPostpone() {
 			ResourceVersion: "1",
 		},
 		Spec: codebaseApi.CodebaseSpec{
-			Strategy: util.ImportStrategy,
-			CiTool:   util.GitlabCi,
-			Type:     "application",
-			Lang:     "java",
+			GitUrlPath: util.GetStringP("/test"),
+			Strategy:   util.ImportStrategy,
+			CiTool:     util.GitlabCi,
+			Type:       "application",
+			Lang:       "java",
 		},
 	}
 	fakeCl := fake.NewClientBuilder().WithScheme(s.scheme).WithRuntimeObjects(&c).Build()
@@ -446,6 +434,7 @@ func (s *ControllerTestSuite) TestPostpone() {
 		chainGetter: func(cr *codebaseApi.Codebase) (handler.CodebaseHandler, error) {
 			return &handlerMock, nil
 		},
+		modifier: objectmodifier.NewCodebaseModifier(fakeCl),
 	}
 
 	res, err := r.Reconcile(ctx, reconcile.Request{NamespacedName: types.NamespacedName{Name: c.Name, Namespace: c.Namespace}})
@@ -456,196 +445,29 @@ func (s *ControllerTestSuite) TestPostpone() {
 	handlerMock.AssertExpectations(s.T())
 }
 
-func (s *ControllerTestSuite) TestReconcileCodebase_trimGitFromImportUrl() {
-	t := s.T()
-
-	t.Parallel()
-
-	type args struct {
-		codebase *codebaseApi.Codebase
-	}
-
-	tests := []struct {
-		name         string
-		args         args
-		want         bool
-		wantCodebase *codebaseApi.Codebase
-		wantErr      require.ErrorAssertionFunc
-	}{
-		{
-			name: "should trim .git and patch the Codebase resource",
-			args: args{
-				codebase: &codebaseApi.Codebase{
-					TypeMeta: metaV1.TypeMeta{
-						Kind:       "Codebase",
-						APIVersion: "v2.edp.epam.com/v1",
-					},
-					ObjectMeta: metaV1.ObjectMeta{
-						Name:            "NewCodebase",
-						Namespace:       "default",
-						ResourceVersion: "1",
-					},
-					Spec: codebaseApi.CodebaseSpec{
-						Strategy:   util.ImportStrategy,
-						GitUrlPath: util.GetStringP("/some/test/path.git"),
-					},
-				},
-			},
-			want: true,
-			wantCodebase: &codebaseApi.Codebase{
-				TypeMeta: metaV1.TypeMeta{
-					Kind:       "Codebase",
-					APIVersion: "v2.edp.epam.com/v1",
-				},
-				ObjectMeta: metaV1.ObjectMeta{
-					Name:            "NewCodebase",
-					Namespace:       "default",
-					ResourceVersion: "2",
-				},
-				Spec: codebaseApi.CodebaseSpec{
-					Strategy:   util.ImportStrategy,
-					GitUrlPath: util.GetStringP("/some/test/path"),
-				},
-			},
-			wantErr: require.NoError,
-		},
-		{
-			name: "should trim multiple .git and patch the Codebase resource",
-			args: args{
-				codebase: &codebaseApi.Codebase{
-					TypeMeta: metaV1.TypeMeta{
-						Kind:       "Codebase",
-						APIVersion: "v2.edp.epam.com/v1",
-					},
-					ObjectMeta: metaV1.ObjectMeta{
-						Name:            "NewCodebase",
-						Namespace:       "default",
-						ResourceVersion: "1",
-					},
-					Spec: codebaseApi.CodebaseSpec{
-						Strategy:   util.ImportStrategy,
-						GitUrlPath: util.GetStringP("/some/test/path.git.git.git"),
-					},
-				},
-			},
-			want: true,
-			wantCodebase: &codebaseApi.Codebase{
-				TypeMeta: metaV1.TypeMeta{
-					Kind:       "Codebase",
-					APIVersion: "v2.edp.epam.com/v1",
-				},
-				ObjectMeta: metaV1.ObjectMeta{
-					Name:            "NewCodebase",
-					Namespace:       "default",
-					ResourceVersion: "2",
-				},
-				Spec: codebaseApi.CodebaseSpec{
-					Strategy:   util.ImportStrategy,
-					GitUrlPath: util.GetStringP("/some/test/path"),
-				},
-			},
-			wantErr: require.NoError,
-		},
-		{
-			name: "should not update because of no .git suffix",
-			args: args{
-				codebase: &codebaseApi.Codebase{
-					TypeMeta: metaV1.TypeMeta{
-						Kind:       "Codebase",
-						APIVersion: "v2.edp.epam.com/v1",
-					},
-					ObjectMeta: metaV1.ObjectMeta{
-						Name:            "NewCodebase",
-						Namespace:       "default",
-						ResourceVersion: "1",
-					},
-					Spec: codebaseApi.CodebaseSpec{
-						Strategy:   util.ImportStrategy,
-						GitUrlPath: util.GetStringP("/some/test/path"),
-					},
-				},
-			},
-			want: false,
-			wantCodebase: &codebaseApi.Codebase{
-				TypeMeta: metaV1.TypeMeta{
-					Kind:       "Codebase",
-					APIVersion: "v2.edp.epam.com/v1",
-				},
-				ObjectMeta: metaV1.ObjectMeta{
-					Name:            "NewCodebase",
-					Namespace:       "default",
-					ResourceVersion: "1",
-				},
-				Spec: codebaseApi.CodebaseSpec{
-					Strategy:   util.ImportStrategy,
-					GitUrlPath: util.GetStringP("/some/test/path"),
-				},
-			},
-			wantErr: require.NoError,
-		},
-		{
-			name: "should not update because of nil GitUrlPath",
-			args: args{
-				codebase: &codebaseApi.Codebase{
-					TypeMeta: metaV1.TypeMeta{
-						Kind:       "Codebase",
-						APIVersion: "v2.edp.epam.com/v1",
-					},
-					ObjectMeta: metaV1.ObjectMeta{
-						Name:            "NewCodebase",
-						Namespace:       "default",
-						ResourceVersion: "1",
-					},
-					Spec: codebaseApi.CodebaseSpec{
-						Strategy:   util.ImportStrategy,
-						GitUrlPath: nil,
-					},
-				},
-			},
-			want: false,
-			wantCodebase: &codebaseApi.Codebase{
-				TypeMeta: metaV1.TypeMeta{
-					Kind:       "Codebase",
-					APIVersion: "v2.edp.epam.com/v1",
-				},
-				ObjectMeta: metaV1.ObjectMeta{
-					Name:            "NewCodebase",
-					Namespace:       "default",
-					ResourceVersion: "1",
-				},
-				Spec: codebaseApi.CodebaseSpec{
-					Strategy:   util.ImportStrategy,
-					GitUrlPath: nil,
-				},
-			},
-			wantErr: require.NoError,
+func (s *ControllerTestSuite) TestModifyCodebaseBeforeReconciliation() {
+	codebase := &codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      "test-codebase",
+			Namespace: "namespace",
 		},
 	}
+	fakeCl := fake.NewClientBuilder().WithScheme(s.scheme).WithRuntimeObjects(codebase).Build()
 
-	ctx := context.Background()
+	r := NewReconcileCodebase(fakeCl, s.scheme, logr.Discard())
 
-	for _, tt := range tests {
-		tt := tt
+	res, err := r.Reconcile(
+		context.Background(),
+		reconcile.Request{NamespacedName: types.NamespacedName{Name: codebase.Name, Namespace: codebase.Namespace}},
+	)
 
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
+	require.NoError(s.T(), err)
+	require.Equal(s.T(), res, reconcile.Result{})
 
-			testClient := fake.NewClientBuilder().
-				WithScheme(s.scheme).
-				WithObjects(tt.args.codebase).
-				Build()
+	patchedCodebase := &codebaseApi.Codebase{}
+	err = fakeCl.Get(context.Background(), types.NamespacedName{Name: codebase.Name, Namespace: codebase.Namespace}, patchedCodebase)
 
-			r := &ReconcileCodebase{
-				client: testClient,
-				scheme: s.scheme,
-				log:    logr.Discard(),
-			}
-
-			got, err := r.trimGitFromImportUrl(ctx, tt.args.codebase)
-
-			tt.wantErr(t, err)
-			require.Equal(t, tt.want, got)
-			require.Equal(t, tt.wantCodebase, tt.args.codebase)
-		})
-	}
+	require.NoError(s.T(), err)
+	require.NotNil(s.T(), patchedCodebase.Spec.GitUrlPath)
+	require.Equal(s.T(), *patchedCodebase.Spec.GitUrlPath, "/test-codebase")
 }
