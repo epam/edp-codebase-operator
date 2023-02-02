@@ -13,18 +13,19 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
+	edpCompApi "github.com/epam/edp-component-operator/api/v1"
+
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	"github.com/epam/edp-codebase-operator/v2/controllers/codebase/repository"
 	mockGit "github.com/epam/edp-codebase-operator/v2/controllers/gitserver/mocks"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
-	edpCompApi "github.com/epam/edp-component-operator/api/v1"
 )
 
 func TestPutGitlabCiFile_ShouldPass(t *testing.T) {
 	ctx := context.Background()
 
 	dir, err := os.MkdirTemp("/tmp", "codebase")
-	require.NoError(t, err, "unable to create temp directory for testing")
+	require.NoError(t, err, "failed to create temp directory for testing")
 
 	defer func() {
 		err = os.RemoveAll(dir)
@@ -112,7 +113,7 @@ func TestPutGitlabCiFile_ShouldPass(t *testing.T) {
 
 	err = util.CreateDirectory(wd)
 	if err != nil {
-		t.Error("Unable to create directory for testing")
+		t.Error("failed to create directory for testing")
 	}
 
 	mGit := new(mockGit.MockGit)

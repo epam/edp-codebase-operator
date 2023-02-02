@@ -1,7 +1,7 @@
 package chain
 
 import (
-	"github.com/pkg/errors"
+	"fmt"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	"github.com/epam/edp-codebase-operator/v2/controllers/jiraserver/chain/handler"
@@ -32,7 +32,7 @@ func (h CheckConnection) ServeRequest(js *codebaseApi.JiraServer) error {
 func (h CheckConnection) checkConnection() (bool, error) {
 	connected, err := h.client.Connected()
 	if err != nil {
-		return false, errors.Wrap(err, "couldn't connect to Jira server")
+		return false, fmt.Errorf("failed to connect to Jira server: %w", err)
 	}
 
 	log.Info("connection to Jira server", "established", connected)

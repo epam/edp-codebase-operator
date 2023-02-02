@@ -22,7 +22,7 @@ import (
 )
 
 func TestPutGerritReplication_ShouldFailWhenReloadGerritPlugin(t *testing.T) {
-	//TODO: mock sshclient and implement test that passes
+	// TODO: mock sshclient and implement test that passes
 	t.Skip()
 
 	ctx := context.Background()
@@ -97,7 +97,7 @@ func TestPutGerritReplication_ShouldFailWhenReloadGerritPlugin(t *testing.T) {
 	}
 
 	pk, err := rsa.GenerateKey(rand.Reader, 128)
-	require.NoError(t, err, "unable to generate test private key")
+	require.NoError(t, err, "failed to generate test private key")
 
 	privateKeyBytes := x509.MarshalPKCS1PrivateKey(pk)
 	privateKeyPem := pem.EncodeToMemory(

@@ -45,7 +45,7 @@ func (s *PutDefaultCodeBaseBranch) ServeRequest(ctx context.Context, codebase *c
 	}
 
 	if err != nil && !k8sErrors.IsNotFound(err) {
-		return fmt.Errorf("unable to get codebase branch: %w", err)
+		return fmt.Errorf("failed to get codebase branch: %w", err)
 	}
 
 	branch = &codebaseApi.CodebaseBranch{
@@ -64,7 +64,7 @@ func (s *PutDefaultCodeBaseBranch) ServeRequest(ctx context.Context, codebase *c
 	}
 
 	if err = s.client.Create(ctx, branch); err != nil {
-		return fmt.Errorf("unable to create codebase branch: %w", err)
+		return fmt.Errorf("failed to create codebase branch: %w", err)
 	}
 
 	logger.Info("Codebase branch has been created")

@@ -1,6 +1,7 @@
 package jenkins
 
 import (
+	"errors"
 	"net/http"
 	"strings"
 	"testing"
@@ -8,7 +9,6 @@ import (
 
 	"github.com/bndr/gojenkins"
 	"github.com/jarcoal/httpmock"
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	coreV1 "k8s.io/api/core/v1"
@@ -44,7 +44,7 @@ func TestJenkinsClient_TriggerReleaseJob_JobNotFound(t *testing.T) {
 	err = jc.TriggerReleaseJob("codebase", map[string]string{"foo": "bar"})
 	require.NotNil(t, err)
 
-	if !strings.Contains(err.Error(), "unable to get job") {
+	if !strings.Contains(err.Error(), "failed to get job") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
 }
@@ -79,7 +79,7 @@ func TestJenkinsClient_TriggerReleaseJob_UnableToBuild(t *testing.T) {
 	err = jc.TriggerReleaseJob("codebase", map[string]string{"foo": "bar"})
 	require.NotNil(t, err)
 
-	if !strings.Contains(err.Error(), "Couldn't trigger") {
+	if !strings.Contains(err.Error(), "failed to trigger") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
 }
@@ -486,7 +486,7 @@ func TestJenkinsClient_TriggerDeletionJob_JobNotFound(t *testing.T) {
 	err = jc.TriggerDeletionJob("master", "codebase")
 	require.NotNil(t, err)
 
-	if errors.Cause(err) != JobNotFoundError(err.Error()) {
+	if !errors.Is(err, JobNotFoundError(err.Error())) {
 		t.Fatal("wrong error returned")
 	}
 }
@@ -596,7 +596,7 @@ func TestJenkinsClient_TriggerDeletionJob_ShouldFailOnJobBuildFailure(t *testing
 	err = jc.TriggerDeletionJob("master", "codebase")
 	require.NotNil(t, err)
 
-	if !strings.Contains(err.Error(), "unable to build job") {
+	if !strings.Contains(err.Error(), "failed to build job") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
 }
@@ -691,7 +691,7 @@ func TestJenkinsClient_GetJobStatus_ShouldFailOnTimeout(t *testing.T) {
 	js, err := jc.GetJobStatus("job-name", 1*time.Millisecond, 1)
 	assert.Error(t, err)
 	assert.Equal(t, js, "")
-	assert.Contains(t, err.Error(), "Job job-name has not been finished after specified delay")
+	assert.Contains(t, err.Error(), "failed to finish job after specified delay - job job-name")
 }
 
 func TestJenkinsClient_GetJobStatus_ShouldFailOnNotbuilt(t *testing.T) {
@@ -722,5 +722,5 @@ func TestJenkinsClient_GetJobStatus_ShouldFailOnNotbuilt(t *testing.T) {
 	js, err := jc.GetJobStatus("job-name", 1*time.Millisecond, 1)
 	assert.Error(t, err)
 	assert.Equal(t, js, "")
-	assert.Contains(t, err.Error(), "Job job-name has not been finished after specified delay")
+	assert.Contains(t, err.Error(), "failed to finish job after specified delay - job job-name")
 }

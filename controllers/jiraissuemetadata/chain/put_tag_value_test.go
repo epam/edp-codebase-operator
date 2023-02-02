@@ -87,7 +87,7 @@ func TestPutTagValue_GetProjectInfo(t *testing.T) {
 		errors.New("unknown")).Once()
 
 	_, _, err = ptv.getProjectInfo([]string{"baz"})
-	assert.EqualError(t, err, "unable to get project info: unknown")
+	assert.EqualError(t, err, "failed to get project info: unknown")
 
 	mClient.AssertExpectations(t)
 }

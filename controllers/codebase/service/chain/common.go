@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"regexp"
 
-	"github.com/pkg/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -24,7 +23,7 @@ func pushChangesToGit(c client.Client, g git.Git, projectPath string, cb *codeba
 
 	secret, err := util.GetSecret(c, gs.NameSshKeySecret, cb.Namespace)
 	if err != nil {
-		return errors.Wrapf(err, "an error has occurred while getting %v secret", gs.NameSshKeySecret)
+		return fmt.Errorf("failed to get %v secret: %w", gs.NameSshKeySecret, err)
 	}
 
 	k := string(secret.Data[util.PrivateSShKeyName])
@@ -32,7 +31,7 @@ func pushChangesToGit(c client.Client, g git.Git, projectPath string, cb *codeba
 	p := gs.SshPort
 
 	if err := g.PushChanges(k, u, projectPath, p, cb.Spec.DefaultBranch); err != nil {
-		return errors.Wrapf(err, "an error has occurred while pushing changes for %v repo", projectPath)
+		return fmt.Errorf("failed to push changes for repo %v: %w", projectPath, err)
 	}
 
 	log.Info("templates have been pushed")

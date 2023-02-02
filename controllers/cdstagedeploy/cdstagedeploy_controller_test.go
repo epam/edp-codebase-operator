@@ -16,8 +16,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
-	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 )
 
 func TestReconcileCDStageDeploy_Reconcile(t *testing.T) {
@@ -283,7 +284,7 @@ func TestReconcileCDStageDeploy_Reconcile(t *testing.T) {
 			wantErr: func(t require.TestingT, err error, _ ...any) {
 				require.Error(t, err)
 
-				errText := "couldn't get NewCDStageDeploy cd stage jenkins deployment"
+				errText := "failed to get NewCDStageDeploy cd stage jenkins deployment"
 
 				require.Contains(t, err.Error(), errText)
 			},

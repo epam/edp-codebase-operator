@@ -19,7 +19,7 @@ func TestCleaner_ShouldPass(t *testing.T) {
 	ctx := context.Background()
 
 	dir, err := os.MkdirTemp("/tmp", "codebase")
-	require.NoError(t, err, "unable to create temp directory for testing")
+	require.NoError(t, err, "failed to create temp directory for testing")
 
 	defer func() {
 		err = os.RemoveAll(dir)
@@ -58,7 +58,7 @@ func TestCleaner_ShouldNotFailedIfSecretNotFound(t *testing.T) {
 	ctx := context.Background()
 
 	dir, err := os.MkdirTemp("/tmp", "codebase")
-	require.NoError(t, err, "unable to create temp directory for testing")
+	require.NoError(t, err, "failed to create temp directory for testing")
 
 	defer func() {
 		err = os.RemoveAll(dir)
@@ -92,7 +92,7 @@ func TestCleaner_ShouldFail(t *testing.T) {
 	ctx := context.Background()
 
 	dir, err := os.MkdirTemp("/tmp", "codebase")
-	require.NoError(t, err, "unable to create temp directory for testing")
+	require.NoError(t, err, "failed to create temp directory for testing")
 
 	defer func() {
 		err = os.RemoveAll(dir)
@@ -120,5 +120,5 @@ func TestCleaner_ShouldFail(t *testing.T) {
 	err = cl.ServeRequest(ctx, c)
 
 	assert.NotNil(t, err)
-	assert.Contains(t, err.Error(), "unable to delete secret repository-codebase-fake-name-temp")
+	assert.Contains(t, err.Error(), "failed to delete secret repository-codebase-fake-name-temp")
 }

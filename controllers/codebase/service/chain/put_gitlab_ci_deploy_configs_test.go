@@ -23,7 +23,7 @@ func TestPutGitlabCiDeployConfigs_ShouldPass(t *testing.T) {
 	ctx := context.Background()
 
 	dir, err := os.MkdirTemp("/tmp", "codebase")
-	require.NoError(t, err, "unable to create temp directory for testing")
+	require.NoError(t, err, "failed to create temp directory for testing")
 
 	defer func() {
 		err = os.RemoveAll(dir)

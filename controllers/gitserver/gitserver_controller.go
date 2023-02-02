@@ -7,7 +7,6 @@ import (
 
 	"github.com/go-logr/logr"
 	predicateLib "github.com/operator-framework/operator-lib/predicate"
-	"github.com/pkg/errors"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -53,7 +52,7 @@ func (r *ReconcileGitServer) SetupWithManager(mgr ctrl.Manager) error {
 
 	pause, err := predicateLib.NewPause(util.PauseAnnotation)
 	if err != nil {
-		return fmt.Errorf("unable to create pause predicate: %w", err)
+		return fmt.Errorf("failed to create pause predicate: %w", err)
 	}
 
 	err = ctrl.NewControllerManagedBy(mgr).
@@ -97,11 +96,11 @@ func (r *ReconcileGitServer) Reconcile(ctx context.Context, request reconcile.Re
 			reconcilerLog.Error(updateErr, "failed to update GitServer status")
 		}
 
-		return reconcile.Result{}, errors.Wrap(err, fmt.Sprintf("an error has occurred while checking connection to Git Server %v", gitServer.GitHost))
+		return reconcile.Result{}, fmt.Errorf("failed to check connection to Git Server %v: %w", gitServer.GitHost, err)
 	}
 
 	if err := r.updateStatus(ctx, r.client, instance, hasConnection); err != nil {
-		return reconcile.Result{}, errors.Wrap(err, fmt.Sprintf("an error has occurred while updating GitServer status %v", gitServer.GitHost))
+		return reconcile.Result{}, fmt.Errorf("failed to update GitServer status %v: %w", gitServer.GitHost, err)
 	}
 
 	if !hasConnection {

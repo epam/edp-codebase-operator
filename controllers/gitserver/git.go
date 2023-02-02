@@ -1,7 +1,7 @@
 package gitserver
 
 import (
-	goerrors "errors"
+	"errors"
 	"fmt"
 	netHttp "net/http"
 	"net/url"
@@ -19,7 +19,6 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/go-git/go-git/v5/storage/memory"
 	"github.com/go-logr/logr"
-	"github.com/pkg/errors"
 	"golang.org/x/crypto/ssh"
 	v1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -52,7 +51,7 @@ const (
 	logOutKey        = "out"
 
 	errPlainOpenTmpl    = "failed to open git directory %q: %w"
-	errRemoveSHHKeyFile = "unable to remove key file"
+	errRemoveSHHKeyFile = "failed to remove key file"
 )
 
 type GitSshData struct {
@@ -194,7 +193,7 @@ func (gp *GitProvider) RemoveBranch(directory, branchName string) error {
 	cmd := gp.buildCommand(gitCMD, gitDirArg, gitDir, gitBranchArg, "-D", branchName)
 
 	if bts, err := cmd.CombinedOutput(); err != nil {
-		return errors.Wrapf(err, "unable to remove branch, err: %s", string(bts))
+		return fmt.Errorf("failed to remove branch, err: %s: %w", string(bts), err)
 	}
 
 	return nil
@@ -205,12 +204,12 @@ func (gp *GitProvider) RenameBranch(directory, currentName, newName string) erro
 	cmd := gp.buildCommand(gitCMD, gitDirArg, gitDir, gitCheckoutArg, currentName)
 
 	if bts, err := cmd.CombinedOutput(); err != nil {
-		return errors.Wrapf(err, "unable to checkout branch, err: %s", string(bts))
+		return fmt.Errorf("failed to checkout branch, err: %s: %w", string(bts), err)
 	}
 
 	cmd = gp.buildCommand(gitCMD, gitDirArg, gitDir, gitBranchArg, "-m", newName)
 	if bts, err := cmd.CombinedOutput(); err != nil {
-		return errors.Wrapf(err, "unable to rename branch, err: %s", string(bts))
+		return fmt.Errorf("failed to rename branch, err: %s: %w", string(bts), err)
 	}
 
 	return nil
@@ -221,12 +220,12 @@ func (gp *GitProvider) CreateChildBranch(directory, currentBranch, newBranch str
 	cmd := gp.buildCommand(gitCMD, gitDirArg, gitDir, gitCheckoutArg, currentBranch)
 
 	if bts, err := cmd.CombinedOutput(); err != nil {
-		return errors.Wrapf(err, "unable to checkout branch, err: %s", string(bts))
+		return fmt.Errorf("failed to checkout branch, err: %s: %w", string(bts), err)
 	}
 
 	cmd = gp.buildCommand(gitCMD, gitDirArg, gitDir, gitCheckoutArg, "-b", newBranch)
 	if bts, err := cmd.CombinedOutput(); err != nil {
-		return errors.Wrapf(err, "unable to rename branch, err: %s", string(bts))
+		return fmt.Errorf("failed to rename branch, err: %s: %w", string(bts), err)
 	}
 
 	return nil
@@ -261,7 +260,7 @@ func (*GitProvider) PushChanges(key, user, directory string, port int32, pushPar
 	log.Info("pushCMD:", "is: ", basePushParams)
 
 	if bts, err := pushCMD.CombinedOutput(); err != nil {
-		return errors.Wrapf(err, "unable to push changes, err: %s", string(bts))
+		return fmt.Errorf("failed to push changes, err: %s: %w", string(bts), err)
 	}
 
 	log.Info("Changes has been pushed", logDirectoryKey, directory)
@@ -307,12 +306,12 @@ func (*GitProvider) BareToNormal(p string) error {
 	gitDir := path.Join(p, gitDirName)
 
 	if err := os.MkdirAll(gitDir, readWriteExecutePermBits); err != nil {
-		return errors.Wrap(err, "unable to create .git folder")
+		return fmt.Errorf("failed to create .git folder: %w", err)
 	}
 
 	files, err := os.ReadDir(p)
 	if err != nil {
-		return errors.Wrap(err, "unable to list dir")
+		return fmt.Errorf("failed to list dir: %w", err)
 	}
 
 	for _, f := range files {
@@ -324,27 +323,27 @@ func (*GitProvider) BareToNormal(p string) error {
 		newPath := path.Join(p, gitDirName, f.Name())
 
 		if err := os.Rename(oldPath, newPath); err != nil {
-			return errors.Wrap(err, "unable to rename file")
+			return fmt.Errorf("failed to rename file: %w", err)
 		}
 	}
 
 	cmd := exec.Command(gitCMD, gitDirArg, gitDir, "config", "--local",
 		"--bool", "core.bare", "false")
 	if bts, err := cmd.CombinedOutput(); err != nil {
-		return errors.Wrapf(err, string(bts))
+		return fmt.Errorf("%s: %w", string(bts), err)
 	}
 
 	cmd = exec.Command(gitCMD, gitDirArg, gitDir, "config", "--local",
 		"--bool", "remote.origin.mirror", "false")
 	if bts, err := cmd.CombinedOutput(); err != nil {
-		return errors.Wrapf(err, string(bts))
+		return fmt.Errorf("%s: %w", string(bts), err)
 	}
 
 	cmd = exec.Command(gitCMD, gitDirArg, gitDir, "reset", "--hard")
 	cmd.Dir = p
 
 	if bts, err := cmd.CombinedOutput(); err != nil {
-		return errors.Wrapf(err, string(bts))
+		return fmt.Errorf("%s: %w", string(bts), err)
 	}
 
 	return nil
@@ -370,7 +369,7 @@ func (gp *GitProvider) CloneRepositoryBySsh(key, user, repoUrl, destination stri
 
 	bytes, err := cloneCMD.CombinedOutput()
 	if err != nil {
-		return errors.Wrapf(err, "unable to clone repo by ssh, err: %s", string(bytes))
+		return fmt.Errorf("failed to clone repo by ssh, err: %s: %w", string(bytes), err)
 	}
 
 	fetchCMD := exec.Command(gitCMD, gitDirArg, destination, getFetchArg, gitUnshallowArg)
@@ -378,14 +377,14 @@ func (gp *GitProvider) CloneRepositoryBySsh(key, user, repoUrl, destination stri
 
 	bts, err := fetchCMD.CombinedOutput()
 	if err != nil {
-		return errors.Wrapf(err, "unable to fetch unshallow repo: %s", string(bts))
+		return fmt.Errorf("failed to fetch unshallow repo: %s: %w", string(bts), err)
 	}
 
 	log.Info("Result of `git fetch unshallow` command", logOutKey, string(bts))
 
 	err = gp.BareToNormal(destination)
 	if err != nil {
-		return errors.Wrap(err, "unable to covert bare repo to normal")
+		return fmt.Errorf("failed to covert bare repo to normal: %w", err)
 	}
 
 	gitDir := path.Join(destination, ".git")
@@ -394,7 +393,7 @@ func (gp *GitProvider) CloneRepositoryBySsh(key, user, repoUrl, destination stri
 	bts, err = fetchCMD.CombinedOutput()
 
 	if err != nil && !strings.Contains(string(bts), "does not make sense") {
-		return errors.Wrapf(err, "unable to pull unshallow repo: %s", string(bts))
+		return fmt.Errorf("failed to pull unshallow repo: %s: %w", string(bts), err)
 	}
 
 	log.Info("Result of `git pull unshallow` command", logOutKey, string(bts))
@@ -412,7 +411,7 @@ func (gp *GitProvider) CloneRepository(repo string, user, pass *string, destinat
 	if user != nil && pass != nil {
 		u, err := url.Parse(repo)
 		if err != nil {
-			return errors.Wrap(err, "unable to parse repo url")
+			return fmt.Errorf("failed to parse repo url: %w", err)
 		}
 
 		u.User = url.UserPassword(*user, *pass)
@@ -420,31 +419,31 @@ func (gp *GitProvider) CloneRepository(repo string, user, pass *string, destinat
 	} else {
 		rsp, err := netHttp.Get(repo)
 		if err != nil {
-			return errors.Wrap(err, "unable to get repo")
+			return fmt.Errorf("failed to get repo: %w", err)
 		}
 		if rsp.StatusCode >= httpClientErrors {
-			return errors.Wrapf(err, "repo access denied, response code: %d", rsp.StatusCode)
+			return fmt.Errorf("repo access denied, response code: %d: %w", rsp.StatusCode, err)
 		}
 	}
 
 	cloneCMD := exec.Command(gitCMD, "clone", "--mirror", "--depth", "1", repo, destination)
 
 	if bts, err := cloneCMD.CombinedOutput(); err != nil {
-		return errors.Wrapf(err, "unable to clone repo: %s", string(bts))
+		return fmt.Errorf("failed to clone repo: %s: %w", string(bts), err)
 	}
 
 	fetchCMD := exec.Command(gitCMD, gitDirArg, destination, getFetchArg, gitUnshallowArg)
 
 	bts, err := fetchCMD.CombinedOutput()
 	if err != nil {
-		return errors.Wrapf(err, "unable to fetch unshallow repo: %s", string(bts))
+		return fmt.Errorf("failed to fetch unshallow repo: %s: %w", string(bts), err)
 	}
 
 	log.Info("Result of `git fetch unshallow` command", logOutKey, string(bts))
 
 	err = gp.BareToNormal(destination)
 	if err != nil {
-		return errors.Wrap(err, "unable to covert bare repo to normal")
+		return fmt.Errorf("failed to covert bare repo to normal: %w", err)
 	}
 
 	gitDir := path.Join(destination, gitDirName)
@@ -452,7 +451,7 @@ func (gp *GitProvider) CloneRepository(repo string, user, pass *string, destinat
 
 	bts, err = fetchCMD.CombinedOutput()
 	if err != nil && !strings.Contains(string(bts), "does not make sense") {
-		return errors.Wrapf(err, "unable to pull unshallow repo: %s", string(bts))
+		return fmt.Errorf("failed to pull unshallow repo: %s: %w", string(bts), err)
 	}
 
 	log.Info("Result of `git pull unshallow` command", logOutKey, string(bts))
@@ -529,7 +528,7 @@ func (*GitProvider) Fetch(key, user, workDir, branchName string) error {
 	cmd.Dir = workDir
 
 	if bts, err := cmd.CombinedOutput(); err != nil {
-		return errors.Wrapf(err, "unable to push changes, err: %s", string(bts))
+		return fmt.Errorf("failed to push changes, err: %s: %w", string(bts), err)
 	}
 
 	log.Info("end fetching data", logBranchNameKey, branchName)
@@ -567,7 +566,7 @@ func (*GitProvider) Checkout(user, pass *string, directory, branchName string, r
 		err = r.Fetch(gfo)
 		if err != nil {
 			if err.Error() != "already up-to-date" {
-				return errors.Wrapf(err, "Unable to fetch")
+				return fmt.Errorf("failed to fetch: %w", err)
 			}
 		}
 
@@ -645,7 +644,7 @@ func (*GitProvider) CheckoutRemoteBranchBySSH(key, user, gitPath, remoteBranchNa
 	cmdFetch.Dir = gitPath
 
 	if bts, err := cmdFetch.CombinedOutput(); err != nil {
-		return errors.Wrapf(err, "unable to fetch branches, err: %s", string(bts))
+		return fmt.Errorf("failed to fetch branches, err: %s: %w", string(bts), err)
 	}
 
 	// here we expect that remote branch exists otherwise return error
@@ -654,7 +653,7 @@ func (*GitProvider) CheckoutRemoteBranchBySSH(key, user, gitPath, remoteBranchNa
 	cmdCheckout.Dir = gitPath
 
 	if bts, err := cmdCheckout.CombinedOutput(); err != nil {
-		return errors.Wrapf(err, "unable to checkout to branch, err: %s", string(bts))
+		return fmt.Errorf("failed to checkout to branch, err: %s: %w", string(bts), err)
 	}
 
 	log.Info("end checkout to", "branch", remoteBranchName)
@@ -671,7 +670,7 @@ func (*GitProvider) CommitExists(directory, hash string) (bool, error) {
 
 	commit, err := r.CommitObject(plumbing.NewHash(hash))
 	if err != nil {
-		if goerrors.Is(err, plumbing.ErrObjectNotFound) {
+		if errors.Is(err, plumbing.ErrObjectNotFound) {
 			return false, nil
 		}
 
@@ -703,7 +702,7 @@ func initAuth(key, user string) (string, error) {
 
 	keyFile, err := os.CreateTemp("", "sshkey")
 	if err != nil {
-		return "", errors.Wrap(err, "unable to create temp file for ssh key")
+		return "", fmt.Errorf("failed to create temp file for ssh key: %w", err)
 	}
 
 	keyFileInfo, _ := keyFile.Stat()
@@ -712,17 +711,17 @@ func initAuth(key, user string) (string, error) {
 	// write the key to the file with a new line at the end to avoid ssh errors on git commands
 	// if the new line already exists, adding the new line will not cause any issues
 	if _, err = keyFile.WriteString(fmt.Sprintf("%s%s", key, "\n")); err != nil {
-		return "", errors.Wrap(err, "unable to write ssh key")
+		return "", fmt.Errorf("failed to write ssh key: %w", err)
 	}
 
 	if err = keyFile.Close(); err != nil {
-		return "", errors.Wrap(err, "unable to close file")
+		return "", fmt.Errorf("failed to close file: %w", err)
 	}
 
 	const readOnlyPermBits = 0o400
 
 	if err := os.Chmod(keyFilePath, readOnlyPermBits); err != nil {
-		return "", errors.Wrap(err, "unable to chmod ssh key file")
+		return "", fmt.Errorf("failed to chmod ssh key file: %w", err)
 	}
 
 	return keyFilePath, nil
@@ -733,7 +732,7 @@ func checkConnectionToGitServer(c client.Client, gitServer *model.GitServer) (bo
 
 	sshSecret, err := util.GetSecret(c, gitServer.NameSshKeySecret, gitServer.Namespace)
 	if err != nil {
-		return false, errors.Wrap(err, fmt.Sprintf("an error has occurred  while getting %v secret", gitServer.NameSshKeySecret))
+		return false, fmt.Errorf("failed to get %v secret: %w", gitServer.NameSshKeySecret, err)
 	}
 
 	gitSshData := extractSshData(gitServer, sshSecret)
@@ -812,7 +811,7 @@ func sshInitFromSecret(data GitSshData, logger logr.Logger) (*gerrit.SSHClient, 
 func publicKey(key string) (ssh.AuthMethod, error) {
 	signer, err := ssh.ParsePrivateKey([]byte(key))
 	if err != nil {
-		return nil, fmt.Errorf("unable to parse private key: %w", err)
+		return nil, fmt.Errorf("failed to parse private key: %w", err)
 	}
 
 	return ssh.PublicKeys(signer), nil

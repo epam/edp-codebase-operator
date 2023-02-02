@@ -2,8 +2,9 @@ package chain
 
 import (
 	"context"
+	"errors"
+	"fmt"
 
-	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
@@ -24,7 +25,7 @@ func (h DeleteJiraIssueMetadataCr) ServeRequest(metadata *codebaseApi.JiraIssueM
 	logv.V(2).Info("start deleting Jira issue metadata cr.")
 
 	if err := h.c.Delete(context.TODO(), metadata); err != nil {
-		return errors.Wrapf(err, "couldn't remove fix version cr %v", metadata.Name)
+		return fmt.Errorf("failed to remove fix version cr %v: %w", metadata.Name, err)
 	}
 
 	logv.Info("Jira issue metadata cr has been deleted.")

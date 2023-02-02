@@ -15,6 +15,7 @@ type MockCodebasebranch struct {
 func (m *MockCodebasebranch) TriggerDeletionJob(cb *codebaseApi.CodebaseBranch) error {
 	return m.Called(cb).Error(0)
 }
+
 func (m *MockCodebasebranch) TriggerReleaseJob(cb *codebaseApi.CodebaseBranch) error {
 	return m.Called(cb).Error(0)
 }

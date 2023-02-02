@@ -38,7 +38,7 @@ func (c CheckCommitHashExists) ServeRequest(codebaseBranch *codebaseApi.Codebase
 		},
 		codebase,
 	); err != nil {
-		return c.processErr(codebaseBranch, fmt.Errorf("unable to get codebase %s: %w", codebaseBranch.Spec.CodebaseName, err))
+		return c.processErr(codebaseBranch, fmt.Errorf("failed to get codebase %s: %w", codebaseBranch.Spec.CodebaseName, err))
 	}
 
 	gitServer := &codebaseApi.GitServer{}
@@ -50,7 +50,7 @@ func (c CheckCommitHashExists) ServeRequest(codebaseBranch *codebaseApi.Codebase
 		},
 		gitServer,
 	); err != nil {
-		return c.processErr(codebaseBranch, fmt.Errorf("unable to get git server %s: %w", codebase.Spec.GitServer, err))
+		return c.processErr(codebaseBranch, fmt.Errorf("failed to get git server %s: %w", codebase.Spec.GitServer, err))
 	}
 
 	secret := &corev1.Secret{}
@@ -62,7 +62,7 @@ func (c CheckCommitHashExists) ServeRequest(codebaseBranch *codebaseApi.Codebase
 		},
 		secret,
 	); err != nil {
-		return c.processErr(codebaseBranch, fmt.Errorf("unable to get secret %s: %w", gitServer.Spec.NameSshKeySecret, err))
+		return c.processErr(codebaseBranch, fmt.Errorf("failed to get secret %s: %w", gitServer.Spec.NameSshKeySecret, err))
 	}
 
 	workDir := util.GetWorkDir(codebaseBranch.Spec.CodebaseName, fmt.Sprintf("%v-%v", codebaseBranch.Namespace, codebaseBranch.Spec.BranchName))
@@ -100,7 +100,7 @@ func (c CheckCommitHashExists) ServeRequest(codebaseBranch *codebaseApi.Codebase
 func (c CheckCommitHashExists) next(codebaseBranch *codebaseApi.CodebaseBranch) error {
 	err := handler.NextServeOrNil(c.Next, codebaseBranch)
 	if err != nil {
-		return fmt.Errorf("unable to serve next chain element: %w", err)
+		return fmt.Errorf("failed to serve next chain element: %w", err)
 	}
 
 	return nil

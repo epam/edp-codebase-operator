@@ -1,13 +1,13 @@
 package gitlab
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
 	"net/url"
 	"strconv"
 
-	"github.com/pkg/errors"
 	"gopkg.in/resty.v1"
 )
 
@@ -44,7 +44,7 @@ func (gitlab *GitLab) CheckProjectExist(groupPath, projectName string) (*bool, e
 	log.Printf("Response received from by GET project request: %v", resp.String())
 
 	if err != nil {
-		errorMsg := fmt.Sprintf("Unable to check project: %v", err)
+		errorMsg := fmt.Sprintf("failed to check project: %v", err)
 		log.Println(errorMsg)
 
 		return nil, errors.New(errorMsg)
@@ -83,7 +83,7 @@ func (gitlab *GitLab) CreateProject(groupPath, projectName string) (string, erro
 		}).
 		Post("/api/v4/projects")
 	if err != nil {
-		errorMsg := fmt.Sprintf("Unable to create project in GitLab: %v", err)
+		errorMsg := fmt.Sprintf("failed to create project in GitLab: %v", err)
 
 		log.Println(errorMsg)
 
@@ -125,7 +125,7 @@ func (gitlab *GitLab) GetRepositorySshUrl(groupPath, projectName string) (string
 	}
 
 	if err != nil {
-		errorMsg := fmt.Sprintf("Unable get repository SSH URL: %v", err)
+		errorMsg := fmt.Sprintf("failed get repository SSH URL: %v", err)
 		log.Println(errorMsg)
 
 		return "", errors.New(errorMsg)
@@ -168,7 +168,7 @@ func (gitlab *GitLab) Init(hostUrl, username, password string) error {
 	if err != nil {
 		log.Printf("Error has been occured tring login via password for user: %s", username)
 
-		return errors.Wrap(err, "Unable to login to Gitlab")
+		return fmt.Errorf("failed to login to Gitlab: %w", err)
 	}
 
 	log.Printf("Token for username: %v has been retrieved successfully", username)
@@ -192,7 +192,7 @@ func (gitlab *GitLab) GetGroupIdByName(groupName string) (string, error) {
 		}).
 		Get("/api/v4/groups/{group-name}")
 	if err != nil {
-		errorMsg := fmt.Sprintf("Unable get repository group id: %v", err)
+		errorMsg := fmt.Sprintf("failed get repository group id: %v", err)
 		log.Println(errorMsg)
 
 		return "", errors.New(errorMsg)
@@ -221,7 +221,7 @@ func (gitlab *GitLab) DeleteProject(projectId string) error {
 	log.Printf("Response received from by DELETE project request: %v", resp.String())
 
 	if err != nil {
-		errorMsg := fmt.Sprintf("Unable to delete project in GitLab: %v", err)
+		errorMsg := fmt.Sprintf("failed to delete project in GitLab: %v", err)
 		log.Println(errorMsg)
 
 		return errors.New(errorMsg)
@@ -248,7 +248,7 @@ func tryToLoginWithPass(hostUrl, user, pass string) (*string, error) {
 		}).
 		Post(hostUrl + "/oauth/token")
 	if err != nil {
-		errorMsg := fmt.Sprintf("Unable to get GitLab access token: %v", err)
+		errorMsg := fmt.Sprintf("failed to get GitLab access token: %v", err)
 		log.Println(errorMsg)
 
 		return nil, errors.New(errorMsg)

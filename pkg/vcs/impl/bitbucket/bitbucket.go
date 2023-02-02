@@ -1,12 +1,12 @@
 package bitbucket
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
 	"strconv"
 
-	"github.com/pkg/errors"
 	"gopkg.in/resty.v1"
 )
 
@@ -68,7 +68,7 @@ func (bitBucket *BitBucket) getProject(groupPath, projectName string) (*project,
 		}).
 		Get("/rest/api/1.0/projects/{groupPath}/repos/{projectName}")
 	if err != nil {
-		errorMsg := fmt.Sprintf("Unable to read project: %v", err)
+		errorMsg := fmt.Sprintf("failed to read project: %v", err)
 		log.Println(errorMsg)
 
 		return nil, nil, errors.New(errorMsg)
@@ -107,7 +107,7 @@ func (bitBucket *BitBucket) CreateProject(groupPath, projectName string) (string
 		}).
 		Post("/rest/api/1.0/projects/{groupPath}/repos")
 	if err != nil {
-		errorMsg := fmt.Sprintf("Unable to create project in Bitbucket: %v", err)
+		errorMsg := fmt.Sprintf("failed to create project in Bitbucket: %v", err)
 		log.Println(errorMsg)
 
 		return "", errors.New(errorMsg)
@@ -130,7 +130,7 @@ func (bitBucket *BitBucket) GetRepositorySshUrl(groupPath, projectName string) (
 	}
 
 	if !*exist {
-		return "", errors.Errorf("project %v, does not exist in group %v", projectName, groupPath)
+		return "", fmt.Errorf("failed to find project %v in group %v: it does not exist", projectName, groupPath)
 	}
 
 	sshLink, err := getSshLink(*pr)
@@ -160,7 +160,7 @@ func (bitBucket *BitBucket) DeleteProject(groupPath, projectName string) error {
 		}).
 		Delete("/rest/api/1.0/projects/{groupPath}/repos/{projectName}")
 	if err != nil {
-		errorMsg := fmt.Sprintf("Unable to delete project in Bitbucket: %v", err)
+		errorMsg := fmt.Sprintf("failed to delete project in Bitbucket: %v", err)
 		log.Println(errorMsg)
 
 		return errors.New(errorMsg)

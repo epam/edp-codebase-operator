@@ -4,13 +4,13 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
+
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
-	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
 )
 
 type BranchesExistsError string
@@ -35,7 +35,7 @@ func (h *DropJenkinsFolders) ServeRequest(ctx context.Context, c *codebaseApi.Co
 	if err := h.k8sClient.List(ctx, &branchList, &client.ListOptions{
 		Namespace: c.Namespace,
 	}); err != nil {
-		return errors.Wrap(err, "unable to list codebase branches")
+		return fmt.Errorf("failed to list codebase branches: %w", err)
 	}
 
 	for i := 0; i < len(branchList.Items); i++ {
@@ -49,7 +49,7 @@ func (h *DropJenkinsFolders) ServeRequest(ctx context.Context, c *codebaseApi.Co
 
 	selector, err := labels.Parse(fmt.Sprintf("%s=%s", util.CodebaseLabelKey, c.Name))
 	if err != nil {
-		return errors.Wrap(err, "couldn't parse label selector")
+		return fmt.Errorf("failed to parse label selector: %w", err)
 	}
 
 	options := &client.ListOptions{
@@ -58,7 +58,7 @@ func (h *DropJenkinsFolders) ServeRequest(ctx context.Context, c *codebaseApi.Co
 
 	var jenkinsFolderList jenkinsApi.JenkinsFolderList
 	if err := h.k8sClient.List(ctx, &jenkinsFolderList, options); err != nil {
-		return errors.Wrap(err, "unable to list jenkins folders")
+		return fmt.Errorf("failed to list jenkins folders: %w", err)
 	}
 
 	for i := 0; i < len(jenkinsFolderList.Items); i++ {
@@ -66,7 +66,7 @@ func (h *DropJenkinsFolders) ServeRequest(ctx context.Context, c *codebaseApi.Co
 		rLog.Info("trying to delete jenkins folder", "folder name", jf.Name)
 
 		if err := h.k8sClient.Delete(ctx, &jf); err != nil {
-			return errors.Wrap(err, "unable to delete jenkins folder")
+			return fmt.Errorf("failed to delete jenkins folder: %w", err)
 		}
 	}
 

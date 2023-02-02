@@ -2,12 +2,12 @@ package chain
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io/fs"
 	"os"
 	"strings"
 
-	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
@@ -68,8 +68,8 @@ func (h *PutVersionFile) ServeRequest(ctx context.Context, c *codebaseApi.Codeba
 
 	err = h.cr.UpdateProjectStatusValue(ctx, util.ProjectVersionGoFilePushedStatus, c.Name, *name)
 	if err != nil {
-		err = errors.Wrapf(err, "couldn't set project_status %v value for %v codebase",
-			util.ProjectVersionGoFilePushedStatus, c.Name)
+		err = fmt.Errorf("failed to set project_status - %v value, codebase - %v: %w",
+			util.ProjectVersionGoFilePushedStatus, c.Name, err)
 		setFailedFields(c, codebaseApi.PutVersionFile, err.Error())
 
 		return err
@@ -83,7 +83,7 @@ func (h *PutVersionFile) ServeRequest(ctx context.Context, c *codebaseApi.Codeba
 func (h *PutVersionFile) versionFileExists(ctx context.Context, codebaseName, edpName string) (bool, error) {
 	ps, err := h.cr.SelectProjectStatusValue(ctx, codebaseName, edpName)
 	if err != nil {
-		return false, errors.Wrapf(err, "couldn't get project_status value for %v codebase", codebaseName)
+		return false, fmt.Errorf("failed to get project_status value for %v codebase: %w", codebaseName, err)
 	}
 
 	if ps == util.ProjectVersionGoFilePushedStatus {
@@ -96,11 +96,11 @@ func (h *PutVersionFile) versionFileExists(ctx context.Context, codebaseName, ed
 func (h *PutVersionFile) tryToPutVersionFile(c *codebaseApi.Codebase, projectPath string) error {
 	path := fmt.Sprintf("%v/%v", projectPath, versionFileName)
 	if err := createFile(path); err != nil {
-		return errors.Wrapf(err, "couldn't create file %v", path)
+		return fmt.Errorf("failed to create file %v: %w", path, err)
 	}
 
 	if err := writeFile(path); err != nil {
-		return errors.Wrapf(err, "couldn't write to file %v", path)
+		return fmt.Errorf("failed to write to file %v: %w", path, err)
 	}
 
 	gs, err := util.GetGitServer(h.client, c.Spec.GitServer, c.Namespace)
@@ -110,16 +110,16 @@ func (h *PutVersionFile) tryToPutVersionFile(c *codebaseApi.Codebase, projectPat
 
 	secret, err := util.GetSecret(h.client, gs.NameSshKeySecret, c.Namespace)
 	if err != nil {
-		return errors.Wrapf(err, "an error has occurred while getting %v secret", gs.NameSshKeySecret)
+		return fmt.Errorf("failed to get %v secret: %w", gs.NameSshKeySecret, err)
 	}
 
 	ru, err := util.GetRepoUrl(c)
 	if err != nil {
-		return errors.Wrap(err, "couldn't build repo url")
+		return fmt.Errorf("failed to build repo url: %w", err)
 	}
 
 	if err := CheckoutBranch(ru, projectPath, c.Spec.DefaultBranch, h.git, c, h.client); err != nil {
-		return errors.Wrapf(err, "checkout default branch %v in Gerrit has been failed", c.Spec.DefaultBranch)
+		return fmt.Errorf("failed to checkout default branch %v in Gerrit: %w", c.Spec.DefaultBranch, err)
 	}
 
 	k := string(secret.Data[util.PrivateSShKeyName])
@@ -127,7 +127,7 @@ func (h *PutVersionFile) tryToPutVersionFile(c *codebaseApi.Codebase, projectPat
 	p := gs.SshPort
 
 	if err := h.pushChanges(projectPath, k, u, p); err != nil {
-		return errors.Wrapf(err, "an error has occurred while pushing %v for %v codebase", versionFileName, c.Name)
+		return fmt.Errorf("failed to push %v for %v codebase: %w", versionFileName, c.Name, err)
 	}
 
 	return nil
@@ -139,7 +139,7 @@ func (h *PutVersionFile) pushChanges(projectPath, privateKey, user string, port 
 	}
 
 	if err := h.git.PushChanges(privateKey, user, projectPath, port, "--all"); err != nil {
-		return errors.Wrapf(err, "an error has occurred while pushing changes for %v project", projectPath)
+		return fmt.Errorf("failed to push changes for %v project: %w", projectPath, err)
 	}
 
 	return nil

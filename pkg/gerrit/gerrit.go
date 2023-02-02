@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"html/template"
 	"io"
@@ -15,7 +16,6 @@ import (
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
 	"github.com/go-logr/logr"
-	"github.com/pkg/errors"
 	"golang.org/x/crypto/ssh"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -93,7 +93,7 @@ func (s *SSHClient) NewSession() (*ssh.Session, *ssh.Client, error) {
 func SshInit(port int32, idrsa, host string, logger logr.Logger) (*SSHClient, error) {
 	pubkey, err := ssh.ParsePrivateKey([]byte(idrsa))
 	if err != nil {
-		return nil, errors.Wrap(err, "Unable to get Public Key from Private one")
+		return nil, fmt.Errorf("failed to get Public Key from Private one: %w", err)
 	}
 
 	sshConfig := &ssh.ClientConfig{
@@ -131,17 +131,17 @@ func CheckProjectExist(port int32, idrsa, host, appName string, logger logr.Logg
 
 	cl, err := SshInit(port, idrsa, host, logger)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to init ssh")
+		return nil, fmt.Errorf("failed to init ssh: %w", err)
 	}
 
 	outputCmd, err := cl.RunCommand(cmd)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to run ssh command")
+		return nil, fmt.Errorf("failed to run ssh command: %w", err)
 	}
 
 	err = json.Unmarshal(outputCmd, &raw)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to decode json")
+		return nil, fmt.Errorf("failed to decode json: %w", err)
 	}
 
 	raw["count"] = 1
@@ -199,12 +199,12 @@ func AddRemoteLinkToGerrit(repoPath, host string, port int32, appName string, lo
 
 	r, err := git.PlainOpen(repoPath)
 	if err != nil {
-		return errors.Wrap(err, "Unable to open Git directory")
+		return fmt.Errorf("failed to open Git directory: %w", err)
 	}
 
 	err = r.DeleteRemote("origin")
-	if err != nil && errors.Cause(err) != git.ErrRemoteNotFound {
-		return errors.Wrap(err, "Unable to delete remote origin")
+	if err != nil && !errors.Is(err, git.ErrRemoteNotFound) {
+		return fmt.Errorf("failed to delete remote origin: %w", err)
 	}
 
 	_, err = r.CreateRemote(&config.RemoteConfig{
@@ -212,7 +212,7 @@ func AddRemoteLinkToGerrit(repoPath, host string, port int32, appName string, lo
 		URLs: []string{remoteUrl},
 	})
 	if err != nil {
-		return errors.Wrap(err, "Unable to create remote origin")
+		return fmt.Errorf("failed to create remote origin: %w", err)
 	}
 
 	logger.Info("Remote link has been added", "repoPath", repoPath, "host", host, "port", port,
@@ -238,7 +238,7 @@ func generateReplicationConfig(templatePath, templateName string, params Replica
 
 	err = tmpl.Execute(&renderedTemplate, params)
 	if err != nil {
-		log.Printf("Unable to render replication config: %v", err)
+		log.Printf("failed to render replication config: %v", err)
 
 		return "", fmt.Errorf("failed to process template: %w", err)
 	}
@@ -250,7 +250,8 @@ func generateReplicationConfig(templatePath, templateName string, params Replica
 }
 
 func SetupProjectReplication(c client.Client, sshPort int32, host, idrsa, codebaseName, namespace,
-	vcsSshUrl string, logger logr.Logger) error {
+	vcsSshUrl string, logger logr.Logger,
+) error {
 	logger.Info("Start setup project replication for app", "codebase", codebaseName)
 
 	ctx := context.Background()
@@ -261,9 +262,8 @@ func SetupProjectReplication(c client.Client, sshPort int32, host, idrsa, codeba
 			Name:      codebaseName,
 			VcsSshUrl: vcsSshUrl,
 		})
-
 	if err != nil {
-		return errors.Wrap(err, "Uable to generate replication config")
+		return fmt.Errorf("failed to generate replication config: %w", err)
 	}
 
 	gerritSettings := &v1.ConfigMap{}
@@ -273,7 +273,7 @@ func SetupProjectReplication(c client.Client, sshPort int32, host, idrsa, codeba
 		Name:      "gerrit",
 	}, gerritSettings)
 	if err != nil {
-		return errors.Wrapf(err, "couldn't get %v config map", "gerrit")
+		return fmt.Errorf("failed to get %v config map: %w", "gerrit", err)
 	}
 
 	replicaConfig := gerritSettings.Data["replication.config"]
@@ -285,12 +285,12 @@ func SetupProjectReplication(c client.Client, sshPort int32, host, idrsa, codeba
 
 	err = c.Update(ctx, gerritSettings)
 	if err != nil {
-		log.Printf("Unable to update config map with replication config: %v", err)
+		log.Printf("failed to update config map with replication config: %v", err)
 
 		return fmt.Errorf("failed to update 'ConfigMap' resource %q: %w", gerritSettings.Name, err)
 	}
 
-	// TODO: refactor
+	// TODO: refactor.
 	const waitDuration = 5 * time.Second
 
 	log.Println("Waiting for gerrit replication config map appears in gerrit pod. Sleeping for 5 seconds...")
@@ -298,7 +298,7 @@ func SetupProjectReplication(c client.Client, sshPort int32, host, idrsa, codeba
 
 	err = reloadReplicationPlugin(sshPort, idrsa, host, logger)
 	if err != nil {
-		log.Printf("Unable to reload replication plugin: %v", err)
+		log.Printf("failed to reload replication plugin: %v", err)
 
 		return err
 	}

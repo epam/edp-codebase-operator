@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
@@ -41,7 +40,7 @@ func (h *CloneGitProject) ServeRequest(ctx context.Context, c *codebaseApi.Codeb
 	rLog.Info("codebase data", "spec", c.Spec)
 
 	if err := setIntermediateSuccessFields(ctx, h.client, c, codebaseApi.AcceptCodebaseRegistration); err != nil {
-		return errors.Wrapf(err, "an error has been occurred while updating %v Codebase status", c.Name)
+		return fmt.Errorf("failed to update Codebase status %v: %w", c.Name, err)
 	}
 
 	wd := util.GetWorkDir(c.Name, c.Namespace)
@@ -57,13 +56,13 @@ func (h *CloneGitProject) ServeRequest(ctx context.Context, c *codebaseApi.Codeb
 	gs, err := util.GetGitServer(h.client, c.Spec.GitServer, c.Namespace)
 	if err != nil {
 		setFailedFields(c, codebaseApi.ImportProject, err.Error())
-		return errors.Wrapf(err, "an error has occurred while getting %v GitServer", c.Spec.GitServer)
+		return fmt.Errorf("failed to get Gitserver %v: %w", c.Spec.GitServer, err)
 	}
 
 	secret, err := util.GetSecret(h.client, gs.NameSshKeySecret, c.Namespace)
 	if err != nil {
 		setFailedFields(c, codebaseApi.ImportProject, err.Error())
-		return errors.Wrapf(err, "an error has occurred while getting %v secret", gs.NameSshKeySecret)
+		return fmt.Errorf("failed to get secret %v: %w", gs.NameSshKeySecret, err)
 	}
 
 	k := string(secret.Data[util.PrivateSShKeyName])
@@ -73,7 +72,7 @@ func (h *CloneGitProject) ServeRequest(ctx context.Context, c *codebaseApi.Codeb
 	if !util.DoesDirectoryExist(wd) || util.IsDirectoryEmpty(wd) {
 		if err := h.git.CloneRepositoryBySsh(k, u, ru, wd, gs.SshPort); err != nil {
 			setFailedFields(c, codebaseApi.ImportProject, err.Error())
-			return errors.Wrapf(err, "an error has occurred while cloning repository %v", ru)
+			return fmt.Errorf("failed to clone repository %v: %w", ru, err)
 		}
 	}
 

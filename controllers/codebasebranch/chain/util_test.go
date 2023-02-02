@@ -21,7 +21,8 @@ func Test_hasNewVersion(t *testing.T) {
 		want    bool
 		wantErr assert.ErrorAssertionFunc
 	}{
-		{"Codebasebranch Doesn't have new version",
+		{
+			"Codebasebranch Doesn't have new version",
 			args{
 				b: &codebaseApi.CodebaseBranch{
 					Spec: codebaseApi.CodebaseBranchSpec{
@@ -31,8 +32,11 @@ func Test_hasNewVersion(t *testing.T) {
 						VersionHistory: []string{"0.0.0-SNAPSHOT"},
 					},
 				},
-			}, false, assert.NoError},
-		{"Codebasebranch has new version",
+			},
+			false, assert.NoError,
+		},
+		{
+			"Codebasebranch has new version",
 			args{
 				b: &codebaseApi.CodebaseBranch{
 					Spec: codebaseApi.CodebaseBranchSpec{
@@ -42,11 +46,16 @@ func Test_hasNewVersion(t *testing.T) {
 						VersionHistory: []string{"0.0.0-SNAPSHOT", "0.0.1-SNAPSHOT"},
 					},
 				},
-			}, true, assert.NoError},
-		{"Codebasebranch has no version",
+			},
+			true, assert.NoError,
+		},
+		{
+			"Codebasebranch has no version",
 			args{
 				b: &codebaseApi.CodebaseBranch{},
-			}, false, assert.Error},
+			},
+			false, assert.Error,
+		},
 	}
 
 	for _, tt := range tests {

@@ -5,7 +5,6 @@ import (
 	"log"
 	"net/url"
 
-	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/epam/edp-codebase-operator/v2/pkg/model"
@@ -53,7 +52,7 @@ func GetVcsConfig(c client.Client, us *model.UserSettings, codebaseName, namespa
 	vcsAutoUserLogin, vcsAutoUserPassword, err := util.GetVcsBasicAuthConfig(c, namespace,
 		fmt.Sprintf("vcs-autouser-codebase-%v-temp", codebaseName))
 	if err != nil {
-		return nil, errors.Wrap(err, "Unable to get secret")
+		return nil, fmt.Errorf("failed to get secret: %w", err)
 	}
 
 	vcsGroupNameUrl, err := url.Parse(us.VcsGroupNameUrl)
@@ -93,7 +92,7 @@ func CreateProjectInVcs(c client.Client, us *model.UserSettings, codebaseName, n
 	vcsTool, err := CreateVCSClient(vcsConf.VcsToolName,
 		vcsConf.ProjectVcsHostnameUrl, vcsConf.VcsUsername, vcsConf.VcsPassword)
 	if err != nil {
-		return errors.Wrap(err, "unable to create VCS client")
+		return fmt.Errorf("failed to create VCS client: %w", err)
 	}
 
 	e, err := vcsTool.CheckProjectExist(vcsConf.ProjectVcsGroupPath, codebaseName)
@@ -102,7 +101,7 @@ func CreateProjectInVcs(c client.Client, us *model.UserSettings, codebaseName, n
 	}
 
 	if *e {
-		log.Printf("couldn't copy project to your VCS group. Repository %v is already exists in %v", codebaseName, vcsConf.ProjectVcsGroupPath)
+		log.Printf("failed to copy project to your VCS group. Repository %v is already exists in %v", codebaseName, vcsConf.ProjectVcsGroupPath)
 		return nil
 	}
 
@@ -113,7 +112,7 @@ func CreateProjectInVcs(c client.Client, us *model.UserSettings, codebaseName, n
 
 	vcsConf.VcsSshUrl, err = vcsTool.GetRepositorySshUrl(vcsConf.ProjectVcsGroupPath, codebaseName)
 	if err != nil {
-		return errors.Wrap(err, "Unable to get repository ssh url")
+		return fmt.Errorf("failed to get repository ssh url: %w", err)
 	}
 
 	return nil

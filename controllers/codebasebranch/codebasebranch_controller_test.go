@@ -20,11 +20,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
+	edpComponentApi "github.com/epam/edp-component-operator/api/v1"
+	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
+
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/codebasebranch"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
-	edpComponentApi "github.com/epam/edp-component-operator/api/v1"
-	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
 )
 
 func TestReconcileCodebaseBranch_Reconcile_ShouldPassNotFoundCR(t *testing.T) {
@@ -119,7 +120,7 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldFailGetCodebase(t *testing.T) {
 	assert.Error(t, err)
 	assert.False(t, res.Requeue)
 
-	if !strings.Contains(err.Error(), "Unable to get Codebase ") {
+	if !strings.Contains(err.Error(), "failed to get Codebase ") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
 }
@@ -175,7 +176,7 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldFailDeleteCodebasebranch(t *tes
 	assert.Error(t, err)
 	assert.False(t, res.Requeue)
 
-	if !strings.Contains(err.Error(), "Unable to remove codebasebranch NewCodebaseBranch") {
+	if !strings.Contains(err.Error(), "failed to remove codebasebranch NewCodebaseBranch") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
 }

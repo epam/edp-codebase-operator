@@ -7,7 +7,6 @@ import (
 
 	"github.com/go-logr/logr"
 	predicateLib "github.com/operator-framework/operator-lib/predicate"
-	"github.com/pkg/errors"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -20,6 +19,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
+
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	"github.com/epam/edp-codebase-operator/v2/controllers/cdstagedeploy/chain"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
@@ -48,7 +48,7 @@ func (r *ReconcileCDStageDeploy) SetupWithManager(mgr ctrl.Manager) error {
 
 	pause, err := predicateLib.NewPause(util.PauseAnnotation)
 	if err != nil {
-		return fmt.Errorf("unable to create pause predicate: %w", err)
+		return fmt.Errorf("failed to create pause predicate: %w", err)
 	}
 
 	err = ctrl.NewControllerManagedBy(mgr).
@@ -87,7 +87,7 @@ func (r *ReconcileCDStageDeploy) Reconcile(ctx context.Context, request reconcil
 	}()
 
 	if err := r.setFinalizer(ctx, i); err != nil {
-		err = errors.Wrapf(err, "cannot set %v finalizer", util.ForegroundDeletionFinalizerName)
+		err = fmt.Errorf("failed to set %v finalizer: %w", util.ForegroundDeletionFinalizerName, err)
 		i.SetFailedStatus(err)
 
 		return reconcile.Result{}, err
@@ -103,7 +103,7 @@ func (r *ReconcileCDStageDeploy) Reconcile(ctx context.Context, request reconcil
 
 		switch err.(type) {
 		case *util.CDStageJenkinsDeploymentHasNotBeenProcessedError:
-			log.Error(err, "unable to continue autodeploy",
+			log.Error(err, "failed to continue autodeploy",
 				"pipe", i.Spec.Pipeline, "stage", i.Spec.Stage)
 
 			p := r.setReconciliationPeriod(i)

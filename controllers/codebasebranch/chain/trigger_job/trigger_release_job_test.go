@@ -14,10 +14,11 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
+	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
+
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	"github.com/epam/edp-codebase-operator/v2/controllers/codebasebranch/service"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
-	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
 )
 
 func TestTriggerReleaseJob_ShouldPass(t *testing.T) {
@@ -213,7 +214,7 @@ func TestTriggerReleaseJob_ShouldFailOnCodebaseNotFound(t *testing.T) {
 	err := trj.ServeRequest(cb)
 	assert.Error(t, err)
 
-	if !strings.Contains(err.Error(), "Unable to get Codebase non-existing-stub-name: codebases.apps \"non-existing-stub-name\" not found") {
+	if !strings.Contains(err.Error(), "failed to get Codebase non-existing-stub-name: codebases.apps \"non-existing-stub-name\" not found") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
 
@@ -231,7 +232,7 @@ func TestTriggerReleaseJob_ShouldFailOnCodebaseNotFound(t *testing.T) {
 	// Our cb object should have values from SetFailedFields(), but values
 	// will be set in Reconciler() using defer approach
 	assert.Equal(t, cb.Status.Value, "failed")
-	assert.Equal(t, cb.Status.DetailedMessage, "Unable to get Codebase non-existing-stub-name: codebases.apps \"non-existing-stub-name\" not found")
+	assert.Equal(t, cb.Status.DetailedMessage, "failed to get Codebase non-existing-stub-name: codebases.apps \"non-existing-stub-name\" not found")
 }
 
 func TestTriggerReleaseJob_ShouldFailOnJenkinsfolderNotFound(t *testing.T) {

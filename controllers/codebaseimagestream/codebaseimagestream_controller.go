@@ -58,7 +58,7 @@ func (r *ReconcileCodebaseImageStream) SetupWithManager(mgr ctrl.Manager) error 
 
 	pause, err := predicateLib.NewPause(util.PauseAnnotation)
 	if err != nil {
-		return fmt.Errorf("unable to create pause predicate: %w", err)
+		return fmt.Errorf("failed to create pause predicate: %w", err)
 	}
 
 	err = ctrl.NewControllerManagedBy(mgr).

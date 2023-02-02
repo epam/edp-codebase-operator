@@ -14,8 +14,7 @@ type ImageStreamTagSpec struct {
 }
 
 // ImageStreamTagStatus defines the observed state of ImageStreamTag.
-type ImageStreamTagStatus struct {
-}
+type ImageStreamTagStatus struct{}
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status

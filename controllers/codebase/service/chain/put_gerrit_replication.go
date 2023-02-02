@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
@@ -27,7 +26,7 @@ func (h *PutGerritReplication) ServeRequest(_ context.Context, c *codebaseApi.Co
 
 	if err := h.tryToSetupGerritReplication(c.Name, c.Namespace); err != nil {
 		setFailedFields(c, codebaseApi.GerritRepositoryProvisioning, err.Error())
-		return errors.Wrapf(err, "setup Gerrit replication for codebase %v has been failed", c.Name)
+		return fmt.Errorf("failed to setup Gerrit replication for codebase %v: %w", c.Name, err)
 	}
 
 	rLog.Info("Gerrit replication section finished successfully")
@@ -38,7 +37,7 @@ func (h *PutGerritReplication) ServeRequest(_ context.Context, c *codebaseApi.Co
 func (h *PutGerritReplication) tryToSetupGerritReplication(codebaseName, namespace string) error {
 	us, err := util.GetUserSettings(h.client, namespace)
 	if err != nil {
-		return errors.Wrap(err, "unable get user settings settings")
+		return fmt.Errorf("failed to get user settings settings: %w", err)
 	}
 
 	if !us.VcsIntegrationEnabled {
@@ -48,7 +47,7 @@ func (h *PutGerritReplication) tryToSetupGerritReplication(codebaseName, namespa
 
 	port, err := util.GetGerritPort(h.client, namespace)
 	if err != nil {
-		return errors.Wrap(err, "unable get gerrit port")
+		return fmt.Errorf("failed to get gerrit port: %w", err)
 	}
 
 	vcsConf, err := vcs.GetVcsConfig(h.client, us, codebaseName, namespace)
@@ -58,7 +57,7 @@ func (h *PutGerritReplication) tryToSetupGerritReplication(codebaseName, namespa
 
 	s, err := util.GetSecret(h.client, "gerrit-project-creator", namespace)
 	if err != nil {
-		return errors.Wrap(err, "unable to get gerrit-project-creator secret")
+		return fmt.Errorf("failed to get gerrit-project-creator secret: %w", err)
 	}
 
 	idrsa := string(s.Data[util.PrivateSShKeyName])

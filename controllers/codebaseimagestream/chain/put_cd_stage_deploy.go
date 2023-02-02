@@ -2,21 +2,22 @@ package chain
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"regexp"
 	"strings"
 	"time"
 
 	"github.com/go-logr/logr"
-	"github.com/pkg/errors"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
+
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
-	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
 )
 
 type PutCDStageDeploy struct {
@@ -43,7 +44,7 @@ func (h PutCDStageDeploy) ServeRequest(imageStream *codebaseApi.CodebaseImageStr
 	log.Info("creating/updating CDStageDeploy.")
 
 	if err := h.handleCodebaseImageStreamEnvLabels(imageStream); err != nil {
-		return errors.Wrapf(err, "couldn't handle %v codebase image stream", imageStream.Name)
+		return fmt.Errorf("failed to handle %v codebase image stream: %w", imageStream.Name, err)
 	}
 
 	log.Info("creating/updating CDStageDeploy has been finished.")
@@ -57,7 +58,7 @@ func (h PutCDStageDeploy) handleCodebaseImageStreamEnvLabels(imageStream *codeba
 		return nil
 	}
 
-	var labelValueRegexp = regexp.MustCompile("^[-A-Za-z0-9_.]+/[-A-Za-z0-9_.]+$")
+	labelValueRegexp := regexp.MustCompile("^[-A-Za-z0-9_.]+/[-A-Za-z0-9_.]+$")
 
 	for envLabel := range imageStream.ObjectMeta.Labels {
 		if errs := validateCbis(imageStream, envLabel, labelValueRegexp); len(errs) != 0 {
@@ -95,7 +96,7 @@ func (h PutCDStageDeploy) putCDStageDeploy(envLabel, namespace string, spec code
 
 	stageDeploy, err := h.getCDStageDeploy(name, namespace)
 	if err != nil {
-		return errors.Wrapf(err, "couldn't get %v cd stage deploy", name)
+		return fmt.Errorf("failed to get %v cd stage deploy: %w", name, err)
 	}
 
 	if stageDeploy != nil {
@@ -108,11 +109,11 @@ func (h PutCDStageDeploy) putCDStageDeploy(envLabel, namespace string, spec code
 
 	cdsd, err := getCreateCommand(envLabel, name, namespace, spec.Codebase, spec.Tags)
 	if err != nil {
-		return errors.Wrapf(err, "couldn't construct command to create %v cd stage deploy", name)
+		return fmt.Errorf("failed to construct command to create %v cd stage deploy: %w", name, err)
 	}
 
 	if err := h.create(cdsd); err != nil {
-		return errors.Wrapf(err, "couldn't create %v cd stage deploy", name)
+		return fmt.Errorf("failed to create %v cd stage deploy: %w", name, err)
 	}
 
 	return nil
@@ -149,7 +150,7 @@ func getCreateCommand(envLabel, name, namespace, codebase string, tags []codebas
 
 	lastTag, err := getLastTag(tags)
 	if err != nil {
-		return nil, errors.Wrapf(err, "couldn't create cdStageDeployCommand with name %v", name)
+		return nil, fmt.Errorf("failed to create cdStageDeployCommand with name %v: %w", name, err)
 	}
 
 	return &cdStageDeployCommand{

@@ -11,9 +11,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
+	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
+
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
-	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
 )
 
 func TestPutCDStageJenkinsDeployment_ServeRequest_ShouldPass(t *testing.T) {
@@ -150,7 +151,7 @@ func TestPutCDStageJenkinsDeployment_ServeRequest_ShouldFailGenerateLabels(t *te
 	err := jd.ServeRequest(cdsd)
 	assert.Error(t, err)
 
-	if !strings.Contains(err.Error(), "couldn't generate labels") {
+	if !strings.Contains(err.Error(), "failed to generate labels") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
 }
@@ -174,7 +175,7 @@ func TestPutCDStageJenkinsDeployment_ServeRequest_ShouldFailGetJenkinsDeployment
 	err := jd.ServeRequest(cdsd)
 	assert.Error(t, err)
 
-	if !strings.Contains(err.Error(), "couldn't get NewCDStageDeploy cd stage jenkins deployment") {
+	if !strings.Contains(err.Error(), "failed to get NewCDStageDeploy cd stage jenkins deployment") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
 }

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
@@ -36,7 +35,7 @@ func (h *PutDeployConfigs) ServeRequest(ctx context.Context, c *codebaseApi.Code
 
 	if err := h.tryToPushConfigs(ctx, c); err != nil {
 		setFailedFields(c, codebaseApi.SetupDeploymentTemplates, err.Error())
-		return errors.Wrapf(err, "couldn't push deploy configs for %v codebase", c.Name)
+		return fmt.Errorf("failed to push deploy configs for %v codebase: %w", c.Name, err)
 	}
 
 	rLog.Info("end pushing configs")
@@ -47,15 +46,15 @@ func (h *PutDeployConfigs) ServeRequest(ctx context.Context, c *codebaseApi.Code
 func (h *PutDeployConfigs) tryToPushConfigs(ctx context.Context, c *codebaseApi.Codebase) error {
 	edpN, err := helper.GetEDPName(ctx, h.client, c.Namespace)
 	if err != nil {
-		return errors.Wrap(err, "couldn't get edp name")
+		return fmt.Errorf("failed to get edp name: %w", err)
 	}
 
 	ps, err := h.cr.SelectProjectStatusValue(ctx, c.Name, *edpN)
 	if err != nil {
-		return errors.Wrapf(err, "couldn't get project_status value for %v codebase", c.Name)
+		return fmt.Errorf("failed to get project_status value for %v codebase: %w", c.Name, err)
 	}
 
-	var status = []string{util.ProjectTemplatesPushedStatus, util.ProjectVersionGoFilePushedStatus}
+	status := []string{util.ProjectTemplatesPushedStatus, util.ProjectVersionGoFilePushedStatus}
 	if util.ContainsString(status, ps) {
 		log.Info("skip pushing templates to gerrit. templates already pushed", "name", c.Name)
 
@@ -64,7 +63,7 @@ func (h *PutDeployConfigs) tryToPushConfigs(ctx context.Context, c *codebaseApi.
 
 	s, err := util.GetSecret(h.client, "gerrit-project-creator", c.Namespace)
 	if err != nil {
-		return errors.Wrap(err, "unable to get gerrit-project-creator secret")
+		return fmt.Errorf("failed to get gerrit-project-creator secret: %w", err)
 	}
 
 	idrsa := string(s.Data[util.PrivateSShKeyName])
@@ -76,7 +75,7 @@ func (h *PutDeployConfigs) tryToPushConfigs(ctx context.Context, c *codebaseApi.
 	sshPort, err := util.GetGerritPort(h.client, c.Namespace)
 	if err != nil {
 		setFailedFields(c, codebaseApi.SetupDeploymentTemplates, err.Error())
-		return errors.Wrap(err, "unable get gerrit port")
+		return fmt.Errorf("failed get gerrit port: %w", err)
 	}
 
 	if !util.DoesDirectoryExist(wd) || util.IsDirectoryEmpty(wd) {
@@ -88,12 +87,12 @@ func (h *PutDeployConfigs) tryToPushConfigs(ctx context.Context, c *codebaseApi.
 
 	ru, err := util.GetRepoUrl(c)
 	if err != nil {
-		return errors.Wrap(err, "couldn't build repo url")
+		return fmt.Errorf("failed to build repo url: %w", err)
 	}
 
 	err = CheckoutBranch(ru, wd, c.Spec.DefaultBranch, h.git, c, h.client)
 	if err != nil {
-		return errors.Wrapf(err, "checkout default branch %v in Gerrit put_deploy_config has been failed", c.Spec.DefaultBranch)
+		return fmt.Errorf("failed to checkout default branch %v in Gerrit put_deploy_config has been failed: %w", c.Spec.DefaultBranch, err)
 	}
 
 	err = template.PrepareTemplates(h.client, c, wd, ad)
@@ -113,8 +112,7 @@ func (h *PutDeployConfigs) tryToPushConfigs(ctx context.Context, c *codebaseApi.
 
 	err = h.cr.UpdateProjectStatusValue(ctx, util.ProjectTemplatesPushedStatus, c.Name, *edpN)
 	if err != nil {
-		return errors.Wrapf(err, "couldn't set project_status %v value for %v codebase",
-			util.ProjectTemplatesPushedStatus, c.Name)
+		return fmt.Errorf("failed to set project_status %v value for %v codebase: %w", util.ProjectTemplatesPushedStatus, c.Name, err)
 	}
 
 	return nil
@@ -131,7 +129,7 @@ func (h *PutDeployConfigs) cloneProjectRepoFromGerrit(sshPort int32, idrsa, clon
 	destinationPath := fmt.Sprintf("%v/.git/hooks", wd)
 
 	if err := util.CreateDirectory(destinationPath); err != nil {
-		return errors.Wrapf(err, "couldn't create folder %v", destinationPath)
+		return fmt.Errorf("failed to create folder %v: %w", destinationPath, err)
 	}
 
 	fileName := "commit-msg"
@@ -139,7 +137,7 @@ func (h *PutDeployConfigs) cloneProjectRepoFromGerrit(sshPort int32, idrsa, clon
 	dest := fmt.Sprintf("%v/%v", destinationPath, fileName)
 
 	if err := util.CopyFile(src, dest); err != nil {
-		return errors.Wrapf(err, "couldn't copy file %v", fileName)
+		return fmt.Errorf("failed to copy file %v: %w", fileName, err)
 	}
 
 	return nil

@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/hashicorp/go-multierror"
-	"github.com/pkg/errors"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	"github.com/epam/edp-codebase-operator/v2/controllers/jiraissuemetadata/chain/handler"
@@ -22,14 +21,14 @@ func (h ApplyTagsToIssues) ServeRequest(metadata *codebaseApi.JiraIssueMetadata)
 
 	requestPayload, err := util.GetFieldsMap(metadata.Spec.Payload, []string{issuesLinksKey})
 	if err != nil {
-		return errors.Wrap(err, "couldn't get map with Jira field values")
+		return fmt.Errorf("failed to get map with Jira field values: %w", err)
 	}
 
 	body := createRequestBody(requestPayload)
 	for _, ticket := range metadata.Spec.Tickets {
 		if err := h.client.ApplyTagsToIssue(ticket, body); err != nil {
 			metadata.Status.Error = multierror.Append(metadata.Status.Error,
-				fmt.Errorf("couldn't apply tags to issue %s, err: %w", ticket, err))
+				fmt.Errorf("failed to apply tags to issue %s, err: %w", ticket, err))
 		}
 	}
 
@@ -58,11 +57,12 @@ func createRequestBody(requestPayload map[string]interface{}) map[string]interfa
 		}
 
 		updateField[k] = []map[string]interface{}{
-			{"add": struct {
-				Name string `json:"name"`
-			}{
-				strVal,
-			},
+			{
+				"add": struct {
+					Name string `json:"name"`
+				}{
+					strVal,
+				},
 			},
 		}
 	}

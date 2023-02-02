@@ -18,8 +18,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	edpCompApi "github.com/epam/edp-component-operator/api/v1"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 )
 
 func TestReconcileJiraServer_Reconcile_ShouldPassNotFound(t *testing.T) {
@@ -112,7 +113,7 @@ func TestReconcileJiraServer_Reconcile_ShouldFailInitJiraClientWithSecretNotFoun
 	assert.Error(t, err)
 	assert.False(t, res.Requeue)
 
-	if !strings.Contains(err.Error(), "couldn't get secret jira-secret") {
+	if !strings.Contains(err.Error(), "failed to get secret jira-secret") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
 }
@@ -163,7 +164,7 @@ func TestReconcileJiraServer_Reconcile_ShouldFailToCreateNewJiraClient(t *testin
 	assert.Error(t, err)
 	assert.False(t, res.Requeue)
 
-	if !strings.Contains(err.Error(), "couldn't create Jira client") {
+	if !strings.Contains(err.Error(), "failed to create Jira client") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
 }
@@ -286,7 +287,7 @@ func TestReconcileJiraServer_Reconcile_ShouldFailToCreateEDPComponent(t *testing
 	assert.Error(t, err)
 	assert.False(t, res.Requeue)
 
-	if !strings.Contains(err.Error(), "couldn't create EDP component NewJira") {
+	if !strings.Contains(err.Error(), "failed to create EDP component NewJira") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
 }

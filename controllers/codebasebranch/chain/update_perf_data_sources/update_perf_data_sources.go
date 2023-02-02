@@ -2,20 +2,21 @@ package update_perf_data_sources
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
-	"github.com/pkg/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	perfApi "github.com/epam/edp-perf-operator/v2/api/v1"
+
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	"github.com/epam/edp-codebase-operator/v2/controllers/codebasebranch/chain/handler"
 	"github.com/epam/edp-codebase-operator/v2/pkg/model"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
-	perfApi "github.com/epam/edp-perf-operator/v2/api/v1"
 )
 
 type UpdatePerfDataSources struct {
@@ -42,7 +43,7 @@ func (h UpdatePerfDataSources) ServeRequest(cb *codebaseApi.CodebaseBranch) erro
 
 	if err := h.tryToUpdateDataSourceCr(cb); err != nil {
 		setFailedFields(cb, codebaseApi.PerfDataSourceCrUpdate, err.Error())
-		return errors.Wrap(err, "couldn't update PerfDataSource CR")
+		return fmt.Errorf("failed to update PerfDataSource CR: %w", err)
 	}
 
 	rLog.Info("data source has been updated")
@@ -100,7 +101,7 @@ func setFailedFields(cb *codebaseApi.CodebaseBranch, a codebaseApi.ActionType, m
 func (h UpdatePerfDataSources) tryToUpdateDataSourceCr(cb *codebaseApi.CodebaseBranch) error {
 	owr, err := util.GetOwnerReference(codebaseKind, cb.GetOwnerReferences())
 	if err != nil {
-		return errors.New("unable to get owner reference")
+		return errors.New("failed to get owner reference")
 	}
 
 	c, err := util.GetCodebase(h.Client, owr.Name, cb.Namespace)

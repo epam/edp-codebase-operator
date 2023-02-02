@@ -30,13 +30,13 @@ func TestCopyTemplate_HelmTemplates_ShouldPass(t *testing.T) {
 
 	_, err = os.Stat(chf)
 	if err != nil {
-		t.Fatalf("unable to check test file")
+		t.Fatalf("failed to check test file")
 	}
 
 	// read the whole file at once
 	b, err := os.ReadFile(chf)
 	if err != nil {
-		t.Fatalf("unable to read test file")
+		t.Fatalf("failed to read test file")
 	}
 
 	assert.Contains(t, string(b), "home: https://example.com")
@@ -61,12 +61,12 @@ func TestCopyTemplate_OpenShiftTemplates_ShouldPass(t *testing.T) {
 
 	_, err = os.Stat(chf)
 	if err != nil {
-		t.Fatalf("unable to check test file")
+		t.Fatalf("failed to check test file")
 	}
 
 	b, err := os.ReadFile(chf)
 	if err != nil {
-		t.Fatalf("unable to read test file")
+		t.Fatalf("failed to read test file")
 	}
 
 	assert.Contains(t, string(b), "description: Openshift template for Go application/service deploying")
@@ -79,7 +79,7 @@ func TestCopyTemplate_ShouldNotOverwriteExistingDeploymentTemaplates(t *testing.
 	cf := &model.ConfigGoTemplating{}
 
 	if err := os.MkdirAll(fmt.Sprintf("%v/deploy-templates", testDir), 0o775); err != nil {
-		t.Fatal("Unable to create deploy-templates dir")
+		t.Fatal("failed to create deploy-templates dir")
 	}
 
 	err := CopyTemplate("openshift-template", testDir, "../../build", cf)

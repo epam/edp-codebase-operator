@@ -7,7 +7,6 @@ import (
 	"os"
 	"path"
 
-	"github.com/pkg/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
@@ -92,7 +91,7 @@ func DoesDirectoryExist(dirPath string) bool {
 			return false
 		}
 
-		log.Error(err, "unable to check directory")
+		log.Error(err, "failed to check directory")
 
 		return false
 	}
@@ -102,7 +101,7 @@ func DoesDirectoryExist(dirPath string) bool {
 
 func RemoveDirectory(dirPath string) error {
 	if err := os.RemoveAll(dirPath); err != nil {
-		return errors.Wrapf(err, "couldn't remove directory %q", dirPath)
+		return fmt.Errorf("failed to remove directory %q: %w", dirPath, err)
 	}
 
 	log.Info("directory has been cleaned", "directory", dirPath)
@@ -113,7 +112,7 @@ func RemoveDirectory(dirPath string) error {
 func IsDirectoryEmpty(dirPath string) bool {
 	files, err := os.ReadDir(dirPath)
 	if err != nil {
-		log.Error(err, "unable to check directory")
+		log.Error(err, "failed to check directory")
 
 		return false
 	}

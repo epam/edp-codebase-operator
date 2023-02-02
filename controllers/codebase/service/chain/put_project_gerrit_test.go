@@ -67,7 +67,7 @@ func TestPutProjectGerrit_ShouldFailToRunSSHCommand(t *testing.T) {
 	ctx := context.Background()
 
 	dir, err := os.MkdirTemp("/tmp", "codebase")
-	require.NoError(t, err, "unable to create temp directory for testing")
+	require.NoError(t, err, "failed to create temp directory for testing")
 
 	defer func() {
 		err = os.RemoveAll(dir)
@@ -188,7 +188,7 @@ func TestPutProjectGerrit_ShouldFailToRunSSHCommand(t *testing.T) {
 
 	err = ppg.ServeRequest(ctx, c)
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "unable to run ssh command")
+	assert.Contains(t, err.Error(), "failed to run ssh command")
 }
 
 func TestPutProjectGerrit_ShouldFailToGetConfigmap(t *testing.T) {
@@ -251,14 +251,14 @@ func TestPutProjectGerrit_ShouldFailToCreateRepo(t *testing.T) {
 	err := ppg.ServeRequest(context.Background(), c)
 
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "Unable to get GitServer gerrit")
+	assert.Contains(t, err.Error(), "failed to get GitServer gerrit")
 }
 
 func TestPutProjectGerrit_ShouldFailToGetGerritPort(t *testing.T) {
 	ctx := context.Background()
 
 	dir, err := os.MkdirTemp("/tmp", "codebase")
-	require.NoError(t, err, "unable to create temp directory for testing")
+	require.NoError(t, err, "failed to create temp directory for testing")
 
 	defer func() {
 		err = os.RemoveAll(dir)
@@ -300,14 +300,14 @@ func TestPutProjectGerrit_ShouldFailToGetGerritPort(t *testing.T) {
 
 	err = ppg.ServeRequest(ctx, c)
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "unable get gerrit port")
+	assert.Contains(t, err.Error(), "failed get gerrit port")
 }
 
 func TestPutProjectGerrit_ShouldFailToGetUserSettings(t *testing.T) {
 	ctx := context.Background()
 
 	dir, err := os.MkdirTemp("/tmp", "codebase")
-	require.NoError(t, err, "unable to create temp directory for testing")
+	require.NoError(t, err, "failed to create temp directory for testing")
 
 	defer func() {
 		err = os.RemoveAll(dir)
@@ -359,14 +359,14 @@ func TestPutProjectGerrit_ShouldFailToGetUserSettings(t *testing.T) {
 
 	err = ppg.ServeRequest(ctx, c)
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "unable get user settings settings")
+	assert.Contains(t, err.Error(), "failed get user settings settings")
 }
 
 func TestPutProjectGerrit_ShouldFailToSetVCSIntegration(t *testing.T) {
 	ctx := context.Background()
 
 	dir, err := os.MkdirTemp("/tmp", "codebase")
-	require.NoError(t, err, "unable to create temp directory for testing")
+	require.NoError(t, err, "failed to create temp directory for testing")
 
 	defer func() {
 		err = os.RemoveAll(dir)
@@ -424,14 +424,14 @@ func TestPutProjectGerrit_ShouldFailToSetVCSIntegration(t *testing.T) {
 
 	err = ppg.ServeRequest(ctx, c)
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "unable to create project in VCS")
+	assert.Contains(t, err.Error(), "failed to create project in VCS")
 }
 
 func TestPutProjectGerrit_ShouldFailedOnInitialProjectProvisioning(t *testing.T) {
 	ctx := context.Background()
 
 	dir, err := os.MkdirTemp("/tmp", "codebase")
-	require.NoError(t, err, "unable to create temp directory for testing")
+	require.NoError(t, err, "failed to create temp directory for testing")
 
 	defer func() {
 		err = os.RemoveAll(dir)
@@ -511,12 +511,12 @@ func TestPutProjectGerrit_ShouldFailedOnInitialProjectProvisioning(t *testing.T)
 
 	err = ppg.ServeRequest(ctx, c)
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "initial provisioning of codebase fake-name has been failed")
+	assert.Contains(t, err.Error(), "failed to perform initial provisioning of codebase fake-name")
 }
 
 func TestPutProjectGerrit_pushToGerrit_ShouldPass(t *testing.T) {
 	dir, err := os.MkdirTemp("/tmp", "codebase")
-	require.NoError(t, err, "unable to create temp directory for testing")
+	require.NoError(t, err, "failed to create temp directory for testing")
 
 	defer func() {
 		err = os.RemoveAll(dir)
@@ -524,7 +524,7 @@ func TestPutProjectGerrit_pushToGerrit_ShouldPass(t *testing.T) {
 	}()
 
 	_, err = git.PlainInit(dir, false)
-	require.NoError(t, err, "unable to create test git repo")
+	require.NoError(t, err, "failed to create test git repo")
 
 	mGit := new(mockGit.MockGit)
 	mGit.On("PushChanges", "idrsa", "project-creator", dir, int32(22)).Return(nil)
@@ -542,12 +542,12 @@ func TestPutProjectGerrit_pushToGerrit_ShouldFailToAddRemoteLink(t *testing.T) {
 
 	err := ppg.pushToGerrit(22, "idrsa", "fake-host", "c-name", "/tmp")
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "couldn't add remote link to Gerrit")
+	assert.Contains(t, err.Error(), "failed to add remote link to Gerrit")
 }
 
 func TestPutProjectGerrit_pushToGerrit_ShouldFailOnPush(t *testing.T) {
 	dir, err := os.MkdirTemp("/tmp", "codebase")
-	require.NoError(t, err, "unable to create temp directory for testing")
+	require.NoError(t, err, "failed to create temp directory for testing")
 
 	defer func() {
 		err = os.RemoveAll(dir)
@@ -555,7 +555,7 @@ func TestPutProjectGerrit_pushToGerrit_ShouldFailOnPush(t *testing.T) {
 	}()
 
 	_, err = git.PlainInit(dir, false)
-	require.NoError(t, err, "unable to create test git repo")
+	require.NoError(t, err, "failed to create test git repo")
 
 	mGit := new(mockGit.MockGit)
 	mGit.On("PushChanges", "idrsa", "project-creator", dir, int32(22)).Return(errors.New("FATAL: PUSH"))
@@ -655,7 +655,7 @@ func TestPutProjectGerrit_notEmptyProjectProvisioningShouldFailOnGetRepoUrl(t *t
 
 	err := ppg.notEmptyProjectProvisioning(c, logr.Discard(), "/tmp")
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "couldn't build repo url")
+	assert.Contains(t, err.Error(), "failed to build repo url")
 }
 
 func TestPutProjectGerrit_notEmptyProjectProvisioningShouldFailOnGetRepoCreds(t *testing.T) {
@@ -684,7 +684,7 @@ func TestPutProjectGerrit_notEmptyProjectProvisioningShouldFailOnGetRepoCreds(t 
 
 	err := ppg.notEmptyProjectProvisioning(c, logr.Discard(), "/tmp")
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "Unable to get repository credentials")
+	assert.Contains(t, err.Error(), "failed to get repository credentials")
 }
 
 func TestPutProjectGerrit_notEmptyProjectProvisioningShouldFailOnCheckPermission(t *testing.T) {
@@ -729,7 +729,7 @@ func TestPutProjectGerrit_notEmptyProjectProvisioningShouldFailOnCheckPermission
 
 	err := ppg.notEmptyProjectProvisioning(c, logr.Discard(), "/tmp")
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "cannot get access to the repository link")
+	assert.Contains(t, err.Error(), "failed to get access to the repository link")
 }
 
 func TestPutProjectGerrit_notEmptyProjectProvisioningShouldFailOnCloneRepo(t *testing.T) {
@@ -776,7 +776,7 @@ func TestPutProjectGerrit_notEmptyProjectProvisioningShouldFailOnCloneRepo(t *te
 
 	err := ppg.notEmptyProjectProvisioning(c, logr.Discard(), wd)
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "cloning template project has been failed")
+	assert.Contains(t, err.Error(), "failed to clone template project")
 }
 
 func TestPutProjectGerrit_notEmptyProjectProvisioningShouldFailOnSquash(t *testing.T) {
@@ -824,7 +824,7 @@ func TestPutProjectGerrit_notEmptyProjectProvisioningShouldFailOnSquash(t *testi
 
 	err := ppg.notEmptyProjectProvisioning(c, logr.Discard(), "/tmp")
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "squash commits in a template repo has been failed")
+	assert.Contains(t, err.Error(), "failed to squash commits in a template repo")
 }
 
 func TestPutProjectGerrit_tryToSquashCommitsShouldReturnNil(t *testing.T) {
@@ -845,21 +845,21 @@ func TestPutProjectGerrit_tryToSquashCommitsShouldFailOnCommitChanges(t *testing
 	)
 	err := ppg.tryToSquashCommits("workDir", "codebaseName", codebaseApi.Create)
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "an error has occurred while committing all default content")
+	assert.Contains(t, err.Error(), "failed to commit all default content")
 }
 
 func TestPutProjectGerrit_tryToCloneShouldPassWithExistingRepo(t *testing.T) {
 	dir, err := os.MkdirTemp("/tmp", "codebase")
-	require.NoError(t, err, "unable to create temp directory for testing")
+	require.NoError(t, err, "failed to create temp directory for testing")
 
 	_, err = git.PlainInit(dir, false)
-	require.NoError(t, err, "unable to create test git repo")
+	require.NoError(t, err, "failed to create test git repo")
 
 	u := "user"
 	p := "pass"
 
 	err = os.MkdirAll(fmt.Sprintf("%v/.git", dir), 0o775)
-	require.NoError(t, err, "unable to create .git directory for test")
+	require.NoError(t, err, "failed to create .git directory for test")
 
 	ppg := NewPutProjectGerrit(nil, nil, nil)
 	err = ppg.tryToCloneRepo("repourl", &u, &p, dir, "c-name")
@@ -883,11 +883,11 @@ func TestReplaceDefaultBranch(t *testing.T) {
 	mGit.On("RemoveBranch", "foo", "bar").Return(errors.New("RemoveBranch fatal")).Once()
 
 	err = ppg.replaceDefaultBranch("foo", "bar", "baz")
-	assert.EqualError(t, err, "unable to remove master branch: RemoveBranch fatal")
+	assert.EqualError(t, err, "failed to remove master branch: RemoveBranch fatal")
 
 	mGit.On("RemoveBranch", "foo", "bar").Return(nil).Once()
 	mGit.On("CreateChildBranch", "foo", "baz", "bar").Return(errors.New("fatal")).Once()
 
 	err = ppg.replaceDefaultBranch("foo", "bar", "baz")
-	assert.EqualError(t, err, "unable to create child branch: fatal")
+	assert.EqualError(t, err, "failed to create child branch: fatal")
 }

@@ -457,7 +457,7 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 				httpmock.RegisterRegexpResponder(http.MethodGet, fakeUrlRegexp, getResponder)
 			},
 			wantErr:     require.Error,
-			errContains: "unable to get webhook",
+			errContains: "failed to get webhook",
 		},
 		{
 			name: "failed to create webhook",
@@ -501,7 +501,7 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 				httpmock.RegisterRegexpResponder(http.MethodPost, fakeUrlRegexp, responder)
 			},
 			wantErr:     require.Error,
-			errContains: "unable to create",
+			errContains: "failed to create",
 		},
 		{
 			name: "failed to get getWebHookUrl - no rules",
@@ -587,7 +587,7 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 			},
 			responder:   func(t *testing.T) {},
 			wantErr:     require.Error,
-			errContains: fmt.Sprintf("unable to get %s ingress", gitLabIngressName),
+			errContains: fmt.Sprintf("failed to get %s ingress", gitLabIngressName),
 		},
 		{
 			name: "failed to get secret - no required field",
@@ -624,7 +624,7 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 			},
 			responder:   func(t *testing.T) {},
 			wantErr:     require.Error,
-			errContains: fmt.Sprintf("unable to get %s field", util.GitServerSecretTokenField),
+			errContains: fmt.Sprintf("failed to get %s field", util.GitServerSecretTokenField),
 		},
 		{
 			name: "failed to get secret",
@@ -655,7 +655,7 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 			},
 			responder:   func(t *testing.T) {},
 			wantErr:     require.Error,
-			errContains: "unable to get test-secret",
+			errContains: "failed to get test-secret",
 		},
 		{
 			name: "project ID not found",
@@ -694,7 +694,7 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 			},
 			responder:   func(t *testing.T) {},
 			wantErr:     require.Error,
-			errContains: "unable to get project ID for codebase",
+			errContains: "failed to get project ID for codebase",
 		},
 		{
 			name: "git server not found",
@@ -710,7 +710,7 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 			k8sObjects:  []client.Object{},
 			responder:   func(t *testing.T) {},
 			wantErr:     require.Error,
-			errContains: "unable to get git server",
+			errContains: "failed to get git server",
 		},
 	}
 

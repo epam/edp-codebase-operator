@@ -19,8 +19,7 @@ type GitTagSpec struct {
 }
 
 // GitTagStatus defines the observed state of GitTag.
-type GitTagStatus struct {
-}
+type GitTagStatus struct{}
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status

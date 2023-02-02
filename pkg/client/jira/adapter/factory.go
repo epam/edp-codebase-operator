@@ -9,8 +9,7 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/pkg/client/jira/dto"
 )
 
-type GoJiraAdapterFactory struct {
-}
+type GoJiraAdapterFactory struct{}
 
 func (GoJiraAdapterFactory) New(js dto.JiraServer) (jira.Client, error) {
 	rl := log.WithValues("jira dto", js)

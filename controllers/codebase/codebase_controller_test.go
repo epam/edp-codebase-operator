@@ -17,13 +17,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
+	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
+
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	"github.com/epam/edp-codebase-operator/v2/controllers/codebase/service/chain"
 	"github.com/epam/edp-codebase-operator/v2/controllers/codebase/service/chain/handler"
 	chainMocks "github.com/epam/edp-codebase-operator/v2/controllers/codebase/service/chain/mocks"
 	"github.com/epam/edp-codebase-operator/v2/pkg/objectmodifier"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
-	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
 )
 
 type ControllerTestSuite struct {

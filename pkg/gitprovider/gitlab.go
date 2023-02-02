@@ -66,13 +66,12 @@ func (c *GitLabClient) CreateWebHook(
 		}).
 		SetResult(webHook).
 		Post("/api/v4/projects/{project-id}/hooks")
-
 	if err != nil {
-		return nil, fmt.Errorf("unable to create GitLab web hook: %w", err)
+		return nil, fmt.Errorf("failed to create GitLab web hook: %w", err)
 	}
 
 	if resp.IsError() {
-		return nil, fmt.Errorf("unable to create GitLab web hook: %s", resp.String())
+		return nil, fmt.Errorf("failed to create GitLab web hook: %s", resp.String())
 	}
 
 	return webHook, nil
@@ -123,17 +122,16 @@ func (c *GitLabClient) GetWebHook(
 		}).
 		SetResult(webHook).
 		Get("/api/v4/projects/{project-id}/hooks/{hook-id}")
-
 	if err != nil {
-		return nil, fmt.Errorf("unable to get GitLab web hook: %w", err)
+		return nil, fmt.Errorf("failed to get GitLab web hook: %w", err)
 	}
 
 	if resp.StatusCode() == http.StatusNotFound {
-		return nil, fmt.Errorf("unable to get GitLab web hook: %w", ErrWebHookNotFound)
+		return nil, fmt.Errorf("failed to get GitLab web hook: %w", ErrWebHookNotFound)
 	}
 
 	if resp.IsError() {
-		return nil, fmt.Errorf("unable to get GitLab web hook: %s", resp.String())
+		return nil, fmt.Errorf("failed to get GitLab web hook: %s", resp.String())
 	}
 
 	return webHook, nil
@@ -159,13 +157,12 @@ func (c *GitLabClient) GetWebHooks(
 		}).
 		SetResult(&webHooks).
 		Get("/api/v4/projects/{project-id}/hooks")
-
 	if err != nil {
-		return nil, fmt.Errorf("unable to get GitLab web hooks: %w", err)
+		return nil, fmt.Errorf("failed to get GitLab web hooks: %w", err)
 	}
 
 	if resp.IsError() {
-		return nil, fmt.Errorf("unable to get GitLab web hooks: %s", resp.String())
+		return nil, fmt.Errorf("failed to get GitLab web hooks: %s", resp.String())
 	}
 
 	return webHooks, nil
@@ -190,17 +187,16 @@ func (c *GitLabClient) DeleteWebHook(
 			"hook-id":          strconv.Itoa(webHookID),
 		}).
 		Delete("/api/v4/projects/{project-id}/hooks/{hook-id}")
-
 	if err != nil {
-		return fmt.Errorf("unable to delete GitLab web hook: %w", err)
+		return fmt.Errorf("failed to delete GitLab web hook: %w", err)
 	}
 
 	if resp.StatusCode() == http.StatusNotFound {
-		return fmt.Errorf("unable to delete GitLab web hook: %w", ErrWebHookNotFound)
+		return fmt.Errorf("failed to delete GitLab web hook: %w", ErrWebHookNotFound)
 	}
 
 	if resp.IsError() {
-		return fmt.Errorf("unable to delete GitLab web hook: %s", resp.String())
+		return fmt.Errorf("failed to delete GitLab web hook: %s", resp.String())
 	}
 
 	return nil

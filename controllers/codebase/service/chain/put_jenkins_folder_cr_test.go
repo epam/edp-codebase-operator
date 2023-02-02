@@ -2,7 +2,6 @@ package chain
 
 import (
 	"context"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -11,10 +10,11 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
-	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
 	"github.com/epam/edp-jenkins-operator/v2/pkg/util/consts"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
+	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
 func TestPutJenkinsFolder_ShouldCreateJenkinsFolder(t *testing.T) {
@@ -69,7 +69,7 @@ func TestPutJenkinsFolder_ShouldCreateJenkinsFolder(t *testing.T) {
 			Namespace: fakeNamespace,
 		},
 		gjf); err != nil {
-		t.Error("Unable to get JenkinsFolder")
+		t.Error("failed to get JenkinsFolder")
 	}
 
 	assert.Equal(t, gjf.Spec.Job.Name, "job-provisions/job/ci/job/ci")
@@ -147,9 +147,7 @@ func TestPutJenkinsFolder_ShouldFailWhenGetGitServer(t *testing.T) {
 	err := pjf.ServeRequest(ctx, c)
 	assert.Error(t, err)
 
-	if !strings.Contains(err.Error(), "an error has occurred while getting fake-name Git Server CR") {
-		t.Fatalf("wrong error returned: %s", err.Error())
-	}
+	assert.Contains(t, err.Error(), "failed to get fake-name Git Server CR")
 }
 
 func Test_getRepositoryPath(t *testing.T) {

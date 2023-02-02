@@ -24,7 +24,7 @@ func TestGoJiraAdapter_Connected_True(t *testing.T) {
 
 	jc, err := new(GoJiraAdapterFactory).New(dto.ConvertSpecToJiraServer("j-api", "user", "pwd"))
 	if err != nil {
-		t.Fatal("Unable to create Jira Client")
+		t.Fatal("failed to create Jira Client")
 	}
 
 	c, err := jc.Connected()
@@ -38,7 +38,7 @@ func TestGoJiraAdapter_Connected_False(t *testing.T) {
 
 	jc, err := new(GoJiraAdapterFactory).New(dto.ConvertSpecToJiraServer("j-api", "user", "pwd"))
 	if err != nil {
-		t.Fatal("Unable to create Jira Client")
+		t.Fatal("failed to create Jira Client")
 	}
 
 	c, err := jc.Connected()
@@ -73,7 +73,7 @@ func TestGoJiraAdapter_GetIssueMetadata_Pass(t *testing.T) {
 
 	jc, err := new(GoJiraAdapterFactory).New(dto.ConvertSpecToJiraServer("j-api", "user", "pwd"))
 	if err != nil {
-		t.Fatal("Unable to create Jira Client")
+		t.Fatal("failed to create Jira Client")
 	}
 
 	meta, err := jc.GetIssueMetadata("project_key")
@@ -87,7 +87,7 @@ func TestGoJiraAdapter_GetIssueMetadata_Fail(t *testing.T) {
 
 	jc, err := new(GoJiraAdapterFactory).New(dto.ConvertSpecToJiraServer("j-api", "user", "pwd"))
 	if err != nil {
-		t.Fatal("Unable to create Jira Client")
+		t.Fatal("failed to create Jira Client")
 	}
 
 	meta, err := jc.GetIssueMetadata("issueId")
@@ -114,7 +114,7 @@ func TestGoJiraAdapter_GetIssueType_Pass(t *testing.T) {
 
 	jc, err := new(GoJiraAdapterFactory).New(dto.ConvertSpecToJiraServer("j-api", "user", "pwd"))
 	if err != nil {
-		t.Fatal("Unable to create Jira Client")
+		t.Fatal("failed to create Jira Client")
 	}
 
 	issue, err := jc.GetIssueType("issueId")
@@ -128,7 +128,7 @@ func TestGoJiraAdapter_GetIssueType_Fail(t *testing.T) {
 
 	jc, err := new(GoJiraAdapterFactory).New(dto.ConvertSpecToJiraServer("j-api", "user", "pwd"))
 	if err != nil {
-		t.Fatal("Unable to create Jira Client")
+		t.Fatal("failed to create Jira Client")
 	}
 
 	issue, err := jc.GetIssueType("issueId")
@@ -155,7 +155,7 @@ func TestGoJiraAdapter_GetProjectInfo_Pass(t *testing.T) {
 
 	jc, err := new(GoJiraAdapterFactory).New(dto.ConvertSpecToJiraServer("j-api", "user", "pwd"))
 	if err != nil {
-		t.Fatal("Unable to create Jira Client")
+		t.Fatal("failed to create Jira Client")
 	}
 
 	jp, err := jc.GetProjectInfo("issueId")
@@ -169,7 +169,7 @@ func TestGoJiraAdapter_GetProjectInfo_Fail(t *testing.T) {
 
 	jc, err := new(GoJiraAdapterFactory).New(dto.ConvertSpecToJiraServer("j-api", "user", "pwd"))
 	if err != nil {
-		t.Fatal("Unable to create Jira Client")
+		t.Fatal("failed to create Jira Client")
 	}
 
 	jp, err := jc.GetProjectInfo("issueId")
@@ -185,7 +185,7 @@ func TestGoJiraAdapter_GetProjectInfo_Fail_IssueNotFound(t *testing.T) {
 
 	jc, err := new(GoJiraAdapterFactory).New(dto.ConvertSpecToJiraServer("j-api", "user", "pwd"))
 	if err != nil {
-		t.Fatal("Unable to create Jira Client")
+		t.Fatal("failed to create Jira Client")
 	}
 
 	httpmock.RegisterResponder("GET", "/j-api/rest/api/2/issue/issueId",
@@ -212,7 +212,7 @@ func TestGoJiraAdapter_CreateFixVersionValue_Pass(t *testing.T) {
 
 	jc, err := new(GoJiraAdapterFactory).New(dto.ConvertSpecToJiraServer("j-api", "user", "pwd"))
 	if err != nil {
-		t.Fatal("Unable to create Jira Client")
+		t.Fatal("failed to create Jira Client")
 	}
 
 	err = jc.CreateFixVersionValue(1, "100")
@@ -231,7 +231,7 @@ func TestGoJiraAdapter_CreateFixVersionValue_Fail(t *testing.T) {
 
 	jc, err := new(GoJiraAdapterFactory).New(dto.ConvertSpecToJiraServer("j-api", "user", "pwd"))
 	if err != nil {
-		t.Fatal("Unable to create Jira Client")
+		t.Fatal("failed to create Jira Client")
 	}
 
 	err = jc.CreateFixVersionValue(1, "100")
@@ -253,7 +253,7 @@ func TestGoJiraAdapter_CreateComponentValue_Pass(t *testing.T) {
 
 	jc, err := new(GoJiraAdapterFactory).New(dto.ConvertSpecToJiraServer("j-api", "user", "pwd"))
 	if err != nil {
-		t.Fatal("Unable to create Jira Client")
+		t.Fatal("failed to create Jira Client")
 	}
 
 	err = jc.CreateComponentValue(1, "100")
@@ -272,7 +272,7 @@ func TestGoJiraAdapter_CreateComponentValue_FailToGetProject(t *testing.T) {
 
 	jc, err := new(GoJiraAdapterFactory).New(dto.ConvertSpecToJiraServer("j-api", "user", "pwd"))
 	if err != nil {
-		t.Fatal("Unable to create Jira Client")
+		t.Fatal("failed to create Jira Client")
 	}
 
 	err = jc.CreateComponentValue(1, "100")
@@ -291,7 +291,7 @@ func TestGoJiraAdapter_CreateComponentValue_FailToCreateComponent(t *testing.T) 
 
 	jc, err := new(GoJiraAdapterFactory).New(dto.ConvertSpecToJiraServer("j-api", "user", "pwd"))
 	if err != nil {
-		t.Fatal("Unable to create Jira Client")
+		t.Fatal("failed to create Jira Client")
 	}
 
 	err = jc.CreateComponentValue(1, "100")
@@ -313,7 +313,7 @@ func TestGoJiraAdapter_ApplyTagsToIssue_Pass(t *testing.T) {
 
 	jc, err := new(GoJiraAdapterFactory).New(dto.ConvertSpecToJiraServer("j-api", "user", "pwd"))
 	if err != nil {
-		t.Fatal("Unable to create Jira Client")
+		t.Fatal("failed to create Jira Client")
 	}
 
 	err = jc.ApplyTagsToIssue("jiraId", params)
@@ -330,7 +330,7 @@ func TestGoJiraAdapter_ApplyTagsToIssue_Fail(t *testing.T) {
 
 	jc, err := new(GoJiraAdapterFactory).New(dto.ConvertSpecToJiraServer("j-api", "user", "pwd"))
 	if err != nil {
-		t.Fatal("Unable to create Jira Client")
+		t.Fatal("failed to create Jira Client")
 	}
 
 	err = jc.ApplyTagsToIssue("jiraId", params)
@@ -349,7 +349,7 @@ func TestGoJiraAdapter_CreateIssueLink_Pass(t *testing.T) {
 
 	jc, err := new(GoJiraAdapterFactory).New(dto.ConvertSpecToJiraServer("j-api", "user", "pwd"))
 	if err != nil {
-		t.Fatal("Unable to create Jira Client")
+		t.Fatal("failed to create Jira Client")
 	}
 
 	err = jc.CreateIssueLink("jiraId", "title", "url")
@@ -362,7 +362,7 @@ func TestGoJiraAdapter_CreateIssueLink_Fail(t *testing.T) {
 
 	jc, err := new(GoJiraAdapterFactory).New(dto.ConvertSpecToJiraServer("j-api", "user", "pwd"))
 	if err != nil {
-		t.Fatal("Unable to create Jira Client")
+		t.Fatal("failed to create Jira Client")
 	}
 
 	err = jc.CreateIssueLink("jiraId", "title", "url")

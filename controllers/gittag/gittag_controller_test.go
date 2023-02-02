@@ -102,7 +102,7 @@ func TestReconcileGitTag_Reconcile_ShouldFail(t *testing.T) {
 
 	assert.Error(t, err)
 
-	if !strings.Contains(err.Error(), "couldn't push add tag 111") {
+	if !strings.Contains(err.Error(), "failed to push add tag 111") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
 

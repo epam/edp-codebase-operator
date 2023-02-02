@@ -24,7 +24,6 @@ require (
 	github.com/go-resty/resty/v2 v2.6.0
 	github.com/jarcoal/httpmock v1.0.8
 	github.com/operator-framework/operator-lib v0.11.0
-	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.8.1
 	github.com/trivago/tgo v1.0.7
 	go.uber.org/multierr v1.9.0
@@ -36,8 +35,6 @@ require (
 	knative.dev/pkg v0.0.0-20230116014407-876c59d03903
 	sigs.k8s.io/controller-runtime v0.14.1
 )
-
-require github.com/hashicorp/errwrap v1.0.0 // indirect
 
 require (
 	github.com/Microsoft/go-winio v0.4.16 // indirect
@@ -68,6 +65,7 @@ require (
 	github.com/google/go-querystring v1.0.0 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/uuid v1.3.0 // indirect
+	github.com/hashicorp/errwrap v1.0.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/imdario/mergo v0.3.13 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
@@ -80,6 +78,7 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
+	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/prometheus/client_golang v1.14.0 // indirect
 	github.com/prometheus/client_model v0.3.0 // indirect

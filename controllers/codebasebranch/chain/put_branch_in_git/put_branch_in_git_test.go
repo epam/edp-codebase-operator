@@ -116,7 +116,7 @@ func TestPutBranchInGit_CodebaseShouldNotBeFound(t *testing.T) {
 
 	assert.Error(t, err)
 
-	if !strings.Contains(err.Error(), "Unable to get Codebase fake-name") {
+	if !strings.Contains(err.Error(), "failed to get Codebase fake-name") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
 
@@ -293,9 +293,7 @@ func TestPutBranchInGit_GitServerShouldNotBeFound(t *testing.T) {
 
 	assert.Error(t, err)
 
-	if !strings.Contains(err.Error(), "an error has occurred while getting fake-name Git Server CR") {
-		t.Fatalf("wrong error returned: %s", err.Error())
-	}
+	assert.Contains(t, err.Error(), "failed to get fake-name Git Server CR")
 }
 
 func TestPutBranchInGit_SecretShouldNotBeFound(t *testing.T) {
@@ -347,7 +345,7 @@ func TestPutBranchInGit_SecretShouldNotBeFound(t *testing.T) {
 
 	assert.Error(t, err)
 
-	if !strings.Contains(err.Error(), "Unable to get secret fake-name") {
+	if !strings.Contains(err.Error(), "failed to get secret fake-name") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
 }

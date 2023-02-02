@@ -103,7 +103,7 @@ func TestReconcileImageStreamTag_Reconcile_ShouldFail(t *testing.T) {
 
 	assert.Error(t, err)
 
-	if !strings.Contains(err.Error(), "couldn't add tag to codebase image stream cis") {
+	if !strings.Contains(err.Error(), "failed to add tag to codebase image stream cis") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
 

@@ -169,7 +169,7 @@ func TestPutCDStageDeploy_CdstagedeployShouldFailOnSearch(t *testing.T) {
 	err := chain.ServeRequest(cis)
 	assert.Error(t, err)
 
-	if !strings.Contains(err.Error(), "couldn't get pipeline-name-stage-name-cb-name cd stage deploy") {
+	if !strings.Contains(err.Error(), "failed to get pipeline-name-stage-name-cb-name cd stage deploy") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
 }
@@ -318,7 +318,7 @@ func TestPutCDStageDeploy_ShouldFailWithIncorrectTagstimestamp(t *testing.T) {
 	err := chain.ServeRequest(cis)
 	assert.Error(t, err)
 
-	if !strings.Contains(err.Error(), "couldn't construct command to create pipeline-name-stage-name-cb-name cd stage deploy") {
+	if !strings.Contains(err.Error(), "failed to construct command to create pipeline-name-stage-name-cb-name cd stage deploy") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
 }

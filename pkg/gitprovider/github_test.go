@@ -42,7 +42,7 @@ func TestGitHubClient_CreateWebHook(t *testing.T) {
 			respStatus:  http.StatusBadRequest,
 			resBody:     map[string]interface{}{"message": "bad request"},
 			wantErr:     require.Error,
-			errContains: "unable to create GitHub web hook",
+			errContains: "failed to create GitHub web hook",
 		},
 		{
 			name:        "invalid projectID",
@@ -125,7 +125,7 @@ func TestGitHubClient_GetWebHook(t *testing.T) {
 			respStatus:  http.StatusBadRequest,
 			resBody:     map[string]interface{}{"message": "bad request"},
 			wantErr:     require.Error,
-			errContains: "unable to get GitHub web hook",
+			errContains: "failed to get GitHub web hook",
 		},
 	}
 
@@ -187,7 +187,7 @@ func TestGitHubClient_DeleteWebHook(t *testing.T) {
 			projectID:   "owner/repo",
 			respStatus:  http.StatusBadRequest,
 			wantErr:     require.Error,
-			errContains: "unable to delete GitHub web hook",
+			errContains: "failed to delete GitHub web hook",
 		},
 		{
 			name:        "invalid project ID",
@@ -268,7 +268,7 @@ func TestGitHubClient_GetWebHooks(t *testing.T) {
 			respStatus:  http.StatusBadRequest,
 			resBody:     map[string]interface{}{"message": "bad request"},
 			wantErr:     require.Error,
-			errContains: "unable to get GitHub web hooks",
+			errContains: "failed to get GitHub web hooks",
 		},
 	}
 
@@ -353,7 +353,7 @@ func TestGitHubClient_CreateWebHookIfNotExists(t *testing.T) {
 			GETRespStatus: http.StatusBadRequest,
 			GETResBody:    map[string]interface{}{"message": "bad request"},
 			wantErr:       require.Error,
-			errContains:   "unable to get GitHub web hooks",
+			errContains:   "failed to get GitHub web hooks",
 		},
 		{
 			name:           "create webhooks response failure",

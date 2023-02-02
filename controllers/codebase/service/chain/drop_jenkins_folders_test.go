@@ -10,8 +10,9 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 )
 
 func TestDropJenkinsFolders_ServeRequest(t *testing.T) {
@@ -82,14 +83,14 @@ func TestDropJenkinsFolders_ServeRequest(t *testing.T) {
 			Namespace: fakeNamespace,
 		},
 		jfr); err != nil {
-		t.Error("Unable to get JenkinsFolder")
+		t.Error("failed to get JenkinsFolder")
 	}
 
 	assert.Equal(t, jfr.Labels["codebase"], "another-codebase")
 
 	jflr := &jenkinsApi.JenkinsFolderList{}
 	if err := fakeCl.List(ctx, jflr); err != nil {
-		t.Error("Unable to get JenkinsFolder")
+		t.Error("failed to get JenkinsFolder")
 	}
 
 	assert.Equal(t, len(jflr.Items), 1)

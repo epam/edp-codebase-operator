@@ -2,11 +2,11 @@ package chain
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/go-logr/logr"
 	"github.com/go-resty/resty/v2"
-	"github.com/pkg/errors"
 	coreV1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -53,7 +53,7 @@ func (s *DeleteWebHook) ServeRequest(ctx context.Context, codebase *codebaseApi.
 	}
 
 	if codebase.Spec.GitUrlPath == nil {
-		err = fmt.Errorf("unable to get project ID for codebase %s, git url path is empty", codebase.Name)
+		err = fmt.Errorf("failed to get project ID for codebase %s, git url path is empty", codebase.Name)
 		rLog.Error(err, "Failed to delete webhook.")
 
 		return nil
@@ -96,11 +96,11 @@ func (s *DeleteWebHook) ServeRequest(ctx context.Context, codebase *codebaseApi.
 func (s *DeleteWebHook) getGitServerSecret(ctx context.Context, secretName, namespace string) (*coreV1.Secret, error) {
 	secret := &coreV1.Secret{}
 	if err := s.client.Get(ctx, client.ObjectKey{Name: secretName, Namespace: namespace}, secret); err != nil {
-		return nil, fmt.Errorf("unable to get %v secret: %w", secretName, err)
+		return nil, fmt.Errorf("failed to get %v secret: %w", secretName, err)
 	}
 
 	if _, ok := secret.Data[util.GitServerSecretTokenField]; !ok {
-		return nil, fmt.Errorf("unable to get %s field from %s secret", util.GitServerSecretTokenField, secretName)
+		return nil, fmt.Errorf("failed to get field %s from %s secret", util.GitServerSecretTokenField, secretName)
 	}
 
 	return secret, nil

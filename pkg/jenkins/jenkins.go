@@ -7,14 +7,14 @@ import (
 	"time"
 
 	"github.com/bndr/gojenkins"
-	"github.com/pkg/errors"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
 	jenkinsOperatorSpec "github.com/epam/edp-jenkins-operator/v2/pkg/service/jenkins/spec"
+
+	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
 var log = ctrl.Log.WithName("jenkins-client")
@@ -86,7 +86,7 @@ func (c JenkinsClient) TriggerDeletionJob(branchName, appName string) error {
 		"RELEASE_NAME": branchName,
 	})
 	if err != nil {
-		return errors.Wrap(err, "unable to build job")
+		return fmt.Errorf("failed to build job: %w", err)
 	}
 
 	return nil
@@ -97,11 +97,11 @@ func (c JenkinsClient) TriggerReleaseJob(appName string, params map[string]strin
 	log.Info("Trying to trigger Release jenkins job", "jobName", jobName)
 
 	if _, err := c.GetJob(jobName, time.Second, c.triggerReleaseRetryCount); err != nil {
-		return errors.Wrapf(err, "unable to get job %s", jobName)
+		return fmt.Errorf("failed to get job %s: %w", jobName, err)
 	}
 
 	if _, err := c.Jenkins.BuildJob(jobName, params); err != nil {
-		return errors.Wrapf(err, "Couldn't trigger %v job", jobName)
+		return fmt.Errorf("failed to trigger %v job: %w", jobName, err)
 	}
 
 	return nil
@@ -117,7 +117,7 @@ func (c JenkinsClient) GetJobStatus(name string, delay time.Duration, retryCount
 		if qErr != nil || rErr != nil {
 			job, err := c.Jenkins.GetJob(name)
 			if err != nil {
-				return "", errors.Wrap(err, "job not found")
+				return "", fmt.Errorf("job not found: %w", err)
 			}
 
 			if job.Raw.Color == "notbuilt" {
@@ -142,7 +142,7 @@ func (c JenkinsClient) GetJobStatus(name string, delay time.Duration, retryCount
 		time.Sleep(delay)
 	}
 
-	return "", errors.Errorf("Job %v has not been finished after specified delay", name)
+	return "", fmt.Errorf("failed to finish job after specified delay - job %v", name)
 }
 
 func (c JenkinsClient) IsJobQueued(name string) (*bool, error) {
@@ -179,7 +179,7 @@ func GetJenkins(c client.Client, namespace string) (*jenkinsApi.Jenkins, error) 
 
 	err := c.List(context.TODO(), jenkinsList, &options)
 	if err != nil {
-		return nil, errors.Wrapf(err, "Unable to get Jenkins CRs in namespace %v", namespace)
+		return nil, fmt.Errorf("failed to get Jenkins CRs in namespace %v: %w", namespace, err)
 	}
 
 	if len(jenkinsList.Items) == 0 {
@@ -196,10 +196,10 @@ func GetJenkinsCreds(c client.Client, jenkins *jenkinsApi.Jenkins, namespace str
 	jenkinsTokenSecret, err := util.GetSecret(c, jenkinsTokenSecretName, namespace)
 	if err != nil {
 		if k8sErrors.IsNotFound(err) {
-			return "", "", errors.Wrapf(err, "Secret %v in not found", jenkinsTokenSecretName)
+			return "", "", fmt.Errorf("Secret %v in not found: %w", jenkinsTokenSecretName, err)
 		}
 
-		return "", "", errors.Wrapf(err, "Getting secret %v failed", jenkinsTokenSecretName)
+		return "", "", fmt.Errorf("Getting secret %v failed: %w", jenkinsTokenSecretName, err)
 	}
 
 	userName = string(jenkinsTokenSecret.Data["username"])

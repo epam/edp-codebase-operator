@@ -3,7 +3,6 @@ package chain
 import (
 	"fmt"
 
-	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
@@ -24,7 +23,7 @@ func (h PushGitTag) ServeRequest(gt *codebaseApi.GitTag) error {
 	rl.Info("start PushGitTag chain executing...")
 
 	if err := h.tryToPushTag(gt); err != nil {
-		return errors.Wrapf(err, "couldn't push add tag %v", gt.Spec.Tag)
+		return fmt.Errorf("failed to push add tag %v: %w", gt.Spec.Tag, err)
 	}
 
 	rl.Info("end PushGitTag chain executing...")
@@ -50,7 +49,7 @@ func (h PushGitTag) tryToPushTag(gt *codebaseApi.GitTag) error {
 
 	secret, err := util.GetSecret(h.client, gs.NameSshKeySecret, c.Namespace)
 	if err != nil {
-		return errors.Wrapf(err, "an error has occurred while getting %v secret", gs.NameSshKeySecret)
+		return fmt.Errorf("an error has occurred while getting %v secret: %w", gs.NameSshKeySecret, err)
 	}
 
 	wd := util.GetWorkDir(c.Name, c.Namespace)

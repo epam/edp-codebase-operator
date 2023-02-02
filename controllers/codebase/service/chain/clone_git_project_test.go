@@ -23,7 +23,7 @@ func TestCloneGitProject_ShouldPass(t *testing.T) {
 	ctx := context.Background()
 
 	dir, err := os.MkdirTemp("/tmp", "codebase")
-	require.NoError(t, err, "unable to create temp directory for testing")
+	require.NoError(t, err, "failed to create temp directory for testing")
 
 	defer func() {
 		err = os.RemoveAll(dir)
@@ -119,7 +119,7 @@ func TestCloneGitProject_SetIntermediateSuccessFieldsShouldFail(t *testing.T) {
 
 	err := cgp.ServeRequest(ctx, c)
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "an error has been occurred while updating fake-name Codebase status", "wrong error returned")
+	assert.Contains(t, err.Error(), "failed to update Codebase status fake-name", "wrong error returned")
 }
 
 func TestCloneGitProject_GetGitServerShouldFail(t *testing.T) {
@@ -150,7 +150,7 @@ func TestCloneGitProject_GetGitServerShouldFail(t *testing.T) {
 
 	err := cgp.ServeRequest(ctx, c)
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "an error has occurred while getting fake-name GitServer", "wrong error returned")
+	assert.Contains(t, err.Error(), "failed to get GitServer fake-name", "wrong error returned")
 }
 
 func TestCloneGitProject_GetSecretShouldFail(t *testing.T) {
@@ -193,14 +193,14 @@ func TestCloneGitProject_GetSecretShouldFail(t *testing.T) {
 
 	err := cgp.ServeRequest(ctx, c)
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "an error has occurred while getting fake-name secret", "wrong error returned")
+	assert.Contains(t, err.Error(), "failed to get secret fake-name", "wrong error returned")
 }
 
 func TestCloneGitProject_CloneRepositoryBySshShouldFail(t *testing.T) {
 	ctx := context.Background()
 
 	dir, err := os.MkdirTemp("/tmp", "codebase")
-	require.NoError(t, err, "unable to create temp directory for testing")
+	require.NoError(t, err, "failed to create temp directory for testing")
 
 	defer func() {
 		err = os.RemoveAll(dir)
@@ -277,7 +277,7 @@ func TestCloneGitProject_CloneRepositoryBySshShouldFail(t *testing.T) {
 
 	err = cgp.ServeRequest(ctx, c)
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "an error has occurred while cloning repository ssh://fake-name:22fake-name: FATAL ERROR", "wrong error returned")
+	assert.Contains(t, err.Error(), "failed to clone repository ssh://fake-name:22fake-name: FATAL ERROR", "wrong error returned")
 }
 
 func TestCloneGitProject_Postpone(t *testing.T) {

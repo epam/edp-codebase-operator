@@ -1,12 +1,12 @@
 package template
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"strings"
 	"text/template"
 
-	"github.com/pkg/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -30,7 +30,7 @@ func PrepareTemplates(c client.Client, cb *codebaseApi.Codebase, workDir, assets
 
 	if cb.Spec.Type == util.Application {
 		if err := util.CopyTemplate(cb.Spec.DeploymentScript, workDir, assetsDir, cf); err != nil {
-			return errors.Wrapf(err, "an error has occurred while copying template for %v codebase", cb.Name)
+			return fmt.Errorf("failed to copy template for %v codebase: %w", cb.Name, err)
 		}
 	}
 
@@ -59,7 +59,7 @@ func PrepareGitlabCITemplates(c client.Client, cb *codebaseApi.Codebase, workDir
 	}
 
 	if err := util.CopyTemplate(cb.Spec.DeploymentScript, workDir, assetsDir, cf); err != nil {
-		return errors.Wrapf(err, "an error has occurred while copying template for %v codebase", cb.Name)
+		return fmt.Errorf("failed to copy template for %v codebase: %w", cb.Name, err)
 	}
 
 	log.Info("end preparing deploy templates", codebaseKey, cb.Name)
@@ -72,7 +72,7 @@ func buildTemplateConfig(c client.Client, cb *codebaseApi.Codebase) (*model.Conf
 
 	us, err := util.GetUserSettings(c, cb.Namespace)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable get user settings settings")
+		return nil, fmt.Errorf("failed to get user settings settings: %w", err)
 	}
 
 	cf := model.ConfigGoTemplating{
@@ -88,7 +88,7 @@ func buildTemplateConfig(c client.Client, cb *codebaseApi.Codebase) (*model.Conf
 
 	cf.GitURL, err = getProjectUrl(c, &cb.Spec, cb.Namespace)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable get project url")
+		return nil, fmt.Errorf("failed to get project url: %w", err)
 	}
 
 	log.Info("end creating template config", "codebase_name", cb.Name)
@@ -109,13 +109,13 @@ func getProjectUrl(c client.Client, s *codebaseApi.CodebaseSpec, n string) (stri
 	case "import":
 		gs, err := util.GetGitServer(c, s.GitServer, n)
 		if err != nil {
-			return "", errors.Wrap(err, "unable get git server")
+			return "", fmt.Errorf("failed to get git server: %w", err)
 		}
 
 		return fmt.Sprintf("https://%v%v", gs.GitHost, *s.GitUrlPath), nil
 
 	default:
-		return "", errors.New("unable get project url, caused by the unsupported strategy")
+		return "", errors.New("failed to get project url, caused by the unsupported strategy")
 	}
 }
 
@@ -153,7 +153,7 @@ func copySonarConfigs(workDir, td string, config *model.ConfigGoTemplating) (err
 
 	err = tmpl.Execute(f, config)
 	if err != nil {
-		return errors.Wrapf(err, "couldn't render Sonar configs fo %v app: %v", config.Lang, config.Name)
+		return fmt.Errorf("failed to render Sonar configs fo %v app: %v: %w", config.Lang, config.Name, err)
 	}
 
 	log.Info("Sonar configs has been copied", "codebase_name", config.Name)

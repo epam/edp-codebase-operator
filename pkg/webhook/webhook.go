@@ -17,7 +17,7 @@ func RegisterValidationWebHook(ctx context.Context, mgr ctrl.Manager, namespace 
 
 	codebaseWebHook := NewCodebaseValidationWebhook(mgr.GetClient(), ctrl.Log.WithName("codebase-webhook"))
 	if err := codebaseWebHook.SetupWebhookWithManager(mgr); err != nil {
-		return fmt.Errorf("unable to create webhook: %w", err)
+		return fmt.Errorf("failed to create webhook: %w", err)
 	}
 
 	return nil

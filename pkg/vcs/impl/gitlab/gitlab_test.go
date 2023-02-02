@@ -55,7 +55,7 @@ func TestGitLab_CheckProjectExist_ShouldFailToRequest(t *testing.T) {
 
 	assert.Error(t, err)
 	assert.Nil(t, r)
-	assert.Contains(t, err.Error(), "Unable to check project")
+	assert.Contains(t, err.Error(), "failed to check project")
 }
 
 func TestGitLab_Init(t *testing.T) {
@@ -96,7 +96,7 @@ func TestGitLab_Init_ShouldFail(t *testing.T) {
 	err := g.Init("//", "user", "pass")
 
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "Unable to get GitLab access token: Post")
+	assert.Contains(t, err.Error(), "failed to get GitLab access token: Post")
 }
 
 func TestGitLab_Init_ShouldGetError(t *testing.T) {
@@ -162,7 +162,7 @@ func TestGitLab_DeleteProject_ShouldFail(t *testing.T) {
 	err := g.DeleteProject("fake-project")
 
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "Unable to delete project in GitLab")
+	assert.Contains(t, err.Error(), "failed to delete project in GitLab")
 }
 
 func TestGitLab_CreateProject_ShouldPass(t *testing.T) {
@@ -253,7 +253,7 @@ func TestGitLab_CreateProject_ShouldFailOnCreate(t *testing.T) {
 	r, err := g.CreateProject("fake-group", "fake-project")
 	assert.Error(t, err)
 	assert.Equal(t, r, "")
-	assert.Contains(t, err.Error(), "Unable to create project in GitLab")
+	assert.Contains(t, err.Error(), "failed to create project in GitLab")
 }
 
 func TestGitLab_GetGroupIdByName_ShouldFail(t *testing.T) {
@@ -267,7 +267,7 @@ func TestGitLab_GetGroupIdByName_ShouldFail(t *testing.T) {
 	r, err := g.GetGroupIdByName("fake-group")
 	assert.Error(t, err)
 	assert.Equal(t, r, "")
-	assert.Contains(t, err.Error(), "Unable get repository group id")
+	assert.Contains(t, err.Error(), "failed get repository group id")
 }
 
 func TestGitLab_GetRepositorySshUrl_ShouldPass(t *testing.T) {
@@ -300,7 +300,7 @@ func TestGitLab_GetRepositorySshUrl_ShouldFailToExecute(t *testing.T) {
 
 	_, err := g.GetRepositorySshUrl("fake-group", "fake-project")
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "Unable get repository SSH URL")
+	assert.Contains(t, err.Error(), "failed get repository SSH URL")
 }
 
 func TestGitLab_GetRepositorySshUrl_ShouldNotFound(t *testing.T) {

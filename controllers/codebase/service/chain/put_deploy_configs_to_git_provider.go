@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
@@ -37,7 +36,7 @@ func (h *PutDeployConfigsToGitProvider) ServeRequest(ctx context.Context, c *cod
 
 	if err := h.tryToPushConfigs(ctx, c); err != nil {
 		setFailedFields(c, codebaseApi.SetupDeploymentTemplates, err.Error())
-		return errors.Wrapf(err, "couldn't push deploy configs for %v codebase", c.Name)
+		return fmt.Errorf("failed to push deploy configs for %v codebase: %w", c.Name, err)
 	}
 
 	rLog.Info("end pushing configs to remote git server")
@@ -48,7 +47,7 @@ func (h *PutDeployConfigsToGitProvider) ServeRequest(ctx context.Context, c *cod
 func (h *PutDeployConfigsToGitProvider) tryToPushConfigs(ctx context.Context, c *codebaseApi.Codebase) error {
 	name, err := helper.GetEDPName(ctx, h.client, c.Namespace)
 	if err != nil {
-		return errors.Wrap(err, "couldn't get edp name")
+		return fmt.Errorf("failed to get edp name: %w", err)
 	}
 
 	skip, err := h.skipTemplatePreparing(ctx, *name, c.Name)
@@ -66,12 +65,12 @@ func (h *PutDeployConfigsToGitProvider) tryToPushConfigs(ctx context.Context, c 
 
 	ru, err := util.GetRepoUrl(c)
 	if err != nil {
-		return errors.Wrap(err, "couldn't build repo url")
+		return fmt.Errorf("failed to build repo url: %w", err)
 	}
 
 	err = CheckoutBranch(ru, wd, c.Spec.DefaultBranch, h.git, c, h.client)
 	if err != nil {
-		return errors.Wrapf(err, "checkout default branch %v in Git put_deploy_config has been failed", c.Spec.DefaultBranch)
+		return fmt.Errorf("checkout default branch %v in Git put_deploy_config has been failed: %w", c.Spec.DefaultBranch, err)
 	}
 
 	err = template.PrepareTemplates(h.client, c, wd, ad)
@@ -89,8 +88,7 @@ func (h *PutDeployConfigsToGitProvider) tryToPushConfigs(ctx context.Context, c 
 	}
 
 	if err := h.cr.UpdateProjectStatusValue(ctx, util.ProjectTemplatesPushedStatus, c.Name, *name); err != nil {
-		return errors.Wrapf(err, "couldn't set project_status %v value for %v codebase",
-			util.ProjectTemplatesPushedStatus, c.Name)
+		return fmt.Errorf("failed to set project_status %v value for %v codebase: %w", util.ProjectTemplatesPushedStatus, c.Name, err)
 	}
 
 	return nil
@@ -99,7 +97,7 @@ func (h *PutDeployConfigsToGitProvider) tryToPushConfigs(ctx context.Context, c 
 func (h *PutDeployConfigsToGitProvider) skipTemplatePreparing(ctx context.Context, edpName, codebaseName string) (bool, error) {
 	ps, err := h.cr.SelectProjectStatusValue(ctx, codebaseName, edpName)
 	if err != nil {
-		return true, errors.Wrapf(err, "couldn't get project_status value for %v codebase", codebaseName)
+		return true, fmt.Errorf("failed to get project_status value for %v codebase: %w", codebaseName, err)
 	}
 
 	if util.ContainsString([]string{util.ProjectTemplatesPushedStatus, util.ProjectVersionGoFilePushedStatus}, ps) {

@@ -12,7 +12,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
-	"github.com/epam/edp-codebase-operator/v2/api/v1"
+	v1 "github.com/epam/edp-codebase-operator/v2/api/v1"
 )
 
 const listLimit = 1000
@@ -36,7 +36,6 @@ func (r *CodebaseValidationWebhook) SetupWebhookWithManager(mgr ctrl.Manager) er
 		For(&v1.Codebase{}).
 		WithValidator(r).
 		Complete()
-
 	if err != nil {
 		return fmt.Errorf("failed to build Codebase validation webhook: %w", err)
 	}

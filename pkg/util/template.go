@@ -1,13 +1,12 @@
 package util
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path"
 	"strings"
 	"text/template"
-
-	"github.com/pkg/errors"
 
 	"github.com/epam/edp-codebase-operator/v2/pkg/model"
 )
@@ -107,7 +106,7 @@ func CopyHelmChartTemplates(deploymentScript, templatesDest, assetsDir string, c
 
 	templateFolderFilesList, err := GetListFilesInDirectory(path.Join(templatesDest, TemplateFolder))
 	if err != nil {
-		return errors.Wrapf(err, "Unable to GetListFilesInDirectory")
+		return fmt.Errorf("failed to GetListFilesInDirectory: %w", err)
 	}
 
 	for _, file := range templateFolderFilesList {
@@ -189,11 +188,11 @@ func renderTemplate(file *os.File, templateBasePath, templateName string, config
 
 	tmpl, err := template.New(templateName).ParseFiles(templateBasePath)
 	if err != nil {
-		return errors.Wrap(err, "unable to parse codebase deploy template")
+		return fmt.Errorf("failed to parse codebase deploy template: %w", err)
 	}
 
 	if err := tmpl.Execute(file, config); err != nil {
-		return errors.Wrap(err, "unable to render codebase deploy template")
+		return fmt.Errorf("failed to render codebase deploy template: %w", err)
 	}
 
 	log.Info("template has been rendered", "codebase", config.Name)

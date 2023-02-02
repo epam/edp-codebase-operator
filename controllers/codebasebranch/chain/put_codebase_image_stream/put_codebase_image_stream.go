@@ -5,18 +5,18 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/pkg/errors"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	edpComponentApi "github.com/epam/edp-component-operator/api/v1"
+
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	"github.com/epam/edp-codebase-operator/v2/controllers/codebasebranch/chain/handler"
 	"github.com/epam/edp-codebase-operator/v2/pkg/model"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
-	edpComponentApi "github.com/epam/edp-component-operator/api/v1"
 )
 
 type PutCodebaseImageStream struct {
@@ -45,7 +45,7 @@ func (h PutCodebaseImageStream) ServeRequest(cb *codebaseApi.CodebaseBranch) err
 
 	ec, err := h.getDockerRegistryEdpComponent(cb.Namespace)
 	if err != nil {
-		err = errors.Wrapf(err, "couldn't get %v EDP component", dockerRegistryName)
+		err = fmt.Errorf("failed to get %v EDP component: %w", dockerRegistryName, err)
 		setFailedFields(cb, codebaseApi.PutCodebaseImageStream, err.Error())
 
 		return err

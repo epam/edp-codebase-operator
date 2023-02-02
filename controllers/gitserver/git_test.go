@@ -102,7 +102,7 @@ func TestGitProvider_CreateChildBranch(t *testing.T) {
 
 	err = gp.CreateChildBranch("dir", "br1", "br2")
 	assert.Error(t, err)
-	assert.EqualError(t, err, "unable to checkout branch, err: : fatal")
+	assert.EqualError(t, err, "failed to checkout branch, err: : fatal")
 }
 
 func TestGitProvider_RemoveBranch(t *testing.T) {
@@ -130,7 +130,7 @@ func TestGitProvider_RemoveBranch(t *testing.T) {
 
 	err = gp.RemoveBranch("dir", "br1")
 	assert.Error(t, err)
-	assert.EqualError(t, err, "unable to remove branch, err: : fatal")
+	assert.EqualError(t, err, "failed to remove branch, err: : fatal")
 }
 
 func TestGitProvider_RenameBranch(t *testing.T) {
@@ -158,7 +158,7 @@ func TestGitProvider_RenameBranch(t *testing.T) {
 
 	err = gp.RenameBranch("dir", "br1", "br2")
 	assert.Error(t, err)
-	assert.EqualError(t, err, "unable to checkout branch, err: : fatal")
+	assert.EqualError(t, err, "failed to checkout branch, err: : fatal")
 }
 
 func Test_publicKey(t *testing.T) {

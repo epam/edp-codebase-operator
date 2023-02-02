@@ -27,7 +27,7 @@ func setupSuite(tb testing.TB) (func(tb testing.TB), string) {
 
 	pk, err := rsa.GenerateKey(rand.Reader, 128)
 	if err != nil {
-		tb.Error("Unable to generate test private key")
+		tb.Error("failed to generate test private key")
 	}
 
 	privateKeyBytes := x509.MarshalPKCS1PrivateKey(pk)
@@ -72,12 +72,12 @@ func TestSShInit_ShouldFailForIncorrectRSAPKey(t *testing.T) {
 	gc, err := SshInit(22, "idrsa", "fake-host", logr.Discard())
 	assert.Error(t, err)
 	assert.Nil(t, gc)
-	assert.Contains(t, err.Error(), "Unable to get Public Key from Private one")
+	assert.Contains(t, err.Error(), "failed to get Public Key from Private one")
 }
 
 func TestAddRemoteLinkToGerrit_ShouldPass(t *testing.T) {
 	dir, err := os.MkdirTemp("/tmp", "codebase")
-	require.NoError(t, err, "unable to create temp directory for testing")
+	require.NoError(t, err, "failed to create temp directory for testing")
 
 	defer func() {
 		err = os.RemoveAll(dir)
@@ -86,14 +86,14 @@ func TestAddRemoteLinkToGerrit_ShouldPass(t *testing.T) {
 
 	repo, err := git.PlainInit(dir, false)
 	if err != nil {
-		t.Error("Unable to create test git repo")
+		t.Error("failed to create test git repo")
 	}
 
 	if _, err = repo.CreateRemote(&config.RemoteConfig{
 		Name: "origin",
 		URLs: []string{"https://example.com"},
 	}); err != nil {
-		t.Error("Unable to create remote")
+		t.Error("failed to create remote")
 	}
 
 	err = AddRemoteLinkToGerrit(dir, "fake-host", 22, "appName", logr.Discard())
@@ -101,7 +101,7 @@ func TestAddRemoteLinkToGerrit_ShouldPass(t *testing.T) {
 
 	b, err := os.ReadFile(fmt.Sprintf("%v/.git/config", dir))
 	if err != nil {
-		t.Error("Unable to read test file with git config")
+		t.Error("failed to read test file with git config")
 	}
 
 	assert.Contains(t, string(b), "[remote \"origin\"]\n\turl = ssh://fake-host:22/appName")
@@ -109,7 +109,7 @@ func TestAddRemoteLinkToGerrit_ShouldPass(t *testing.T) {
 
 func TestAddRemoteLinkToGerrit_ShouldPassWithErrRemoteNotFound(t *testing.T) {
 	dir, err := os.MkdirTemp("/tmp", "codebase")
-	require.NoError(t, err, "unable to create temp directory for testing")
+	require.NoError(t, err, "failed to create temp directory for testing")
 
 	defer func() {
 		err = os.RemoveAll(dir)
@@ -117,7 +117,7 @@ func TestAddRemoteLinkToGerrit_ShouldPassWithErrRemoteNotFound(t *testing.T) {
 	}()
 
 	if _, err = git.PlainInit(dir, false); err != nil {
-		t.Error("Unable to create test git repo")
+		t.Error("failed to create test git repo")
 	}
 
 	err = AddRemoteLinkToGerrit(dir, "fake-host", 22, "appName", logr.Discard())
@@ -125,7 +125,7 @@ func TestAddRemoteLinkToGerrit_ShouldPassWithErrRemoteNotFound(t *testing.T) {
 
 	b, err := os.ReadFile(fmt.Sprintf("%v/.git/config", dir))
 	if err != nil {
-		t.Error("Unable to read test file with git config")
+		t.Error("failed to read test file with git config")
 	}
 
 	assert.Contains(t, string(b), "[remote \"origin\"]\n\turl = ssh://fake-host:22/appName")
@@ -133,7 +133,7 @@ func TestAddRemoteLinkToGerrit_ShouldPassWithErrRemoteNotFound(t *testing.T) {
 
 func TestAddRemoteLinkToGerrit_ShouldFail(t *testing.T) {
 	dir, err := os.MkdirTemp("/tmp", "codebase")
-	require.NoError(t, err, "unable to create temp directory for testing")
+	require.NoError(t, err, "failed to create temp directory for testing")
 
 	defer func() {
 		err = os.RemoveAll(dir)
@@ -141,7 +141,7 @@ func TestAddRemoteLinkToGerrit_ShouldFail(t *testing.T) {
 	}()
 
 	if _, err = git.PlainInit(dir, false); err != nil {
-		t.Error("Unable to create test git repo")
+		t.Error("failed to create test git repo")
 	}
 
 	err = AddRemoteLinkToGerrit(dir, "fake-host", 22, "appName", logr.Discard())
@@ -149,7 +149,7 @@ func TestAddRemoteLinkToGerrit_ShouldFail(t *testing.T) {
 
 	b, err := os.ReadFile(fmt.Sprintf("%v/.git/config", dir))
 	if err != nil {
-		t.Error("Unable to read test file with git config")
+		t.Error("failed to read test file with git config")
 	}
 
 	assert.Contains(t, string(b), "[remote \"origin\"]\n\turl = ssh://fake-host:22/appName")
@@ -158,7 +158,7 @@ func TestAddRemoteLinkToGerrit_ShouldFail(t *testing.T) {
 func TestAddRemoteLinkToGerrit_ShouldFailToOpenGit(t *testing.T) {
 	err := AddRemoteLinkToGerrit("/tmp/1", "fake-host", 22, "appName", logr.Discard())
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "Unable to open Git directory")
+	assert.Contains(t, err.Error(), "failed to open Git directory")
 }
 
 func TestSetupProjectReplication_ShouldFailToReloadGerritPlugin(t *testing.T) {
@@ -185,7 +185,7 @@ func TestSetupProjectReplication_ShouldFailToReloadGerritPlugin(t *testing.T) {
 
 	err = SetupProjectReplication(fakeCl, 22, "gerrit", idrsa, "fake-name",
 		"fake-namespace", "vcs", logr.Discard())
-	//TODO: mock sshclient and implement test that passes
+	// TODO: mock sshclient and implement test that passes
 	assert.Error(t, err)
 
 	if !strings.Contains(err.Error(), "failed to dial:") {
@@ -204,9 +204,7 @@ func TestSetupProjectReplication_ShouldFailToGetReplicationConfig(t *testing.T) 
 		"fake-namespace", "vcs", logr.Discard())
 	assert.Error(t, err)
 
-	if !strings.Contains(err.Error(), "Uable to generate replication config") {
-		t.Fatalf("wrong error returned: %s", err.Error())
-	}
+	assert.Contains(t, err.Error(), "failed to generate replication config")
 }
 
 func TestSetupProjectReplication_ShouldFailToGetConfigmap(t *testing.T) {
@@ -225,7 +223,7 @@ func TestSetupProjectReplication_ShouldFailToGetConfigmap(t *testing.T) {
 
 	assert.Error(t, err)
 
-	if !strings.Contains(err.Error(), "couldn't get gerrit config map") {
+	if !strings.Contains(err.Error(), "failed to get gerrit config map") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
 }
@@ -259,13 +257,13 @@ func TestSetupProjectReplication_ShouldFailToParseConfigmap(t *testing.T) {
 func TestReloadReplicationPlugin_ShouldFailToParseRSAKey(t *testing.T) {
 	err := reloadReplicationPlugin(22, "wrong-format-pkey", "host", logr.Discard())
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "Unable to get Public Key from Private one")
+	assert.Contains(t, err.Error(), "failed to get Public Key from Private one")
 }
 
 func TestCreateProject_ShouldFailToParseRSAKey(t *testing.T) {
 	err := CreateProject(22, "wrong-format-pkey", "host", "appName", logr.Discard())
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "Unable to get Public Key from Private one")
+	assert.Contains(t, err.Error(), "failed to get Public Key from Private one")
 }
 
 func TestCreateProject_ShouldFailToRunCommand(t *testing.T) {
@@ -280,7 +278,7 @@ func TestCreateProject_ShouldFailToRunCommand(t *testing.T) {
 func TestSetHeadToBranch_ShouldFailToParseRSAKey(t *testing.T) {
 	err := SetHeadToBranch(22, "wrong-format-pkey", "host", "appName", "defBranch", logr.Discard())
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "Unable to get Public Key from Private one")
+	assert.Contains(t, err.Error(), "failed to get Public Key from Private one")
 }
 
 func TestSetHeadToBranch_ShouldFailToRunCommand(t *testing.T) {
@@ -296,7 +294,7 @@ func TestCheckProjectExist_ShouldFailToParseRSAKey(t *testing.T) {
 	e, err := CheckProjectExist(22, "wrong-format-pkey", "host", "appName", logr.Discard())
 	assert.Error(t, err)
 	assert.Nil(t, e)
-	assert.Contains(t, err.Error(), "Unable to get Public Key from Private one")
+	assert.Contains(t, err.Error(), "failed to get Public Key from Private one")
 }
 
 func TestCheckProjectExist_ShouldFailToRunCommand(t *testing.T) {

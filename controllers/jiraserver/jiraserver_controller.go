@@ -6,7 +6,6 @@ import (
 
 	"github.com/go-logr/logr"
 	predicateLib "github.com/operator-framework/operator-lib/predicate"
-	"github.com/pkg/errors"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -60,7 +59,7 @@ func (r *ReconcileJiraServer) SetupWithManager(mgr ctrl.Manager) error {
 
 	pause, err := predicateLib.NewPause(util.PauseAnnotation)
 	if err != nil {
-		return fmt.Errorf("unable to create pause predicate: %w", err)
+		return fmt.Errorf("failed to create pause predicate: %w", err)
 	}
 
 	err = ctrl.NewControllerManagedBy(mgr).
@@ -124,7 +123,7 @@ func (r *ReconcileJiraServer) updateStatus(ctx context.Context, instance *codeba
 func (r *ReconcileJiraServer) initJiraClient(js *codebaseApi.JiraServer) (jira.Client, error) {
 	s, err := util.GetSecret(r.client, js.Spec.CredentialName, js.Namespace)
 	if err != nil {
-		return nil, errors.Wrapf(err, "couldn't get secret %v", js.Spec.CredentialName)
+		return nil, fmt.Errorf("failed to get secret %v: %w", js.Spec.CredentialName, err)
 	}
 
 	user := string(s.Data["username"])
@@ -132,7 +131,7 @@ func (r *ReconcileJiraServer) initJiraClient(js *codebaseApi.JiraServer) (jira.C
 
 	c, err := new(adapter.GoJiraAdapterFactory).New(dto.ConvertSpecToJiraServer(js.Spec.ApiUrl, user, pwd))
 	if err != nil {
-		return nil, errors.Wrap(err, "couldn't create Jira client")
+		return nil, fmt.Errorf("failed to create Jira client: %w", err)
 	}
 
 	return c, nil

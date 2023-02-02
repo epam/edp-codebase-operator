@@ -13,8 +13,9 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	edpComponentApi "github.com/epam/edp-component-operator/api/v1"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 )
 
 func TestGetGerritPort_ShouldFound(t *testing.T) {
@@ -77,9 +78,7 @@ func TestGetGerritPort_ShouldNotFound(t *testing.T) {
 	assert.Nil(t, port)
 	assert.Error(t, err)
 
-	if !strings.Contains(err.Error(), "an error has occurred while getting gerrit Git Server CR") {
-		t.Fatalf("wrong error returned: %s", err.Error())
-	}
+	assert.Contains(t, err.Error(), "failed to get gerrit Git Server CR")
 }
 
 func TestGetEdpComponent_ShouldPass(t *testing.T) {
@@ -267,9 +266,7 @@ func TestGetGitServer_ShouldFailIfNotFound(t *testing.T) {
 	assert.Nil(t, ggs)
 	assert.Error(t, err)
 
-	if !strings.Contains(err.Error(), "GitServer non-existing doesn't exist in k8s") {
-		t.Fatalf("wrong error returned: %s", err.Error())
-	}
+	assert.Contains(t, err.Error(), "failed to find GitServer non-existing in k8s")
 }
 
 func TestGetUserSettings_ShouldPass(t *testing.T) {

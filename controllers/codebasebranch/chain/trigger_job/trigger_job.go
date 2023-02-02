@@ -4,12 +4,13 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/pkg/errors"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	"github.com/epam/edp-codebase-operator/v2/controllers/codebasebranch/chain"
@@ -17,7 +18,6 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/controllers/codebasebranch/service"
 	"github.com/epam/edp-codebase-operator/v2/pkg/model"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
-	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
 )
 
 var log = ctrl.Log.WithName("trigger-job-chain")
@@ -29,7 +29,8 @@ type TriggerJob struct {
 }
 
 func (h TriggerJob) Trigger(cb *codebaseApi.CodebaseBranch, actionType codebaseApi.ActionType,
-	triggerFunc func(cb *codebaseApi.CodebaseBranch) error) error {
+	triggerFunc func(cb *codebaseApi.CodebaseBranch) error,
+) error {
 	if err := h.SetIntermediateSuccessFields(cb, actionType); err != nil {
 		return err
 	}
@@ -50,7 +51,7 @@ func (h TriggerJob) Trigger(cb *codebaseApi.CodebaseBranch, actionType codebaseA
 	}
 
 	if !c.Status.Available || !isJenkinsFolderAvailable(jf) {
-		log.Info("couldn't start reconciling for branch. someone of codebase or jenkins folder is unavailable",
+		log.Info("failed to start reconciling for branch. someone of codebase or jenkins folder is unavailable",
 			"codebase", c.Name, "branch", cb.Name)
 
 		return util.NewCodebaseBranchReconcileError(fmt.Sprintf("%v codebase and/or jenkinsfolder %v are/is unavailable", c.Name, jfn))
@@ -60,7 +61,7 @@ func (h TriggerJob) Trigger(cb *codebaseApi.CodebaseBranch, actionType codebaseA
 	if err != nil {
 		h.SetFailedFields(cb, actionType, err.Error())
 
-		return fmt.Errorf("couldn't process new version for %v branch: %w", cb.Name, err)
+		return fmt.Errorf("failed to process new version for %v branch: %w", cb.Name, err)
 	}
 
 	err = triggerFunc(cb)
@@ -133,7 +134,7 @@ func (h TriggerJob) GetJenkinsFolder(name, namespace string) (*jenkinsApi.Jenkin
 			return nil, nil
 		}
 
-		return nil, errors.Wrapf(err, "failed to get jenkins folder %v", name)
+		return nil, fmt.Errorf("failed to get jenkins folder %v: %w", name, err)
 	}
 
 	return i, nil
@@ -146,7 +147,7 @@ func (h TriggerJob) ProcessNewVersion(codebaseBranch *codebaseApi.CodebaseBranch
 
 	hasVersion, err := chain.HasNewVersion(codebaseBranch)
 	if err != nil {
-		return fmt.Errorf("couldn't check if branch %v has new version: %w", codebaseBranch.Name, err)
+		return fmt.Errorf("failed to check if branch %v has new version: %w", codebaseBranch.Name, err)
 	}
 
 	if !hasVersion {

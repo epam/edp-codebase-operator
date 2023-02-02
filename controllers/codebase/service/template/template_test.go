@@ -2,7 +2,6 @@ package template
 
 import (
 	"os"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -23,7 +22,7 @@ const (
 
 func TestPrepareTemplates_ShouldPass(t *testing.T) {
 	dir, err := os.MkdirTemp("/tmp", "codebase")
-	require.NoError(t, err, "unable to create temp directory for testing")
+	require.NoError(t, err, "failed to create temp directory for testing")
 
 	defer func() {
 		err = os.RemoveAll(dir)
@@ -103,14 +102,12 @@ func TestPrepareTemplates_ShouldFailOnGetProjectUrl(t *testing.T) {
 	err := PrepareTemplates(fakeCl, c, "/tmp", "../../../../build")
 	assert.Error(t, err)
 
-	if !strings.Contains(err.Error(), "unable get project url") {
-		t.Fatalf("wrong error returned: %s", err.Error())
-	}
+	assert.Contains(t, err.Error(), "failed to get project url")
 }
 
 func TestPrepareGitLabCITemplates(t *testing.T) {
 	dir, err := os.MkdirTemp("/tmp", "codebase")
-	require.NoError(t, err, "unable to create temp directory for testing")
+	require.NoError(t, err, "failed to create temp directory for testing")
 
 	defer func() {
 		err = os.RemoveAll(dir)
@@ -207,9 +204,7 @@ func TestGetProjectUrl_ShouldFailToGetGitServer(t *testing.T) {
 	assert.Error(t, err)
 	assert.Empty(t, url)
 
-	if !strings.Contains(err.Error(), "unable get git server") {
-		t.Fatalf("wrong error returned: %s", err.Error())
-	}
+	assert.Contains(t, err.Error(), "failed to get git server")
 }
 
 func TestGetProjectUrl_ShouldFailWithUnsupportedStrategy(t *testing.T) {
@@ -229,7 +224,5 @@ func TestGetProjectUrl_ShouldFailWithUnsupportedStrategy(t *testing.T) {
 	assert.Error(t, err)
 	assert.Empty(t, url)
 
-	if !strings.Contains(err.Error(), "unable get project url, caused by the unsupported strategy") {
-		t.Fatalf("wrong error returned: %s", err.Error())
-	}
+	assert.Contains(t, err.Error(), "failed to get project url, caused by the unsupported strategy")
 }

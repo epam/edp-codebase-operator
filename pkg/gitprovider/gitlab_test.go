@@ -211,7 +211,7 @@ func TestGitLabClient_GetWebHooks(t *testing.T) {
 			respStatus:  http.StatusBadRequest,
 			resBody:     map[string]interface{}{"message": "bad request"},
 			wantErr:     require.Error,
-			errContains: "unable to get GitLab web hooks",
+			errContains: "failed to get GitLab web hooks",
 		},
 	}
 
@@ -296,7 +296,7 @@ func TestGitLabClient_CreateWebHookIfNotExists(t *testing.T) {
 			GETRespStatus: http.StatusBadRequest,
 			GETResBody:    map[string]interface{}{"message": "bad request"},
 			wantErr:       require.Error,
-			errContains:   "unable to get GitLab web hooks",
+			errContains:   "failed to get GitLab web hooks",
 		},
 		{
 			name:           "create webhooks response failure",

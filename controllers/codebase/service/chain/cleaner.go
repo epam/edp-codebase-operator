@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -41,7 +40,7 @@ func (h *Cleaner) tryToClean(c *codebaseApi.Codebase) error {
 	s := fmt.Sprintf("repository-codebase-%v-temp", c.Name)
 
 	if err := h.deleteSecret(s, c.Namespace); err != nil {
-		return errors.Wrapf(err, "unable to delete secret %v", s)
+		return fmt.Errorf("failed to delete secret %v: %w", s, err)
 	}
 
 	wd := util.GetWorkDir(c.Name, c.Namespace)
@@ -76,7 +75,7 @@ func (h *Cleaner) deleteSecret(secretName, namespace string) error {
 
 func deleteWorkDirectory(dir string) error {
 	if err := util.RemoveDirectory(dir); err != nil {
-		return errors.Wrapf(err, "couldn't delete directory %v", dir)
+		return fmt.Errorf("failed to delete directory %v: %w", dir, err)
 	}
 
 	log.Info("directory was cleaned", "path", dir)

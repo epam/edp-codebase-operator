@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/pkg/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -43,13 +42,13 @@ func (h PutBranchInGit) ServeRequest(cb *codebaseApi.CodebaseBranch) error {
 	}
 
 	if !c.Status.Available {
-		log.Info("couldn't start reconciling for branch. codebase is unavailable", "codebase", c.Name)
+		log.Info("failed to start reconciling for branch; codebase is unavailable", "codebase", c.Name)
 		return util.NewCodebaseBranchReconcileError(fmt.Sprintf("%v codebase is unavailable", c.Name))
 	}
 
 	err = h.processNewVersion(cb, c)
 	if err != nil {
-		err = fmt.Errorf("couldn't process new version for %s branch: %w", cb.Name, err)
+		err = fmt.Errorf("failed to process new version for %s branch: %w", cb.Name, err)
 
 		setFailedFields(cb, codebaseApi.PutBranchForGitlabCiCodebase, err.Error())
 
@@ -65,7 +64,7 @@ func (h PutBranchInGit) ServeRequest(cb *codebaseApi.CodebaseBranch) error {
 
 	secret, err := util.GetSecret(h.Client, gs.NameSshKeySecret, c.Namespace)
 	if err != nil {
-		err = errors.Wrapf(err, "an error has occurred while getting %v secret", gs.NameSshKeySecret)
+		err = fmt.Errorf("failed to get %v secret: %w", gs.NameSshKeySecret, err)
 		setFailedFields(cb, codebaseApi.PutBranchForGitlabCiCodebase, err.Error())
 
 		return err
@@ -160,7 +159,7 @@ func (h PutBranchInGit) processNewVersion(codebaseBranch *codebaseApi.CodebaseBr
 
 	hasVersion, err := chain.HasNewVersion(codebaseBranch)
 	if err != nil {
-		return fmt.Errorf("couldn't check if branch %v has new version: %w", codebaseBranch.Name, err)
+		return fmt.Errorf("failed to check if branch %v has new version: %w", codebaseBranch.Name, err)
 	}
 
 	if !hasVersion {

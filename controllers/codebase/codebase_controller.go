@@ -9,7 +9,6 @@ import (
 
 	"github.com/go-logr/logr"
 	predicateLib "github.com/operator-framework/operator-lib/predicate"
-	"github.com/pkg/errors"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -75,7 +74,7 @@ func (r *ReconcileCodebase) SetupWithManager(mgr ctrl.Manager) error {
 
 	pause, err := predicateLib.NewPause(util.PauseAnnotation)
 	if err != nil {
-		return fmt.Errorf("unable to create pause predicate: %w", err)
+		return fmt.Errorf("failed to create pause predicate: %w", err)
 	}
 
 	err = ctrl.NewControllerManagedBy(mgr).
@@ -151,7 +150,7 @@ func (r *ReconcileCodebase) Reconcile(ctx context.Context, request reconcile.Req
 	}
 
 	if err := ch.ServeRequest(ctx, codebase); err != nil {
-		if pErr, ok := errors.Cause(err).(chain.PostponeError); ok {
+		if pErr, ok := err.(chain.PostponeError); ok {
 			return reconcile.Result{RequeueAfter: pErr.Timeout}, nil
 		}
 

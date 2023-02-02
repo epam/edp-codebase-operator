@@ -2,8 +2,8 @@ package chain
 
 import (
 	"context"
+	"fmt"
 
-	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
@@ -30,7 +30,7 @@ func (h DeleteTagCodebaseImageStreamCr) ServeRequest(ist *codebaseApi.ImageStrea
 
 func (h DeleteTagCodebaseImageStreamCr) delete(tag *codebaseApi.ImageStreamTag) error {
 	if err := h.client.Delete(context.TODO(), tag); err != nil {
-		return errors.Wrapf(err, "couldn't remove image stream tag %v", tag.Name)
+		return fmt.Errorf("failed to remove image stream tag %v: %w", tag.Name, err)
 	}
 
 	log.Info("image stream tag has been removed", "name", tag.Name)

@@ -5,15 +5,15 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/pkg/errors"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	perfAPi "github.com/epam/edp-perf-operator/v2/api/v1"
+
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
-	perfAPi "github.com/epam/edp-perf-operator/v2/api/v1"
 )
 
 type PutPerfDataSources struct {
@@ -38,7 +38,7 @@ func (h *PutPerfDataSources) ServeRequest(ctx context.Context, c *codebaseApi.Co
 	rLog.Info("start creating PERF data source cr...")
 
 	if err := h.tryToCreateDataSourceCr(ctx, c); err != nil {
-		return errors.Wrap(err, "couldn't create PerfDataSource CR")
+		return fmt.Errorf("failed to create PerfDataSource CR: %w", err)
 	}
 
 	rLog.Info("data source has been created")
@@ -149,7 +149,7 @@ func (h *PutPerfDataSources) createJenkinsDataSource(ctx context.Context, c *cod
 
 	err = h.client.Create(ctx, ds)
 	if err != nil {
-		return errors.Wrapf(err, "couldn't create PERF Jenkins data source %v-%v", c.Name, dataSourceType)
+		return fmt.Errorf("failed to create PERF Jenkins data source %v-%v: %w", c.Name, dataSourceType, err)
 	}
 
 	return nil
@@ -176,7 +176,7 @@ func (h *PutPerfDataSources) createSonarDataSource(ctx context.Context, c *codeb
 
 	err = h.client.Create(ctx, ds)
 	if err != nil {
-		return errors.Wrapf(err, "couldn't create PERF Sonar data source %v-%v", c.Name, dataSourceType)
+		return fmt.Errorf("failed to create PERF Sonar data source %v-%v: %w", c.Name, dataSourceType, err)
 	}
 
 	return nil
@@ -203,7 +203,7 @@ func (h *PutPerfDataSources) createGitLabDataSource(ctx context.Context, c *code
 
 	err = h.client.Create(ctx, ds)
 	if err != nil {
-		return errors.Wrapf(err, "couldn't create PERF GitLab data source %v-%v", c.Name, dataSourceType)
+		return fmt.Errorf("failed to create PERF GitLab data source %v-%v: %w", c.Name, dataSourceType, err)
 	}
 
 	return nil

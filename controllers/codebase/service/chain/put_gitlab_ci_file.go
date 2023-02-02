@@ -7,7 +7,6 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
@@ -56,7 +55,7 @@ func (h *PutGitlabCiFile) ServeRequest(ctx context.Context, c *codebaseApi.Codeb
 	}
 
 	if err := h.cr.UpdateProjectStatusValue(ctx, util.GitlabCi, c.Name, *name); err != nil {
-		err = errors.Wrapf(err, "couldn't set project_status %v value for %v codebase", util.GitlabCi, c.Name)
+		err = fmt.Errorf("failed to set project_status %v value for %v codebase: %w", util.GitlabCi, c.Name, err)
 		setFailedFields(c, codebaseApi.PutGitlabCIFile, err.Error())
 
 		return err
@@ -79,7 +78,7 @@ func (h *PutGitlabCiFile) tryToPutGitlabCIFile(c *codebaseApi.Codebase) error {
 
 	secret, err := util.GetSecret(h.client, gs.NameSshKeySecret, c.Namespace)
 	if err != nil {
-		return errors.Wrapf(err, "an error has occurred while getting %v secret", gs.NameSshKeySecret)
+		return fmt.Errorf("failed to get %v secret: %w", gs.NameSshKeySecret, err)
 	}
 
 	k := string(secret.Data[util.PrivateSShKeyName])
@@ -87,7 +86,7 @@ func (h *PutGitlabCiFile) tryToPutGitlabCIFile(c *codebaseApi.Codebase) error {
 	p := gs.SshPort
 
 	if err := h.pushChanges(util.GetWorkDir(c.Name, c.Namespace), k, u, c.Spec.DefaultBranch, p); err != nil {
-		return errors.Wrapf(err, "an error has occurred while pushing %v for %v codebase", versionFileName, c.Name)
+		return fmt.Errorf("failed to push %v for %v codebase: %w", versionFileName, c.Name, err)
 	}
 
 	return nil
@@ -99,7 +98,7 @@ func (h *PutGitlabCiFile) pushChanges(projectPath, privateKey, user, defaultBran
 	}
 
 	if err := h.git.PushChanges(privateKey, user, projectPath, port, defaultBranch); err != nil {
-		return errors.Wrapf(err, "an error has occurred while pushing changes for %v project", projectPath)
+		return fmt.Errorf("failed to push changes for %v project: %w", projectPath, err)
 	}
 
 	return nil
@@ -136,7 +135,7 @@ func (h *PutGitlabCiFile) parseTemplate(c *codebaseApi.Codebase) error {
 func (h *PutGitlabCiFile) gitlabCiFileExists(ctx context.Context, codebaseName, edpName string) (bool, error) {
 	ps, err := h.cr.SelectProjectStatusValue(ctx, codebaseName, edpName)
 	if err != nil {
-		return false, errors.Wrapf(err, "couldn't get project_status value for %v codebase", codebaseName)
+		return false, fmt.Errorf("failed to get project_status value for %v codebase: %w", codebaseName, err)
 	}
 
 	if util.ContainsString([]string{util.GitlabCiFilePushedStatus, util.ProjectVersionGoFilePushedStatus}, ps) {
@@ -165,7 +164,7 @@ func parseTemplate(templatePath, gitlabCiFile string, data interface{}) (err err
 
 	err = tmpl.Execute(f, data)
 	if err != nil {
-		return errors.Wrapf(err, "couldn't parse template %v", templatePath)
+		return fmt.Errorf("failed to parse template %v: %w", templatePath, err)
 	}
 
 	log.Info("template has been rendered", "path", gitlabCiFile)

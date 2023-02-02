@@ -3,7 +3,6 @@ package clean_tmp_directory
 import (
 	"fmt"
 
-	"github.com/pkg/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 
@@ -11,8 +10,7 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
-type CleanTempDirectory struct {
-}
+type CleanTempDirectory struct{}
 
 var log = ctrl.Log.WithName("clean-temp-directory-chain")
 
@@ -35,7 +33,7 @@ func (*CleanTempDirectory) ServeRequest(cb *codebaseApi.CodebaseBranch) error {
 
 func deleteWorkDirectory(dir string) error {
 	if err := util.RemoveDirectory(dir); err != nil {
-		return errors.Wrapf(err, "couldn't delete directory %v", dir)
+		return fmt.Errorf("failed to delete directory %v: %w", dir, err)
 	}
 
 	log.Info("directory was cleaned", "path", dir)

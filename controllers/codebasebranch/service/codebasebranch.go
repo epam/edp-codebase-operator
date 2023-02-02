@@ -3,10 +3,10 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
-	"github.com/pkg/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -38,11 +38,7 @@ type CodebaseBranchServiceProvider struct {
 	Client client.Client
 }
 
-type JobFailedError string
-
-func (j JobFailedError) Error() string {
-	return string(j)
-}
+var ErrJobFailed = errors.New("deletion job failed")
 
 func (s *CodebaseBranchServiceProvider) TriggerDeletionJob(cb *codebaseApi.CodebaseBranch) error {
 	rLog := log.WithValues("codebasebranch_name", cb.Name, "codebase_name", cb.Spec.CodebaseName)
@@ -50,7 +46,7 @@ func (s *CodebaseBranchServiceProvider) TriggerDeletionJob(cb *codebaseApi.Codeb
 
 	jc, err := initJenkinsClient(s.Client, cb.Namespace)
 	if err != nil {
-		return errors.Wrap(err, "couldn't create jenkins client")
+		return fmt.Errorf("failed to create jenkins client: %w", err)
 	}
 
 	if err = jc.TriggerDeletionJob(cb.Spec.BranchName, cb.Spec.CodebaseName); err != nil {
@@ -59,7 +55,7 @@ func (s *CodebaseBranchServiceProvider) TriggerDeletionJob(cb *codebaseApi.Codeb
 			rLog.Info("deletion job not found")
 			return nil
 		default:
-			return errors.Wrap(err, "unable to trigger deletion job")
+			return fmt.Errorf("failed to trigger deletion job: %w", err)
 		}
 	}
 
@@ -69,13 +65,13 @@ func (s *CodebaseBranchServiceProvider) TriggerDeletionJob(cb *codebaseApi.Codeb
 
 	js, err := jc.GetJobStatus(rj, defaultTimeoutDuration, defaultRetryCount)
 	if err != nil {
-		return errors.Wrap(err, "unable to get deletion job status")
+		return fmt.Errorf("failed to get deletion job status: %w", err)
 	}
 
 	if js != jenkinsJobSuccessStatus {
 		rLog.Info("failed to delete release", "deletion release job status", js)
 
-		return JobFailedError("deletion job failed")
+		return ErrJobFailed
 	}
 
 	rLog.Info("release has been deleted", "status", model.StatusFinished)
@@ -95,7 +91,7 @@ func (s *CodebaseBranchServiceProvider) TriggerReleaseJob(cb *codebaseApi.Codeba
 
 	jc, err := initJenkinsClient(s.Client, cb.Namespace)
 	if err != nil {
-		return errors.Wrap(err, "couldn't create jenkins client")
+		return fmt.Errorf("failed to create jenkins client: %w", err)
 	}
 
 	rLog.V(2).Info("start creating release for codebase")
@@ -107,12 +103,12 @@ func (s *CodebaseBranchServiceProvider) TriggerReleaseJob(cb *codebaseApi.Codeba
 	if cb.Spec.ReleaseJobParams != nil && len(cb.Spec.ReleaseJobParams) > 0 {
 		params, err = s.convertCodebaseBranchSpecToParams(cb)
 		if err != nil {
-			return errors.Wrap(err, "unable to convert codebase branch spec to params map")
+			return fmt.Errorf("failed to convert codebase branch spec to params map: %w", err)
 		}
 	}
 
 	if err = jc.TriggerReleaseJob(cb.Spec.CodebaseName, params); err != nil {
-		return errors.Wrap(err, "unable to trigger release job")
+		return fmt.Errorf("failed to trigger release job: %w", err)
 	}
 
 	rLog.Info("Release job has been triggered")
@@ -138,12 +134,12 @@ func (s *CodebaseBranchServiceProvider) convertCodebaseBranchSpecToParams(cb *co
 
 	var branchSpecMap map[string]interface{}
 	if err := json.Unmarshal(bts, &branchSpecMap); err != nil {
-		return nil, errors.Wrap(err, "unable to decode codebase branch spec to map")
+		return nil, fmt.Errorf("failed to decode codebase branch spec to map: %w", err)
 	}
 
 	c, err := util.GetCodebase(s.Client, cb.Spec.CodebaseName, cb.Namespace)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to get codebase")
+		return nil, fmt.Errorf("failed to get codebase: %w", err)
 	}
 
 	bts, _ = json.Marshal(c.Spec)
@@ -152,7 +148,7 @@ func (s *CodebaseBranchServiceProvider) convertCodebaseBranchSpecToParams(cb *co
 
 	err = json.Unmarshal(bts, &codebaseSpecMap)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to decode codebase spec to map")
+		return nil, fmt.Errorf("failed to decode codebase spec to map: %w", err)
 	}
 
 	for k, v := range branchSpecMap {
@@ -231,7 +227,7 @@ func (s *CodebaseBranchServiceProvider) ResetBranchSuccessBuildCounter(cb *codeb
 func (s *CodebaseBranchServiceProvider) updateStatus(cb *codebaseApi.CodebaseBranch) error {
 	if err := s.Client.Status().Update(context.TODO(), cb); err != nil {
 		if err = s.Client.Update(context.TODO(), cb); err != nil {
-			return errors.Wrap(err, "CodebaseBranchServiceProvider: couldn't update codebase branch status")
+			return fmt.Errorf("failed to update codebase branch status: %w", err)
 		}
 	}
 

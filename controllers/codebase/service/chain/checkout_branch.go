@@ -3,7 +3,6 @@ package chain
 import (
 	"fmt"
 
-	"github.com/pkg/errors"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -54,36 +53,33 @@ func CheckoutBranch(repository *string, projectPath, branchName string, g git.Gi
 	switch cb.Spec.Strategy {
 	case "create":
 		if err := g.Checkout(user, password, projectPath, branchName, false); err != nil {
-			return errors.Wrapf(err, "checkout default branch %s has been failed (create strategy)",
-				branchName)
+			return fmt.Errorf("failed to checkout to default branch %s (create strategy): %w", branchName, err)
 		}
 
 	case "clone":
 		if err := g.Checkout(user, password, projectPath, branchName, true); err != nil {
-			return errors.Wrapf(err, "checkout default branch %s has been failed (clone strategy)",
-				branchName)
+			return fmt.Errorf("failed to checkout to default branch %s (clone strategy): %w", branchName, err)
 		}
 	case "import":
 		gs, err := util.GetGitServer(c, cb.Spec.GitServer, cb.Namespace)
 		if err != nil {
-			return errors.Wrapf(err, "Unable to get GitServer")
+			return fmt.Errorf("failed to get GitServer: %w", err)
 		}
 
 		secret, err := util.GetSecret(c, gs.NameSshKeySecret, cb.Namespace)
 		if err != nil {
-			return errors.Wrapf(err, "an error has occurred while getting %v secret", gs.NameSshKeySecret)
+			return fmt.Errorf("failed to get %v secret: %w", gs.NameSshKeySecret, err)
 		}
 
 		k := string(secret.Data[util.PrivateSShKeyName])
 		u := gs.GitUser
 		// CheckoutRemoteBranchBySSH(key, user, gitPath, remoteBranchName string)
 		if err := g.CheckoutRemoteBranchBySSH(k, u, projectPath, branchName); err != nil {
-			return errors.Wrapf(err, "checkout default branch %s has been failed (import strategy)",
-				branchName)
+			return fmt.Errorf("failed to checkout to default branch %s (import strategy): %w", branchName, err)
 		}
 
 	default:
-		return fmt.Errorf("unable to checkout, unsupported strategy: '%s'", cb.Spec.Strategy)
+		return fmt.Errorf("failed to checkout, unsupported strategy: '%s'", cb.Spec.Strategy)
 	}
 
 	return nil

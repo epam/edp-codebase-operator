@@ -108,7 +108,7 @@ func TestReconcileGitServer_Reconcile_ShouldFailToGetSecret(t *testing.T) {
 
 	assert.Error(t, err)
 
-	if !strings.Contains(err.Error(), "an error has occurred  while getting ssh-secret secret") {
+	if !strings.Contains(err.Error(), "failed to get ssh-secret secret") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
 
@@ -299,7 +299,7 @@ func TestReconcileGitServer_InvalidSSHKey(t *testing.T) {
 
 	_, err = r.Reconcile(context.Background(), req)
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "unable to parse private key")
+	require.Contains(t, err.Error(), "failed to parse private key")
 
 	gotGitServer := &codebaseApi.GitServer{}
 	err = fakeCl.Get(context.Background(), req.NamespacedName, gotGitServer)

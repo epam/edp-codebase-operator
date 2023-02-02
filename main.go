@@ -23,6 +23,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
+	buildInfo "github.com/epam/edp-common/pkg/config"
+	edpCompApi "github.com/epam/edp-component-operator/api/v1"
+	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
+	perfAPi "github.com/epam/edp-perf-operator/v2/api/v1"
+
 	codebaseApiV1 "github.com/epam/edp-codebase-operator/v2/api/v1"
 	codebaseApiV1Alpha1 "github.com/epam/edp-codebase-operator/v2/api/v1alpha1"
 	"github.com/epam/edp-codebase-operator/v2/controllers/cdstagedeploy"
@@ -36,10 +41,6 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/controllers/jiraserver"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	"github.com/epam/edp-codebase-operator/v2/pkg/webhook"
-	buildInfo "github.com/epam/edp-common/pkg/config"
-	edpCompApi "github.com/epam/edp-component-operator/api/v1"
-	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
-	perfAPi "github.com/epam/edp-perf-operator/v2/api/v1"
 )
 
 var (
@@ -51,7 +52,7 @@ const (
 	port                                     = 9443
 	codebaseOperatorLock                     = "edp-codebase-operator-lock"
 	codebaseBranchMaxConcurrentReconcilesEnv = "CODEBASE_BRANCH_MAX_CONCURRENT_RECONCILES"
-	logFailCtrlCreateMessage                 = "unable to create controller"
+	logFailCtrlCreateMessage                 = "failed to create controller"
 )
 
 func main() {
@@ -69,7 +70,7 @@ func main() {
 
 	mode, err := util.GetDebugMode()
 	if err != nil {
-		setupLog.Error(err, "unable to get debug mode value")
+		setupLog.Error(err, "failed to get debug mode value")
 		os.Exit(1)
 	}
 
@@ -104,7 +105,7 @@ func main() {
 
 	ns, err := util.GetWatchNamespace()
 	if err != nil {
-		setupLog.Error(err, "unable to get watch namespace")
+		setupLog.Error(err, "failed to get watch namespace")
 		os.Exit(1)
 	}
 
@@ -123,7 +124,7 @@ func main() {
 		Namespace: ns,
 	})
 	if err != nil {
-		setupLog.Error(err, "unable to start manager")
+		setupLog.Error(err, "failed to start manager")
 		os.Exit(1)
 	}
 
@@ -131,13 +132,13 @@ func main() {
 
 	cdStageDeployCtrl := cdstagedeploy.NewReconcileCDStageDeploy(mgr.GetClient(), mgr.GetScheme(), ctrlLog)
 	if err = cdStageDeployCtrl.SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "cd-stage-deploy")
+		setupLog.Error(err, "failed to create controller", "controller", "cd-stage-deploy")
 		os.Exit(1)
 	}
 
 	codebaseCtrl := codebase.NewReconcileCodebase(mgr.GetClient(), mgr.GetScheme(), ctrlLog)
 	if err = codebaseCtrl.SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "codebase")
+		setupLog.Error(err, "failed to create controller", "controller", "codebase")
 		os.Exit(1)
 	}
 
@@ -186,7 +187,7 @@ func main() {
 
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
 		if err = webhook.RegisterValidationWebHook(context.Background(), mgr, ns); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "Codebase")
+			setupLog.Error(err, "failed to create webhook", "webhook", "Codebase")
 			os.Exit(1)
 		}
 	}
@@ -194,12 +195,12 @@ func main() {
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
-		setupLog.Error(err, "unable to set up health check")
+		setupLog.Error(err, "failed to set up health check")
 		os.Exit(1)
 	}
 
 	if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
-		setupLog.Error(err, "unable to set up ready check")
+		setupLog.Error(err, "failed to set up ready check")
 		os.Exit(1)
 	}
 

@@ -68,7 +68,7 @@ func TestGetRepositoryCredentialsIfExists_ShouldFail(t *testing.T) {
 	_, _, err := GetRepositoryCredentialsIfExists(c, fakeCl)
 	assert.Error(t, err)
 
-	if !strings.Contains(err.Error(), "Unable to get secret repository-codebase-fake-name-temp") {
+	if !strings.Contains(err.Error(), "failed to get secret repository-codebase-fake-name-temp") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
 }
@@ -95,7 +95,7 @@ func TestCheckoutBranch_ShouldFailOnGetSecret(t *testing.T) {
 	err := CheckoutBranch(util.GetStringP("repo"), "project-path", "branch", mGit, c, fakeCl)
 	assert.Error(t, err)
 
-	if !strings.Contains(err.Error(), "Unable to get secret repository-codebase-fake-name-temp") {
+	if !strings.Contains(err.Error(), "failed to get secret repository-codebase-fake-name-temp") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
 }

@@ -7,18 +7,18 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/pkg/errors"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
+	"github.com/epam/edp-jenkins-operator/v2/pkg/util/consts"
+
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/model"
 	"github.com/epam/edp-codebase-operator/v2/pkg/platform"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
-	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
-	"github.com/epam/edp-jenkins-operator/v2/pkg/util/consts"
 )
 
 type PutJenkinsFolder struct {
@@ -103,7 +103,7 @@ func (h *PutJenkinsFolder) putJenkinsFolder(c *codebaseApi.Codebase, jc, jfn str
 		},
 	}
 	if err := h.client.Create(context.TODO(), jf); err != nil {
-		return errors.Wrapf(err, "couldn't create jenkins folder %v", "name")
+		return fmt.Errorf("failed to create jenkins folder %v: %w", "name", err)
 	}
 
 	return nil
@@ -121,7 +121,7 @@ func (h *PutJenkinsFolder) getJenkinsFolder(name, namespace string) (*jenkinsApi
 			return nil, nil
 		}
 
-		return nil, errors.Wrapf(err, "failed to get instance by owner %v", name)
+		return nil, fmt.Errorf("failed to get instance by owner %v: %w", name, err)
 	}
 
 	return i, nil

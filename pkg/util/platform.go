@@ -2,19 +2,20 @@ package util
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"strconv"
 
-	"github.com/pkg/errors"
 	coreV1 "k8s.io/api/core/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	edpComponentApi "github.com/epam/edp-component-operator/api/v1"
+
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/model"
-	edpComponentApi "github.com/epam/edp-component-operator/api/v1"
 )
 
 const (
@@ -59,7 +60,7 @@ func GetUserSettings(c client.Client, namespace string) (*model.UserSettings, er
 func GetGerritPort(c client.Client, namespace string) (*int32, error) {
 	gs, err := getGitServerCR(c, "gerrit", namespace)
 	if err != nil {
-		return nil, errors.Wrapf(err, "an error has occurred while getting %v Git Server CR", "gerrit")
+		return nil, fmt.Errorf("failed to get %v Git Server CR: %w", "gerrit", err)
 	}
 
 	if gs.Spec.SshPort == 0 {
@@ -83,11 +84,11 @@ func GetVcsBasicAuthConfig(c client.Client, namespace, secretName string) (userN
 		Name:      secretName,
 	}, secret)
 	if err != nil {
-		return "", "", errors.Wrapf(err, "Unable to get secret %v", secretName)
+		return "", "", fmt.Errorf("failed to get secret %v: %w", secretName, err)
 	}
 
 	if len(secret.Data["username"]) == 0 || len(secret.Data["password"]) == 0 {
-		return "", "", errors.Errorf("username/password keys are not defined in Secret %v ", secretName)
+		return "", "", fmt.Errorf("username/password keys are not defined in Secret %v ", secretName)
 	}
 
 	userName = string(secret.Data["username"])
@@ -99,7 +100,7 @@ func GetVcsBasicAuthConfig(c client.Client, namespace, secretName string) (userN
 func GetGitServer(c client.Client, name, namespace string) (*model.GitServer, error) {
 	gitReq, err := getGitServerCR(c, name, namespace)
 	if err != nil {
-		return nil, errors.Wrapf(err, "an error has occurred while getting %v Git Server CR", name)
+		return nil, fmt.Errorf("failed to get %v Git Server CR: %w", name, err)
 	}
 
 	gs := model.ConvertToGitServer(gitReq)
@@ -113,10 +114,10 @@ func getGitServerCR(c client.Client, name, namespace string) (*codebaseApi.GitSe
 	instance := &codebaseApi.GitServer{}
 	if err := c.Get(context.TODO(), types.NamespacedName{Namespace: namespace, Name: name}, instance); err != nil {
 		if k8sErrors.IsNotFound(err) {
-			return nil, errors.Wrapf(err, "GitServer %v doesn't exist in k8s", name)
+			return nil, fmt.Errorf("failed to find GitServer %v in k8s: %w", name, err)
 		}
 
-		return nil, errors.Wrapf(err, "Unable to get GitServer %v", name)
+		return nil, fmt.Errorf("failed to get GitServer %v: %w", name, err)
 	}
 
 	log.Info("Git Server instance has been received", "name", name)
@@ -134,7 +135,7 @@ func GetSecret(c client.Client, secretName, namespace string) (*coreV1.Secret, e
 		Name:      secretName,
 	}, secret)
 	if err != nil {
-		return nil, errors.Wrapf(err, "Unable to get secret %v", secretName)
+		return nil, fmt.Errorf("failed to get secret %v: %w", secretName, err)
 	}
 
 	log.Info("Secret has been fetched", "secret name", secretName, "namespace", namespace)
@@ -150,7 +151,7 @@ func GetCodebase(c client.Client, name, namespace string) (*codebaseApi.Codebase
 		Name:      name,
 	}, instance)
 	if err != nil {
-		return nil, errors.Wrapf(err, "Unable to get Codebase %v", name)
+		return nil, fmt.Errorf("failed to get Codebase %v: %w", name, err)
 	}
 
 	return instance, nil
@@ -164,7 +165,7 @@ func GetEdpComponent(c client.Client, name, namespace string) (*edpComponentApi.
 		Namespace: namespace,
 	}, ec)
 	if err != nil {
-		return nil, errors.Wrapf(err, "Unable to get EDPComponent %v", name)
+		return nil, fmt.Errorf("failed to get EDPComponent %v: %w", name, err)
 	}
 
 	return ec, nil

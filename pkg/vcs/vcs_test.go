@@ -150,7 +150,7 @@ func TestGetVcsConfig_ShouldFailToGetSecret(t *testing.T) {
 	us := model.UserSettings{}
 	_, err := GetVcsConfig(fakeCl, &us, "codebaseName", "fake-namespace")
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "Unable to get secret")
+	assert.Contains(t, err.Error(), "failed to get secret")
 }
 
 func TestGetVcsConfig_ShouldFailToUrl(t *testing.T) {

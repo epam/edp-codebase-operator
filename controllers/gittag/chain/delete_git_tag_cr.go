@@ -2,8 +2,8 @@ package chain
 
 import (
 	"context"
+	"fmt"
 
-	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
@@ -30,7 +30,7 @@ func (h DeleteGitTagCr) ServeRequest(gt *codebaseApi.GitTag) error {
 
 func (h DeleteGitTagCr) delete(tag *codebaseApi.GitTag) error {
 	if err := h.client.Delete(context.TODO(), tag); err != nil {
-		return errors.Wrapf(err, "couldn't remove git tag %v", tag.Name)
+		return fmt.Errorf("failed to remove git tag %v: %w", tag.Name, err)
 	}
 
 	log.Info("git tag has been removed", "name", tag.Name)

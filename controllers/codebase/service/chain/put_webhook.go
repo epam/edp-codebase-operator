@@ -41,7 +41,7 @@ func (s *PutWebHook) ServeRequest(ctx context.Context, codebase *codebaseApi.Cod
 	if err := s.client.Get(ctx, client.ObjectKey{Name: codebase.Spec.GitServer, Namespace: codebase.Namespace}, gitServer); err != nil {
 		return s.processCodebaseError(
 			codebase,
-			fmt.Errorf("unable to get git server %s: %w", codebase.Spec.GitServer, err),
+			fmt.Errorf("failed to get git server %s: %w", codebase.Spec.GitServer, err),
 		)
 	}
 
@@ -59,13 +59,13 @@ func (s *PutWebHook) ServeRequest(ctx context.Context, codebase *codebaseApi.Cod
 	if codebase.Spec.GitUrlPath == nil {
 		return s.processCodebaseError(
 			codebase,
-			fmt.Errorf("unable to get project ID for codebase %s, git url path is empty", codebase.Name),
+			fmt.Errorf("failed to get project ID for codebase %s, git url path is empty", codebase.Name),
 		)
 	}
 
 	gitProvider, err := gitprovider.NewProvider(gitServer, s.restyClient)
 	if err != nil {
-		return s.processCodebaseError(codebase, fmt.Errorf("unable to create git provider: %w", err))
+		return s.processCodebaseError(codebase, fmt.Errorf("failed to create git provider: %w", err))
 	}
 
 	projectID := codebase.Spec.GetProjectID()
@@ -87,7 +87,7 @@ func (s *PutWebHook) ServeRequest(ctx context.Context, codebase *codebaseApi.Cod
 		}
 
 		if !errors.Is(err, gitprovider.ErrWebHookNotFound) {
-			return s.processCodebaseError(codebase, fmt.Errorf("unable to get webhook: %w", err))
+			return s.processCodebaseError(codebase, fmt.Errorf("failed to get webhook: %w", err))
 		}
 	}
 
@@ -105,13 +105,13 @@ func (s *PutWebHook) ServeRequest(ctx context.Context, codebase *codebaseApi.Cod
 		webHookURL,
 	)
 	if err != nil {
-		return s.processCodebaseError(codebase, fmt.Errorf("unable to create web hook: %w", err))
+		return s.processCodebaseError(codebase, fmt.Errorf("failed to create web hook: %w", err))
 	}
 
 	codebase.Status.WebHookID = webHook.ID
 
 	if err = setIntermediateSuccessFields(ctx, s.client, codebase, codebaseApi.PutWebHook); err != nil {
-		return fmt.Errorf("unable to update codebase %s status: %w", codebase.Name, err)
+		return fmt.Errorf("failed to update codebase %s status: %w", codebase.Name, err)
 	}
 
 	rLog.Info("Webhook has been created successfully.")
@@ -122,23 +122,23 @@ func (s *PutWebHook) ServeRequest(ctx context.Context, codebase *codebaseApi.Cod
 func (s *PutWebHook) getGitServerSecret(ctx context.Context, secretName, namespace string) (*coreV1.Secret, error) {
 	secret := &coreV1.Secret{}
 	if err := s.client.Get(ctx, client.ObjectKey{Name: secretName, Namespace: namespace}, secret); err != nil {
-		return nil, fmt.Errorf("unable to get %v secret: %w", secretName, err)
+		return nil, fmt.Errorf("failed to get %v secret: %w", secretName, err)
 	}
 
 	if _, ok := secret.Data[util.GitServerSecretTokenField]; !ok {
-		return nil, fmt.Errorf("unable to get %s field from %s secret", util.GitServerSecretTokenField, secretName)
+		return nil, fmt.Errorf("failed to get %s field from %s secret", util.GitServerSecretTokenField, secretName)
 	}
 
 	if token, ok := secret.Data[util.GitServerSecretWebhookSecretField]; !ok || len(token) == 0 {
 		token, err := util.GenerateRandomString(webhookTokenLength)
 		if err != nil {
-			return nil, fmt.Errorf("unable to generate webhook secret: %w", err)
+			return nil, fmt.Errorf("failed to generate webhook secret: %w", err)
 		}
 
 		secret.Data[util.GitServerSecretWebhookSecretField] = []byte(token)
 
 		if err = s.client.Update(ctx, secret); err != nil {
-			return nil, fmt.Errorf("unable to update %s secret: %w", secretName, err)
+			return nil, fmt.Errorf("failed to update %s secret: %w", secretName, err)
 		}
 	}
 
@@ -159,7 +159,7 @@ func (s *PutWebHook) getWebHookUrl(ctx context.Context, gitServer *codebaseApi.G
 
 	ingress := &networkingV1.Ingress{}
 	if err := s.client.Get(ctx, client.ObjectKey{Name: ingressName, Namespace: gitServer.Namespace}, ingress); err != nil {
-		return "", fmt.Errorf("unable to get %s ingress: %w", ingressName, err)
+		return "", fmt.Errorf("failed to get %s ingress: %w", ingressName, err)
 	}
 
 	if len(ingress.Spec.Rules) == 0 {

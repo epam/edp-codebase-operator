@@ -24,7 +24,7 @@ func TestPutDeployConfigs_ShouldPass(t *testing.T) {
 	ctx := context.Background()
 
 	dir, err := os.MkdirTemp("/tmp", "codebase")
-	require.NoError(t, err, "unable to create temp directory for testing")
+	require.NoError(t, err, "failed to create temp directory for testing")
 
 	defer func() {
 		err = os.RemoveAll(dir)
@@ -143,7 +143,7 @@ func TestPutDeployConfigs_ShouldFailOnGetGerritPort(t *testing.T) {
 	ctx := context.Background()
 
 	dir, err := os.MkdirTemp("/tmp", "codebase")
-	require.NoError(t, err, "unable to create temp directory for testing")
+	require.NoError(t, err, "failed to create temp directory for testing")
 
 	defer func() {
 		err = os.RemoveAll(dir)
@@ -213,7 +213,7 @@ func TestPutDeployConfigs_ShouldFailOnGetGerritPort(t *testing.T) {
 	err = pdc.ServeRequest(ctx, c)
 
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "unable get gerrit port", "wrong error returned")
+	assert.Contains(t, err.Error(), "failed get gerrit port", "wrong error returned")
 }
 
 func TestPutDeployConfigs_ServeRequest_Skip(t *testing.T) {

@@ -76,13 +76,12 @@ func (c *GitHubClient) CreateWebHook(
 		}).
 		SetResult(webHook).
 		Post("/repos/{owner}/{repo}/hooks")
-
 	if err != nil {
-		return nil, fmt.Errorf("unable to create GitHub web hook: %w", err)
+		return nil, fmt.Errorf("failed to create GitHub web hook: %w", err)
 	}
 
 	if resp.IsError() {
-		return nil, fmt.Errorf("unable to create GitHub web hook: %s", resp.String())
+		return nil, fmt.Errorf("failed to create GitHub web hook: %s", resp.String())
 	}
 
 	return convertWebhook(webHook), nil
@@ -139,17 +138,16 @@ func (c *GitHubClient) GetWebHook(
 		}).
 		SetResult(webHook).
 		Get("/repos/{owner}/{repo}/hooks/{hook-id}")
-
 	if err != nil {
-		return nil, fmt.Errorf("unable to get GitHub web hook: %w", err)
+		return nil, fmt.Errorf("failed to get GitHub web hook: %w", err)
 	}
 
 	if resp.StatusCode() == http.StatusNotFound {
-		return nil, fmt.Errorf("unable to get GitHub web hook: %w", ErrWebHookNotFound)
+		return nil, fmt.Errorf("failed to get GitHub web hook: %w", ErrWebHookNotFound)
 	}
 
 	if resp.IsError() {
-		return nil, fmt.Errorf("unable to get GitHub web hook: %s", resp.String())
+		return nil, fmt.Errorf("failed to get GitHub web hook: %s", resp.String())
 	}
 
 	return convertWebhook(webHook), nil
@@ -181,13 +179,12 @@ func (c *GitHubClient) GetWebHooks(
 		}).
 		SetResult(&gitHubWebHooks).
 		Get("/repos/{owner}/{repo}/hooks")
-
 	if err != nil {
-		return nil, fmt.Errorf("unable to get GitHub web hooks: %w", err)
+		return nil, fmt.Errorf("failed to get GitHub web hooks: %w", err)
 	}
 
 	if resp.IsError() {
-		return nil, fmt.Errorf("unable to get GitHub web hooks: %s", resp.String())
+		return nil, fmt.Errorf("failed to get GitHub web hooks: %s", resp.String())
 	}
 
 	webHooks := make([]*WebHook, len(gitHubWebHooks))
@@ -223,17 +220,16 @@ func (c *GitHubClient) DeleteWebHook(
 			"hook-id":      strconv.Itoa(webHookID),
 		}).
 		Delete("/repos/{owner}/{repo}/hooks/{hook-id}")
-
 	if err != nil {
-		return fmt.Errorf("unable to delete GitHub web hook: %w", err)
+		return fmt.Errorf("failed to delete GitHub web hook: %w", err)
 	}
 
 	if resp.StatusCode() == http.StatusNotFound {
-		return fmt.Errorf("unable to delete GitHub web hook: %w", ErrWebHookNotFound)
+		return fmt.Errorf("failed to delete GitHub web hook: %w", ErrWebHookNotFound)
 	}
 
 	if resp.IsError() {
-		return fmt.Errorf("unable to delete GitHub web hook: %s", resp.String())
+		return fmt.Errorf("failed to delete GitHub web hook: %s", resp.String())
 	}
 
 	return nil

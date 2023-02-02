@@ -5,16 +5,16 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
-	"github.com/pkg/errors"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
-	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
 	"github.com/epam/edp-jenkins-operator/v2/pkg/util/platform"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
+	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
 type PutCDStageJenkinsDeployment struct {
@@ -34,7 +34,7 @@ func (h PutCDStageJenkinsDeployment) ServeRequest(stageDeploy *codebaseApi.CDSta
 
 	jd, err := h.getCDStageJenkinsDeployment(stageDeploy.Name, stageDeploy.Namespace)
 	if err != nil {
-		return errors.Wrapf(err, "couldn't get %v cd stage jenkins deployment", stageDeploy.Name)
+		return fmt.Errorf("failed to get %v cd stage jenkins deployment: %w", stageDeploy.Name, err)
 	}
 
 	if jd != nil {
@@ -48,7 +48,7 @@ func (h PutCDStageJenkinsDeployment) ServeRequest(stageDeploy *codebaseApi.CDSta
 	}
 
 	if err := h.create(stageDeploy); err != nil {
-		return errors.Wrapf(err, "couldn't create %v cd stage jenkins deployment", stageDeploy.Name)
+		return fmt.Errorf("failed to create %v cd stage jenkins deployment: %w", stageDeploy.Name, err)
 	}
 
 	log.Info("creating CDStageJenkinsDeployment has been finished.")
@@ -85,7 +85,7 @@ func (h PutCDStageJenkinsDeployment) create(stageDeploy *codebaseApi.CDStageDepl
 
 	labels, err := h.generateLabels(stageDeploy.Name, stageDeploy.Namespace)
 	if err != nil {
-		return errors.Wrap(err, "couldn't generate labels")
+		return fmt.Errorf("failed to generate labels: %w", err)
 	}
 
 	tagsList := make([]jenkinsApi.Tag, 0)

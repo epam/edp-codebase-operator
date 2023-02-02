@@ -7,7 +7,6 @@ import (
 
 	"github.com/bndr/gojenkins"
 	"github.com/jarcoal/httpmock"
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/apps/v1"
@@ -17,9 +16,10 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
+	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
+
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/model"
-	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
 )
 
 func TestCodebaseBranchService_TriggerReleaseJob(t *testing.T) {
@@ -233,9 +233,7 @@ func TestCodebaseBranchService_TriggerDeletionJobFailed(t *testing.T) {
 	err := svc.TriggerDeletionJob(&cb)
 	assert.Error(t, err)
 
-	if errors.Cause(err) != JobFailedError(err.Error()) {
-		t.Fatal("wrong error returned")
-	}
+	require.ErrorIs(t, err, ErrJobFailed)
 }
 
 func TestCodebaseBranchServiceProvider_AppendVersionToTheHistorySlice(t *testing.T) {

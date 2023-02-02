@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -26,7 +25,7 @@ func (h PutTagCodebaseImageStreamCr) ServeRequest(ist *codebaseApi.ImageStreamTa
 	rl.Info("start PutTagCodebaseImageStreamCr chain executing...")
 
 	if err := h.addTagToCodebaseImageStream(ist.Spec.CodebaseImageStreamName, ist.Spec.Tag, ist.Namespace); err != nil {
-		return errors.Wrapf(err, "couldn't add tag to codebase image stream %v", ist.Spec.CodebaseImageStreamName)
+		return fmt.Errorf("failed to add tag to codebase image stream %v: %w", ist.Spec.CodebaseImageStreamName, err)
 	}
 
 	rl.Info("end PutTagCodebaseImageStreamCr chain executing...")
@@ -49,7 +48,7 @@ func (h PutTagCodebaseImageStreamCr) addTagToCodebaseImageStream(cisName, tag, n
 
 	t, err := getCurrentTimeInUTC()
 	if err != nil {
-		return errors.Wrap(err, "couldn't get current time")
+		return fmt.Errorf("failed to get current time: %w", err)
 	}
 
 	cis.Spec.Tags = append(cis.Spec.Tags, codebaseApi.Tag{
@@ -88,7 +87,7 @@ func (h PutTagCodebaseImageStreamCr) update(cis *codebaseApi.CodebaseImageStream
 	ctx := context.Background()
 
 	if err := h.client.Update(ctx, cis); err != nil {
-		return errors.Wrapf(err, "couldn't add new tag to codebase image stream %v", cis.Name)
+		return fmt.Errorf("failed to add new tag to codebase image stream %v: %w", cis.Name, err)
 	}
 
 	log.Info("cis has been updated with tag", "cis", cis.Name, "tags", cis.Spec.Tags)

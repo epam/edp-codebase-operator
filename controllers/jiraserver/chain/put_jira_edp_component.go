@@ -9,15 +9,15 @@ import (
 	"os"
 	"path"
 
-	"github.com/pkg/errors"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	edpComponentApi "github.com/epam/edp-component-operator/api/v1"
+
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	"github.com/epam/edp-codebase-operator/v2/controllers/jiraserver/chain/handler"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
-	edpComponentApi "github.com/epam/edp-component-operator/api/v1"
 )
 
 const (
@@ -36,7 +36,7 @@ func (h PutJiraEDPComponent) ServeRequest(jira *codebaseApi.JiraServer) error {
 	rl.V(2).Info("start putting Jira EDP component...")
 
 	if err := h.createEDPComponentIfNotExists(jira); err != nil {
-		return errors.Wrapf(err, "couldn't create EDP component %v", jira.Name)
+		return fmt.Errorf("failed to create EDP component %v: %w", jira.Name, err)
 	}
 
 	jira.Status.Status = statusFinished
@@ -52,7 +52,7 @@ func (h PutJiraEDPComponent) createEDPComponentIfNotExists(js *codebaseApi.JiraS
 
 	icon, err := getIcon()
 	if err != nil {
-		return errors.Wrapf(err, "couldn't encode icon %v", js.Name)
+		return fmt.Errorf("failed to encode icon %v: %w", js.Name, err)
 	}
 
 	c := &edpComponentApi.EDPComponent{

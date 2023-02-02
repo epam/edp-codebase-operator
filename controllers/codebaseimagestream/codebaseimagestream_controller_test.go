@@ -134,7 +134,7 @@ func TestReconcileCodebaseImageStream_Reconcile_ShouldFail(t *testing.T) {
 	assert.Error(t, err)
 	assert.False(t, res.Requeue)
 
-	if !strings.Contains(err.Error(), "couldn't handle NewCIS codebase image stream") {
+	if !strings.Contains(err.Error(), "failed to handle NewCIS codebase image stream") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
 }

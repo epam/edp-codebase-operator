@@ -12,8 +12,9 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	edpComponentApi "github.com/epam/edp-component-operator/api/v1"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 )
 
 func TestPutCodebaseImageStream_ShouldCreateCisWithDefaultVersioningType(t *testing.T) {
@@ -176,7 +177,7 @@ func TestPutCodebaseImageStream_ShouldFailToGetCodebase(t *testing.T) {
 	err := cisChain.ServeRequest(cb)
 	assert.Error(t, err)
 
-	if !strings.Contains(err.Error(), "Unable to get Codebase stub-name") {
+	if !strings.Contains(err.Error(), "failed to get Codebase stub-name") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
 }
