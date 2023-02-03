@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -17,8 +18,8 @@ type DeleteJiraIssueMetadataCr struct {
 }
 
 func (h DeleteJiraIssueMetadataCr) ServeRequest(metadata *codebaseApi.JiraIssueMetadata) error {
-	if metadata.Status.Error != nil {
-		return errors.New(metadata.Status.PrintErrors())
+	if metadata.Status.ErrorStrings != nil {
+		return errors.New(strings.Join(metadata.Status.ErrorStrings, "\n"))
 	}
 
 	logv := log.WithValues("name", metadata.Name)

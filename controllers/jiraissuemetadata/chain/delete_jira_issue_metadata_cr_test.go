@@ -1,10 +1,8 @@
 package chain
 
 import (
-	"errors"
 	"testing"
 
-	"github.com/hashicorp/go-multierror"
 	"github.com/stretchr/testify/assert"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -43,7 +41,7 @@ func TestDeleteJiraIssueMetadataCr_ServeRequest_StopOnErrors(t *testing.T) {
 			Namespace: "fake-namespace",
 		},
 		Status: codebaseApi.JiraIssueMetadataStatus{
-			Error: multierror.Append(errors.New("error1"), errors.New("error2")),
+			ErrorStrings: []string{"error1", "error2"},
 		},
 	}
 

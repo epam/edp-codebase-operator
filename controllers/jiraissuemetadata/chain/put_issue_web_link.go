@@ -5,8 +5,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/hashicorp/go-multierror"
-
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	"github.com/epam/edp-codebase-operator/v2/controllers/jiraissuemetadata/chain/handler"
 	"github.com/epam/edp-codebase-operator/v2/pkg/client/jira"
@@ -43,10 +41,11 @@ func (h PutIssueWebLink) ServeRequest(metadata *codebaseApi.JiraIssueMetadata) e
 
 	for _, linkInfo := range payload.IssuesLinks {
 		if err = h.client.CreateIssueLink(linkInfo.Ticket, linkInfo.Title, linkInfo.Url); err != nil {
-			metadata.Status.Error = multierror.Append(metadata.Status.Error,
-				fmt.Errorf("an error has occurred during creating remote link."+
-					" ticket - %s, title - %s, url - %s, err: %w", linkInfo.Ticket, linkInfo.Title,
-					linkInfo.Url, err))
+			metadata.Status.ErrorStrings = append(metadata.Status.ErrorStrings,
+				fmt.Sprintf(
+					"failed to create remote link. ticket - %s, title - %s, url - %s, err: %v",
+					linkInfo.Ticket, linkInfo.Title, linkInfo.Url, err),
+			)
 		}
 	}
 

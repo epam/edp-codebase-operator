@@ -57,5 +57,5 @@ func TestPutIssueWebLink_ServeRequest_ShouldFail(t *testing.T) {
 
 	err := piwl.ServeRequest(jim)
 	assert.NoError(t, err)
-	assert.Error(t, jim.Status.Error)
+	assert.NotNil(t, jim.Status.ErrorStrings)
 }
