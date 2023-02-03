@@ -2,8 +2,84 @@
 ## [Unreleased]
 
 
+<a name="v2.13.2"></a>
+## [v2.13.2] - 2023-01-24
+### Bug Fixes
+
+- Get jira project info error handler [EPMDEDP-10454](https://jiraeu.epam.com/browse/EPMDEDP-10454)
+- Jira issue metadata wrong ticket blocker [EPMDEDP-10454](https://jiraeu.epam.com/browse/EPMDEDP-10454)
+
+### Code Refactoring
+
+- Set remote git HEAD to default branch in Gerrit [EPMDEDP-10810](https://jiraeu.epam.com/browse/EPMDEDP-10810)
+
+### Routine
+
+- Upgrade git package to version 2.36.3-r0 [EPMDEDP-10743](https://jiraeu.epam.com/browse/EPMDEDP-10743)
+
+
+<a name="v2.14.1"></a>
+## [v2.14.1] - 2023-01-23
+### Bug Fixes
+
+- Set unsuccessful status for Codebasebranch if commit hash is invalid [EPMDEDP-11189](https://jiraeu.epam.com/browse/EPMDEDP-11189)
+
+### Routine
+
+- Update git package version to 2.36.4-r0 [EPMDEDP-11260](https://jiraeu.epam.com/browse/EPMDEDP-11260)
+
+
+<a name="v2.14.0"></a>
+## [v2.14.0] - 2022-12-06
+### Features
+
+- Add support for Tekton Tool [EPMDEDP-10641](https://jiraeu.epam.com/browse/EPMDEDP-10641)
+- Implement webhook GitLab integration as a part of codebase onboarding [EPMDEDP-10708](https://jiraeu.epam.com/browse/EPMDEDP-10708)
+- Implement default branch provisioning by codebase controller [EPMDEDP-10733](https://jiraeu.epam.com/browse/EPMDEDP-10733)
+- Implement GitHub Webhook integration for codebase [EPMDEDP-10743](https://jiraeu.epam.com/browse/EPMDEDP-10743)
+- GitServer - make gitUser optional with the default value git [EPMDEDP-11026](https://jiraeu.epam.com/browse/EPMDEDP-11026)
+
+### Bug Fixes
+
+- Warnings from go-critic [EPMDEDP-10542](https://jiraeu.epam.com/browse/EPMDEDP-10542)
+- Add golangci-lint config file [EPMDEDP-10542](https://jiraeu.epam.com/browse/EPMDEDP-10542)
+- Golangci-lint errors [EPMDEDP-10542](https://jiraeu.epam.com/browse/EPMDEDP-10542)
+- Remove slash from CodebaseSpec.GitUrlPath for the webhook creation [EPMDEDP-10708](https://jiraeu.epam.com/browse/EPMDEDP-10708)
+- GitHub webhook events names [EPMDEDP-10743](https://jiraeu.epam.com/browse/EPMDEDP-10743)
+- Fix permissions for configmap in leader election [EPMDEDP-10802](https://jiraeu.epam.com/browse/EPMDEDP-10802)
+- Use an already created webhook [EPMDEDP-10844](https://jiraeu.epam.com/browse/EPMDEDP-10844)
+- CodebaseBranch with empty version may produce panic [EPMDEDP-10883](https://jiraeu.epam.com/browse/EPMDEDP-10883)
+- Concurrent write ssh key to the same file [EPMDEDP-10892](https://jiraeu.epam.com/browse/EPMDEDP-10892)
+- Do not ignore git command errors [EPMDEDP-10892](https://jiraeu.epam.com/browse/EPMDEDP-10892)
+- Set GitServer unavailable status if the ssh key is invalid [EPMDEDP-10914](https://jiraeu.epam.com/browse/EPMDEDP-10914)
+- Add empty line to git server private key [EPMDEDP-10982](https://jiraeu.epam.com/browse/EPMDEDP-10982)
+
+### Code Refactoring
+
+- Use single chain [EPMDEDP-10498](https://jiraeu.epam.com/browse/EPMDEDP-10498)
+- Resolve `revive` lint warnings [EPMDEDP-10542](https://jiraeu.epam.com/browse/EPMDEDP-10542)
+- Partially resolve golangci-lint warnings [EPMDEDP-10542](https://jiraeu.epam.com/browse/EPMDEDP-10542)
+- Enable two more golangci-lint rules [EPMDEDP-10542](https://jiraeu.epam.com/browse/EPMDEDP-10542)
+- Set remote git HEAD to default branch in Gerrit [EPMDEDP-10658](https://jiraeu.epam.com/browse/EPMDEDP-10658)
+- Create default codebasebranch for other flows [EPMDEDP-10733](https://jiraeu.epam.com/browse/EPMDEDP-10733)
+- Remove SQL DB repository [EPMDEDP-10751](https://jiraeu.epam.com/browse/EPMDEDP-10751)
+
+### Routine
+
+- Update current development version [EPMDEDP-10274](https://jiraeu.epam.com/browse/EPMDEDP-10274)
+- Upgrade git package to version 2.36.3-r0 [EPMDEDP-10743](https://jiraeu.epam.com/browse/EPMDEDP-10743)
+- Update current development version [EPMDEDP-10805](https://jiraeu.epam.com/browse/EPMDEDP-10805)
+- Update Changelog [EPMDEDP-11010](https://jiraeu.epam.com/browse/EPMDEDP-11010)
+- Remove deprecated Dotnet 2.1 support [EPMDEDP-11024](https://jiraeu.epam.com/browse/EPMDEDP-11024)
+
+### Documentation
+
+- Update Readme [EPMDEDP-11008](https://jiraeu.epam.com/browse/EPMDEDP-11008)
+- Update Readme [EPMDEDP-11008](https://jiraeu.epam.com/browse/EPMDEDP-11008)
+
+
 <a name="v2.13.1"></a>
-## [v2.13.1] - 2022-09-26
+## [v2.13.1] - 2022-10-28
 ### Code Refactoring
 
 - Set remote git HEAD to default branch in Gerrit [EPMDEDP-10810](https://jiraeu.epam.com/browse/EPMDEDP-10810)
@@ -232,7 +308,10 @@ Jenkins pipelines for code-review, build, create-release flow.
 - [MDTUDDM-673] Save git status in the intermediate operations
 
 
-[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.13.1...HEAD
+[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.13.2...HEAD
+[v2.13.2]: https://github.com/epam/edp-codebase-operator/compare/v2.14.1...v2.13.2
+[v2.14.1]: https://github.com/epam/edp-codebase-operator/compare/v2.14.0...v2.14.1
+[v2.14.0]: https://github.com/epam/edp-codebase-operator/compare/v2.13.1...v2.14.0
 [v2.13.1]: https://github.com/epam/edp-codebase-operator/compare/v2.13.0...v2.13.1
 [v2.13.0]: https://github.com/epam/edp-codebase-operator/compare/v2.12.0...v2.13.0
 [v2.12.0]: https://github.com/epam/edp-codebase-operator/compare/v2.11.0...v2.12.0
