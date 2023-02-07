@@ -63,6 +63,38 @@ func TestCodebaseWebhook_ValidateCreate(t *testing.T) {
 			},
 		},
 		{
+			name: "should return error if GitUrlPath already exists with, check .git suffix",
+			client: fake.NewClientBuilder().WithScheme(scheme).WithObjects(&codebaseApi.Codebase{
+				ObjectMeta: metaV1.ObjectMeta{
+					Name:      "codebase2",
+					Namespace: "default",
+				},
+				Spec: codebaseApi.CodebaseSpec{
+					GitUrlPath: util.GetStringP("user/repo"),
+				},
+			}).Build(),
+			ctx: admission.NewContextWithRequest(context.Background(), admission.Request{
+				AdmissionRequest: v1.AdmissionRequest{
+					Name:      "codebase",
+					Namespace: "default",
+				},
+			}),
+			obj: &codebaseApi.Codebase{
+				ObjectMeta: metaV1.ObjectMeta{
+					Name:      "codebase",
+					Namespace: "default",
+				},
+				Spec: codebaseApi.CodebaseSpec{
+					GitUrlPath: util.GetStringP("user/repo.git"),
+				},
+			},
+			wantErr: func(t require.TestingT, err error, _ ...any) {
+				require.Error(t, err)
+
+				require.Contains(t, err.Error(), "codebase codebase2 with GitUrlPath user/repo already exists")
+			},
+		},
+		{
 			name: "should skip codebase with same GitUrlPath in the another namespace",
 			client: fake.NewClientBuilder().WithScheme(scheme).WithObjects(&codebaseApi.Codebase{
 				ObjectMeta: metaV1.ObjectMeta{
@@ -116,6 +148,30 @@ func TestCodebaseWebhook_ValidateCreate(t *testing.T) {
 				},
 			},
 			wantErr: require.NoError,
+		},
+		{
+			name:   "should return error if GitUrlPath is not valid",
+			client: fake.NewClientBuilder().WithScheme(scheme).Build(),
+			ctx: admission.NewContextWithRequest(context.Background(), admission.Request{
+				AdmissionRequest: v1.AdmissionRequest{
+					Name:      "codebase",
+					Namespace: "default",
+				},
+			}),
+			obj: &codebaseApi.Codebase{
+				ObjectMeta: metaV1.ObjectMeta{
+					Name:      "codebase",
+					Namespace: "default",
+				},
+				Spec: codebaseApi.CodebaseSpec{
+					GitUrlPath: util.GetStringP(".git"),
+				},
+			},
+			wantErr: func(t require.TestingT, err error, _ ...any) {
+				require.Error(t, err)
+
+				require.Contains(t, err.Error(), "gitUrlPath .git is invalid")
+			},
 		},
 		{
 			name:   "skip validation - wrong object",

@@ -13,6 +13,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	v1 "github.com/epam/edp-codebase-operator/v2/api/v1"
+	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
 const listLimit = 1000
@@ -67,17 +68,24 @@ func (r *CodebaseValidationWebhook) ValidateCreate(ctx context.Context, obj runt
 		return nil
 	}
 
+	gitUrlPathToValidate := util.TrimGitFromURL(*createdCodebase.Spec.GitUrlPath)
+	if gitUrlPathToValidate == "" {
+		return fmt.Errorf("gitUrlPath %s is invalid", *createdCodebase.Spec.GitUrlPath)
+	}
+
 	codeBases := &v1.CodebaseList{}
 	if err := r.client.List(ctx, codeBases, client.InNamespace(req.Namespace), client.Limit(listLimit)); err != nil {
 		return fmt.Errorf("failed to list codebases: %w", err)
 	}
 
 	for i := range codeBases.Items {
-		if codeBases.Items[i].Spec.GitUrlPath != nil && *codeBases.Items[i].Spec.GitUrlPath == *createdCodebase.Spec.GitUrlPath {
+		gitUrlPath := codeBases.Items[i].Spec.GitUrlPath
+
+		if gitUrlPath != nil && *gitUrlPath == gitUrlPathToValidate {
 			return fmt.Errorf(
 				"codebase %s with GitUrlPath %s already exists",
 				codeBases.Items[i].Name,
-				*createdCodebase.Spec.GitUrlPath,
+				*gitUrlPath,
 			)
 		}
 	}
