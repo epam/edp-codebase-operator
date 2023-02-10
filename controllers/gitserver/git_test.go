@@ -4,8 +4,11 @@ import (
 	"encoding/base64"
 	"errors"
 	"os"
+	"path"
 	"testing"
 
+	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -72,9 +75,9 @@ func TestGitProvider_CheckPermissions_NoRefs(t *testing.T) {
 }
 
 func TestInitAuth(t *testing.T) {
-	path, err := initAuth("foo", "bar")
+	dir, err := initAuth("foo", "bar")
 	assert.NoError(t, err)
-	assert.Contains(t, path, "sshkey")
+	assert.Contains(t, dir, "sshkey")
 }
 
 func TestGitProvider_CreateChildBranch(t *testing.T) {
@@ -233,6 +236,89 @@ some-key
 			gotKey, err := os.ReadFile(got)
 			require.NoError(t, err)
 			assert.Equal(t, tt.want, string(gotKey))
+		})
+	}
+}
+
+func TestGitProvider_CommitChanges(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name      string
+		initRepo  func(t *testing.T) string
+		wantErr   require.ErrorAssertionFunc
+		checkRepo func(t *testing.T, dir string)
+	}{
+		{
+			name: "should commit changes successfully",
+			initRepo: func(t *testing.T) string {
+				dir := t.TempDir()
+				_, err := git.PlainInit(dir, false)
+				require.NoError(t, err)
+
+				_, err = os.Create(path.Join(dir, "config.yaml"))
+				require.NoError(t, err)
+
+				return dir
+			},
+			wantErr: require.NoError,
+			checkRepo: func(t *testing.T, dir string) {
+				r, err := git.PlainOpen(dir)
+				require.NoError(t, err)
+
+				commits, err := r.CommitObjects()
+				require.NoError(t, err)
+
+				count := 0
+				_ = commits.ForEach(func(*object.Commit) error {
+					count++
+
+					return nil
+				})
+
+				require.Equalf(t, 1, count, "expected 1 commits, got %d", count)
+			},
+		},
+		{
+			name: "skip commit if no changes",
+			initRepo: func(t *testing.T) string {
+				dir := t.TempDir()
+				_, err := git.PlainInit(dir, false)
+				require.NoError(t, err)
+
+				return dir
+			},
+			wantErr: require.NoError,
+			checkRepo: func(t *testing.T, dir string) {
+				r, err := git.PlainOpen(dir)
+				require.NoError(t, err)
+
+				commits, err := r.CommitObjects()
+				require.NoError(t, err)
+
+				count := 0
+				_ = commits.ForEach(func(*object.Commit) error {
+					count++
+
+					return nil
+				})
+
+				require.Equalf(t, 0, count, "expected 0 commits, got %d", count)
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			gp := &GitProvider{}
+			dir := tt.initRepo(t)
+
+			err := gp.CommitChanges(dir, "test commit message")
+			tt.wantErr(t, err)
+			tt.checkRepo(t, dir)
 		})
 	}
 }

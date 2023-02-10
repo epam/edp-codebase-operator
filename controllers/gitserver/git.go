@@ -155,7 +155,8 @@ func (gp *GitProvider) CreateRemoteBranch(key, user, p, name, fromcommit string,
 }
 
 func (*GitProvider) CommitChanges(directory, commitMsg string) error {
-	log.Info("Start committing changes", logDirectoryKey, directory)
+	logger := log.WithValues(logDirectoryKey, directory)
+	logger.Info("Start committing changes")
 
 	r, err := git.PlainOpen(directory)
 	if err != nil {
@@ -172,6 +173,17 @@ func (*GitProvider) CommitChanges(directory, commitMsg string) error {
 		return fmt.Errorf("failed to add files to the index: %w", err)
 	}
 
+	status, err := w.Status()
+	if err != nil {
+		return fmt.Errorf("failed to get git status: %w", err)
+	}
+
+	if status.IsClean() {
+		logger.Info("Nothing to commit. Skip committing")
+
+		return nil
+	}
+
 	_, err = w.Commit(commitMsg, &git.CommitOptions{
 		Author: &object.Signature{
 			Name:  "codebase",
@@ -183,7 +195,7 @@ func (*GitProvider) CommitChanges(directory, commitMsg string) error {
 		return fmt.Errorf("failed to commit: %w", err)
 	}
 
-	log.Info("Changes have been committed", logDirectoryKey, directory)
+	logger.Info("Changes have been committed")
 
 	return nil
 }
