@@ -24,6 +24,7 @@ type CodebaseModifier struct {
 func NewCodebaseModifier(k8sClient client.Writer) *CodebaseModifier {
 	modifiers := []codebaseModifierFunc{
 		trimCodebaseGitSuffix,
+		addCodebaseGitSuffix,
 		setCodebaseGitUrlPath,
 	}
 
@@ -59,11 +60,37 @@ func trimCodebaseGitSuffix(codebase *codebaseApi.Codebase) bool {
 		return false
 	}
 
-	if codebase.Spec.GitUrlPath == nil || !strings.HasSuffix(*codebase.Spec.GitUrlPath, ".git") {
+	if codebase.Spec.GitUrlPath == nil || !strings.HasSuffix(*codebase.Spec.GitUrlPath, util.CrSuffixGit) {
 		return false
 	}
 
 	newGitUrlPath := util.TrimGitFromURL(*codebase.Spec.GitUrlPath)
+	codebase.Spec.GitUrlPath = &newGitUrlPath
+
+	return true
+}
+
+// addCodebaseGitSuffix adds trailing ".git" suffix to the end of the git url path, if it doesn't exist.
+// Returns true if suffix is added.
+func addCodebaseGitSuffix(codebase *codebaseApi.Codebase) bool {
+	if codebase.Spec.Strategy != util.CloneStrategy {
+		return false
+	}
+
+	if codebase.Spec.GitUrlPath == nil {
+		return false
+	}
+
+	if strings.HasSuffix(*codebase.Spec.GitUrlPath, util.CrSuffixGit) {
+		if strings.Count(*codebase.Spec.GitUrlPath, util.CrSuffixGit) == 1 {
+			return false
+		}
+
+		newGitUrlPath := util.TrimGitFromURL(*codebase.Spec.GitUrlPath)
+		codebase.Spec.GitUrlPath = &newGitUrlPath
+	}
+
+	newGitUrlPath := util.AddGitToURL(*codebase.Spec.GitUrlPath)
 	codebase.Spec.GitUrlPath = &newGitUrlPath
 
 	return true

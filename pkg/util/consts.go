@@ -24,6 +24,7 @@ const (
 	GitServerSecretWebhookSecretField = "secretString"
 
 	ImportStrategy     = "import"
+	CloneStrategy      = "clone"
 	Application        = "application"
 	LanguageJavascript = "javascript"
 	LanguagePython     = "python"

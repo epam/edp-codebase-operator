@@ -133,6 +133,125 @@ func Test_trimCodebaseGitSuffix(t *testing.T) {
 	}
 }
 
+func Test_addCodebaseGitSuffix(t *testing.T) {
+	t.Parallel()
+
+	type args struct {
+		codebase *codebaseApi.Codebase
+	}
+
+	tests := []struct {
+		name         string
+		args         args
+		want         bool
+		wantCodebase *codebaseApi.Codebase
+	}{
+		{
+			name: "should add .git",
+			args: args{
+				codebase: &codebaseApi.Codebase{
+					Spec: codebaseApi.CodebaseSpec{
+						Strategy:   util.CloneStrategy,
+						GitUrlPath: util.GetStringP("/some/test/path"),
+					},
+				},
+			},
+			want: true,
+			wantCodebase: &codebaseApi.Codebase{
+				Spec: codebaseApi.CodebaseSpec{
+					Strategy:   util.CloneStrategy,
+					GitUrlPath: util.GetStringP("/some/test/path.git"),
+				},
+			},
+		},
+		{
+			name: "should leave one .git",
+			args: args{
+				codebase: &codebaseApi.Codebase{
+					Spec: codebaseApi.CodebaseSpec{
+						Strategy:   util.CloneStrategy,
+						GitUrlPath: util.GetStringP("/some/test/path.git.git.git"),
+					},
+				},
+			},
+			want: true,
+			wantCodebase: &codebaseApi.Codebase{
+				Spec: codebaseApi.CodebaseSpec{
+					Strategy:   util.CloneStrategy,
+					GitUrlPath: util.GetStringP("/some/test/path.git"),
+				},
+			},
+		},
+		{
+			name: "should not update because of .git suffix",
+			args: args{
+				codebase: &codebaseApi.Codebase{
+					Spec: codebaseApi.CodebaseSpec{
+						Strategy:   util.CloneStrategy,
+						GitUrlPath: util.GetStringP("/some/test/path.git"),
+					},
+				},
+			},
+			want: false,
+			wantCodebase: &codebaseApi.Codebase{
+				Spec: codebaseApi.CodebaseSpec{
+					Strategy:   util.CloneStrategy,
+					GitUrlPath: util.GetStringP("/some/test/path.git"),
+				},
+			},
+		},
+		{
+			name: "should not update because of nil GitUrlPath",
+			args: args{
+				codebase: &codebaseApi.Codebase{
+					Spec: codebaseApi.CodebaseSpec{
+						Strategy:   util.CloneStrategy,
+						GitUrlPath: nil,
+					},
+				},
+			},
+			want: false,
+			wantCodebase: &codebaseApi.Codebase{
+				Spec: codebaseApi.CodebaseSpec{
+					Strategy:   util.CloneStrategy,
+					GitUrlPath: nil,
+				},
+			},
+		},
+		{
+			name: "should not update when strategy is not clone",
+			args: args{
+				codebase: &codebaseApi.Codebase{
+					Spec: codebaseApi.CodebaseSpec{
+						Strategy:   "create",
+						GitUrlPath: util.GetStringP("/some/test/path"),
+					},
+				},
+			},
+			want: false,
+			wantCodebase: &codebaseApi.Codebase{
+				Spec: codebaseApi.CodebaseSpec{
+					Strategy:   "create",
+					GitUrlPath: util.GetStringP("/some/test/path"),
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			got := addCodebaseGitSuffix(tt.args.codebase)
+
+			assert.Equal(t, tt.want, got)
+			assert.Equal(t, tt.wantCodebase, tt.args.codebase)
+		})
+	}
+}
+
 func Test_setCodebaseGitUrlPath(t *testing.T) {
 	t.Parallel()
 

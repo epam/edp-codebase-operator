@@ -10,6 +10,7 @@ import (
 
 const (
 	logCodebaseNameKey = "codebase_name"
+	CrSuffixGit        = ".git"
 )
 
 var lf = map[string]string{
@@ -23,8 +24,16 @@ var lf = map[string]string{
 }
 
 func TrimGitFromURL(url string) string {
-	for strings.HasSuffix(url, ".git") {
-		url = strings.TrimSuffix(url, ".git")
+	for strings.HasSuffix(url, CrSuffixGit) {
+		url = strings.TrimSuffix(url, CrSuffixGit)
+	}
+
+	return url
+}
+
+func AddGitToURL(url string) string {
+	if !strings.HasSuffix(url, CrSuffixGit) {
+		url += CrSuffixGit
 	}
 
 	return url
