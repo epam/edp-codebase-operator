@@ -70,28 +70,26 @@ func trimCodebaseGitSuffix(codebase *codebaseApi.Codebase) bool {
 	return true
 }
 
-// addCodebaseGitSuffix adds trailing ".git" suffix to the end of the git url path, if it doesn't exist.
+// addCodebaseGitSuffix adds trailing ".git" suffix to the end of the git repository url path, if it doesn't exist.
 // Returns true if suffix is added.
 func addCodebaseGitSuffix(codebase *codebaseApi.Codebase) bool {
 	if codebase.Spec.Strategy != util.CloneStrategy {
 		return false
 	}
 
-	if codebase.Spec.GitUrlPath == nil {
+	if codebase.Spec.Repository.Url == "" {
 		return false
 	}
 
-	if strings.HasSuffix(*codebase.Spec.GitUrlPath, util.CrSuffixGit) {
-		if strings.Count(*codebase.Spec.GitUrlPath, util.CrSuffixGit) == 1 {
+	if strings.HasSuffix(codebase.Spec.Repository.Url, util.CrSuffixGit) {
+		if strings.Count(codebase.Spec.Repository.Url, util.CrSuffixGit) == 1 {
 			return false
 		}
 
-		newGitUrlPath := util.TrimGitFromURL(*codebase.Spec.GitUrlPath)
-		codebase.Spec.GitUrlPath = &newGitUrlPath
+		codebase.Spec.Repository.Url = util.TrimGitFromURL(codebase.Spec.Repository.Url)
 	}
 
-	newGitUrlPath := util.AddGitToURL(*codebase.Spec.GitUrlPath)
-	codebase.Spec.GitUrlPath = &newGitUrlPath
+	codebase.Spec.Repository.Url = util.AddGitToURL(codebase.Spec.Repository.Url)
 
 	return true
 }

@@ -152,7 +152,7 @@ func Test_addCodebaseGitSuffix(t *testing.T) {
 				codebase: &codebaseApi.Codebase{
 					Spec: codebaseApi.CodebaseSpec{
 						Strategy:   util.CloneStrategy,
-						GitUrlPath: util.GetStringP("/some/test/path"),
+						Repository: &codebaseApi.Repository{Url: "/some/test/path"},
 					},
 				},
 			},
@@ -160,7 +160,7 @@ func Test_addCodebaseGitSuffix(t *testing.T) {
 			wantCodebase: &codebaseApi.Codebase{
 				Spec: codebaseApi.CodebaseSpec{
 					Strategy:   util.CloneStrategy,
-					GitUrlPath: util.GetStringP("/some/test/path.git"),
+					Repository: &codebaseApi.Repository{Url: "/some/test/path.git"},
 				},
 			},
 		},
@@ -170,7 +170,7 @@ func Test_addCodebaseGitSuffix(t *testing.T) {
 				codebase: &codebaseApi.Codebase{
 					Spec: codebaseApi.CodebaseSpec{
 						Strategy:   util.CloneStrategy,
-						GitUrlPath: util.GetStringP("/some/test/path.git.git.git"),
+						Repository: &codebaseApi.Repository{Url: "/some/test/path.git.git.git"},
 					},
 				},
 			},
@@ -178,7 +178,7 @@ func Test_addCodebaseGitSuffix(t *testing.T) {
 			wantCodebase: &codebaseApi.Codebase{
 				Spec: codebaseApi.CodebaseSpec{
 					Strategy:   util.CloneStrategy,
-					GitUrlPath: util.GetStringP("/some/test/path.git"),
+					Repository: &codebaseApi.Repository{Url: "/some/test/path.git"},
 				},
 			},
 		},
@@ -188,7 +188,7 @@ func Test_addCodebaseGitSuffix(t *testing.T) {
 				codebase: &codebaseApi.Codebase{
 					Spec: codebaseApi.CodebaseSpec{
 						Strategy:   util.CloneStrategy,
-						GitUrlPath: util.GetStringP("/some/test/path.git"),
+						Repository: &codebaseApi.Repository{Url: "/some/test/path.git"},
 					},
 				},
 			},
@@ -196,7 +196,7 @@ func Test_addCodebaseGitSuffix(t *testing.T) {
 			wantCodebase: &codebaseApi.Codebase{
 				Spec: codebaseApi.CodebaseSpec{
 					Strategy:   util.CloneStrategy,
-					GitUrlPath: util.GetStringP("/some/test/path.git"),
+					Repository: &codebaseApi.Repository{Url: "/some/test/path.git"},
 				},
 			},
 		},
@@ -206,7 +206,7 @@ func Test_addCodebaseGitSuffix(t *testing.T) {
 				codebase: &codebaseApi.Codebase{
 					Spec: codebaseApi.CodebaseSpec{
 						Strategy:   util.CloneStrategy,
-						GitUrlPath: nil,
+						Repository: &codebaseApi.Repository{Url: ""},
 					},
 				},
 			},
@@ -214,7 +214,7 @@ func Test_addCodebaseGitSuffix(t *testing.T) {
 			wantCodebase: &codebaseApi.Codebase{
 				Spec: codebaseApi.CodebaseSpec{
 					Strategy:   util.CloneStrategy,
-					GitUrlPath: nil,
+					Repository: &codebaseApi.Repository{Url: ""},
 				},
 			},
 		},
@@ -224,7 +224,7 @@ func Test_addCodebaseGitSuffix(t *testing.T) {
 				codebase: &codebaseApi.Codebase{
 					Spec: codebaseApi.CodebaseSpec{
 						Strategy:   "create",
-						GitUrlPath: util.GetStringP("/some/test/path"),
+						Repository: &codebaseApi.Repository{Url: "/some/test/path"},
 					},
 				},
 			},
@@ -232,7 +232,7 @@ func Test_addCodebaseGitSuffix(t *testing.T) {
 			wantCodebase: &codebaseApi.Codebase{
 				Spec: codebaseApi.CodebaseSpec{
 					Strategy:   "create",
-					GitUrlPath: util.GetStringP("/some/test/path"),
+					Repository: &codebaseApi.Repository{Url: "/some/test/path"},
 				},
 			},
 		},
