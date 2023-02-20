@@ -1,6 +1,57 @@
 <a name="unreleased"></a>
 ## [Unreleased]
 
+### Features
+
+- Import strategy supports .git [EPMDEDP-10886](https://jiraeu.epam.com/browse/EPMDEDP-10886)
+- Validating Codebase gitUrlpath for uniqueness [EPMDEDP-10945](https://jiraeu.epam.com/browse/EPMDEDP-10945)
+- Updated operator sdk version to 1.25.3 [EPMDEDP-11022](https://jiraeu.epam.com/browse/EPMDEDP-11022)
+- Add annotation for disabling reconciliation [EPMDEDP-11200](https://jiraeu.epam.com/browse/EPMDEDP-11200)
+- Update EDP components [EPMDEDP-11206](https://jiraeu.epam.com/browse/EPMDEDP-11206)
+- Duplicated api to their old folder [EPMDEDP-11206](https://jiraeu.epam.com/browse/EPMDEDP-11206)
+- Set codebase.gitUrlPath equal codebase.name when empty [EPMDEDP-11300](https://jiraeu.epam.com/browse/EPMDEDP-11300)
+- Add suffix .git to the end of git url path if it does not exist with clone strategy [EPMDEDP-11406](https://jiraeu.epam.com/browse/EPMDEDP-11406)
+
+### Bug Fixes
+
+- Get jira project info error handler [EPMDEDP-10454](https://jiraeu.epam.com/browse/EPMDEDP-10454)
+- Jira issue metadata wrong ticket blocker [EPMDEDP-10454](https://jiraeu.epam.com/browse/EPMDEDP-10454)
+- Check if gitUrlPath is unique with the .git suffix [EPMDEDP-10945](https://jiraeu.epam.com/browse/EPMDEDP-10945)
+- Align GitHub workflows to the new project structure [EPMDEDP-11022](https://jiraeu.epam.com/browse/EPMDEDP-11022)
+- Set Codebasebranch failureCount for tekton flow [EPMDEDP-11189](https://jiraeu.epam.com/browse/EPMDEDP-11189)
+- Set Codebasebranch failureCount for tekton flow [EPMDEDP-11189](https://jiraeu.epam.com/browse/EPMDEDP-11189)
+- Check if Codebasebranch commit hash is valid before triggering the Jenkins job [EPMDEDP-11189](https://jiraeu.epam.com/browse/EPMDEDP-11189)
+- Set unsuccessful status for Codebasebranch if commit hash is invalid [EPMDEDP-11189](https://jiraeu.epam.com/browse/EPMDEDP-11189)
+- Operator updates the codebase branch status all the time [EPMDEDP-11357](https://jiraeu.epam.com/browse/EPMDEDP-11357)
+- Add suffix .git to the end of git repository url if it does not exist with clone strategy [EPMDEDP-11406](https://jiraeu.epam.com/browse/EPMDEDP-11406)
+- Removed error type fields from API [EPMDEDP-11463](https://jiraeu.epam.com/browse/EPMDEDP-11463)
+- Do not make empty commits [EPMDEDP-7985](https://jiraeu.epam.com/browse/EPMDEDP-7985)
+
+### Code Refactoring
+
+- Move documentation to docs [EPMDEDP-11195](https://jiraeu.epam.com/browse/EPMDEDP-11195)
+
+### Testing
+
+- Improved test coverage [EPMDEDP-11065](https://jiraeu.epam.com/browse/EPMDEDP-11065)
+
+### Routine
+
+- Update current development version [EPMDEDP-10610](https://jiraeu.epam.com/browse/EPMDEDP-10610)
+- Removed redundant pkg/errors direct dependency [EPMDEDP-11201](https://jiraeu.epam.com/browse/EPMDEDP-11201)
+- Updated cd-pipeline-operator dependency [EPMDEDP-11275](https://jiraeu.epam.com/browse/EPMDEDP-11275)
+
+
+<a name="v2.14.1"></a>
+## [v2.14.1] - 2023-01-23
+### Bug Fixes
+
+- Set unsuccessful status for Codebasebranch if commit hash is invalid [EPMDEDP-11189](https://jiraeu.epam.com/browse/EPMDEDP-11189)
+
+### Routine
+
+- Update git package version to 2.36.4-r0 [EPMDEDP-11260](https://jiraeu.epam.com/browse/EPMDEDP-11260)
+
 
 <a name="v2.14.0"></a>
 ## [v2.14.0] - 2022-12-06
@@ -30,9 +81,9 @@
 ### Code Refactoring
 
 - Use single chain [EPMDEDP-10498](https://jiraeu.epam.com/browse/EPMDEDP-10498)
+- Enable two more golangci-lint rules [EPMDEDP-10542](https://jiraeu.epam.com/browse/EPMDEDP-10542)
 - Resolve `revive` lint warnings [EPMDEDP-10542](https://jiraeu.epam.com/browse/EPMDEDP-10542)
 - Partially resolve golangci-lint warnings [EPMDEDP-10542](https://jiraeu.epam.com/browse/EPMDEDP-10542)
-- Enable two more golangci-lint rules [EPMDEDP-10542](https://jiraeu.epam.com/browse/EPMDEDP-10542)
 - Set remote git HEAD to default branch in Gerrit [EPMDEDP-10658](https://jiraeu.epam.com/browse/EPMDEDP-10658)
 - Create default codebasebranch for other flows [EPMDEDP-10733](https://jiraeu.epam.com/browse/EPMDEDP-10733)
 - Remove SQL DB repository [EPMDEDP-10751](https://jiraeu.epam.com/browse/EPMDEDP-10751)
@@ -49,6 +100,14 @@
 
 - Update Readme [EPMDEDP-11008](https://jiraeu.epam.com/browse/EPMDEDP-11008)
 - Update Readme [EPMDEDP-11008](https://jiraeu.epam.com/browse/EPMDEDP-11008)
+
+
+<a name="v2.13.2"></a>
+## [v2.13.2] - 2023-02-03
+### Bug Fixes
+
+- Get jira project info error handler [EPMDEDP-10454](https://jiraeu.epam.com/browse/EPMDEDP-10454)
+- Jira issue metadata wrong ticket blocker [EPMDEDP-10454](https://jiraeu.epam.com/browse/EPMDEDP-10454)
 
 
 <a name="v2.13.1"></a>
@@ -150,12 +209,12 @@
 
 ### Routine
 
-- Add automatic GitHub Release Action [EPMDEDP-7847](https://jiraeu.epam.com/browse/EPMDEDP-7847)
-- Bump main branch version [EPMDEDP-7847](https://jiraeu.epam.com/browse/EPMDEDP-7847)
 - Update release CI pipelines [EPMDEDP-7847](https://jiraeu.epam.com/browse/EPMDEDP-7847)
 - Fix git-chglog installation (GH Actions) [EPMDEDP-7847](https://jiraeu.epam.com/browse/EPMDEDP-7847)
 - Switch changelog from JiraIssueID to Scope [EPMDEDP-7847](https://jiraeu.epam.com/browse/EPMDEDP-7847)
 - Fix release pipeline in GH Actions [EPMDEDP-7847](https://jiraeu.epam.com/browse/EPMDEDP-7847)
+- Add automatic GitHub Release Action [EPMDEDP-7847](https://jiraeu.epam.com/browse/EPMDEDP-7847)
+- Bump main branch version [EPMDEDP-7847](https://jiraeu.epam.com/browse/EPMDEDP-7847)
 - Populate chart with Artifacthub annotations [EPMDEDP-8049](https://jiraeu.epam.com/browse/EPMDEDP-8049)
 - Update changelog [EPMDEDP-8227](https://jiraeu.epam.com/browse/EPMDEDP-8227)
 
@@ -190,8 +249,8 @@
 - Improve default ingress creation [EPMDEDP-7483](https://jiraeu.epam.com/browse/EPMDEDP-7483)
 - Proper exclusion for golang tests in sonar [EPMDEDP-7535](https://jiraeu.epam.com/browse/EPMDEDP-7535)
 - Exclude groovy files from sonar scan [EPMDEDP-7743](https://jiraeu.epam.com/browse/EPMDEDP-7743)
-- Provide operator's build information [EPMDEDP-7847](https://jiraeu.epam.com/browse/EPMDEDP-7847)
 - Switch to edp-common for BuildInfo [EPMDEDP-7847](https://jiraeu.epam.com/browse/EPMDEDP-7847)
+- Provide operator's build information [EPMDEDP-7847](https://jiraeu.epam.com/browse/EPMDEDP-7847)
 
 ### Bug Fixes
 
@@ -207,19 +266,19 @@
 ### Code Refactoring
 
 - Remove Jenkins pipelines logic [EPMDEDP-7136](https://jiraeu.epam.com/browse/EPMDEDP-7136)
+- Expand codebase-operator role [EPMDEDP-7279](https://jiraeu.epam.com/browse/EPMDEDP-7279)
 - Replace cluster-wide role/rolebinding to namespaced [EPMDEDP-7279](https://jiraeu.epam.com/browse/EPMDEDP-7279)
 - Add namespace field in roleRef in OKD RB, align CRB name [EPMDEDP-7279](https://jiraeu.epam.com/browse/EPMDEDP-7279)
-- Expand codebase-operator role [EPMDEDP-7279](https://jiraeu.epam.com/browse/EPMDEDP-7279)
 - Push with default branch for GitLabCI flow [EPMDEDP-7336](https://jiraeu.epam.com/browse/EPMDEDP-7336)
-- Increase code coverage for gerrit pkg [EPMDEDP-7505](https://jiraeu.epam.com/browse/EPMDEDP-7505)
+- Decrease Jenkins job status poll timeout [EPMDEDP-7505](https://jiraeu.epam.com/browse/EPMDEDP-7505)
 - Update VCS model [EPMDEDP-7505](https://jiraeu.epam.com/browse/EPMDEDP-7505)
 - Add unit tests for project creation in Gerrit [EPMDEDP-7505](https://jiraeu.epam.com/browse/EPMDEDP-7505)
 - Fix issue with template rendering [EPMDEDP-7505](https://jiraeu.epam.com/browse/EPMDEDP-7505)
-- Address staticcheck issues [EPMDEDP-7505](https://jiraeu.epam.com/browse/EPMDEDP-7505)
+- Increase code coverage for gerrit pkg [EPMDEDP-7505](https://jiraeu.epam.com/browse/EPMDEDP-7505)
 - Remove duplicate code [EPMDEDP-7505](https://jiraeu.epam.com/browse/EPMDEDP-7505)
 - Add validation and checks in put_cd_stage_deploy [EPMDEDP-7505](https://jiraeu.epam.com/browse/EPMDEDP-7505)
-- Decrease Jenkins job status poll timeout [EPMDEDP-7505](https://jiraeu.epam.com/browse/EPMDEDP-7505)
 - Remove duplicate code [EPMDEDP-7505](https://jiraeu.epam.com/browse/EPMDEDP-7505)
+- Address staticcheck issues [EPMDEDP-7505](https://jiraeu.epam.com/browse/EPMDEDP-7505)
 - Codebase and Codebasebranch ctrl [EPMDEDP-7505](https://jiraeu.epam.com/browse/EPMDEDP-7505)
 - Add tests for Controllers [EPMDEDP-7505](https://jiraeu.epam.com/browse/EPMDEDP-7505)
 - Disable jira integration by default [EPMDEDP-7812](https://jiraeu.epam.com/browse/EPMDEDP-7812)
@@ -281,8 +340,10 @@ Jenkins pipelines for code-review, build, create-release flow.
 - [MDTUDDM-673] Save git status in the intermediate operations
 
 
-[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.14.0...HEAD
-[v2.14.0]: https://github.com/epam/edp-codebase-operator/compare/v2.13.1...v2.14.0
+[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.14.1...HEAD
+[v2.14.1]: https://github.com/epam/edp-codebase-operator/compare/v2.14.0...v2.14.1
+[v2.14.0]: https://github.com/epam/edp-codebase-operator/compare/v2.13.2...v2.14.0
+[v2.13.2]: https://github.com/epam/edp-codebase-operator/compare/v2.13.1...v2.13.2
 [v2.13.1]: https://github.com/epam/edp-codebase-operator/compare/v2.13.0...v2.13.1
 [v2.13.0]: https://github.com/epam/edp-codebase-operator/compare/v2.12.0...v2.13.0
 [v2.12.0]: https://github.com/epam/edp-codebase-operator/compare/v2.11.0...v2.12.0
