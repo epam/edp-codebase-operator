@@ -6,12 +6,12 @@ const (
 	Openshift = "openshift"
 	K8S       = "kubernetes"
 
-	ptKey     = "PLATFORM_TYPE"
+	TypeEnv   = "PLATFORM_TYPE"
 	defaultPt = Openshift
 )
 
 func lookup() string {
-	if value, ok := os.LookupEnv(ptKey); ok {
+	if value, ok := os.LookupEnv(TypeEnv); ok {
 		return value
 	}
 

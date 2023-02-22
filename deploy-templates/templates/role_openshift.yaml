@@ -92,9 +92,9 @@ rules:
     - patch
     - delete
 - apiGroups:
-    - networking.k8s.io
+    - route.openshift.io
   resources:
-    - ingresses
+    - routes
   verbs:
     - get
     - list

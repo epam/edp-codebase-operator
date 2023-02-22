@@ -6,12 +6,14 @@ import (
 	"fmt"
 
 	"github.com/go-resty/resty/v2"
+	routeApi "github.com/openshift/api/route/v1"
 	coreV1 "k8s.io/api/core/v1"
 	networkingV1 "k8s.io/api/networking/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/gitprovider"
+	"github.com/epam/edp-codebase-operator/v2/pkg/platform"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
@@ -157,8 +159,22 @@ func (s *PutWebHook) getWebHookUrl(ctx context.Context, gitServer *codebaseApi.G
 		return "", fmt.Errorf("unsupported git provider %s", gitServer.Spec.GitProvider)
 	}
 
+	if platform.IsK8S() {
+		return s.getWebhookIngressUrl(ctx, ingressName, gitServer.Namespace)
+	}
+
+	return s.getWebhookRouteUrl(ctx, ingressName, gitServer.Namespace)
+}
+
+func (*PutWebHook) processCodebaseError(codebase *codebaseApi.Codebase, err error) error {
+	setFailedFields(codebase, codebaseApi.PutWebHook, err.Error())
+
+	return err
+}
+
+func (s *PutWebHook) getWebhookIngressUrl(ctx context.Context, ingressName, namespace string) (string, error) {
 	ingress := &networkingV1.Ingress{}
-	if err := s.client.Get(ctx, client.ObjectKey{Name: ingressName, Namespace: gitServer.Namespace}, ingress); err != nil {
+	if err := s.client.Get(ctx, client.ObjectKey{Name: ingressName, Namespace: namespace}, ingress); err != nil {
 		return "", fmt.Errorf("failed to get %s ingress: %w", ingressName, err)
 	}
 
@@ -169,8 +185,15 @@ func (s *PutWebHook) getWebHookUrl(ctx context.Context, gitServer *codebaseApi.G
 	return getHostWithProtocol(ingress.Spec.Rules[0].Host), nil
 }
 
-func (*PutWebHook) processCodebaseError(codebase *codebaseApi.Codebase, err error) error {
-	setFailedFields(codebase, codebaseApi.PutWebHook, err.Error())
+func (s *PutWebHook) getWebhookRouteUrl(ctx context.Context, routeName, namespace string) (string, error) {
+	route := &routeApi.Route{}
+	if err := s.client.Get(ctx, client.ObjectKey{Name: routeName, Namespace: namespace}, route); err != nil {
+		return "", fmt.Errorf("failed to get %s route: %w", routeName, err)
+	}
 
-	return err
+	if len(route.Status.Ingress) == 0 {
+		return "", fmt.Errorf("route %s doesn't have ingresses", routeName)
+	}
+
+	return getHostWithProtocol(route.Status.Ingress[0].Host), nil
 }

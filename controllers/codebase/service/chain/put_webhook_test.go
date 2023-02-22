@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-resty/resty/v2"
 	"github.com/jarcoal/httpmock"
+	routeApi "github.com/openshift/api/route/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	coreV1 "k8s.io/api/core/v1"
@@ -19,6 +20,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
+	"github.com/epam/edp-codebase-operator/v2/pkg/platform"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
@@ -29,12 +31,11 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 	defer httpmock.DeactivateAndReset()
 
 	schema := runtime.NewScheme()
-	err := codebaseApi.AddToScheme(schema)
-	require.NoError(t, err)
-	err = coreV1.AddToScheme(schema)
-	require.NoError(t, err)
-	err = networkingV1.AddToScheme(schema)
-	require.NoError(t, err)
+
+	require.NoError(t, codebaseApi.AddToScheme(schema))
+	require.NoError(t, coreV1.AddToScheme(schema))
+	require.NoError(t, networkingV1.AddToScheme(schema))
+	require.NoError(t, routeApi.AddToScheme(schema))
 
 	const namespace = "test-ns"
 
@@ -45,6 +46,7 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 		name        string
 		codebase    *codebaseApi.Codebase
 		k8sObjects  []client.Object
+		prepare     func(t *testing.T)
 		responder   func(t *testing.T)
 		wantErr     require.ErrorAssertionFunc
 		errContains string
@@ -61,6 +63,9 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 					GitServer:  "test-git-server",
 					GitUrlPath: &gitURL,
 				},
+			},
+			prepare: func(t *testing.T) {
+				t.Setenv(platform.TypeEnv, platform.K8S)
 			},
 			k8sObjects: []client.Object{
 				&codebaseApi.Codebase{
@@ -105,6 +110,76 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 			wantErr: require.NoError,
 		},
 		{
+			name: "success gitlab with route",
+			codebase: &codebaseApi.Codebase{
+				ObjectMeta: metaV1.ObjectMeta{
+					Namespace:       namespace,
+					Name:            "test-codebase",
+					ResourceVersion: "1",
+				},
+				Spec: codebaseApi.CodebaseSpec{
+					GitServer:  "test-git-server",
+					GitUrlPath: &gitURL,
+				},
+			},
+			prepare: func(t *testing.T) {
+				t.Setenv(platform.TypeEnv, platform.Openshift)
+			},
+			k8sObjects: []client.Object{
+				&codebaseApi.Codebase{
+					ObjectMeta: metaV1.ObjectMeta{
+						Namespace:       namespace,
+						Name:            "test-codebase",
+						ResourceVersion: "1",
+					},
+				},
+				&codebaseApi.GitServer{
+					ObjectMeta: metaV1.ObjectMeta{
+						Namespace: namespace,
+						Name:      "test-git-server",
+					},
+					Spec: codebaseApi.GitServerSpec{
+						GitHost:          "fake.gitlab.com",
+						GitUser:          "git",
+						HttpsPort:        443,
+						NameSshKeySecret: "test-secret",
+						GitProvider:      codebaseApi.GitProviderGitlab,
+					},
+				},
+				&coreV1.Secret{
+					ObjectMeta: metaV1.ObjectMeta{
+						Namespace: namespace,
+						Name:      "test-secret",
+					},
+					Data: map[string][]byte{
+						util.GitServerSecretTokenField:         []byte("test-token"),
+						util.GitServerSecretWebhookSecretField: []byte("test-webhook-secret"),
+					},
+				},
+				&routeApi.Route{
+					ObjectMeta: metaV1.ObjectMeta{
+						Namespace: namespace,
+						Name:      gitLabIngressName,
+					},
+					Status: routeApi.RouteStatus{
+						Ingress: []routeApi.RouteIngress{
+							{
+								Host: "fake.gitlab.com",
+							},
+						},
+					},
+				},
+			},
+			responder: func(t *testing.T) {
+				POSTResponder := httpmock.NewStringResponder(http.StatusOK, "")
+				httpmock.RegisterRegexpResponder(http.MethodPost, fakeUrlRegexp, POSTResponder)
+
+				GETResponder := httpmock.NewStringResponder(http.StatusOK, "")
+				httpmock.RegisterRegexpResponder(http.MethodGet, fakeUrlRegexp, GETResponder)
+			},
+			wantErr: require.NoError,
+		},
+		{
 			name: "success github",
 			codebase: &codebaseApi.Codebase{
 				ObjectMeta: metaV1.ObjectMeta{
@@ -116,6 +191,9 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 					GitServer:  "test-git-server",
 					GitUrlPath: &gitURL,
 				},
+			},
+			prepare: func(t *testing.T) {
+				t.Setenv(platform.TypeEnv, platform.K8S)
 			},
 			k8sObjects: []client.Object{
 				&codebaseApi.Codebase{
@@ -171,6 +249,9 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 					GitServer:  "test-git-server",
 					GitUrlPath: &gitURL,
 				},
+			},
+			prepare: func(t *testing.T) {
+				t.Setenv(platform.TypeEnv, platform.K8S)
 			},
 			k8sObjects: []client.Object{
 				&codebaseApi.Codebase{
@@ -229,6 +310,9 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 					GitUrlPath: &gitURL,
 				},
 			},
+			prepare: func(t *testing.T) {
+				t.Setenv(platform.TypeEnv, platform.K8S)
+			},
 			k8sObjects: []client.Object{
 				&codebaseApi.Codebase{
 					ObjectMeta: metaV1.ObjectMeta{
@@ -286,6 +370,9 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 					WebHookID: 999,
 				},
 			},
+			prepare: func(t *testing.T) {
+				t.Setenv(platform.TypeEnv, platform.K8S)
+			},
 			k8sObjects: []client.Object{
 				&codebaseApi.GitServer{
 					ObjectMeta: metaV1.ObjectMeta{
@@ -332,6 +419,9 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 				Status: codebaseApi.CodebaseStatus{
 					WebHookID: 999,
 				},
+			},
+			prepare: func(t *testing.T) {
+				t.Setenv(platform.TypeEnv, platform.K8S)
 			},
 			k8sObjects: []client.Object{
 				&codebaseApi.Codebase{
@@ -392,6 +482,9 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 					GitUrlPath: &gitURL,
 				},
 			},
+			prepare: func(t *testing.T) {
+				t.Setenv(platform.TypeEnv, platform.K8S)
+			},
 			k8sObjects: []client.Object{
 				&codebaseApi.GitServer{
 					ObjectMeta: metaV1.ObjectMeta{
@@ -425,6 +518,9 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 				Status: codebaseApi.CodebaseStatus{
 					WebHookID: 999,
 				},
+			},
+			prepare: func(t *testing.T) {
+				t.Setenv(platform.TypeEnv, platform.K8S)
 			},
 			k8sObjects: []client.Object{
 				&codebaseApi.GitServer{
@@ -471,6 +567,9 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 					GitUrlPath: &gitURL,
 				},
 			},
+			prepare: func(t *testing.T) {
+				t.Setenv(platform.TypeEnv, platform.K8S)
+			},
 			k8sObjects: []client.Object{
 				&codebaseApi.GitServer{
 					ObjectMeta: metaV1.ObjectMeta{
@@ -514,6 +613,9 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 					GitServer:  "test-git-server",
 					GitUrlPath: &gitURL,
 				},
+			},
+			prepare: func(t *testing.T) {
+				t.Setenv(platform.TypeEnv, platform.K8S)
 			},
 			k8sObjects: []client.Object{
 				&codebaseApi.GitServer{
@@ -561,6 +663,9 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 					GitUrlPath: &gitURL,
 				},
 			},
+			prepare: func(t *testing.T) {
+				t.Setenv(platform.TypeEnv, platform.K8S)
+			},
 			k8sObjects: []client.Object{
 				&codebaseApi.GitServer{
 					ObjectMeta: metaV1.ObjectMeta{
@@ -601,6 +706,9 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 					GitUrlPath: &gitURL,
 				},
 			},
+			prepare: func(t *testing.T) {
+				t.Setenv(platform.TypeEnv, platform.K8S)
+			},
 			k8sObjects: []client.Object{
 				&codebaseApi.GitServer{
 					ObjectMeta: metaV1.ObjectMeta{
@@ -638,6 +746,9 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 					GitUrlPath: &gitURL,
 				},
 			},
+			prepare: func(t *testing.T) {
+				t.Setenv(platform.TypeEnv, platform.K8S)
+			},
 			k8sObjects: []client.Object{
 				&codebaseApi.GitServer{
 					ObjectMeta: metaV1.ObjectMeta{
@@ -667,6 +778,9 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 				Spec: codebaseApi.CodebaseSpec{
 					GitServer: "test-git-server",
 				},
+			},
+			prepare: func(t *testing.T) {
+				t.Setenv(platform.TypeEnv, platform.K8S)
 			},
 			k8sObjects: []client.Object{
 				&codebaseApi.GitServer{
@@ -707,6 +821,9 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 					GitServer: "test-git-server",
 				},
 			},
+			prepare: func(t *testing.T) {
+				t.Setenv(platform.TypeEnv, platform.K8S)
+			},
 			k8sObjects:  []client.Object{},
 			responder:   func(t *testing.T) {},
 			wantErr:     require.Error,
@@ -718,6 +835,7 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			httpmock.Reset()
 			tt.responder(t)
+			tt.prepare(t)
 
 			k8sClient := fake.NewClientBuilder().WithScheme(schema).WithObjects(tt.k8sObjects...).Build()
 			s := NewPutWebHook(k8sClient, restyClient)

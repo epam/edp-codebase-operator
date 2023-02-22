@@ -23,6 +23,7 @@ require (
 	github.com/go-logr/logr v1.2.3
 	github.com/go-resty/resty/v2 v2.6.0
 	github.com/jarcoal/httpmock v1.0.8
+	github.com/openshift/api v3.9.0+incompatible
 	github.com/operator-framework/operator-lib v0.11.0
 	github.com/stretchr/testify v1.8.1
 	github.com/trivago/tgo v1.0.7
