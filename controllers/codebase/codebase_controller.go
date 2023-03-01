@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
-	predicateLib "github.com/operator-framework/operator-lib/predicate"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -25,6 +24,7 @@ import (
 	cHand "github.com/epam/edp-codebase-operator/v2/controllers/codebase/service/chain/handler"
 	validate "github.com/epam/edp-codebase-operator/v2/controllers/codebase/validation"
 	"github.com/epam/edp-codebase-operator/v2/pkg/objectmodifier"
+	codebasepredicate "github.com/epam/edp-codebase-operator/v2/pkg/predicate"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
@@ -72,13 +72,10 @@ func (r *ReconcileCodebase) SetupWithManager(mgr ctrl.Manager) error {
 		},
 	}
 
-	pause, err := predicateLib.NewPause(util.PauseAnnotation)
-	if err != nil {
-		return fmt.Errorf("failed to create pause predicate: %w", err)
-	}
+	pause := codebasepredicate.NewPause(r.log)
 
-	err = ctrl.NewControllerManagedBy(mgr).
-		For(&codebaseApi.Codebase{}, builder.WithPredicates(p, pause)).
+	err := ctrl.NewControllerManagedBy(mgr).
+		For(&codebaseApi.Codebase{}, builder.WithPredicates(pause, p)).
 		Complete(r)
 	if err != nil {
 		return fmt.Errorf("failed to build Codebase controller: %w", err)

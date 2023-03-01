@@ -6,7 +6,6 @@ import (
 	"reflect"
 
 	"github.com/go-logr/logr"
-	predicateLib "github.com/operator-framework/operator-lib/predicate"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -17,7 +16,7 @@ import (
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	"github.com/epam/edp-codebase-operator/v2/controllers/codebaseimagestream/chain"
-	"github.com/epam/edp-codebase-operator/v2/pkg/util"
+	codebasepredicate "github.com/epam/edp-codebase-operator/v2/pkg/predicate"
 )
 
 func NewReconcileCodebaseImageStream(c client.Client, log logr.Logger) *ReconcileCodebaseImageStream {
@@ -56,12 +55,9 @@ func (r *ReconcileCodebaseImageStream) SetupWithManager(mgr ctrl.Manager) error 
 		},
 	}
 
-	pause, err := predicateLib.NewPause(util.PauseAnnotation)
-	if err != nil {
-		return fmt.Errorf("failed to create pause predicate: %w", err)
-	}
+	pause := codebasepredicate.NewPause(r.log)
 
-	err = ctrl.NewControllerManagedBy(mgr).
+	err := ctrl.NewControllerManagedBy(mgr).
 		For(&codebaseApi.CodebaseImageStream{}, builder.WithPredicates(p, pause)).
 		Complete(r)
 	if err != nil {

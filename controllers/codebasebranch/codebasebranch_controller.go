@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
-	predicateLib "github.com/operator-framework/operator-lib/predicate"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -29,6 +28,7 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/controllers/codebasebranch/service"
 	"github.com/epam/edp-codebase-operator/v2/pkg/codebasebranch"
 	"github.com/epam/edp-codebase-operator/v2/pkg/model"
+	codebasepredicate "github.com/epam/edp-codebase-operator/v2/pkg/predicate"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
@@ -76,12 +76,9 @@ func (r *ReconcileCodebaseBranch) SetupWithManager(mgr ctrl.Manager, maxConcurre
 		},
 	}
 
-	pause, err := predicateLib.NewPause(util.PauseAnnotation)
-	if err != nil {
-		return fmt.Errorf("failed to create pause predicate: %w", err)
-	}
+	pause := codebasepredicate.NewPause(r.log)
 
-	err = ctrl.NewControllerManagedBy(mgr).
+	err := ctrl.NewControllerManagedBy(mgr).
 		For(&codebaseApi.CodebaseBranch{}, builder.WithPredicates(p, pause)).
 		WithOptions(controller.Options{
 			MaxConcurrentReconciles: maxConcurrentReconciles,
