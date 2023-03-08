@@ -86,7 +86,7 @@ func (h *PutGitlabCiFile) tryToPutGitlabCIFile(c *codebaseApi.Codebase) error {
 	p := gs.SshPort
 
 	if err := h.pushChanges(util.GetWorkDir(c.Name, c.Namespace), k, u, c.Spec.DefaultBranch, p); err != nil {
-		return fmt.Errorf("failed to push %v for %v codebase: %w", versionFileName, c.Name, err)
+		return fmt.Errorf("failed to push %v for %v codebase: %w", util.GitlabCi, c.Name, err)
 	}
 
 	return nil
@@ -138,7 +138,7 @@ func (h *PutGitlabCiFile) gitlabCiFileExists(ctx context.Context, codebaseName, 
 		return false, fmt.Errorf("failed to get project_status value for %v codebase: %w", codebaseName, err)
 	}
 
-	if util.ContainsString([]string{util.GitlabCiFilePushedStatus, util.ProjectVersionGoFilePushedStatus}, ps) {
+	if util.ContainsString([]string{util.GitlabCiFilePushedStatus}, ps) {
 		return true, nil
 	}
 

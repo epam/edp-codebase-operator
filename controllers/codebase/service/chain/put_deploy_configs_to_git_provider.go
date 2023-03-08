@@ -100,7 +100,7 @@ func (h *PutDeployConfigsToGitProvider) skipTemplatePreparing(ctx context.Contex
 		return true, fmt.Errorf("failed to get project_status value for %v codebase: %w", codebaseName, err)
 	}
 
-	if util.ContainsString([]string{util.ProjectTemplatesPushedStatus, util.ProjectVersionGoFilePushedStatus}, ps) {
+	if util.ContainsString([]string{util.ProjectTemplatesPushedStatus}, ps) {
 		return true, nil
 	}
 

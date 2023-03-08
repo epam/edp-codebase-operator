@@ -35,10 +35,9 @@ const (
 	CDStageJenkinsDeploymentKind = "CDStageJenkinsDeployment"
 	V2APIVersion                 = "v2.edp.epam.com/v1"
 
-	ProjectPushedStatus              = "pushed"
-	ProjectTemplatesPushedStatus     = "templates_pushed"
-	ProjectVersionGoFilePushedStatus = "version_go"
-	GitlabCiFilePushedStatus         = "gitlab ci"
+	ProjectPushedStatus          = "pushed"
+	ProjectTemplatesPushedStatus = "templates_pushed"
+	GitlabCiFilePushedStatus     = "gitlab ci"
 
 	GithubDomain = "https://github.com/epmd-edp"
 

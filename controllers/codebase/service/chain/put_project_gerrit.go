@@ -53,7 +53,7 @@ func (h *PutProjectGerrit) ServeRequest(ctx context.Context, c *codebaseApi.Code
 		return fmt.Errorf("failed to get project_status value for %v codebase: %w", c.Name, err)
 	}
 
-	status := []string{util.ProjectPushedStatus, util.ProjectTemplatesPushedStatus, util.ProjectVersionGoFilePushedStatus}
+	status := []string{util.ProjectPushedStatus, util.ProjectTemplatesPushedStatus}
 	if util.ContainsString(status, ps) {
 		log.Info("skip pushing to gerrit. project already pushed", "name", c.Name)
 

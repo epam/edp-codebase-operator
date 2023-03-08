@@ -21,6 +21,11 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
+const (
+	fakeCodebaseName = "fake_codebase_name"
+	goLang           = "go"
+)
+
 func TestPutGitlabCiFile_ShouldPass(t *testing.T) {
 	ctx := context.Background()
 

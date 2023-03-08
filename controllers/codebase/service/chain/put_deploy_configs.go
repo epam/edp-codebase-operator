@@ -54,7 +54,7 @@ func (h *PutDeployConfigs) tryToPushConfigs(ctx context.Context, c *codebaseApi.
 		return fmt.Errorf("failed to get project_status value for %v codebase: %w", c.Name, err)
 	}
 
-	status := []string{util.ProjectTemplatesPushedStatus, util.ProjectVersionGoFilePushedStatus}
+	status := []string{util.ProjectTemplatesPushedStatus}
 	if util.ContainsString(status, ps) {
 		log.Info("skip pushing templates to gerrit. templates already pushed", "name", c.Name)
 

@@ -93,7 +93,7 @@ func (h *PutGitlabCiDeployConfigs) skipTemplatePreparing(ctx context.Context, ed
 		return true, fmt.Errorf("failed to get project_status value for %v codebase: %w", codebaseName, err)
 	}
 
-	if util.ContainsString([]string{util.ProjectTemplatesPushedStatus, util.ProjectVersionGoFilePushedStatus, util.GitlabCiFilePushedStatus}, ps) {
+	if util.ContainsString([]string{util.ProjectTemplatesPushedStatus, util.GitlabCiFilePushedStatus}, ps) {
 		return true, nil
 	}
 
