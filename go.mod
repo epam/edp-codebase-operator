@@ -13,7 +13,6 @@ replace (
 require (
 	github.com/andygrunwald/go-jira v1.14.0
 	github.com/bndr/gojenkins v0.2.1-0.20181125150310-de43c03cf849
-	github.com/dchest/uniuri v0.0.0-20160212164326-8902c56451e9
 	github.com/epam/edp-cd-pipeline-operator/v2 v2.3.0-58.0.20230125151029-744b0fbb137f
 	github.com/epam/edp-common v0.0.0-20230104131608-33d095012fe8
 	github.com/epam/edp-component-operator v0.12.0
@@ -24,7 +23,6 @@ require (
 	github.com/go-resty/resty/v2 v2.6.0
 	github.com/jarcoal/httpmock v1.0.8
 	github.com/openshift/api v3.9.0+incompatible
-	github.com/operator-framework/operator-lib v0.11.0
 	github.com/stretchr/testify v1.8.1
 	github.com/trivago/tgo v1.0.7
 	go.uber.org/multierr v1.9.0
@@ -89,11 +87,11 @@ require (
 	github.com/xanzy/ssh-agent v0.3.0 // indirect
 	go.uber.org/atomic v1.10.0 // indirect
 	go.uber.org/zap v1.24.0 // indirect
-	golang.org/x/net v0.5.0 // indirect
+	golang.org/x/net v0.8.0 // indirect
 	golang.org/x/oauth2 v0.4.0 // indirect
-	golang.org/x/sys v0.4.0 // indirect
-	golang.org/x/term v0.4.0 // indirect
-	golang.org/x/text v0.6.0 // indirect
+	golang.org/x/sys v0.6.0 // indirect
+	golang.org/x/term v0.6.0 // indirect
+	golang.org/x/text v0.8.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.2.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
