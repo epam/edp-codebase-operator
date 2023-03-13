@@ -64,6 +64,10 @@ func (r *ReconcileCodebaseBranch) SetupWithManager(mgr ctrl.Manager, maxConcurre
 				return false
 			}
 
+			if codebasepredicate.PauseAnnotationChanged(oo, no) {
+				return true
+			}
+
 			if !reflect.DeepEqual(oo.Spec, no.Spec) {
 				return true
 			}
@@ -79,7 +83,7 @@ func (r *ReconcileCodebaseBranch) SetupWithManager(mgr ctrl.Manager, maxConcurre
 	pause := codebasepredicate.NewPause(r.log)
 
 	err := ctrl.NewControllerManagedBy(mgr).
-		For(&codebaseApi.CodebaseBranch{}, builder.WithPredicates(p, pause)).
+		For(&codebaseApi.CodebaseBranch{}, builder.WithPredicates(pause, p)).
 		WithOptions(controller.Options{
 			MaxConcurrentReconciles: maxConcurrentReconciles,
 		}).

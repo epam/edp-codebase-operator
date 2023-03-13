@@ -60,6 +60,10 @@ func (r *ReconcileCodebase) SetupWithManager(mgr ctrl.Manager) error {
 				return false
 			}
 
+			if codebasepredicate.PauseAnnotationChanged(oo, no) {
+				return true
+			}
+
 			if !reflect.DeepEqual(oo.Spec, no.Spec) {
 				return true
 			}

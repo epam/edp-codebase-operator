@@ -63,6 +63,10 @@ func (r *ReconcileJiraIssueMetadata) SetupWithManager(mgr ctrl.Manager) error {
 				return false
 			}
 
+			if codebasepredicate.PauseAnnotationChanged(oo, no) {
+				return true
+			}
+
 			return !reflect.DeepEqual(oo.Spec, no.Spec)
 		},
 	}
@@ -70,7 +74,7 @@ func (r *ReconcileJiraIssueMetadata) SetupWithManager(mgr ctrl.Manager) error {
 	pause := codebasepredicate.NewPause(r.log)
 
 	err := ctrl.NewControllerManagedBy(mgr).
-		For(&codebaseApi.JiraIssueMetadata{}, builder.WithPredicates(p, pause)).
+		For(&codebaseApi.JiraIssueMetadata{}, builder.WithPredicates(pause, p)).
 		Complete(r)
 	if err != nil {
 		return fmt.Errorf("failed to build JiraIssueMetadata controller: %w", err)

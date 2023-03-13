@@ -53,6 +53,10 @@ func (r *ReconcileJiraServer) SetupWithManager(mgr ctrl.Manager) error {
 				return false
 			}
 
+			if codebasepredicate.PauseAnnotationChanged(oldObject, newObject) {
+				return true
+			}
+
 			return oldObject.Status == newObject.Status
 		},
 	}
@@ -60,7 +64,7 @@ func (r *ReconcileJiraServer) SetupWithManager(mgr ctrl.Manager) error {
 	pause := codebasepredicate.NewPause(r.log)
 
 	err := ctrl.NewControllerManagedBy(mgr).
-		For(&codebaseApi.JiraServer{}, builder.WithPredicates(p, pause)).
+		For(&codebaseApi.JiraServer{}, builder.WithPredicates(pause, p)).
 		Complete(r)
 	if err != nil {
 		return fmt.Errorf("failed to build JiraServer controller: %w", err)

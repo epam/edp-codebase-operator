@@ -47,6 +47,10 @@ func (r *ReconcileCodebaseImageStream) SetupWithManager(mgr ctrl.Manager) error 
 				return false
 			}
 
+			if codebasepredicate.PauseAnnotationChanged(oo, on) {
+				return true
+			}
+
 			if !reflect.DeepEqual(oo.Spec.Tags, on.Spec.Tags) && on.ObjectMeta.Labels != nil {
 				return true
 			}
@@ -58,7 +62,7 @@ func (r *ReconcileCodebaseImageStream) SetupWithManager(mgr ctrl.Manager) error 
 	pause := codebasepredicate.NewPause(r.log)
 
 	err := ctrl.NewControllerManagedBy(mgr).
-		For(&codebaseApi.CodebaseImageStream{}, builder.WithPredicates(p, pause)).
+		For(&codebaseApi.CodebaseImageStream{}, builder.WithPredicates(pause, p)).
 		Complete(r)
 	if err != nil {
 		return fmt.Errorf("failed to build CodebaseImageStream controller: %w", err)

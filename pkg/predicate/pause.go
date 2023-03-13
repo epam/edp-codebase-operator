@@ -91,12 +91,33 @@ func (p Pause) run(obj client.Object) bool {
 	if pause {
 		p.log.Info(
 			"Resource reconciliation is paused",
-			"kind",
-			obj.GetObjectKind().GroupVersionKind().Kind,
 			"name", obj.GetName(),
 			"namespace", obj.GetNamespace(),
 		)
 	}
 
 	return !pause
+}
+
+// PauseAnnotationChanged returns true if the pause annotation has been changed.
+func PauseAnnotationChanged(objOld, objNew client.Object) bool {
+	if objOld == nil || objNew == nil {
+		return false
+	}
+
+	oldAnno := objOld.GetAnnotations()
+	newAnno := objNew.GetAnnotations()
+
+	oldStr, oldHasAnno := oldAnno[pauseAnnotation]
+	newStr, newHasAnno := newAnno[pauseAnnotation]
+
+	if oldHasAnno && !newHasAnno {
+		return true
+	}
+
+	if !oldHasAnno && newHasAnno {
+		return true
+	}
+
+	return oldStr != newStr
 }

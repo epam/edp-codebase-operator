@@ -42,6 +42,20 @@ type ReconcileCDStageDeploy struct {
 func (r *ReconcileCDStageDeploy) SetupWithManager(mgr ctrl.Manager) error {
 	p := predicate.Funcs{
 		UpdateFunc: func(e event.UpdateEvent) bool {
+			oo, ok := e.ObjectOld.(*codebaseApi.CDStageDeploy)
+			if !ok {
+				return false
+			}
+
+			no, ok := e.ObjectNew.(*codebaseApi.CDStageDeploy)
+			if !ok {
+				return false
+			}
+
+			if codebasepredicate.PauseAnnotationChanged(oo, no) {
+				return true
+			}
+
 			return false
 		},
 	}
