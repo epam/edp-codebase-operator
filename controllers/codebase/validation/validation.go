@@ -12,7 +12,8 @@ var log = ctrl.Log.WithName("codebase_validator")
 
 var allowedCodebaseSettings = map[string][]string{
 	"add_repo_strategy": {"create", "clone", "import"},
-	"language":          {"java", "dotnet", "javascript", "groovy-pipeline", "other", "go", "python", "terraform", "rego", "container", "helm"},
+	"language": {"java", "dotnet", "javascript",
+		"groovy-pipeline", "other", "go", "python", "terraform", "rego", "container", "helm", "csharp"},
 }
 
 func IsCodebaseValid(cr *codebaseApi.Codebase) bool {
