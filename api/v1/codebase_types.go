@@ -162,6 +162,7 @@ const (
 	CleanData                        ActionType = "clean_data"
 	ImportProject                    ActionType = "import_project"
 	PutWebHook                       ActionType = "put_web_hook"
+	PutGitWebRepoUrl                 ActionType = "put_git_web_repo_url"
 	PutGitlabCIFile                  ActionType = "put_gitlab_ci_file"
 	PutBranchForGitlabCiCodebase     ActionType = "put_branch_for_gitlab_ci_codebase"
 	PutCodebaseImageStream           ActionType = "put_codebase_image_stream"
@@ -223,6 +224,10 @@ type CodebaseStatus struct {
 	// Stores ID of webhook which was created for a codebase.
 	// +optional
 	WebHookID int `json:"webHookID,omitempty"`
+
+	// Stores GitWebUrl of codebase.
+	// +optional
+	GitWebUrl string `json:"gitWebUrl,omitempty"`
 }
 
 // +kubebuilder:object:root=true

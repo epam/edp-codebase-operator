@@ -183,6 +183,7 @@ func (r *ReconcileCodebase) updateFinishStatus(ctx context.Context, c *codebaseA
 		FailureCount:    0,
 		Git:             c.Status.Git,
 		WebHookID:       c.Status.WebHookID,
+		GitWebUrl:       c.Status.GitWebUrl,
 	}
 
 	return r.updateStatus(ctx, c)

@@ -179,6 +179,9 @@ spec:
               git:
                 description: Specifies a status of action for git.
                 type: string
+              gitWebUrl:
+                description: Stores GitWebUrl of codebase.
+                type: string
               lastTimeUpdated:
                 description: Information when the last time the action were performed.
                 format: date-time

@@ -51,15 +51,14 @@ func setIntermediateSuccessFields(ctx context.Context, c client.Client, cb *code
 		FailureCount:    cb.Status.FailureCount,
 		Git:             cb.Status.Git,
 		WebHookID:       cb.Status.WebHookID,
+		GitWebUrl:       cb.Status.GitWebUrl,
 	}
 
-	err := c.Status().Update(ctx, cb)
-	if err != nil {
+	if err := c.Status().Update(ctx, cb); err != nil {
 		return fmt.Errorf("failed to update status field of %q resource 'Codebase': %w", cb.Name, err)
 	}
 
-	err = c.Update(ctx, cb)
-	if err != nil {
+	if err := c.Update(ctx, cb); err != nil {
 		return fmt.Errorf("failed to update %q resource 'Codebase': %w", cb.Name, err)
 	}
 

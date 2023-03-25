@@ -1056,6 +1056,13 @@ CodebaseStatus defines the observed state of Codebase.
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>gitWebUrl</b></td>
+        <td>string</td>
+        <td>
+          Stores GitWebUrl of codebase.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>webHookID</b></td>
         <td>integer</td>
         <td>

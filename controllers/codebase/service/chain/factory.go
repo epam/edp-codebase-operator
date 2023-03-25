@@ -27,6 +27,7 @@ func MakeGerritDefChain(c client.Client, cr repository.CodebaseRepository) handl
 	gp := &gitserver.GitProvider{}
 
 	ch.Use(
+		NewPutGitWebRepoUrl(c),
 		NewPutProjectGerrit(c, cr, gp),
 		NewPutGerritReplication(c),
 		NewPutPerfDataSources(c),
@@ -46,6 +47,7 @@ func MakeGerritTektonChain(c client.Client, cr repository.CodebaseRepository) ha
 	gp := &gitserver.GitProvider{}
 
 	ch.Use(
+		NewPutGitWebRepoUrl(c),
 		NewPutProjectGerrit(c, cr, gp),
 		NewPutGerritReplication(c),
 		NewPutPerfDataSources(c),
@@ -64,6 +66,7 @@ func MakeThirdPartyVcsProviderDefChain(c client.Client, cr repository.CodebaseRe
 	gp := &gitserver.GitProvider{}
 
 	ch.Use(
+		NewPutGitWebRepoUrl(c),
 		NewCloneGitProject(c, gp),
 		NewPutPerfDataSources(c),
 		NewPutDeployConfigsToGitProvider(c, cr, gp),
@@ -96,6 +99,7 @@ func MakeGitlabCiDefChain(c client.Client, cr repository.CodebaseRepository) han
 	gp := &gitserver.GitProvider{}
 
 	ch.Use(
+		NewPutGitWebRepoUrl(c),
 		NewCloneGitProject(c, gp),
 		NewPutPerfDataSources(c),
 		NewPutGitlabCiDeployConfigs(c, cr, gp),
@@ -114,6 +118,7 @@ func MakeTektonCiDefChain(c client.Client, cr repository.CodebaseRepository) han
 	gp := &gitserver.GitProvider{}
 
 	ch.Use(
+		NewPutGitWebRepoUrl(c),
 		NewPutWebHook(c, resty.New()),
 		NewCloneGitProject(c, gp),
 		NewPutPerfDataSources(c),
