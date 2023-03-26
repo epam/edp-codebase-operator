@@ -1,6 +1,6 @@
 # codebase-operator
 
-![Version: 2.15.0-SNAPSHOT](https://img.shields.io/badge/Version-2.15.0--SNAPSHOT-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 2.15.0-SNAPSHOT](https://img.shields.io/badge/AppVersion-2.15.0--SNAPSHOT-informational?style=flat-square)
+![Version: 2.16.0-SNAPSHOT](https://img.shields.io/badge/Version-2.16.0--SNAPSHOT-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 2.16.0-SNAPSHOT](https://img.shields.io/badge/AppVersion-2.16.0--SNAPSHOT-informational?style=flat-square)
 
 A Helm chart for EDP Codebase Operator
 
@@ -27,7 +27,7 @@ A Helm chart for EDP Codebase Operator
 | envs[0].value | string | `"360"` |  |
 | envs[1] | object | `{"name":"CODEBASE_BRANCH_MAX_CONCURRENT_RECONCILES","value":"3"}` | Maximum number of parallel reconciliation codebasebranches |
 | global.edpName | string | `""` | namespace or a project name (in case of OpenShift) |
-| global.platform | string | `"openshift"` | platform type that can be "kubernetes" or "openshift" |
+| global.platform | string | `"kubernetes"` | platform type that can be "kubernetes" or "openshift" |
 | image.repository | string | `"epamedp/codebase-operator"` | EDP codebase-operator Docker image name. The released image can be found on [Dockerhub](https://hub.docker.com/r/epamedp/codebase-operator) |
 | image.tag | string | `nil` | EDP codebase-operator Docker image tag. The released image can be found on [Dockerhub](https://hub.docker.com/r/epamedp/codebase-operator/tags) |
 | imagePullPolicy | string | `"IfNotPresent"` |  |
