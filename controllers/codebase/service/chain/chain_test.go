@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/epam/edp-codebase-operator/v2/controllers/codebase/service/chain/handler"
-	"github.com/epam/edp-codebase-operator/v2/controllers/codebase/service/chain/mocks"
+	handlermocks "github.com/epam/edp-codebase-operator/v2/controllers/codebase/service/chain/handler/mocks"
 )
 
 func Test_chain_Use(t *testing.T) {
@@ -31,7 +31,7 @@ func Test_chain_Use(t *testing.T) {
 				handlers: []handler.CodebaseHandler{},
 			},
 			args: args{
-				handlers: []handler.CodebaseHandler{mocks.NewCodebaseHandler(t)},
+				handlers: []handler.CodebaseHandler{handlermocks.NewCodebaseHandler(t)},
 			},
 		},
 	}

@@ -109,14 +109,7 @@ func Test_tryGetRepoUrl(t *testing.T) {
 			got, err := tryGetRepoUrl(tt.args.spec)
 
 			tt.wantErr(t, err)
-
-			if err != nil {
-				require.Nil(t, got)
-
-				return
-			}
-
-			assert.Equal(t, &tt.want, got)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
@@ -182,8 +175,7 @@ func TestGetRepoUrl(t *testing.T) {
 			got, err := GetRepoUrl(codebase)
 
 			tt.wantErr(t, err)
-
-			assert.Equal(t, &tt.want, got)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
@@ -237,6 +229,79 @@ func TestTrimGitFromURL(t *testing.T) {
 			t.Parallel()
 
 			assert.Equal(t, tt.want, TrimGitFromURL(tt.args.url))
+		})
+	}
+}
+
+func TestGetHostWithProtocol(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name string
+		host string
+		want string
+	}{
+		{
+			name: "should add https://",
+			host: "github.com",
+			want: "https://github.com",
+		},
+		{
+			name: "should not add https://",
+			host: "https://github.com",
+			want: "https://github.com",
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.want, GetHostWithProtocol(tt.host))
+		})
+	}
+}
+
+func TestGetSSHUrl(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name      string
+		gitServer *codebaseApi.GitServer
+		repoName  string
+		want      string
+	}{
+		{
+			name: "should create gerrit ssh url",
+			gitServer: &codebaseApi.GitServer{
+				Spec: codebaseApi.GitServerSpec{
+					GitHost:     "gerrit",
+					GitProvider: codebaseApi.GitProviderGerrit,
+					SshPort:     22,
+				},
+			},
+			repoName: "test",
+			want:     "ssh://gerrit:22/test",
+		},
+		{
+			name: "should create github ssh url",
+			gitServer: &codebaseApi.GitServer{
+				Spec: codebaseApi.GitServerSpec{
+					GitHost:     "github.com",
+					GitProvider: codebaseApi.GitProviderGithub,
+					SshPort:     22,
+				},
+			},
+			repoName: "owner/repo",
+			want:     "git@github.com:owner/repo.git",
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			assert.Equal(t, tt.want, GetSSHUrl(tt.gitServer, tt.repoName))
 		})
 	}
 }

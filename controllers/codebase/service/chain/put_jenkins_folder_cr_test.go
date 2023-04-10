@@ -32,6 +32,7 @@ func TestPutJenkinsFolder_ShouldCreateJenkinsFolder(t *testing.T) {
 			Repository: &codebaseApi.Repository{
 				Url: "https://example.com",
 			},
+			CiTool: util.CIJenkins,
 		},
 	}
 
@@ -82,6 +83,9 @@ func TestPutJenkinsFolder_ShouldSkipWhenJenkinsFolderExists(t *testing.T) {
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
+		Spec: codebaseApi.CodebaseSpec{
+			CiTool: util.CIJenkins,
+		},
 	}
 
 	jf := &jenkinsApi.JenkinsFolder{
@@ -110,6 +114,9 @@ func TestPutJenkinsFolder_ShouldFailWhenGetJenkinsFolder(t *testing.T) {
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
+		Spec: codebaseApi.CodebaseSpec{
+			CiTool: util.CIJenkins,
+		},
 	}
 
 	scheme := runtime.NewScheme()
@@ -133,6 +140,7 @@ func TestPutJenkinsFolder_ShouldFailWhenGetGitServer(t *testing.T) {
 		},
 		Spec: codebaseApi.CodebaseSpec{
 			GitServer: fakeName,
+			CiTool:    util.CIJenkins,
 		},
 	}
 	jf := &jenkinsApi.JenkinsFolder{}

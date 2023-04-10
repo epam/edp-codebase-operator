@@ -3,7 +3,6 @@ package codebasebranch
 import (
 	"context"
 	"net/http"
-	"os"
 	"strings"
 	"testing"
 	"time"
@@ -85,10 +84,7 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldFailNotFound(t *testing.T) {
 }
 
 func TestReconcileCodebaseBranch_Reconcile_ShouldFailGetCodebase(t *testing.T) {
-	err := os.Setenv("WORKING_DIR", "/tmp/1")
-	if err != nil {
-		t.Fatal(err)
-	}
+	t.Setenv("WORKING_DIR", "/tmp/1")
 
 	c := &codebaseApi.CodebaseBranch{
 		ObjectMeta: metaV1.ObjectMeta{
@@ -126,10 +122,7 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldFailGetCodebase(t *testing.T) {
 }
 
 func TestReconcileCodebaseBranch_Reconcile_ShouldFailDeleteCodebasebranch(t *testing.T) {
-	err := os.Setenv("WORKING_DIR", "/tmp/1")
-	if err != nil {
-		t.Fatal(err)
-	}
+	t.Setenv("WORKING_DIR", "/tmp/1")
 
 	c := &codebaseApi.CodebaseBranch{
 		ObjectMeta: metaV1.ObjectMeta{
@@ -182,10 +175,7 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldFailDeleteCodebasebranch(t *tes
 }
 
 func TestReconcileCodebaseBranch_Reconcile_ShouldPassDeleteCodebasebranch(t *testing.T) {
-	err := os.Setenv("WORKING_DIR", "/tmp/1")
-	if err != nil {
-		t.Fatal(err)
-	}
+	t.Setenv("WORKING_DIR", "/tmp/1")
 
 	cb := &codebaseApi.CodebaseBranch{
 		ObjectMeta: metaV1.ObjectMeta{
@@ -209,7 +199,7 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldPassDeleteCodebasebranch(t *tes
 			},
 		},
 		Spec: codebaseApi.CodebaseSpec{
-			CiTool: util.GitlabCi,
+			CiTool: util.CITekton,
 		},
 		Status: codebaseApi.CodebaseStatus{
 			Available: true,
@@ -241,10 +231,7 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldPassDeleteCodebasebranch(t *tes
 }
 
 func TestReconcileCodebaseBranch_Reconcile_ShouldPassWithDeleteJobFailure(t *testing.T) {
-	err := os.Setenv("WORKING_DIR", "/tmp/1")
-	if err != nil {
-		t.Fatal(err)
-	}
+	t.Setenv("WORKING_DIR", "/tmp/1")
 
 	cb := &codebaseApi.CodebaseBranch{
 		ObjectMeta: metaV1.ObjectMeta{
@@ -371,10 +358,7 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldPassWithDeleteJobFailure(t *tes
 }
 
 func TestReconcileCodebaseBranch_Reconcile_ShouldPassWithCreatingCIS(t *testing.T) {
-	err := os.Setenv("WORKING_DIR", "/tmp/1")
-	if err != nil {
-		t.Fatal(err)
-	}
+	t.Setenv("WORKING_DIR", "/tmp/1")
 
 	cb := &codebaseApi.CodebaseBranch{
 		ObjectMeta: metaV1.ObjectMeta{
@@ -521,10 +505,7 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldPassWithCreatingCIS(t *testing.
 }
 
 func TestReconcileCodebaseBranch_Reconcile_ShouldRequeueWithCodebaseNotReady(t *testing.T) {
-	err := os.Setenv("WORKING_DIR", "/tmp/1")
-	if err != nil {
-		t.Fatal(err)
-	}
+	t.Setenv("WORKING_DIR", "/tmp/1")
 
 	cb := &codebaseApi.CodebaseBranch{
 		ObjectMeta: metaV1.ObjectMeta{

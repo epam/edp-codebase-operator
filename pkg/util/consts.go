@@ -37,13 +37,12 @@ const (
 
 	ProjectPushedStatus          = "pushed"
 	ProjectTemplatesPushedStatus = "templates_pushed"
-	GitlabCiFilePushedStatus     = "gitlab ci"
 
 	GithubDomain = "https://github.com/epmd-edp"
 
-	GitlabCi = "gitlab ci"
+	CITekton = "tekton"
 
-	Tekton = "tekton"
+	CIJenkins = "jenkins"
 
 	VersioningTypeEDP = "edp"
 

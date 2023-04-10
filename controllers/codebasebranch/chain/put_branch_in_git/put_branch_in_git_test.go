@@ -79,7 +79,7 @@ func TestPutBranchInGit_ShouldBeExecutedSuccessfullyWithDefaultVersioning(t *tes
 	scheme.AddKnownTypes(coreV1.SchemeGroupVersion, s)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, gs, cb, s).Build()
 
-	mGit := new(gitServerMocks.MockGit)
+	mGit := gitServerMocks.NewGit(t)
 	port := int32(22)
 	wd := util.GetWorkDir(fakeName, fmt.Sprintf("%v-%v", fakeNamespace, fakeName))
 
@@ -120,7 +120,7 @@ func TestPutBranchInGit_CodebaseShouldNotBeFound(t *testing.T) {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
 
-	assert.Equal(t, codebaseApi.PutBranchForGitlabCiCodebase, cb.Status.Action)
+	assert.Equal(t, codebaseApi.PutGitBranch, cb.Status.Action)
 }
 
 func TestPutBranchInGit_ShouldThrowCodebaseBranchReconcileError(t *testing.T) {
@@ -222,7 +222,7 @@ func TestPutBranchInGit_ShouldBeExecutedSuccessfullyWithEdpVersioning(t *testing
 	scheme.AddKnownTypes(coreV1.SchemeGroupVersion, s)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, gs, cb, s).Build()
 
-	mGit := new(gitServerMocks.MockGit)
+	mGit := gitServerMocks.NewGit(t)
 
 	port := int32(22)
 	wd := util.GetWorkDir(fakeName, fmt.Sprintf("%v-%v", fakeNamespace, fakeName))
@@ -407,18 +407,9 @@ func TestPutBranchInGit_ShouldFailNoEDPVersion(t *testing.T) {
 	scheme.AddKnownTypes(coreV1.SchemeGroupVersion, secret)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(codeBase, gitServer, codeBaseBranch, secret).Build()
 
-	mGit := &gitServerMocks.MockGit{}
-	port := int32(22)
-	wd := util.GetWorkDir(fakeName, fmt.Sprintf("%v-%v", fakeNamespace, fakeName))
-
-	mGit.On("CloneRepositoryBySsh", "",
-		fakeName, fmt.Sprintf("%v:%v", fakeName, fakeName),
-		wd, port).Return(nil)
-	mGit.On("CreateRemoteBranch", "", fakeName, wd, fakeName, "commitsha", port).Return(nil)
-
 	err := PutBranchInGit{
 		Client: fakeCl,
-		Git:    mGit,
+		Git:    gitServerMocks.NewGit(t),
 	}.ServeRequest(codeBaseBranch)
 
 	require.Error(t, err)

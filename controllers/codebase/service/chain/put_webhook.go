@@ -9,6 +9,7 @@ import (
 	routeApi "github.com/openshift/api/route/v1"
 	coreV1 "k8s.io/api/core/v1"
 	networkingV1 "k8s.io/api/networking/v1"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
@@ -36,8 +37,14 @@ func NewPutWebHook(k8sClient client.Client, restyClient *resty.Client) *PutWebHo
 
 // ServeRequest creates webhook.
 func (s *PutWebHook) ServeRequest(ctx context.Context, codebase *codebaseApi.Codebase) error {
-	rLog := log.WithValues("codebase name", codebase.Name)
-	rLog.Info("Start putting webhook...")
+	log := ctrl.LoggerFrom(ctx)
+
+	if codebase.Spec.CiTool != util.CITekton {
+		log.Info("Skip putting webhook for non-Tekton CI tool")
+		return nil
+	}
+
+	log.Info("Start putting webhook")
 
 	gitServer := &codebaseApi.GitServer{}
 	if err := s.client.Get(ctx, client.ObjectKey{Name: codebase.Spec.GitServer, Namespace: codebase.Namespace}, gitServer); err != nil {
@@ -49,7 +56,7 @@ func (s *PutWebHook) ServeRequest(ctx context.Context, codebase *codebaseApi.Cod
 
 	if gitServer.Spec.GitProvider != codebaseApi.GitProviderGitlab &&
 		gitServer.Spec.GitProvider != codebaseApi.GitProviderGithub {
-		rLog.Info(fmt.Sprintf("Unsupported Git provider %s. Skip putting webhook.", gitServer.Spec.GitProvider))
+		log.Info(fmt.Sprintf("Unsupported Git provider %s. Skip putting webhook", gitServer.Spec.GitProvider))
 		return nil
 	}
 
@@ -71,7 +78,7 @@ func (s *PutWebHook) ServeRequest(ctx context.Context, codebase *codebaseApi.Cod
 	}
 
 	projectID := codebase.Spec.GetProjectID()
-	gitHost := getGitProviderAPIURL(gitServer)
+	gitHost := gitprovider.GetGitProviderAPIURL(gitServer)
 
 	if codebase.Status.WebHookID != 0 {
 		_, err = gitProvider.GetWebHook(
@@ -83,7 +90,7 @@ func (s *PutWebHook) ServeRequest(ctx context.Context, codebase *codebaseApi.Cod
 		)
 
 		if err == nil {
-			rLog.Info("Webhook already exists. Skip putting webhook.")
+			log.Info("Webhook already exists. Skip putting webhook")
 
 			return nil
 		}
@@ -116,7 +123,7 @@ func (s *PutWebHook) ServeRequest(ctx context.Context, codebase *codebaseApi.Cod
 		return fmt.Errorf("failed to update codebase %s status: %w", codebase.Name, err)
 	}
 
-	rLog.Info("Webhook has been created successfully.")
+	log.Info("Webhook has been created successfully")
 
 	return nil
 }
@@ -182,7 +189,7 @@ func (s *PutWebHook) getWebhookIngressUrl(ctx context.Context, ingressName, name
 		return "", fmt.Errorf("ingress %s doesn't have rules", ingressName)
 	}
 
-	return getHostWithProtocol(ingress.Spec.Rules[0].Host), nil
+	return util.GetHostWithProtocol(ingress.Spec.Rules[0].Host), nil
 }
 
 func (s *PutWebHook) getWebhookRouteUrl(ctx context.Context, routeName, namespace string) (string, error) {
@@ -195,5 +202,5 @@ func (s *PutWebHook) getWebhookRouteUrl(ctx context.Context, routeName, namespac
 		return "", fmt.Errorf("route %s doesn't have ingresses", routeName)
 	}
 
-	return getHostWithProtocol(route.Status.Ingress[0].Host), nil
+	return util.GetHostWithProtocol(route.Status.Ingress[0].Host), nil
 }

@@ -7,6 +7,7 @@ import (
 
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
@@ -26,7 +27,7 @@ func NewPutDefaultCodeBaseBranch(c client.Client) *PutDefaultCodeBaseBranch {
 func (s *PutDefaultCodeBaseBranch) ServeRequest(ctx context.Context, codebase *codebaseApi.Codebase) error {
 	codeBaseBranchName := fmt.Sprintf("%s-%s", codebase.Name, processNameToKubernetesConvention(codebase.Spec.DefaultBranch))
 
-	logger := log.WithValues("codebase name", codebase.Name, "codebase branch name", codeBaseBranchName)
+	log := ctrl.LoggerFrom(ctx).WithValues("codeBaseBranchName", codeBaseBranchName)
 
 	branch := &codebaseApi.CodebaseBranch{}
 	err := s.client.Get(
@@ -39,7 +40,7 @@ func (s *PutDefaultCodeBaseBranch) ServeRequest(ctx context.Context, codebase *c
 	)
 
 	if err == nil {
-		logger.Info("Codebase branch already exists")
+		log.Info("Codebase branch already exists")
 
 		return nil
 	}
@@ -67,7 +68,7 @@ func (s *PutDefaultCodeBaseBranch) ServeRequest(ctx context.Context, codebase *c
 		return fmt.Errorf("failed to create codebase branch: %w", err)
 	}
 
-	logger.Info("Codebase branch has been created")
+	log.Info("Codebase branch has been created")
 
 	return nil
 }

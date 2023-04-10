@@ -1,14 +1,7 @@
 package model
 
 type UserSettings struct {
-	DnsWildcard            string  `json:"dns_wildcard"`
-	EdpName                string  `json:"edp_name"`
-	EdpVersion             string  `json:"edp_version"`
-	PerfIntegrationEnabled bool    `json:"perf_integration_enabled"`
-	VcsGroupNameUrl        string  `json:"vcs_group_name_url"`
-	VcsIntegrationEnabled  bool    `json:"vcs_integration_enabled"`
-	VcsSshPort             string  `json:"vcs_ssh_port"`
-	VcsToolName            VCSTool `json:"vcs_tool_name"`
+	DnsWildcard string `json:"dns_wildcard"`
 }
 
 type EnvSettings struct {

@@ -12,7 +12,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
-	mockGit "github.com/epam/edp-codebase-operator/v2/controllers/gitserver/mocks"
+	gitServerMocks "github.com/epam/edp-codebase-operator/v2/controllers/gitserver/mocks"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
@@ -92,9 +92,9 @@ func TestCheckoutBranch_ShouldFailOnGetSecret(t *testing.T) {
 	scheme.AddKnownTypes(codebaseApi.GroupVersion, c)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c).Build()
 
-	mGit := new(mockGit.MockGit)
+	mGit := gitServerMocks.NewGit(t)
 
-	err := CheckoutBranch(util.GetStringP("repo"), "project-path", "branch", mGit, c, fakeCl)
+	err := CheckoutBranch("repo", "project-path", "branch", mGit, c, fakeCl)
 	assert.Error(t, err)
 
 	if !strings.Contains(err.Error(), "failed to get secret repository-codebase-fake-name-temp") {
@@ -131,10 +131,10 @@ func TestCheckoutBranch_ShouldFailOnCheckPermission(t *testing.T) {
 
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(s, c).Build()
 
-	mGit := new(mockGit.MockGit)
+	mGit := gitServerMocks.NewGit(t)
 	mGit.On("CheckPermissions", "repo", util.GetStringP("user"), util.GetStringP("pass")).Return(false)
 
-	err := CheckoutBranch(util.GetStringP("repo"), "project-path", "branch", mGit, c, fakeCl)
+	err := CheckoutBranch("repo", "project-path", "branch", mGit, c, fakeCl)
 	assert.Error(t, err)
 
 	if !strings.Contains(err.Error(), "user user cannot get access to the repository repo") {
@@ -169,11 +169,11 @@ func TestCheckoutBranch_ShouldFailOnGetCurrentBranchName(t *testing.T) {
 	scheme.AddKnownTypes(codebaseApi.GroupVersion, c)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(s, c).Build()
 
-	mGit := new(mockGit.MockGit)
+	mGit := gitServerMocks.NewGit(t)
 	mGit.On("CheckPermissions", "repo", util.GetStringP("user"), util.GetStringP("pass")).Return(true)
 	mGit.On("GetCurrentBranchName", "project-path").Return("", errors.New("FATAL:FAILED"))
 
-	err := CheckoutBranch(util.GetStringP("repo"), "project-path", "branch", mGit, c, fakeCl)
+	err := CheckoutBranch("repo", "project-path", "branch", mGit, c, fakeCl)
 	assert.Error(t, err)
 
 	if !strings.Contains(err.Error(), "FATAL:FAILED") {
@@ -212,12 +212,12 @@ func TestCheckoutBranch_ShouldFailOnCheckout(t *testing.T) {
 	scheme.AddKnownTypes(codebaseApi.GroupVersion, c)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(s, c).Build()
 
-	mGit := new(mockGit.MockGit)
+	mGit := gitServerMocks.NewGit(t)
 	mGit.On("CheckPermissions", "repo", &u, &p).Return(true)
 	mGit.On("GetCurrentBranchName", "project-path").Return("some-other-branch", nil)
 	mGit.On("Checkout", &u, &p, "project-path", "branch", true).Return(errors.New("FATAL:FAILED"))
 
-	err := CheckoutBranch(&repo, "project-path", "branch", mGit, c, fakeCl)
+	err := CheckoutBranch(repo, "project-path", "branch", mGit, c, fakeCl)
 	assert.Error(t, err)
 
 	if !strings.Contains(err.Error(), "FATAL:FAILED") {
@@ -278,11 +278,11 @@ func TestCheckoutBranch_ShouldPassForCloneStrategy(t *testing.T) {
 	scheme.AddKnownTypes(codebaseApi.GroupVersion, c, gs)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(s, c, gs, ssh).Build()
 
-	mGit := new(mockGit.MockGit)
+	mGit := gitServerMocks.NewGit(t)
 	mGit.On("CheckPermissions", "repo", &u, &p).Return(true)
 	mGit.On("GetCurrentBranchName", "project-path").Return("some-other-branch", nil)
 	mGit.On("CheckoutRemoteBranchBySSH", "fake", fakeName, "project-path", "branch").Return(nil)
 
-	err := CheckoutBranch(&repo, "project-path", "branch", mGit, c, fakeCl)
+	err := CheckoutBranch(repo, "project-path", "branch", mGit, c, fakeCl)
 	assert.NoError(t, err)
 }

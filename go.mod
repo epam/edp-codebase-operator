@@ -27,10 +27,11 @@ require (
 	github.com/trivago/tgo v1.0.7
 	go.uber.org/multierr v1.9.0
 	golang.org/x/crypto v0.1.0
-	gopkg.in/resty.v1 v1.12.0
+	golang.org/x/exp v0.0.0-20230321023759-10a507213a29
 	k8s.io/api v0.26.1
 	k8s.io/apimachinery v0.26.1
 	k8s.io/client-go v0.26.1
+	k8s.io/utils v0.0.0-20230115233650-391b47cb4029
 	knative.dev/pkg v0.0.0-20230116014407-876c59d03903
 	sigs.k8s.io/controller-runtime v0.14.1
 )
@@ -104,7 +105,6 @@ require (
 	k8s.io/component-base v0.26.1 // indirect
 	k8s.io/klog/v2 v2.90.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20230123231816-1cb3ae25d79a // indirect
-	k8s.io/utils v0.0.0-20230115233650-391b47cb4029 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect

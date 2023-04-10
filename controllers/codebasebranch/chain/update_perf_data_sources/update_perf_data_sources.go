@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	"golang.org/x/exp/slices"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -147,7 +148,7 @@ func (h UpdatePerfDataSources) tryToUpdateJenkinsDataSource(cb *codebaseApi.Code
 	}
 
 	jn := fmt.Sprintf("/%v/%v-Build-%v", cb.Spec.CodebaseName, strings.ToUpper(cb.Spec.BranchName), cb.Spec.CodebaseName)
-	if util.ContainsString(ds.Spec.Config.JobNames, jn) {
+	if slices.Contains(ds.Spec.Config.JobNames, jn) {
 		log.Info("perf data source already contains job", "job", jn)
 		return nil
 	}
@@ -171,7 +172,7 @@ func (h UpdatePerfDataSources) tryToUpdateGitLabDataSource(cb *codebaseApi.Codeb
 		return err
 	}
 
-	if util.ContainsString(ds.Spec.Config.Branches, cb.Spec.BranchName) {
+	if slices.Contains(ds.Spec.Config.Branches, cb.Spec.BranchName) {
 		log.Info("perf data source already contains branch", "branch", cb.Spec.BranchName)
 		return nil
 	}

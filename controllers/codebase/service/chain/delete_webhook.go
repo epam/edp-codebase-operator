@@ -8,6 +8,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/go-resty/resty/v2"
 	coreV1 "k8s.io/api/core/v1"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
@@ -29,45 +30,51 @@ func NewDeleteWebHook(k8sClient client.Client, restyClient *resty.Client, log lo
 
 // ServeRequest deletes webhook.
 func (s *DeleteWebHook) ServeRequest(ctx context.Context, codebase *codebaseApi.Codebase) error {
-	rLog := s.log.WithValues("codebase name", codebase.Name)
-	rLog.Info("Start deleting webhook...")
+	log := ctrl.LoggerFrom(ctx)
+
+	if codebase.Spec.CiTool != util.CITekton {
+		log.Info("Skip deleting webhook for non-Tekton CI tool")
+		return nil
+	}
+
+	log.Info("Start deleting webhook...")
 
 	if codebase.Status.WebHookID == 0 {
-		rLog.Info("Webhook ID is empty. Skip deleting webhook.")
+		log.Info("Webhook ID is empty. Skip deleting webhook.")
 
 		return nil
 	}
 
 	gitServer := &codebaseApi.GitServer{}
 	if err := s.client.Get(ctx, client.ObjectKey{Name: codebase.Spec.GitServer, Namespace: codebase.Namespace}, gitServer); err != nil {
-		rLog.Error(err, "Failed to delete webhook: unable to get git server", "git server name", codebase.Spec.GitServer)
+		log.Error(err, "Failed to delete webhook: unable to get GitServer", "gitServer", codebase.Spec.GitServer)
 
 		return nil
 	}
 
 	secret, err := s.getGitServerSecret(ctx, gitServer.Spec.NameSshKeySecret, codebase.Namespace)
 	if err != nil {
-		rLog.Error(err, "Failed to delete webhook: unable to get git server secret.")
+		log.Error(err, "Failed to delete webhook: unable to get GitServer secret")
 
 		return nil
 	}
 
 	if codebase.Spec.GitUrlPath == nil {
 		err = fmt.Errorf("failed to get project ID for codebase %s, git url path is empty", codebase.Name)
-		rLog.Error(err, "Failed to delete webhook.")
+		log.Error(err, "Failed to delete webhook")
 
 		return nil
 	}
 
 	gitProvider, err := gitprovider.NewProvider(gitServer, s.restyClient)
 	if err != nil {
-		rLog.Error(err, "Failed to delete webhook: unable to create git provider.")
+		log.Error(err, "Failed to delete webhook: unable to create git provider")
 
 		return nil
 	}
 
 	projectID := codebase.Spec.GetProjectID()
-	gitHost := getGitProviderAPIURL(gitServer)
+	gitHost := gitprovider.GetGitProviderAPIURL(gitServer)
 
 	err = gitProvider.DeleteWebHook(
 		ctx,
@@ -78,17 +85,17 @@ func (s *DeleteWebHook) ServeRequest(ctx context.Context, codebase *codebaseApi.
 	)
 	if err != nil {
 		if errors.Is(err, gitprovider.ErrWebHookNotFound) {
-			rLog.Info("Webhook was not found. Skip deleting webhook.")
+			log.Info("Webhook was not found. Skip deleting webhook")
 
 			return nil
 		}
 
-		rLog.Error(err, "Failed to delete webhook.")
+		log.Error(err, "Failed to delete webhook")
 
 		return nil
 	}
 
-	rLog.Info("Webhook has been deleted successfully.")
+	log.Info("Webhook has been deleted successfully")
 
 	return nil
 }

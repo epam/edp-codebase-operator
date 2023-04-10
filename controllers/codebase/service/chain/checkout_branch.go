@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
@@ -29,14 +30,14 @@ func GetRepositoryCredentialsIfExists(cb *codebaseApi.Codebase, c client.Client)
 	return
 }
 
-func CheckoutBranch(repository *string, projectPath, branchName string, g git.Git, cb *codebaseApi.Codebase, c client.Client) error {
+func CheckoutBranch(repository, projectPath, branchName string, g git.Git, cb *codebaseApi.Codebase, c client.Client) error {
 	user, password, err := GetRepositoryCredentialsIfExists(cb, c)
 	if err != nil && !k8sErrors.IsNotFound(err) {
 		return err
 	}
 
-	if !g.CheckPermissions(*repository, user, password) {
-		msg := fmt.Errorf("user %s cannot get access to the repository %s", *user, *repository)
+	if !g.CheckPermissions(repository, user, password) {
+		msg := fmt.Errorf("user %s cannot get access to the repository %s", *user, repository)
 		return msg
 	}
 
@@ -46,7 +47,7 @@ func CheckoutBranch(repository *string, projectPath, branchName string, g git.Gi
 	}
 
 	if currentBranchName == branchName {
-		log.Info("default branch is already active", "name", branchName)
+		ctrl.Log.Info("default branch is already active", "name", branchName)
 		return nil
 	}
 

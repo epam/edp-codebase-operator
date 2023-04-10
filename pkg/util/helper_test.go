@@ -1,7 +1,6 @@
 package util
 
 import (
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -115,8 +114,7 @@ func TestGetWorkDir(t *testing.T) {
 }
 
 func TestGetWorkDir_WithCustomPathShouldWork(t *testing.T) {
-	err := os.Setenv("WORKING_DIR", "/CUSTOM_PATH")
-	require.NoError(t, err)
+	t.Setenv("WORKING_DIR", "/CUSTOM_PATH")
 
 	type args struct {
 		codebaseName string
@@ -150,9 +148,9 @@ func TestGetWorkDir_WithCustomPathShouldWork(t *testing.T) {
 }
 
 func TestGetAssetsDir_ShouldPass(t *testing.T) {
-	err := os.Setenv("ASSETS_DIR", "/tmp")
-	require.NoError(t, err)
+	t.Setenv(AssetsDirEnv, "/tmp")
 
-	ad := GetAssetsDir()
+	ad, err := GetAssetsDir()
 	assert.Equal(t, ad, "/tmp")
+	assert.NoError(t, err)
 }

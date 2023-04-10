@@ -1,17 +1,16 @@
 package chain
 
 import (
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+
+	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
 func Test_getIcon(t *testing.T) {
-	err := os.Setenv("ASSETS_DIR", "../../../build")
-	require.NoError(t, err)
+	t.Setenv(util.AssetsDirEnv, "../../../build")
 
-	_, err = getIcon()
-	assert.Nil(t, err)
+	_, err := getIcon()
+	assert.NoError(t, err)
 }

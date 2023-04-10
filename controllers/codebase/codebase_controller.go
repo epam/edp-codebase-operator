@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"reflect"
-	"strings"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -14,15 +13,14 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
-	"github.com/epam/edp-codebase-operator/v2/controllers/codebase/repository"
 	"github.com/epam/edp-codebase-operator/v2/controllers/codebase/service/chain"
 	cHand "github.com/epam/edp-codebase-operator/v2/controllers/codebase/service/chain/handler"
-	validate "github.com/epam/edp-codebase-operator/v2/controllers/codebase/validation"
 	"github.com/epam/edp-codebase-operator/v2/pkg/objectmodifier"
 	codebasepredicate "github.com/epam/edp-codebase-operator/v2/pkg/predicate"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
@@ -95,7 +93,7 @@ func (r *ReconcileCodebase) SetupWithManager(mgr ctrl.Manager) error {
 
 // Reconcile reads that state of the cluster for a Codebase object and makes changes based on the state.
 func (r *ReconcileCodebase) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	log := r.log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
+	log := ctrl.LoggerFrom(ctx)
 	log.Info("Reconciling Codebase")
 
 	codebase := &codebaseApi.Codebase{}
@@ -118,12 +116,6 @@ func (r *ReconcileCodebase) Reconcile(ctx context.Context, request reconcile.Req
 		return reconcile.Result{}, nil
 	}
 
-	defer func() {
-		if err = r.updateStatus(ctx, codebase); err != nil {
-			log.Error(err, "error during status updating")
-		}
-	}()
-
 	if err = r.setFinalizers(ctx, codebase); err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to set finalizers: %w", err)
 	}
@@ -137,27 +129,21 @@ func (r *ReconcileCodebase) Reconcile(ctx context.Context, request reconcile.Req
 		return *result, nil
 	}
 
-	if !validate.IsCodebaseValid(codebase) {
-		return reconcile.Result{}, nil
-	}
-
 	err = r.initLabels(ctx, codebase)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to init labels for codebase: %w", err)
 	}
 
-	ch, err := r.getChain(codebase)
+	ch, err := r.getChain(ctx, codebase)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to select chain: %w", err)
 	}
 
-	if err := ch.ServeRequest(ctx, codebase); err != nil {
-		if pErr, ok := err.(chain.PostponeError); ok {
-			return reconcile.Result{RequeueAfter: pErr.Timeout}, nil
-		}
+	if err = ch.ServeRequest(ctx, codebase); err != nil {
+		timeout := r.setFailureCount(ctx, codebase)
 
-		timeout := r.setFailureCount(codebase)
-		log.Error(err, "an error has occurred while handling codebase", "name", codebase.Name)
+		log.Error(err, "Error during codebase reconciliation")
+		log.Info("Wait for next reconciliation", "timeout", timeout)
 
 		return reconcile.Result{RequeueAfter: timeout}, nil
 	}
@@ -166,7 +152,7 @@ func (r *ReconcileCodebase) Reconcile(ctx context.Context, request reconcile.Req
 		return reconcile.Result{}, fmt.Errorf("failed to update %v Codebase status: %w", codebase.Name, err)
 	}
 
-	log.Info("Reconciling codebase has been finished")
+	log.Info("Reconciling Codebase has been finished")
 
 	return reconcile.Result{}, nil
 }
@@ -186,132 +172,122 @@ func (r *ReconcileCodebase) updateFinishStatus(ctx context.Context, c *codebaseA
 		GitWebUrl:       c.Status.GitWebUrl,
 	}
 
-	return r.updateStatus(ctx, c)
-}
-
-// setFailureCount increments failure count and returns delay for next reconciliation.
-func (r *ReconcileCodebase) setFailureCount(c *codebaseApi.Codebase) time.Duration {
-	const defaultTimeout = 10 * time.Second
-	timeout := util.GetTimeout(c.Status.FailureCount, defaultTimeout)
-
-	r.log.V(2).Info("wait for next reconciliation", "next reconciliation in", timeout)
-
-	c.Status.FailureCount++
-
-	return timeout
-}
-
-func (r *ReconcileCodebase) getChain(cr *codebaseApi.Codebase) (cHand.CodebaseHandler, error) {
-	if r.chainGetter == nil {
-		r.chainGetter = func(cr *codebaseApi.Codebase) (cHand.CodebaseHandler, error) {
-			r.log.Info("select correct chain to handle codebase", "name", cr.Name)
-			return r.getStrategyChain(cr)
-		}
-	}
-
-	return r.chainGetter(cr)
-}
-
-func (r *ReconcileCodebase) getStrategyChain(c *codebaseApi.Codebase) (cHand.CodebaseHandler, error) {
-	repo := r.createCodebaseRepo(c)
-
-	if c.Spec.Strategy == util.ImportStrategy {
-		return r.getCiChain(c, repo)
-	}
-
-	if strings.EqualFold(c.Spec.CiTool, util.Tekton) {
-		return chain.MakeGerritTektonChain(r.client, repo), nil
-	}
-
-	return chain.MakeGerritDefChain(r.client, repo), nil
-}
-
-func (r *ReconcileCodebase) createCodebaseRepo(c *codebaseApi.Codebase) repository.CodebaseRepository {
-	return repository.NewK8SCodebaseRepository(r.client, c)
-}
-
-func (r *ReconcileCodebase) getCiChain(c *codebaseApi.Codebase, repo repository.CodebaseRepository) (cHand.CodebaseHandler, error) {
-	if strings.EqualFold(c.Spec.CiTool, util.GitlabCi) {
-		return chain.MakeGitlabCiDefChain(r.client, repo), nil
-	}
-
-	if strings.EqualFold(c.Spec.CiTool, util.Tekton) {
-		return chain.MakeTektonCiDefChain(r.client, repo), nil
-	}
-
-	return chain.MakeThirdPartyVcsProviderDefChain(r.client, repo), nil
-}
-
-func (r *ReconcileCodebase) updateStatus(ctx context.Context, instance *codebaseApi.Codebase) error {
-	err := r.client.Status().Update(ctx, instance)
-	if err != nil {
-		return fmt.Errorf("failed to update status field of k8s resource: %w", err)
-	}
-
-	err = r.client.Update(ctx, instance)
-	if err != nil {
-		return fmt.Errorf("failed to update k8s resource: %w", err)
+	if err := r.client.Status().Update(ctx, c); err != nil {
+		return fmt.Errorf("failed to update Codebase status: %w", err)
 	}
 
 	return nil
 }
 
-func (r *ReconcileCodebase) tryToDeleteCodebase(ctx context.Context, c *codebaseApi.Codebase) (*reconcile.Result, error) {
-	if c.GetDeletionTimestamp().IsZero() {
+// setFailureCount increments failure count and returns delay for next reconciliation.
+func (r *ReconcileCodebase) setFailureCount(ctx context.Context, codebase *codebaseApi.Codebase) time.Duration {
+	const defaultTimeout = 10 * time.Second
+	timeout := util.GetTimeout(codebase.Status.FailureCount, defaultTimeout)
+
+	codebase.Status.FailureCount++
+
+	if err := r.client.Status().Update(ctx, codebase); err != nil {
+		ctrl.LoggerFrom(ctx).Error(err, "failed to update Codebase status with failure count")
+	}
+
+	return timeout
+}
+
+func (r *ReconcileCodebase) getChain(ctx context.Context, codebase *codebaseApi.Codebase) (cHand.CodebaseHandler, error) {
+	if r.chainGetter == nil {
+		r.chainGetter = func(cr *codebaseApi.Codebase) (cHand.CodebaseHandler, error) {
+			return chain.MakeChain(ctx, r.client), nil
+		}
+	}
+
+	return r.chainGetter(codebase)
+}
+
+func (r *ReconcileCodebase) tryToDeleteCodebase(ctx context.Context, codebase *codebaseApi.Codebase) (*reconcile.Result, error) {
+	log := ctrl.LoggerFrom(ctx)
+
+	if codebase.GetDeletionTimestamp().IsZero() {
 		return nil, nil
 	}
 
-	if err := removeDirectoryIfExists(c.Name, c.Namespace); err != nil {
+	log.Info("Deleting codebase")
+
+	if err := removeDirectoryIfExists(ctx, codebase); err != nil {
 		return nil, err
 	}
 
-	if err := chain.MakeDeletionChain(r.client, c).ServeRequest(ctx, c); err != nil {
+	if err := chain.MakeDeletionChain(ctx, r.client).ServeRequest(ctx, codebase); err != nil {
 		return nil, fmt.Errorf("failed to make deletion chain: %w", err)
 	}
 
-	c.ObjectMeta.Finalizers = util.RemoveString(c.ObjectMeta.Finalizers, codebaseOperatorFinalizerName)
+	log.Info("Codebase deletion chain has been finished successfully")
+	log.Info("Removing finalizer from Codebase", "finalizer", codebaseOperatorFinalizerName)
 
-	if err := r.client.Update(ctx, c); err != nil {
-		return &reconcile.Result{}, fmt.Errorf("failed to update 'Codebase' resource %q: %w", c.Name, err)
+	controllerutil.RemoveFinalizer(codebase, codebaseOperatorFinalizerName)
+
+	if err := r.client.Update(ctx, codebase); err != nil {
+		return &reconcile.Result{}, fmt.Errorf("failed to update 'Codebase' resource %q: %w", codebase.Name, err)
 	}
+
+	log.Info("Codebase has been deleted successfully")
 
 	return &reconcile.Result{}, nil
 }
 
 func (r *ReconcileCodebase) setFinalizers(ctx context.Context, c *codebaseApi.Codebase) error {
+	log := ctrl.LoggerFrom(ctx)
+
 	if !c.GetDeletionTimestamp().IsZero() {
 		return nil
 	}
 
-	if !util.ContainsString(c.ObjectMeta.Finalizers, codebaseOperatorFinalizerName) {
-		c.ObjectMeta.Finalizers = append(c.ObjectMeta.Finalizers, codebaseOperatorFinalizerName)
+	finalizerAdded := false
+
+	if controllerutil.AddFinalizer(c, codebaseOperatorFinalizerName) {
+		finalizerAdded = true
+
+		log.Info("Adding finalizer to Codebase", "finalizer", codebaseOperatorFinalizerName)
 	}
 
-	if !util.ContainsString(c.ObjectMeta.Finalizers, util.ForegroundDeletionFinalizerName) {
-		c.ObjectMeta.Finalizers = append(c.ObjectMeta.Finalizers, util.ForegroundDeletionFinalizerName)
+	if controllerutil.AddFinalizer(c, util.ForegroundDeletionFinalizerName) {
+		finalizerAdded = true
+
+		log.Info("Adding finalizer to Codebase", "finalizer", util.ForegroundDeletionFinalizerName)
 	}
 
-	err := r.client.Update(ctx, c)
-	if err != nil {
-		return fmt.Errorf("failed to update 'Codebase' resource %q: %w", c.Name, err)
+	if finalizerAdded {
+		err := r.client.Update(ctx, c)
+		if err != nil {
+			return fmt.Errorf("failed to update 'Codebase' resource %q: %w", c.Name, err)
+		}
+
+		log.Info("Finalizers were added successfully")
 	}
 
 	return nil
 }
 
-func removeDirectoryIfExists(codebaseName, namespace string) error {
-	wd := util.GetWorkDir(codebaseName, namespace)
+func removeDirectoryIfExists(ctx context.Context, codebase *codebaseApi.Codebase) error {
+	log := ctrl.LoggerFrom(ctx)
+
+	log.Info("Removing codebase directory before deletion")
+
+	wd := util.GetWorkDir(codebase.Name, codebase.Namespace)
 	if err := util.RemoveDirectory(wd); err != nil {
 		return fmt.Errorf("failed to remove directory %s: %w", wd, err)
 	}
+
+	log.Info("Codebase directory was removed successfully", "directory", wd)
 
 	return nil
 }
 
 func (r *ReconcileCodebase) initLabels(ctx context.Context, c *codebaseApi.Codebase) error {
-	const codebaseTypeLabelName = "app.edp.epam.com/codebaseType"
+	log := ctrl.LoggerFrom(ctx)
 
-	r.log.Info("Trying to update labels for codebase", "name", c.Name)
+	log.Info("Trying to update labels for codebase")
+
+	const codebaseTypeLabelName = "app.edp.epam.com/codebaseType"
 
 	originalCodeBase := c.DeepCopy()
 
@@ -321,7 +297,7 @@ func (r *ReconcileCodebase) initLabels(ctx context.Context, c *codebaseApi.Codeb
 	}
 
 	if _, ok := labels[codebaseTypeLabelName]; ok {
-		r.log.Info("Codebase already has label", "codebaseName", c.Name, "label", codebaseTypeLabelName)
+		log.Info("Codebase already has label", "label", codebaseTypeLabelName)
 		return nil
 	}
 

@@ -13,6 +13,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	v1 "github.com/epam/edp-codebase-operator/v2/api/v1"
+	"github.com/epam/edp-codebase-operator/v2/controllers/codebase/validation"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
@@ -62,6 +63,10 @@ func (r *CodebaseValidationWebhook) ValidateCreate(ctx context.Context, obj runt
 		return nil
 	}
 
+	if err = validation.IsCodebaseValid(createdCodebase); err != nil {
+		return fmt.Errorf("codebase %s is invalid: %w", createdCodebase.Name, err)
+	}
+
 	if createdCodebase.Spec.GitUrlPath == nil {
 		r.log.Info("git url path is empty, skipping validation")
 
@@ -94,13 +99,24 @@ func (r *CodebaseValidationWebhook) ValidateCreate(ctx context.Context, obj runt
 }
 
 // ValidateUpdate is a webhook for validating the updating of the Codebase CR.
-func (r *CodebaseValidationWebhook) ValidateUpdate(ctx context.Context, _, _ runtime.Object) error {
+func (r *CodebaseValidationWebhook) ValidateUpdate(ctx context.Context, _, newObj runtime.Object) error {
 	req, err := admission.RequestFromContext(ctx)
 	if err != nil {
 		return fmt.Errorf("expected admission.Request in ctx: %w", err)
 	}
 
 	r.log.Info("validate update", "name", req.Name)
+
+	updatedCodebase, ok := newObj.(*v1.Codebase)
+	if !ok {
+		r.log.Info("the wrong object given, skipping validation")
+
+		return nil
+	}
+
+	if err = validation.IsCodebaseValid(updatedCodebase); err != nil {
+		return fmt.Errorf("codebase %s is invalid: %w", updatedCodebase.Name, err)
+	}
 
 	return nil
 }

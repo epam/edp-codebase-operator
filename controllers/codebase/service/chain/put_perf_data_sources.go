@@ -8,6 +8,7 @@ import (
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	perfAPi "github.com/epam/edp-perf-operator/v2/api/v1"
@@ -34,22 +35,24 @@ func NewPutPerfDataSources(c client.Client) *PutPerfDataSources {
 }
 
 func (h *PutPerfDataSources) ServeRequest(ctx context.Context, c *codebaseApi.Codebase) error {
-	rLog := log.WithValues("codebase_name", c.Name)
-	rLog.Info("start creating PERF data source cr...")
+	log := ctrl.LoggerFrom(ctx)
+
+	log.Info("Start creating PERF data source")
 
 	if err := h.tryToCreateDataSourceCr(ctx, c); err != nil {
 		return fmt.Errorf("failed to create PerfDataSource CR: %w", err)
 	}
 
-	rLog.Info("data source has been created")
+	log.Info("PERF data source has been created")
 
 	return nil
 }
 
 func (h *PutPerfDataSources) tryToCreateDataSourceCr(ctx context.Context, c *codebaseApi.Codebase) error {
+	log := ctrl.LoggerFrom(ctx)
+
 	if c.Spec.Perf == nil {
-		log.Info("PERF server wasn't selected. skip creating PERF data source cr...",
-			"codebase_name", c.Name)
+		log.Info("PERF server wasn't selected. skip creating PERF data source")
 		return nil
 	}
 
@@ -242,7 +245,7 @@ func (h *PutPerfDataSources) getGitLabDataSourceConfig(codebase *codebaseApi.Cod
 	return &perfAPi.DataSourceGitLabConfig{
 		Repositories: []string{(*codebase.Spec.GitUrlPath)[1:]},
 		Branches:     []string{codebase.Spec.DefaultBranch},
-		Url:          getHostWithProtocol(gs.GitHost),
+		Url:          util.GetHostWithProtocol(gs.GitHost),
 	}, nil
 }
 

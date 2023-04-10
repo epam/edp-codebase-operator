@@ -1,19 +1,16 @@
 package clean_tmp_directory
 
 import (
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 )
 
 func TestCleanTempDirectory_ShouldRemoveWithSuccessStatus(t *testing.T) {
-	err := os.Setenv("WORKING_DIR", "/tmp/1")
-	require.NoError(t, err)
+	t.Setenv("WORKING_DIR", "/tmp/1")
 
 	cb := &codebaseApi.CodebaseBranch{
 		ObjectMeta: metaV1.ObjectMeta{
@@ -27,7 +24,7 @@ func TestCleanTempDirectory_ShouldRemoveWithSuccessStatus(t *testing.T) {
 	}
 	directory := &CleanTempDirectory{}
 
-	err = directory.ServeRequest(cb)
+	err := directory.ServeRequest(cb)
 	assert.NoError(t, err)
 }
 

@@ -35,25 +35,8 @@ func GetUserSettings(c client.Client, namespace string) (*model.UserSettings, er
 		return nil, fmt.Errorf("failed to fetch 'edp-config' resource: %w", err)
 	}
 
-	vcsIntegrationEnabled, err := strconv.ParseBool(us.Data["vcs_integration_enabled"])
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse 'vcs_integration_enabled' as boolean: %w", err)
-	}
-
-	perfIntegrationEnabled, err := strconv.ParseBool(us.Data["perf_integration_enabled"])
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse 'perf_integration_enabled' as boolean: %w", err)
-	}
-
 	return &model.UserSettings{
-		DnsWildcard:            us.Data["dns_wildcard"],
-		EdpName:                us.Data["edp_name"],
-		EdpVersion:             us.Data["edp_version"],
-		PerfIntegrationEnabled: perfIntegrationEnabled,
-		VcsGroupNameUrl:        us.Data["vcs_group_name_url"],
-		VcsIntegrationEnabled:  vcsIntegrationEnabled,
-		VcsSshPort:             us.Data["vcs_ssh_port"],
-		VcsToolName:            model.VCSTool(us.Data["vcs_tool_name"]),
+		DnsWildcard: us.Data["dns_wildcard"],
 	}, nil
 }
 

@@ -26,8 +26,7 @@ func TestCleaner_ShouldPass(t *testing.T) {
 		require.NoError(t, err)
 	}()
 
-	err = os.Setenv("WORKING_DIR", dir)
-	require.NoError(t, err)
+	t.Setenv("WORKING_DIR", dir)
 
 	c := &codebaseApi.Codebase{
 		ObjectMeta: metaV1.ObjectMeta{
@@ -65,8 +64,7 @@ func TestCleaner_ShouldNotFailedIfSecretNotFound(t *testing.T) {
 		require.NoError(t, err)
 	}()
 
-	err = os.Setenv("WORKING_DIR", dir)
-	require.NoError(t, err)
+	t.Setenv("WORKING_DIR", dir)
 
 	c := &codebaseApi.Codebase{
 		ObjectMeta: metaV1.ObjectMeta{
@@ -99,8 +97,7 @@ func TestCleaner_ShouldFail(t *testing.T) {
 		require.NoError(t, err)
 	}()
 
-	err = os.Setenv("WORKING_DIR", dir)
-	require.NoError(t, err)
+	t.Setenv("WORKING_DIR", dir)
 
 	c := &codebaseApi.Codebase{
 		ObjectMeta: metaV1.ObjectMeta{

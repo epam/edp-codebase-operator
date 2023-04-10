@@ -13,6 +13,7 @@ import (
 	coreV1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
@@ -55,6 +56,7 @@ func TestDeleteWebHook_ServeRequest(t *testing.T) {
 				Spec: codebaseApi.CodebaseSpec{
 					GitServer:  "test-git-server",
 					GitUrlPath: &gitURL,
+					CiTool:     util.CITekton,
 				},
 				Status: codebaseApi.CodebaseStatus{
 					WebHookID: 1,
@@ -99,6 +101,7 @@ func TestDeleteWebHook_ServeRequest(t *testing.T) {
 				Spec: codebaseApi.CodebaseSpec{
 					GitServer:  "test-git-server",
 					GitUrlPath: &gitURL,
+					CiTool:     util.CITekton,
 				},
 				Status: codebaseApi.CodebaseStatus{
 					WebHookID: 1,
@@ -143,6 +146,7 @@ func TestDeleteWebHook_ServeRequest(t *testing.T) {
 				Spec: codebaseApi.CodebaseSpec{
 					GitServer:  "test-git-server",
 					GitUrlPath: &gitURL,
+					CiTool:     util.CITekton,
 				},
 			},
 			k8sObjects: []client.Object{},
@@ -158,6 +162,7 @@ func TestDeleteWebHook_ServeRequest(t *testing.T) {
 				Spec: codebaseApi.CodebaseSpec{
 					GitServer:  "test-git-server",
 					GitUrlPath: &gitURL,
+					CiTool:     util.CITekton,
 				},
 				Status: codebaseApi.CodebaseStatus{
 					WebHookID: 1,
@@ -203,6 +208,7 @@ func TestDeleteWebHook_ServeRequest(t *testing.T) {
 				Spec: codebaseApi.CodebaseSpec{
 					GitServer:  "test-git-server",
 					GitUrlPath: &gitURL,
+					CiTool:     util.CITekton,
 				},
 				Status: codebaseApi.CodebaseStatus{
 					WebHookID: 1,
@@ -244,6 +250,7 @@ func TestDeleteWebHook_ServeRequest(t *testing.T) {
 				},
 				Spec: codebaseApi.CodebaseSpec{
 					GitServer: "test-git-server",
+					CiTool:    util.CITekton,
 				},
 				Status: codebaseApi.CodebaseStatus{
 					WebHookID: 1,
@@ -286,6 +293,7 @@ func TestDeleteWebHook_ServeRequest(t *testing.T) {
 				Spec: codebaseApi.CodebaseSpec{
 					GitServer:  "test-git-server",
 					GitUrlPath: &gitURL,
+					CiTool:     util.CITekton,
 				},
 				Status: codebaseApi.CodebaseStatus{
 					WebHookID: 1,
@@ -326,6 +334,7 @@ func TestDeleteWebHook_ServeRequest(t *testing.T) {
 				Spec: codebaseApi.CodebaseSpec{
 					GitServer:  "test-git-server",
 					GitUrlPath: &gitURL,
+					CiTool:     util.CITekton,
 				},
 				Status: codebaseApi.CodebaseStatus{
 					WebHookID: 1,
@@ -359,6 +368,7 @@ func TestDeleteWebHook_ServeRequest(t *testing.T) {
 				Spec: codebaseApi.CodebaseSpec{
 					GitServer:  "test-git-server",
 					GitUrlPath: &gitURL,
+					CiTool:     util.CITekton,
 				},
 				Status: codebaseApi.CodebaseStatus{
 					WebHookID: 1,
@@ -367,6 +377,24 @@ func TestDeleteWebHook_ServeRequest(t *testing.T) {
 			k8sObjects: []client.Object{},
 			responder:  func(t *testing.T) {},
 			hasError:   true,
+		},
+		{
+			name: "skip if ci tool is not tekton",
+			codebase: &codebaseApi.Codebase{
+				ObjectMeta: metaV1.ObjectMeta{
+					Namespace: namespace,
+					Name:      "test-codebase",
+				},
+				Spec: codebaseApi.CodebaseSpec{
+					GitServer:  "test-git-server",
+					GitUrlPath: &gitURL,
+					CiTool:     util.CIJenkins,
+				},
+				Status: codebaseApi.CodebaseStatus{
+					WebHookID: 1,
+				},
+			},
+			responder: func(t *testing.T) {},
 		},
 	}
 
@@ -383,7 +411,7 @@ func TestDeleteWebHook_ServeRequest(t *testing.T) {
 
 			s := NewDeleteWebHook(k8sClient, restyClient, logger)
 
-			assert.NoError(t, s.ServeRequest(context.Background(), tt.codebase))
+			assert.NoError(t, s.ServeRequest(ctrl.LoggerInto(context.Background(), logger), tt.codebase))
 			assert.Equalf(t, tt.hasError, loggerSink.LastError() != nil, "expected error: %v, got: %v", tt.hasError, loggerSink.LastError())
 		})
 	}

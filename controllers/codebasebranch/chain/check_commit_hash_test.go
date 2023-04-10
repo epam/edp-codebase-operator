@@ -13,7 +13,7 @@ import (
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	"github.com/epam/edp-codebase-operator/v2/controllers/gitserver"
-	mockGit "github.com/epam/edp-codebase-operator/v2/controllers/gitserver/mocks"
+	gitServerMocks "github.com/epam/edp-codebase-operator/v2/controllers/gitserver/mocks"
 )
 
 func TestCheckCommitHashExists_ServeRequest(t *testing.T) {
@@ -71,7 +71,7 @@ func TestCheckCommitHashExists_ServeRequest(t *testing.T) {
 				},
 			},
 			gitClient: func() gitserver.Git {
-				mGit := &mockGit.MockGit{}
+				mGit := gitServerMocks.NewGit(t)
 				mGit.On(
 					"CloneRepositoryBySsh",
 					testifymock.Anything,
@@ -130,7 +130,7 @@ func TestCheckCommitHashExists_ServeRequest(t *testing.T) {
 				},
 			},
 			gitClient: func() gitserver.Git {
-				mGit := &mockGit.MockGit{}
+				mGit := gitServerMocks.NewGit(t)
 				mGit.On(
 					"CloneRepositoryBySsh",
 					testifymock.Anything,
@@ -162,7 +162,7 @@ func TestCheckCommitHashExists_ServeRequest(t *testing.T) {
 				},
 			},
 			gitClient: func() gitserver.Git {
-				return &mockGit.MockGit{}
+				return gitServerMocks.NewGit(t)
 			},
 			wantErr: require.NoError,
 		},

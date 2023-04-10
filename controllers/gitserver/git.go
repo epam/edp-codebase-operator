@@ -61,6 +61,9 @@ type GitSshData struct {
 	Port int32
 }
 
+// Git interface provides methods for working with git.
+//
+//go:generate mockery --name Git --filename git_mock.go
 type Git interface {
 	CommitChanges(directory, commitMsg string) error
 	PushChanges(key, user, directory string, port int32, pushParams ...string) error
@@ -78,6 +81,7 @@ type Git interface {
 	RenameBranch(directory, currentName, newName string) error
 	CreateChildBranch(directory, currentBranch, newBranch string) error
 	CommitExists(directory, hash string) (bool, error)
+	AddRemoteLink(repoPath, remoteUrl string) error
 }
 
 type Command interface {
@@ -690,6 +694,29 @@ func (*GitProvider) CommitExists(directory, hash string) (bool, error) {
 	}
 
 	return commit != nil, nil
+}
+
+// AddRemoteLink adds a remote link to the repository.
+func (*GitProvider) AddRemoteLink(repoPath, remoteUrl string) error {
+	r, err := git.PlainOpen(repoPath)
+	if err != nil {
+		return fmt.Errorf("failed to open Git directory: %w", err)
+	}
+
+	err = r.DeleteRemote("origin")
+	if err != nil && !errors.Is(err, git.ErrRemoteNotFound) {
+		return fmt.Errorf("failed to delete remote origin: %w", err)
+	}
+
+	_, err = r.CreateRemote(&config.RemoteConfig{
+		Name: "origin",
+		URLs: []string{remoteUrl},
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create remote origin: %w", err)
+	}
+
+	return nil
 }
 
 func isBranchExists(name string, branches storer.ReferenceIter) (bool, error) {

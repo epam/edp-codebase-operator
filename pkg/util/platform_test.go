@@ -1,12 +1,10 @@
 package util
 
 import (
-	"os"
 	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/apps/v1"
 	coreV1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -276,14 +274,7 @@ func TestGetUserSettings_ShouldPass(t *testing.T) {
 			Namespace: "stub-namespace",
 		},
 		Data: map[string]string{
-			"vcs_integration_enabled":  "true",
-			"perf_integration_enabled": "true",
-			"dns_wildcard":             "dns",
-			"edp_name":                 "edp-name",
-			"edp_version":              "2.2.2",
-			"vcs_group_name_url":       "edp",
-			"vcs_ssh_port":             "22",
-			"vcs_tool_name":            "stub",
+			"dns_wildcard": "dns",
 		},
 	}
 	scheme := runtime.NewScheme()
@@ -291,57 +282,8 @@ func TestGetUserSettings_ShouldPass(t *testing.T) {
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(cm).Build()
 
 	model, err := GetUserSettings(fakeCl, "stub-namespace")
-	assert.Equal(t, model.EdpName, "edp-name")
-	assert.Equal(t, model.EdpVersion, "2.2.2")
-	assert.True(t, model.PerfIntegrationEnabled)
-	assert.True(t, model.VcsIntegrationEnabled)
+	assert.Equal(t, model.DnsWildcard, "dns")
 	assert.NoError(t, err)
-}
-
-func TestGetUserSettings_ShouldFailToConvertBoolVcsintegration(t *testing.T) {
-	cm := &coreV1.ConfigMap{
-		ObjectMeta: metaV1.ObjectMeta{
-			Name:      "edp-config",
-			Namespace: "stub-namespace",
-		},
-		Data: map[string]string{
-			"vcs_integration_enabled": "5",
-		},
-	}
-	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(coreV1.SchemeGroupVersion, cm)
-	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(cm).Build()
-
-	model, err := GetUserSettings(fakeCl, "stub-namespace")
-	assert.Error(t, err)
-	assert.Nil(t, model)
-
-	if !strings.Contains(err.Error(), "strconv.ParseBool: parsing \"5\": invalid syntax") {
-		t.Fatalf("wrong error returned: %s", err.Error())
-	}
-}
-
-func TestGetUserSettings_ShouldFailToConvertBoolPerfintegration(t *testing.T) {
-	cm := &coreV1.ConfigMap{
-		ObjectMeta: metaV1.ObjectMeta{
-			Name:      "edp-config",
-			Namespace: "stub-namespace",
-		},
-		Data: map[string]string{
-			"vcs_integration_enabled": "true",
-		},
-	}
-	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(coreV1.SchemeGroupVersion, cm)
-	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(cm).Build()
-
-	model, err := GetUserSettings(fakeCl, "stub-namespace")
-	assert.Error(t, err)
-	assert.Nil(t, model)
-
-	if !strings.Contains(err.Error(), "strconv.ParseBool: parsing \"\": invalid syntax") {
-		t.Fatalf("wrong error returned: %s", err.Error())
-	}
 }
 
 func TestGetUserSettings_ShouldFailOnFindConfigmap(t *testing.T) {
@@ -365,8 +307,7 @@ func TestGetUserSettings_ShouldFailOnFindConfigmap(t *testing.T) {
 }
 
 func TestGetWatchNamespace_IsDefined(t *testing.T) {
-	err := os.Setenv("WATCH_NAMESPACE", "namespace")
-	require.NoError(t, err)
+	t.Setenv("WATCH_NAMESPACE", "namespace")
 
 	ns, err := GetWatchNamespace()
 	assert.Equal(t, ns, "namespace")
@@ -374,9 +315,6 @@ func TestGetWatchNamespace_IsDefined(t *testing.T) {
 }
 
 func TestGetWatchNamespace_NotDefined(t *testing.T) {
-	err := os.Unsetenv("WATCH_NAMESPACE")
-	require.NoError(t, err)
-
 	ns, err := GetWatchNamespace()
 	assert.Equal(t, ns, "")
 	assert.Error(t, err)
@@ -387,8 +325,7 @@ func TestGetWatchNamespace_NotDefined(t *testing.T) {
 }
 
 func TestGetDebugMode_IsDefined(t *testing.T) {
-	err := os.Setenv("DEBUG_MODE", "true")
-	require.NoError(t, err)
+	t.Setenv("DEBUG_MODE", "true")
 
 	d, err := GetDebugMode()
 	assert.True(t, d)
@@ -396,17 +333,13 @@ func TestGetDebugMode_IsDefined(t *testing.T) {
 }
 
 func TestGetDebugMode_NotDefined(t *testing.T) {
-	err := os.Unsetenv("DEBUG_MODE")
-	require.NoError(t, err)
-
 	d, err := GetDebugMode()
 	assert.False(t, d)
 	assert.Nil(t, err)
 }
 
 func TestGetDebugMode_ShouldFailOnConvertToBool(t *testing.T) {
-	err := os.Setenv("DEBUG_MODE", "6")
-	require.NoError(t, err)
+	t.Setenv("DEBUG_MODE", "6")
 
 	d, err := GetDebugMode()
 	assert.False(t, d)

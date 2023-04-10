@@ -1,7 +1,7 @@
 package template
 
 import (
-	"os"
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -21,14 +21,6 @@ const (
 )
 
 func TestPrepareTemplates_ShouldPass(t *testing.T) {
-	dir, err := os.MkdirTemp("/tmp", "codebase")
-	require.NoError(t, err, "failed to create temp directory for testing")
-
-	defer func() {
-		err = os.RemoveAll(dir)
-		require.NoError(t, err)
-	}()
-
 	c := &codebaseApi.Codebase{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      fakeName,
@@ -44,26 +36,22 @@ func TestPrepareTemplates_ShouldPass(t *testing.T) {
 			Git: *util.GetStringP("pushed"),
 		},
 	}
-
-	cm := &coreV1.ConfigMap{
+	config := &coreV1.ConfigMap{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "edp-config",
 			Namespace: fakeNamespace,
 		},
-		Data: map[string]string{
-			"edp_name":                 "edp-name",
-			"vcs_integration_enabled":  "false",
-			"perf_integration_enabled": "false",
-		},
 	}
 
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(coreV1.SchemeGroupVersion, cm)
-	scheme.AddKnownTypes(codebaseApi.GroupVersion, c)
+	require.NoError(t, codebaseApi.AddToScheme(scheme))
+	require.NoError(t, coreV1.AddToScheme(scheme))
 
-	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, cm).Build()
+	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, config).Build()
 
-	err = PrepareTemplates(fakeCl, c, dir, "../../../../build")
+	t.Setenv(util.AssetsDirEnv, "../../../../build")
+
+	err := PrepareTemplates(context.Background(), fakeCl, c, t.TempDir())
 	assert.NoError(t, err)
 }
 
@@ -80,80 +68,25 @@ func TestPrepareTemplates_ShouldFailOnGetProjectUrl(t *testing.T) {
 			Lang:             "go",
 		},
 	}
-
-	cm := &coreV1.ConfigMap{
+	config := &coreV1.ConfigMap{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "edp-config",
 			Namespace: fakeNamespace,
 		},
-		Data: map[string]string{
-			"edp_name":                 "edp-name",
-			"vcs_integration_enabled":  "false",
-			"perf_integration_enabled": "false",
-		},
 	}
 
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(coreV1.SchemeGroupVersion, cm)
-	scheme.AddKnownTypes(codebaseApi.GroupVersion, c)
+	require.NoError(t, coreV1.AddToScheme(scheme))
+	require.NoError(t, codebaseApi.AddToScheme(scheme))
 
-	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, cm).Build()
+	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, config).Build()
 
-	err := PrepareTemplates(fakeCl, c, "/tmp", "../../../../build")
+	t.Setenv(util.AssetsDirEnv, "../../../../build")
+
+	err := PrepareTemplates(context.Background(), fakeCl, c, "/tmp")
 	assert.Error(t, err)
 
 	assert.Contains(t, err.Error(), "failed to get project url")
-}
-
-func TestPrepareGitLabCITemplates(t *testing.T) {
-	dir, err := os.MkdirTemp("/tmp", "codebase")
-	require.NoError(t, err, "failed to create temp directory for testing")
-
-	defer func() {
-		err = os.RemoveAll(dir)
-		require.NoError(t, err)
-	}()
-
-	c := &codebaseApi.Codebase{
-		ObjectMeta: metaV1.ObjectMeta{
-			Name:      fakeName,
-			Namespace: fakeNamespace,
-		},
-		Spec: codebaseApi.CodebaseSpec{
-			Type:             util.Application,
-			Strategy:         codebaseApi.Clone,
-			DeploymentScript: "helm-chart",
-			Lang:             "java",
-			Repository: &codebaseApi.Repository{
-				Url: "http://example.com",
-			},
-			Framework: util.GetStringP("java11"),
-		},
-		Status: codebaseApi.CodebaseStatus{
-			Git: *util.GetStringP("pushed"),
-		},
-	}
-
-	cm := &coreV1.ConfigMap{
-		ObjectMeta: metaV1.ObjectMeta{
-			Name:      "edp-config",
-			Namespace: fakeNamespace,
-		},
-		Data: map[string]string{
-			"edp_name":                 "edp-name",
-			"vcs_integration_enabled":  "false",
-			"perf_integration_enabled": "false",
-		},
-	}
-
-	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(coreV1.SchemeGroupVersion, cm)
-	scheme.AddKnownTypes(codebaseApi.GroupVersion, c)
-
-	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, cm).Build()
-
-	err = PrepareGitlabCITemplates(fakeCl, c, dir, "../../../../build")
-	assert.NoError(t, err)
 }
 
 func TestGetProjectUrl_ShouldPass(t *testing.T) {

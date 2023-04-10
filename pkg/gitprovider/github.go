@@ -235,6 +235,77 @@ func (c *GitHubClient) DeleteWebHook(
 	return nil
 }
 
+// CreateProject creates a new project.
+func (c *GitHubClient) CreateProject(
+	ctx context.Context,
+	githubURL,
+	token,
+	projectID string,
+) error {
+	_, repo, err := parseProjectID(projectID)
+	if err != nil {
+		return err
+	}
+
+	c.restyClient.HostURL = githubURL
+
+	resp, err := c.restyClient.
+		R().
+		SetContext(ctx).
+		SetAuthToken(token).
+		SetBody(map[string]string{
+			"name": repo,
+		}).
+		Post("/user/repos")
+	if err != nil {
+		return fmt.Errorf("failed to create GitHub repository: %w", err)
+	}
+
+	if resp.IsError() {
+		return fmt.Errorf("failed to create GitHub repository: %s", resp.String())
+	}
+
+	return nil
+}
+
+// ProjectExists checks if the given project exists.
+func (c *GitHubClient) ProjectExists(
+	ctx context.Context,
+	githubURL,
+	token,
+	projectID string,
+) (bool, error) {
+	owner, repo, err := parseProjectID(projectID)
+	if err != nil {
+		return false, err
+	}
+
+	c.restyClient.HostURL = githubURL
+
+	resp, err := c.restyClient.
+		R().
+		SetContext(ctx).
+		SetAuthToken(token).
+		SetPathParams(map[string]string{
+			ownerPathParam: owner,
+			repoPathParam:  repo,
+		}).
+		Get("/repos/{owner}/{repo}")
+	if err != nil {
+		return false, fmt.Errorf("failed to get GitHub repository: %w", err)
+	}
+
+	if resp.IsError() {
+		if resp.StatusCode() == http.StatusNotFound {
+			return false, nil
+		}
+
+		return false, fmt.Errorf("failed to get GitHub repository: %s", resp.String())
+	}
+
+	return true, nil
+}
+
 func convertWebhook(githubHook *gitHubWebHook) *WebHook {
 	if githubHook == nil {
 		return nil

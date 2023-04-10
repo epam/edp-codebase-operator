@@ -65,3 +65,54 @@ func TestNewProvider(t *testing.T) {
 		})
 	}
 }
+
+func Test_getGitProviderAPIURL(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name      string
+		gitServer *codebaseApi.GitServer
+		want      string
+	}{
+		{
+			name: "gitlab host",
+			gitServer: &codebaseApi.GitServer{
+				Spec: codebaseApi.GitServerSpec{
+					GitHost:     "gitlab.com",
+					HttpsPort:   8443,
+					GitProvider: codebaseApi.GitProviderGitlab,
+				},
+			},
+			want: "https://gitlab.com:8443",
+		},
+		{
+			name: "github host",
+			gitServer: &codebaseApi.GitServer{
+				Spec: codebaseApi.GitServerSpec{
+					GitHost:     "github.com",
+					GitProvider: codebaseApi.GitProviderGithub,
+				},
+			},
+			want: "https://api.github.com",
+		},
+		{
+			name: "github Enterprise host",
+			gitServer: &codebaseApi.GitServer{
+				Spec: codebaseApi.GitServerSpec{
+					GitHost:     "company.github.com",
+					GitProvider: codebaseApi.GitProviderGithub,
+				},
+			},
+			want: "https://company.github.com/api/v3",
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			assert.Equal(t, tt.want, GetGitProviderAPIURL(tt.gitServer))
+		})
+	}
+}

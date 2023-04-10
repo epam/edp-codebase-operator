@@ -36,7 +36,7 @@ func (h PutBranchInGit) ServeRequest(cb *codebaseApi.CodebaseBranch) error {
 
 	c, err := util.GetCodebase(h.Client, cb.Spec.CodebaseName, cb.Namespace)
 	if err != nil {
-		setFailedFields(cb, codebaseApi.PutBranchForGitlabCiCodebase, err.Error())
+		setFailedFields(cb, codebaseApi.PutGitBranch, err.Error())
 
 		return fmt.Errorf("failed to fetch Codebase: %w", err)
 	}
@@ -50,14 +50,14 @@ func (h PutBranchInGit) ServeRequest(cb *codebaseApi.CodebaseBranch) error {
 	if err != nil {
 		err = fmt.Errorf("failed to process new version for %s branch: %w", cb.Name, err)
 
-		setFailedFields(cb, codebaseApi.PutBranchForGitlabCiCodebase, err.Error())
+		setFailedFields(cb, codebaseApi.PutGitBranch, err.Error())
 
 		return err
 	}
 
 	gs, err := util.GetGitServer(h.Client, c.Spec.GitServer, c.Namespace)
 	if err != nil {
-		setFailedFields(cb, codebaseApi.PutBranchForGitlabCiCodebase, err.Error())
+		setFailedFields(cb, codebaseApi.PutGitBranch, err.Error())
 
 		return fmt.Errorf("failed to fetch GitServer: %w", err)
 	}
@@ -65,7 +65,7 @@ func (h PutBranchInGit) ServeRequest(cb *codebaseApi.CodebaseBranch) error {
 	secret, err := util.GetSecret(h.Client, gs.NameSshKeySecret, c.Namespace)
 	if err != nil {
 		err = fmt.Errorf("failed to get %v secret: %w", gs.NameSshKeySecret, err)
-		setFailedFields(cb, codebaseApi.PutBranchForGitlabCiCodebase, err.Error())
+		setFailedFields(cb, codebaseApi.PutGitBranch, err.Error())
 
 		return err
 	}
@@ -81,7 +81,7 @@ func (h PutBranchInGit) ServeRequest(cb *codebaseApi.CodebaseBranch) error {
 
 		err = h.Git.CloneRepositoryBySsh(string(secret.Data[util.PrivateSShKeyName]), gs.GitUser, ru, wd, gs.SshPort)
 		if err != nil {
-			setFailedFields(cb, codebaseApi.PutBranchForGitlabCiCodebase, err.Error())
+			setFailedFields(cb, codebaseApi.PutGitBranch, err.Error())
 
 			return fmt.Errorf("failed to clone repository: %w", err)
 		}
@@ -89,7 +89,7 @@ func (h PutBranchInGit) ServeRequest(cb *codebaseApi.CodebaseBranch) error {
 
 	err = h.Git.CreateRemoteBranch(string(secret.Data[util.PrivateSShKeyName]), gs.GitUser, wd, cb.Spec.BranchName, cb.Spec.FromCommit, gs.SshPort)
 	if err != nil {
-		setFailedFields(cb, codebaseApi.PutBranchForGitlabCiCodebase, err.Error())
+		setFailedFields(cb, codebaseApi.PutGitBranch, err.Error())
 
 		return fmt.Errorf("failed to create remove branch: %w", err)
 	}

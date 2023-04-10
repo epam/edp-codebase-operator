@@ -322,3 +322,64 @@ func TestGitProvider_CommitChanges(t *testing.T) {
 		})
 	}
 }
+
+func TestGitProvider_AddRemoteLink(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name      string
+		remoteUrl string
+		initRepo  func(t *testing.T) string
+		wantErr   require.ErrorAssertionFunc
+		checkRepo func(t *testing.T, dir string)
+	}{
+		{
+			name:      "should add remote link successfully",
+			remoteUrl: "git@host:32/app.git",
+			initRepo: func(t *testing.T) string {
+				dir := t.TempDir()
+				_, err := git.PlainInit(dir, false)
+				require.NoError(t, err)
+
+				return dir
+			},
+			wantErr: require.NoError,
+			checkRepo: func(t *testing.T, dir string) {
+				r, err := git.PlainOpen(dir)
+				require.NoError(t, err)
+
+				remote, err := r.Remote("origin")
+				require.NoError(t, err)
+
+				require.Equal(t, "origin", remote.Config().Name)
+				require.Len(t, remote.Config().URLs, 1)
+				require.Equal(t, "git@host:32/app.git", remote.Config().URLs[0])
+			},
+		},
+		{
+			name:      "empty git dir",
+			remoteUrl: "git@host:32/app.git",
+			initRepo: func(t *testing.T) string {
+				dir := t.TempDir()
+
+				return dir
+			},
+			wantErr:   require.Error,
+			checkRepo: func(t *testing.T, dir string) {},
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			gp := &GitProvider{}
+			dir := tt.initRepo(t)
+
+			err := gp.AddRemoteLink(dir, tt.remoteUrl)
+			tt.wantErr(t, err)
+			tt.checkRepo(t, dir)
+		})
+	}
+}

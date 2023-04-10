@@ -19,7 +19,7 @@ func TestIsCodebaseValid(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want bool
+		want assert.ErrorAssertionFunc
 	}{
 		{
 			name: "should be valid",
@@ -34,7 +34,7 @@ func TestIsCodebaseValid(t *testing.T) {
 					Status: codebaseApi.CodebaseStatus{},
 				},
 			},
-			want: true,
+			want: assert.NoError,
 		},
 		{
 			name: "should fail on strategy",
@@ -49,7 +49,7 @@ func TestIsCodebaseValid(t *testing.T) {
 					Status: codebaseApi.CodebaseStatus{},
 				},
 			},
-			want: false,
+			want: assert.Error,
 		},
 		{
 			name: "should fail on language",
@@ -64,7 +64,7 @@ func TestIsCodebaseValid(t *testing.T) {
 					Status: codebaseApi.CodebaseStatus{},
 				},
 			},
-			want: false,
+			want: assert.Error,
 		},
 	}
 
@@ -74,9 +74,9 @@ func TestIsCodebaseValid(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			got := IsCodebaseValid(tt.args.cr)
+			err := IsCodebaseValid(tt.args.cr)
 
-			assert.Equal(t, tt.want, got)
+			tt.want(t, err)
 		})
 	}
 }

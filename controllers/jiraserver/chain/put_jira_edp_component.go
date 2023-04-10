@@ -63,7 +63,7 @@ func (h PutJiraEDPComponent) createEDPComponentIfNotExists(js *codebaseApi.JiraS
 		Spec: edpComponentApi.EDPComponentSpec{
 			Type:    edpComponentJiraType,
 			Url:     js.Spec.RootUrl,
-			Icon:    *icon,
+			Icon:    icon,
 			Visible: true,
 		},
 	}
@@ -82,22 +82,27 @@ func (h PutJiraEDPComponent) createEDPComponentIfNotExists(js *codebaseApi.JiraS
 	return nil
 }
 
-func getIcon() (*string, error) {
-	p := path.Join(util.GetAssetsDir(), "img/jira.svg")
+func getIcon() (string, error) {
+	assetsDir, err := util.GetAssetsDir()
+	if err != nil {
+		return "", fmt.Errorf("failed to get assets dir: %w", err)
+	}
+
+	p := path.Join(assetsDir, "img/jira.svg")
 
 	f, err := os.Open(p)
 	if err != nil {
-		return nil, fmt.Errorf("failed to open file: %w", err)
+		return "", fmt.Errorf("failed to open file: %w", err)
 	}
 
 	reader := bufio.NewReader(f)
 
 	content, err := io.ReadAll(reader)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read all file content: %w", err)
+		return "", fmt.Errorf("failed to read all file content: %w", err)
 	}
 
 	encoded := base64.StdEncoding.EncodeToString(content)
 
-	return &encoded, nil
+	return encoded, nil
 }

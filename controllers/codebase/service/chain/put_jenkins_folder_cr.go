@@ -10,6 +10,7 @@ import (
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
@@ -29,9 +30,14 @@ func NewPutJenkinsFolder(c client.Client) *PutJenkinsFolder {
 	return &PutJenkinsFolder{client: c}
 }
 
-func (h *PutJenkinsFolder) ServeRequest(_ context.Context, c *codebaseApi.Codebase) error {
-	rLog := log.WithValues("codebase_name", c.Name)
+func (h *PutJenkinsFolder) ServeRequest(ctx context.Context, c *codebaseApi.Codebase) error {
 	jfn := fmt.Sprintf("%v-%v", c.Name, "codebase")
+	log := ctrl.LoggerFrom(ctx).WithValues("jenkinsFolder", jfn)
+
+	if c.Spec.CiTool != util.CIJenkins {
+		log.Info("Jenkins is not used as CI tool. Skip creating Jenkins folder")
+		return nil
+	}
 
 	jfr, err := h.getJenkinsFolder(jfn, c.Namespace)
 	if err != nil {
@@ -39,7 +45,7 @@ func (h *PutJenkinsFolder) ServeRequest(_ context.Context, c *codebaseApi.Codeba
 	}
 
 	if jfr != nil {
-		rLog.Info("jenkins folder already exists in cluster", "name", jfn)
+		log.Info("Jenkins folder already exists in cluster")
 		return nil
 	}
 
@@ -63,16 +69,19 @@ func (h *PutJenkinsFolder) ServeRequest(_ context.Context, c *codebaseApi.Codeba
 		"JIRA_INTEGRATION_ENABLED": strconv.FormatBool(isJiraIntegrationEnabled(c.Spec.JiraServer)),
 		"PLATFORM_TYPE":            platform.GetPlatformType(),
 	}
+
+	log.Info("Jenkins folder params", "params", jpm)
+
 	jc, _ := json.Marshal(jpm)
 
-	rLog.Info("start creating jenkins folder...")
+	log.Info("Start creating jenkins folder")
 
 	if err := h.putJenkinsFolder(c, string(jc), jfn); err != nil {
 		setFailedFields(c, codebaseApi.PutJenkinsFolder, err.Error())
 		return err
 	}
 
-	rLog.Info("end creating jenkins folder...")
+	log.Info("End creating jenkins folder")
 
 	return nil
 }
@@ -137,7 +146,6 @@ func getRepositoryPath(codebaseName, strategy string, gitUrlPath *string) string
 
 func generateSshLink(repoPath string, gs *model.GitServer) string {
 	l := fmt.Sprintf("ssh://%v@%v:%v%v", gs.GitUser, gs.GitHost, gs.SshPort, repoPath)
-	log.Info("generated SSH link", "link", l)
 
 	return l
 }

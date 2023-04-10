@@ -7,6 +7,7 @@ import (
 	"github.com/go-resty/resty/v2"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
+	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
 // GitWebHookProvider is an interface for Git web hook provider.
@@ -49,8 +50,31 @@ type GitWebHookProvider interface {
 	) error
 }
 
-// NewProvider creates a new Git web hook provider based on gitServer.
-func NewProvider(gitServer *codebaseApi.GitServer, restyClient *resty.Client) (GitWebHookProvider, error) {
+// GitProjectProvider is an interface for Git project provider.
+//
+//go:generate mockery --name GitProjectProvider --filename provider_mock.go
+type GitProjectProvider interface {
+	CreateProject(
+		ctx context.Context,
+		gitlabURL,
+		token,
+		fullPath string,
+	) error
+	ProjectExists(
+		ctx context.Context,
+		gitlabURL,
+		token,
+		projectID string,
+	) (bool, error)
+}
+
+type GitProvider interface {
+	GitWebHookProvider
+	GitProjectProvider
+}
+
+// NewProvider creates a new Git provider based on gitServer.
+func NewProvider(gitServer *codebaseApi.GitServer, restyClient *resty.Client) (GitProvider, error) {
 	switch gitServer.Spec.GitProvider {
 	case codebaseApi.GitProviderGithub:
 		return NewGitHubClient(restyClient), nil
@@ -59,4 +83,30 @@ func NewProvider(gitServer *codebaseApi.GitServer, restyClient *resty.Client) (G
 	default:
 		return nil, fmt.Errorf("unsupported git provider %s", gitServer.Spec.GitProvider)
 	}
+}
+
+// NewGitProjectProvider creates a new Git project provider based on gitServer.
+func NewGitProjectProvider(gitServer *codebaseApi.GitServer) (GitProjectProvider, error) {
+	return NewProvider(gitServer, resty.New())
+}
+
+// GetGitProviderAPIURL returns git server url with protocol.
+func GetGitProviderAPIURL(gitServer *codebaseApi.GitServer) string {
+	url := util.GetHostWithProtocol(gitServer.Spec.GitHost)
+
+	if gitServer.Spec.GitProvider == codebaseApi.GitProviderGithub {
+		// GitHub API url is different for enterprise and other versions
+		// see: https://docs.github.com/en/get-started/learning-about-github/about-versions-of-github-docs#github-enterprise-server
+		if url == "https://github.com" {
+			return "https://api.github.com"
+		}
+
+		url = fmt.Sprintf("%s/api/v3", url)
+	}
+
+	if gitServer.Spec.HttpsPort != 0 {
+		url = fmt.Sprintf("%s:%d", url, gitServer.Spec.HttpsPort)
+	}
+
+	return url
 }

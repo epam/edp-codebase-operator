@@ -1,14 +1,11 @@
 package validation
 
 import (
+	"fmt"
 	"strings"
-
-	ctrl "sigs.k8s.io/controller-runtime"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 )
-
-var log = ctrl.Log.WithName("codebase_validator")
 
 var allowedCodebaseSettings = map[string][]string{
 	"add_repo_strategy": {"create", "clone", "import"},
@@ -16,20 +13,16 @@ var allowedCodebaseSettings = map[string][]string{
 		"groovy-pipeline", "other", "go", "python", "terraform", "rego", "container", "helm", "csharp"},
 }
 
-func IsCodebaseValid(cr *codebaseApi.Codebase) bool {
+func IsCodebaseValid(cr *codebaseApi.Codebase) error {
 	if !containSettings(allowedCodebaseSettings["add_repo_strategy"], string(cr.Spec.Strategy)) {
-		log.Info("Provided unsupported repository strategy", "strategy", string(cr.Spec.Strategy))
-
-		return false
+		return fmt.Errorf("provided unsupported repository strategy: %s", string(cr.Spec.Strategy))
 	}
 
 	if !containSettings(allowedCodebaseSettings["language"], cr.Spec.Lang) {
-		log.Info("Provided unsupported language", "language", cr.Spec.Lang)
-
-		return false
+		return fmt.Errorf("provided unsupported language: %s", cr.Spec.Lang)
 	}
 
-	return true
+	return nil
 }
 
 func containSettings(slice []string, value string) bool {

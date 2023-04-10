@@ -2,7 +2,6 @@ package jiraserver
 
 import (
 	"context"
-	"os"
 	"strings"
 	"testing"
 
@@ -10,7 +9,6 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	coreV1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -21,6 +19,7 @@ import (
 	edpCompApi "github.com/epam/edp-component-operator/api/v1"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
+	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
 func TestReconcileJiraServer_Reconcile_ShouldPassNotFound(t *testing.T) {
@@ -229,8 +228,7 @@ func TestReconcileJiraServer_Reconcile_ShouldPass(t *testing.T) {
 }
 
 func TestReconcileJiraServer_Reconcile_ShouldFailToCreateEDPComponent(t *testing.T) {
-	err := os.Setenv("ASSETS_DIR", "../../build")
-	require.NoError(t, err)
+	t.Setenv(util.AssetsDirEnv, "../../build")
 
 	j := &codebaseApi.JiraServer{
 		ObjectMeta: metaV1.ObjectMeta{

@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 
+	corev1 "k8s.io/api/core/v1"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
-	"github.com/epam/edp-codebase-operator/v2/controllers/codebase/helper"
-	"github.com/epam/edp-codebase-operator/v2/controllers/codebase/repository"
 	"github.com/epam/edp-codebase-operator/v2/controllers/codebase/service/template"
 	git "github.com/epam/edp-codebase-operator/v2/controllers/gitserver"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
@@ -16,124 +16,148 @@ import (
 
 type PutDeployConfigs struct {
 	client client.Client
-	cr     repository.CodebaseRepository
 	git    git.Git
 }
 
-func NewPutDeployConfigs(c client.Client, cr repository.CodebaseRepository, g git.Git) *PutDeployConfigs {
-	return &PutDeployConfigs{client: c, cr: cr, git: g}
+func NewPutDeployConfigs(c client.Client, g git.Git) *PutDeployConfigs {
+	return &PutDeployConfigs{client: c, git: g}
 }
 
 func (h *PutDeployConfigs) ServeRequest(ctx context.Context, c *codebaseApi.Codebase) error {
-	rLog := log.WithValues("codebase_name", c.Name)
+	log := ctrl.LoggerFrom(ctx)
+
 	if c.Spec.DisablePutDeployTemplates {
-		rLog.Info("skip of putting deploy templates to codebase due to specified flag")
+		log.Info("Skip of putting deploy templates to codebase due to specified flag")
 		return nil
 	}
 
-	rLog.Info("Start pushing configs...")
+	log.Info("Start pushing configs")
 
 	if err := h.tryToPushConfigs(ctx, c); err != nil {
 		setFailedFields(c, codebaseApi.SetupDeploymentTemplates, err.Error())
 		return fmt.Errorf("failed to push deploy configs for %v codebase: %w", c.Name, err)
 	}
 
-	rLog.Info("end pushing configs")
+	log.Info("End pushing configs")
 
 	return nil
 }
 
-func (h *PutDeployConfigs) tryToPushConfigs(ctx context.Context, c *codebaseApi.Codebase) error {
-	edpN, err := helper.GetEDPName(ctx, h.client, c.Namespace)
-	if err != nil {
-		return fmt.Errorf("failed to get edp name: %w", err)
-	}
+func (h *PutDeployConfigs) tryToPushConfigs(ctx context.Context, codebase *codebaseApi.Codebase) error {
+	log := ctrl.LoggerFrom(ctx)
 
-	ps, err := h.cr.SelectProjectStatusValue(ctx, c.Name, *edpN)
-	if err != nil {
-		return fmt.Errorf("failed to get project_status value for %v codebase: %w", c.Name, err)
-	}
-
-	status := []string{util.ProjectTemplatesPushedStatus}
-	if util.ContainsString(status, ps) {
-		log.Info("skip pushing templates to gerrit. templates already pushed", "name", c.Name)
+	if codebase.Status.Git == util.ProjectTemplatesPushedStatus {
+		log.Info("Skip pushing templates to gerrit. Templates already pushed")
 
 		return nil
 	}
 
-	s, err := util.GetSecret(h.client, "gerrit-project-creator", c.Namespace)
-	if err != nil {
-		return fmt.Errorf("failed to get gerrit-project-creator secret: %w", err)
+	gitServer := &codebaseApi.GitServer{}
+	if err := h.client.Get(
+		ctx,
+		client.ObjectKey{Name: codebase.Spec.GitServer, Namespace: codebase.Namespace},
+		gitServer,
+	); err != nil {
+		setFailedFields(codebase, codebaseApi.SetupDeploymentTemplates, err.Error())
+		return fmt.Errorf("failed get GitServer: %w", err)
 	}
 
-	idrsa := string(s.Data[util.PrivateSShKeyName])
-	u := "project-creator"
-	url := fmt.Sprintf("ssh://gerrit.%v:%v", c.Namespace, c.Name)
-	wd := util.GetWorkDir(c.Name, c.Namespace)
-	ad := util.GetAssetsDir()
-
-	sshPort, err := util.GetGerritPort(h.client, c.Namespace)
-	if err != nil {
-		setFailedFields(c, codebaseApi.SetupDeploymentTemplates, err.Error())
-		return fmt.Errorf("failed get gerrit port: %w", err)
+	gitServerSecret := &corev1.Secret{}
+	if err := h.client.Get(
+		ctx,
+		client.ObjectKey{Name: gitServer.Spec.NameSshKeySecret, Namespace: codebase.Namespace},
+		gitServerSecret,
+	); err != nil {
+		return fmt.Errorf("failed to get GitServer secret: %w", err)
 	}
+
+	privateSSHKey := string(gitServerSecret.Data[util.PrivateSShKeyName])
+	repoSshUrl := util.GetSSHUrl(gitServer, codebase.Spec.GetProjectID())
+	wd := util.GetWorkDir(codebase.Name, codebase.Namespace)
 
 	if !util.DoesDirectoryExist(wd) || util.IsDirectoryEmpty(wd) {
-		err = h.cloneProjectRepoFromGerrit(*sshPort, idrsa, url, wd, ad)
+		log.Info("Start cloning repository", "url", repoSshUrl)
+
+		err := h.git.CloneRepositoryBySsh(privateSSHKey, gitServer.Spec.GitUser, repoSshUrl, wd, gitServer.Spec.SshPort)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to clone git repository: %w", err)
 		}
+
+		log.Info("Repository has been cloned", "url", repoSshUrl)
 	}
 
-	ru, err := util.GetRepoUrl(c)
+	if gitServer.Spec.GitProvider == codebaseApi.GitProviderGerrit {
+		log.Info("Start adding commit hooks")
+
+		if err := h.addCommitHooks(wd); err != nil {
+			return fmt.Errorf("failed to add commit hooks: %w", err)
+		}
+
+		log.Info("Commit hooks have been added")
+	}
+
+	ru, err := util.GetRepoUrl(codebase)
 	if err != nil {
 		return fmt.Errorf("failed to build repo url: %w", err)
 	}
 
-	err = CheckoutBranch(ru, wd, c.Spec.DefaultBranch, h.git, c, h.client)
+	log.Info("Start checkout default branch", "branch", codebase.Spec.DefaultBranch, "repo", ru)
+
+	err = CheckoutBranch(ru, wd, codebase.Spec.DefaultBranch, h.git, codebase, h.client)
 	if err != nil {
-		return fmt.Errorf("failed to checkout default branch %v in Gerrit put_deploy_config has been failed: %w", c.Spec.DefaultBranch, err)
+		return fmt.Errorf("failed to checkout default branch %v in put_deploy_config has been failed: %w", codebase.Spec.DefaultBranch, err)
 	}
 
-	err = template.PrepareTemplates(h.client, c, wd, ad)
+	log.Info("Default branch has been checked out", "branch", codebase.Spec.DefaultBranch, "repo", ru)
+	log.Info("Start preparing templates")
+
+	err = template.PrepareTemplates(ctx, h.client, codebase, wd)
 	if err != nil {
 		return fmt.Errorf("failed to prepare template: %w", err)
 	}
 
-	err = h.git.CommitChanges(wd, fmt.Sprintf("Add deployment templates for %v", c.Name))
+	log.Info("Templates have been prepared")
+	log.Info("Start committing changes")
+
+	err = h.git.CommitChanges(wd, fmt.Sprintf("Add deployment templates for %s", codebase.Name))
 	if err != nil {
 		return fmt.Errorf("failed to commit changes: %w", err)
 	}
 
-	err = h.git.PushChanges(idrsa, u, wd, *sshPort, "--all")
+	log.Info("Changes have been committed")
+	log.Info("Start pushing changes")
+
+	err = h.git.PushChanges(privateSSHKey, gitServer.Spec.GitUser, wd, gitServer.Spec.SshPort, "--all")
 	if err != nil {
 		return fmt.Errorf("failed to push changes: %w", err)
 	}
 
-	err = h.cr.UpdateProjectStatusValue(ctx, util.ProjectTemplatesPushedStatus, c.Name, *edpN)
-	if err != nil {
-		return fmt.Errorf("failed to set project_status %v value for %v codebase: %w", util.ProjectTemplatesPushedStatus, c.Name, err)
+	log.Info("Changes have been pushed")
+
+	codebase.Status.Git = util.ProjectTemplatesPushedStatus
+	if err = h.client.Status().Update(ctx, codebase); err != nil {
+		return fmt.Errorf("failed to set git status %s for codebase %s: %w", util.ProjectTemplatesPushedStatus, codebase.Name, err)
 	}
+
+	log.Info("Config has been pushed")
 
 	return nil
 }
 
-func (h *PutDeployConfigs) cloneProjectRepoFromGerrit(sshPort int32, idrsa, cloneSshUrl, wd, ad string) error {
-	log.Info("start cloning repository from Gerrit", "ssh url", cloneSshUrl)
-
-	err := h.git.CloneRepositoryBySsh(idrsa, "project-creator", cloneSshUrl, wd, sshPort)
-	if err != nil {
-		return fmt.Errorf("failed to clone git repository: %w", err)
-	}
-
+func (*PutDeployConfigs) addCommitHooks(wd string) error {
 	destinationPath := fmt.Sprintf("%v/.git/hooks", wd)
 
 	if err := util.CreateDirectory(destinationPath); err != nil {
 		return fmt.Errorf("failed to create folder %v: %w", destinationPath, err)
 	}
 
+	assetsDir, err := util.GetAssetsDir()
+	if err != nil {
+		return fmt.Errorf("failed to get assets dir: %w", err)
+	}
+
 	fileName := "commit-msg"
-	src := fmt.Sprintf("%v/configs/%v", ad, fileName)
+	src := fmt.Sprintf("%v/configs/%v", assetsDir, fileName)
 	dest := fmt.Sprintf("%v/%v", destinationPath, fileName)
 
 	if err := util.CopyFile(src, dest); err != nil {

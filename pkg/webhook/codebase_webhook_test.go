@@ -39,6 +39,8 @@ func TestCodebaseWebhook_ValidateCreate(t *testing.T) {
 				},
 				Spec: codebaseApi.CodebaseSpec{
 					GitUrlPath: util.GetStringP("user/repo"),
+					Strategy:   codebaseApi.Import,
+					Lang:       "java",
 				},
 			}).Build(),
 			ctx: admission.NewContextWithRequest(context.Background(), admission.Request{
@@ -54,6 +56,8 @@ func TestCodebaseWebhook_ValidateCreate(t *testing.T) {
 				},
 				Spec: codebaseApi.CodebaseSpec{
 					GitUrlPath: util.GetStringP("user/repo"),
+					Strategy:   codebaseApi.Import,
+					Lang:       "java",
 				},
 			},
 			wantErr: func(t require.TestingT, err error, _ ...any) {
@@ -71,6 +75,8 @@ func TestCodebaseWebhook_ValidateCreate(t *testing.T) {
 				},
 				Spec: codebaseApi.CodebaseSpec{
 					GitUrlPath: util.GetStringP("user/repo"),
+					Strategy:   codebaseApi.Import,
+					Lang:       "java",
 				},
 			}).Build(),
 			ctx: admission.NewContextWithRequest(context.Background(), admission.Request{
@@ -86,6 +92,8 @@ func TestCodebaseWebhook_ValidateCreate(t *testing.T) {
 				},
 				Spec: codebaseApi.CodebaseSpec{
 					GitUrlPath: util.GetStringP("user/repo.git"),
+					Strategy:   codebaseApi.Import,
+					Lang:       "java",
 				},
 			},
 			wantErr: func(t require.TestingT, err error, _ ...any) {
@@ -103,6 +111,8 @@ func TestCodebaseWebhook_ValidateCreate(t *testing.T) {
 				},
 				Spec: codebaseApi.CodebaseSpec{
 					GitUrlPath: util.GetStringP("user/repo"),
+					Strategy:   codebaseApi.Import,
+					Lang:       "java",
 				},
 			}).Build(),
 			ctx: admission.NewContextWithRequest(context.Background(), admission.Request{
@@ -118,6 +128,8 @@ func TestCodebaseWebhook_ValidateCreate(t *testing.T) {
 				},
 				Spec: codebaseApi.CodebaseSpec{
 					GitUrlPath: util.GetStringP("user/repo"),
+					Strategy:   codebaseApi.Import,
+					Lang:       "java",
 				},
 			},
 			wantErr: require.NoError,
@@ -146,6 +158,10 @@ func TestCodebaseWebhook_ValidateCreate(t *testing.T) {
 					Name:      "codebase",
 					Namespace: "default",
 				},
+				Spec: codebaseApi.CodebaseSpec{
+					Strategy: codebaseApi.Import,
+					Lang:     "java",
+				},
 			},
 			wantErr: require.NoError,
 		},
@@ -165,6 +181,8 @@ func TestCodebaseWebhook_ValidateCreate(t *testing.T) {
 				},
 				Spec: codebaseApi.CodebaseSpec{
 					GitUrlPath: util.GetStringP(".git"),
+					Strategy:   codebaseApi.Import,
+					Lang:       "java",
 				},
 			},
 			wantErr: func(t require.TestingT, err error, _ ...any) {
@@ -211,9 +229,61 @@ func TestCodebaseWebhook_ValidateCreate(t *testing.T) {
 				},
 				Spec: codebaseApi.CodebaseSpec{
 					GitUrlPath: util.GetStringP("user/repo"),
+					Strategy:   codebaseApi.Import,
+					Lang:       "java",
 				},
 			},
 			wantErr: require.NoError,
+		},
+		{
+			name:   "should return error if Strategy is not valid",
+			client: fake.NewClientBuilder().WithScheme(scheme).Build(),
+			ctx: admission.NewContextWithRequest(context.Background(), admission.Request{
+				AdmissionRequest: v1.AdmissionRequest{
+					Name:      "codebase",
+					Namespace: "default",
+				},
+			}),
+			obj: &codebaseApi.Codebase{
+				ObjectMeta: metaV1.ObjectMeta{
+					Name:      "codebase",
+					Namespace: "default",
+				},
+				Spec: codebaseApi.CodebaseSpec{
+					Strategy: "invalid",
+					Lang:     "java",
+				},
+			},
+			wantErr: func(t require.TestingT, err error, _ ...any) {
+				require.Error(t, err)
+
+				require.Contains(t, err.Error(), "provided unsupported repository strategy")
+			},
+		},
+		{
+			name:   "should return error if Lang is not valid",
+			client: fake.NewClientBuilder().WithScheme(scheme).Build(),
+			ctx: admission.NewContextWithRequest(context.Background(), admission.Request{
+				AdmissionRequest: v1.AdmissionRequest{
+					Name:      "codebase",
+					Namespace: "default",
+				},
+			}),
+			obj: &codebaseApi.Codebase{
+				ObjectMeta: metaV1.ObjectMeta{
+					Name:      "codebase",
+					Namespace: "default",
+				},
+				Spec: codebaseApi.CodebaseSpec{
+					Strategy: codebaseApi.Import,
+					Lang:     "lang",
+				},
+			},
+			wantErr: func(t require.TestingT, err error, _ ...any) {
+				require.Error(t, err)
+
+				require.Contains(t, err.Error(), "provided unsupported language")
+			},
 		},
 	}
 	for _, tt := range tests {
@@ -261,6 +331,54 @@ func TestCodebaseValidationWebhook_ValidateUpdate(t *testing.T) {
 			},
 		},
 		{
+			name: "should return error if Strategy is not valid",
+			ctx: admission.NewContextWithRequest(context.Background(), admission.Request{
+				AdmissionRequest: v1.AdmissionRequest{
+					Name:      "codebase",
+					Namespace: "default",
+				},
+			}),
+			newObj: &codebaseApi.Codebase{
+				ObjectMeta: metaV1.ObjectMeta{
+					Name:      "codebase",
+					Namespace: "default",
+				},
+				Spec: codebaseApi.CodebaseSpec{
+					Strategy: "invalid",
+					Lang:     "java",
+				},
+			},
+			wantErr: func(t require.TestingT, err error, _ ...any) {
+				require.Error(t, err)
+
+				require.Contains(t, err.Error(), "provided unsupported repository strategy")
+			},
+		},
+		{
+			name: "should return error if Lang is not valid",
+			ctx: admission.NewContextWithRequest(context.Background(), admission.Request{
+				AdmissionRequest: v1.AdmissionRequest{
+					Name:      "codebase",
+					Namespace: "default",
+				},
+			}),
+			newObj: &codebaseApi.Codebase{
+				ObjectMeta: metaV1.ObjectMeta{
+					Name:      "codebase",
+					Namespace: "default",
+				},
+				Spec: codebaseApi.CodebaseSpec{
+					Strategy: codebaseApi.Import,
+					Lang:     "lang",
+				},
+			},
+			wantErr: func(t require.TestingT, err error, _ ...any) {
+				require.Error(t, err)
+
+				require.Contains(t, err.Error(), "provided unsupported language")
+			},
+		},
+		{
 			name: "skip validation",
 			ctx: admission.NewContextWithRequest(context.Background(), admission.Request{
 				AdmissionRequest: v1.AdmissionRequest{
@@ -273,11 +391,9 @@ func TestCodebaseValidationWebhook_ValidateUpdate(t *testing.T) {
 					Name:      "codebase",
 					Namespace: "default",
 				},
-			},
-			oldObj: &codebaseApi.Codebase{
-				ObjectMeta: metaV1.ObjectMeta{
-					Name:      "codebase",
-					Namespace: "default",
+				Spec: codebaseApi.CodebaseSpec{
+					Strategy: codebaseApi.Import,
+					Lang:     "java",
 				},
 			},
 			wantErr: require.NoError,

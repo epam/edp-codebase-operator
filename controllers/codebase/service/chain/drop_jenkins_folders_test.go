@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -13,6 +14,7 @@ import (
 	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
+	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
 func TestDropJenkinsFolders_ServeRequest(t *testing.T) {
@@ -23,6 +25,9 @@ func TestDropJenkinsFolders_ServeRequest(t *testing.T) {
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
+		},
+		Spec: codebaseApi.CodebaseSpec{
+			CiTool: util.CIJenkins,
 		},
 	}
 
@@ -107,6 +112,9 @@ func TestDropJenkinsFolders_ServeRequest_ShouldFailCodebaseExists(t *testing.T) 
 			Namespace: fakeNamespace,
 			UID:       "xxx",
 		},
+		Spec: codebaseApi.CodebaseSpec{
+			CiTool: util.CIJenkins,
+		},
 	}
 
 	cbl := &codebaseApi.CodebaseBranchList{
@@ -134,5 +142,6 @@ func TestDropJenkinsFolders_ServeRequest_ShouldFailCodebaseExists(t *testing.T) 
 	)
 
 	err := djf.ServeRequest(ctx, c)
+	require.Error(t, err)
 	assert.ErrorIs(t, err, BranchesExistsError(err.Error()))
 }

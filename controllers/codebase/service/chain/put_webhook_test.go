@@ -62,6 +62,7 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 				Spec: codebaseApi.CodebaseSpec{
 					GitServer:  "test-git-server",
 					GitUrlPath: &gitURL,
+					CiTool:     util.CITekton,
 				},
 			},
 			prepare: func(t *testing.T) {
@@ -120,6 +121,7 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 				Spec: codebaseApi.CodebaseSpec{
 					GitServer:  "test-git-server",
 					GitUrlPath: &gitURL,
+					CiTool:     util.CITekton,
 				},
 			},
 			prepare: func(t *testing.T) {
@@ -190,6 +192,7 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 				Spec: codebaseApi.CodebaseSpec{
 					GitServer:  "test-git-server",
 					GitUrlPath: &gitURL,
+					CiTool:     util.CITekton,
 				},
 			},
 			prepare: func(t *testing.T) {
@@ -248,6 +251,7 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 				Spec: codebaseApi.CodebaseSpec{
 					GitServer:  "test-git-server",
 					GitUrlPath: &gitURL,
+					CiTool:     util.CITekton,
 				},
 			},
 			prepare: func(t *testing.T) {
@@ -308,6 +312,7 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 				Spec: codebaseApi.CodebaseSpec{
 					GitServer:  "test-git-server",
 					GitUrlPath: &gitURL,
+					CiTool:     util.CITekton,
 				},
 			},
 			prepare: func(t *testing.T) {
@@ -365,6 +370,7 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 				Spec: codebaseApi.CodebaseSpec{
 					GitServer:  "test-git-server",
 					GitUrlPath: &gitURL,
+					CiTool:     util.CITekton,
 				},
 				Status: codebaseApi.CodebaseStatus{
 					WebHookID: 999,
@@ -415,6 +421,7 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 				Spec: codebaseApi.CodebaseSpec{
 					GitServer:  "test-git-server",
 					GitUrlPath: &gitURL,
+					CiTool:     util.CITekton,
 				},
 				Status: codebaseApi.CodebaseStatus{
 					WebHookID: 999,
@@ -480,6 +487,7 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 				Spec: codebaseApi.CodebaseSpec{
 					GitServer:  "test-git-server",
 					GitUrlPath: &gitURL,
+					CiTool:     util.CITekton,
 				},
 			},
 			prepare: func(t *testing.T) {
@@ -514,6 +522,7 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 				Spec: codebaseApi.CodebaseSpec{
 					GitServer:  "test-git-server",
 					GitUrlPath: &gitURL,
+					CiTool:     util.CITekton,
 				},
 				Status: codebaseApi.CodebaseStatus{
 					WebHookID: 999,
@@ -565,6 +574,7 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 				Spec: codebaseApi.CodebaseSpec{
 					GitServer:  "test-git-server",
 					GitUrlPath: &gitURL,
+					CiTool:     util.CITekton,
 				},
 			},
 			prepare: func(t *testing.T) {
@@ -612,6 +622,7 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 				Spec: codebaseApi.CodebaseSpec{
 					GitServer:  "test-git-server",
 					GitUrlPath: &gitURL,
+					CiTool:     util.CITekton,
 				},
 			},
 			prepare: func(t *testing.T) {
@@ -661,6 +672,7 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 				Spec: codebaseApi.CodebaseSpec{
 					GitServer:  "test-git-server",
 					GitUrlPath: &gitURL,
+					CiTool:     util.CITekton,
 				},
 			},
 			prepare: func(t *testing.T) {
@@ -704,6 +716,7 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 				Spec: codebaseApi.CodebaseSpec{
 					GitServer:  "test-git-server",
 					GitUrlPath: &gitURL,
+					CiTool:     util.CITekton,
 				},
 			},
 			prepare: func(t *testing.T) {
@@ -744,6 +757,7 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 				Spec: codebaseApi.CodebaseSpec{
 					GitServer:  "test-git-server",
 					GitUrlPath: &gitURL,
+					CiTool:     util.CITekton,
 				},
 			},
 			prepare: func(t *testing.T) {
@@ -777,6 +791,7 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 				},
 				Spec: codebaseApi.CodebaseSpec{
 					GitServer: "test-git-server",
+					CiTool:    util.CITekton,
 				},
 			},
 			prepare: func(t *testing.T) {
@@ -819,6 +834,7 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 				},
 				Spec: codebaseApi.CodebaseSpec{
 					GitServer: "test-git-server",
+					CiTool:    util.CITekton,
 				},
 			},
 			prepare: func(t *testing.T) {

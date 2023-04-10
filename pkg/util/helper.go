@@ -7,12 +7,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const AssetsDirEnv = "ASSETS_DIR"
+const WorkDirEnv = "WORKING_DIR"
+
 func GetStringP(val string) *string {
 	return &val
-}
-
-func GetPointerStringP(val *string) *string {
-	return val
 }
 
 func GetWorkDir(codebaseName, namespace string) string {
@@ -24,13 +23,13 @@ func GetWorkDir(codebaseName, namespace string) string {
 	return fmt.Sprintf("%v/codebase-operator/edp/%v/%v/%v/%v", value, namespace, codebaseName, "templates", codebaseName)
 }
 
-func GetAssetsDir() string {
-	value, ok := os.LookupEnv("ASSETS_DIR")
+func GetAssetsDir() (string, error) {
+	value, ok := os.LookupEnv(AssetsDirEnv)
 	if !ok {
-		panic("env variable ASSETS_DIR is missing")
+		return "", fmt.Errorf("ASSETS_DIR env variable is not set")
 	}
 
-	return value
+	return value, nil
 }
 
 func GetOwnerReference(ownerKind string, ors []metav1.OwnerReference) (*metav1.OwnerReference, error) {

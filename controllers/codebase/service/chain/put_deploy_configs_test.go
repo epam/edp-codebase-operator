@@ -3,36 +3,21 @@ package chain
 import (
 	"context"
 	"fmt"
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	coreV1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
-	"github.com/epam/edp-codebase-operator/v2/controllers/codebase/repository"
-	mockGit "github.com/epam/edp-codebase-operator/v2/controllers/gitserver/mocks"
-	"github.com/epam/edp-codebase-operator/v2/pkg/platform"
+	gitServerMocks "github.com/epam/edp-codebase-operator/v2/controllers/gitserver/mocks"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
 func TestPutDeployConfigs_ShouldPass(t *testing.T) {
-	ctx := context.Background()
-
-	dir, err := os.MkdirTemp("/tmp", "codebase")
-	require.NoError(t, err, "failed to create temp directory for testing")
-
-	defer func() {
-		err = os.RemoveAll(dir)
-		require.NoError(t, err)
-	}()
-
-	err = os.Setenv("WORKING_DIR", dir)
-	require.NoError(t, err)
+	t.Setenv("WORKING_DIR", t.TempDir())
 
 	c := &codebaseApi.Codebase{
 		ObjectMeta: metaV1.ObjectMeta{
@@ -49,7 +34,7 @@ func TestPutDeployConfigs_ShouldPass(t *testing.T) {
 			Repository: &codebaseApi.Repository{
 				Url: "repo",
 			},
-			GitServer: fakeName,
+			GitServer: "gerrit",
 		},
 		Status: codebaseApi.CodebaseStatus{
 			Git: *util.GetStringP("pushed"),
@@ -72,10 +57,11 @@ func TestPutDeployConfigs_ShouldPass(t *testing.T) {
 			Namespace: fakeNamespace,
 		},
 		Spec: codebaseApi.GitServerSpec{
-			NameSshKeySecret: fakeName,
+			NameSshKeySecret: "gerrit-secret",
 			GitHost:          fakeName,
 			SshPort:          22,
 			GitUser:          fakeName,
+			GitProvider:      codebaseApi.GitProviderGerrit,
 		},
 	}
 	cm := &coreV1.ConfigMap{
@@ -84,19 +70,12 @@ func TestPutDeployConfigs_ShouldPass(t *testing.T) {
 			Namespace: fakeNamespace,
 		},
 		Data: map[string]string{
-			"vcs_integration_enabled":  "true",
-			"perf_integration_enabled": "true",
-			"dns_wildcard":             "dns",
-			"edp_name":                 "edp-name",
-			"edp_version":              "2.2.2",
-			"vcs_group_name_url":       "edp",
-			"vcs_ssh_port":             "22",
-			"vcs_tool_name":            "stub",
+			"dns_wildcard": "dns",
 		},
 	}
 	ssh := &coreV1.Secret{
 		ObjectMeta: metaV1.ObjectMeta{
-			Name:      "gerrit-project-creator",
+			Name:      gs.Spec.NameSshKeySecret,
 			Namespace: fakeNamespace,
 		},
 		Data: map[string][]byte{
@@ -110,148 +89,24 @@ func TestPutDeployConfigs_ShouldPass(t *testing.T) {
 
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, gs, ssh, cm, s).Build()
 
-	err = os.Setenv("ASSETS_DIR", "../../../../build")
-	require.NoError(t, err)
+	t.Setenv(util.AssetsDirEnv, "../../../../build")
 
 	port := int32(22)
 	u := "user"
 	p := "pass"
 	wd := util.GetWorkDir(fakeName, fakeNamespace)
 
-	mGit := new(mockGit.MockGit)
-	mGit.On("CloneRepositoryBySsh", "fake",
-		"project-creator", fmt.Sprintf("ssh://gerrit.%v:%v", fakeNamespace, fakeName),
-		wd, port).Return(nil)
+	mGit := gitServerMocks.NewGit(t)
 
 	mGit.On("CheckPermissions", "https://github.com/epmd-edp/go--.git", &u, &p).Return(true)
 	mGit.On("GetCurrentBranchName", wd).Return("master", nil)
 	mGit.On("Checkout", &u, &p, wd, "fake-defaultBranch", false).Return(nil)
 	mGit.On("CommitChanges", wd, fmt.Sprintf("Add deployment templates for %v", c.Name)).Return(nil)
-	mGit.On("PushChanges", "fake", "project-creator", wd, port).Return(nil)
+	mGit.On("PushChanges", "fake", "fake-name", wd, port, "--all").Return(nil)
+	mGit.On("CloneRepositoryBySsh", "fake", "fake-name", "ssh://fake-name:22/fake-name", wd, port).Return(nil)
 
-	pdc := NewPutDeployConfigs(
-		fakeCl,
-		repository.NewK8SCodebaseRepository(fakeCl, c),
-		mGit,
-	)
+	pdc := NewPutDeployConfigs(fakeCl, mGit)
 
-	err = pdc.ServeRequest(ctx, c)
+	err := pdc.ServeRequest(context.Background(), c)
 	assert.NoError(t, err)
-}
-
-func TestPutDeployConfigs_ShouldFailOnGetGerritPort(t *testing.T) {
-	ctx := context.Background()
-
-	dir, err := os.MkdirTemp("/tmp", "codebase")
-	require.NoError(t, err, "failed to create temp directory for testing")
-
-	defer func() {
-		err = os.RemoveAll(dir)
-		require.NoError(t, err)
-	}()
-
-	err = os.Setenv("WORKING_DIR", dir)
-	require.NoError(t, err)
-
-	c := &codebaseApi.Codebase{
-		ObjectMeta: metaV1.ObjectMeta{
-			Name:      fakeName,
-			Namespace: fakeNamespace,
-		},
-		Spec: codebaseApi.CodebaseSpec{
-			GitServer: fakeName,
-		},
-	}
-
-	gs := &codebaseApi.GitServer{
-		ObjectMeta: metaV1.ObjectMeta{
-			Name:      "gerrit",
-			Namespace: fakeNamespace,
-		},
-	}
-	cm := &coreV1.ConfigMap{
-		ObjectMeta: metaV1.ObjectMeta{
-			Name:      "edp-config",
-			Namespace: fakeNamespace,
-		},
-		Data: map[string]string{
-			"vcs_integration_enabled":  "true",
-			"perf_integration_enabled": "true",
-			"dns_wildcard":             "dns",
-			"edp_name":                 "edp-name",
-			"edp_version":              "2.2.2",
-			"vcs_group_name_url":       "edp",
-			"vcs_ssh_port":             "22",
-			"vcs_tool_name":            "stub",
-		},
-	}
-	ssh := &coreV1.Secret{
-		ObjectMeta: metaV1.ObjectMeta{
-			Name:      "gerrit-project-creator",
-			Namespace: fakeNamespace,
-		},
-		Data: map[string][]byte{
-			util.PrivateSShKeyName: []byte("fake"),
-		},
-	}
-
-	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(coreV1.SchemeGroupVersion, ssh, cm)
-	scheme.AddKnownTypes(codebaseApi.GroupVersion, c, gs)
-
-	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, gs, ssh, cm).Build()
-
-	err = os.Setenv("ASSETS_DIR", "../../../../build")
-	require.NoError(t, err)
-
-	pdc := NewPutDeployConfigs(
-		fakeCl,
-		repository.NewK8SCodebaseRepository(fakeCl, c),
-		nil,
-	)
-
-	err = pdc.ServeRequest(ctx, c)
-
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "failed get gerrit port", "wrong error returned")
-}
-
-func TestPutDeployConfigs_ServeRequest_Skip(t *testing.T) {
-	ctx := context.Background()
-	pdc := NewPutDeployConfigs(nil, nil, nil)
-	logger := platform.NewLoggerMock()
-	log = logger
-	loggerSink, ok := logger.GetSink().(*platform.LoggerMock)
-	require.True(t, ok)
-
-	cb := &codebaseApi.Codebase{
-		Spec: codebaseApi.CodebaseSpec{DisablePutDeployTemplates: true},
-	}
-	expectedLog := "skip of putting deploy templates to codebase due to specified flag"
-
-	err := pdc.ServeRequest(ctx, cb)
-	assert.NoError(t, err)
-
-	_, ok = loggerSink.InfoMessages()[expectedLog]
-	assert.True(t, ok)
-
-	loggerSink.ClearInfoMessages()
-
-	pdctp := PutDeployConfigsToGitProvider{}
-
-	err = pdctp.ServeRequest(ctx, cb)
-	assert.NoError(t, err)
-
-	_, ok = loggerSink.InfoMessages()[expectedLog]
-	assert.True(t, ok)
-
-	loggerSink.ClearInfoMessages()
-
-	pdGitlab := PutGitlabCiDeployConfigs{}
-
-	err = pdGitlab.ServeRequest(ctx, cb)
-	assert.NoError(t, err)
-
-	_, ok = loggerSink.InfoMessages()[expectedLog]
-	assert.True(t, ok)
 }

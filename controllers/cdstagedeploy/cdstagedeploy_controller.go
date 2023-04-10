@@ -179,13 +179,11 @@ func (r *ReconcileCDStageDeploy) setFinalizer(ctx context.Context, stageDeploy *
 		return nil
 	}
 
-	if !util.ContainsString(stageDeploy.ObjectMeta.Finalizers, util.ForegroundDeletionFinalizerName) {
-		stageDeploy.ObjectMeta.Finalizers = append(stageDeploy.ObjectMeta.Finalizers, util.ForegroundDeletionFinalizerName)
-	}
-
-	err := r.client.Update(ctx, stageDeploy)
-	if err != nil {
-		return fmt.Errorf("failed to update k8s resource: %w", err)
+	if controllerutil.AddFinalizer(stageDeploy, util.ForegroundDeletionFinalizerName) {
+		err := r.client.Update(ctx, stageDeploy)
+		if err != nil {
+			return fmt.Errorf("failed to update k8s resource: %w", err)
+		}
 	}
 
 	return nil

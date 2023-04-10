@@ -3,6 +3,7 @@ package util
 import (
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
@@ -13,15 +14,19 @@ const (
 	CrSuffixGit        = ".git"
 )
 
-var lf = map[string]string{
-	"javascript":      "react",
-	"groovy-pipeline": "codenarc",
-	"dotnet":          "netcore",
-	"python":          "python-3.8",
-	"terraform":       "terraform",
-	"rego":            "opa",
-	"container":       "docker",
-}
+var (
+	lf = map[string]string{
+		"javascript":      "react",
+		"groovy-pipeline": "codenarc",
+		"dotnet":          "netcore",
+		"python":          "python-3.8",
+		"terraform":       "terraform",
+		"rego":            "opa",
+		"container":       "docker",
+	}
+
+	protocolRegexp = regexp.MustCompile(`^(https://)|^(http://)`)
+)
 
 func TrimGitFromURL(url string) string {
 	for strings.HasSuffix(url, CrSuffixGit) {
@@ -39,7 +44,7 @@ func AddGitToURL(url string) string {
 	return url
 }
 
-func GetRepoUrl(c *codebaseApi.Codebase) (*string, error) {
+func GetRepoUrl(c *codebaseApi.Codebase) (string, error) {
 	log.Info("Setup repo url", "codebase_name", c.Name)
 
 	if c.Spec.Strategy == codebaseApi.Clone {
@@ -51,17 +56,17 @@ func GetRepoUrl(c *codebaseApi.Codebase) (*string, error) {
 
 	u := BuildRepoUrl(&c.Spec)
 
-	log.Info("ApiUrl has been generated", "url", u, logCodebaseNameKey, c.Name)
+	log.Info("Repository url has been generated", "url", u, logCodebaseNameKey, c.Name)
 
-	return &u, nil
+	return u, nil
 }
 
-func tryGetRepoUrl(spec *codebaseApi.CodebaseSpec) (*string, error) {
+func tryGetRepoUrl(spec *codebaseApi.CodebaseSpec) (string, error) {
 	if spec.Repository == nil {
-		return nil, errors.New("repository cannot be nil for specified strategy")
+		return "", errors.New("repository cannot be nil for specified strategy")
 	}
 
-	return &spec.Repository.Url, nil
+	return spec.Repository.Url, nil
 }
 
 func BuildRepoUrl(spec *codebaseApi.CodebaseSpec) string {
@@ -77,4 +82,22 @@ func getFrameworkOrDefault(spec *codebaseApi.CodebaseSpec) string {
 	}
 
 	return lf[strings.ToLower(spec.Lang)]
+}
+
+// GetHostWithProtocol adds protocol to host if it is not presented.
+func GetHostWithProtocol(host string) string {
+	if protocolRegexp.MatchString(host) {
+		return host
+	}
+
+	return fmt.Sprintf("https://%v", host)
+}
+
+// GetSSHUrl returns ssh url for git server.
+func GetSSHUrl(gitServer *codebaseApi.GitServer, repoName string) string {
+	if gitServer.Spec.GitProvider == codebaseApi.GitProviderGerrit {
+		return fmt.Sprintf("ssh://%s:%d/%s", gitServer.Spec.GitHost, gitServer.Spec.SshPort, repoName)
+	}
+
+	return fmt.Sprintf("git@%s:%s.git", gitServer.Spec.GitHost, repoName)
 }

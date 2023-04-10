@@ -334,3 +334,202 @@ func TestGitLabClient_CreateWebHookIfNotExists(t *testing.T) {
 		})
 	}
 }
+
+func TestGitLabClient_CreateProject(t *testing.T) {
+	fakeUrlRegexp := regexp.MustCompile(`.*`)
+	restyClient := resty.New()
+	httpmock.ActivateNonDefault(restyClient.GetClient())
+
+	defer httpmock.DeactivateAndReset()
+
+	tests := []struct {
+		name                    string
+		projectID               string
+		getNsRespStatus         int
+		getNsResBody            interface{}
+		CreateProjectRespStatus int
+		CreateProjectResBody    interface{}
+		wantErr                 require.ErrorAssertionFunc
+	}{
+		{
+			name:                    "success - create new project",
+			projectID:               "namespace/owner/repo",
+			getNsRespStatus:         http.StatusOK,
+			getNsResBody:            map[string]int{"id": 1},
+			CreateProjectRespStatus: http.StatusCreated,
+			CreateProjectResBody:    map[string]int{"id": 1},
+			wantErr:                 require.NoError,
+		},
+		{
+			name:            "failed to get namespace",
+			projectID:       "namespace/owner/repo",
+			getNsRespStatus: http.StatusNotFound,
+			getNsResBody:    map[string]string{"message": "not found"},
+			wantErr: func(t require.TestingT, err error, i ...interface{}) {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), "failed to get GitLab namespace")
+			},
+		},
+		{
+			name:                    "failed to create project",
+			projectID:               "namespace/owner/repo",
+			getNsRespStatus:         http.StatusOK,
+			getNsResBody:            map[string]int{"id": 1},
+			CreateProjectRespStatus: http.StatusBadRequest,
+			CreateProjectResBody:    map[string]string{"message": "not found"},
+			wantErr: func(t require.TestingT, err error, i ...interface{}) {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), "failed to create GitLab project")
+			},
+		},
+		{
+			name:      "invalid project ID",
+			projectID: "/repo",
+			wantErr: func(t require.TestingT, err error, i ...interface{}) {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), "invalid project ID")
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			httpmock.Reset()
+
+			GETResponder, err := httpmock.NewJsonResponder(tt.getNsRespStatus, tt.getNsResBody)
+			require.NoError(t, err)
+			httpmock.RegisterRegexpResponder(http.MethodGet, fakeUrlRegexp, GETResponder)
+
+			POSTResponder, err := httpmock.NewJsonResponder(tt.CreateProjectRespStatus, tt.CreateProjectResBody)
+			require.NoError(t, err)
+			httpmock.RegisterRegexpResponder(http.MethodPost, fakeUrlRegexp, POSTResponder)
+
+			c := NewGitLabClient(restyClient)
+
+			err = c.CreateProject(context.Background(), "url", "token", tt.projectID)
+			tt.wantErr(t, err)
+		})
+	}
+}
+
+func TestGitLabClient_ProjectExists(t *testing.T) {
+	fakeUrlRegexp := regexp.MustCompile(`.*`)
+	restyClient := resty.New()
+	httpmock.ActivateNonDefault(restyClient.GetClient())
+
+	defer httpmock.DeactivateAndReset()
+
+	tests := []struct {
+		name                 string
+		projectID            string
+		getProjectRespStatus int
+		getProjectResBody    interface{}
+		want                 bool
+		wantErr              require.ErrorAssertionFunc
+	}{
+		{
+			name:                 "success - project exists",
+			projectID:            "namespace/owner/repo",
+			getProjectRespStatus: http.StatusOK,
+			getProjectResBody:    map[string]int{"id": 1},
+			want:                 true,
+			wantErr:              require.NoError,
+		},
+		{
+			name:                 "success - project does not exist",
+			projectID:            "namespace/owner/repo",
+			getProjectRespStatus: http.StatusNotFound,
+			getProjectResBody:    map[string]string{"message": "not found"},
+			want:                 false,
+			wantErr:              require.NoError,
+		},
+		{
+			name:                 "failed to get project",
+			projectID:            "namespace/owner/repo",
+			getProjectRespStatus: http.StatusBadRequest,
+			getProjectResBody:    map[string]string{"message": "bad request"},
+			wantErr: func(t require.TestingT, err error, i ...interface{}) {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), "failed to get GitLab project")
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			httpmock.Reset()
+
+			GETResponder, err := httpmock.NewJsonResponder(tt.getProjectRespStatus, tt.getProjectResBody)
+			require.NoError(t, err)
+			httpmock.RegisterRegexpResponder(http.MethodGet, fakeUrlRegexp, GETResponder)
+
+			c := NewGitLabClient(restyClient)
+
+			got, err := c.ProjectExists(context.Background(), "url", "token", tt.projectID)
+			tt.wantErr(t, err)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func Test_decodeProjectID(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name          string
+		projectID     string
+		wantNamespace string
+		wantPath      string
+		wantErr       require.ErrorAssertionFunc
+	}{
+		{
+			name:          "success with namespace",
+			projectID:     "namespace/owner/repo",
+			wantNamespace: "namespace/owner",
+			wantPath:      "repo",
+			wantErr:       require.NoError,
+		},
+		{
+			name:          "success with owner",
+			projectID:     "owner/repo",
+			wantNamespace: "owner",
+			wantPath:      "repo",
+			wantErr:       require.NoError,
+		},
+		{
+			name:      "failed - no repo",
+			projectID: "namespace",
+			wantErr: func(t require.TestingT, err error, i ...interface{}) {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), "invalid project ID")
+			},
+		},
+		{
+			name:      "failed - starts with /",
+			projectID: "/namespace",
+			wantErr: func(t require.TestingT, err error, i ...interface{}) {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), "invalid project ID")
+			},
+		},
+		{
+			name:      "failed - ends with /",
+			projectID: "namespace/",
+			wantErr: func(t require.TestingT, err error, i ...interface{}) {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), "invalid project ID")
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			gotNamespace, gotPath, err := decodeProjectID(tt.projectID)
+			tt.wantErr(t, err)
+
+			assert.Equal(t, tt.wantNamespace, gotNamespace)
+			assert.Equal(t, tt.wantPath, gotPath)
+		})
+	}
+}

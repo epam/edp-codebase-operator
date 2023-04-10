@@ -1,12 +1,14 @@
 package template
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
 	"strings"
 	"text/template"
 
+	"golang.org/x/exp/slices"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -16,16 +18,23 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
-const codebaseKey = "codebase"
+var (
+	languagesForSonarTemplates = []string{util.LanguageJavascript, util.LanguagePython, util.LanguageGo}
+)
 
-var log = ctrl.Log.WithName("template")
+func PrepareTemplates(ctx context.Context, c client.Client, cb *codebaseApi.Codebase, workDir string) error {
+	log := ctrl.LoggerFrom(ctx)
 
-func PrepareTemplates(c client.Client, cb *codebaseApi.Codebase, workDir, assetsDir string) error {
-	log.Info("start preparing deploy templates", codebaseKey, cb.Name)
+	log.Info("Start preparing deploy templates")
 
-	cf, err := buildTemplateConfig(c, cb)
+	cf, err := buildTemplateConfig(ctx, c, cb)
 	if err != nil {
 		return err
+	}
+
+	assetsDir, err := util.GetAssetsDir()
+	if err != nil {
+		return fmt.Errorf("failed to get assets dir: %w", err)
 	}
 
 	if cb.Spec.Type == util.Application {
@@ -35,40 +44,20 @@ func PrepareTemplates(c client.Client, cb *codebaseApi.Codebase, workDir, assets
 	}
 
 	if cb.Spec.Strategy != util.ImportStrategy {
-		if err := copySonarConfigs(workDir, assetsDir, cf); err != nil {
+		if err := copySonarConfigs(ctx, workDir, assetsDir, cf); err != nil {
 			return err
 		}
 	}
 
-	log.Info("end preparing deploy templates", codebaseKey, cb.Name)
+	log.Info("End preparing deploy templates")
 
 	return nil
 }
 
-func PrepareGitlabCITemplates(c client.Client, cb *codebaseApi.Codebase, workDir, assetsDir string) error {
-	log.Info("start preparing deploy templates", codebaseKey, cb.Name)
+func buildTemplateConfig(ctx context.Context, c client.Client, cb *codebaseApi.Codebase) (*model.ConfigGoTemplating, error) {
+	log := ctrl.LoggerFrom(ctx)
 
-	if cb.Spec.Type != util.Application {
-		log.Info("codebase is not application. skip copying templates", "name", cb.Name)
-		return nil
-	}
-
-	cf, err := buildTemplateConfig(c, cb)
-	if err != nil {
-		return err
-	}
-
-	if err := util.CopyTemplate(cb.Spec.DeploymentScript, workDir, assetsDir, cf); err != nil {
-		return fmt.Errorf("failed to copy template for %v codebase: %w", cb.Name, err)
-	}
-
-	log.Info("end preparing deploy templates", codebaseKey, cb.Name)
-
-	return nil
-}
-
-func buildTemplateConfig(c client.Client, cb *codebaseApi.Codebase) (*model.ConfigGoTemplating, error) {
-	log.Info("start creating template config", "codebase_name", cb.Name)
+	log.Info("Start creating template config")
 
 	us, err := util.GetUserSettings(c, cb.Namespace)
 	if err != nil {
@@ -91,7 +80,7 @@ func buildTemplateConfig(c client.Client, cb *codebaseApi.Codebase) (*model.Conf
 		return nil, fmt.Errorf("failed to get project url: %w", err)
 	}
 
-	log.Info("end creating template config", "codebase_name", cb.Name)
+	log.Info("End creating template config")
 
 	return &cf, nil
 }
@@ -122,14 +111,15 @@ func getProjectUrl(c client.Client, s *codebaseApi.CodebaseSpec, n string) (stri
 // Copy sonar configurations for JavaScript, Python, Go
 // It expects workDir - work dir, which contains codebase; td - template dir, which contains sonar.property file
 // It returns error in case of issue.
-func copySonarConfigs(workDir, td string, config *model.ConfigGoTemplating) (err error) {
-	languagesForSonarTemplates := []string{util.LanguageJavascript, util.LanguagePython, util.LanguageGo}
-	if !util.CheckElementInArray(languagesForSonarTemplates, strings.ToLower(config.Lang)) {
+func copySonarConfigs(ctx context.Context, workDir, td string, config *model.ConfigGoTemplating) (err error) {
+	log := ctrl.LoggerFrom(ctx)
+
+	if !slices.Contains(languagesForSonarTemplates, strings.ToLower(config.Lang)) {
 		return
 	}
 
 	sonarConfigPath := fmt.Sprintf("%v/sonar-project.properties", workDir)
-	log.Info("start copying sonar configs", "path", sonarConfigPath)
+	log.Info("Start copying sonar configs", "path", sonarConfigPath)
 
 	_, statErr := os.Stat(sonarConfigPath)
 	if statErr == nil {
@@ -156,7 +146,7 @@ func copySonarConfigs(workDir, td string, config *model.ConfigGoTemplating) (err
 		return fmt.Errorf("failed to render Sonar configs fo %v app: %v: %w", config.Lang, config.Name, err)
 	}
 
-	log.Info("Sonar configs has been copied", "codebase_name", config.Name)
+	log.Info("Sonar configs has been copied")
 
 	return
 }

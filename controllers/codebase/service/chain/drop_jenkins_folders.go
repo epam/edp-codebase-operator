@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"k8s.io/apimachinery/pkg/labels"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
@@ -28,8 +29,15 @@ func NewDropJenkinsFolders(k8sClient client.Client) *DropJenkinsFolders {
 }
 
 func (h *DropJenkinsFolders) ServeRequest(ctx context.Context, c *codebaseApi.Codebase) error {
-	rLog := log.WithValues("codebase_name", c.Name)
-	rLog.Info("starting to delete related jenkins folders")
+	log := ctrl.LoggerFrom(ctx)
+
+	if c.Spec.CiTool != util.CIJenkins {
+		log.Info("Skipping jenkins folders deletion because ci tool is not jenkins")
+
+		return nil
+	}
+
+	log.Info("Starting to delete related jenkins folders")
 
 	var branchList codebaseApi.CodebaseBranchList
 	if err := h.k8sClient.List(ctx, &branchList, &client.ListOptions{
@@ -63,14 +71,14 @@ func (h *DropJenkinsFolders) ServeRequest(ctx context.Context, c *codebaseApi.Co
 
 	for i := 0; i < len(jenkinsFolderList.Items); i++ {
 		jf := jenkinsFolderList.Items[i]
-		rLog.Info("trying to delete jenkins folder", "folder name", jf.Name)
+		log.Info("Trying to delete jenkins folder", "folder name", jf.Name)
 
 		if err := h.k8sClient.Delete(ctx, &jf); err != nil {
 			return fmt.Errorf("failed to delete jenkins folder: %w", err)
 		}
 	}
 
-	rLog.Info("done deleting child jenkins folders")
+	log.Info("Done deleting child jenkins folders")
 
 	return nil
 }

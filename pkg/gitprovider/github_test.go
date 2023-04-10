@@ -397,3 +397,116 @@ func TestGitHubClient_CreateWebHookIfNotExists(t *testing.T) {
 		})
 	}
 }
+
+func TestGitHubClient_CreateProject(t *testing.T) {
+	fakeUrlRegexp := regexp.MustCompile(`.*`)
+	restyClient := resty.New()
+	httpmock.ActivateNonDefault(restyClient.GetClient())
+
+	defer httpmock.DeactivateAndReset()
+
+	tests := []struct {
+		name           string
+		projectID      string
+		POSTRespStatus int
+		POSTResBody    interface{}
+		wantErr        require.ErrorAssertionFunc
+	}{
+		{
+			name:           "success",
+			projectID:      "owner/repo",
+			POSTRespStatus: http.StatusCreated,
+			POSTResBody:    map[string]interface{}{"id": 1},
+			wantErr:        require.NoError,
+		},
+		{
+			name:           "response failure",
+			projectID:      "owner/repo",
+			POSTRespStatus: http.StatusBadRequest,
+			POSTResBody:    map[string]interface{}{"message": "bad request"},
+			wantErr:        require.Error,
+		},
+		{
+			name:           "invalid projectID",
+			projectID:      "owner-repo",
+			POSTRespStatus: http.StatusCreated,
+			POSTResBody:    map[string]interface{}{"id": 1},
+			wantErr:        require.Error,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			httpmock.Reset()
+
+			POSTResponder, err := httpmock.NewJsonResponder(tt.POSTRespStatus, tt.POSTResBody)
+			require.NoError(t, err)
+			httpmock.RegisterRegexpResponder(http.MethodPost, fakeUrlRegexp, POSTResponder)
+
+			c := NewGitHubClient(restyClient)
+			err = c.CreateProject(context.Background(), "url", "token", tt.projectID)
+			tt.wantErr(t, err)
+		})
+	}
+}
+
+func TestGitHubClient_ProjectExists(t *testing.T) {
+	fakeUrlRegexp := regexp.MustCompile(`.*`)
+	restyClient := resty.New()
+	httpmock.ActivateNonDefault(restyClient.GetClient())
+
+	defer httpmock.DeactivateAndReset()
+
+	tests := []struct {
+		name          string
+		projectID     string
+		GETRespStatus int
+		GETResBody    interface{}
+		want          bool
+		wantErr       require.ErrorAssertionFunc
+	}{
+		{
+			name:          "success - project exists",
+			projectID:     "owner/repo",
+			GETRespStatus: http.StatusOK,
+			GETResBody:    []map[string]interface{}{{"id": 1}},
+			want:          true,
+			wantErr:       require.NoError,
+		},
+		{
+			name:          "success - project doesn't exist",
+			projectID:     "owner/repo",
+			GETRespStatus: http.StatusNotFound,
+			GETResBody:    []map[string]interface{}{},
+			want:          false,
+			wantErr:       require.NoError,
+		},
+		{
+			name:          "response failure",
+			projectID:     "owner/repo",
+			GETRespStatus: http.StatusBadRequest,
+			GETResBody:    map[string]interface{}{"message": "bad request"},
+			wantErr:       require.Error,
+		},
+		{
+			name:          "invalid projectID",
+			projectID:     "owner-repo",
+			GETRespStatus: http.StatusOK,
+			GETResBody:    []map[string]interface{}{{"id": 1}},
+			wantErr:       require.Error,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			httpmock.Reset()
+
+			GETResponder, err := httpmock.NewJsonResponder(tt.GETRespStatus, tt.GETResBody)
+			require.NoError(t, err)
+			httpmock.RegisterRegexpResponder(http.MethodGet, fakeUrlRegexp, GETResponder)
+
+			c := NewGitHubClient(restyClient)
+			got, err := c.ProjectExists(context.Background(), "url", "token", tt.projectID)
+			tt.wantErr(t, err)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}

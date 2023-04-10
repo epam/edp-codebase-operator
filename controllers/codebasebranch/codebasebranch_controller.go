@@ -210,8 +210,7 @@ func (r *ReconcileCodebaseBranch) tryToDeleteCodebaseBranch(ctx context.Context,
 	deletionChain cbHandler.CodebaseBranchHandler,
 ) (*reconcile.Result, error) {
 	if cb.GetDeletionTimestamp().IsZero() {
-		if !util.ContainsString(cb.ObjectMeta.Finalizers, codebaseBranchOperatorFinalizerName) {
-			cb.ObjectMeta.Finalizers = append(cb.ObjectMeta.Finalizers, codebaseBranchOperatorFinalizerName)
+		if controllerutil.AddFinalizer(cb, codebaseBranchOperatorFinalizerName) {
 			if err := r.client.Update(ctx, cb); err != nil {
 				return &reconcile.Result{}, fmt.Errorf("failed to add finalizer to %v: %w", cb.Name, err)
 			}
@@ -240,7 +239,7 @@ func (r *ReconcileCodebaseBranch) tryToDeleteCodebaseBranch(ctx context.Context,
 			return err //nolint:wrapcheck // We have to return original error
 		}
 		r.log.Info("Trying to remove finalizer from", "codebasebranch_name", cb.Name)
-		cb.ObjectMeta.Finalizers = util.RemoveString(cb.ObjectMeta.Finalizers, codebaseBranchOperatorFinalizerName)
+		controllerutil.RemoveFinalizer(cb, codebaseBranchOperatorFinalizerName)
 		err := r.client.Update(ctx, cb)
 
 		// We have to return err itself here (not wrapped inside another error)
