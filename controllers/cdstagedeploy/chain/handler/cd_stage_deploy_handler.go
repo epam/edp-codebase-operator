@@ -1,7 +1,14 @@
 package handler
 
-import codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
+import (
+	"context"
 
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
+)
+
+// CDStageDeployHandler is an interface for cd stage deploy chain handlers.
+//
+//go:generate mockery --name CDStageDeployHandler --filename handler_mock.go
 type CDStageDeployHandler interface {
-	ServeRequest(stageDeploy *codebaseApi.CDStageDeploy) error
+	ServeRequest(ctx context.Context, stageDeploy *codebaseApi.CDStageDeploy) error
 }

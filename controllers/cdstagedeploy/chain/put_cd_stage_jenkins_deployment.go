@@ -8,6 +8,7 @@ import (
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
@@ -28,9 +29,9 @@ const (
 	cdStageDeployKey  = "cdStageDeployName"
 )
 
-func (h PutCDStageJenkinsDeployment) ServeRequest(stageDeploy *codebaseApi.CDStageDeploy) error {
-	log := h.log.WithValues("name", stageDeploy.Name)
-	log.Info("creating CDStageJenkinsDeployment.")
+func (h *PutCDStageJenkinsDeployment) ServeRequest(ctx context.Context, stageDeploy *codebaseApi.CDStageDeploy) error {
+	log := ctrl.LoggerFrom(ctx)
+	log.Info("Creating CDStageJenkinsDeployment")
 
 	jd, err := h.getCDStageJenkinsDeployment(stageDeploy.Name, stageDeploy.Namespace)
 	if err != nil {
@@ -38,13 +39,10 @@ func (h PutCDStageJenkinsDeployment) ServeRequest(stageDeploy *codebaseApi.CDSta
 	}
 
 	if jd != nil {
-		h.log.Info("CDStageJenkinsDeployment already exists. skip creating.")
+		h.log.Info(fmt.Sprintf("CDStageJenkinsDeployment %s already exists with status %s and status message %s",
+			stageDeploy.Name, jd.Status.Status, jd.Status.Message))
 
-		return &util.CDStageJenkinsDeploymentHasNotBeenProcessedError{
-			Message: fmt.Sprintf("%v has not been processed for previous version of application yet."+
-				" Check status of %v CDStageJenkinsDeployment resource to get more information.",
-				stageDeploy.Name, stageDeploy.Name),
-		}
+		return fmt.Errorf("failed to create CDStageJenkinsDeployment: %w", ErrCDStageJenkinsDeploymentHasNotBeenProcessed)
 	}
 
 	if err := h.create(stageDeploy); err != nil {
@@ -56,17 +54,18 @@ func (h PutCDStageJenkinsDeployment) ServeRequest(stageDeploy *codebaseApi.CDSta
 	return nil
 }
 
-func (h PutCDStageJenkinsDeployment) getCDStageJenkinsDeployment(name, namespace string) (*jenkinsApi.CDStageJenkinsDeployment, error) {
+func (h *PutCDStageJenkinsDeployment) getCDStageJenkinsDeployment(name, namespace string) (*jenkinsApi.CDStageJenkinsDeployment, error) {
 	h.log.Info("getting cd stage jenkins deployment", "stageDeployment", name)
 
 	ctx := context.Background()
-	i := &jenkinsApi.CDStageJenkinsDeployment{}
-	nn := types.NamespacedName{
-		Namespace: namespace,
-		Name:      name,
-	}
+	cdStageJenkinsDeployment := &jenkinsApi.CDStageJenkinsDeployment{}
 
-	if err := h.client.Get(ctx, nn, i); err != nil {
+	if err := h.client.Get(ctx,
+		types.NamespacedName{
+			Namespace: namespace,
+			Name:      name,
+		}, cdStageJenkinsDeployment,
+	); err != nil {
 		if k8sErrors.IsNotFound(err) {
 			return nil, nil
 		}
@@ -74,10 +73,10 @@ func (h PutCDStageJenkinsDeployment) getCDStageJenkinsDeployment(name, namespace
 		return nil, fmt.Errorf("failed to fetch 'CDStageJenkinsDeployment' resource %q: %w", name, err)
 	}
 
-	return i, nil
+	return cdStageJenkinsDeployment, nil
 }
 
-func (h PutCDStageJenkinsDeployment) create(stageDeploy *codebaseApi.CDStageDeploy) error {
+func (h *PutCDStageJenkinsDeployment) create(stageDeploy *codebaseApi.CDStageDeploy) error {
 	log := h.log.WithValues("name", stageDeploy.Name)
 	log.Info("cd stage jenkins deployment is not present in cluster. start creating...")
 
@@ -116,8 +115,7 @@ func (h PutCDStageJenkinsDeployment) create(stageDeploy *codebaseApi.CDStageDepl
 		},
 	}
 
-	err = h.client.Create(ctx, jdCommand)
-	if err != nil {
+	if err = h.client.Create(ctx, jdCommand); err != nil {
 		return fmt.Errorf("failed to create CDStageJenkinsDeployment resource: %w", err)
 	}
 
@@ -126,7 +124,7 @@ func (h PutCDStageJenkinsDeployment) create(stageDeploy *codebaseApi.CDStageDepl
 	return nil
 }
 
-func (h PutCDStageJenkinsDeployment) generateLabels(cdStageDeployName, ns string) (map[string]string, error) {
+func (h *PutCDStageJenkinsDeployment) generateLabels(cdStageDeployName, ns string) (map[string]string, error) {
 	ji, err := platform.GetFirstJenkinsInstance(h.client, ns)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch jenkins instance from cluster: %w", err)

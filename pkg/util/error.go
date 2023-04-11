@@ -19,11 +19,3 @@ type CDStageDeployHasNotBeenProcessedError struct {
 func (e *CDStageDeployHasNotBeenProcessedError) Error() string {
 	return e.Message
 }
-
-type CDStageJenkinsDeploymentHasNotBeenProcessedError struct {
-	Message string
-}
-
-func (e *CDStageJenkinsDeploymentHasNotBeenProcessedError) Error() string {
-	return e.Message
-}

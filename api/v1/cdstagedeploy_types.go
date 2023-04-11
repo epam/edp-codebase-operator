@@ -2,8 +2,6 @@ package v1
 
 import (
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
 )
 
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
@@ -21,10 +19,15 @@ type CDStageDeploySpec struct {
 	Stage string `json:"stage"`
 
 	// Specifies a latest available tag
-	Tag jenkinsApi.Tag `json:"tag"`
+	Tag CodebaseTag `json:"tag"`
 
 	// A list of available tags
-	Tags []jenkinsApi.Tag `json:"tags"`
+	Tags []CodebaseTag `json:"tags"`
+}
+
+type CodebaseTag struct {
+	Codebase string `json:"codebase"`
+	Tag      string `json:"tag"`
 }
 
 // CDStageDeployStatus defines the observed state of CDStageDeploy.

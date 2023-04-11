@@ -2,11 +2,12 @@ package cdstagedeploy
 
 import (
 	"context"
+	"errors"
 	"testing"
-	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
+	testify "github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -19,6 +20,9 @@ import (
 	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
+	"github.com/epam/edp-codebase-operator/v2/controllers/cdstagedeploy/chain"
+	"github.com/epam/edp-codebase-operator/v2/controllers/cdstagedeploy/chain/handler"
+	"github.com/epam/edp-codebase-operator/v2/controllers/cdstagedeploy/chain/handler/mocks"
 )
 
 func TestReconcileCDStageDeploy_Reconcile(t *testing.T) {
@@ -39,6 +43,7 @@ func TestReconcileCDStageDeploy_Reconcile(t *testing.T) {
 	type configs struct {
 		scheme func(env env) *runtime.Scheme
 		client func(scheme *runtime.Scheme, env env) client.Client
+		chain  func(t *testing.T) chain.CDStageDeployChain
 	}
 
 	tests := []struct {
@@ -88,7 +93,7 @@ func TestReconcileCDStageDeploy_Reconcile(t *testing.T) {
 					Spec: codebaseApi.CDStageDeploySpec{
 						Pipeline: "pipeline",
 						Stage:    "stage",
-						Tag: jenkinsApi.Tag{
+						Tag: codebaseApi.CodebaseTag{
 							Codebase: "codebase",
 							Tag:      "tag",
 						},
@@ -111,6 +116,17 @@ func TestReconcileCDStageDeploy_Reconcile(t *testing.T) {
 						WithScheme(scheme).
 						WithRuntimeObjects(env.cdsd, env.s, env.jcdsd, env.j, env.jl).
 						Build()
+				},
+				chain: func(t *testing.T) chain.CDStageDeployChain {
+					mock := mocks.NewCDStageDeployHandler(t)
+
+					mock.
+						On("ServeRequest", testify.Anything, testify.Anything).
+						Return(nil)
+
+					return func(ctx context.Context, cl client.Client, deploy *codebaseApi.CDStageDeploy) (handler.CDStageDeployHandler, error) {
+						return mock, nil
+					}
 				},
 			},
 			want: reconcile.Result{
@@ -136,6 +152,11 @@ func TestReconcileCDStageDeploy_Reconcile(t *testing.T) {
 				},
 				client: func(scheme *runtime.Scheme, _ env) client.Client {
 					return fake.NewClientBuilder().WithScheme(scheme).Build()
+				},
+				chain: func(t *testing.T) chain.CDStageDeployChain {
+					return func(ctx context.Context, cl client.Client, deploy *codebaseApi.CDStageDeploy) (handler.CDStageDeployHandler, error) {
+						return mocks.NewCDStageDeployHandler(t), nil
+					}
 				},
 			},
 			want: reconcile.Result{
@@ -175,6 +196,11 @@ func TestReconcileCDStageDeploy_Reconcile(t *testing.T) {
 						WithScheme(scheme).
 						WithRuntimeObjects(env.cdsd).
 						Build()
+				},
+				chain: func(t *testing.T) chain.CDStageDeployChain {
+					return func(ctx context.Context, cl client.Client, deploy *codebaseApi.CDStageDeploy) (handler.CDStageDeployHandler, error) {
+						return mocks.NewCDStageDeployHandler(t), nil
+					}
 				},
 			},
 			want: reconcile.Result{
@@ -218,6 +244,11 @@ func TestReconcileCDStageDeploy_Reconcile(t *testing.T) {
 						WithRuntimeObjects(env.cdsd).
 						Build()
 				},
+				chain: func(t *testing.T) chain.CDStageDeployChain {
+					return func(ctx context.Context, cl client.Client, deploy *codebaseApi.CDStageDeploy) (handler.CDStageDeployHandler, error) {
+						return mocks.NewCDStageDeployHandler(t), nil
+					}
+				},
 			},
 			want: reconcile.Result{
 				Requeue: false,
@@ -255,7 +286,7 @@ func TestReconcileCDStageDeploy_Reconcile(t *testing.T) {
 					Spec: codebaseApi.CDStageDeploySpec{
 						Pipeline: "pipeline",
 						Stage:    "stage",
-						Tag: jenkinsApi.Tag{
+						Tag: codebaseApi.CodebaseTag{
 							Codebase: "codebase",
 							Tag:      "tag",
 						},
@@ -277,6 +308,17 @@ func TestReconcileCDStageDeploy_Reconcile(t *testing.T) {
 						WithRuntimeObjects(env.cdsd, env.s).
 						Build()
 				},
+				chain: func(t *testing.T) chain.CDStageDeployChain {
+					mock := mocks.NewCDStageDeployHandler(t)
+
+					mock.
+						On("ServeRequest", testify.Anything, testify.Anything).
+						Return(errors.New("chainFactory failed"))
+
+					return func(ctx context.Context, cl client.Client, deploy *codebaseApi.CDStageDeploy) (handler.CDStageDeployHandler, error) {
+						return mock, nil
+					}
+				},
 			},
 			want: reconcile.Result{
 				Requeue: false,
@@ -284,72 +326,8 @@ func TestReconcileCDStageDeploy_Reconcile(t *testing.T) {
 			wantErr: func(t require.TestingT, err error, _ ...any) {
 				require.Error(t, err)
 
-				errText := "failed to get NewCDStageDeploy cd stage jenkins deployment"
-
-				require.Contains(t, err.Error(), errText)
+				require.Contains(t, err.Error(), "chainFactory failed")
 			},
-		},
-		{
-			name: "should fail to serve request with existing CR",
-			args: args{
-				request: reconcile.Request{
-					NamespacedName: types.NamespacedName{
-						Name:      "NewCDStageDeploy",
-						Namespace: "namespace",
-					},
-				},
-			},
-			env: env{
-				jcdsd: &jenkinsApi.CDStageJenkinsDeployment{
-					ObjectMeta: metaV1.ObjectMeta{
-						Name:      "NewCDStageDeploy",
-						Namespace: "namespace",
-					},
-				},
-				s: &cdPipeApi.Stage{
-					ObjectMeta: metaV1.ObjectMeta{
-						Name:      "pipeline-stage",
-						Namespace: "namespace",
-					},
-				},
-				cdsd: &codebaseApi.CDStageDeploy{
-					ObjectMeta: metaV1.ObjectMeta{
-						Name:      "NewCDStageDeploy",
-						Namespace: "namespace",
-					},
-					Spec: codebaseApi.CDStageDeploySpec{
-						Pipeline: "pipeline",
-						Stage:    "stage",
-						Tag: jenkinsApi.Tag{
-							Codebase: "codebase",
-							Tag:      "tag",
-						},
-					},
-				},
-			},
-			configs: configs{
-				scheme: func(env env) *runtime.Scheme {
-					scheme := runtime.NewScheme()
-
-					scheme.AddKnownTypes(cdPipeApi.GroupVersion, env.s)
-					scheme.AddKnownTypes(codebaseApi.GroupVersion, env.cdsd)
-					scheme.AddKnownTypes(jenkinsApi.SchemeGroupVersion, env.jcdsd)
-
-					return scheme
-				},
-				client: func(scheme *runtime.Scheme, env env) client.Client {
-					return fake.NewClientBuilder().
-						WithScheme(scheme).
-						WithRuntimeObjects(env.cdsd, env.jcdsd, env.s).
-						Build()
-				},
-			},
-			want: reconcile.Result{
-				Requeue:      false,
-				RequeueAfter: 10 * time.Second,
-			},
-			wantFailureCount: 1,
-			wantErr:          require.NoError,
 		},
 	}
 
@@ -362,11 +340,12 @@ func TestReconcileCDStageDeploy_Reconcile(t *testing.T) {
 			scheme := tt.configs.scheme(tt.env)
 			fakeClient := tt.configs.client(scheme, tt.env)
 
-			r := &ReconcileCDStageDeploy{
-				client: fakeClient,
-				scheme: scheme,
-				log:    logr.Discard(),
-			}
+			r := NewReconcileCDStageDeploy(
+				fakeClient,
+				scheme,
+				logr.Discard(),
+				tt.configs.chain(t),
+			)
 
 			ctx := context.Background()
 
@@ -389,48 +368,6 @@ func TestReconcileCDStageDeploy_Reconcile(t *testing.T) {
 
 				assert.Equal(t, cdsdResp.Status.FailureCount, tt.wantFailureCount)
 			}
-		})
-	}
-}
-
-func TestNewReconcileCDStageDeploy(t *testing.T) {
-	t.Parallel()
-
-	type args struct {
-		c      client.Client
-		scheme *runtime.Scheme
-	}
-
-	tests := []struct {
-		name string
-		args args
-		want *ReconcileCDStageDeploy
-	}{
-		{
-			name: "should complete successfully",
-			args: args{
-				c:      fake.NewClientBuilder().Build(),
-				scheme: runtime.NewScheme(),
-			},
-			want: &ReconcileCDStageDeploy{},
-		},
-	}
-
-	for _, tt := range tests {
-		tt := tt
-
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
-			log := logr.Discard()
-
-			tt.want.client = tt.args.c
-			tt.want.scheme = tt.args.scheme
-			tt.want.log = log
-
-			got := NewReconcileCDStageDeploy(tt.args.c, tt.args.scheme, log)
-
-			assert.Equal(t, tt.want, got)
 		})
 	}
 }

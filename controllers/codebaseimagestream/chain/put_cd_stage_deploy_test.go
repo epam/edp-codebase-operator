@@ -233,11 +233,11 @@ func TestPutCDStageDeploy_ShouldCreateCdstagedeploy(t *testing.T) {
 			Tags: []codebaseApi.Tag{
 				{
 					Name:    "master-0.0.1-1",
-					Created: "2021-10-20T14:00:00",
+					Created: "2022-04-12T12:54:04Z",
 				},
 				{
 					Name:    "master-0.0.1-2",
-					Created: "2021-10-20T14:11:11",
+					Created: "2022-04-13T12:54:04Z",
 				},
 			},
 		},
@@ -327,15 +327,15 @@ func TestPutCDStageDeploy_ShouldGetLastTag(t *testing.T) {
 	cis := []codebaseApi.Tag{
 		{
 			Name:    "master-0.0.1-1",
-			Created: "2021-10-20T11:11:11",
+			Created: "2023-04-12T12:54:04Z",
 		},
 		{
 			Name:    "master-0.0.1-2",
-			Created: "2021-10-20T10:10:10",
+			Created: "2022-04-12T12:54:04Z",
 		},
 	}
 
-	cb, err := getLastTag(cis)
+	cb, err := getLastTag(cis, logr.Discard())
 	assert.Nil(t, err)
 	assert.Equal(t, cb.Name, "master-0.0.1-1")
 }
@@ -356,7 +356,7 @@ func TestPutCDStageDeploy_ShouldSkipTagsWithWrongDatetimeFormat(t *testing.T) {
 		},
 		{
 			Name:    "master-0.0.1-4",
-			Created: "2021-10-20T11:11:11",
+			Created: "2021-10-20'T'11:11:11",
 		},
 		{
 			Name:    "master-0.0.1-5",
@@ -364,13 +364,13 @@ func TestPutCDStageDeploy_ShouldSkipTagsWithWrongDatetimeFormat(t *testing.T) {
 		},
 		{
 			Name:    "master-0.0.1-6",
-			Created: "2021-10-20T12:12:12",
+			Created: "2022-04-12T12:54:04Z",
 		},
 	}
 
-	cb, err := getLastTag(cis)
+	cb, err := getLastTag(cis, logr.Discard())
 	assert.Nil(t, err)
-	assert.Equal(t, cb.Name, "master-0.0.1-3")
+	assert.Equal(t, cb.Name, "master-0.0.1-6")
 }
 
 func TestPutCDStageDeploy_ShouldFailWithInvalidTags(t *testing.T) {
@@ -385,10 +385,10 @@ func TestPutCDStageDeploy_ShouldFailWithInvalidTags(t *testing.T) {
 		},
 	}
 
-	_, err := getLastTag(cis)
+	_, err := getLastTag(cis, logr.Discard())
 	assert.Error(t, err)
 
-	if !strings.Contains(err.Error(), "There are no valid tags") {
+	if !strings.Contains(err.Error(), "latest tag is not found") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
 }

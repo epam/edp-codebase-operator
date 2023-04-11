@@ -32,6 +32,7 @@ import (
 	codebaseApiV1 "github.com/epam/edp-codebase-operator/v2/api/v1"
 	codebaseApiV1Alpha1 "github.com/epam/edp-codebase-operator/v2/api/v1alpha1"
 	"github.com/epam/edp-codebase-operator/v2/controllers/cdstagedeploy"
+	"github.com/epam/edp-codebase-operator/v2/controllers/cdstagedeploy/chain"
 	"github.com/epam/edp-codebase-operator/v2/controllers/codebase"
 	"github.com/epam/edp-codebase-operator/v2/controllers/codebasebranch"
 	"github.com/epam/edp-codebase-operator/v2/controllers/codebaseimagestream"
@@ -132,7 +133,7 @@ func main() {
 
 	ctrlLog := ctrl.Log.WithName("controllers")
 
-	cdStageDeployCtrl := cdstagedeploy.NewReconcileCDStageDeploy(mgr.GetClient(), mgr.GetScheme(), ctrlLog)
+	cdStageDeployCtrl := cdstagedeploy.NewReconcileCDStageDeploy(mgr.GetClient(), mgr.GetScheme(), ctrlLog, chain.CreateDefChain)
 	if err = cdStageDeployCtrl.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "failed to create controller", "controller", "cd-stage-deploy")
 		os.Exit(1)

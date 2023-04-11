@@ -1,6 +1,7 @@
 package chain
 
 import (
+	"context"
 	"strings"
 	"testing"
 
@@ -14,7 +15,6 @@ import (
 	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
-	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
 func TestPutCDStageJenkinsDeployment_ServeRequest_ShouldPass(t *testing.T) {
@@ -44,7 +44,7 @@ func TestPutCDStageJenkinsDeployment_ServeRequest_ShouldPass(t *testing.T) {
 		Spec: codebaseApi.CDStageDeploySpec{
 			Pipeline: "pipeline",
 			Stage:    "stage",
-			Tag: jenkinsApi.Tag{
+			Tag: codebaseApi.CodebaseTag{
 				Codebase: "codebase",
 				Tag:      "tag",
 			},
@@ -62,7 +62,7 @@ func TestPutCDStageJenkinsDeployment_ServeRequest_ShouldPass(t *testing.T) {
 		log:    logr.Discard(),
 	}
 
-	err := jd.ServeRequest(cdsd)
+	err := jd.ServeRequest(context.Background(), cdsd)
 	assert.NoError(t, err)
 }
 
@@ -75,7 +75,7 @@ func TestPutCDStageJenkinsDeployment_ServeRequest_ShouldFailWithExistingCR(t *te
 		Spec: codebaseApi.CDStageDeploySpec{
 			Pipeline: "pipeline",
 			Stage:    "stage",
-			Tag: jenkinsApi.Tag{
+			Tag: codebaseApi.CodebaseTag{
 				Codebase: "codebase",
 				Tag:      "tag",
 			},
@@ -105,11 +105,8 @@ func TestPutCDStageJenkinsDeployment_ServeRequest_ShouldFailWithExistingCR(t *te
 		log:    logr.Discard(),
 	}
 
-	err := jd.ServeRequest(cdsd)
-	assert.Error(t, err)
-
-	_, ok := err.(*util.CDStageJenkinsDeploymentHasNotBeenProcessedError)
-	assert.True(t, ok, "wrong type of error")
+	err := jd.ServeRequest(context.Background(), cdsd)
+	assert.ErrorIs(t, err, ErrCDStageJenkinsDeploymentHasNotBeenProcessed)
 }
 
 func TestPutCDStageJenkinsDeployment_ServeRequest_ShouldFailGenerateLabels(t *testing.T) {
@@ -130,7 +127,7 @@ func TestPutCDStageJenkinsDeployment_ServeRequest_ShouldFailGenerateLabels(t *te
 		Spec: codebaseApi.CDStageDeploySpec{
 			Pipeline: "pipeline",
 			Stage:    "stage",
-			Tag: jenkinsApi.Tag{
+			Tag: codebaseApi.CodebaseTag{
 				Codebase: "codebase",
 				Tag:      "tag",
 			},
@@ -148,7 +145,7 @@ func TestPutCDStageJenkinsDeployment_ServeRequest_ShouldFailGenerateLabels(t *te
 		log:    logr.Discard(),
 	}
 
-	err := jd.ServeRequest(cdsd)
+	err := jd.ServeRequest(context.Background(), cdsd)
 	assert.Error(t, err)
 
 	if !strings.Contains(err.Error(), "failed to generate labels") {
@@ -172,7 +169,7 @@ func TestPutCDStageJenkinsDeployment_ServeRequest_ShouldFailGetJenkinsDeployment
 		log:    logr.Discard(),
 	}
 
-	err := jd.ServeRequest(cdsd)
+	err := jd.ServeRequest(context.Background(), cdsd)
 	assert.Error(t, err)
 
 	if !strings.Contains(err.Error(), "failed to get NewCDStageDeploy cd stage jenkins deployment") {

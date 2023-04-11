@@ -8,6 +8,16 @@ metadata:
   name: edp-{{ .Values.name }}
 rules:
 - apiGroups:
+    - argoproj.io
+  resources:
+    - applications
+  verbs:
+    - get
+    - list
+    - patch
+    - update
+    - watch
+- apiGroups:
     - '*'
   resources:
     - adminconsoles

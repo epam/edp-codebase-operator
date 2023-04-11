@@ -2,6 +2,7 @@ package cdstagedeploy
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -25,18 +26,25 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
-func NewReconcileCDStageDeploy(c client.Client, scheme *runtime.Scheme, log logr.Logger) *ReconcileCDStageDeploy {
+func NewReconcileCDStageDeploy(
+	c client.Client,
+	scheme *runtime.Scheme,
+	log logr.Logger,
+	chainFactory chain.CDStageDeployChain,
+) *ReconcileCDStageDeploy {
 	return &ReconcileCDStageDeploy{
-		client: c,
-		scheme: scheme,
-		log:    log.WithName("cd-stage-deploy"),
+		client:       c,
+		scheme:       scheme,
+		log:          log.WithName("cd-stage-deploy"),
+		chainFactory: chainFactory,
 	}
 }
 
 type ReconcileCDStageDeploy struct {
-	client client.Client
-	scheme *runtime.Scheme
-	log    logr.Logger
+	client       client.Client
+	scheme       *runtime.Scheme
+	log          logr.Logger
+	chainFactory chain.CDStageDeployChain
 }
 
 func (r *ReconcileCDStageDeploy) SetupWithManager(mgr ctrl.Manager) error {
@@ -75,12 +83,12 @@ func (r *ReconcileCDStageDeploy) SetupWithManager(mgr ctrl.Manager) error {
 //+kubebuilder:rbac:groups=v2.edp.epam.com,namespace=placeholder,resources=cdstagedeployments,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=v2.edp.epam.com,namespace=placeholder,resources=cdstagedeployments/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=v2.edp.epam.com,namespace=placeholder,resources=cdstagedeployments/finalizers,verbs=update
+//+kubebuilder:rbac:groups=argoproj.io,namespace=placeholder,resources=applications,verbs=get;list;watch;update;patch;
 
 // Reconcile reads that state of the cluster for a CDStageDeploy object and makes changes based on the state.
 func (r *ReconcileCDStageDeploy) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	log := r.log.WithValues("type", "CDStageDeploy", "Request.Namespace", request.Namespace,
-		"Request.Name", request.Name)
-	log.Info("Reconciling has been started.")
+	log := ctrl.LoggerFrom(ctx)
+	log.Info("Reconciling CDStageDeploy has been started")
 
 	i := &codebaseApi.CDStageDeploy{}
 	if err := r.client.Get(ctx, request.NamespacedName, i); err != nil {
@@ -93,7 +101,7 @@ func (r *ReconcileCDStageDeploy) Reconcile(ctx context.Context, request reconcil
 
 	defer func() {
 		if err := r.updateStatus(ctx, i); err != nil {
-			log.Error(err, "error during status updating")
+			log.Error(err, "Error during status updating")
 		}
 	}()
 
@@ -109,23 +117,29 @@ func (r *ReconcileCDStageDeploy) Reconcile(ctx context.Context, request reconcil
 		return reconcile.Result{}, err
 	}
 
-	if err := chain.CreateDefChain(r.client).ServeRequest(i); err != nil {
+	ch, err := r.chainFactory(ctx, r.client, i)
+	if err != nil {
 		i.SetFailedStatus(err)
 
-		switch err.(type) {
-		case *util.CDStageJenkinsDeploymentHasNotBeenProcessedError:
-			log.Error(err, "failed to continue autodeploy",
+		return reconcile.Result{}, err
+	}
+
+	if err = ch.ServeRequest(ctx, i); err != nil {
+		i.SetFailedStatus(err)
+
+		if errors.Is(err, chain.ErrCDStageJenkinsDeploymentHasNotBeenProcessed) {
+			log.Error(err, "Failed to continue auto-deploy",
 				"pipe", i.Spec.Pipeline, "stage", i.Spec.Stage)
 
 			p := r.setReconciliationPeriod(i)
 
 			return reconcile.Result{RequeueAfter: p}, nil
-		default:
-			return reconcile.Result{}, fmt.Errorf("failed to process default chain: %w", err)
 		}
+
+		return reconcile.Result{}, fmt.Errorf("failed to process default chainFactory: %w", err)
 	}
 
-	log.Info("reconciling has been finished.")
+	log.Info("Reconciling has been finished")
 
 	return reconcile.Result{}, nil
 }

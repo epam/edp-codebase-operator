@@ -10,15 +10,12 @@ import (
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	"github.com/epam/edp-codebase-operator/v2/controllers/imagestreamtag/chain/handler"
-	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
 type PutTagCodebaseImageStreamCr struct {
 	next   handler.ImageStreamTagHandler
 	client client.Client
 }
-
-const timePattern = "2006-01-02T15:04:05"
 
 func (h PutTagCodebaseImageStreamCr) ServeRequest(ist *codebaseApi.ImageStreamTag) error {
 	rl := log.WithValues("image stream tag name", ist.Name)
@@ -46,26 +43,16 @@ func (h PutTagCodebaseImageStreamCr) addTagToCodebaseImageStream(cisName, tag, n
 		}
 	}
 
-	t, err := getCurrentTimeInUTC()
 	if err != nil {
 		return fmt.Errorf("failed to get current time: %w", err)
 	}
 
 	cis.Spec.Tags = append(cis.Spec.Tags, codebaseApi.Tag{
 		Name:    tag,
-		Created: *t,
+		Created: time.Now().String(),
 	})
 
 	return h.update(cis)
-}
-
-func getCurrentTimeInUTC() (*string, error) {
-	loc, err := time.LoadLocation("UTC")
-	if err != nil {
-		return nil, fmt.Errorf("failed to load location data: %w", err)
-	}
-
-	return util.GetStringP(time.Now().In(loc).Format(timePattern)), nil
 }
 
 func (h PutTagCodebaseImageStreamCr) getCodebaseImageStream(name, namespace string) (*codebaseApi.CodebaseImageStream, error) {

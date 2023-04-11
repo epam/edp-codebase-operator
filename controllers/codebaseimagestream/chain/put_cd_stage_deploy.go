@@ -14,8 +14,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
-
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
@@ -30,24 +28,23 @@ type cdStageDeployCommand struct {
 	Namespace string
 	Pipeline  string
 	Stage     string
-	Tag       jenkinsApi.Tag
-	Tags      []jenkinsApi.Tag
+	Tag       codebaseApi.CodebaseTag
+	Tags      []codebaseApi.CodebaseTag
 }
 
 const (
-	dateLayout = "2006-01-02T15:04:05"
 	logNameKey = "name"
 )
 
 func (h PutCDStageDeploy) ServeRequest(imageStream *codebaseApi.CodebaseImageStream) error {
-	log := h.log.WithValues(logNameKey, imageStream.Name)
-	log.Info("creating/updating CDStageDeploy.")
+	l := h.log.WithValues(logNameKey, imageStream.Name)
+	l.Info("creating/updating CDStageDeploy.")
 
 	if err := h.handleCodebaseImageStreamEnvLabels(imageStream); err != nil {
 		return fmt.Errorf("failed to handle %v codebase image stream: %w", imageStream.Name, err)
 	}
 
-	log.Info("creating/updating CDStageDeploy has been finished.")
+	l.Info("creating/updating CDStageDeploy has been finished.")
 
 	return nil
 }
@@ -107,7 +104,7 @@ func (h PutCDStageDeploy) putCDStageDeploy(envLabel, namespace string, spec code
 		}
 	}
 
-	cdsd, err := getCreateCommand(envLabel, name, namespace, spec.Codebase, spec.Tags)
+	cdsd, err := getCreateCommand(envLabel, name, namespace, spec.Codebase, spec.Tags, log)
 	if err != nil {
 		return fmt.Errorf("failed to construct command to create %v cd stage deploy: %w", name, err)
 	}
@@ -145,10 +142,10 @@ func (h PutCDStageDeploy) getCDStageDeploy(name, namespace string) (*codebaseApi
 	return i, nil
 }
 
-func getCreateCommand(envLabel, name, namespace, codebase string, tags []codebaseApi.Tag) (*cdStageDeployCommand, error) {
+func getCreateCommand(envLabel, name, namespace, codebase string, tags []codebaseApi.Tag, log logr.Logger) (*cdStageDeployCommand, error) {
 	env := strings.Split(envLabel, "/")
 
-	lastTag, err := getLastTag(tags)
+	lastTag, err := getLastTag(tags, log)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create cdStageDeployCommand with name %v: %w", name, err)
 	}
@@ -158,11 +155,11 @@ func getCreateCommand(envLabel, name, namespace, codebase string, tags []codebas
 		Namespace: namespace,
 		Pipeline:  env[0],
 		Stage:     env[1],
-		Tag: jenkinsApi.Tag{
+		Tag: codebaseApi.CodebaseTag{
 			Codebase: codebase,
 			Tag:      lastTag.Name,
 		},
-		Tags: []jenkinsApi.Tag{
+		Tags: []codebaseApi.CodebaseTag{
 			{
 				Codebase: codebase,
 				Tag:      lastTag.Name,
@@ -171,23 +168,26 @@ func getCreateCommand(envLabel, name, namespace, codebase string, tags []codebas
 	}, nil
 }
 
-func getLastTag(tags []codebaseApi.Tag) (codebaseApi.Tag, error) {
+func getLastTag(tags []codebaseApi.Tag, log logr.Logger) (codebaseApi.Tag, error) {
 	var (
 		latestTag     codebaseApi.Tag
 		latestTagTime = time.Time{}
 	)
 
 	for i, s := range tags {
-		if current, err := time.Parse(dateLayout, tags[i].Created); err == nil {
-			if current.After(latestTagTime) {
-				latestTagTime = current
-				latestTag = s
-			}
+		current, err := time.Parse(time.RFC3339, tags[i].Created)
+		if err != nil {
+			log.Error(err, "Failed to parse tag created time. Skip tag.", "tag", s.Name)
+		}
+
+		if current.After(latestTagTime) {
+			latestTagTime = current
+			latestTag = s
 		}
 	}
 
 	if latestTag.Name == "" {
-		return latestTag, errors.New("There are no valid tags")
+		return latestTag, errors.New("latest tag is not found")
 	}
 
 	return latestTag, nil

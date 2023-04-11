@@ -66,6 +66,16 @@ metadata:
   namespace: placeholder
 rules:
 - apiGroups:
+  - argoproj.io
+  resources:
+  - applications
+  verbs:
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
   - route.openshift.io
   resources:
   - routes

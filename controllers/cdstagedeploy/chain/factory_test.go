@@ -1,33 +1,100 @@
 package chain
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	"github.com/stretchr/testify/require"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
+	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
 func TestCreateDefChain(t *testing.T) {
 	t.Parallel()
 
-	type args struct {
-		c client.Client
-	}
+	scheme := runtime.NewScheme()
+	require.NoError(t, codebaseApi.AddToScheme(scheme))
 
 	tests := []struct {
-		name string
-		args args
-		want PutCDStageJenkinsDeployment
+		name    string
+		deploy  *codebaseApi.CDStageDeploy
+		objects []runtime.Object
+		wantErr require.ErrorAssertionFunc
 	}{
 		{
-			name: "should succeed",
-			args: args{
-				c: fake.NewClientBuilder().Build(),
+			name: "should create jenkins chain",
+			deploy: &codebaseApi.CDStageDeploy{
+				ObjectMeta: metaV1.ObjectMeta{
+					Name:      "test",
+					Namespace: "default",
+				},
+				Spec: codebaseApi.CDStageDeploySpec{
+					Tag: codebaseApi.CodebaseTag{
+						Codebase: "app1",
+					},
+				},
 			},
-			want: PutCDStageJenkinsDeployment{
-				log: ctrl.Log.WithName("put-cd-stage-jenkins-deployment-controller"),
+			objects: []runtime.Object{
+				&codebaseApi.Codebase{
+					ObjectMeta: metaV1.ObjectMeta{
+						Name:      "app1",
+						Namespace: "default",
+					},
+					Spec: codebaseApi.CodebaseSpec{
+						CiTool: util.CIJenkins,
+					},
+				},
+			},
+			wantErr: require.NoError,
+		},
+		{
+			name: "should create tekton chain",
+			deploy: &codebaseApi.CDStageDeploy{
+				ObjectMeta: metaV1.ObjectMeta{
+					Name:      "test",
+					Namespace: "default",
+				},
+				Spec: codebaseApi.CDStageDeploySpec{
+					Tag: codebaseApi.CodebaseTag{
+						Codebase: "app1",
+					},
+				},
+			},
+			objects: []runtime.Object{
+				&codebaseApi.Codebase{
+					ObjectMeta: metaV1.ObjectMeta{
+						Name:      "app1",
+						Namespace: "default",
+					},
+					Spec: codebaseApi.CodebaseSpec{
+						CiTool: util.CITekton,
+					},
+				},
+			},
+			wantErr: require.NoError,
+		},
+		{
+			name: "failed to get codebase",
+			deploy: &codebaseApi.CDStageDeploy{
+				ObjectMeta: metaV1.ObjectMeta{
+					Name:      "test",
+					Namespace: "default",
+				},
+				Spec: codebaseApi.CDStageDeploySpec{
+					Tag: codebaseApi.CodebaseTag{
+						Codebase: "app1",
+					},
+				},
+			},
+			wantErr: func(t require.TestingT, err error, i ...interface{}) {
+				require.Error(t, err)
+
+				assert.Contains(t, err.Error(), "failed to get codebase")
 			},
 		},
 	}
@@ -38,11 +105,13 @@ func TestCreateDefChain(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			tt.want.client = tt.args.c
+			_, err := CreateDefChain(
+				context.Background(),
+				fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(tt.objects...).Build(),
+				tt.deploy,
+			)
 
-			got := CreateDefChain(tt.args.c)
-
-			assert.Equal(t, tt.want, got)
+			tt.wantErr(t, err)
 		})
 	}
 }
