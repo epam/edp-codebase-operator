@@ -38,15 +38,15 @@ func TestSShInit_ShouldPass(t *testing.T) {
 	teardownSuite, idrsa := setupSuite(t)
 	defer teardownSuite(t)
 
-	g, err := SshInit(22, idrsa, "fake-host", logr.Discard())
+	g, err := SshInit(22, idrsa, "fake-host", "admin", logr.Discard())
 	assert.NoError(t, err)
-	assert.Equal(t, g.Config.User, "project-creator")
+	assert.Equal(t, g.Config.User, "admin")
 	assert.Equal(t, g.Host, "fake-host")
 	assert.Equal(t, g.Port, int32(22))
 }
 
 func TestSShInit_ShouldFailForIncorrectRSAPKey(t *testing.T) {
-	gc, err := SshInit(22, "idrsa", "fake-host", logr.Discard())
+	gc, err := SshInit(22, "idrsa", "fake-host", "admin", logr.Discard())
 	assert.Error(t, err)
 	assert.Nil(t, gc)
 	assert.Contains(t, err.Error(), "failed to get Public Key from Private one")
@@ -54,7 +54,7 @@ func TestSShInit_ShouldFailForIncorrectRSAPKey(t *testing.T) {
 
 func TestCreateProject_ShouldFailToParseRSAKey(t *testing.T) {
 	g := &SSHGerritClient{}
-	err := g.CreateProject(22, "wrong-format-pkey", "host", "appName", logr.Discard())
+	err := g.CreateProject(22, "wrong-format-pkey", "host", "admin", "appName", logr.Discard())
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to get Public Key from Private one")
 }
@@ -64,14 +64,14 @@ func TestCreateProject_ShouldFailToRunCommand(t *testing.T) {
 	defer teardownSuite(t)
 
 	g := &SSHGerritClient{}
-	err := g.CreateProject(22, idrsa, "host", "appName", logr.Discard())
+	err := g.CreateProject(22, idrsa, "host", "admin", "appName", logr.Discard())
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to dial")
 }
 
 func TestSetHeadToBranch_ShouldFailToParseRSAKey(t *testing.T) {
 	g := &SSHGerritClient{}
-	err := g.SetHeadToBranch(22, "wrong-format-pkey", "host", "appName", "defBranch", logr.Discard())
+	err := g.SetHeadToBranch(22, "wrong-format-pkey", "host", "admin", "appName", "defBranch", logr.Discard())
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to get Public Key from Private one")
 }
@@ -81,14 +81,14 @@ func TestSetHeadToBranch_ShouldFailToRunCommand(t *testing.T) {
 	defer teardownSuite(t)
 
 	g := &SSHGerritClient{}
-	err := g.SetHeadToBranch(22, idrsa, "host", "appName", "defBranch", logr.Discard())
+	err := g.SetHeadToBranch(22, idrsa, "host", "admin", "appName", "defBranch", logr.Discard())
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to dial")
 }
 
 func TestCheckProjectExist_ShouldFailToParseRSAKey(t *testing.T) {
 	g := &SSHGerritClient{}
-	e, err := g.CheckProjectExist(22, "wrong-format-pkey", "host", "appName", logr.Discard())
+	e, err := g.CheckProjectExist(22, "wrong-format-pkey", "host", "admin", "appName", logr.Discard())
 	assert.Error(t, err)
 	assert.False(t, e)
 	assert.Contains(t, err.Error(), "failed to get Public Key from Private one")
@@ -99,7 +99,7 @@ func TestCheckProjectExist_ShouldFailToRunCommand(t *testing.T) {
 	defer teardownSuite(t)
 
 	g := &SSHGerritClient{}
-	e, err := g.CheckProjectExist(22, idrsa, "host", "appName", logr.Discard())
+	e, err := g.CheckProjectExist(22, idrsa, "host", "admin", "appName", logr.Discard())
 	assert.Error(t, err)
 	assert.False(t, e)
 	assert.Contains(t, err.Error(), "failed to dial")

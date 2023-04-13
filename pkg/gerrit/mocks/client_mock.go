@@ -12,23 +12,23 @@ type Client struct {
 	mock.Mock
 }
 
-// CheckProjectExist provides a mock function with given fields: port, idrsa, host, appName, logger
-func (_m *Client) CheckProjectExist(port int32, idrsa string, host string, appName string, logger logr.Logger) (bool, error) {
-	ret := _m.Called(port, idrsa, host, appName, logger)
+// CheckProjectExist provides a mock function with given fields: port, sshPrivateKey, host, user, appName, logger
+func (_m *Client) CheckProjectExist(port int32, sshPrivateKey string, host string, user string, appName string, logger logr.Logger) (bool, error) {
+	ret := _m.Called(port, sshPrivateKey, host, user, appName, logger)
 
 	var r0 bool
 	var r1 error
-	if rf, ok := ret.Get(0).(func(int32, string, string, string, logr.Logger) (bool, error)); ok {
-		return rf(port, idrsa, host, appName, logger)
+	if rf, ok := ret.Get(0).(func(int32, string, string, string, string, logr.Logger) (bool, error)); ok {
+		return rf(port, sshPrivateKey, host, user, appName, logger)
 	}
-	if rf, ok := ret.Get(0).(func(int32, string, string, string, logr.Logger) bool); ok {
-		r0 = rf(port, idrsa, host, appName, logger)
+	if rf, ok := ret.Get(0).(func(int32, string, string, string, string, logr.Logger) bool); ok {
+		r0 = rf(port, sshPrivateKey, host, user, appName, logger)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
-	if rf, ok := ret.Get(1).(func(int32, string, string, string, logr.Logger) error); ok {
-		r1 = rf(port, idrsa, host, appName, logger)
+	if rf, ok := ret.Get(1).(func(int32, string, string, string, string, logr.Logger) error); ok {
+		r1 = rf(port, sshPrivateKey, host, user, appName, logger)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -36,13 +36,13 @@ func (_m *Client) CheckProjectExist(port int32, idrsa string, host string, appNa
 	return r0, r1
 }
 
-// CreateProject provides a mock function with given fields: port, idrsa, host, appName, logger
-func (_m *Client) CreateProject(port int32, idrsa string, host string, appName string, logger logr.Logger) error {
-	ret := _m.Called(port, idrsa, host, appName, logger)
+// CreateProject provides a mock function with given fields: port, sshPrivateKey, host, user, appName, logger
+func (_m *Client) CreateProject(port int32, sshPrivateKey string, host string, user string, appName string, logger logr.Logger) error {
+	ret := _m.Called(port, sshPrivateKey, host, user, appName, logger)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(int32, string, string, string, logr.Logger) error); ok {
-		r0 = rf(port, idrsa, host, appName, logger)
+	if rf, ok := ret.Get(0).(func(int32, string, string, string, string, logr.Logger) error); ok {
+		r0 = rf(port, sshPrivateKey, host, user, appName, logger)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -50,13 +50,13 @@ func (_m *Client) CreateProject(port int32, idrsa string, host string, appName s
 	return r0
 }
 
-// SetHeadToBranch provides a mock function with given fields: port, idrsa, host, appName, branchName, logger
-func (_m *Client) SetHeadToBranch(port int32, idrsa string, host string, appName string, branchName string, logger logr.Logger) error {
-	ret := _m.Called(port, idrsa, host, appName, branchName, logger)
+// SetHeadToBranch provides a mock function with given fields: port, sshPrivateKey, host, user, appName, branchName, logger
+func (_m *Client) SetHeadToBranch(port int32, sshPrivateKey string, host string, user string, appName string, branchName string, logger logr.Logger) error {
+	ret := _m.Called(port, sshPrivateKey, host, user, appName, branchName, logger)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(int32, string, string, string, string, logr.Logger) error); ok {
-		r0 = rf(port, idrsa, host, appName, branchName, logger)
+	if rf, ok := ret.Get(0).(func(int32, string, string, string, string, string, logr.Logger) error); ok {
+		r0 = rf(port, sshPrivateKey, host, user, appName, branchName, logger)
 	} else {
 		r0 = ret.Error(0)
 	}

@@ -15,9 +15,9 @@ import (
 //
 //go:generate mockery --name Client --filename client_mock.go
 type Client interface {
-	CreateProject(port int32, idrsa, host, appName string, logger logr.Logger) error
-	CheckProjectExist(port int32, idrsa, host, appName string, logger logr.Logger) (bool, error)
-	SetHeadToBranch(port int32, idrsa, host, appName, branchName string, logger logr.Logger) error
+	CreateProject(port int32, sshPrivateKey, host, user, appName string, logger logr.Logger) error
+	CheckProjectExist(port int32, sshPrivateKey, host, user, appName string, logger logr.Logger) (bool, error)
+	SetHeadToBranch(port int32, sshPrivateKey, host, user, appName, branchName string, logger logr.Logger) error
 }
 
 type SSHGerritClient struct {
@@ -80,14 +80,14 @@ func (s *SSHClient) NewSession() (*ssh.Session, *ssh.Client, error) {
 	return session, connection, nil
 }
 
-func SshInit(port int32, idrsa, host string, logger logr.Logger) (*SSHClient, error) {
-	pubkey, err := ssh.ParsePrivateKey([]byte(idrsa))
+func SshInit(port int32, sshPrivateKey, host, user string, logger logr.Logger) (*SSHClient, error) {
+	pubkey, err := ssh.ParsePrivateKey([]byte(sshPrivateKey))
 	if err != nil {
 		return nil, fmt.Errorf("failed to get Public Key from Private one: %w", err)
 	}
 
 	sshConfig := &ssh.ClientConfig{
-		User: "project-creator",
+		User: user,
 		Auth: []ssh.AuthMethod{
 			ssh.PublicKeys(pubkey),
 		},
@@ -101,12 +101,12 @@ func SshInit(port int32, idrsa, host string, logger logr.Logger) (*SSHClient, er
 		Port:   port,
 	}
 
-	logger.Info("SSH Client has been initialized", "host", host, "port", port)
+	logger.Info("SSH Client has been initialized", "host", host, "port", port, "user", user)
 
 	return &cl, nil
 }
 
-func (*SSHGerritClient) CheckProjectExist(port int32, idrsa, host, appName string, logger logr.Logger) (bool, error) {
+func (*SSHGerritClient) CheckProjectExist(port int32, sshPrivateKey, host, user, appName string, logger logr.Logger) (bool, error) {
 	var raw map[string]interface{}
 
 	command := "gerrit ls-projects --format json"
@@ -119,7 +119,7 @@ func (*SSHGerritClient) CheckProjectExist(port int32, idrsa, host, appName strin
 		Stderr: os.Stderr,
 	}
 
-	cl, err := SshInit(port, idrsa, host, logger)
+	cl, err := SshInit(port, sshPrivateKey, host, user, logger)
 	if err != nil {
 		return false, fmt.Errorf("failed to init ssh: %w", err)
 	}
@@ -140,7 +140,7 @@ func (*SSHGerritClient) CheckProjectExist(port int32, idrsa, host, appName strin
 	return isExist, nil
 }
 
-func (*SSHGerritClient) CreateProject(port int32, idrsa, host, appName string, logger logr.Logger) error {
+func (*SSHGerritClient) CreateProject(port int32, sshPrivateKey, host, user, appName string, logger logr.Logger) error {
 	command := fmt.Sprintf("gerrit create-project %v", appName)
 	cmd := &SSHCommand{
 		Path:   command,
@@ -150,7 +150,7 @@ func (*SSHGerritClient) CreateProject(port int32, idrsa, host, appName string, l
 		Stderr: os.Stderr,
 	}
 
-	cl, err := SshInit(port, idrsa, host, logger)
+	cl, err := SshInit(port, sshPrivateKey, host, user, logger)
 	if err != nil {
 		return err
 	}
@@ -164,7 +164,7 @@ func (*SSHGerritClient) CreateProject(port int32, idrsa, host, appName string, l
 }
 
 // SetHeadToBranch sets remote git HEAD to specific branch using ssh Gerrit command.
-func (*SSHGerritClient) SetHeadToBranch(port int32, idrsa, host, appName, branchName string, logger logr.Logger) error {
+func (*SSHGerritClient) SetHeadToBranch(port int32, sshPrivateKey, host, user, appName, branchName string, logger logr.Logger) error {
 	command := fmt.Sprintf("gerrit set-head %v --new-head %v", appName, branchName)
 	cmd := &SSHCommand{
 		Path:   command,
@@ -174,7 +174,7 @@ func (*SSHGerritClient) SetHeadToBranch(port int32, idrsa, host, appName, branch
 		Stderr: os.Stderr,
 	}
 
-	cl, err := SshInit(port, idrsa, host, logger)
+	cl, err := SshInit(port, sshPrivateKey, host, user, logger)
 	if err != nil {
 		return err
 	}

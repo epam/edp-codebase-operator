@@ -41,6 +41,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 		Spec: codebaseApi.GitServerSpec{
 			GitProvider:      codebaseApi.GitProviderGerrit,
 			NameSshKeySecret: "gerrit-ssh-key",
+			GitUser:          "ci",
 		},
 	}
 	gerritGitServerSecret := &corev1.Secret{
@@ -142,11 +143,37 @@ func TestPutProject_ServeRequest(t *testing.T) {
 			gerritClient: func(t *testing.T) gerrit.Client {
 				mock := gerritmocks.NewClient(t)
 
-				mock.On("CheckProjectExist", testify.Anything, testify.Anything, testify.Anything, testify.Anything, testify.Anything).
+				mock.
+					On(
+						"CheckProjectExist",
+						testify.Anything,
+						testify.Anything,
+						testify.Anything,
+						gerritGitServer.Spec.GitUser,
+						testify.Anything,
+						testify.Anything,
+					).
 					Return(false, nil).
-					On("CreateProject", testify.Anything, testify.Anything, testify.Anything, testify.Anything, testify.Anything).
+					On(
+						"CreateProject",
+						testify.Anything,
+						testify.Anything,
+						testify.Anything,
+						gerritGitServer.Spec.GitUser,
+						testify.Anything,
+						testify.Anything,
+					).
 					Return(nil).
-					On("SetHeadToBranch", testify.Anything, testify.Anything, testify.Anything, testify.Anything, testify.Anything, testify.Anything).
+					On(
+						"SetHeadToBranch",
+						testify.Anything,
+						testify.Anything,
+						testify.Anything,
+						gerritGitServer.Spec.GitUser,
+						testify.Anything,
+						testify.Anything,
+						testify.Anything,
+					).
 					Return(nil)
 
 				return mock
@@ -196,11 +223,37 @@ func TestPutProject_ServeRequest(t *testing.T) {
 			gerritClient: func(t *testing.T) gerrit.Client {
 				mock := gerritmocks.NewClient(t)
 
-				mock.On("CheckProjectExist", testify.Anything, testify.Anything, testify.Anything, testify.Anything, testify.Anything).
+				mock.
+					On(
+						"CheckProjectExist",
+						testify.Anything,
+						testify.Anything,
+						testify.Anything,
+						gerritGitServer.Spec.GitUser,
+						testify.Anything,
+						testify.Anything,
+					).
 					Return(false, nil).
-					On("CreateProject", testify.Anything, testify.Anything, testify.Anything, testify.Anything, testify.Anything).
+					On(
+						"CreateProject",
+						testify.Anything,
+						testify.Anything,
+						testify.Anything,
+						gerritGitServer.Spec.GitUser,
+						testify.Anything,
+						testify.Anything,
+					).
 					Return(nil).
-					On("SetHeadToBranch", testify.Anything, testify.Anything, testify.Anything, testify.Anything, testify.Anything, testify.Anything).
+					On(
+						"SetHeadToBranch",
+						testify.Anything,
+						testify.Anything,
+						testify.Anything,
+						gerritGitServer.Spec.GitUser,
+						testify.Anything,
+						testify.Anything,
+						testify.Anything,
+					).
 					Return(nil)
 
 				return mock
@@ -230,7 +283,8 @@ func TestPutProject_ServeRequest(t *testing.T) {
 			gitClient: func(t *testing.T) git.Git {
 				mock := gitmocks.NewGit(t)
 
-				mock.On("CheckPermissions", testify.Anything, testify.Anything, testify.Anything).
+				mock.
+					On("CheckPermissions", testify.Anything, testify.Anything, testify.Anything).
 					Return(true).
 					On("CloneRepository", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(nil).
@@ -248,11 +302,37 @@ func TestPutProject_ServeRequest(t *testing.T) {
 			gerritClient: func(t *testing.T) gerrit.Client {
 				mock := gerritmocks.NewClient(t)
 
-				mock.On("CheckProjectExist", testify.Anything, testify.Anything, testify.Anything, testify.Anything, testify.Anything).
+				mock.
+					On(
+						"CheckProjectExist",
+						testify.Anything,
+						testify.Anything,
+						testify.Anything,
+						gerritGitServer.Spec.GitUser,
+						testify.Anything,
+						testify.Anything,
+					).
 					Return(false, nil).
-					On("CreateProject", testify.Anything, testify.Anything, testify.Anything, testify.Anything, testify.Anything).
+					On(
+						"CreateProject",
+						testify.Anything,
+						testify.Anything,
+						testify.Anything,
+						gerritGitServer.Spec.GitUser,
+						testify.Anything,
+						testify.Anything,
+					).
 					Return(nil).
-					On("SetHeadToBranch", testify.Anything, testify.Anything, testify.Anything, testify.Anything, testify.Anything, testify.Anything).
+					On(
+						"SetHeadToBranch",
+						testify.Anything,
+						testify.Anything,
+						testify.Anything,
+						gerritGitServer.Spec.GitUser,
+						testify.Anything,
+						testify.Anything,
+						testify.Anything,
+					).
 					Return(nil)
 
 				return mock
@@ -300,11 +380,37 @@ func TestPutProject_ServeRequest(t *testing.T) {
 			gerritClient: func(t *testing.T) gerrit.Client {
 				mock := gerritmocks.NewClient(t)
 
-				mock.On("CheckProjectExist", testify.Anything, testify.Anything, testify.Anything, testify.Anything, testify.Anything).
+				mock.
+					On(
+						"CheckProjectExist",
+						testify.Anything,
+						testify.Anything,
+						testify.Anything,
+						gerritGitServer.Spec.GitUser,
+						testify.Anything,
+						testify.Anything,
+					).
 					Return(false, nil).
-					On("CreateProject", testify.Anything, testify.Anything, testify.Anything, testify.Anything, testify.Anything).
+					On(
+						"CreateProject",
+						testify.Anything,
+						testify.Anything,
+						testify.Anything,
+						gerritGitServer.Spec.GitUser,
+						testify.Anything,
+						testify.Anything,
+					).
 					Return(nil).
-					On("SetHeadToBranch", testify.Anything, testify.Anything, testify.Anything, testify.Anything, testify.Anything, testify.Anything).
+					On(
+						"SetHeadToBranch",
+						testify.Anything,
+						testify.Anything,
+						testify.Anything,
+						gerritGitServer.Spec.GitUser,
+						testify.Anything,
+						testify.Anything,
+						testify.Anything,
+					).
 					Return(errors.New("failed to set head to branch"))
 
 				return mock
@@ -358,9 +464,26 @@ func TestPutProject_ServeRequest(t *testing.T) {
 			gerritClient: func(t *testing.T) gerrit.Client {
 				mock := gerritmocks.NewClient(t)
 
-				mock.On("CheckProjectExist", testify.Anything, testify.Anything, testify.Anything, testify.Anything, testify.Anything).
+				mock.
+					On(
+						"CheckProjectExist",
+						testify.Anything,
+						testify.Anything,
+						testify.Anything,
+						gerritGitServer.Spec.GitUser,
+						testify.Anything,
+						testify.Anything,
+					).
 					Return(false, nil).
-					On("CreateProject", testify.Anything, testify.Anything, testify.Anything, testify.Anything, testify.Anything).
+					On(
+						"CreateProject",
+						testify.Anything,
+						testify.Anything,
+						testify.Anything,
+						gerritGitServer.Spec.GitUser,
+						testify.Anything,
+						testify.Anything,
+					).
 					Return(nil)
 
 				return mock
@@ -410,9 +533,26 @@ func TestPutProject_ServeRequest(t *testing.T) {
 			gerritClient: func(t *testing.T) gerrit.Client {
 				mock := gerritmocks.NewClient(t)
 
-				mock.On("CheckProjectExist", testify.Anything, testify.Anything, testify.Anything, testify.Anything, testify.Anything).
+				mock.
+					On(
+						"CheckProjectExist",
+						testify.Anything,
+						testify.Anything,
+						testify.Anything,
+						gerritGitServer.Spec.GitUser,
+						testify.Anything,
+						testify.Anything,
+					).
 					Return(false, nil).
-					On("CreateProject", testify.Anything, testify.Anything, testify.Anything, testify.Anything, testify.Anything).
+					On(
+						"CreateProject",
+						testify.Anything,
+						testify.Anything,
+						testify.Anything,
+						gerritGitServer.Spec.GitUser,
+						testify.Anything,
+						testify.Anything,
+					).
 					Return(errors.New("failed to create project"))
 
 				return mock
@@ -464,9 +604,26 @@ func TestPutProject_ServeRequest(t *testing.T) {
 			gerritClient: func(t *testing.T) gerrit.Client {
 				mock := gerritmocks.NewClient(t)
 
-				mock.On("CheckProjectExist", testify.Anything, testify.Anything, testify.Anything, testify.Anything, testify.Anything).
+				mock.
+					On(
+						"CheckProjectExist",
+						testify.Anything,
+						testify.Anything,
+						testify.Anything,
+						gerritGitServer.Spec.GitUser,
+						testify.Anything,
+						testify.Anything,
+					).
 					Return(false, nil).
-					On("CreateProject", testify.Anything, testify.Anything, testify.Anything, testify.Anything, testify.Anything).
+					On(
+						"CreateProject",
+						testify.Anything,
+						testify.Anything,
+						testify.Anything,
+						gerritGitServer.Spec.GitUser,
+						testify.Anything,
+						testify.Anything,
+					).
 					Return(nil)
 
 				return mock
@@ -516,9 +673,26 @@ func TestPutProject_ServeRequest(t *testing.T) {
 			gerritClient: func(t *testing.T) gerrit.Client {
 				mock := gerritmocks.NewClient(t)
 
-				mock.On("CheckProjectExist", testify.Anything, testify.Anything, testify.Anything, testify.Anything, testify.Anything).
+				mock.
+					On(
+						"CheckProjectExist",
+						testify.Anything,
+						testify.Anything,
+						testify.Anything,
+						gerritGitServer.Spec.GitUser,
+						testify.Anything,
+						testify.Anything,
+					).
 					Return(false, nil).
-					On("CreateProject", testify.Anything, testify.Anything, testify.Anything, testify.Anything, testify.Anything).
+					On(
+						"CreateProject",
+						testify.Anything,
+						testify.Anything,
+						testify.Anything,
+						gerritGitServer.Spec.GitUser,
+						testify.Anything,
+						testify.Anything,
+					).
 					Return(errors.New("failed to create project"))
 
 				return mock
@@ -568,7 +742,16 @@ func TestPutProject_ServeRequest(t *testing.T) {
 			gerritClient: func(t *testing.T) gerrit.Client {
 				mock := gerritmocks.NewClient(t)
 
-				mock.On("CheckProjectExist", testify.Anything, testify.Anything, testify.Anything, testify.Anything, testify.Anything).
+				mock.
+					On(
+						"CheckProjectExist",
+						testify.Anything,
+						testify.Anything,
+						testify.Anything,
+						gerritGitServer.Spec.GitUser,
+						testify.Anything,
+						testify.Anything,
+					).
 					Return(false, errors.New("failed to check project exist"))
 
 				return mock

@@ -152,7 +152,7 @@ func (h *PutProject) createProject(
 	if gitServer.Spec.GitProvider == codebaseApi.GitProviderGerrit {
 		log.Info("Set HEAD to default branch in Gerrit", "defaultBranch", codebase.Spec.DefaultBranch)
 
-		err = h.gerrit.SetHeadToBranch(gitServer.Spec.SshPort, privateSSHKey, gitServer.Spec.GitHost, codebase.Name, codebase.Spec.DefaultBranch, log)
+		err = h.gerrit.SetHeadToBranch(gitServer.Spec.SshPort, privateSSHKey, gitServer.Spec.GitHost, gitServer.Spec.GitUser, codebase.Name, codebase.Spec.DefaultBranch, log)
 		if err != nil {
 			return fmt.Errorf("set remote HEAD for codebase %v to default branch %v has been failed: %w", codebase.Name, codebase.Spec.DefaultBranch, err)
 		}
@@ -218,7 +218,7 @@ func (h *PutProject) createGerritProject(ctx context.Context, gitServer *codebas
 
 	log.Info("Start creating project in Gerrit")
 
-	projectExist, err := h.gerrit.CheckProjectExist(gitServer.Spec.SshPort, privateSSHKey, gitServer.Spec.GitHost, projectName, log)
+	projectExist, err := h.gerrit.CheckProjectExist(gitServer.Spec.SshPort, privateSSHKey, gitServer.Spec.GitHost, gitServer.Spec.GitUser, projectName, log)
 	if err != nil {
 		return fmt.Errorf("failed to check if project exist in Gerrit: %w", err)
 	}
@@ -228,7 +228,7 @@ func (h *PutProject) createGerritProject(ctx context.Context, gitServer *codebas
 		return nil
 	}
 
-	err = h.gerrit.CreateProject(gitServer.Spec.SshPort, privateSSHKey, gitServer.Spec.GitHost, projectName, log)
+	err = h.gerrit.CreateProject(gitServer.Spec.SshPort, privateSSHKey, gitServer.Spec.GitHost, gitServer.Spec.GitUser, projectName, log)
 	if err != nil {
 		return fmt.Errorf("failed to create gerrit project: %w", err)
 	}
