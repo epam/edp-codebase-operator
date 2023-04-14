@@ -5,13 +5,14 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
-	"github.com/epam/edp-jenkins-operator/v2/pkg/util/consts"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
@@ -32,7 +33,8 @@ func TestPutJenkinsFolder_ShouldCreateJenkinsFolder(t *testing.T) {
 			Repository: &codebaseApi.Repository{
 				Url: "https://example.com",
 			},
-			CiTool: util.CIJenkins,
+			CiTool:     util.CIJenkins,
+			GitUrlPath: pointer.String("/owner/repo"),
 		},
 	}
 
@@ -43,35 +45,34 @@ func TestPutJenkinsFolder_ShouldCreateJenkinsFolder(t *testing.T) {
 		},
 		Spec: codebaseApi.GitServerSpec{
 			NameSshKeySecret: fakeName,
-			GitHost:          fakeName,
+			GitHost:          "github.com",
 			SshPort:          22,
-			GitUser:          fakeName,
+			GitUser:          "git",
 		},
 	}
 
 	jf := &jenkinsApi.JenkinsFolder{}
 
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(codebaseApi.GroupVersion, c, gs, jf)
+	require.NoError(t, codebaseApi.AddToScheme(scheme))
+	require.NoError(t, jenkinsApi.AddToScheme(scheme))
 
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, gs, jf).Build()
 
 	pjf := NewPutJenkinsFolder(fakeCl)
 
-	if err := pjf.ServeRequest(ctx, c); err != nil {
-		t.Error("ServeRequest failed for PutJenkinsFolder")
-	}
+	err := pjf.ServeRequest(ctx, c)
+	require.NoError(t, err)
 
 	gjf := &jenkinsApi.JenkinsFolder{}
 
-	if err := fakeCl.Get(context.TODO(),
+	err = fakeCl.Get(context.Background(),
 		types.NamespacedName{
 			Name:      "fake-name-codebase",
 			Namespace: fakeNamespace,
 		},
-		gjf); err != nil {
-		t.Error("failed to get JenkinsFolder")
-	}
+		gjf)
+	require.NoError(t, err)
 
 	assert.Equal(t, gjf.Spec.Job.Name, "job-provisions/job/ci/job/ci")
 }
@@ -132,7 +133,6 @@ func TestPutJenkinsFolder_ShouldFailWhenGetJenkinsFolder(t *testing.T) {
 }
 
 func TestPutJenkinsFolder_ShouldFailWhenGetGitServer(t *testing.T) {
-	ctx := context.Background()
 	c := &codebaseApi.Codebase{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      fakeName,
@@ -146,39 +146,14 @@ func TestPutJenkinsFolder_ShouldFailWhenGetGitServer(t *testing.T) {
 	jf := &jenkinsApi.JenkinsFolder{}
 
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(codebaseApi.GroupVersion, c, jf)
+	require.NoError(t, codebaseApi.AddToScheme(scheme))
+	require.NoError(t, jenkinsApi.AddToScheme(scheme))
 
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, jf).Build()
 
 	pjf := NewPutJenkinsFolder(fakeCl)
 
-	err := pjf.ServeRequest(ctx, c)
-	assert.Error(t, err)
-
-	assert.Contains(t, err.Error(), "failed to get fake-name Git Server CR")
-}
-
-func Test_getRepositoryPath(t *testing.T) {
-	type args struct {
-		codebaseName string
-		strategy     string
-		gitUrlPath   *string
-	}
-
-	tests := []struct {
-		name string
-		args args
-		want string
-	}{
-		{"Import strategy", args{"codebase-name", consts.ImportStrategy, util.GetStringP("url")}, "url"},
-		{"Clone strategy", args{"codebase-name", string(codebaseApi.Clone), util.GetStringP("url")}, "/codebase-name"},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := getRepositoryPath(tt.args.codebaseName, tt.args.strategy, tt.args.gitUrlPath); got != tt.want {
-				t.Errorf("getRepositoryPath() = %v, want %v", got, tt.want)
-			}
-		})
-	}
+	err := pjf.ServeRequest(context.Background(), c)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to get GitServer")
 }

@@ -14,10 +14,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
-	"github.com/epam/edp-jenkins-operator/v2/pkg/util/consts"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
-	"github.com/epam/edp-codebase-operator/v2/pkg/model"
 	"github.com/epam/edp-codebase-operator/v2/pkg/platform"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
@@ -49,23 +47,25 @@ func (h *PutJenkinsFolder) ServeRequest(ctx context.Context, c *codebaseApi.Code
 		return nil
 	}
 
-	gs, err := util.GetGitServer(h.client, c.Spec.GitServer, c.Namespace)
-	if err != nil {
-		return fmt.Errorf("failed to fetch Git Server: %w", err)
+	gitServer := &codebaseApi.GitServer{}
+	if err = h.client.Get(
+		ctx,
+		client.ObjectKey{Name: c.Spec.GitServer, Namespace: c.Namespace},
+		gitServer,
+	); err != nil {
+		return fmt.Errorf("failed to get GitServer: %w", err)
 	}
 
-	path := getRepositoryPath(c.Name, string(c.Spec.Strategy), c.Spec.GitUrlPath)
-	sshLink := generateSshLink(path, gs)
 	jpm := map[string]string{
 		"PARAM":                    "true",
 		"NAME":                     c.Name,
 		"LANGUAGE":                 c.Spec.Lang,
 		"BUILD_TOOL":               strings.ToLower(c.Spec.BuildTool),
 		"DEFAULT_BRANCH":           c.Spec.DefaultBranch,
-		"GIT_SERVER_CR_NAME":       gs.Name,
+		"GIT_SERVER_CR_NAME":       gitServer.Name,
 		"GIT_SERVER_CR_VERSION":    "v2",
-		"GIT_CREDENTIALS_ID":       gs.NameSshKeySecret,
-		"REPOSITORY_PATH":          sshLink,
+		"GIT_CREDENTIALS_ID":       gitServer.Spec.NameSshKeySecret,
+		"REPOSITORY_PATH":          generateSshLink(gitServer, c.Spec.GetProjectID()),
 		"JIRA_INTEGRATION_ENABLED": strconv.FormatBool(isJiraIntegrationEnabled(c.Spec.JiraServer)),
 		"PLATFORM_TYPE":            platform.GetPlatformType(),
 	}
@@ -136,18 +136,8 @@ func (h *PutJenkinsFolder) getJenkinsFolder(name, namespace string) (*jenkinsApi
 	return i, nil
 }
 
-func getRepositoryPath(codebaseName, strategy string, gitUrlPath *string) string {
-	if strategy == consts.ImportStrategy {
-		return *gitUrlPath
-	}
-
-	return "/" + codebaseName
-}
-
-func generateSshLink(repoPath string, gs *model.GitServer) string {
-	l := fmt.Sprintf("ssh://%v@%v:%v%v", gs.GitUser, gs.GitHost, gs.SshPort, repoPath)
-
-	return l
+func generateSshLink(gitServer *codebaseApi.GitServer, repoPath string) string {
+	return fmt.Sprintf("ssh://%v@%v:%v/%v", gitServer.Spec.GitUser, gitServer.Spec.GitHost, gitServer.Spec.SshPort, repoPath)
 }
 
 func isJiraIntegrationEnabled(server *string) bool {
