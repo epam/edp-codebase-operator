@@ -87,7 +87,7 @@ func (h *PutProject) ServeRequest(ctx context.Context, codebase *codebaseApi.Cod
 	err = h.createProject(ctx, codebase, gitServer, wd)
 	if err != nil {
 		setFailedFields(codebase, codebaseApi.GerritRepositoryProvisioning, err.Error())
-		return fmt.Errorf("failed to push to gerrit for codebase %v: %w", codebase.Name, err)
+		return fmt.Errorf("failed to create project: %w", err)
 	}
 
 	codebase.Status.Git = util.ProjectPushedStatus
@@ -152,9 +152,22 @@ func (h *PutProject) createProject(
 	if gitServer.Spec.GitProvider == codebaseApi.GitProviderGerrit {
 		log.Info("Set HEAD to default branch in Gerrit", "defaultBranch", codebase.Spec.DefaultBranch)
 
-		err = h.gerrit.SetHeadToBranch(gitServer.Spec.SshPort, privateSSHKey, gitServer.Spec.GitHost, gitServer.Spec.GitUser, codebase.Name, codebase.Spec.DefaultBranch, log)
+		err = h.gerrit.SetHeadToBranch(
+			gitServer.Spec.SshPort,
+			privateSSHKey,
+			gitServer.Spec.GitHost,
+			gitServer.Spec.GitUser,
+			codebase.Spec.GetProjectID(),
+			codebase.Spec.DefaultBranch,
+			log,
+		)
 		if err != nil {
-			return fmt.Errorf("set remote HEAD for codebase %v to default branch %v has been failed: %w", codebase.Name, codebase.Spec.DefaultBranch, err)
+			return fmt.Errorf(
+				"set remote HEAD for codebase %s to default branch %s has been failed: %w",
+				codebase.Spec.GetProjectID(),
+				codebase.Spec.DefaultBranch,
+				err,
+			)
 		}
 	}
 
