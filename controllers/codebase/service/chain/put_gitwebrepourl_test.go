@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
@@ -19,7 +20,6 @@ import (
 func TestPutGitWebRepoUrl_ServeRequest(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
 	schema := runtime.NewScheme()
 
 	require.NoError(t, codebaseApi.AddToScheme(schema))
@@ -133,7 +133,7 @@ func TestPutGitWebRepoUrl_ServeRequest(t *testing.T) {
 			k8sClient := fake.NewClientBuilder().WithScheme(schema).WithObjects(tt.k8sObjects...).Build()
 			s := NewPutGitWebRepoUrl(k8sClient)
 
-			gotErr := s.ServeRequest(ctx, tt.codebase)
+			gotErr := s.ServeRequest(context.Background(), tt.codebase)
 			tt.wantErr(t, gotErr)
 		})
 	}
@@ -142,7 +142,6 @@ func TestPutGitWebRepoUrl_ServeRequest(t *testing.T) {
 func TestPutGitWebRepoUrl_getGitWebURL(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
 	schema := runtime.NewScheme()
 
 	require.NoError(t, codebaseApi.AddToScheme(schema))
@@ -186,11 +185,11 @@ func TestPutGitWebRepoUrl_getGitWebURL(t *testing.T) {
 			wantErr: require.NoError,
 		},
 		{
-			name:           "should return correct GitWebUrl for Gerrit with trailing slash in EDPcomponent.Url",
-			expectedWebUrl: "https://gerrit.example.com/gitweb?p=test.git",
+			name:           "should return correct GitWebUrl for Gerrit with trailing slash in EDPComponent.Url",
+			expectedWebUrl: "https://gerrit.example.com/gitweb?p=test-app.git",
 			codebase: &codebaseApi.Codebase{
 				ObjectMeta: metaV1.ObjectMeta{Name: "test", Namespace: namespace, ResourceVersion: "1"},
-				Spec:       codebaseApi.CodebaseSpec{GitServer: "git-server", GitUrlPath: &gitURL},
+				Spec:       codebaseApi.CodebaseSpec{GitServer: "git-server", GitUrlPath: pointer.String("/test-app")},
 				Status:     codebaseApi.CodebaseStatus{},
 			},
 			gitServer: &codebaseApi.GitServer{
@@ -276,7 +275,7 @@ func TestPutGitWebRepoUrl_getGitWebURL(t *testing.T) {
 			k8sClient := fake.NewClientBuilder().WithScheme(schema).WithObjects(tt.k8sObjects...).Build()
 			s := NewPutGitWebRepoUrl(k8sClient)
 
-			webUrl, gotErr := s.getGitWebURL(ctx, tt.gitServer, tt.codebase)
+			webUrl, gotErr := s.getGitWebURL(context.Background(), tt.gitServer, tt.codebase)
 			assert.Equal(t, tt.expectedWebUrl, webUrl)
 			tt.wantErr(t, gotErr)
 		})

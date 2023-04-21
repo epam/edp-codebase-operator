@@ -71,7 +71,7 @@ func (s *PutGitWebRepoUrl) getGitWebURL(ctx context.Context, gitServer *codebase
 		urlLink := util.GetHostWithProtocol(gitServer.Spec.GitHost)
 		urlLink = strings.TrimSuffix(urlLink, "/")
 		// For GitHub and GitLab we return link to the repository in format: https://<git_host>/<git_org>/<git_repo>
-		return fmt.Sprintf("%s%s", urlLink, *codebase.Spec.GitUrlPath), nil
+		return fmt.Sprintf("%s/%s", urlLink, codebase.Spec.GetProjectID()), nil
 
 	case codebaseApi.GitProviderGerrit:
 		// get EDPComponent with the name gerrit.
@@ -83,7 +83,7 @@ func (s *PutGitWebRepoUrl) getGitWebURL(ctx context.Context, gitServer *codebase
 		// For Gerrit, we return link to the repository in format: https://<gerrit_host>/gitweb?p=<codebase>.git
 		gerritProjectUrl := strings.TrimSuffix(component.Spec.Url, "/")
 
-		return fmt.Sprintf("%s/gitweb?p=%s.git", gerritProjectUrl, codebase.Name), nil
+		return fmt.Sprintf("%s/gitweb?p=%s.git", gerritProjectUrl, codebase.Spec.GetProjectID()), nil
 	default:
 		return "", fmt.Errorf("unsupported Git provider %s", gitServer.Spec.GitProvider)
 	}
