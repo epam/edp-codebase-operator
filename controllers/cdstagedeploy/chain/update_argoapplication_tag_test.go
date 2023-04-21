@@ -190,12 +190,8 @@ func TestUpdateArgoApplicationTag_ServeRequest(t *testing.T) {
 					},
 				},
 			},
-			wantErr: func(t require.TestingT, err error, i ...interface{}) {
-				require.Error(t, err)
-
-				assert.Contains(t, err.Error(), "failed to find Argo Application with the provided labels")
-			},
-			assert: func(t *testing.T, deploy *codebaseApi.CDStageDeploy, reader client.Reader) {},
+			wantErr: require.NoError,
+			assert:  func(t *testing.T, deploy *codebaseApi.CDStageDeploy, reader client.Reader) {},
 		},
 	}
 

@@ -3,6 +3,7 @@ package chain
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"github.com/mitchellh/mapstructure"
@@ -46,6 +47,11 @@ func (h *UpdateArgoApplicationTag) ServeRequest(ctx context.Context, stageDeploy
 
 	argoApplication, err := h.getArgoApplicationByCDStageDeploy(ctx, stageDeploy)
 	if err != nil {
+		if errors.Is(err, ErrArgoApplicationNotFound) {
+			log.Info("Skipping ArgoCD Application image tag update. ArgoCD Application is not deployed.", "reason", err.Error())
+			return nextServeOrNil(ctx, h.next, stageDeploy)
+		}
+
 		return fmt.Errorf("failed to get %v ArgoCD Application: %w", stageDeploy.Name, err)
 	}
 
@@ -85,7 +91,11 @@ func (h *UpdateArgoApplicationTag) getArgoApplicationByCDStageDeploy(ctx context
 	}
 
 	if len(apps.Items) == 0 {
-		return nil, fmt.Errorf("failed to find Argo Application with the provided labels %s", labelSelector)
+		return nil, fmt.Errorf(
+			"failed to find Argo Application with the provided labels %s: %w",
+			labelSelector,
+			ErrArgoApplicationNotFound,
+		)
 	}
 
 	if len(apps.Items) > 1 {
