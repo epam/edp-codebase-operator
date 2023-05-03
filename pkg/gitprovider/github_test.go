@@ -406,34 +406,70 @@ func TestGitHubClient_CreateProject(t *testing.T) {
 	defer httpmock.DeactivateAndReset()
 
 	tests := []struct {
-		name           string
-		projectID      string
-		POSTRespStatus int
-		POSTResBody    interface{}
-		wantErr        require.ErrorAssertionFunc
+		name             string
+		projectID        string
+		POSTRespStatus   int
+		POSTResBody      interface{}
+		GetOrgRespStatus int
+		GetOrgResBody    interface{}
+		wantErr          require.ErrorAssertionFunc
 	}{
 		{
-			name:           "success",
-			projectID:      "owner/repo",
-			POSTRespStatus: http.StatusCreated,
-			POSTResBody:    map[string]interface{}{"id": 1},
-			wantErr:        require.NoError,
+			name:             "success",
+			projectID:        "owner/repo",
+			POSTRespStatus:   http.StatusCreated,
+			POSTResBody:      map[string]interface{}{"id": 1},
+			GetOrgRespStatus: http.StatusOK,
+			GetOrgResBody:    []map[string]interface{}{},
+			wantErr:          require.NoError,
 		},
 		{
-			name:           "response failure",
-			projectID:      "owner/repo",
-			POSTRespStatus: http.StatusBadRequest,
-			POSTResBody:    map[string]interface{}{"message": "bad request"},
-			wantErr:        require.Error,
+			name:             "success with organization as owner",
+			projectID:        "owner/repo",
+			POSTRespStatus:   http.StatusCreated,
+			POSTResBody:      map[string]interface{}{"id": 1},
+			GetOrgRespStatus: http.StatusOK,
+			GetOrgResBody:    []map[string]interface{}{{"login": "owner"}},
+			wantErr:          require.NoError,
 		},
 		{
-			name:           "invalid projectID",
-			projectID:      "owner-repo",
-			POSTRespStatus: http.StatusCreated,
-			POSTResBody:    map[string]interface{}{"id": 1},
-			wantErr:        require.Error,
+			name:             "success with organization not found",
+			projectID:        "owner/repo",
+			POSTRespStatus:   http.StatusCreated,
+			POSTResBody:      map[string]interface{}{"id": 1},
+			GetOrgRespStatus: http.StatusOK,
+			GetOrgResBody:    []map[string]interface{}{{"login": "owner2"}},
+			wantErr:          require.NoError,
+		},
+		{
+			name:             "failed to get organizations",
+			projectID:        "owner/repo",
+			POSTRespStatus:   http.StatusCreated,
+			POSTResBody:      map[string]interface{}{"id": 1},
+			GetOrgRespStatus: http.StatusBadRequest,
+			GetOrgResBody:    []map[string]interface{}{},
+			wantErr:          require.Error,
+		},
+		{
+			name:             "response failure",
+			projectID:        "owner/repo",
+			POSTRespStatus:   http.StatusBadRequest,
+			POSTResBody:      map[string]interface{}{"message": "bad request"},
+			GetOrgRespStatus: http.StatusOK,
+			GetOrgResBody:    []map[string]interface{}{},
+			wantErr:          require.Error,
+		},
+		{
+			name:             "invalid projectID",
+			projectID:        "owner-repo",
+			POSTRespStatus:   http.StatusCreated,
+			POSTResBody:      map[string]interface{}{"id": 1},
+			GetOrgRespStatus: http.StatusOK,
+			GetOrgResBody:    []map[string]interface{}{},
+			wantErr:          require.Error,
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			httpmock.Reset()
@@ -441,6 +477,10 @@ func TestGitHubClient_CreateProject(t *testing.T) {
 			POSTResponder, err := httpmock.NewJsonResponder(tt.POSTRespStatus, tt.POSTResBody)
 			require.NoError(t, err)
 			httpmock.RegisterRegexpResponder(http.MethodPost, fakeUrlRegexp, POSTResponder)
+
+			GetOrgResponder, err := httpmock.NewJsonResponder(tt.GetOrgRespStatus, tt.GetOrgResBody)
+			require.NoError(t, err)
+			httpmock.RegisterRegexpResponder(http.MethodGet, fakeUrlRegexp, GetOrgResponder)
 
 			c := NewGitHubClient(restyClient)
 			err = c.CreateProject(context.Background(), "url", "token", tt.projectID)

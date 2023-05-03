@@ -17,6 +17,10 @@ type gitHubWebHook struct {
 	} `json:"config"`
 }
 
+type gitHubOrganization struct {
+	Login string `json:"login"`
+}
+
 type GitHubClient struct {
 	restyClient *resty.Client
 }
@@ -242,12 +246,22 @@ func (c *GitHubClient) CreateProject(
 	token,
 	projectID string,
 ) error {
-	_, repo, err := parseProjectID(projectID)
+	c.restyClient.HostURL = githubURL
+	path := "user/repos"
+
+	owner, repo, err := parseProjectID(projectID)
 	if err != nil {
 		return err
 	}
 
-	c.restyClient.HostURL = githubURL
+	isOrg, err := c.isOwnerOrg(ctx, githubURL, token, owner)
+	if err != nil {
+		return err
+	}
+
+	if isOrg {
+		path = fmt.Sprintf("orgs/%v/repos", owner)
+	}
 
 	resp, err := c.restyClient.
 		R().
@@ -256,7 +270,7 @@ func (c *GitHubClient) CreateProject(
 		SetBody(map[string]string{
 			"name": repo,
 		}).
-		Post("/user/repos")
+		Post(path)
 	if err != nil {
 		return fmt.Errorf("failed to create GitHub repository: %w", err)
 	}
@@ -304,6 +318,41 @@ func (c *GitHubClient) ProjectExists(
 	}
 
 	return true, nil
+}
+
+// isOwnerOrg checks if the given owner is an organization.
+func (c *GitHubClient) isOwnerOrg(
+	ctx context.Context,
+	githubURL,
+	token string,
+	owner string,
+) (bool, error) {
+	c.restyClient.HostURL = githubURL
+
+	orgs := make([]gitHubOrganization, 0)
+
+	resp, err := c.restyClient.
+		R().
+		SetContext(ctx).
+		SetAuthToken(token).
+		SetQueryParam("per_page", "1000").
+		SetResult(&orgs).
+		Get("/user/orgs")
+	if err != nil {
+		return false, fmt.Errorf("failed to get GitHub organizations: %w", err)
+	}
+
+	if resp.IsError() {
+		return false, fmt.Errorf("failed to get GitHub organizations: %s", resp.String())
+	}
+
+	for _, org := range orgs {
+		if strings.EqualFold(org.Login, owner) {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }
 
 func convertWebhook(githubHook *gitHubWebHook) *WebHook {
