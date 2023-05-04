@@ -66,7 +66,7 @@ func (c *GitHubClient) CreateWebHook(
 		SetBody(map[string]interface{}{
 			"name":   "web",
 			"active": true,
-			"events": []string{"pull_request", "push"},
+			"events": []string{"pull_request", "push", "issue_comment"},
 			"config": map[string]string{
 				"url":          webHookURL,
 				"content_type": "json",

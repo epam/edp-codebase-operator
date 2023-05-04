@@ -63,6 +63,7 @@ func (c *GitLabClient) CreateWebHook(
 		SetBody(map[string]interface{}{
 			"url":                   webHookURL,
 			"merge_requests_events": true,
+			"note_events":           true,
 			"push_events":           false,
 			"token":                 webHookSecret,
 		}).
