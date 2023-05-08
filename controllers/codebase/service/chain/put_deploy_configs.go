@@ -31,6 +31,11 @@ func (h *PutDeployConfigs) ServeRequest(ctx context.Context, c *codebaseApi.Code
 		return nil
 	}
 
+	if c.Spec.Type != util.Application {
+		log.Info("Skip putting deploy templates to codebase because it is not application")
+		return nil
+	}
+
 	log.Info("Start pushing configs")
 
 	if err := h.tryToPushConfigs(ctx, c); err != nil {

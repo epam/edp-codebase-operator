@@ -110,3 +110,31 @@ func TestPutDeployConfigs_ShouldPass(t *testing.T) {
 	err := pdc.ServeRequest(context.Background(), c)
 	assert.NoError(t, err)
 }
+
+func TestPutDeployConfigs_ShouldPassWithNonApplication(t *testing.T) {
+	t.Setenv("WORKING_DIR", t.TempDir())
+
+	c := &codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      fakeName,
+			Namespace: fakeNamespace,
+		},
+		Spec: codebaseApi.CodebaseSpec{
+			Type: "Library",
+		},
+	}
+
+	scheme := runtime.NewScheme()
+	scheme.AddKnownTypes(codebaseApi.GroupVersion, c)
+
+	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c).Build()
+
+	t.Setenv(util.AssetsDirEnv, "../../../../build")
+
+	mGit := gitServerMocks.NewGit(t)
+
+	pdc := NewPutDeployConfigs(fakeCl, mGit)
+
+	err := pdc.ServeRequest(context.Background(), c)
+	assert.NoError(t, err)
+}
