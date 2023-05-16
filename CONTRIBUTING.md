@@ -48,7 +48,6 @@ Include details about your configuration and environment:
 
 * **Which version of EDP Codebase Operator are you using?**
 * **What's the name and version of the cluster you're using**?
-* **Which version of EDP Codebase Operator is being integrated with?**
 
 ### Suggesting Enhancements
 
@@ -68,7 +67,6 @@ Enhancement suggestions are tracked as [GitHub issues](https://guides.github.com
 * **Explain why this enhancement would be useful**
 * **Which version of EDP Codebase Operator are you using?**
 * **What's the name and version of the cluster you're using**?
-* **Which version of EDP Codebase Operator is being integrated with?**
 
 #### Local development
 

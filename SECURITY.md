@@ -2,7 +2,7 @@
 
 ## Supported Versions
 
-The Keycloak operator project maintains release branches for the three most recent minor releases. Applicable fixes, including security fixes, may be backported to those three release branches, depending on severity and feasibility. Please refer to CHANGELOG.md for details.
+The EDP Codebase Operator project maintains release branches for the three most recent minor releases. Applicable fixes, including security fixes, may be backported to those three release branches, depending on severity and feasibility. Please refer to CHANGELOG.md for details.
 
 ## Reporting a Vulnerability
 
