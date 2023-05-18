@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/mitchellh/mapstructure"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -16,6 +17,7 @@ import (
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	"github.com/epam/edp-codebase-operator/v2/controllers/cdstagedeploy/chain/handler"
 	"github.com/epam/edp-codebase-operator/v2/pkg/argocd"
+	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
 // argoApplicationImagePatch is a struct that represents ArgoCD Application image patch.
@@ -55,7 +57,12 @@ func (h *UpdateArgoApplicationTag) ServeRequest(ctx context.Context, stageDeploy
 		return fmt.Errorf("failed to get %v ArgoCD Application: %w", stageDeploy.Name, err)
 	}
 
-	if err := h.updateArgoApplicationImageTag(ctx, argoApplication, stageDeploy.Spec.Tag.Tag); err != nil {
+	targetRevision, err := h.getTargetRevision(ctx, stageDeploy)
+	if err != nil {
+		return err
+	}
+
+	if err := h.updateArgoApplication(ctx, argoApplication, stageDeploy.Spec.Tag.Tag, targetRevision); err != nil {
 		return err
 	}
 
@@ -108,14 +115,19 @@ func (h *UpdateArgoApplicationTag) getArgoApplicationByCDStageDeploy(ctx context
 	return &apps.Items[0], nil
 }
 
-// updateArgoApplicationImageTag updates ArgoCD Application image tag.
-func (h *UpdateArgoApplicationTag) updateArgoApplicationImageTag(ctx context.Context, application *unstructured.Unstructured, imageTag string) error {
+// updateArgoApplication updates ArgoCD Application image tag.
+func (h *UpdateArgoApplicationTag) updateArgoApplication(
+	ctx context.Context,
+	application *unstructured.Unstructured,
+	imageTag,
+	targetRevision string,
+) error {
 	var applicationPatch argoApplicationImagePatch
 	if err := mapstructure.Decode(application.Object, &applicationPatch); err != nil {
 		return fmt.Errorf("failed to decode ArgoCD Application spec: %w", err)
 	}
 
-	applicationPatch.Spec.Source.TargetRevision = imageTag
+	applicationPatch.Spec.Source.TargetRevision = targetRevision
 
 	for i := range applicationPatch.Spec.Source.Helm.Parameters {
 		if applicationPatch.Spec.Source.Helm.Parameters[i].Name == "image.tag" {
@@ -130,4 +142,20 @@ func (h *UpdateArgoApplicationTag) updateArgoApplicationImageTag(ctx context.Con
 	}
 
 	return nil
+}
+
+func (h *UpdateArgoApplicationTag) getTargetRevision(ctx context.Context, deploy *codebaseApi.CDStageDeploy) (string, error) {
+	codebase := &codebaseApi.Codebase{}
+	if err := h.client.Get(ctx, types.NamespacedName{
+		Name:      deploy.Spec.Tag.Codebase,
+		Namespace: deploy.Namespace,
+	}, codebase); err != nil {
+		return "", fmt.Errorf("failed to get codebase: %w", err)
+	}
+
+	if codebase.Spec.Versioning.Type == util.VersioningTypeEDP && !strings.HasPrefix(deploy.Spec.Tag.Tag, "build/") {
+		return fmt.Sprintf("build/%s", deploy.Spec.Tag.Tag), nil
+	}
+
+	return deploy.Spec.Tag.Tag, nil
 }
