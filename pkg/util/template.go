@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path"
-	"strings"
 	"text/template"
 
 	"github.com/epam/edp-codebase-operator/v2/pkg/model"
@@ -130,41 +129,6 @@ func CopyHelmChartTemplates(deploymentScript, templatesDest, assetsDir string, c
 	return nil
 }
 
-func CopyOpenshiftTemplate(deploymentScript, templatesDest, assetsDir string, config *model.ConfigGoTemplating) error {
-	log.Info("start handling Openshift template", logCodebaseNameKey, config.Name)
-
-	templateBasePath := path.Join(assetsDir, "templates/applications", deploymentScript, strings.ToLower(config.Lang))
-	templateName := fmt.Sprintf("%v.tmpl", strings.ToLower(config.Lang))
-
-	log.Info("Paths", "templatesDest", templatesDest, "templateBasePath", templateBasePath,
-		"templateName", templateName)
-
-	err := CreateDirectory(templatesDest)
-	if err != nil {
-		return err
-	}
-
-	log.Info(logDirCreatedMessage, logPathKey, templatesDest)
-
-	fp := path.Join(templatesDest, config.Name+".yaml")
-
-	f, err := os.Create(fp)
-	if err != nil {
-		return fmt.Errorf("failed to create openshift template file: %w", err)
-	}
-
-	log.Info("file is created", logPathKey, fp)
-
-	err = renderTemplate(f, path.Join(templateBasePath, templateName), templateName, config)
-	if err != nil {
-		return err
-	}
-
-	log.Info("end handling Openshift template", logCodebaseNameKey, config.Name)
-
-	return nil
-}
-
 func CopyTemplate(deploymentScript, workDir, assetsDir string, cf *model.ConfigGoTemplating) error {
 	templatesDest := path.Join(workDir, "deploy-templates")
 
@@ -176,8 +140,6 @@ func CopyTemplate(deploymentScript, workDir, assetsDir string, cf *model.ConfigG
 	switch deploymentScript {
 	case HelmChartDeploymentScriptType:
 		return CopyHelmChartTemplates(deploymentScript, templatesDest, assetsDir, cf)
-	case "openshift-template":
-		return CopyOpenshiftTemplate(deploymentScript, templatesDest, assetsDir, cf)
 	default:
 		return errors.New("Unsupported deployment type")
 	}
