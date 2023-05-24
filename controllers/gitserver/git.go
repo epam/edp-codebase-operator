@@ -403,17 +403,6 @@ func (gp *GitProvider) CloneRepositoryBySsh(key, user, repoUrl, destination stri
 		return fmt.Errorf("failed to covert bare repo to normal: %w", err)
 	}
 
-	gitDir := path.Join(destination, ".git")
-	fetchCMD = exec.Command(gitCMD, gitDirArg, gitDir, "pull", gitOriginArg, gitUnshallowArg, "--no-rebase")
-	fetchCMD.Env = cloneCMD.Env
-	bts, err = fetchCMD.CombinedOutput()
-
-	if err != nil && !strings.Contains(string(bts), "does not make sense") {
-		return fmt.Errorf("failed to pull unshallow repo: %s: %w", string(bts), err)
-	}
-
-	log.Info("Result of `git pull unshallow` command", logOutKey, string(bts))
-
 	log.Info("End cloning", logRepositoryKey, repoUrl)
 
 	return nil
@@ -462,15 +451,6 @@ func (gp *GitProvider) CloneRepository(repo string, user, pass *string, destinat
 		return fmt.Errorf("failed to covert bare repo to normal: %w", err)
 	}
 
-	gitDir := path.Join(destination, gitDirName)
-	fetchCMD = exec.Command(gitCMD, gitDirArg, gitDir, "pull", gitOriginArg, gitUnshallowArg, "--no-rebase")
-
-	bts, err = fetchCMD.CombinedOutput()
-	if err != nil && !strings.Contains(string(bts), "does not make sense") {
-		return fmt.Errorf("failed to pull unshallow repo: %s: %w", string(bts), err)
-	}
-
-	log.Info("Result of `git pull unshallow` command", logOutKey, string(bts))
 	log.Info("End cloning", logRepositoryKey, repo)
 
 	return nil
