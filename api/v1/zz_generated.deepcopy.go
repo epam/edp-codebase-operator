@@ -382,11 +382,6 @@ func (in *CodebaseSpec) DeepCopyInto(out *CodebaseSpec) {
 		*out = new(string)
 		**out = **in
 	}
-	if in.Framework != nil {
-		in, out := &in.Framework, &out.Framework
-		*out = new(string)
-		**out = **in
-	}
 	if in.Repository != nil {
 		in, out := &in.Repository, &out.Repository
 		*out = new(Repository)

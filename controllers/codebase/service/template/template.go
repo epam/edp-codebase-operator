@@ -67,10 +67,7 @@ func buildTemplateConfig(ctx context.Context, c client.Client, cb *codebaseApi.C
 		PlatformType: platform.GetPlatformType(),
 		Lang:         cb.Spec.Lang,
 		DnsWildcard:  us.DnsWildcard,
-	}
-
-	if cb.Spec.Framework != nil {
-		cf.Framework = *cb.Spec.Framework
+		Framework:    cb.Spec.Framework,
 	}
 
 	cf.GitURL, err = getProjectUrl(c, &cb.Spec, cb.Namespace)

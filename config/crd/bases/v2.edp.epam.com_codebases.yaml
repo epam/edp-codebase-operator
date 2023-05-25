@@ -70,7 +70,6 @@ spec:
                 type: boolean
               framework:
                 description: A framework used in codebase.
-                nullable: true
                 type: string
               gitServer:
                 description: 'A name of git server which will be used as VCS. Example:
@@ -151,6 +150,7 @@ spec:
             - ciTool
             - defaultBranch
             - emptyProject
+            - framework
             - gitServer
             - lang
             - strategy

@@ -723,6 +723,13 @@ CodebaseSpec defines the desired state of Codebase.
         </td>
         <td>true</td>
       </tr><tr>
+        <td><b>framework</b></td>
+        <td>string</td>
+        <td>
+          A framework used in codebase.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
         <td><b>gitServer</b></td>
         <td>string</td>
         <td>
@@ -792,13 +799,6 @@ CodebaseSpec defines the desired state of Codebase.
         <td>boolean</td>
         <td>
           Controller must skip step "put deploy templates" in action chain.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>framework</b></td>
-        <td>string</td>
-        <td>
-          A framework used in codebase.<br/>
         </td>
         <td>false</td>
       </tr><tr>

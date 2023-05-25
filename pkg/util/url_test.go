@@ -34,15 +34,6 @@ func TestBuildRepoUrl(t *testing.T) {
 			},
 			want: "https://github.com/epmd-edp/java-maven-java11.git",
 		},
-		{
-			name: "should complete without a framework",
-			fields: fields{
-				lang:      "javascript",
-				buildTool: "npm",
-				specType:  "library",
-			},
-			want: "https://github.com/epmd-edp/javascript-npm-react.git",
-		},
 	}
 
 	for _, tt := range tests {
@@ -55,7 +46,7 @@ func TestBuildRepoUrl(t *testing.T) {
 				Lang:      tt.fields.lang,
 				BuildTool: tt.fields.buildTool,
 				Type:      tt.fields.specType,
-				Framework: &tt.fields.framework,
+				Framework: tt.fields.framework,
 			}
 
 			got := BuildRepoUrl(spec)
@@ -167,7 +158,7 @@ func TestGetRepoUrl(t *testing.T) {
 					Strategy:   tt.fields.strategy,
 					Lang:       tt.fields.lang,
 					BuildTool:  tt.fields.buildTool,
-					Framework:  &tt.fields.framework,
+					Framework:  tt.fields.framework,
 					Repository: tt.fields.repository,
 				},
 			}

@@ -15,16 +15,6 @@ const (
 )
 
 var (
-	lf = map[string]string{
-		"javascript":      "react",
-		"groovy-pipeline": "codenarc",
-		"dotnet":          "netcore",
-		"python":          "python-3.8",
-		"terraform":       "terraform",
-		"rego":            "opa",
-		"container":       "docker",
-	}
-
 	protocolRegexp = regexp.MustCompile(`^(https://)|^(http://)`)
 )
 
@@ -72,16 +62,14 @@ func tryGetRepoUrl(spec *codebaseApi.CodebaseSpec) (string, error) {
 func BuildRepoUrl(spec *codebaseApi.CodebaseSpec) string {
 	log.Info("Start building repo url", "base url", GithubDomain, "spec", spec)
 
-	return strings.ToLower(fmt.Sprintf("%v/%v-%v-%v.git", GithubDomain, spec.Lang, spec.BuildTool,
-		getFrameworkOrDefault(spec)))
-}
-
-func getFrameworkOrDefault(spec *codebaseApi.CodebaseSpec) string {
-	if spec.Framework != nil && *spec.Framework != "" {
-		return *spec.Framework
-	}
-
-	return lf[strings.ToLower(spec.Lang)]
+	return strings.ToLower(
+		fmt.Sprintf(
+			"%v/%v-%v-%v.git",
+			GithubDomain,
+			spec.Lang, spec.BuildTool,
+			spec.Framework,
+		),
+	)
 }
 
 // GetHostWithProtocol adds protocol to host if it is not presented.

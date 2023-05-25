@@ -57,9 +57,7 @@ type CodebaseSpec struct {
 	Description *string `json:"description,omitempty"`
 
 	// A framework used in codebase.
-	// +nullable
-	// +optional
-	Framework *string `json:"framework,omitempty"`
+	Framework string `json:"framework"`
 
 	// A build tool which is used on codebase.
 	BuildTool string `json:"buildTool"`
