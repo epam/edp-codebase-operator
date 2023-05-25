@@ -3,8 +3,8 @@ description: A Helm chart for EDP Codebase Operator
 home: https://epam.github.io/edp-install/
 name: codebase-operator
 type: application
-version: 2.16.0-SNAPSHOT
-appVersion: 2.16.0-SNAPSHOT
+version: 2.17.0-SNAPSHOT
+appVersion: 2.17.0-SNAPSHOT
 icon: https://epam.github.io/edp-install/assets/logo.png
 keywords:
   - edp
@@ -33,10 +33,10 @@ annotations:
   artifacthub.io/license: Apache-2.0
   artifacthub.io/operator: "true"
   artifacthub.io/images: |
-    - name: codebase-operator:2.15.0
-      image: epamedp/codebase-operator:2.15.0
-    - name: alpine:3.16.4
-      image: alpine:3.16.4
+    - name: codebase-operator:2.16.0
+      image: epamedp/codebase-operator:2.16.0
+    - name: alpine:3.18.0
+      image: alpine:3.18.0
   artifacthub.io/operatorCapabilities: Full Lifecycle
   artifacthub.io/crds: |
     - kind: CDStageDeploy
