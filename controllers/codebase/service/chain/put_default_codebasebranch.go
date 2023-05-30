@@ -60,7 +60,7 @@ func (s *PutDefaultCodeBaseBranch) ServeRequest(ctx context.Context, codebase *c
 		},
 	}
 
-	if codebase.Spec.Versioning.Type != codebaseApi.Default {
+	if codebase.Spec.Versioning.Type != codebaseApi.VersioningTypDefault {
 		branch.Spec.Version = codebase.Spec.Versioning.StartFrom
 	}
 

@@ -17,7 +17,6 @@ import (
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/argocd"
-	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
 func TestUpdateArgoApplicationTag_ServeRequest(t *testing.T) {
@@ -149,7 +148,7 @@ func TestUpdateArgoApplicationTag_ServeRequest(t *testing.T) {
 					},
 					Spec: codebaseApi.CodebaseSpec{
 						Versioning: codebaseApi.Versioning{
-							Type:      util.VersioningTypeEDP,
+							Type:      codebaseApi.VersioningTypeEDP,
 							StartFrom: pointer.String("2.0.0"),
 						},
 					},

@@ -26,12 +26,14 @@ const (
 type VersioningType string
 
 const (
-	Default VersioningType = "default"
+	VersioningTypDefault VersioningType = "default"
+	VersioningTypeEDP    VersioningType = "edp"
 )
 
 type Versioning struct {
 	Type VersioningType `json:"type"`
 
+	// StartFrom is required when versioning type is not default.
 	// +nullable
 	// +optional
 	StartFrom *string `json:"startFrom,omitempty"`

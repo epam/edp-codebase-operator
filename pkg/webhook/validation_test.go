@@ -1,9 +1,9 @@
-package validation
+package webhook
 
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
@@ -19,7 +19,7 @@ func TestIsCodebaseValid(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want assert.ErrorAssertionFunc
+		want require.ErrorAssertionFunc
 	}{
 		{
 			name: "should be valid",
@@ -30,11 +30,14 @@ func TestIsCodebaseValid(t *testing.T) {
 					Spec: codebaseApi.CodebaseSpec{
 						Lang:     "go",
 						Strategy: "create",
+						Versioning: codebaseApi.Versioning{
+							Type: codebaseApi.VersioningTypDefault,
+						},
 					},
 					Status: codebaseApi.CodebaseStatus{},
 				},
 			},
-			want: assert.NoError,
+			want: require.NoError,
 		},
 		{
 			name: "should fail on strategy",
@@ -49,7 +52,10 @@ func TestIsCodebaseValid(t *testing.T) {
 					Status: codebaseApi.CodebaseStatus{},
 				},
 			},
-			want: assert.Error,
+			want: func(t require.TestingT, err error, i ...interface{}) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "provided unsupported repository strategy: test-strategy")
+			},
 		},
 		{
 			name: "should fail on language",
@@ -64,7 +70,31 @@ func TestIsCodebaseValid(t *testing.T) {
 					Status: codebaseApi.CodebaseStatus{},
 				},
 			},
-			want: assert.Error,
+			want: func(t require.TestingT, err error, i ...interface{}) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "provided unsupported language: test-lang")
+			},
+		},
+		{
+			name: "should fail on versioning",
+			args: args{
+				cr: &codebaseApi.Codebase{
+					TypeMeta:   metaV1.TypeMeta{},
+					ObjectMeta: metaV1.ObjectMeta{},
+					Spec: codebaseApi.CodebaseSpec{
+						Lang:     "go",
+						Strategy: "create",
+						Versioning: codebaseApi.Versioning{
+							Type: codebaseApi.VersioningTypeEDP,
+						},
+					},
+					Status: codebaseApi.CodebaseStatus{},
+				},
+			},
+			want: func(t require.TestingT, err error, i ...interface{}) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "versioning start from is required when versioning type is not default")
+			},
 		},
 	}
 

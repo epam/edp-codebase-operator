@@ -153,7 +153,7 @@ func checkDirectory(path string) bool {
 }
 
 func (h PutBranchInGit) processNewVersion(codebaseBranch *codebaseApi.CodebaseBranch, codeBase *codebaseApi.Codebase) error {
-	if codeBase.Spec.Versioning.Type != util.VersioningTypeEDP {
+	if codeBase.Spec.Versioning.Type != codebaseApi.VersioningTypeEDP {
 		return nil
 	}
 

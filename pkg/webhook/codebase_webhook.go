@@ -13,7 +13,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	v1 "github.com/epam/edp-codebase-operator/v2/api/v1"
-	"github.com/epam/edp-codebase-operator/v2/controllers/codebase/validation"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
@@ -63,7 +62,7 @@ func (r *CodebaseValidationWebhook) ValidateCreate(ctx context.Context, obj runt
 		return nil
 	}
 
-	if err = validation.IsCodebaseValid(createdCodebase); err != nil {
+	if err = IsCodebaseValid(createdCodebase); err != nil {
 		return fmt.Errorf("codebase %s is invalid: %w", createdCodebase.Name, err)
 	}
 
@@ -114,7 +113,7 @@ func (r *CodebaseValidationWebhook) ValidateUpdate(ctx context.Context, _, newOb
 		return nil
 	}
 
-	if err = validation.IsCodebaseValid(updatedCodebase); err != nil {
+	if err = IsCodebaseValid(updatedCodebase); err != nil {
 		return fmt.Errorf("codebase %s is invalid: %w", updatedCodebase.Name, err)
 	}
 

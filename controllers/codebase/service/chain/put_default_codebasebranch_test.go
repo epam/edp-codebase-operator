@@ -50,7 +50,7 @@ func TestPutDefaultCodeBaseBranch_ServeRequest(t *testing.T) {
 					Spec: codebaseApi.CodebaseSpec{
 						DefaultBranch: "master",
 						Versioning: codebaseApi.Versioning{
-							Type: codebaseApi.Default,
+							Type: codebaseApi.VersioningTypDefault,
 						},
 					},
 				},

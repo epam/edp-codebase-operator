@@ -44,8 +44,6 @@ const (
 
 	CIJenkins = "jenkins"
 
-	VersioningTypeEDP = "edp"
-
 	// finalizers.
 	ForegroundDeletionFinalizerName = "foregroundDeletion"
 )

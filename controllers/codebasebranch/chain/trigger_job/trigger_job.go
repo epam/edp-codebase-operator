@@ -141,7 +141,7 @@ func (h TriggerJob) GetJenkinsFolder(name, namespace string) (*jenkinsApi.Jenkin
 }
 
 func (h TriggerJob) ProcessNewVersion(codebaseBranch *codebaseApi.CodebaseBranch, codeBase *codebaseApi.Codebase) error {
-	if codeBase.Spec.Versioning.Type != util.VersioningTypeEDP {
+	if codeBase.Spec.Versioning.Type != codebaseApi.VersioningTypeEDP {
 		return nil
 	}
 

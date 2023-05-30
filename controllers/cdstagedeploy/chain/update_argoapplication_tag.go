@@ -17,7 +17,6 @@ import (
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	"github.com/epam/edp-codebase-operator/v2/controllers/cdstagedeploy/chain/handler"
 	"github.com/epam/edp-codebase-operator/v2/pkg/argocd"
-	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
 // argoApplicationImagePatch is a struct that represents ArgoCD Application image patch.
@@ -153,7 +152,7 @@ func (h *UpdateArgoApplicationTag) getTargetRevision(ctx context.Context, deploy
 		return "", fmt.Errorf("failed to get codebase: %w", err)
 	}
 
-	if codebase.Spec.Versioning.Type == util.VersioningTypeEDP && !strings.HasPrefix(deploy.Spec.Tag.Tag, "build/") {
+	if codebase.Spec.Versioning.Type == codebaseApi.VersioningTypeEDP && !strings.HasPrefix(deploy.Spec.Tag.Tag, "build/") {
 		return fmt.Sprintf("build/%s", deploy.Spec.Tag.Tag), nil
 	}
 

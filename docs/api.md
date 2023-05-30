@@ -895,7 +895,7 @@ CodebaseSpec defines the desired state of Codebase.
         <td><b>startFrom</b></td>
         <td>string</td>
         <td>
-          <br/>
+          StartFrom is required when versioning type is not default.<br/>
         </td>
         <td>false</td>
       </tr></tbody>

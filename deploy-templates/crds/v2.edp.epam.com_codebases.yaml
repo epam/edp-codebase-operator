@@ -138,6 +138,8 @@ spec:
               versioning:
                 properties:
                   startFrom:
+                    description: StartFrom is required when versioning type is not
+                      default.
                     nullable: true
                     type: string
                   type:

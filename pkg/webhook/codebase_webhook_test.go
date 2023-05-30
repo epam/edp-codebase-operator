@@ -58,6 +58,9 @@ func TestCodebaseWebhook_ValidateCreate(t *testing.T) {
 					GitUrlPath: util.GetStringP("user/repo"),
 					Strategy:   codebaseApi.Import,
 					Lang:       "java",
+					Versioning: codebaseApi.Versioning{
+						Type: codebaseApi.VersioningTypDefault,
+					},
 				},
 			},
 			wantErr: func(t require.TestingT, err error, _ ...any) {
@@ -94,6 +97,9 @@ func TestCodebaseWebhook_ValidateCreate(t *testing.T) {
 					GitUrlPath: util.GetStringP("user/repo.git"),
 					Strategy:   codebaseApi.Import,
 					Lang:       "java",
+					Versioning: codebaseApi.Versioning{
+						Type: codebaseApi.VersioningTypDefault,
+					},
 				},
 			},
 			wantErr: func(t require.TestingT, err error, _ ...any) {
@@ -130,6 +136,9 @@ func TestCodebaseWebhook_ValidateCreate(t *testing.T) {
 					GitUrlPath: util.GetStringP("user/repo"),
 					Strategy:   codebaseApi.Import,
 					Lang:       "java",
+					Versioning: codebaseApi.Versioning{
+						Type: codebaseApi.VersioningTypDefault,
+					},
 				},
 			},
 			wantErr: require.NoError,
@@ -161,6 +170,9 @@ func TestCodebaseWebhook_ValidateCreate(t *testing.T) {
 				Spec: codebaseApi.CodebaseSpec{
 					Strategy: codebaseApi.Import,
 					Lang:     "java",
+					Versioning: codebaseApi.Versioning{
+						Type: codebaseApi.VersioningTypDefault,
+					},
 				},
 			},
 			wantErr: require.NoError,
@@ -183,6 +195,9 @@ func TestCodebaseWebhook_ValidateCreate(t *testing.T) {
 					GitUrlPath: util.GetStringP(".git"),
 					Strategy:   codebaseApi.Import,
 					Lang:       "java",
+					Versioning: codebaseApi.Versioning{
+						Type: codebaseApi.VersioningTypDefault,
+					},
 				},
 			},
 			wantErr: func(t require.TestingT, err error, _ ...any) {
@@ -231,6 +246,9 @@ func TestCodebaseWebhook_ValidateCreate(t *testing.T) {
 					GitUrlPath: util.GetStringP("user/repo"),
 					Strategy:   codebaseApi.Import,
 					Lang:       "java",
+					Versioning: codebaseApi.Versioning{
+						Type: codebaseApi.VersioningTypDefault,
+					},
 				},
 			},
 			wantErr: require.NoError,
@@ -252,6 +270,9 @@ func TestCodebaseWebhook_ValidateCreate(t *testing.T) {
 				Spec: codebaseApi.CodebaseSpec{
 					Strategy: "invalid",
 					Lang:     "java",
+					Versioning: codebaseApi.Versioning{
+						Type: codebaseApi.VersioningTypDefault,
+					},
 				},
 			},
 			wantErr: func(t require.TestingT, err error, _ ...any) {
@@ -277,6 +298,9 @@ func TestCodebaseWebhook_ValidateCreate(t *testing.T) {
 				Spec: codebaseApi.CodebaseSpec{
 					Strategy: codebaseApi.Import,
 					Lang:     "lang",
+					Versioning: codebaseApi.Versioning{
+						Type: codebaseApi.VersioningTypDefault,
+					},
 				},
 			},
 			wantErr: func(t require.TestingT, err error, _ ...any) {
@@ -394,6 +418,9 @@ func TestCodebaseValidationWebhook_ValidateUpdate(t *testing.T) {
 				Spec: codebaseApi.CodebaseSpec{
 					Strategy: codebaseApi.Import,
 					Lang:     "java",
+					Versioning: codebaseApi.Versioning{
+						Type: codebaseApi.VersioningTypDefault,
+					},
 				},
 			},
 			wantErr: require.NoError,
