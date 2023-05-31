@@ -3,6 +3,7 @@ package webhook
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -107,6 +108,36 @@ func TestIsCodebaseValid(t *testing.T) {
 			err := IsCodebaseValid(tt.args.cr)
 
 			tt.want(t, err)
+		})
+	}
+}
+
+func Test_validateCodBaseName(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name        string
+		codBaseName string
+		wantErr     assert.ErrorAssertionFunc
+	}{
+		{
+			name:        "valid codebase name",
+			codBaseName: "test-codebase",
+			wantErr:     assert.NoError,
+		},
+		{
+			name:        "invalid codebase name",
+			codBaseName: "test--codebase",
+			wantErr:     assert.Error,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			tt.wantErr(t, validateCodBaseName(tt.codBaseName))
 		})
 	}
 }

@@ -62,6 +62,10 @@ func (r *CodebaseValidationWebhook) ValidateCreate(ctx context.Context, obj runt
 		return nil
 	}
 
+	if err = validateCodBaseName(createdCodebase.Name); err != nil {
+		return err
+	}
+
 	if err = IsCodebaseValid(createdCodebase); err != nil {
 		return fmt.Errorf("codebase %s is invalid: %w", createdCodebase.Name, err)
 	}

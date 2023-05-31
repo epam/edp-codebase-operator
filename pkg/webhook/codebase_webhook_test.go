@@ -309,7 +309,36 @@ func TestCodebaseWebhook_ValidateCreate(t *testing.T) {
 				require.Contains(t, err.Error(), "provided unsupported language")
 			},
 		},
+		{
+			name:   "codebase name contains --",
+			client: fake.NewClientBuilder().WithScheme(scheme).Build(),
+			ctx: admission.NewContextWithRequest(context.Background(), admission.Request{
+				AdmissionRequest: v1.AdmissionRequest{
+					Name:      "code--base",
+					Namespace: "default",
+				},
+			}),
+			obj: &codebaseApi.Codebase{
+				ObjectMeta: metaV1.ObjectMeta{
+					Name:      "code--base",
+					Namespace: "default",
+				},
+				Spec: codebaseApi.CodebaseSpec{
+					Strategy: codebaseApi.Import,
+					Lang:     "java",
+					Versioning: codebaseApi.Versioning{
+						Type: codebaseApi.VersioningTypDefault,
+					},
+				},
+			},
+			wantErr: func(t require.TestingT, err error, _ ...any) {
+				require.Error(t, err)
+
+				require.Contains(t, err.Error(), "codebase name shouldn't contain '--' symbol")
+			},
+		},
 	}
+
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {

@@ -318,6 +318,8 @@ linters-settings:
       - performance
       - experimental
       - opinionated
+    disabled-checks:
+      - sloppyReassign
 
     # Settings passed to gocritic.
     # The settings key is the name of a supported gocritic checker.

@@ -30,6 +30,14 @@ func IsCodebaseValid(codebase *codebaseApi.Codebase) error {
 	return nil
 }
 
+func validateCodBaseName(name string) error {
+	if strings.Contains(name, "--") {
+		return fmt.Errorf("codebase name shouldn't contain '--' symbol")
+	}
+
+	return nil
+}
+
 func containSettings(slice []string, value string) bool {
 	for _, element := range slice {
 		if strings.EqualFold(element, value) {
