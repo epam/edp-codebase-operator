@@ -41,10 +41,8 @@ func PrepareTemplates(ctx context.Context, c client.Client, cb *codebaseApi.Code
 		return fmt.Errorf("failed to copy template for %v codebase: %w", cb.Name, err)
 	}
 
-	if cb.Spec.Strategy != util.ImportStrategy {
-		if err := copySonarConfigs(ctx, workDir, assetsDir, cf); err != nil {
-			return err
-		}
+	if err := copySonarConfigs(ctx, workDir, assetsDir, cf); err != nil {
+		return err
 	}
 
 	log.Info("End preparing deploy templates")
@@ -118,6 +116,8 @@ func copySonarConfigs(ctx context.Context, workDir, td string, config *model.Con
 
 	_, statErr := os.Stat(sonarConfigPath)
 	if statErr == nil {
+		log.Info("Sonar configs already exist")
+
 		return nil
 	}
 

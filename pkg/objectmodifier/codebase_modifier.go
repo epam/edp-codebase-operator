@@ -56,10 +56,6 @@ func (m *CodebaseModifier) Apply(ctx context.Context, codebase *codebaseApi.Code
 // trimCodebaseGitSuffix removes all the trailing ".git" suffixes at the end of the git url path, if there are any.
 // If it removes anything, it returns true.
 func trimCodebaseGitSuffix(codebase *codebaseApi.Codebase) bool {
-	if codebase.Spec.Strategy != util.ImportStrategy {
-		return false
-	}
-
 	if codebase.Spec.GitUrlPath == nil || !strings.HasSuffix(*codebase.Spec.GitUrlPath, util.CrSuffixGit) {
 		return false
 	}

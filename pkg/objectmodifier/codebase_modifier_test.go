@@ -99,24 +99,6 @@ func Test_trimCodebaseGitSuffix(t *testing.T) {
 				},
 			},
 		},
-		{
-			name: "should not update then strategy is not import",
-			args: args{
-				codebase: &codebaseApi.Codebase{
-					Spec: codebaseApi.CodebaseSpec{
-						Strategy:   "create",
-						GitUrlPath: util.GetStringP("/some/test/path.git"),
-					},
-				},
-			},
-			want: false,
-			wantCodebase: &codebaseApi.Codebase{
-				Spec: codebaseApi.CodebaseSpec{
-					Strategy:   "create",
-					GitUrlPath: util.GetStringP("/some/test/path.git"),
-				},
-			},
-		},
 	}
 
 	for _, tt := range tests {

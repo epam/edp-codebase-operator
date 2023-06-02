@@ -2,6 +2,8 @@ package template
 
 import (
 	"context"
+	"os"
+	"path"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -52,6 +54,45 @@ func TestPrepareTemplates_ShouldPass(t *testing.T) {
 	t.Setenv(util.AssetsDirEnv, "../../../../build")
 
 	err := PrepareTemplates(context.Background(), fakeCl, c, t.TempDir())
+	assert.NoError(t, err)
+}
+
+func TestPrepareTemplates_ShouldSkipSonarConfig(t *testing.T) {
+	c := &codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      fakeName,
+			Namespace: fakeNamespace,
+		},
+		Spec: codebaseApi.CodebaseSpec{
+			Type:             util.Application,
+			Strategy:         codebaseApi.Create,
+			DeploymentScript: "helm-chart",
+			Lang:             "go",
+		},
+		Status: codebaseApi.CodebaseStatus{
+			Git: *util.GetStringP("pushed"),
+		},
+	}
+	config := &coreV1.ConfigMap{
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      "edp-config",
+			Namespace: fakeNamespace,
+		},
+	}
+
+	scheme := runtime.NewScheme()
+	require.NoError(t, codebaseApi.AddToScheme(scheme))
+	require.NoError(t, coreV1.AddToScheme(scheme))
+
+	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, config).Build()
+
+	t.Setenv(util.AssetsDirEnv, "../../../../build")
+
+	wd := t.TempDir()
+	_, err := os.Create(path.Join(wd, "sonar-project.properties"))
+	require.NoError(t, err)
+
+	err = PrepareTemplates(context.Background(), fakeCl, c, wd)
 	assert.NoError(t, err)
 }
 
