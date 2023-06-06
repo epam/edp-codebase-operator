@@ -392,11 +392,6 @@ func (in *CodebaseSpec) DeepCopyInto(out *CodebaseSpec) {
 		*out = new(string)
 		**out = **in
 	}
-	if in.GitUrlPath != nil {
-		in, out := &in.GitUrlPath, &out.GitUrlPath
-		*out = new(string)
-		**out = **in
-	}
 	if in.JenkinsSlave != nil {
 		in, out := &in.JenkinsSlave, &out.JenkinsSlave
 		*out = new(string)

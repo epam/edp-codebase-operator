@@ -33,7 +33,7 @@ func Test_trimCodebaseGitSuffix(t *testing.T) {
 				codebase: &codebaseApi.Codebase{
 					Spec: codebaseApi.CodebaseSpec{
 						Strategy:   util.ImportStrategy,
-						GitUrlPath: util.GetStringP("/some/test/path.git"),
+						GitUrlPath: "/some/test/path.git",
 					},
 				},
 			},
@@ -41,7 +41,7 @@ func Test_trimCodebaseGitSuffix(t *testing.T) {
 			wantCodebase: &codebaseApi.Codebase{
 				Spec: codebaseApi.CodebaseSpec{
 					Strategy:   util.ImportStrategy,
-					GitUrlPath: util.GetStringP("/some/test/path"),
+					GitUrlPath: "/some/test/path",
 				},
 			},
 		},
@@ -51,7 +51,7 @@ func Test_trimCodebaseGitSuffix(t *testing.T) {
 				codebase: &codebaseApi.Codebase{
 					Spec: codebaseApi.CodebaseSpec{
 						Strategy:   util.ImportStrategy,
-						GitUrlPath: util.GetStringP("/some/test/path.git.git.git"),
+						GitUrlPath: "/some/test/path.git.git.git",
 					},
 				},
 			},
@@ -59,7 +59,7 @@ func Test_trimCodebaseGitSuffix(t *testing.T) {
 			wantCodebase: &codebaseApi.Codebase{
 				Spec: codebaseApi.CodebaseSpec{
 					Strategy:   util.ImportStrategy,
-					GitUrlPath: util.GetStringP("/some/test/path"),
+					GitUrlPath: "/some/test/path",
 				},
 			},
 		},
@@ -69,7 +69,7 @@ func Test_trimCodebaseGitSuffix(t *testing.T) {
 				codebase: &codebaseApi.Codebase{
 					Spec: codebaseApi.CodebaseSpec{
 						Strategy:   util.ImportStrategy,
-						GitUrlPath: util.GetStringP("/some/test/path"),
+						GitUrlPath: "/some/test/path",
 					},
 				},
 			},
@@ -77,17 +77,17 @@ func Test_trimCodebaseGitSuffix(t *testing.T) {
 			wantCodebase: &codebaseApi.Codebase{
 				Spec: codebaseApi.CodebaseSpec{
 					Strategy:   util.ImportStrategy,
-					GitUrlPath: util.GetStringP("/some/test/path"),
+					GitUrlPath: "/some/test/path",
 				},
 			},
 		},
 		{
-			name: "should not update because of nil GitUrlPath",
+			name: "should not update because of empty GitUrlPath",
 			args: args{
 				codebase: &codebaseApi.Codebase{
 					Spec: codebaseApi.CodebaseSpec{
 						Strategy:   util.ImportStrategy,
-						GitUrlPath: nil,
+						GitUrlPath: "",
 					},
 				},
 			},
@@ -95,7 +95,7 @@ func Test_trimCodebaseGitSuffix(t *testing.T) {
 			wantCodebase: &codebaseApi.Codebase{
 				Spec: codebaseApi.CodebaseSpec{
 					Strategy:   util.ImportStrategy,
-					GitUrlPath: nil,
+					GitUrlPath: "",
 				},
 			},
 		},
@@ -234,66 +234,6 @@ func Test_addCodebaseGitSuffix(t *testing.T) {
 	}
 }
 
-func Test_setCodebaseGitUrlPath(t *testing.T) {
-	t.Parallel()
-
-	tests := []struct {
-		name         string
-		codebase     *codebaseApi.Codebase
-		wantCodebase *codebaseApi.Codebase
-		want         bool
-	}{
-		{
-			name: "should set git url path",
-			codebase: &codebaseApi.Codebase{
-				ObjectMeta: metaV1.ObjectMeta{
-					Name: "test",
-				},
-			},
-			wantCodebase: &codebaseApi.Codebase{
-				ObjectMeta: metaV1.ObjectMeta{
-					Name: "test",
-				},
-				Spec: codebaseApi.CodebaseSpec{
-					GitUrlPath: util.GetStringP("/test"),
-				},
-			},
-			want: true,
-		},
-		{
-			name: "should not set git url path because of existing value",
-			codebase: &codebaseApi.Codebase{
-				ObjectMeta: metaV1.ObjectMeta{
-					Name: "test",
-				},
-				Spec: codebaseApi.CodebaseSpec{
-					GitUrlPath: util.GetStringP("/test/path"),
-				},
-			},
-			wantCodebase: &codebaseApi.Codebase{
-				ObjectMeta: metaV1.ObjectMeta{
-					Name: "test",
-				},
-				Spec: codebaseApi.CodebaseSpec{
-					GitUrlPath: util.GetStringP("/test/path"),
-				},
-			},
-			want: false,
-		},
-	}
-
-	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
-			got := setCodebaseGitUrlPath(tt.codebase)
-			assert.Equal(t, tt.wantCodebase, tt.codebase)
-			assert.Equal(t, tt.want, got)
-		})
-	}
-}
-
 func TestCodebaseModifier_Apply(t *testing.T) {
 	t.Parallel()
 
@@ -309,11 +249,17 @@ func TestCodebaseModifier_Apply(t *testing.T) {
 		wantErr  assert.ErrorAssertionFunc
 	}{
 		{
-			name: "should update because of nil GitUrlPath",
+			name: "should update Repository.Url",
 			codebase: &codebaseApi.Codebase{
 				ObjectMeta: metaV1.ObjectMeta{
 					Name:      "test",
 					Namespace: "test",
+				},
+				Spec: codebaseApi.CodebaseSpec{
+					Repository: &codebaseApi.Repository{
+						Url: "https://github/com/test/test.git.git",
+					},
+					Strategy: util.CloneStrategy,
 				},
 			},
 			objects: []runtime.Object{
@@ -328,14 +274,17 @@ func TestCodebaseModifier_Apply(t *testing.T) {
 			wantErr: assert.NoError,
 		},
 		{
-			name: "should not update because of not nil GitUrlPath",
+			name: "should not update",
 			codebase: &codebaseApi.Codebase{
 				ObjectMeta: metaV1.ObjectMeta{
 					Name:      "test",
 					Namespace: "test",
 				},
 				Spec: codebaseApi.CodebaseSpec{
-					GitUrlPath: util.GetStringP("/test"),
+					Repository: &codebaseApi.Repository{
+						Url: "https://github/com/test/test.git",
+					},
+					Strategy: util.CloneStrategy,
 				},
 			},
 			objects: []runtime.Object{
@@ -356,6 +305,12 @@ func TestCodebaseModifier_Apply(t *testing.T) {
 					Name:      "test",
 					Namespace: "test",
 				},
+				Spec: codebaseApi.CodebaseSpec{
+					Repository: &codebaseApi.Repository{
+						Url: "https://github/com/test/test.git.git",
+					},
+					Strategy: util.CloneStrategy,
+				},
 			},
 			want: false,
 			wantErr: func(t assert.TestingT, err error, msgAndArgs ...interface{}) bool {
@@ -367,6 +322,7 @@ func TestCodebaseModifier_Apply(t *testing.T) {
 			},
 		},
 	}
+
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {

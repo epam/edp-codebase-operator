@@ -55,16 +55,23 @@ func (h PutBranchInGit) ServeRequest(cb *codebaseApi.CodebaseBranch) error {
 		return err
 	}
 
-	gs, err := util.GetGitServer(h.Client, c.Spec.GitServer, c.Namespace)
-	if err != nil {
+	gitServer := &codebaseApi.GitServer{}
+	if err = h.Client.Get(
+		context.TODO(),
+		client.ObjectKey{
+			Namespace: cb.Namespace,
+			Name:      c.Spec.GitServer,
+		},
+		gitServer,
+	); err != nil {
 		setFailedFields(cb, codebaseApi.PutGitBranch, err.Error())
 
 		return fmt.Errorf("failed to fetch GitServer: %w", err)
 	}
 
-	secret, err := util.GetSecret(h.Client, gs.NameSshKeySecret, c.Namespace)
+	secret, err := util.GetSecret(h.Client, gitServer.Spec.NameSshKeySecret, c.Namespace)
 	if err != nil {
-		err = fmt.Errorf("failed to get %v secret: %w", gs.NameSshKeySecret, err)
+		err = fmt.Errorf("failed to get %v secret: %w", gitServer.Spec.NameSshKeySecret, err)
 		setFailedFields(cb, codebaseApi.PutGitBranch, err.Error())
 
 		return err
@@ -72,14 +79,9 @@ func (h PutBranchInGit) ServeRequest(cb *codebaseApi.CodebaseBranch) error {
 
 	wd := util.GetWorkDir(cb.Spec.CodebaseName, fmt.Sprintf("%v-%v", cb.Namespace, cb.Spec.BranchName))
 	if !checkDirectory(wd) {
-		// we work with gerrit by default
-		ru := fmt.Sprintf("%v:%v", gs.GitHost, c.Name)
-		// may be it's third party VCS
-		if c.Spec.GitUrlPath != nil {
-			ru = fmt.Sprintf("%v:%v", gs.GitHost, *c.Spec.GitUrlPath)
-		}
+		repoSshUrl := util.GetSSHUrl(gitServer, c.Spec.GetProjectID())
 
-		err = h.Git.CloneRepositoryBySsh(string(secret.Data[util.PrivateSShKeyName]), gs.GitUser, ru, wd, gs.SshPort)
+		err = h.Git.CloneRepositoryBySsh(string(secret.Data[util.PrivateSShKeyName]), gitServer.Spec.GitUser, repoSshUrl, wd, gitServer.Spec.SshPort)
 		if err != nil {
 			setFailedFields(cb, codebaseApi.PutGitBranch, err.Error())
 
@@ -87,7 +89,7 @@ func (h PutBranchInGit) ServeRequest(cb *codebaseApi.CodebaseBranch) error {
 		}
 	}
 
-	err = h.Git.CreateRemoteBranch(string(secret.Data[util.PrivateSShKeyName]), gs.GitUser, wd, cb.Spec.BranchName, cb.Spec.FromCommit, gs.SshPort)
+	err = h.Git.CreateRemoteBranch(string(secret.Data[util.PrivateSShKeyName]), gitServer.Spec.GitUser, wd, cb.Spec.BranchName, cb.Spec.FromCommit, gitServer.Spec.SshPort)
 	if err != nil {
 		setFailedFields(cb, codebaseApi.PutGitBranch, err.Error())
 

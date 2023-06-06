@@ -737,6 +737,13 @@ CodebaseSpec defines the desired state of Codebase.
         </td>
         <td>true</td>
       </tr><tr>
+        <td><b>gitUrlPath</b></td>
+        <td>string</td>
+        <td>
+          A relative path for git repository. Should start from /. Example: /company/api-app.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
         <td><b>lang</b></td>
         <td>string</td>
         <td>
@@ -799,13 +806,6 @@ CodebaseSpec defines the desired state of Codebase.
         <td>boolean</td>
         <td>
           Controller must skip step "put deploy templates" in action chain.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>gitUrlPath</b></td>
-        <td>string</td>
-        <td>
-          A relative path for git repository, used for "import" strategy. Should start from /. Example: /company/api-app.<br/>
         </td>
         <td>false</td>
       </tr><tr>

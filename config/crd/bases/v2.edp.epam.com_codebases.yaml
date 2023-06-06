@@ -76,9 +76,8 @@ spec:
                   "gerrit".'
                 type: string
               gitUrlPath:
-                description: 'A relative path for git repository, used for "import"
-                  strategy. Should start from /. Example: /company/api-app.'
-                nullable: true
+                description: 'A relative path for git repository. Should start from
+                  /. Example: /company/api-app.'
                 type: string
               jenkinsSlave:
                 description: A name of Jenkins slave instance which will be used to
@@ -154,6 +153,7 @@ spec:
             - emptyProject
             - framework
             - gitServer
+            - gitUrlPath
             - lang
             - strategy
             - type

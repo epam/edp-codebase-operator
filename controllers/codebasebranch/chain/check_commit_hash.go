@@ -67,16 +67,12 @@ func (c CheckCommitHashExists) ServeRequest(codebaseBranch *codebaseApi.Codebase
 
 	workDir := util.GetWorkDir(codebaseBranch.Spec.CodebaseName, fmt.Sprintf("%v-%v", codebaseBranch.Namespace, codebaseBranch.Spec.BranchName))
 	if !DirectoryExistsNotEmpty(workDir) {
-		repoUrl := fmt.Sprintf("%v:%v", gitServer.Spec.GitHost, codebase.Name)
-
-		if codebase.Spec.GitUrlPath != nil {
-			repoUrl = fmt.Sprintf("%v:%v", gitServer.Spec.GitHost, *codebase.Spec.GitUrlPath)
-		}
+		repoSshUrl := util.GetSSHUrl(gitServer, codebase.Spec.GetProjectID())
 
 		if err := c.Git.CloneRepositoryBySsh(
 			string(secret.Data[util.PrivateSShKeyName]),
 			gitServer.Spec.GitUser,
-			repoUrl,
+			repoSshUrl,
 			workDir,
 			gitServer.Spec.SshPort,
 		); err != nil {

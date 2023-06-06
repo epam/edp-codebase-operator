@@ -94,7 +94,7 @@ func getProjectUrl(c client.Client, s *codebaseApi.CodebaseSpec, n string) (stri
 			return "", fmt.Errorf("failed to get git server: %w", err)
 		}
 
-		return fmt.Sprintf("https://%v%v", gs.GitHost, *s.GitUrlPath), nil
+		return fmt.Sprintf("https://%v%v", gs.GitHost, s.GitUrlPath), nil
 
 	default:
 		return "", errors.New("failed to get project url, caused by the unsupported strategy")

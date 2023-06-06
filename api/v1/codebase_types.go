@@ -82,10 +82,8 @@ type CodebaseSpec struct {
 	// Example: "gerrit".
 	GitServer string `json:"gitServer"`
 
-	// A relative path for git repository, used for "import" strategy. Should start from /. Example: /company/api-app.
-	// +nullable
-	// +optional
-	GitUrlPath *string `json:"gitUrlPath,omitempty"`
+	// A relative path for git repository. Should start from /. Example: /company/api-app.
+	GitUrlPath string `json:"gitUrlPath"`
 
 	// A name of Jenkins slave instance which will be used to handle codebase.
 	// +nullable
@@ -142,12 +140,7 @@ type CodebaseSpec struct {
 
 // GetProjectID returns project id from GitUrlPath codebase spec. It removes the leading slash.
 func (in *CodebaseSpec) GetProjectID() string {
-	id := in.GitUrlPath
-	if id == nil {
-		return ""
-	}
-
-	return strings.TrimPrefix(*id, "/")
+	return strings.TrimPrefix(in.GitUrlPath, "/")
 }
 
 type ActionType string

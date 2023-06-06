@@ -13,7 +13,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/pointer"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
@@ -108,7 +107,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 				Spec: codebaseApi.CodebaseSpec{
 					Strategy:                    codebaseApi.Create,
 					GitServer:                   gerritGitServer.Name,
-					GitUrlPath:                  pointer.String("/owner/go-repo"),
+					GitUrlPath:                  "/owner/go-repo",
 					DefaultBranch:               "master",
 					BranchToCopyInDefaultBranch: "main",
 				},
@@ -194,7 +193,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 				Spec: codebaseApi.CodebaseSpec{
 					Strategy:      codebaseApi.Create,
 					GitServer:     gerritGitServer.Name,
-					GitUrlPath:    pointer.String("/owner/go-repo"),
+					GitUrlPath:    "/owner/go-repo",
 					DefaultBranch: "master",
 					EmptyProject:  true,
 				},
@@ -274,7 +273,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 				Spec: codebaseApi.CodebaseSpec{
 					Strategy:      codebaseApi.Clone,
 					GitServer:     gerritGitServer.Name,
-					GitUrlPath:    pointer.String("/owner/go-repo"),
+					GitUrlPath:    "/owner/go-repo",
 					Repository:    &codebaseApi.Repository{Url: "https://github.com/owner/repo.git"},
 					DefaultBranch: "master",
 				},
@@ -353,7 +352,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 				Spec: codebaseApi.CodebaseSpec{
 					Strategy:      codebaseApi.Clone,
 					GitServer:     gerritGitServer.Name,
-					GitUrlPath:    pointer.String("/owner/go-repo"),
+					GitUrlPath:    "/owner/go-repo",
 					Repository:    &codebaseApi.Repository{Url: "https://github.com/owner/repo.git"},
 					DefaultBranch: "master",
 				},
@@ -437,7 +436,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 				Spec: codebaseApi.CodebaseSpec{
 					Strategy:      codebaseApi.Clone,
 					GitServer:     gerritGitServer.Name,
-					GitUrlPath:    pointer.String("/owner/go-repo"),
+					GitUrlPath:    "/owner/go-repo",
 					Repository:    &codebaseApi.Repository{Url: "https://github.com/owner/repo.git"},
 					DefaultBranch: "master",
 				},
@@ -510,7 +509,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 				Spec: codebaseApi.CodebaseSpec{
 					Strategy:      codebaseApi.Clone,
 					GitServer:     gerritGitServer.Name,
-					GitUrlPath:    pointer.String("/owner/go-repo"),
+					GitUrlPath:    "/owner/go-repo",
 					Repository:    &codebaseApi.Repository{Url: "https://github.com/owner/repo.git"},
 					DefaultBranch: "master",
 				},
@@ -579,7 +578,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 				Spec: codebaseApi.CodebaseSpec{
 					Strategy:      codebaseApi.Clone,
 					GitServer:     gerritGitServer.Name,
-					GitUrlPath:    pointer.String("/owner/go-repo"),
+					GitUrlPath:    "/owner/go-repo",
 					Repository:    &codebaseApi.Repository{Url: "https://github.com/owner/repo.git"},
 					DefaultBranch: "master",
 				},
@@ -650,7 +649,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 				Spec: codebaseApi.CodebaseSpec{
 					Strategy:      codebaseApi.Clone,
 					GitServer:     gerritGitServer.Name,
-					GitUrlPath:    pointer.String("/owner/go-repo"),
+					GitUrlPath:    "/owner/go-repo",
 					Repository:    &codebaseApi.Repository{Url: "https://github.com/owner/repo.git"},
 					DefaultBranch: "master",
 				},
@@ -719,7 +718,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 				Spec: codebaseApi.CodebaseSpec{
 					Strategy:      codebaseApi.Clone,
 					GitServer:     gerritGitServer.Name,
-					GitUrlPath:    pointer.String("/owner/go-repo"),
+					GitUrlPath:    "/owner/go-repo",
 					Repository:    &codebaseApi.Repository{Url: "https://github.com/owner/repo.git"},
 					DefaultBranch: "master",
 				},
@@ -778,7 +777,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 				Spec: codebaseApi.CodebaseSpec{
 					Strategy:      codebaseApi.Clone,
 					GitServer:     gerritGitServer.Name,
-					GitUrlPath:    pointer.String("/owner/go-repo"),
+					GitUrlPath:    "/owner/go-repo",
 					Repository:    &codebaseApi.Repository{Url: "https://github.com/owner/repo.git"},
 					DefaultBranch: "master",
 				},
@@ -823,7 +822,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 				Spec: codebaseApi.CodebaseSpec{
 					Strategy:      codebaseApi.Clone,
 					GitServer:     gerritGitServer.Name,
-					GitUrlPath:    pointer.String("/owner/go-repo"),
+					GitUrlPath:    "/owner/go-repo",
 					Repository:    &codebaseApi.Repository{Url: "https://github.com/owner/repo.git"},
 					DefaultBranch: "master",
 				},
@@ -868,7 +867,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 				Spec: codebaseApi.CodebaseSpec{
 					Strategy:      codebaseApi.Create,
 					GitServer:     githubGitServer.Name,
-					GitUrlPath:    pointer.String("/owner/go-repo"),
+					GitUrlPath:    "/owner/go-repo",
 					DefaultBranch: "master",
 				},
 			},
@@ -925,7 +924,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 				Spec: codebaseApi.CodebaseSpec{
 					Strategy:      codebaseApi.Clone,
 					GitServer:     githubGitServer.Name,
-					GitUrlPath:    pointer.String("/owner/go-repo"),
+					GitUrlPath:    "/owner/go-repo",
 					Repository:    &codebaseApi.Repository{Url: "https://github.com/owner/repo.git"},
 					DefaultBranch: "master",
 				},
@@ -979,7 +978,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 				Spec: codebaseApi.CodebaseSpec{
 					Strategy:      codebaseApi.Create,
 					GitServer:     gitlabGitServer.Name,
-					GitUrlPath:    pointer.String("/owner/go-repo"),
+					GitUrlPath:    "/owner/go-repo",
 					DefaultBranch: "master",
 				},
 			},
@@ -1036,7 +1035,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 				Spec: codebaseApi.CodebaseSpec{
 					Strategy:      codebaseApi.Clone,
 					GitServer:     gitlabGitServer.Name,
-					GitUrlPath:    pointer.String("/owner/go-repo"),
+					GitUrlPath:    "/owner/go-repo",
 					Repository:    &codebaseApi.Repository{Url: "https://github.com/owner/repo.git"},
 					DefaultBranch: "master",
 				},

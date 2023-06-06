@@ -14,7 +14,6 @@ import (
 	perfApi "github.com/epam/edp-perf-operator/v2/api/v1"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
-	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
 const (
@@ -71,7 +70,7 @@ func TestPutPerfDataSourcesChain_JenkinsAndSonarDataSourcesShouldBeCreated(t *te
 		},
 		Spec: codebaseApi.CodebaseSpec{
 			DefaultBranch: fakeName,
-			GitUrlPath:    util.GetStringP("/fake"),
+			GitUrlPath:    "/fake",
 			GitServer:     fakeName,
 			Perf: &codebaseApi.Perf{
 				Name:        fakeName,

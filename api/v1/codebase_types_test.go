@@ -10,7 +10,7 @@ func TestCodebaseSpec_GetProjectID(t *testing.T) {
 	t.Parallel()
 
 	type fields struct {
-		GitUrlPath func() *string
+		GitUrlPath string
 	}
 
 	tests := []struct {
@@ -21,31 +21,21 @@ func TestCodebaseSpec_GetProjectID(t *testing.T) {
 		{
 			name: "should remove prefix from the git url",
 			fields: fields{
-				GitUrlPath: func() *string {
-					p := "/group/proj1"
-
-					return &p
-				},
+				GitUrlPath: "/group/proj1",
 			},
 			want: "group/proj1",
 		},
 		{
 			name: "should skip prefix removal if git url doesn't contain prefix",
 			fields: fields{
-				GitUrlPath: func() *string {
-					p := "group/proj1"
-
-					return &p
-				},
+				GitUrlPath: "group/proj1",
 			},
 			want: "group/proj1",
 		},
 		{
-			name: "should return empty string if GitUrlPath returns nil",
+			name: "should return empty string if GitUrlPath empty",
 			fields: fields{
-				GitUrlPath: func() *string {
-					return nil
-				},
+				GitUrlPath: "",
 			},
 			want: "",
 		},
@@ -58,7 +48,7 @@ func TestCodebaseSpec_GetProjectID(t *testing.T) {
 			t.Parallel()
 
 			in := &CodebaseSpec{
-				GitUrlPath: tt.fields.GitUrlPath(),
+				GitUrlPath: tt.fields.GitUrlPath,
 			}
 
 			got := in.GetProjectID()

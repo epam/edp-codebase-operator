@@ -30,7 +30,7 @@ func TestPutDeployConfigs_ShouldPass(t *testing.T) {
 			Strategy:         codebaseApi.Create,
 			Lang:             util.LanguageGo,
 			DefaultBranch:    "fake-defaultBranch",
-			GitUrlPath:       util.GetStringP(fakeName),
+			GitUrlPath:       fakeName,
 			Repository: &codebaseApi.Repository{
 				Url: "repo",
 			},

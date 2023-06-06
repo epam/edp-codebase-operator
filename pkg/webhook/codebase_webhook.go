@@ -70,15 +70,9 @@ func (r *CodebaseValidationWebhook) ValidateCreate(ctx context.Context, obj runt
 		return fmt.Errorf("codebase %s is invalid: %w", createdCodebase.Name, err)
 	}
 
-	if createdCodebase.Spec.GitUrlPath == nil {
-		r.log.Info("git url path is empty, skipping validation")
-
-		return nil
-	}
-
-	gitUrlPathToValidate := util.TrimGitFromURL(*createdCodebase.Spec.GitUrlPath)
+	gitUrlPathToValidate := util.TrimGitFromURL(createdCodebase.Spec.GitUrlPath)
 	if gitUrlPathToValidate == "" {
-		return fmt.Errorf("gitUrlPath %s is invalid", *createdCodebase.Spec.GitUrlPath)
+		return fmt.Errorf("gitUrlPath %s is invalid", createdCodebase.Spec.GitUrlPath)
 	}
 
 	codeBases := &v1.CodebaseList{}
@@ -89,11 +83,11 @@ func (r *CodebaseValidationWebhook) ValidateCreate(ctx context.Context, obj runt
 	for i := range codeBases.Items {
 		gitUrlPath := codeBases.Items[i].Spec.GitUrlPath
 
-		if gitUrlPath != nil && *gitUrlPath == gitUrlPathToValidate {
+		if gitUrlPath == gitUrlPathToValidate {
 			return fmt.Errorf(
 				"codebase %s with GitUrlPath %s already exists",
 				codeBases.Items[i].Name,
-				*gitUrlPath,
+				gitUrlPath,
 			)
 		}
 	}

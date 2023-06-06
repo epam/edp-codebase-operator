@@ -243,7 +243,7 @@ func (h *PutPerfDataSources) getGitLabDataSourceConfig(codebase *codebaseApi.Cod
 	}
 
 	return &perfAPi.DataSourceGitLabConfig{
-		Repositories: []string{(*codebase.Spec.GitUrlPath)[1:]},
+		Repositories: []string{(codebase.Spec.GitUrlPath)[1:]},
 		Branches:     []string{codebase.Spec.DefaultBranch},
 		Url:          util.GetHostWithProtocol(gs.GitHost),
 	}, nil

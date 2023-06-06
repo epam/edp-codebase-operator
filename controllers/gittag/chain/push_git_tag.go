@@ -1,6 +1,7 @@
 package chain
 
 import (
+	"context"
 	"fmt"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -42,33 +43,40 @@ func (h PushGitTag) tryToPushTag(gt *codebaseApi.GitTag) error {
 		return fmt.Errorf("failed to fetch Codebase: %w", err)
 	}
 
-	gs, err := util.GetGitServer(h.client, c.Spec.GitServer, gt.Namespace)
-	if err != nil {
+	gitServer := &codebaseApi.GitServer{}
+	if err = h.client.Get(
+		context.TODO(),
+		client.ObjectKey{
+			Namespace: gt.Namespace,
+			Name:      c.Spec.GitServer,
+		},
+		gitServer,
+	); err != nil {
 		return fmt.Errorf("failed to fetch Git Server: %w", err)
 	}
 
-	secret, err := util.GetSecret(h.client, gs.NameSshKeySecret, c.Namespace)
+	secret, err := util.GetSecret(h.client, gitServer.Spec.NameSshKeySecret, c.Namespace)
 	if err != nil {
-		return fmt.Errorf("an error has occurred while getting %v secret: %w", gs.NameSshKeySecret, err)
+		return fmt.Errorf("an error has occurred while getting %v secret: %w", gitServer.Spec.NameSshKeySecret, err)
 	}
 
 	wd := util.GetWorkDir(c.Name, c.Namespace)
 	if !checkDirectory(wd) {
-		ru := fmt.Sprintf("%v:%v", gs.GitHost, *c.Spec.GitUrlPath)
+		repoSshUrl := util.GetSSHUrl(gitServer, c.Spec.GetProjectID())
 		key := string(secret.Data[util.PrivateSShKeyName])
 
-		err = h.git.CloneRepositoryBySsh(key, gs.GitUser, ru, wd, gs.SshPort)
+		err = h.git.CloneRepositoryBySsh(key, gitServer.Spec.GitUser, repoSshUrl, wd, gitServer.Spec.SshPort)
 		if err != nil {
 			return fmt.Errorf("failed to git cline repository: %w", err)
 		}
 	}
 
-	err = h.git.Fetch(string(secret.Data[util.PrivateSShKeyName]), gs.GitUser, wd, gt.Spec.Branch)
+	err = h.git.Fetch(string(secret.Data[util.PrivateSShKeyName]), gitServer.Spec.GitUser, wd, gt.Spec.Branch)
 	if err != nil {
 		return fmt.Errorf("failed to git fetch: %w", err)
 	}
 
-	err = h.git.CreateRemoteTag(string(secret.Data[util.PrivateSShKeyName]), gs.GitUser, wd, gt.Spec.Branch, gt.Spec.Tag)
+	err = h.git.CreateRemoteTag(string(secret.Data[util.PrivateSShKeyName]), gitServer.Spec.GitUser, wd, gt.Spec.Branch, gt.Spec.Tag)
 	if err != nil {
 		return fmt.Errorf("failed to create remote tag in git: %w", err)
 	}

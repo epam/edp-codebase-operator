@@ -61,7 +61,7 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 				},
 				Spec: codebaseApi.CodebaseSpec{
 					GitServer:  "test-git-server",
-					GitUrlPath: &gitURL,
+					GitUrlPath: gitURL,
 					CiTool:     util.CITekton,
 				},
 			},
@@ -120,7 +120,7 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 				},
 				Spec: codebaseApi.CodebaseSpec{
 					GitServer:  "test-git-server",
-					GitUrlPath: &gitURL,
+					GitUrlPath: gitURL,
 					CiTool:     util.CITekton,
 				},
 			},
@@ -191,7 +191,7 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 				},
 				Spec: codebaseApi.CodebaseSpec{
 					GitServer:  "test-git-server",
-					GitUrlPath: &gitURL,
+					GitUrlPath: gitURL,
 					CiTool:     util.CITekton,
 				},
 			},
@@ -250,7 +250,7 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 				},
 				Spec: codebaseApi.CodebaseSpec{
 					GitServer:  "test-git-server",
-					GitUrlPath: &gitURL,
+					GitUrlPath: gitURL,
 					CiTool:     util.CITekton,
 				},
 			},
@@ -311,7 +311,7 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 				},
 				Spec: codebaseApi.CodebaseSpec{
 					GitServer:  "test-git-server",
-					GitUrlPath: &gitURL,
+					GitUrlPath: gitURL,
 					CiTool:     util.CITekton,
 				},
 			},
@@ -369,7 +369,7 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 				},
 				Spec: codebaseApi.CodebaseSpec{
 					GitServer:  "test-git-server",
-					GitUrlPath: &gitURL,
+					GitUrlPath: gitURL,
 					CiTool:     util.CITekton,
 				},
 				Status: codebaseApi.CodebaseStatus{
@@ -420,7 +420,7 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 				},
 				Spec: codebaseApi.CodebaseSpec{
 					GitServer:  "test-git-server",
-					GitUrlPath: &gitURL,
+					GitUrlPath: gitURL,
 					CiTool:     util.CITekton,
 				},
 				Status: codebaseApi.CodebaseStatus{
@@ -486,7 +486,7 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 				},
 				Spec: codebaseApi.CodebaseSpec{
 					GitServer:  "test-git-server",
-					GitUrlPath: &gitURL,
+					GitUrlPath: gitURL,
 					CiTool:     util.CITekton,
 				},
 			},
@@ -521,7 +521,7 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 				},
 				Spec: codebaseApi.CodebaseSpec{
 					GitServer:  "test-git-server",
-					GitUrlPath: &gitURL,
+					GitUrlPath: gitURL,
 					CiTool:     util.CITekton,
 				},
 				Status: codebaseApi.CodebaseStatus{
@@ -573,7 +573,7 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 				},
 				Spec: codebaseApi.CodebaseSpec{
 					GitServer:  "test-git-server",
-					GitUrlPath: &gitURL,
+					GitUrlPath: gitURL,
 					CiTool:     util.CITekton,
 				},
 			},
@@ -621,7 +621,7 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 				},
 				Spec: codebaseApi.CodebaseSpec{
 					GitServer:  "test-git-server",
-					GitUrlPath: &gitURL,
+					GitUrlPath: gitURL,
 					CiTool:     util.CITekton,
 				},
 			},
@@ -671,7 +671,7 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 				},
 				Spec: codebaseApi.CodebaseSpec{
 					GitServer:  "test-git-server",
-					GitUrlPath: &gitURL,
+					GitUrlPath: gitURL,
 					CiTool:     util.CITekton,
 				},
 			},
@@ -715,7 +715,7 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 				},
 				Spec: codebaseApi.CodebaseSpec{
 					GitServer:  "test-git-server",
-					GitUrlPath: &gitURL,
+					GitUrlPath: gitURL,
 					CiTool:     util.CITekton,
 				},
 			},
@@ -756,7 +756,7 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 				},
 				Spec: codebaseApi.CodebaseSpec{
 					GitServer:  "test-git-server",
-					GitUrlPath: &gitURL,
+					GitUrlPath: gitURL,
 					CiTool:     util.CITekton,
 				},
 			},
@@ -781,49 +781,6 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 			responder:   func(t *testing.T) {},
 			wantErr:     require.Error,
 			errContains: "failed to get test-secret",
-		},
-		{
-			name: "project ID not found",
-			codebase: &codebaseApi.Codebase{
-				ObjectMeta: metaV1.ObjectMeta{
-					Namespace: namespace,
-					Name:      "test-codebase",
-				},
-				Spec: codebaseApi.CodebaseSpec{
-					GitServer: "test-git-server",
-					CiTool:    util.CITekton,
-				},
-			},
-			prepare: func(t *testing.T) {
-				t.Setenv(platform.TypeEnv, platform.K8S)
-			},
-			k8sObjects: []client.Object{
-				&codebaseApi.GitServer{
-					ObjectMeta: metaV1.ObjectMeta{
-						Namespace: namespace,
-						Name:      "test-git-server",
-					},
-					Spec: codebaseApi.GitServerSpec{
-						GitHost:          "fake.gitlab.com",
-						GitUser:          "git",
-						HttpsPort:        443,
-						NameSshKeySecret: "test-secret",
-						GitProvider:      codebaseApi.GitProviderGitlab,
-					},
-				},
-				&coreV1.Secret{
-					ObjectMeta: metaV1.ObjectMeta{
-						Namespace: namespace,
-						Name:      "test-secret",
-					},
-					Data: map[string][]byte{
-						util.GitServerSecretTokenField: []byte("test-token"),
-					},
-				},
-			},
-			responder:   func(t *testing.T) {},
-			wantErr:     require.Error,
-			errContains: "failed to get project ID for codebase",
 		},
 		{
 			name: "git server not found",

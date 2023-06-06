@@ -65,13 +65,6 @@ func (s *PutWebHook) ServeRequest(ctx context.Context, codebase *codebaseApi.Cod
 		return s.processCodebaseError(codebase, err)
 	}
 
-	if codebase.Spec.GitUrlPath == nil {
-		return s.processCodebaseError(
-			codebase,
-			fmt.Errorf("failed to get project ID for codebase %s, git url path is empty", codebase.Name),
-		)
-	}
-
 	gitProvider, err := gitprovider.NewProvider(gitServer, s.restyClient)
 	if err != nil {
 		return s.processCodebaseError(codebase, fmt.Errorf("failed to create git provider: %w", err))

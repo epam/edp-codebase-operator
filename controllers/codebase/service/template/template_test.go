@@ -135,7 +135,7 @@ func TestGetProjectUrl_ShouldPass(t *testing.T) {
 		Spec: codebaseApi.CodebaseSpec{
 			Type:       util.Application,
 			Strategy:   util.ImportStrategy,
-			GitUrlPath: util.GetStringP("/fake/repo.git"),
+			GitUrlPath: "/fake/repo.git",
 			GitServer:  fakeName,
 		},
 	}
@@ -164,7 +164,7 @@ func TestGetProjectUrl_ShouldFailToGetGitServer(t *testing.T) {
 		Spec: codebaseApi.CodebaseSpec{
 			Type:       util.Application,
 			Strategy:   util.ImportStrategy,
-			GitUrlPath: util.GetStringP("/fake/repo.git"),
+			GitUrlPath: "/fake/repo.git",
 			GitServer:  fakeName,
 		},
 	}

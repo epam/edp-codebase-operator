@@ -55,7 +55,7 @@ func TestDeleteWebHook_ServeRequest(t *testing.T) {
 				},
 				Spec: codebaseApi.CodebaseSpec{
 					GitServer:  "test-git-server",
-					GitUrlPath: &gitURL,
+					GitUrlPath: gitURL,
 					CiTool:     util.CITekton,
 				},
 				Status: codebaseApi.CodebaseStatus{
@@ -100,7 +100,7 @@ func TestDeleteWebHook_ServeRequest(t *testing.T) {
 				},
 				Spec: codebaseApi.CodebaseSpec{
 					GitServer:  "test-git-server",
-					GitUrlPath: &gitURL,
+					GitUrlPath: gitURL,
 					CiTool:     util.CITekton,
 				},
 				Status: codebaseApi.CodebaseStatus{
@@ -145,7 +145,7 @@ func TestDeleteWebHook_ServeRequest(t *testing.T) {
 				},
 				Spec: codebaseApi.CodebaseSpec{
 					GitServer:  "test-git-server",
-					GitUrlPath: &gitURL,
+					GitUrlPath: gitURL,
 					CiTool:     util.CITekton,
 				},
 			},
@@ -161,7 +161,7 @@ func TestDeleteWebHook_ServeRequest(t *testing.T) {
 				},
 				Spec: codebaseApi.CodebaseSpec{
 					GitServer:  "test-git-server",
-					GitUrlPath: &gitURL,
+					GitUrlPath: gitURL,
 					CiTool:     util.CITekton,
 				},
 				Status: codebaseApi.CodebaseStatus{
@@ -207,7 +207,7 @@ func TestDeleteWebHook_ServeRequest(t *testing.T) {
 				},
 				Spec: codebaseApi.CodebaseSpec{
 					GitServer:  "test-git-server",
-					GitUrlPath: &gitURL,
+					GitUrlPath: gitURL,
 					CiTool:     util.CITekton,
 				},
 				Status: codebaseApi.CodebaseStatus{
@@ -292,7 +292,7 @@ func TestDeleteWebHook_ServeRequest(t *testing.T) {
 				},
 				Spec: codebaseApi.CodebaseSpec{
 					GitServer:  "test-git-server",
-					GitUrlPath: &gitURL,
+					GitUrlPath: gitURL,
 					CiTool:     util.CITekton,
 				},
 				Status: codebaseApi.CodebaseStatus{
@@ -333,7 +333,7 @@ func TestDeleteWebHook_ServeRequest(t *testing.T) {
 				},
 				Spec: codebaseApi.CodebaseSpec{
 					GitServer:  "test-git-server",
-					GitUrlPath: &gitURL,
+					GitUrlPath: gitURL,
 					CiTool:     util.CITekton,
 				},
 				Status: codebaseApi.CodebaseStatus{
@@ -367,7 +367,7 @@ func TestDeleteWebHook_ServeRequest(t *testing.T) {
 				},
 				Spec: codebaseApi.CodebaseSpec{
 					GitServer:  "test-git-server",
-					GitUrlPath: &gitURL,
+					GitUrlPath: gitURL,
 					CiTool:     util.CITekton,
 				},
 				Status: codebaseApi.CodebaseStatus{
@@ -387,7 +387,7 @@ func TestDeleteWebHook_ServeRequest(t *testing.T) {
 				},
 				Spec: codebaseApi.CodebaseSpec{
 					GitServer:  "test-git-server",
-					GitUrlPath: &gitURL,
+					GitUrlPath: gitURL,
 					CiTool:     util.CIJenkins,
 				},
 				Status: codebaseApi.CodebaseStatus{

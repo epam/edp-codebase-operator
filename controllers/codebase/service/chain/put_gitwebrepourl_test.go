@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/require"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
@@ -40,7 +39,7 @@ func TestPutGitWebRepoUrl_ServeRequest(t *testing.T) {
 			name: "should put GitWebUrl in codebase status",
 			codebase: &codebaseApi.Codebase{
 				ObjectMeta: metaV1.ObjectMeta{Name: "test", Namespace: namespace, ResourceVersion: "1"},
-				Spec:       codebaseApi.CodebaseSpec{GitServer: "git-server", GitUrlPath: &gitURL},
+				Spec:       codebaseApi.CodebaseSpec{GitServer: "git-server", GitUrlPath: gitURL},
 				Status:     codebaseApi.CodebaseStatus{},
 			},
 			gitServer: &codebaseApi.GitServer{
@@ -54,7 +53,7 @@ func TestPutGitWebRepoUrl_ServeRequest(t *testing.T) {
 				},
 				&codebaseApi.Codebase{
 					ObjectMeta: metaV1.ObjectMeta{Name: "test", Namespace: namespace, ResourceVersion: "1"},
-					Spec:       codebaseApi.CodebaseSpec{GitServer: "git-server", GitUrlPath: &gitURL},
+					Spec:       codebaseApi.CodebaseSpec{GitServer: "git-server", GitUrlPath: gitURL},
 					Status:     codebaseApi.CodebaseStatus{},
 				},
 			},
@@ -64,7 +63,7 @@ func TestPutGitWebRepoUrl_ServeRequest(t *testing.T) {
 			name: "should fail if git server is not found",
 			codebase: &codebaseApi.Codebase{
 				ObjectMeta: metaV1.ObjectMeta{Name: "test", Namespace: namespace},
-				Spec:       codebaseApi.CodebaseSpec{GitServer: "unknown-git-server", GitUrlPath: &gitURL},
+				Spec:       codebaseApi.CodebaseSpec{GitServer: "unknown-git-server", GitUrlPath: gitURL},
 				Status:     codebaseApi.CodebaseStatus{},
 			},
 			gitServer:  nil,
@@ -76,33 +75,10 @@ func TestPutGitWebRepoUrl_ServeRequest(t *testing.T) {
 			},
 		},
 		{
-			name: "should fail if gitUrlPath is not set",
-			codebase: &codebaseApi.Codebase{
-				ObjectMeta: metaV1.ObjectMeta{Name: "test", Namespace: namespace},
-				Spec:       codebaseApi.CodebaseSpec{GitServer: "git-server"},
-				Status:     codebaseApi.CodebaseStatus{},
-			},
-			gitServer: &codebaseApi.GitServer{ObjectMeta: metaV1.ObjectMeta{Name: "git-server", Namespace: namespace}},
-			k8sObjects: []client.Object{
-				&codebaseApi.GitServer{
-					ObjectMeta: metaV1.ObjectMeta{Name: "git-server", Namespace: namespace},
-					Spec:       codebaseApi.GitServerSpec{GitProvider: codebaseApi.GitProviderGithub, GitHost: "github.com"},
-				},
-				&codebaseApi.Codebase{
-					ObjectMeta: metaV1.ObjectMeta{Name: "test", Namespace: namespace},
-				},
-			},
-			wantErr: func(t require.TestingT, err error, _ ...any) {
-				require.Error(t, err)
-
-				require.Contains(t, err.Error(), "failed to get GitUrlPath for codebase test, git url path is empty")
-			},
-		},
-		{
 			name: "should fail if Provider is not supported",
 			codebase: &codebaseApi.Codebase{
 				ObjectMeta: metaV1.ObjectMeta{Name: "test", Namespace: namespace},
-				Spec:       codebaseApi.CodebaseSpec{GitServer: "git-server", GitUrlPath: &gitURL},
+				Spec:       codebaseApi.CodebaseSpec{GitServer: "git-server", GitUrlPath: gitURL},
 				Status:     codebaseApi.CodebaseStatus{},
 			},
 			gitServer: &codebaseApi.GitServer{ObjectMeta: metaV1.ObjectMeta{Name: "git-server", Namespace: namespace}},
@@ -113,7 +89,7 @@ func TestPutGitWebRepoUrl_ServeRequest(t *testing.T) {
 				},
 				&codebaseApi.Codebase{
 					ObjectMeta: metaV1.ObjectMeta{Name: "test", Namespace: namespace},
-					Spec:       codebaseApi.CodebaseSpec{GitServer: "git-server", GitUrlPath: &gitURL},
+					Spec:       codebaseApi.CodebaseSpec{GitServer: "git-server", GitUrlPath: gitURL},
 				},
 			},
 			wantErr: func(t require.TestingT, err error, _ ...any) {
@@ -164,7 +140,7 @@ func TestPutGitWebRepoUrl_getGitWebURL(t *testing.T) {
 			expectedWebUrl: "https://github.com/test-owner/test-repo",
 			codebase: &codebaseApi.Codebase{
 				ObjectMeta: metaV1.ObjectMeta{Name: "test", Namespace: namespace, ResourceVersion: "1"},
-				Spec:       codebaseApi.CodebaseSpec{GitServer: "git-server", GitUrlPath: &gitURL},
+				Spec:       codebaseApi.CodebaseSpec{GitServer: "git-server", GitUrlPath: gitURL},
 				Status:     codebaseApi.CodebaseStatus{},
 			},
 			gitServer: &codebaseApi.GitServer{
@@ -178,7 +154,7 @@ func TestPutGitWebRepoUrl_getGitWebURL(t *testing.T) {
 				},
 				&codebaseApi.Codebase{
 					ObjectMeta: metaV1.ObjectMeta{Name: "test", Namespace: namespace, ResourceVersion: "1"},
-					Spec:       codebaseApi.CodebaseSpec{GitServer: "git-server", GitUrlPath: &gitURL},
+					Spec:       codebaseApi.CodebaseSpec{GitServer: "git-server", GitUrlPath: gitURL},
 					Status:     codebaseApi.CodebaseStatus{},
 				},
 			},
@@ -189,7 +165,7 @@ func TestPutGitWebRepoUrl_getGitWebURL(t *testing.T) {
 			expectedWebUrl: "https://gerrit.example.com/gitweb?p=test-app.git",
 			codebase: &codebaseApi.Codebase{
 				ObjectMeta: metaV1.ObjectMeta{Name: "test", Namespace: namespace, ResourceVersion: "1"},
-				Spec:       codebaseApi.CodebaseSpec{GitServer: "git-server", GitUrlPath: pointer.String("/test-app")},
+				Spec:       codebaseApi.CodebaseSpec{GitServer: "git-server", GitUrlPath: "/test-app"},
 				Status:     codebaseApi.CodebaseStatus{},
 			},
 			gitServer: &codebaseApi.GitServer{
@@ -216,7 +192,7 @@ func TestPutGitWebRepoUrl_getGitWebURL(t *testing.T) {
 			expectedWebUrl: "",
 			codebase: &codebaseApi.Codebase{
 				ObjectMeta: metaV1.ObjectMeta{Name: "test", Namespace: namespace},
-				Spec:       codebaseApi.CodebaseSpec{GitServer: "git-server", GitUrlPath: &gitURL},
+				Spec:       codebaseApi.CodebaseSpec{GitServer: "git-server", GitUrlPath: gitURL},
 				Status:     codebaseApi.CodebaseStatus{},
 			},
 			gitServer: &codebaseApi.GitServer{
@@ -243,7 +219,7 @@ func TestPutGitWebRepoUrl_getGitWebURL(t *testing.T) {
 			expectedWebUrl: "",
 			codebase: &codebaseApi.Codebase{
 				ObjectMeta: metaV1.ObjectMeta{Name: "test", Namespace: namespace},
-				Spec:       codebaseApi.CodebaseSpec{GitServer: "git-server", GitUrlPath: &gitURL},
+				Spec:       codebaseApi.CodebaseSpec{GitServer: "git-server", GitUrlPath: gitURL},
 			},
 			gitServer: &codebaseApi.GitServer{
 				ObjectMeta: metaV1.ObjectMeta{Name: "git-server", Namespace: namespace},

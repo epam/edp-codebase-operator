@@ -39,13 +39,6 @@ func (s *PutGitWebRepoUrl) ServeRequest(ctx context.Context, codebase *codebaseA
 		)
 	}
 
-	if codebase.Spec.GitUrlPath == nil {
-		return s.processCodebaseError(
-			codebase,
-			fmt.Errorf("failed to get GitUrlPath for codebase %s, git url path is empty", codebase.Name),
-		)
-	}
-
 	gitWebURL, err := s.getGitWebURL(ctx, gitServer, codebase)
 	if err != nil {
 		return s.processCodebaseError(codebase, err)

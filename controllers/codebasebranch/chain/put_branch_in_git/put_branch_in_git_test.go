@@ -32,7 +32,7 @@ func TestPutBranchInGit_ShouldBeExecutedSuccessfullyWithDefaultVersioning(t *tes
 		},
 		Spec: codebaseApi.CodebaseSpec{
 			GitServer:  fakeName,
-			GitUrlPath: util.GetStringP(fakeName),
+			GitUrlPath: fakeName,
 		},
 		Status: codebaseApi.CodebaseStatus{
 			Available: true,
@@ -83,9 +83,9 @@ func TestPutBranchInGit_ShouldBeExecutedSuccessfullyWithDefaultVersioning(t *tes
 	port := int32(22)
 	wd := util.GetWorkDir(fakeName, fmt.Sprintf("%v-%v", fakeNamespace, fakeName))
 
-	mGit.On("CloneRepositoryBySsh", "",
-		fakeName, fmt.Sprintf("%v:%v", fakeName, fakeName),
-		wd, port).Return(nil)
+	repoSshUrl := util.GetSSHUrl(gs, c.Spec.GetProjectID())
+
+	mGit.On("CloneRepositoryBySsh", "", fakeName, repoSshUrl, wd, port).Return(nil)
 	mGit.On("CreateRemoteBranch", "", fakeName, wd, fakeName, "commitsha", port).Return(nil)
 
 	err := PutBranchInGit{
@@ -131,7 +131,7 @@ func TestPutBranchInGit_ShouldThrowCodebaseBranchReconcileError(t *testing.T) {
 		},
 		Spec: codebaseApi.CodebaseSpec{
 			GitServer:  fakeName,
-			GitUrlPath: util.GetStringP(fakeName),
+			GitUrlPath: fakeName,
 		},
 		Status: codebaseApi.CodebaseStatus{
 			Available: false,
@@ -167,7 +167,7 @@ func TestPutBranchInGit_ShouldBeExecutedSuccessfullyWithEdpVersioning(t *testing
 		},
 		Spec: codebaseApi.CodebaseSpec{
 			GitServer:  fakeName,
-			GitUrlPath: util.GetStringP(fakeName),
+			GitUrlPath: fakeName,
 			Versioning: codebaseApi.Versioning{
 				Type:      versioningType,
 				StartFrom: nil,
@@ -227,7 +227,9 @@ func TestPutBranchInGit_ShouldBeExecutedSuccessfullyWithEdpVersioning(t *testing
 	port := int32(22)
 	wd := util.GetWorkDir(fakeName, fmt.Sprintf("%v-%v", fakeNamespace, fakeName))
 
-	mGit.On("CloneRepositoryBySsh", "", fakeName, fmt.Sprintf("%v:%v", fakeName, fakeName), wd, port).
+	repoSshUrl := util.GetSSHUrl(gs, c.Spec.GetProjectID())
+
+	mGit.On("CloneRepositoryBySsh", "", fakeName, repoSshUrl, wd, port).
 		Return(nil)
 	mGit.On("CreateRemoteBranch", "", fakeName, wd, fakeName, "", port).Return(nil)
 
@@ -266,7 +268,7 @@ func TestPutBranchInGit_GitServerShouldNotBeFound(t *testing.T) {
 		},
 		Spec: codebaseApi.CodebaseSpec{
 			GitServer:  fakeName,
-			GitUrlPath: util.GetStringP(fakeName),
+			GitUrlPath: fakeName,
 		},
 		Status: codebaseApi.CodebaseStatus{
 			Available: true,
@@ -284,7 +286,8 @@ func TestPutBranchInGit_GitServerShouldNotBeFound(t *testing.T) {
 	}
 
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1.SchemeGroupVersion, c, cb)
+	require.NoError(t, codebaseApi.AddToScheme(scheme))
+	require.NoError(t, coreV1.AddToScheme(scheme))
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, cb).Build()
 
 	err := PutBranchInGit{
@@ -293,7 +296,7 @@ func TestPutBranchInGit_GitServerShouldNotBeFound(t *testing.T) {
 
 	assert.Error(t, err)
 
-	assert.Contains(t, err.Error(), "failed to get fake-name Git Server CR")
+	assert.Contains(t, err.Error(), "failed to fetch GitServer")
 }
 
 func TestPutBranchInGit_SecretShouldNotBeFound(t *testing.T) {
@@ -304,7 +307,7 @@ func TestPutBranchInGit_SecretShouldNotBeFound(t *testing.T) {
 		},
 		Spec: codebaseApi.CodebaseSpec{
 			GitServer:  fakeName,
-			GitUrlPath: util.GetStringP(fakeName),
+			GitUrlPath: fakeName,
 		},
 		Status: codebaseApi.CodebaseStatus{
 			Available: true,
@@ -358,7 +361,7 @@ func TestPutBranchInGit_ShouldFailNoEDPVersion(t *testing.T) {
 		},
 		Spec: codebaseApi.CodebaseSpec{
 			GitServer:  fakeName,
-			GitUrlPath: util.GetStringP(fakeName),
+			GitUrlPath: fakeName,
 			Versioning: codebaseApi.Versioning{
 				Type: "edp",
 			},

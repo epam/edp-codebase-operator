@@ -14,7 +14,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
-	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
 func TestCodebaseWebhook_ValidateCreate(t *testing.T) {
@@ -38,7 +37,7 @@ func TestCodebaseWebhook_ValidateCreate(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: codebaseApi.CodebaseSpec{
-					GitUrlPath: util.GetStringP("user/repo"),
+					GitUrlPath: "user/repo",
 					Strategy:   codebaseApi.Import,
 					Lang:       "java",
 				},
@@ -55,7 +54,7 @@ func TestCodebaseWebhook_ValidateCreate(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: codebaseApi.CodebaseSpec{
-					GitUrlPath: util.GetStringP("user/repo"),
+					GitUrlPath: "user/repo",
 					Strategy:   codebaseApi.Import,
 					Lang:       "java",
 					Versioning: codebaseApi.Versioning{
@@ -77,7 +76,7 @@ func TestCodebaseWebhook_ValidateCreate(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: codebaseApi.CodebaseSpec{
-					GitUrlPath: util.GetStringP("user/repo"),
+					GitUrlPath: "user/repo",
 					Strategy:   codebaseApi.Import,
 					Lang:       "java",
 				},
@@ -94,7 +93,7 @@ func TestCodebaseWebhook_ValidateCreate(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: codebaseApi.CodebaseSpec{
-					GitUrlPath: util.GetStringP("user/repo.git"),
+					GitUrlPath: "user/repo.git",
 					Strategy:   codebaseApi.Import,
 					Lang:       "java",
 					Versioning: codebaseApi.Versioning{
@@ -116,7 +115,7 @@ func TestCodebaseWebhook_ValidateCreate(t *testing.T) {
 					Namespace: "prod",
 				},
 				Spec: codebaseApi.CodebaseSpec{
-					GitUrlPath: util.GetStringP("user/repo"),
+					GitUrlPath: "user/repo",
 					Strategy:   codebaseApi.Import,
 					Lang:       "java",
 				},
@@ -133,7 +132,7 @@ func TestCodebaseWebhook_ValidateCreate(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: codebaseApi.CodebaseSpec{
-					GitUrlPath: util.GetStringP("user/repo"),
+					GitUrlPath: "user/repo",
 					Strategy:   codebaseApi.Import,
 					Lang:       "java",
 					Versioning: codebaseApi.Versioning{
@@ -154,30 +153,6 @@ func TestCodebaseWebhook_ValidateCreate(t *testing.T) {
 			},
 		},
 		{
-			name:   "skip validation - empty GitUrlPath",
-			client: fake.NewClientBuilder().WithScheme(scheme).Build(),
-			ctx: admission.NewContextWithRequest(context.Background(), admission.Request{
-				AdmissionRequest: v1.AdmissionRequest{
-					Name:      "codebase",
-					Namespace: "default",
-				},
-			}),
-			obj: &codebaseApi.Codebase{
-				ObjectMeta: metaV1.ObjectMeta{
-					Name:      "codebase",
-					Namespace: "default",
-				},
-				Spec: codebaseApi.CodebaseSpec{
-					Strategy: codebaseApi.Import,
-					Lang:     "java",
-					Versioning: codebaseApi.Versioning{
-						Type: codebaseApi.VersioningTypDefault,
-					},
-				},
-			},
-			wantErr: require.NoError,
-		},
-		{
 			name:   "should return error if GitUrlPath is not valid",
 			client: fake.NewClientBuilder().WithScheme(scheme).Build(),
 			ctx: admission.NewContextWithRequest(context.Background(), admission.Request{
@@ -192,7 +167,7 @@ func TestCodebaseWebhook_ValidateCreate(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: codebaseApi.CodebaseSpec{
-					GitUrlPath: util.GetStringP(".git"),
+					GitUrlPath: ".git",
 					Strategy:   codebaseApi.Import,
 					Lang:       "java",
 					Versioning: codebaseApi.Versioning{
@@ -243,7 +218,7 @@ func TestCodebaseWebhook_ValidateCreate(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: codebaseApi.CodebaseSpec{
-					GitUrlPath: util.GetStringP("user/repo"),
+					GitUrlPath: "user/repo",
 					Strategy:   codebaseApi.Import,
 					Lang:       "java",
 					Versioning: codebaseApi.Versioning{

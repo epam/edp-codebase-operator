@@ -25,7 +25,6 @@ func NewCodebaseModifier(k8sClient client.Writer) *CodebaseModifier {
 	modifiers := []codebaseModifierFunc{
 		trimCodebaseGitSuffix,
 		addCodebaseGitSuffix,
-		setCodebaseGitUrlPath,
 	}
 
 	return &CodebaseModifier{k8sClient: k8sClient, modifiers: modifiers}
@@ -56,12 +55,11 @@ func (m *CodebaseModifier) Apply(ctx context.Context, codebase *codebaseApi.Code
 // trimCodebaseGitSuffix removes all the trailing ".git" suffixes at the end of the git url path, if there are any.
 // If it removes anything, it returns true.
 func trimCodebaseGitSuffix(codebase *codebaseApi.Codebase) bool {
-	if codebase.Spec.GitUrlPath == nil || !strings.HasSuffix(*codebase.Spec.GitUrlPath, util.CrSuffixGit) {
+	if !strings.HasSuffix(codebase.Spec.GitUrlPath, util.CrSuffixGit) {
 		return false
 	}
 
-	newGitUrlPath := util.TrimGitFromURL(*codebase.Spec.GitUrlPath)
-	codebase.Spec.GitUrlPath = &newGitUrlPath
+	codebase.Spec.GitUrlPath = util.TrimGitFromURL(codebase.Spec.GitUrlPath)
 
 	return true
 }
@@ -88,16 +86,4 @@ func addCodebaseGitSuffix(codebase *codebaseApi.Codebase) bool {
 	codebase.Spec.Repository.Url = util.AddGitToURL(codebase.Spec.Repository.Url)
 
 	return true
-}
-
-// setCodebaseGitUrlPath sets the git url path to the codebase name if it is not set.
-// If it sets anything, it returns true.
-func setCodebaseGitUrlPath(codebase *codebaseApi.Codebase) bool {
-	if codebase.Spec.GitUrlPath == nil {
-		codebase.Spec.GitUrlPath = util.GetStringP(fmt.Sprintf("/%s", codebase.Name))
-
-		return true
-	}
-
-	return false
 }

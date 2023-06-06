@@ -59,13 +59,6 @@ func (s *DeleteWebHook) ServeRequest(ctx context.Context, codebase *codebaseApi.
 		return nil
 	}
 
-	if codebase.Spec.GitUrlPath == nil {
-		err = fmt.Errorf("failed to get project ID for codebase %s, git url path is empty", codebase.Name)
-		log.Error(err, "Failed to delete webhook")
-
-		return nil
-	}
-
 	gitProvider, err := gitprovider.NewProvider(gitServer, s.restyClient)
 	if err != nil {
 		log.Error(err, "Failed to delete webhook: unable to create git provider")
