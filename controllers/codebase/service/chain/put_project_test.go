@@ -17,10 +17,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
-	git "github.com/epam/edp-codebase-operator/v2/controllers/gitserver"
-	gitmocks "github.com/epam/edp-codebase-operator/v2/controllers/gitserver/mocks"
 	"github.com/epam/edp-codebase-operator/v2/pkg/gerrit"
 	gerritmocks "github.com/epam/edp-codebase-operator/v2/pkg/gerrit/mocks"
+	"github.com/epam/edp-codebase-operator/v2/pkg/git"
+	gitmocks "github.com/epam/edp-codebase-operator/v2/pkg/git/mocks"
 	"github.com/epam/edp-codebase-operator/v2/pkg/gitprovider"
 	gitprovidermock "github.com/epam/edp-codebase-operator/v2/pkg/gitprovider/mocks"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
@@ -116,7 +116,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 			gitClient: func(t *testing.T) git.Git {
 				mock := gitmocks.NewGit(t)
 
-				mock.On("CheckPermissions", testify.Anything, testify.Anything, testify.Anything).
+				mock.On("CheckPermissions", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(true).
 					On("CloneRepository", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(nil).
@@ -202,11 +202,11 @@ func TestPutProject_ServeRequest(t *testing.T) {
 			gitClient: func(t *testing.T) git.Git {
 				mock := gitmocks.NewGit(t)
 
-				mock.On("CheckPermissions", testify.Anything, testify.Anything, testify.Anything).
+				mock.On("CheckPermissions", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(true).
 					On("Init", testify.Anything).
 					Return(nil).
-					On("CommitChanges", testify.Anything, testify.Anything).
+					On("CommitChanges", testify.Anything, testify.Anything, testify.Anything).
 					Return(nil).
 					On("GetCurrentBranchName", testify.Anything).
 					Return("feature", nil).
@@ -283,7 +283,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 				mock := gitmocks.NewGit(t)
 
 				mock.
-					On("CheckPermissions", testify.Anything, testify.Anything, testify.Anything).
+					On("CheckPermissions", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(true).
 					On("CloneRepository", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(nil).
@@ -361,7 +361,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 			gitClient: func(t *testing.T) git.Git {
 				mock := gitmocks.NewGit(t)
 
-				mock.On("CheckPermissions", testify.Anything, testify.Anything, testify.Anything).
+				mock.On("CheckPermissions", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(true).
 					On("CloneRepository", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(nil).
@@ -445,7 +445,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 			gitClient: func(t *testing.T) git.Git {
 				mock := gitmocks.NewGit(t)
 
-				mock.On("CheckPermissions", testify.Anything, testify.Anything, testify.Anything).
+				mock.On("CheckPermissions", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(true).
 					On("CloneRepository", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(nil).
@@ -518,7 +518,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 			gitClient: func(t *testing.T) git.Git {
 				mock := gitmocks.NewGit(t)
 
-				mock.On("CheckPermissions", testify.Anything, testify.Anything, testify.Anything).
+				mock.On("CheckPermissions", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(true).
 					On("CloneRepository", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(nil).
@@ -587,7 +587,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 			gitClient: func(t *testing.T) git.Git {
 				mock := gitmocks.NewGit(t)
 
-				mock.On("CheckPermissions", testify.Anything, testify.Anything, testify.Anything).
+				mock.On("CheckPermissions", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(true).
 					On("CloneRepository", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(nil).
@@ -658,7 +658,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 			gitClient: func(t *testing.T) git.Git {
 				mock := gitmocks.NewGit(t)
 
-				mock.On("CheckPermissions", testify.Anything, testify.Anything, testify.Anything).
+				mock.On("CheckPermissions", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(true).
 					On("CloneRepository", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(nil).
@@ -727,7 +727,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 			gitClient: func(t *testing.T) git.Git {
 				mock := gitmocks.NewGit(t)
 
-				mock.On("CheckPermissions", testify.Anything, testify.Anything, testify.Anything).
+				mock.On("CheckPermissions", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(true).
 					On("CloneRepository", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(nil).
@@ -786,7 +786,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 			gitClient: func(t *testing.T) git.Git {
 				mock := gitmocks.NewGit(t)
 
-				mock.On("CheckPermissions", testify.Anything, testify.Anything, testify.Anything).
+				mock.On("CheckPermissions", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(true).
 					On("CloneRepository", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(nil).
@@ -831,7 +831,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 			gitClient: func(t *testing.T) git.Git {
 				mock := gitmocks.NewGit(t)
 
-				mock.On("CheckPermissions", testify.Anything, testify.Anything, testify.Anything).
+				mock.On("CheckPermissions", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(true).
 					On("CloneRepository", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(nil).
@@ -875,7 +875,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 			gitClient: func(t *testing.T) git.Git {
 				mock := gitmocks.NewGit(t)
 
-				mock.On("CheckPermissions", testify.Anything, testify.Anything, testify.Anything).
+				mock.On("CheckPermissions", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(true).
 					On("CloneRepository", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(nil).
@@ -935,7 +935,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 			gitClient: func(t *testing.T) git.Git {
 				mock := gitmocks.NewGit(t)
 
-				mock.On("CheckPermissions", testify.Anything, testify.Anything, testify.Anything).
+				mock.On("CheckPermissions", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(true).
 					On("CloneRepository", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(nil).
@@ -990,7 +990,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 			gitClient: func(t *testing.T) git.Git {
 				mock := gitmocks.NewGit(t)
 
-				mock.On("CheckPermissions", testify.Anything, testify.Anything, testify.Anything).
+				mock.On("CheckPermissions", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(true).
 					On("CloneRepository", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(nil).
@@ -1050,7 +1050,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 			gitClient: func(t *testing.T) git.Git {
 				mock := gitmocks.NewGit(t)
 
-				mock.On("CheckPermissions", testify.Anything, testify.Anything, testify.Anything).
+				mock.On("CheckPermissions", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(true).
 					On("CloneRepository", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(nil).
@@ -1106,7 +1106,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 			gitClient: func(t *testing.T) git.Git {
 				mock := gitmocks.NewGit(t)
 
-				mock.On("CheckPermissions", testify.Anything, testify.Anything, testify.Anything).
+				mock.On("CheckPermissions", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(true).
 					On("CloneRepository", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(nil).

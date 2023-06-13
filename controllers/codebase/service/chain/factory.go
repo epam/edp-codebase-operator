@@ -8,8 +8,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/epam/edp-codebase-operator/v2/controllers/codebase/service/chain/handler"
-	"github.com/epam/edp-codebase-operator/v2/controllers/gitserver"
 	"github.com/epam/edp-codebase-operator/v2/pkg/gerrit"
+	"github.com/epam/edp-codebase-operator/v2/pkg/git"
 	"github.com/epam/edp-codebase-operator/v2/pkg/gitprovider"
 )
 
@@ -19,7 +19,7 @@ func MakeChain(ctx context.Context, c client.Client) handler.CodebaseHandler {
 	log.Info("Default chain is selected")
 
 	ch := &chain{}
-	gp := &gitserver.GitProvider{}
+	gp := &git.GitProvider{}
 
 	ch.Use(
 		NewPutGitWebRepoUrl(c),

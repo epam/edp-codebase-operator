@@ -15,7 +15,7 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/controllers/codebasebranch/chain/trigger_job"
 	"github.com/epam/edp-codebase-operator/v2/controllers/codebasebranch/chain/update_perf_data_sources"
 	"github.com/epam/edp-codebase-operator/v2/controllers/codebasebranch/service"
-	"github.com/epam/edp-codebase-operator/v2/controllers/gitserver"
+	"github.com/epam/edp-codebase-operator/v2/pkg/git"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
@@ -26,7 +26,7 @@ func createJenkinsDefChain(c client.Client) handler.CodebaseBranchHandler {
 
 	return chain.CheckCommitHashExists{
 		Client: c,
-		Git:    &gitserver.GitProvider{},
+		Git:    &git.GitProvider{},
 		Log:    ctrl.Log.WithName("check_commit_hash_exists"),
 		Next: trigger_job.TriggerReleaseJob{
 			TriggerJob: trigger_job.TriggerJob{
@@ -51,7 +51,7 @@ func createTektonDefChain(c client.Client) handler.CodebaseBranchHandler {
 
 	return put_branch_in_git.PutBranchInGit{
 		Client: c,
-		Git:    &gitserver.GitProvider{},
+		Git:    &git.GitProvider{},
 		Next: update_perf_data_sources.UpdatePerfDataSources{
 			Next: put_codebase_image_stream.PutCodebaseImageStream{
 				Client: c,

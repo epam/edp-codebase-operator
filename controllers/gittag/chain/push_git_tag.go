@@ -7,15 +7,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
-	"github.com/epam/edp-codebase-operator/v2/controllers/gitserver"
 	"github.com/epam/edp-codebase-operator/v2/controllers/gittag/chain/handler"
+	"github.com/epam/edp-codebase-operator/v2/pkg/git"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
 type PushGitTag struct {
 	next   handler.GitTagHandler
 	client client.Client
-	git    gitserver.Git
+	git    git.Git
 }
 
 func (h PushGitTag) ServeRequest(gt *codebaseApi.GitTag) error {

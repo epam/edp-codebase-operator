@@ -1,6 +1,7 @@
-package gitserver
+package git
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	netHttp "net/http"
@@ -18,15 +19,7 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/storer"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/go-git/go-git/v5/storage/memory"
-	"github.com/go-logr/logr"
-	"golang.org/x/crypto/ssh"
-	v1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	"github.com/epam/edp-codebase-operator/v2/pkg/gerrit"
-	"github.com/epam/edp-codebase-operator/v2/pkg/model"
-	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
 const (
@@ -54,20 +47,25 @@ const (
 	errRemoveSHHKeyFile = "failed to remove key file"
 )
 
-type GitSshData struct {
-	Host string
-	User string
-	Key  string
-	Port int32
+type commitOps struct {
+	allowEmptyCommit bool
+}
+
+type CommitOps func(*commitOps)
+
+func CommitAllowEmpty() func(*commitOps) {
+	return func(o *commitOps) {
+		o.allowEmptyCommit = true
+	}
 }
 
 // Git interface provides methods for working with git.
 //
 //go:generate mockery --name Git --filename git_mock.go
 type Git interface {
-	CommitChanges(directory, commitMsg string) error
+	CommitChanges(directory, commitMsg string, opts ...CommitOps) error
 	PushChanges(key, user, directory string, port int32, pushParams ...string) error
-	CheckPermissions(repo string, user, pass *string) (accessible bool)
+	CheckPermissions(ctx context.Context, repo string, user, pass *string) (accessible bool)
 	CloneRepositoryBySsh(key, user, repoUrl, destination string, port int32) error
 	CloneRepository(repo string, user *string, pass *string, destination string) error
 	CreateRemoteBranch(key, user, path, name, fromcommit string, port int32) error
@@ -89,17 +87,17 @@ type Command interface {
 }
 
 type GitProvider struct {
-	commandBuilder func(cmd string, params ...string) Command
+	CommandBuilder func(cmd string, params ...string) Command
 }
 
 func (gp *GitProvider) buildCommand(cmd string, params ...string) Command {
-	if gp.commandBuilder == nil {
-		gp.commandBuilder = func(cmd string, params ...string) Command {
+	if gp.CommandBuilder == nil {
+		gp.CommandBuilder = func(cmd string, params ...string) Command {
 			return exec.Command(cmd, params...)
 		}
 	}
 
-	return gp.commandBuilder(cmd, params...)
+	return gp.CommandBuilder(cmd, params...)
 }
 
 var log = ctrl.Log.WithName("git-provider")
@@ -158,9 +156,17 @@ func (gp *GitProvider) CreateRemoteBranch(key, user, p, name, fromcommit string,
 	return nil
 }
 
-func (*GitProvider) CommitChanges(directory, commitMsg string) error {
+func (*GitProvider) CommitChanges(directory, commitMsg string, ops ...CommitOps) error {
 	logger := log.WithValues(logDirectoryKey, directory)
 	logger.Info("Start committing changes")
+
+	option := &commitOps{
+		allowEmptyCommit: false,
+	}
+
+	for _, applyOption := range ops {
+		applyOption(option)
+	}
 
 	r, err := git.PlainOpen(directory)
 	if err != nil {
@@ -177,15 +183,19 @@ func (*GitProvider) CommitChanges(directory, commitMsg string) error {
 		return fmt.Errorf("failed to add files to the index: %w", err)
 	}
 
-	status, err := w.Status()
-	if err != nil {
-		return fmt.Errorf("failed to get git status: %w", err)
-	}
+	if !option.allowEmptyCommit {
+		var status git.Status
 
-	if status.IsClean() {
-		logger.Info("Nothing to commit. Skip committing")
+		status, err = w.Status()
+		if err != nil {
+			return fmt.Errorf("failed to get git status: %w", err)
+		}
 
-		return nil
+		if status.IsClean() {
+			logger.Info("Nothing to commit. Skip committing")
+
+			return nil
+		}
 	}
 
 	_, err = w.Commit(commitMsg, &git.CommitOptions{
@@ -250,7 +260,7 @@ func (gp *GitProvider) CreateChildBranch(directory, currentBranch, newBranch str
 func (*GitProvider) PushChanges(key, user, directory string, port int32, pushParams ...string) error {
 	log.Info("Start pushing changes", logDirectoryKey, directory)
 
-	keyPath, err := initAuth(key, user)
+	keyPath, err := InitAuth(key, user)
 	if err != nil {
 		return err
 	}
@@ -284,10 +294,13 @@ func (*GitProvider) PushChanges(key, user, directory string, port int32, pushPar
 	return nil
 }
 
-func (*GitProvider) CheckPermissions(repo string, user, pass *string) (accessible bool) {
-	log.Info("checking permissions", "user", user, logRepositoryKey, repo)
+func (*GitProvider) CheckPermissions(ctx context.Context, repo string, user, pass *string) (accessible bool) {
+	l := ctrl.LoggerFrom(ctx).WithValues(logRepositoryKey, repo)
+
+	l.Info("Checking permissions", "user", user)
 
 	if user == nil || pass == nil {
+		l.Info("No credentials provided. Skip checking permissions")
 		return true
 	}
 
@@ -304,12 +317,12 @@ func (*GitProvider) CheckPermissions(repo string, user, pass *string) (accessibl
 		},
 	})
 	if err != nil {
-		log.Error(err, fmt.Sprintf("User %v do not have access to %v repository", user, repo))
+		l.Error(err, fmt.Sprintf("User %v do not have access to %v repository", user, repo))
 		return false
 	}
 
 	if len(rfs) == 0 {
-		log.Error(errors.New("there are not refs in repository"), "no refs in repository")
+		l.Error(errors.New("there are not refs in repository"), "no refs in repository")
 		return false
 	}
 
@@ -368,7 +381,7 @@ func (*GitProvider) BareToNormal(p string) error {
 func (gp *GitProvider) CloneRepositoryBySsh(key, user, repoUrl, destination string, port int32) error {
 	log.Info("Start cloning", logRepositoryKey, repoUrl)
 
-	keyPath, err := initAuth(key, user)
+	keyPath, err := InitAuth(key, user)
 	if err != nil {
 		return err
 	}
@@ -504,7 +517,7 @@ func (gp *GitProvider) CreateRemoteTag(key, user, p, branchName, name string) er
 func (*GitProvider) Fetch(key, user, workDir, branchName string) error {
 	log.Info("start fetching data", logBranchNameKey, branchName)
 
-	keyPath, err := initAuth(key, user)
+	keyPath, err := InitAuth(key, user)
 	if err != nil {
 		return err
 	}
@@ -618,7 +631,7 @@ func (*GitProvider) Init(directory string) error {
 func (*GitProvider) CheckoutRemoteBranchBySSH(key, user, gitPath, remoteBranchName string) error {
 	log.Info("start checkout to", "branch", remoteBranchName)
 
-	keyPath, err := initAuth(key, user)
+	keyPath, err := InitAuth(key, user)
 	if err != nil {
 		return err
 	}
@@ -716,7 +729,7 @@ func isBranchExists(name string, branches storer.ReferenceIter) (bool, error) {
 	}
 }
 
-func initAuth(key, user string) (string, error) {
+func InitAuth(key, user string) (string, error) {
 	log.Info("Initializing auth", "user", user)
 
 	keyFile, err := os.CreateTemp("", "sshkey")
@@ -744,96 +757,6 @@ func initAuth(key, user string) (string, error) {
 	}
 
 	return keyFilePath, nil
-}
-
-func checkConnectionToGitServer(c client.Client, gitServer *model.GitServer) (bool, error) {
-	log.Info("Start CheckConnectionToGitServer method", "Git host", gitServer.GitHost)
-
-	sshSecret, err := util.GetSecret(c, gitServer.NameSshKeySecret, gitServer.Namespace)
-	if err != nil {
-		return false, fmt.Errorf("failed to get %v secret: %w", gitServer.NameSshKeySecret, err)
-	}
-
-	gitSshData := extractSshData(gitServer, sshSecret)
-
-	log.Info("Data from request is extracted", "host", gitSshData.Host, "port", gitSshData.Port)
-
-	accessible, err := isGitServerAccessible(gitSshData)
-	if err != nil {
-		return false, fmt.Errorf("an error has occurred while checking connection to git server: %w", err)
-	}
-
-	log.Info("Git server", "accessible", accessible)
-
-	return accessible, nil
-}
-
-func isGitServerAccessible(data GitSshData) (bool, error) {
-	log.Info("Start executing IsGitServerAccessible method to check connection to server", "host", data.Host)
-
-	sshClient, err := sshInitFromSecret(data, log)
-	if err != nil {
-		log.Info(fmt.Sprintf("An error has occurred while initing SSH client. Check data in Git Server resource and secret: %v", err))
-		return false, err
-	}
-
-	var (
-		s *ssh.Session
-		c *ssh.Client
-	)
-
-	if s, c, err = sshClient.NewSession(); err != nil {
-		log.Info(fmt.Sprintf("An error has occurred while connecting to server. Check data in Git Server resource and secret: %v", err))
-		return false, nil
-	}
-
-	defer util.CloseWithLogOnErr(log, s, "failed to close ssh client session")
-	defer util.CloseWithLogOnErr(log, c, "failed to close ssh client connection")
-
-	return s != nil && c != nil, nil
-}
-
-func extractSshData(gitServer *model.GitServer, secret *v1.Secret) GitSshData {
-	return GitSshData{
-		Host: gitServer.GitHost,
-		User: gitServer.GitUser,
-		Key:  string(secret.Data[util.PrivateSShKeyName]),
-		Port: gitServer.SshPort,
-	}
-}
-
-func sshInitFromSecret(data GitSshData, logger logr.Logger) (*gerrit.SSHClient, error) {
-	sshAuth, err := publicKey(data.Key)
-	if err != nil {
-		return nil, err
-	}
-
-	sshConfig := &ssh.ClientConfig{
-		User: data.User,
-		Auth: []ssh.AuthMethod{
-			sshAuth,
-		},
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
-	}
-
-	cl := &gerrit.SSHClient{
-		Config: sshConfig,
-		Host:   data.Host,
-		Port:   data.Port,
-	}
-
-	logger.Info("SSH Client has been initialized", "host", data.Host, "port", data.Port)
-
-	return cl, nil
-}
-
-func publicKey(key string) (ssh.AuthMethod, error) {
-	signer, err := ssh.ParsePrivateKey([]byte(key))
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse private key: %w", err)
-	}
-
-	return ssh.PublicKeys(signer), nil
 }
 
 func isTagExists(name string, tags storer.ReferenceIter) (bool, error) {

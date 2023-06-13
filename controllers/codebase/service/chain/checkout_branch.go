@@ -1,6 +1,7 @@
 package chain
 
 import (
+	"context"
 	"fmt"
 
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
@@ -8,7 +9,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
-	git "github.com/epam/edp-codebase-operator/v2/controllers/gitserver"
+	"github.com/epam/edp-codebase-operator/v2/pkg/git"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
@@ -36,7 +37,7 @@ func CheckoutBranch(repository, projectPath, branchName string, g git.Git, cb *c
 		return err
 	}
 
-	if !g.CheckPermissions(repository, user, password) {
+	if !g.CheckPermissions(ctrl.LoggerInto(context.TODO(), ctrl.Log.WithName("git-provider")), repository, user, password) {
 		msg := fmt.Errorf("user %s cannot get access to the repository %s", *user, repository)
 		return msg
 	}

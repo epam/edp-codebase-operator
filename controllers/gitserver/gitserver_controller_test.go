@@ -13,6 +13,7 @@ import (
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -244,11 +245,11 @@ func TestReconcileGitServer_ServerUnavailable(t *testing.T) {
 		},
 	}
 
-	res, err := r.Reconcile(context.TODO(), req)
+	res, err := r.Reconcile(ctrl.LoggerInto(context.Background(), logger), req)
 	assert.NoError(t, err)
 	assert.Equal(t, res.RequeueAfter, time.Second*30)
 
-	_, ok = loggerSink.InfoMessages()["git server does not have connection, will try again later"]
+	_, ok = loggerSink.InfoMessages()["GitServer does not have connection, will try again later"]
 	assert.True(t, ok)
 }
 

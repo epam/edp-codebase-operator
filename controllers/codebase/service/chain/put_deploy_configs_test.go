@@ -6,13 +6,14 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	testify "github.com/stretchr/testify/mock"
 	coreV1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
-	gitServerMocks "github.com/epam/edp-codebase-operator/v2/controllers/gitserver/mocks"
+	gitServerMocks "github.com/epam/edp-codebase-operator/v2/pkg/git/mocks"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
@@ -98,7 +99,7 @@ func TestPutDeployConfigs_ShouldPass(t *testing.T) {
 
 	mGit := gitServerMocks.NewGit(t)
 
-	mGit.On("CheckPermissions", "https://github.com/epmd-edp/go--.git", &u, &p).Return(true)
+	mGit.On("CheckPermissions", testify.Anything, "https://github.com/epmd-edp/go--.git", &u, &p).Return(true)
 	mGit.On("GetCurrentBranchName", wd).Return("master", nil)
 	mGit.On("Checkout", &u, &p, wd, "fake-defaultBranch", false).Return(nil)
 	mGit.On("CommitChanges", wd, fmt.Sprintf("Add deployment templates for %v", c.Name)).Return(nil)

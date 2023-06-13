@@ -12,8 +12,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
-	"github.com/epam/edp-codebase-operator/v2/controllers/gitserver"
-	gitServerMocks "github.com/epam/edp-codebase-operator/v2/controllers/gitserver/mocks"
+	"github.com/epam/edp-codebase-operator/v2/pkg/git"
+	gitServerMocks "github.com/epam/edp-codebase-operator/v2/pkg/git/mocks"
 )
 
 func TestCheckCommitHashExists_ServeRequest(t *testing.T) {
@@ -28,7 +28,7 @@ func TestCheckCommitHashExists_ServeRequest(t *testing.T) {
 		name           string
 		codebaseBranch *codebaseApi.CodebaseBranch
 		objects        []runtime.Object
-		gitClient      func() gitserver.Git
+		gitClient      func() git.Git
 		wantErr        require.ErrorAssertionFunc
 	}{
 		{
@@ -70,7 +70,7 @@ func TestCheckCommitHashExists_ServeRequest(t *testing.T) {
 					},
 				},
 			},
-			gitClient: func() gitserver.Git {
+			gitClient: func() git.Git {
 				mGit := gitServerMocks.NewGit(t)
 				mGit.On(
 					"CloneRepositoryBySsh",
@@ -129,7 +129,7 @@ func TestCheckCommitHashExists_ServeRequest(t *testing.T) {
 					},
 				},
 			},
-			gitClient: func() gitserver.Git {
+			gitClient: func() git.Git {
 				mGit := gitServerMocks.NewGit(t)
 				mGit.On(
 					"CloneRepositoryBySsh",
@@ -161,7 +161,7 @@ func TestCheckCommitHashExists_ServeRequest(t *testing.T) {
 					Namespace: "default",
 				},
 			},
-			gitClient: func() gitserver.Git {
+			gitClient: func() git.Git {
 				return gitServerMocks.NewGit(t)
 			},
 			wantErr: require.NoError,

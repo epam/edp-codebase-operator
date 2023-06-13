@@ -1,24 +1,28 @@
-package gitserver
+package git_test
 
 import (
+	"context"
 	"encoding/base64"
 	"errors"
 	"os"
 	"path"
 	"testing"
 
-	"github.com/go-git/go-git/v5"
+	gogit "github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/object"
+	"github.com/go-logr/logr"
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	ctrl "sigs.k8s.io/controller-runtime"
 
-	"github.com/epam/edp-codebase-operator/v2/controllers/gitserver/mocks"
+	"github.com/epam/edp-codebase-operator/v2/pkg/git"
+	"github.com/epam/edp-codebase-operator/v2/pkg/git/mocks"
 	"github.com/epam/edp-codebase-operator/v2/pkg/platform"
 )
 
 func TestGitProvider_CheckPermissions(t *testing.T) {
-	gp := GitProvider{}
+	gp := git.GitProvider{}
 	user := "user"
 	pass := "pass"
 
@@ -33,13 +37,13 @@ func TestGitProvider_CheckPermissions(t *testing.T) {
 	httpmock.RegisterResponder("GET", "http://repo.git/info/refs?service=git-upload-pack",
 		httpmock.NewBytesResponder(200, bts))
 
-	if !gp.CheckPermissions("http://repo.git", &user, &pass) {
+	if !gp.CheckPermissions(ctrl.LoggerInto(context.Background(), logr.Discard()), "http://repo.git", &user, &pass) {
 		t.Fatal("repo must be accessible")
 	}
 }
 
 func TestGitProvider_CheckPermissions_NoRefs(t *testing.T) {
-	gp := GitProvider{}
+	gp := git.GitProvider{}
 	user := "user"
 	pass := "pass"
 
@@ -55,35 +59,25 @@ func TestGitProvider_CheckPermissions_NoRefs(t *testing.T) {
 	loggerSink, ok := mockLogger.GetSink().(*platform.LoggerMock)
 	require.True(t, ok)
 
-	log = mockLogger
-
 	httpmock.RegisterResponder("GET", "http://repo.git/info/refs?service=git-upload-pack",
 		httpmock.NewBytesResponder(200, bts))
 
-	if gp.CheckPermissions("http://repo.git", &user, &pass) {
-		t.Fatal("repo must be not accessible")
-	}
-
-	lastErr := loggerSink.LastError()
-	if lastErr == nil {
-		t.Fatal("no error logged")
-	}
-
-	if lastErr.Error() != "there are not refs in repository" {
-		t.Fatalf("wrong error returned: %s", lastErr.Error())
-	}
+	accessible := gp.CheckPermissions(ctrl.LoggerInto(context.Background(), mockLogger), "http://repo.git", &user, &pass)
+	require.False(t, accessible, "repo must not be accessible")
+	require.Error(t, loggerSink.LastError())
+	require.Contains(t, loggerSink.LastError().Error(), "there are not refs in repository")
 }
 
 func TestInitAuth(t *testing.T) {
-	dir, err := initAuth("foo", "bar")
+	dir, err := git.InitAuth("foo", "bar")
 	assert.NoError(t, err)
 	assert.Contains(t, dir, "sshkey")
 }
 
 func TestGitProvider_CreateChildBranch(t *testing.T) {
 	cm := mocks.CommandMock{}
-	gp := GitProvider{
-		commandBuilder: func(cmd string, params ...string) Command {
+	gp := git.GitProvider{
+		CommandBuilder: func(cmd string, params ...string) git.Command {
 			return &cm
 		},
 	}
@@ -95,8 +89,8 @@ func TestGitProvider_CreateChildBranch(t *testing.T) {
 	cm.AssertExpectations(t)
 
 	cmError := mocks.CommandMock{}
-	gp = GitProvider{
-		commandBuilder: func(cmd string, params ...string) Command {
+	gp = git.GitProvider{
+		CommandBuilder: func(cmd string, params ...string) git.Command {
 			return &cmError
 		},
 	}
@@ -110,8 +104,8 @@ func TestGitProvider_CreateChildBranch(t *testing.T) {
 
 func TestGitProvider_RemoveBranch(t *testing.T) {
 	cm := mocks.CommandMock{}
-	gp := GitProvider{
-		commandBuilder: func(cmd string, params ...string) Command {
+	gp := git.GitProvider{
+		CommandBuilder: func(cmd string, params ...string) git.Command {
 			return &cm
 		},
 	}
@@ -123,8 +117,8 @@ func TestGitProvider_RemoveBranch(t *testing.T) {
 	cm.AssertExpectations(t)
 
 	cmError := mocks.CommandMock{}
-	gp = GitProvider{
-		commandBuilder: func(cmd string, params ...string) Command {
+	gp = git.GitProvider{
+		CommandBuilder: func(cmd string, params ...string) git.Command {
 			return &cmError
 		},
 	}
@@ -138,8 +132,8 @@ func TestGitProvider_RemoveBranch(t *testing.T) {
 
 func TestGitProvider_RenameBranch(t *testing.T) {
 	cm := mocks.CommandMock{}
-	gp := GitProvider{
-		commandBuilder: func(cmd string, params ...string) Command {
+	gp := git.GitProvider{
+		CommandBuilder: func(cmd string, params ...string) git.Command {
 			return &cm
 		},
 	}
@@ -151,8 +145,8 @@ func TestGitProvider_RenameBranch(t *testing.T) {
 	cm.AssertExpectations(t)
 
 	cmError := mocks.CommandMock{}
-	gp = GitProvider{
-		commandBuilder: func(cmd string, params ...string) Command {
+	gp = git.GitProvider{
+		CommandBuilder: func(cmd string, params ...string) git.Command {
 			return &cmError
 		},
 	}
@@ -162,31 +156,6 @@ func TestGitProvider_RenameBranch(t *testing.T) {
 	err = gp.RenameBranch("dir", "br1", "br2")
 	assert.Error(t, err)
 	assert.EqualError(t, err, "failed to checkout branch, err: : fatal")
-}
-
-func Test_publicKey(t *testing.T) {
-	tests := []struct {
-		name    string
-		key     string
-		wantErr assert.ErrorAssertionFunc
-	}{
-		{
-			name:    "success",
-			key:     testKey,
-			wantErr: assert.NoError,
-		},
-		{
-			name:    "success",
-			key:     "invalid-key",
-			wantErr: assert.Error,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			_, err := publicKey(tt.key)
-			tt.wantErr(t, err)
-		})
-	}
 }
 
 func Test_initAuth(t *testing.T) {
@@ -230,7 +199,7 @@ some-key
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			got, err := initAuth(tt.key, "user")
+			got, err := git.InitAuth(tt.key, "user")
 			tt.wantErr(t, err)
 
 			gotKey, err := os.ReadFile(got)
@@ -253,7 +222,7 @@ func TestGitProvider_CommitChanges(t *testing.T) {
 			name: "should commit changes successfully",
 			initRepo: func(t *testing.T) string {
 				dir := t.TempDir()
-				_, err := git.PlainInit(dir, false)
+				_, err := gogit.PlainInit(dir, false)
 				require.NoError(t, err)
 
 				_, err = os.Create(path.Join(dir, "config.yaml"))
@@ -263,7 +232,7 @@ func TestGitProvider_CommitChanges(t *testing.T) {
 			},
 			wantErr: require.NoError,
 			checkRepo: func(t *testing.T, dir string) {
-				r, err := git.PlainOpen(dir)
+				r, err := gogit.PlainOpen(dir)
 				require.NoError(t, err)
 
 				commits, err := r.CommitObjects()
@@ -283,14 +252,14 @@ func TestGitProvider_CommitChanges(t *testing.T) {
 			name: "skip commit if no changes",
 			initRepo: func(t *testing.T) string {
 				dir := t.TempDir()
-				_, err := git.PlainInit(dir, false)
+				_, err := gogit.PlainInit(dir, false)
 				require.NoError(t, err)
 
 				return dir
 			},
 			wantErr: require.NoError,
 			checkRepo: func(t *testing.T, dir string) {
-				r, err := git.PlainOpen(dir)
+				r, err := gogit.PlainOpen(dir)
 				require.NoError(t, err)
 
 				commits, err := r.CommitObjects()
@@ -313,7 +282,7 @@ func TestGitProvider_CommitChanges(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			gp := &GitProvider{}
+			gp := &git.GitProvider{}
 			dir := tt.initRepo(t)
 
 			err := gp.CommitChanges(dir, "test commit message")
@@ -338,14 +307,14 @@ func TestGitProvider_AddRemoteLink(t *testing.T) {
 			remoteUrl: "git@host:32/app.git",
 			initRepo: func(t *testing.T) string {
 				dir := t.TempDir()
-				_, err := git.PlainInit(dir, false)
+				_, err := gogit.PlainInit(dir, false)
 				require.NoError(t, err)
 
 				return dir
 			},
 			wantErr: require.NoError,
 			checkRepo: func(t *testing.T, dir string) {
-				r, err := git.PlainOpen(dir)
+				r, err := gogit.PlainOpen(dir)
 				require.NoError(t, err)
 
 				remote, err := r.Remote("origin")
@@ -374,7 +343,7 @@ func TestGitProvider_AddRemoteLink(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			gp := &GitProvider{}
+			gp := &git.GitProvider{}
 			dir := tt.initRepo(t)
 
 			err := gp.AddRemoteLink(dir, tt.remoteUrl)

@@ -7,8 +7,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
-	"github.com/epam/edp-codebase-operator/v2/controllers/gitserver"
 	"github.com/epam/edp-codebase-operator/v2/controllers/gittag/chain/handler"
+	"github.com/epam/edp-codebase-operator/v2/pkg/git"
 )
 
 var log = ctrl.Log.WithName("git_tag_handler")
@@ -19,7 +19,7 @@ func CreateDefChain(c client.Client) handler.GitTagHandler {
 		next: DeleteGitTagCr{
 			client: c,
 		},
-		git: &gitserver.GitProvider{},
+		git: &git.GitProvider{},
 	}
 }
 

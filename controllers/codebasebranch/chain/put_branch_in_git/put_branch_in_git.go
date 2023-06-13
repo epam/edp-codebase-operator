@@ -12,7 +12,7 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/controllers/codebasebranch/chain"
 	"github.com/epam/edp-codebase-operator/v2/controllers/codebasebranch/chain/handler"
 	"github.com/epam/edp-codebase-operator/v2/controllers/codebasebranch/service"
-	"github.com/epam/edp-codebase-operator/v2/controllers/gitserver"
+	"github.com/epam/edp-codebase-operator/v2/pkg/git"
 	"github.com/epam/edp-codebase-operator/v2/pkg/model"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
@@ -20,7 +20,7 @@ import (
 type PutBranchInGit struct {
 	Next    handler.CodebaseBranchHandler
 	Client  client.Client
-	Git     gitserver.Git
+	Git     git.Git
 	Service service.CodebaseBranchService
 }
 

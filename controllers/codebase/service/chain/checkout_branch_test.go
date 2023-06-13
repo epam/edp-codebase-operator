@@ -6,13 +6,14 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	testify "github.com/stretchr/testify/mock"
 	coreV1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
-	gitServerMocks "github.com/epam/edp-codebase-operator/v2/controllers/gitserver/mocks"
+	gitServerMocks "github.com/epam/edp-codebase-operator/v2/pkg/git/mocks"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
@@ -132,7 +133,7 @@ func TestCheckoutBranch_ShouldFailOnCheckPermission(t *testing.T) {
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(s, c).Build()
 
 	mGit := gitServerMocks.NewGit(t)
-	mGit.On("CheckPermissions", "repo", util.GetStringP("user"), util.GetStringP("pass")).Return(false)
+	mGit.On("CheckPermissions", testify.Anything, "repo", util.GetStringP("user"), util.GetStringP("pass")).Return(false)
 
 	err := CheckoutBranch("repo", "project-path", "branch", mGit, c, fakeCl)
 	assert.Error(t, err)
@@ -170,7 +171,7 @@ func TestCheckoutBranch_ShouldFailOnGetCurrentBranchName(t *testing.T) {
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(s, c).Build()
 
 	mGit := gitServerMocks.NewGit(t)
-	mGit.On("CheckPermissions", "repo", util.GetStringP("user"), util.GetStringP("pass")).Return(true)
+	mGit.On("CheckPermissions", testify.Anything, "repo", util.GetStringP("user"), util.GetStringP("pass")).Return(true)
 	mGit.On("GetCurrentBranchName", "project-path").Return("", errors.New("FATAL:FAILED"))
 
 	err := CheckoutBranch("repo", "project-path", "branch", mGit, c, fakeCl)
@@ -213,7 +214,7 @@ func TestCheckoutBranch_ShouldFailOnCheckout(t *testing.T) {
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(s, c).Build()
 
 	mGit := gitServerMocks.NewGit(t)
-	mGit.On("CheckPermissions", "repo", &u, &p).Return(true)
+	mGit.On("CheckPermissions", testify.Anything, "repo", &u, &p).Return(true)
 	mGit.On("GetCurrentBranchName", "project-path").Return("some-other-branch", nil)
 	mGit.On("Checkout", &u, &p, "project-path", "branch", true).Return(errors.New("FATAL:FAILED"))
 
@@ -279,7 +280,7 @@ func TestCheckoutBranch_ShouldPassForCloneStrategy(t *testing.T) {
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(s, c, gs, ssh).Build()
 
 	mGit := gitServerMocks.NewGit(t)
-	mGit.On("CheckPermissions", "repo", &u, &p).Return(true)
+	mGit.On("CheckPermissions", testify.Anything, "repo", &u, &p).Return(true)
 	mGit.On("GetCurrentBranchName", "project-path").Return("some-other-branch", nil)
 	mGit.On("CheckoutRemoteBranchBySSH", "fake", fakeName, "project-path", "branch").Return(nil)
 

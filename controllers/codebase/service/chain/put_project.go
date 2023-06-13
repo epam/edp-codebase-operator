@@ -13,8 +13,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
-	git "github.com/epam/edp-codebase-operator/v2/controllers/gitserver"
 	"github.com/epam/edp-codebase-operator/v2/pkg/gerrit"
+	"github.com/epam/edp-codebase-operator/v2/pkg/git"
 	"github.com/epam/edp-codebase-operator/v2/pkg/gitprovider"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
@@ -441,7 +441,7 @@ func (h *PutProject) emptyProjectProvisioning(ctx context.Context, wd string) er
 
 	log.Info("Making initial commit")
 
-	if err := h.git.CommitChanges(wd, "Initial commit"); err != nil {
+	if err := h.git.CommitChanges(wd, "Initial commit", git.CommitAllowEmpty()); err != nil {
 		return fmt.Errorf("failed to create Initial commit: %w", err)
 	}
 
@@ -464,7 +464,7 @@ func (h *PutProject) notEmptyProjectProvisioning(ctx context.Context, codebase *
 		return fmt.Errorf("failed to get repository credentials: %w", err)
 	}
 
-	if !h.git.CheckPermissions(repoUrl, repu, repp) {
+	if !h.git.CheckPermissions(ctx, repoUrl, repu, repp) {
 		return fmt.Errorf("failed to get access to the repository %v for user %v", repoUrl, *repu)
 	}
 

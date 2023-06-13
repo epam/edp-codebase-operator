@@ -14,7 +14,7 @@ import (
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	"github.com/epam/edp-codebase-operator/v2/controllers/codebasebranch/service"
-	gitServerMocks "github.com/epam/edp-codebase-operator/v2/controllers/gitserver/mocks"
+	gitServerMocks "github.com/epam/edp-codebase-operator/v2/pkg/git/mocks"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 

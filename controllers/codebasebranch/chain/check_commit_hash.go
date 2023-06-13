@@ -11,7 +11,7 @@ import (
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	"github.com/epam/edp-codebase-operator/v2/controllers/codebasebranch/chain/handler"
-	"github.com/epam/edp-codebase-operator/v2/controllers/gitserver"
+	"github.com/epam/edp-codebase-operator/v2/pkg/git"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
@@ -19,7 +19,7 @@ import (
 type CheckCommitHashExists struct {
 	Next   handler.CodebaseBranchHandler
 	Client client.Client
-	Git    gitserver.Git
+	Git    git.Git
 	Log    logr.Logger
 }
 
