@@ -320,6 +320,43 @@ func (c *GitHubClient) ProjectExists(
 	return true, nil
 }
 
+func (c *GitHubClient) SetDefaultBranch(
+	ctx context.Context,
+	githubURL,
+	token,
+	projectID,
+	branch string,
+) error {
+	owner, repo, err := parseProjectID(projectID)
+	if err != nil {
+		return err
+	}
+
+	c.restyClient.HostURL = githubURL
+
+	resp, err := c.restyClient.
+		R().
+		SetContext(ctx).
+		SetAuthToken(token).
+		SetPathParams(map[string]string{
+			ownerPathParam: owner,
+			repoPathParam:  repo,
+		}).
+		SetBody(map[string]string{
+			"default_branch": branch,
+		}).
+		Patch("/repos/{owner}/{repo}")
+	if err != nil {
+		return fmt.Errorf("failed to set GitHub default branch: %w", err)
+	}
+
+	if resp.IsError() {
+		return fmt.Errorf("failed to set GitHub default branch: %s", resp.String())
+	}
+
+	return nil
+}
+
 // isOwnerOrg checks if the given owner is an organization.
 func (c *GitHubClient) isOwnerOrg(
 	ctx context.Context,

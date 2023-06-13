@@ -550,3 +550,57 @@ func TestGitHubClient_ProjectExists(t *testing.T) {
 		})
 	}
 }
+
+func TestGitHubClient_SetDefaultBranch(t *testing.T) {
+	fakeUrlRegexp := regexp.MustCompile(`.*`)
+	restyClient := resty.New()
+	httpmock.ActivateNonDefault(restyClient.GetClient())
+
+	defer httpmock.DeactivateAndReset()
+
+	tests := []struct {
+		name       string
+		projectID  string
+		respStatus int
+		wantErr    require.ErrorAssertionFunc
+	}{
+		{
+			name:       "successfully set default branch",
+			projectID:  "owner/repo",
+			respStatus: http.StatusOK,
+			wantErr:    require.NoError,
+		},
+		{
+			name:       "response failure",
+			projectID:  "owner/repo",
+			respStatus: http.StatusBadRequest,
+			wantErr: func(t require.TestingT, err error, i ...interface{}) {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), "failed to set GitHub default branch")
+			},
+		},
+		{
+			name:       "invalid projectID",
+			projectID:  "owner-repo",
+			respStatus: http.StatusOK,
+			wantErr: func(t require.TestingT, err error, i ...interface{}) {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), "invalid project ID")
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			httpmock.Reset()
+
+			GETResponder, err := httpmock.NewJsonResponder(tt.respStatus, map[string]string{})
+			require.NoError(t, err)
+			httpmock.RegisterRegexpResponder(http.MethodPatch, fakeUrlRegexp, GETResponder)
+
+			c := NewGitHubClient(restyClient)
+			err = c.SetDefaultBranch(context.Background(), "url", "token", tt.projectID, "main")
+			tt.wantErr(t, err)
+		})
+	}
+}

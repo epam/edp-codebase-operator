@@ -903,6 +903,8 @@ func TestPutProject_ServeRequest(t *testing.T) {
 				mock.On("ProjectExists", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(false, nil).
 					On("CreateProject", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
+					Return(nil).
+					On("SetDefaultBranch", testify.Anything, testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(nil)
 
 				return func(gitServer *codebaseApi.GitServer) (gitprovider.GitProjectProvider, error) {
@@ -957,6 +959,8 @@ func TestPutProject_ServeRequest(t *testing.T) {
 				mock.On("ProjectExists", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(false, nil).
 					On("CreateProject", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
+					Return(nil).
+					On("SetDefaultBranch", testify.Anything, testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(nil)
 
 				return func(gitServer *codebaseApi.GitServer) (gitprovider.GitProjectProvider, error) {
@@ -1014,6 +1018,8 @@ func TestPutProject_ServeRequest(t *testing.T) {
 				mock.On("ProjectExists", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(false, nil).
 					On("CreateProject", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
+					Return(nil).
+					On("SetDefaultBranch", testify.Anything, testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(nil)
 
 				return func(gitServer *codebaseApi.GitServer) (gitprovider.GitProjectProvider, error) {
@@ -1068,6 +1074,8 @@ func TestPutProject_ServeRequest(t *testing.T) {
 				mock.On("ProjectExists", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(false, nil).
 					On("CreateProject", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
+					Return(nil).
+					On("SetDefaultBranch", testify.Anything, testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(nil)
 
 				return func(gitServer *codebaseApi.GitServer) (gitprovider.GitProjectProvider, error) {
@@ -1077,6 +1085,65 @@ func TestPutProject_ServeRequest(t *testing.T) {
 			wantErr: require.NoError,
 			wantStatus: func(t *testing.T, status *codebaseApi.CodebaseStatus) {
 				assert.Equal(t, util.ProjectPushedStatus, status.Git)
+			},
+		},
+		{
+			name: "gitlab, clone strategy - failed to set default branch",
+			codebase: &codebaseApi.Codebase{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "go app",
+					Namespace: defaultNs,
+				},
+				Spec: codebaseApi.CodebaseSpec{
+					Strategy:      codebaseApi.Clone,
+					GitServer:     gitlabGitServer.Name,
+					GitUrlPath:    "/owner/go-repo",
+					Repository:    &codebaseApi.Repository{Url: "https://github.com/owner/repo.git"},
+					DefaultBranch: "master",
+				},
+			},
+			objects: []runtime.Object{gitlabGitServer, gitlabGitServerSecret},
+			gitClient: func(t *testing.T) git.Git {
+				mock := gitmocks.NewGit(t)
+
+				mock.On("CheckPermissions", testify.Anything, testify.Anything, testify.Anything).
+					Return(true).
+					On("CloneRepository", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
+					Return(nil).
+					On("GetCurrentBranchName", testify.Anything).
+					Return("feature", nil).
+					On("Checkout", testify.Anything, testify.Anything, testify.Anything, testify.Anything, true).
+					Return(nil).
+					On("AddRemoteLink", testify.Anything, testify.Anything).
+					Return(nil).
+					On("PushChanges", testify.Anything, testify.Anything, testify.Anything, testify.Anything, testify.Anything).
+					Return(nil)
+
+				return mock
+			},
+			gerritClient: func(t *testing.T) gerrit.Client {
+				return gerritmocks.NewClient(t)
+			},
+			gitProvider: func(t *testing.T) func(gitServer *codebaseApi.GitServer) (gitprovider.GitProjectProvider, error) {
+				mock := gitprovidermock.NewGitProjectProvider(t)
+
+				mock.On("ProjectExists", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
+					Return(false, nil).
+					On("CreateProject", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
+					Return(nil).
+					On("SetDefaultBranch", testify.Anything, testify.Anything, testify.Anything, testify.Anything, testify.Anything).
+					Return(errors.New("failed to set default branch"))
+
+				return func(gitServer *codebaseApi.GitServer) (gitprovider.GitProjectProvider, error) {
+					return mock, nil
+				}
+			},
+			wantErr: func(t require.TestingT, err error, i ...interface{}) {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), "failed to set default branch")
+			},
+			wantStatus: func(t *testing.T, status *codebaseApi.CodebaseStatus) {
+				assert.Equal(t, util.StatusFailed, status.Status)
 			},
 		},
 		{

@@ -279,6 +279,37 @@ func (c *GitLabClient) ProjectExists(
 	return true, nil
 }
 
+func (c *GitLabClient) SetDefaultBranch(
+	ctx context.Context,
+	gitlabURL,
+	token,
+	projectID,
+	branch string,
+) error {
+	c.restyClient.HostURL = gitlabURL
+	resp, err := c.restyClient.
+		R().
+		SetContext(ctx).
+		SetHeader(gitLabTokenHeaderName, token).
+		SetPathParams(map[string]string{
+			"projectID": projectID,
+		}).
+		SetBody(map[string]string{
+			"default_branch": branch,
+		}).
+		Put("/api/v4/projects/{projectID}")
+
+	if err != nil {
+		return fmt.Errorf("failed to set GitLab default branch: %w", err)
+	}
+
+	if resp.IsError() {
+		return fmt.Errorf("failed to set GitLab default branch: %s", resp.String())
+	}
+
+	return nil
+}
+
 func (c *GitLabClient) getNamespace(
 	ctx context.Context,
 	gitlabURL,

@@ -472,6 +472,52 @@ func TestGitLabClient_ProjectExists(t *testing.T) {
 	}
 }
 
+func TestGitLabClient_SetDefaultBranch(t *testing.T) {
+	fakeUrlRegexp := regexp.MustCompile(`.*`)
+	restyClient := resty.New()
+	httpmock.ActivateNonDefault(restyClient.GetClient())
+
+	defer httpmock.DeactivateAndReset()
+
+	tests := []struct {
+		name       string
+		projectID  string
+		respStatus int
+		wantErr    require.ErrorAssertionFunc
+	}{
+		{
+			name:       "success",
+			projectID:  "namespace/owner/repo",
+			respStatus: http.StatusOK,
+			wantErr:    require.NoError,
+		},
+		{
+			name:       "failed to set default branch",
+			projectID:  "namespace/owner/repo",
+			respStatus: http.StatusBadRequest,
+			wantErr: func(t require.TestingT, err error, i ...interface{}) {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), "failed to set GitLab default branch")
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			httpmock.Reset()
+
+			GETResponder, err := httpmock.NewJsonResponder(tt.respStatus, map[string]string{})
+			require.NoError(t, err)
+			httpmock.RegisterRegexpResponder(http.MethodPut, fakeUrlRegexp, GETResponder)
+
+			c := NewGitLabClient(restyClient)
+
+			err = c.SetDefaultBranch(context.Background(), "url", "token", tt.projectID, "main")
+			tt.wantErr(t, err)
+		})
+	}
+}
+
 func Test_decodeProjectID(t *testing.T) {
 	t.Parallel()
 

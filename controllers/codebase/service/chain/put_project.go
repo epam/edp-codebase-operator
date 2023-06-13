@@ -41,7 +41,7 @@ func NewPutProject(
 }
 
 func (h *PutProject) ServeRequest(ctx context.Context, codebase *codebaseApi.Codebase) error {
-	log := ctrl.LoggerFrom(ctx)
+	log := ctrl.LoggerFrom(ctx).WithValues("projectID", codebase.Spec.GetProjectID())
 
 	if h.skip(ctx, codebase) {
 		return nil
@@ -79,12 +79,12 @@ func (h *PutProject) ServeRequest(ctx context.Context, codebase *codebaseApi.Cod
 		return fmt.Errorf("failed to perform initial provisioning of codebase %v: %w", codebase.Name, err)
 	}
 
-	if err = h.checkoutBranch(ctx, codebase, wd); err != nil {
+	if err = h.checkoutBranch(ctrl.LoggerInto(ctx, log), codebase, wd); err != nil {
 		setFailedFields(codebase, codebaseApi.GerritRepositoryProvisioning, err.Error())
 		return err
 	}
 
-	err = h.createProject(ctx, codebase, gitServer, wd)
+	err = h.createProject(ctrl.LoggerInto(ctx, log), codebase, gitServer, wd)
 	if err != nil {
 		setFailedFields(codebase, codebaseApi.GerritRepositoryProvisioning, err.Error())
 		return fmt.Errorf("failed to create project: %w", err)
@@ -123,8 +123,6 @@ func (h *PutProject) createProject(
 	gitServer *codebaseApi.GitServer,
 	workDir string,
 ) error {
-	log := ctrl.LoggerFrom(ctx).WithValues("gitProvider", gitServer.Spec.GitProvider)
-
 	gitServerSecret := &corev1.Secret{}
 	if err := h.client.Get(ctx, client.ObjectKey{Name: gitServer.Spec.NameSshKeySecret, Namespace: codebase.Namespace}, gitServerSecret); err != nil {
 		return fmt.Errorf("failed to get git server secret: %w", err)
@@ -149,26 +147,9 @@ func (h *PutProject) createProject(
 		return err
 	}
 
-	if gitServer.Spec.GitProvider == codebaseApi.GitProviderGerrit {
-		log.Info("Set HEAD to default branch in Gerrit", "defaultBranch", codebase.Spec.DefaultBranch)
-
-		err = h.gerrit.SetHeadToBranch(
-			gitServer.Spec.SshPort,
-			privateSSHKey,
-			gitServer.Spec.GitHost,
-			gitServer.Spec.GitUser,
-			codebase.Spec.GetProjectID(),
-			codebase.Spec.DefaultBranch,
-			log,
-		)
-		if err != nil {
-			return fmt.Errorf(
-				"set remote HEAD for codebase %s to default branch %s has been failed: %w",
-				codebase.Spec.GetProjectID(),
-				codebase.Spec.DefaultBranch,
-				err,
-			)
-		}
+	err = h.setDefaultBranch(ctx, gitServer, codebase, gitProviderToken, privateSSHKey)
+	if err != nil {
+		return err
 	}
 
 	return nil
@@ -197,7 +178,7 @@ func (h *PutProject) replaceDefaultBranch(ctx context.Context, directory, defaul
 }
 
 func (h *PutProject) pushProject(ctx context.Context, gitServer *codebaseApi.GitServer, privateSSHKey, projectName, directory string) error {
-	log := ctrl.LoggerFrom(ctx).WithValues("projectName", projectName, "gitProvider", gitServer.Spec.GitProvider)
+	log := ctrl.LoggerFrom(ctx).WithValues("gitProvider", gitServer.Spec.GitProvider)
 
 	log.Info("Start pushing project")
 	log.Info("Start adding remote link to Gerrit")
@@ -227,7 +208,7 @@ func (h *PutProject) pushProject(ctx context.Context, gitServer *codebaseApi.Git
 }
 
 func (h *PutProject) createGerritProject(ctx context.Context, gitServer *codebaseApi.GitServer, privateSSHKey, projectName string) error {
-	log := ctrl.LoggerFrom(ctx).WithValues("projectName", projectName)
+	log := ctrl.LoggerFrom(ctx)
 
 	log.Info("Start creating project in Gerrit")
 
@@ -295,7 +276,7 @@ func (h *PutProject) checkoutBranch(ctx context.Context, codebase *codebaseApi.C
 }
 
 func (h *PutProject) createGitThirdPartyProject(ctx context.Context, gitServer *codebaseApi.GitServer, gitProviderToken, projectName string) error {
-	log := ctrl.LoggerFrom(ctx).WithValues("projectName", projectName, "gitProvider", gitServer.Spec.GitProvider)
+	log := ctrl.LoggerFrom(ctx).WithValues("gitProvider", gitServer.Spec.GitProvider)
 
 	log.Info("Start creating project in git provider")
 
@@ -330,6 +311,66 @@ func (h *PutProject) createGitThirdPartyProject(ctx context.Context, gitServer *
 	}
 
 	log.Info("Project created in git provider")
+
+	return nil
+}
+
+func (h *PutProject) setDefaultBranch(
+	ctx context.Context,
+	gitServer *codebaseApi.GitServer,
+	codebase *codebaseApi.Codebase,
+	gitProviderToken,
+	privateSSHKey string,
+) error {
+	log := ctrl.LoggerFrom(ctx).
+		WithValues("gitProvider", gitServer.Spec.GitProvider)
+
+	log.Info("Start setting default branch", "defaultBranch", codebase.Spec.DefaultBranch)
+
+	if gitServer.Spec.GitProvider == codebaseApi.GitProviderGerrit {
+		log.Info("Set HEAD to default branch in Gerrit")
+
+		err := h.gerrit.SetHeadToBranch(
+			gitServer.Spec.SshPort,
+			privateSSHKey,
+			gitServer.Spec.GitHost,
+			gitServer.Spec.GitUser,
+			codebase.Spec.GetProjectID(),
+			codebase.Spec.DefaultBranch,
+			log,
+		)
+		if err != nil {
+			return fmt.Errorf(
+				"set remote HEAD for codebase %s to default branch %s has been failed: %w",
+				codebase.Spec.GetProjectID(),
+				codebase.Spec.DefaultBranch,
+				err,
+			)
+		}
+
+		log.Info("Set HEAD to default branch in Gerrit has been finished")
+
+		return nil
+	}
+
+	log.Info("Set default branch in git provider")
+
+	gitProvider, err := h.gitProjectProvider(gitServer)
+	if err != nil {
+		return fmt.Errorf("failed to create git provider: %w", err)
+	}
+
+	if err = gitProvider.SetDefaultBranch(
+		ctx,
+		gitprovider.GetGitProviderAPIURL(gitServer),
+		gitProviderToken,
+		codebase.Spec.GetProjectID(),
+		codebase.Spec.DefaultBranch,
+	); err != nil {
+		return fmt.Errorf("failed to set default branch: %w", err)
+	}
+
+	log.Info("Default branch has been set")
 
 	return nil
 }

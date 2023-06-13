@@ -66,6 +66,13 @@ type GitProjectProvider interface {
 		token,
 		projectID string,
 	) (bool, error)
+	SetDefaultBranch(
+		ctx context.Context,
+		githubURL,
+		token,
+		projectID,
+		branch string,
+	) error
 }
 
 type GitProvider interface {
