@@ -1,15 +1,18 @@
 package put_branch_in_git
 
 import (
+	"context"
 	"fmt"
-	"strings"
 	"testing"
 
+	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
+	testifymock "github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	coreV1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
@@ -85,13 +88,13 @@ func TestPutBranchInGit_ShouldBeExecutedSuccessfullyWithDefaultVersioning(t *tes
 
 	repoSshUrl := util.GetSSHUrl(gs, c.Spec.GetProjectID())
 
-	mGit.On("CloneRepositoryBySsh", "", fakeName, repoSshUrl, wd, port).Return(nil)
+	mGit.On("CloneRepositoryBySsh", testifymock.Anything, "", fakeName, repoSshUrl, wd, port).Return(nil)
 	mGit.On("CreateRemoteBranch", "", fakeName, wd, fakeName, "commitsha", port).Return(nil)
 
 	err := PutBranchInGit{
 		Client: fakeCl,
 		Git:    mGit,
-	}.ServeRequest(cb)
+	}.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), cb)
 
 	assert.NoError(t, err)
 }
@@ -107,19 +110,16 @@ func TestPutBranchInGit_CodebaseShouldNotBeFound(t *testing.T) {
 		},
 	}
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1.SchemeGroupVersion, cb)
+	require.NoError(t, codebaseApi.AddToScheme(scheme))
+
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(cb).Build()
 
 	err := PutBranchInGit{
 		Client: fakeCl,
-	}.ServeRequest(cb)
+	}.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), cb)
 
 	assert.Error(t, err)
-
-	if !strings.Contains(err.Error(), "failed to get Codebase fake-name") {
-		t.Fatalf("wrong error returned: %s", err.Error())
-	}
-
+	assert.Contains(t, err.Error(), "failed to fetch Codebase")
 	assert.Equal(t, codebaseApi.PutGitBranch, cb.Status.Action)
 }
 
@@ -153,7 +153,7 @@ func TestPutBranchInGit_ShouldThrowCodebaseBranchReconcileError(t *testing.T) {
 
 	err := PutBranchInGit{
 		Client: fakeCl,
-	}.ServeRequest(cb)
+	}.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), cb)
 
 	_, ok := err.(*util.CodebaseBranchReconcileError)
 	assert.True(t, ok, "wrong type of error")
@@ -229,7 +229,7 @@ func TestPutBranchInGit_ShouldBeExecutedSuccessfullyWithEdpVersioning(t *testing
 
 	repoSshUrl := util.GetSSHUrl(gs, c.Spec.GetProjectID())
 
-	mGit.On("CloneRepositoryBySsh", "", fakeName, repoSshUrl, wd, port).
+	mGit.On("CloneRepositoryBySsh", testifymock.Anything, "", fakeName, repoSshUrl, wd, port).
 		Return(nil)
 	mGit.On("CreateRemoteBranch", "", fakeName, wd, fakeName, "", port).Return(nil)
 
@@ -239,7 +239,7 @@ func TestPutBranchInGit_ShouldBeExecutedSuccessfullyWithEdpVersioning(t *testing
 		Service: &service.CodebaseBranchServiceProvider{
 			Client: fakeCl,
 		},
-	}.ServeRequest(cb)
+	}.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), cb)
 
 	assert.NoError(t, err)
 }
@@ -255,7 +255,7 @@ func TestPutBranchInGit_ShouldFailToSetIntermediateStatus(t *testing.T) {
 		Service: &service.CodebaseBranchServiceProvider{
 			Client: fakeCl,
 		},
-	}.ServeRequest(cb)
+	}.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), cb)
 
 	assert.Error(t, err)
 }
@@ -292,7 +292,7 @@ func TestPutBranchInGit_GitServerShouldNotBeFound(t *testing.T) {
 
 	err := PutBranchInGit{
 		Client: fakeCl,
-	}.ServeRequest(cb)
+	}.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), cb)
 
 	assert.Error(t, err)
 
@@ -344,13 +344,10 @@ func TestPutBranchInGit_SecretShouldNotBeFound(t *testing.T) {
 
 	err := PutBranchInGit{
 		Client: fakeCl,
-	}.ServeRequest(cb)
+	}.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), cb)
 
 	assert.Error(t, err)
-
-	if !strings.Contains(err.Error(), "failed to get secret fake-name") {
-		t.Fatalf("wrong error returned: %s", err.Error())
-	}
+	assert.Contains(t, err.Error(), fmt.Sprintf("failed to get %s secret", fakeName))
 }
 
 func TestPutBranchInGit_ShouldFailNoEDPVersion(t *testing.T) {
@@ -413,8 +410,31 @@ func TestPutBranchInGit_ShouldFailNoEDPVersion(t *testing.T) {
 	err := PutBranchInGit{
 		Client: fakeCl,
 		Git:    gitServerMocks.NewGit(t),
-	}.ServeRequest(codeBaseBranch)
+	}.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), codeBaseBranch)
 
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "doesn't have version")
+}
+
+func TestPutBranchInGit_SkipAlreadyCreated(t *testing.T) {
+	codeBaseBranch := &codebaseApi.CodebaseBranch{
+		ObjectMeta: v1.ObjectMeta{
+			Name:      "fake",
+			Namespace: "default",
+		},
+		Spec: codebaseApi.CodebaseBranchSpec{
+			CodebaseName: "fake",
+			BranchName:   "fake",
+		},
+		Status: codebaseApi.CodebaseBranchStatus{
+			Git: codebaseApi.CodebaseBranchGitStatusBranchCreated,
+		},
+	}
+
+	err := PutBranchInGit{
+		Client: fake.NewClientBuilder().Build(),
+		Git:    gitServerMocks.NewGit(t),
+	}.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), codeBaseBranch)
+
+	require.NoError(t, err)
 }

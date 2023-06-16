@@ -104,7 +104,7 @@ func TestPutDeployConfigs_ShouldPass(t *testing.T) {
 	mGit.On("Checkout", &u, &p, wd, "fake-defaultBranch", false).Return(nil)
 	mGit.On("CommitChanges", wd, fmt.Sprintf("Add deployment templates for %v", c.Name)).Return(nil)
 	mGit.On("PushChanges", "fake", "fake-name", wd, port, "--all").Return(nil)
-	mGit.On("CloneRepositoryBySsh", "fake", "fake-name", "ssh://fake-name:22/fake-name", wd, port).Return(nil)
+	mGit.On("CloneRepositoryBySsh", testify.Anything, "fake", "fake-name", "ssh://fake-name:22/fake-name", wd, port).Return(nil)
 
 	pdc := NewPutDeployConfigs(fakeCl, mGit)
 

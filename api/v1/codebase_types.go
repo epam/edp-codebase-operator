@@ -146,14 +146,12 @@ func (in *CodebaseSpec) GetProjectID() string {
 type ActionType string
 
 const (
-	AcceptCodebaseRegistration       ActionType = "accept_codebase_registration"
 	GerritRepositoryProvisioning     ActionType = "gerrit_repository_provisioning"
 	CIConfiguration                  ActionType = "ci_configuration"
 	SetupDeploymentTemplates         ActionType = "setup_deployment_templates"
 	AcceptCodebaseBranchRegistration ActionType = "accept_codebase_branch_registration"
 	PutJenkinsFolder                 ActionType = "put_jenkins_folder"
 	CleanData                        ActionType = "clean_data"
-	ImportProject                    ActionType = "import_project"
 	PutWebHook                       ActionType = "put_web_hook"
 	PutGitWebRepoUrl                 ActionType = "put_git_web_repo_url"
 	PutGitBranch                     ActionType = "put_git_branch"

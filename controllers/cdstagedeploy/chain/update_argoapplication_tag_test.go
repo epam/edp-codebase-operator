@@ -22,9 +22,6 @@ import (
 func TestUpdateArgoApplicationTag_ServeRequest(t *testing.T) {
 	t.Parallel()
 
-	scheme := runtime.NewScheme()
-	require.NoError(t, codebaseApi.AddToScheme(scheme))
-
 	tests := []struct {
 		name    string
 		deploy  *codebaseApi.CDStageDeploy
@@ -336,6 +333,9 @@ func TestUpdateArgoApplicationTag_ServeRequest(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
+
+			scheme := runtime.NewScheme()
+			require.NoError(t, codebaseApi.AddToScheme(scheme))
 
 			cl := fake.NewClientBuilder().WithScheme(scheme).WithObjects(tt.objects...).Build()
 

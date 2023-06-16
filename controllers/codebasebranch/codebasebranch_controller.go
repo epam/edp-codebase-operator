@@ -101,7 +101,8 @@ func (r *ReconcileCodebaseBranch) SetupWithManager(mgr ctrl.Manager, maxConcurre
 
 // Reconcile reads that state of the cluster for a CodebaseBranch object and makes changes based on the state.
 func (r *ReconcileCodebaseBranch) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	log := r.log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
+	log := ctrl.LoggerFrom(ctx)
+
 	log.Info("Reconciling CodebaseBranch")
 
 	cb := &codebaseApi.CodebaseBranch{}
@@ -113,12 +114,6 @@ func (r *ReconcileCodebaseBranch) Reconcile(ctx context.Context, request reconci
 		return reconcile.Result{}, fmt.Errorf("failed to fetch CodebaseBranch resource %q: %w", request.NamespacedName, err)
 	}
 
-	defer func() {
-		if err := r.updateStatus(ctx, cb); err != nil {
-			log.Error(err, "error on codebase branch update status")
-		}
-	}()
-
 	c, err := util.GetCodebase(r.client, cb.Spec.CodebaseName, cb.Namespace)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to fetch Codebase: %w", err)
@@ -126,6 +121,11 @@ func (r *ReconcileCodebaseBranch) Reconcile(ctx context.Context, request reconci
 
 	if err = r.setOwnerRef(cb, c); err != nil {
 		setErrorStatus(cb, err.Error())
+
+		if err = r.updateStatus(ctx, cb); err != nil {
+			log.Error(err, "error on codebase branch update status")
+		}
+
 		return reconcile.Result{}, fmt.Errorf("failed to set OwnerRef for codebasebranch %v: %w", cb.Name, err)
 	}
 
@@ -151,7 +151,7 @@ func (r *ReconcileCodebaseBranch) Reconcile(ctx context.Context, request reconci
 	}
 
 	cbChain := factory.GetChain(c.Spec.CiTool, r.client)
-	if err := cbChain.ServeRequest(cb); err != nil {
+	if err := cbChain.ServeRequest(ctx, cb); err != nil {
 		const defaultPostponeTime = 5 * time.Second
 
 		log.Error(err, "an error has occurred while handling codebase branch", "name", cb.Name)
@@ -161,7 +161,13 @@ func (r *ReconcileCodebaseBranch) Reconcile(ctx context.Context, request reconci
 			return reconcile.Result{RequeueAfter: defaultPostponeTime}, nil
 		}
 
-		return reconcile.Result{RequeueAfter: r.setFailureCount(cb)}, fmt.Errorf("failed to process default chain: %w", err)
+		timeout := r.setFailureCount(cb)
+
+		if err = r.client.Status().Update(ctx, cb); err != nil {
+			ctrl.LoggerFrom(ctx).Error(err, "failed to update CodebaseBranch status with failure count")
+		}
+
+		return reconcile.Result{RequeueAfter: timeout}, fmt.Errorf("failed to process default chain: %w", err)
 	}
 
 	if err := r.setSuccessStatus(ctx, cb, codebaseApi.CIConfiguration); err != nil {
@@ -185,6 +191,7 @@ func (r *ReconcileCodebaseBranch) setSuccessStatus(ctx context.Context, cb *code
 		VersionHistory:      cb.Status.VersionHistory,
 		LastSuccessfulBuild: cb.Status.LastSuccessfulBuild,
 		Build:               cb.Status.Build,
+		Git:                 cb.Status.Git,
 	}
 
 	return r.updateStatus(ctx, cb)
@@ -192,13 +199,7 @@ func (r *ReconcileCodebaseBranch) setSuccessStatus(ctx context.Context, cb *code
 
 func (r *ReconcileCodebaseBranch) updateStatus(ctx context.Context, cb *codebaseApi.CodebaseBranch) error {
 	if err := r.client.Status().Update(ctx, cb); err != nil {
-		if err != nil {
-			r.log.Error(err, "failed to update CodebaseBranch status", "name", cb.Name)
-		}
-
-		if err := r.client.Update(ctx, cb); err != nil {
-			return fmt.Errorf("failed to update codebase branch status: %w", err)
-		}
+		return fmt.Errorf("failed to update CodebaseBranch status: %w", err)
 	}
 
 	r.log.V(2).Info("codebase branch status has been updated", "name", cb.Name)
@@ -219,11 +220,17 @@ func (r *ReconcileCodebaseBranch) tryToDeleteCodebaseBranch(ctx context.Context,
 		return nil, nil
 	}
 
-	if err := deletionChain.ServeRequest(cb); err != nil {
+	if err := deletionChain.ServeRequest(ctx, cb); err != nil {
 		if errors.Is(err, service.ErrJobFailed) {
 			r.log.Error(err, "deletion job failed")
 
-			return &reconcile.Result{RequeueAfter: r.setFailureCount(cb)}, nil
+			timeout := r.setFailureCount(cb)
+
+			if err = r.client.Status().Update(ctx, cb); err != nil {
+				ctrl.LoggerFrom(ctx).Error(err, "failed to update CodebaseBranch status with failure count")
+			}
+
+			return &reconcile.Result{RequeueAfter: timeout}, nil
 		}
 	}
 

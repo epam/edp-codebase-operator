@@ -1,6 +1,7 @@
 package chain
 
 import (
+	"context"
 	"testing"
 
 	"github.com/go-logr/logr"
@@ -9,6 +10,7 @@ import (
 	coreV1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
@@ -79,6 +81,7 @@ func TestCheckCommitHashExists_ServeRequest(t *testing.T) {
 					testifymock.Anything,
 					testifymock.Anything,
 					testifymock.Anything,
+					testifymock.Anything,
 				).Return(nil)
 				mGit.On(
 					"CommitExists",
@@ -138,6 +141,7 @@ func TestCheckCommitHashExists_ServeRequest(t *testing.T) {
 					testifymock.Anything,
 					testifymock.Anything,
 					testifymock.Anything,
+					testifymock.Anything,
 				).Return(nil)
 				mGit.On(
 					"CommitExists",
@@ -166,16 +170,36 @@ func TestCheckCommitHashExists_ServeRequest(t *testing.T) {
 			},
 			wantErr: require.NoError,
 		},
+		{
+			name: "skip, git branch already created",
+			codebaseBranch: &codebaseApi.CodebaseBranch{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: "default",
+				},
+				Spec: codebaseApi.CodebaseBranchSpec{
+					CodebaseName: "test-codebase",
+					BranchName:   "main",
+					FromCommit:   "bfba920bd3bdebc9ae1c4475d70391152645b2a4",
+				},
+				Status: codebaseApi.CodebaseBranchStatus{
+					Git: codebaseApi.CodebaseBranchGitStatusBranchCreated,
+				},
+			},
+			gitClient: func() git.Git {
+				return gitServerMocks.NewGit(t)
+			},
+			wantErr: require.NoError,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := CheckCommitHashExists{
 				Client: fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(tt.objects...).Build(),
 				Git:    tt.gitClient(),
-				Log:    logr.Discard(),
 			}
 
-			err := c.ServeRequest(tt.codebaseBranch)
+			err := c.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), tt.codebaseBranch)
 
 			tt.wantErr(t, err)
 		})

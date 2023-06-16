@@ -84,13 +84,13 @@ func (_m *Git) CloneRepository(repo string, user *string, pass *string, destinat
 	return r0
 }
 
-// CloneRepositoryBySsh provides a mock function with given fields: key, user, repoUrl, destination, port
-func (_m *Git) CloneRepositoryBySsh(key string, user string, repoUrl string, destination string, port int32) error {
-	ret := _m.Called(key, user, repoUrl, destination, port)
+// CloneRepositoryBySsh provides a mock function with given fields: ctx, key, user, repoUrl, destination, port
+func (_m *Git) CloneRepositoryBySsh(ctx context.Context, key string, user string, repoUrl string, destination string, port int32) error {
+	ret := _m.Called(ctx, key, user, repoUrl, destination, port)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(string, string, string, string, int32) error); ok {
-		r0 = rf(key, user, repoUrl, destination, port)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string, int32) error); ok {
+		r0 = rf(ctx, key, user, repoUrl, destination, port)
 	} else {
 		r0 = ret.Error(0)
 	}

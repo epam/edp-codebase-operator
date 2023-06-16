@@ -444,6 +444,13 @@ CodebaseBranchStatus defines the observed state of CodebaseBranch.
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>git</b></td>
+        <td>string</td>
+        <td>
+          Specifies a status of action for git.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>lastSuccessfulBuild</b></td>
         <td>string</td>
         <td>

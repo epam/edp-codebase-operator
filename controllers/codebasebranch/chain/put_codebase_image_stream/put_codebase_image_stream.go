@@ -26,11 +26,10 @@ type PutCodebaseImageStream struct {
 
 const dockerRegistryName = "docker-registry"
 
-var log = ctrl.Log.WithName("put-codebase-image-stream-chain")
+func (h PutCodebaseImageStream) ServeRequest(ctx context.Context, cb *codebaseApi.CodebaseBranch) error {
+	log := ctrl.LoggerFrom(ctx).WithName("put-codebase-image-stream")
 
-func (h PutCodebaseImageStream) ServeRequest(cb *codebaseApi.CodebaseBranch) error {
-	rl := log.WithValues("namespace", cb.Namespace, "codebase branch", cb.Name)
-	rl.Info("start PutCodebaseImageStream chain...")
+	log.Info("Start creating CodebaseImageStream")
 
 	if err := h.setIntermediateSuccessFields(cb, codebaseApi.PutCodebaseImageStream); err != nil {
 		return err
@@ -54,16 +53,21 @@ func (h PutCodebaseImageStream) ServeRequest(cb *codebaseApi.CodebaseBranch) err
 	cisName := fmt.Sprintf("%v-%v", c.Name, processNameToK8sConvention(cb.Spec.BranchName))
 	imageName := fmt.Sprintf("%v/%v/%v", ec.Spec.Url, cb.Namespace, cb.Spec.CodebaseName)
 
-	err = h.createCodebaseImageStreamIfNotExists(cisName, imageName, cb.Spec.CodebaseName, cb.Namespace)
-	if err != nil {
+	if err = h.createCodebaseImageStreamIfNotExists(
+		ctrl.LoggerInto(ctx, log),
+		cisName,
+		imageName,
+		cb.Spec.CodebaseName,
+		cb.Namespace,
+	); err != nil {
 		setFailedFields(cb, codebaseApi.PutCodebaseImageStream, err.Error())
 
 		return err
 	}
 
-	rl.Info("end PutCodebaseImageStream chain...")
+	log.Info("End creating CodebaseImageStream")
 
-	err = handler.NextServeOrNil(h.Next, cb)
+	err = handler.NextServeOrNil(ctx, h.Next, cb)
 	if err != nil {
 		return fmt.Errorf("failed to process next handler in chain: %w", err)
 	}
@@ -91,8 +95,9 @@ func (h PutCodebaseImageStream) getDockerRegistryEdpComponent(namespace string) 
 	return ec, nil
 }
 
-func (h PutCodebaseImageStream) createCodebaseImageStreamIfNotExists(name, imageName, codebaseName, namespace string) error {
-	ctx := context.Background()
+func (h PutCodebaseImageStream) createCodebaseImageStreamIfNotExists(ctx context.Context, name, imageName, codebaseName, namespace string) error {
+	log := ctrl.LoggerFrom(ctx)
+
 	cis := &codebaseApi.CodebaseImageStream{
 		TypeMeta: metaV1.TypeMeta{
 			APIVersion: "v2.edp.epam.com/v1",
@@ -110,7 +115,7 @@ func (h PutCodebaseImageStream) createCodebaseImageStreamIfNotExists(name, image
 
 	if err := h.Client.Create(ctx, cis); err != nil {
 		if k8sErrors.IsAlreadyExists(err) {
-			log.Info("codebase image stream already exists. skip creating...", "name", cis.Name)
+			log.Info("CodebaseImageStream already exists. Skip creating", "CodebaseImageStream", cis.Name)
 
 			return nil
 		}
@@ -118,7 +123,7 @@ func (h PutCodebaseImageStream) createCodebaseImageStreamIfNotExists(name, image
 		return fmt.Errorf("failed to create %q resource %q: %w", cis.TypeMeta.Kind, name, err)
 	}
 
-	log.Info("codebase image stream has been created", "name", name)
+	log.Info("CodebaseImageStream has been created", "CodebaseImageStream", name)
 
 	return nil
 }
@@ -132,6 +137,7 @@ func setFailedFields(cb *codebaseApi.CodebaseBranch, a codebaseApi.ActionType, m
 		Result:          codebaseApi.Error,
 		DetailedMessage: message,
 		Value:           "failed",
+		Git:             cb.Status.Git,
 	}
 }
 
@@ -147,6 +153,7 @@ func (h PutCodebaseImageStream) setIntermediateSuccessFields(cb *codebaseApi.Cod
 		VersionHistory:      cb.Status.VersionHistory,
 		LastSuccessfulBuild: cb.Status.LastSuccessfulBuild,
 		Build:               cb.Status.Build,
+		Git:                 cb.Status.Git,
 	}
 
 	err := h.Client.Status().Update(ctx, cb)

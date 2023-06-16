@@ -4,6 +4,10 @@ import (
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	CodebaseBranchGitStatusBranchCreated = "branch-created"
+)
+
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
 // CodebaseBranchSpec defines the desired state of CodebaseBranch.
@@ -70,6 +74,9 @@ type CodebaseBranchStatus struct {
 
 	// Amount of times, operator fail to serve with existing CR.
 	FailureCount int64 `json:"failureCount"`
+
+	// Specifies a status of action for git.
+	Git string `json:"git,omitempty"`
 }
 
 // +kubebuilder:object:root=true

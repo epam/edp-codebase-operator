@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	corev1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -24,81 +25,113 @@ type PutBranchInGit struct {
 	Service service.CodebaseBranchService
 }
 
-var log = ctrl.Log.WithName("put-branch-in-git-chain")
+func (h PutBranchInGit) ServeRequest(ctx context.Context, branch *codebaseApi.CodebaseBranch) error {
+	log := ctrl.LoggerFrom(ctx)
 
-func (h PutBranchInGit) ServeRequest(cb *codebaseApi.CodebaseBranch) error {
-	rl := log.WithValues("namespace", cb.Namespace, "codebase branch", cb.Name)
-	rl.Info("start PutBranchInGit method...")
+	if branch.Status.Git == codebaseApi.CodebaseBranchGitStatusBranchCreated {
+		log.Info("Branch is already created in git")
 
-	if err := h.setIntermediateSuccessFields(cb, codebaseApi.AcceptCodebaseBranchRegistration); err != nil {
+		if err := handler.NextServeOrNil(ctx, h.Next, branch); err != nil {
+			return fmt.Errorf("failed to process next handler in chain: %w", err)
+		}
+
+		return nil
+	}
+
+	log.Info("Start creating branch in git")
+
+	if err := h.setIntermediateSuccessFields(branch, codebaseApi.AcceptCodebaseBranchRegistration); err != nil {
 		return err
 	}
 
-	c, err := util.GetCodebase(h.Client, cb.Spec.CodebaseName, cb.Namespace)
-	if err != nil {
-		setFailedFields(cb, codebaseApi.PutGitBranch, err.Error())
+	codebase := &codebaseApi.Codebase{}
+	if err := h.Client.Get(ctx, client.ObjectKey{
+		Namespace: branch.Namespace,
+		Name:      branch.Spec.CodebaseName,
+	}, codebase); err != nil {
+		setFailedFields(branch, codebaseApi.PutGitBranch, err.Error())
 
 		return fmt.Errorf("failed to fetch Codebase: %w", err)
 	}
 
-	if !c.Status.Available {
-		log.Info("failed to start reconciling for branch; codebase is unavailable", "codebase", c.Name)
-		return util.NewCodebaseBranchReconcileError(fmt.Sprintf("%v codebase is unavailable", c.Name))
+	if !codebase.Status.Available {
+		log.Info("failed to start reconciling for branch; codebase is unavailable", "codebase", codebase.Name)
+		return util.NewCodebaseBranchReconcileError(fmt.Sprintf("%v codebase is unavailable", codebase.Name))
 	}
 
-	err = h.processNewVersion(cb, c)
-	if err != nil {
-		err = fmt.Errorf("failed to process new version for %s branch: %w", cb.Name, err)
+	if err := h.processNewVersion(branch, codebase); err != nil {
+		err = fmt.Errorf("failed to process new version for %s branch: %w", branch.Name, err)
 
-		setFailedFields(cb, codebaseApi.PutGitBranch, err.Error())
+		setFailedFields(branch, codebaseApi.PutGitBranch, err.Error())
 
 		return err
 	}
 
 	gitServer := &codebaseApi.GitServer{}
-	if err = h.Client.Get(
-		context.TODO(),
+	if err := h.Client.Get(
+		ctx,
 		client.ObjectKey{
-			Namespace: cb.Namespace,
-			Name:      c.Spec.GitServer,
+			Namespace: branch.Namespace,
+			Name:      codebase.Spec.GitServer,
 		},
 		gitServer,
 	); err != nil {
-		setFailedFields(cb, codebaseApi.PutGitBranch, err.Error())
+		setFailedFields(branch, codebaseApi.PutGitBranch, err.Error())
 
 		return fmt.Errorf("failed to fetch GitServer: %w", err)
 	}
 
-	secret, err := util.GetSecret(h.Client, gitServer.Spec.NameSshKeySecret, c.Namespace)
-	if err != nil {
+	secret := &corev1.Secret{}
+	if err := h.Client.Get(
+		ctx,
+		client.ObjectKey{
+			Namespace: branch.Namespace,
+			Name:      gitServer.Spec.NameSshKeySecret,
+		},
+		secret,
+	); err != nil {
 		err = fmt.Errorf("failed to get %v secret: %w", gitServer.Spec.NameSshKeySecret, err)
-		setFailedFields(cb, codebaseApi.PutGitBranch, err.Error())
+		setFailedFields(branch, codebaseApi.PutGitBranch, err.Error())
 
 		return err
 	}
 
-	wd := util.GetWorkDir(cb.Spec.CodebaseName, fmt.Sprintf("%v-%v", cb.Namespace, cb.Spec.BranchName))
+	wd := util.GetWorkDir(branch.Spec.CodebaseName, fmt.Sprintf("%v-%v", branch.Namespace, branch.Spec.BranchName))
 	if !checkDirectory(wd) {
-		repoSshUrl := util.GetSSHUrl(gitServer, c.Spec.GetProjectID())
+		repoSshUrl := util.GetSSHUrl(gitServer, codebase.Spec.GetProjectID())
 
-		err = h.Git.CloneRepositoryBySsh(string(secret.Data[util.PrivateSShKeyName]), gitServer.Spec.GitUser, repoSshUrl, wd, gitServer.Spec.SshPort)
-		if err != nil {
-			setFailedFields(cb, codebaseApi.PutGitBranch, err.Error())
+		if err := h.Git.CloneRepositoryBySsh(
+			ctx,
+			string(secret.Data[util.PrivateSShKeyName]),
+			gitServer.Spec.GitUser,
+			repoSshUrl,
+			wd,
+			gitServer.Spec.SshPort,
+		); err != nil {
+			setFailedFields(branch, codebaseApi.PutGitBranch, err.Error())
 
 			return fmt.Errorf("failed to clone repository: %w", err)
 		}
 	}
 
-	err = h.Git.CreateRemoteBranch(string(secret.Data[util.PrivateSShKeyName]), gitServer.Spec.GitUser, wd, cb.Spec.BranchName, cb.Spec.FromCommit, gitServer.Spec.SshPort)
+	err := h.Git.CreateRemoteBranch(string(secret.Data[util.PrivateSShKeyName]), gitServer.Spec.GitUser, wd, branch.Spec.BranchName, branch.Spec.FromCommit, gitServer.Spec.SshPort)
 	if err != nil {
-		setFailedFields(cb, codebaseApi.PutGitBranch, err.Error())
+		setFailedFields(branch, codebaseApi.PutGitBranch, err.Error())
 
 		return fmt.Errorf("failed to create remove branch: %w", err)
 	}
 
-	rl.Info("end PutBranchInGit method...")
+	branch.Status.Git = codebaseApi.CodebaseBranchGitStatusBranchCreated
+	if err = h.Client.Status().Update(ctx, branch); err != nil {
+		branch.Status.Git = ""
+		setFailedFields(branch, codebaseApi.PutGitBranch, err.Error())
 
-	err = handler.NextServeOrNil(h.Next, cb)
+		return fmt.Errorf("failed to update CodebaseBranch status: %w", err)
+	}
+
+	log.Info("Branch has been created in git")
+
+	err = handler.NextServeOrNil(ctx, h.Next, branch)
 	if err != nil {
 		return fmt.Errorf("failed to process next handler in chain: %w", err)
 	}
@@ -119,16 +152,12 @@ func (h PutBranchInGit) setIntermediateSuccessFields(cb *codebaseApi.CodebaseBra
 		LastSuccessfulBuild: cb.Status.LastSuccessfulBuild,
 		Build:               cb.Status.Build,
 		FailureCount:        cb.Status.FailureCount,
+		Git:                 cb.Status.Git,
 	}
 
 	err := h.Client.Status().Update(ctx, cb)
 	if err != nil {
 		return fmt.Errorf("failed to update CodebaseBranch status field %q: %w", cb.Name, err)
-	}
-
-	err = h.Client.Update(ctx, cb)
-	if err != nil {
-		return fmt.Errorf("failed to update CodebaseBranch resource %q: %w", cb.Name, err)
 	}
 
 	return nil
@@ -147,6 +176,7 @@ func setFailedFields(cb *codebaseApi.CodebaseBranch, a codebaseApi.ActionType, m
 		LastSuccessfulBuild: cb.Status.LastSuccessfulBuild,
 		Build:               cb.Status.Build,
 		FailureCount:        cb.Status.FailureCount,
+		Git:                 cb.Status.Git,
 	}
 }
 

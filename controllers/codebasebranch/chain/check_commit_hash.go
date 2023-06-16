@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
@@ -20,18 +20,25 @@ type CheckCommitHashExists struct {
 	Next   handler.CodebaseBranchHandler
 	Client client.Client
 	Git    git.Git
-	Log    logr.Logger
 }
 
 // ServeRequest is a method for checking CodebaseBranch FromCommit hash existence.
-func (c CheckCommitHashExists) ServeRequest(codebaseBranch *codebaseApi.CodebaseBranch) error {
+func (c CheckCommitHashExists) ServeRequest(ctx context.Context, codebaseBranch *codebaseApi.CodebaseBranch) error {
+	log := ctrl.LoggerFrom(ctx).WithName("check-commit-hash-exists")
+
+	if codebaseBranch.Status.Git == codebaseApi.CodebaseBranchGitStatusBranchCreated {
+		log.Info("Branch is already created in git. Skip checking commit hash existence")
+
+		return c.next(ctx, codebaseBranch)
+	}
+
 	if codebaseBranch.Spec.FromCommit == "" {
-		return c.next(codebaseBranch)
+		return c.next(ctx, codebaseBranch)
 	}
 
 	codebase := &codebaseApi.Codebase{}
 	if err := c.Client.Get(
-		context.TODO(),
+		ctx,
 		client.ObjectKey{
 			Namespace: codebaseBranch.Namespace,
 			Name:      codebaseBranch.Spec.CodebaseName,
@@ -43,7 +50,7 @@ func (c CheckCommitHashExists) ServeRequest(codebaseBranch *codebaseApi.Codebase
 
 	gitServer := &codebaseApi.GitServer{}
 	if err := c.Client.Get(
-		context.TODO(),
+		ctx,
 		client.ObjectKey{
 			Namespace: codebaseBranch.Namespace,
 			Name:      codebase.Spec.GitServer,
@@ -55,7 +62,7 @@ func (c CheckCommitHashExists) ServeRequest(codebaseBranch *codebaseApi.Codebase
 
 	secret := &corev1.Secret{}
 	if err := c.Client.Get(
-		context.TODO(),
+		ctx,
 		client.ObjectKey{
 			Namespace: codebaseBranch.Namespace,
 			Name:      gitServer.Spec.NameSshKeySecret,
@@ -70,6 +77,7 @@ func (c CheckCommitHashExists) ServeRequest(codebaseBranch *codebaseApi.Codebase
 		repoSshUrl := util.GetSSHUrl(gitServer, codebase.Spec.GetProjectID())
 
 		if err := c.Git.CloneRepositoryBySsh(
+			ctx,
 			string(secret.Data[util.PrivateSShKeyName]),
 			gitServer.Spec.GitUser,
 			repoSshUrl,
@@ -89,12 +97,12 @@ func (c CheckCommitHashExists) ServeRequest(codebaseBranch *codebaseApi.Codebase
 		return c.processErr(codebaseBranch, fmt.Errorf("commit %s doesn't exist", codebaseBranch.Spec.FromCommit))
 	}
 
-	return c.next(codebaseBranch)
+	return c.next(ctx, codebaseBranch)
 }
 
 // next is a method for serving next chain element.
-func (c CheckCommitHashExists) next(codebaseBranch *codebaseApi.CodebaseBranch) error {
-	err := handler.NextServeOrNil(c.Next, codebaseBranch)
+func (c CheckCommitHashExists) next(ctx context.Context, codebaseBranch *codebaseApi.CodebaseBranch) error {
+	err := handler.NextServeOrNil(ctx, c.Next, codebaseBranch)
 	if err != nil {
 		return fmt.Errorf("failed to serve next chain element: %w", err)
 	}
@@ -130,5 +138,6 @@ func (CheckCommitHashExists) setFailedFields(
 		LastSuccessfulBuild: codebaseBranch.Status.LastSuccessfulBuild,
 		Build:               codebaseBranch.Status.Build,
 		FailureCount:        codebaseBranch.Status.FailureCount,
+		Git:                 codebaseBranch.Status.Git,
 	}
 }

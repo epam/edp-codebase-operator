@@ -1,13 +1,16 @@
 package update_perf_data_sources
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
+	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/apps/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	perfApi "github.com/epam/edp-perf-operator/v2/api/v1"
@@ -46,7 +49,8 @@ func TestUpdatePerfDataSources_ShouldSkipUpdating(t *testing.T) {
 	scheme.AddKnownTypes(v1.SchemeGroupVersion, c, cb)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, cb).Build()
 
-	assert.NoError(t, UpdatePerfDataSources{Client: fakeCl}.ServeRequest(cb))
+	err := UpdatePerfDataSources{Client: fakeCl}.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), cb)
+	assert.NoError(t, err)
 }
 
 func TestUpdatePerfDataSources_DsShouldBeUpdated(t *testing.T) {
@@ -88,7 +92,10 @@ func TestUpdatePerfDataSources_DsShouldBeUpdated(t *testing.T) {
 	scheme := runtime.NewScheme()
 	scheme.AddKnownTypes(v1.SchemeGroupVersion, c, p, cb)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, p, cb).Build()
-	assert.NoError(t, UpdatePerfDataSources{Client: fakeCl}.ServeRequest(cb))
+
+	err := UpdatePerfDataSources{Client: fakeCl}.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), cb)
+
+	assert.NoError(t, err)
 }
 
 func TestUpdatePerfDataSources_CodebaseShouldNotBeFound(t *testing.T) {
@@ -117,7 +124,10 @@ func TestUpdatePerfDataSources_CodebaseShouldNotBeFound(t *testing.T) {
 	scheme := runtime.NewScheme()
 	scheme.AddKnownTypes(v1.SchemeGroupVersion, p, cb)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(p, cb).Build()
-	assert.Error(t, UpdatePerfDataSources{Client: fakeCl}.ServeRequest(cb))
+
+	err := UpdatePerfDataSources{Client: fakeCl}.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), cb)
+
+	assert.Error(t, err)
 }
 
 func TestUpdatePerfDataSources_PerfDataSourceShouldNotBeFound(t *testing.T) {
@@ -159,7 +169,10 @@ func TestUpdatePerfDataSources_PerfDataSourceShouldNotBeFound(t *testing.T) {
 	scheme := runtime.NewScheme()
 	scheme.AddKnownTypes(v1.SchemeGroupVersion, c, p, cb)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, p, cb).Build()
-	assert.Error(t, UpdatePerfDataSources{Client: fakeCl}.ServeRequest(cb))
+
+	err := UpdatePerfDataSources{Client: fakeCl}.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), cb)
+
+	assert.Error(t, err)
 }
 
 func TestUpdatePerfDataSources_JenkinsDsShouldBeUpdated(t *testing.T) {
@@ -206,7 +219,10 @@ func TestUpdatePerfDataSources_JenkinsDsShouldBeUpdated(t *testing.T) {
 	scheme := runtime.NewScheme()
 	scheme.AddKnownTypes(v1.SchemeGroupVersion, c, p, cb)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, p, cb).Build()
-	assert.NoError(t, UpdatePerfDataSources{Client: fakeCl}.ServeRequest(cb))
+
+	err := UpdatePerfDataSources{Client: fakeCl}.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), cb)
+
+	assert.NoError(t, err)
 }
 
 func TestUpdatePerfDataSources_GitLabDsShouldBeUpdated(t *testing.T) {
@@ -255,5 +271,8 @@ func TestUpdatePerfDataSources_GitLabDsShouldBeUpdated(t *testing.T) {
 	scheme := runtime.NewScheme()
 	scheme.AddKnownTypes(v1.SchemeGroupVersion, c, p, cb)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, p, cb).Build()
-	assert.NoError(t, UpdatePerfDataSources{Client: fakeCl}.ServeRequest(cb))
+
+	err := UpdatePerfDataSources{Client: fakeCl}.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), cb)
+
+	assert.NoError(t, err)
 }

@@ -83,8 +83,14 @@ func (h *PutDeployConfigs) tryToPushConfigs(ctx context.Context, codebase *codeb
 	if !util.DoesDirectoryExist(wd) || util.IsDirectoryEmpty(wd) {
 		log.Info("Start cloning repository", "url", repoSshUrl)
 
-		err := h.git.CloneRepositoryBySsh(privateSSHKey, gitServer.Spec.GitUser, repoSshUrl, wd, gitServer.Spec.SshPort)
-		if err != nil {
+		if err := h.git.CloneRepositoryBySsh(
+			ctx,
+			privateSSHKey,
+			gitServer.Spec.GitUser,
+			repoSshUrl,
+			wd,
+			gitServer.Spec.SshPort,
+		); err != nil {
 			return fmt.Errorf("failed to clone git repository: %w", err)
 		}
 

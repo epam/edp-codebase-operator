@@ -65,7 +65,7 @@ func (h PushGitTag) tryToPushTag(gt *codebaseApi.GitTag) error {
 		repoSshUrl := util.GetSSHUrl(gitServer, c.Spec.GetProjectID())
 		key := string(secret.Data[util.PrivateSShKeyName])
 
-		err = h.git.CloneRepositoryBySsh(key, gitServer.Spec.GitUser, repoSshUrl, wd, gitServer.Spec.SshPort)
+		err = h.git.CloneRepositoryBySsh(context.TODO(), key, gitServer.Spec.GitUser, repoSshUrl, wd, gitServer.Spec.SshPort)
 		if err != nil {
 			return fmt.Errorf("failed to git cline repository: %w", err)
 		}

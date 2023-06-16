@@ -1,10 +1,13 @@
 package clean_tmp_directory
 
 import (
+	"context"
 	"testing"
 
+	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	ctrl "sigs.k8s.io/controller-runtime"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 )
@@ -24,7 +27,7 @@ func TestCleanTempDirectory_ShouldRemoveWithSuccessStatus(t *testing.T) {
 	}
 	directory := &CleanTempDirectory{}
 
-	err := directory.ServeRequest(cb)
+	err := directory.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), cb)
 	assert.NoError(t, err)
 }
 

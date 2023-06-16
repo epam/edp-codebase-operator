@@ -1,6 +1,7 @@
 package clean_tmp_directory
 
 import (
+	"context"
 	"fmt"
 
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -12,11 +13,10 @@ import (
 
 type CleanTempDirectory struct{}
 
-var log = ctrl.Log.WithName("clean-temp-directory-chain")
+func (*CleanTempDirectory) ServeRequest(ctx context.Context, cb *codebaseApi.CodebaseBranch) error {
+	log := ctrl.LoggerFrom(ctx).WithName("clean-temp-directory")
 
-func (*CleanTempDirectory) ServeRequest(cb *codebaseApi.CodebaseBranch) error {
-	rl := log.WithValues("namespace", cb.Namespace, "codebase branch", cb.Name)
-	rl.Info("start CleanTempDirectory method...")
+	log.Info("Start CleanTempDirectory method")
 
 	wd := util.GetWorkDir(cb.Spec.CodebaseName, fmt.Sprintf("%v-%v", cb.Namespace, cb.Spec.BranchName))
 
@@ -26,7 +26,7 @@ func (*CleanTempDirectory) ServeRequest(cb *codebaseApi.CodebaseBranch) error {
 		return err
 	}
 
-	rl.Info("end CleanTempDirectory method...")
+	log.Info("End cleaning temp directory")
 
 	return nil
 }
@@ -35,8 +35,6 @@ func deleteWorkDirectory(dir string) error {
 	if err := util.RemoveDirectory(dir); err != nil {
 		return fmt.Errorf("failed to delete directory %v: %w", dir, err)
 	}
-
-	log.Info("directory was cleaned", "path", dir)
 
 	return nil
 }
@@ -50,5 +48,6 @@ func setFailedFields(cb *codebaseApi.CodebaseBranch, a codebaseApi.ActionType, m
 		Result:          codebaseApi.Error,
 		DetailedMessage: message,
 		Value:           "failed",
+		Git:             cb.Status.Git,
 	}
 }

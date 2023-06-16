@@ -5,11 +5,13 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	edpComponentApi "github.com/epam/edp-component-operator/api/v1"
@@ -61,7 +63,7 @@ func TestPutCodebaseImageStream_ShouldCreateCisWithDefaultVersioningType(t *test
 		Client: fakeCl,
 	}
 
-	err := cisChain.ServeRequest(cb)
+	err := cisChain.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), cb)
 	assert.NoError(t, err)
 
 	cisResp := &codebaseApi.CodebaseImageStream{}
@@ -105,7 +107,7 @@ func TestPutCodebaseImageStream_ShouldNotFindCodebase(t *testing.T) {
 		Client: fakeCl,
 	}
 
-	err := cisChain.ServeRequest(cb)
+	err := cisChain.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), cb)
 	assert.Error(t, err)
 }
 
@@ -150,7 +152,7 @@ func TestPutCodebaseImageStream_ShouldNotFindEdpComponent(t *testing.T) {
 		Client: fakeCl,
 	}
 
-	err := cisChain.ServeRequest(cb)
+	err := cisChain.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), cb)
 	assert.Error(t, err)
 }
 
@@ -174,7 +176,7 @@ func TestPutCodebaseImageStream_ShouldFailToGetCodebase(t *testing.T) {
 		Client: fakeCl,
 	}
 
-	err := cisChain.ServeRequest(cb)
+	err := cisChain.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), cb)
 	assert.Error(t, err)
 
 	if !strings.Contains(err.Error(), "failed to get Codebase stub-name") {

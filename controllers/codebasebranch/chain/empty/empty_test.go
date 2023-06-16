@@ -1,9 +1,12 @@
 package empty
 
 import (
+	"context"
 	"testing"
 
+	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
+	ctrl "sigs.k8s.io/controller-runtime"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 )
@@ -61,7 +64,7 @@ func TestChain_ServeRequest(t *testing.T) {
 				returnError: tt.fields.returnError,
 			}
 
-			gotErr := e.ServeRequest(tt.args.in0)
+			gotErr := e.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), tt.args.in0)
 
 			tt.wantErr(t, gotErr)
 		})

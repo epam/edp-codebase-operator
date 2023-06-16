@@ -27,7 +27,6 @@ func createJenkinsDefChain(c client.Client) handler.CodebaseBranchHandler {
 	return chain.CheckCommitHashExists{
 		Client: c,
 		Git:    &git.GitProvider{},
-		Log:    ctrl.Log.WithName("check_commit_hash_exists"),
 		Next: trigger_job.TriggerReleaseJob{
 			TriggerJob: trigger_job.TriggerJob{
 				Client: c,

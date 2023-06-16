@@ -6,12 +6,14 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/apps/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
@@ -82,7 +84,7 @@ func TestTriggerReleaseJob_ShouldPass(t *testing.T) {
 		},
 	}
 
-	err := trj.ServeRequest(cb)
+	err := trj.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), cb)
 	assert.NoError(t, err)
 }
 
@@ -147,7 +149,7 @@ func TestTriggerReleaseJob_ShouldFailWhenTriggerJobReturnsErr(t *testing.T) {
 		},
 	}
 
-	err := trj.ServeRequest(cb)
+	err := trj.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), cb)
 	assert.Error(t, err)
 
 	if !strings.Contains(err.Error(), "FATAL ERROR") {
@@ -211,7 +213,7 @@ func TestTriggerReleaseJob_ShouldFailOnCodebaseNotFound(t *testing.T) {
 		},
 	}
 
-	err := trj.ServeRequest(cb)
+	err := trj.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), cb)
 	assert.Error(t, err)
 
 	if !strings.Contains(err.Error(), "failed to get Codebase non-existing-stub-name: codebases.apps \"non-existing-stub-name\" not found") {
@@ -277,7 +279,7 @@ func TestTriggerReleaseJob_ShouldFailOnJenkinsfolderNotFound(t *testing.T) {
 		},
 	}
 
-	err := trj.ServeRequest(cb)
+	err := trj.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), cb)
 	assert.Error(t, err)
 
 	if !strings.Contains(err.Error(), "c-stub-name codebase and/or jenkinsfolder c-stub-name-codebase are/is unavailable") {
@@ -309,7 +311,7 @@ func TestTriggerReleaseJob_ShouldFailOnSetIntermediateStatus(t *testing.T) {
 		},
 	}
 
-	err := trj.ServeRequest(cb)
+	err := trj.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), cb)
 
 	assert.Error(t, err)
 
@@ -389,7 +391,7 @@ func TestTriggerReleaseJob_ShouldPassEDPVersioningAndHasNewVersion(t *testing.T)
 		},
 	}
 
-	err := trj.ServeRequest(cb)
+	err := trj.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), cb)
 	assert.NoError(t, err)
 }
 
@@ -464,7 +466,7 @@ func TestTriggerReleaseJob_ShouldFailEDPVersioningAndHasNewVersion(t *testing.T)
 		},
 	}
 
-	err := trj.ServeRequest(cb)
+	err := trj.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), cb)
 	assert.Error(t, err)
 
 	if !strings.Contains(err.Error(), "FATAL ERROR") {
@@ -533,7 +535,7 @@ func TestTriggerReleaseJob_ShouldFailNoEDPVersion(t *testing.T) {
 		},
 	}
 
-	err := job.ServeRequest(codeBaseBranch)
+	err := job.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), codeBaseBranch)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "doesn't have version")
 }

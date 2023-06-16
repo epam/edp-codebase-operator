@@ -32,24 +32,23 @@ const (
 	gitLabDataSourceType  = "GitLab"
 )
 
-var log = ctrl.Log.WithName("update-perf-data-source-chain")
+func (h UpdatePerfDataSources) ServeRequest(ctx context.Context, cb *codebaseApi.CodebaseBranch) error {
+	log := ctrl.LoggerFrom(ctx).WithName("update-perf-data-source")
 
-func (h UpdatePerfDataSources) ServeRequest(cb *codebaseApi.CodebaseBranch) error {
-	rLog := log.WithValues("codebase", cb.Spec.CodebaseName, "branch", cb.Name)
-	rLog.Info("start updating PERF data source cr...")
+	log.Info("Start updating PERF data source CR")
 
 	if err := h.setIntermediateSuccessFields(cb, codebaseApi.PerfDataSourceCrUpdate); err != nil {
 		return err
 	}
 
-	if err := h.tryToUpdateDataSourceCr(cb); err != nil {
+	if err := h.tryToUpdateDataSourceCr(ctx, cb); err != nil {
 		setFailedFields(cb, codebaseApi.PerfDataSourceCrUpdate, err.Error())
 		return fmt.Errorf("failed to update PerfDataSource CR: %w", err)
 	}
 
-	rLog.Info("data source has been updated")
+	log.Info("Data source has been updated")
 
-	err := handler.NextServeOrNil(h.Next, cb)
+	err := handler.NextServeOrNil(ctx, h.Next, cb)
 	if err != nil {
 		return fmt.Errorf("failed to process next handler in chain: %w", err)
 	}
@@ -69,6 +68,7 @@ func (h UpdatePerfDataSources) setIntermediateSuccessFields(cb *codebaseApi.Code
 		VersionHistory:      cb.Status.VersionHistory,
 		LastSuccessfulBuild: cb.Status.LastSuccessfulBuild,
 		Build:               cb.Status.Build,
+		Git:                 cb.Status.Git,
 	}
 
 	err := h.Client.Status().Update(ctx, cb)
@@ -96,17 +96,23 @@ func setFailedFields(cb *codebaseApi.CodebaseBranch, a codebaseApi.ActionType, m
 		VersionHistory:      cb.Status.VersionHistory,
 		LastSuccessfulBuild: cb.Status.LastSuccessfulBuild,
 		Build:               cb.Status.Build,
+		Git:                 cb.Status.Git,
 	}
 }
 
-func (h UpdatePerfDataSources) tryToUpdateDataSourceCr(cb *codebaseApi.CodebaseBranch) error {
+func (h UpdatePerfDataSources) tryToUpdateDataSourceCr(ctx context.Context, cb *codebaseApi.CodebaseBranch) error {
+	log := ctrl.LoggerFrom(ctx)
+
 	owr, err := util.GetOwnerReference(codebaseKind, cb.GetOwnerReferences())
 	if err != nil {
 		return errors.New("failed to get owner reference")
 	}
 
-	c, err := util.GetCodebase(h.Client, owr.Name, cb.Namespace)
-	if err != nil {
+	c := &codebaseApi.Codebase{}
+	if err = h.Client.Get(ctx, types.NamespacedName{
+		Name:      owr.Name,
+		Namespace: cb.Namespace,
+	}, c); err != nil {
 		return fmt.Errorf("failed to fetch codebase %q: %w", owr.Name, err)
 	}
 
@@ -123,7 +129,7 @@ func (h UpdatePerfDataSources) tryToUpdateDataSourceCr(cb *codebaseApi.CodebaseB
 			continue
 		}
 
-		if err := f(cb, name); err != nil {
+		if err := f(ctx, cb, name); err != nil {
 			return err
 		}
 	}
@@ -131,15 +137,16 @@ func (h UpdatePerfDataSources) tryToUpdateDataSourceCr(cb *codebaseApi.CodebaseB
 	return nil
 }
 
-func (h UpdatePerfDataSources) getCreateFactory() map[string]func(cb *codebaseApi.CodebaseBranch, dataSourceType string) error {
-	return map[string]func(cb *codebaseApi.CodebaseBranch, dataSourceType string) error{
+func (h UpdatePerfDataSources) getCreateFactory() map[string]func(ctx context.Context, cb *codebaseApi.CodebaseBranch, dataSourceType string) error {
+	return map[string]func(ctx context.Context, cb *codebaseApi.CodebaseBranch, dataSourceType string) error{
 		jenkinsDataSourceType: h.tryToUpdateJenkinsDataSource,
 		gitLabDataSourceType:  h.tryToUpdateGitLabDataSource,
 	}
 }
 
-func (h UpdatePerfDataSources) tryToUpdateJenkinsDataSource(cb *codebaseApi.CodebaseBranch, dataSourceType string) error {
-	ctx := context.Background()
+func (h UpdatePerfDataSources) tryToUpdateJenkinsDataSource(ctx context.Context, cb *codebaseApi.CodebaseBranch, dataSourceType string) error {
+	log := ctrl.LoggerFrom(ctx)
+
 	dsName := fmt.Sprintf("%v-%v", cb.Spec.CodebaseName, strings.ToLower(dataSourceType))
 
 	ds, err := h.getPerfDataSourceJenkinsCr(dsName, cb.Namespace)
@@ -163,8 +170,9 @@ func (h UpdatePerfDataSources) tryToUpdateJenkinsDataSource(cb *codebaseApi.Code
 	return nil
 }
 
-func (h UpdatePerfDataSources) tryToUpdateGitLabDataSource(cb *codebaseApi.CodebaseBranch, dataSourceType string) error {
-	ctx := context.Background()
+func (h UpdatePerfDataSources) tryToUpdateGitLabDataSource(ctx context.Context, cb *codebaseApi.CodebaseBranch, dataSourceType string) error {
+	log := ctrl.LoggerFrom(ctx)
+
 	dsName := fmt.Sprintf("%v-%v", cb.Spec.CodebaseName, strings.ToLower(dataSourceType))
 
 	ds, err := h.getPerfDataSourceGitLabCr(dsName, cb.Namespace)

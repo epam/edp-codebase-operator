@@ -66,7 +66,7 @@ type Git interface {
 	CommitChanges(directory, commitMsg string, opts ...CommitOps) error
 	PushChanges(key, user, directory string, port int32, pushParams ...string) error
 	CheckPermissions(ctx context.Context, repo string, user, pass *string) (accessible bool)
-	CloneRepositoryBySsh(key, user, repoUrl, destination string, port int32) error
+	CloneRepositoryBySsh(ctx context.Context, key, user, repoUrl, destination string, port int32) error
 	CloneRepository(repo string, user *string, pass *string, destination string) error
 	CreateRemoteBranch(key, user, path, name, fromcommit string, port int32) error
 	CreateRemoteTag(key, user, path, branchName, name string) error
@@ -378,8 +378,10 @@ func (*GitProvider) BareToNormal(p string) error {
 	return nil
 }
 
-func (gp *GitProvider) CloneRepositoryBySsh(key, user, repoUrl, destination string, port int32) error {
-	log.Info("Start cloning", logRepositoryKey, repoUrl)
+func (gp *GitProvider) CloneRepositoryBySsh(ctx context.Context, key, user, repoUrl, destination string, port int32) error {
+	l := ctrl.LoggerFrom(ctx)
+
+	l.Info("Start cloning", logRepositoryKey, repoUrl)
 
 	keyPath, err := InitAuth(key, user)
 	if err != nil {
@@ -388,7 +390,7 @@ func (gp *GitProvider) CloneRepositoryBySsh(key, user, repoUrl, destination stri
 
 	defer func() {
 		if err = os.Remove(keyPath); err != nil {
-			log.Error(err, errRemoveSHHKeyFile)
+			l.Error(err, errRemoveSHHKeyFile)
 		}
 	}()
 
@@ -409,14 +411,14 @@ func (gp *GitProvider) CloneRepositoryBySsh(key, user, repoUrl, destination stri
 		return fmt.Errorf("failed to fetch unshallow repo: %s: %w", string(bts), err)
 	}
 
-	log.Info("Result of `git fetch unshallow` command", logOutKey, string(bts))
+	l.Info("Result of `git fetch unshallow` command", logOutKey, string(bts))
 
 	err = gp.BareToNormal(destination)
 	if err != nil {
 		return fmt.Errorf("failed to covert bare repo to normal: %w", err)
 	}
 
-	log.Info("End cloning", logRepositoryKey, repoUrl)
+	l.Info("End cloning", logRepositoryKey, repoUrl)
 
 	return nil
 }

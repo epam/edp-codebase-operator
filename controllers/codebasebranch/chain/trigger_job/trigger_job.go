@@ -28,7 +28,7 @@ type TriggerJob struct {
 	Next    handler.CodebaseBranchHandler
 }
 
-func (h TriggerJob) Trigger(cb *codebaseApi.CodebaseBranch, actionType codebaseApi.ActionType,
+func (h TriggerJob) Trigger(ctx context.Context, cb *codebaseApi.CodebaseBranch, actionType codebaseApi.ActionType,
 	triggerFunc func(cb *codebaseApi.CodebaseBranch) error,
 ) error {
 	if err := h.SetIntermediateSuccessFields(cb, actionType); err != nil {
@@ -70,7 +70,7 @@ func (h TriggerJob) Trigger(cb *codebaseApi.CodebaseBranch, actionType codebaseA
 		return err
 	}
 
-	err = handler.NextServeOrNil(h.Next, cb)
+	err = handler.NextServeOrNil(ctx, h.Next, cb)
 	if err != nil {
 		return fmt.Errorf("failed to process next handler in chain: %w", err)
 	}
@@ -91,6 +91,7 @@ func (h TriggerJob) SetIntermediateSuccessFields(cb *codebaseApi.CodebaseBranch,
 		LastSuccessfulBuild: cb.Status.LastSuccessfulBuild,
 		Build:               cb.Status.Build,
 		FailureCount:        cb.Status.FailureCount,
+		Git:                 cb.Status.Git,
 	}
 
 	err := h.Client.Status().Update(ctx, cb)
@@ -119,6 +120,7 @@ func (TriggerJob) SetFailedFields(cb *codebaseApi.CodebaseBranch, a codebaseApi.
 		LastSuccessfulBuild: cb.Status.LastSuccessfulBuild,
 		Build:               cb.Status.Build,
 		FailureCount:        cb.Status.FailureCount,
+		Git:                 cb.Status.Git,
 	}
 }
 
