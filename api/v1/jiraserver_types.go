@@ -36,6 +36,7 @@ type JiraServerStatus struct {
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:shortName=jrs
 // +kubebuilder:storageversion
+// +kubebuilder:printcolumn:name="Available",type="boolean",JSONPath=".status.available",description="Is resource available"
 
 // JiraServer is the Schema for the JiraServers API.
 type JiraServer struct {

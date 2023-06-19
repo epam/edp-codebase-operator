@@ -17,7 +17,16 @@ spec:
     singular: codebasebranch
   scope: Namespaced
   versions:
-  - name: v1
+  - additionalPrinterColumns:
+    - description: Result of last action
+      jsonPath: .status.result
+      name: Result
+      type: string
+    - description: The status of codebasebranch
+      jsonPath: .status.status
+      name: Status
+      type: string
+    name: v1
     schema:
       openAPIV3Schema:
         description: CodebaseBranch is the Schema for the CodebaseBranches API.

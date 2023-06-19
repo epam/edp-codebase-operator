@@ -83,6 +83,8 @@ type CodebaseBranchStatus struct {
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:shortName=cb
 // +kubebuilder:storageversion
+// +kubebuilder:printcolumn:name="Result",type="string",JSONPath=".status.result",description="Result of last action"
+// +kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.status",description="The status of codebasebranch"
 
 // CodebaseBranch is the Schema for the CodebaseBranches API.
 type CodebaseBranch struct {

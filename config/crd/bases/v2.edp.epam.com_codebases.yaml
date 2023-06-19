@@ -17,7 +17,16 @@ spec:
     singular: codebase
   scope: Namespaced
   versions:
-  - name: v1
+  - additionalPrinterColumns:
+    - description: Is resource available
+      jsonPath: .status.available
+      name: Available
+      type: boolean
+    - description: Result of last action
+      jsonPath: .status.result
+      name: Result
+      type: string
+    name: v1
     schema:
       openAPIV3Schema:
         description: Codebase is the Schema for the Codebases API.

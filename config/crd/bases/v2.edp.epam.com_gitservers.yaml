@@ -17,7 +17,12 @@ spec:
     singular: gitserver
   scope: Namespaced
   versions:
-  - name: v1
+  - additionalPrinterColumns:
+    - description: Is resource available
+      jsonPath: .status.available
+      name: Available
+      type: boolean
+    name: v1
     schema:
       openAPIV3Schema:
         description: GitServer is the Schema for the gitservers API.

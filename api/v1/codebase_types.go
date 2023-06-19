@@ -224,6 +224,8 @@ type CodebaseStatus struct {
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:shortName=cdbs
 // +kubebuilder:storageversion
+// +kubebuilder:printcolumn:name="Available",type="boolean",JSONPath=".status.available",description="Is resource available"
+// +kubebuilder:printcolumn:name="Result",type="string",JSONPath=".status.result",description="Result of last action"
 
 // Codebase is the Schema for the Codebases API.
 type Codebase struct {
