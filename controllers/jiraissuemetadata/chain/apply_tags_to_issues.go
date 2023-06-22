@@ -1,7 +1,10 @@
 package chain
 
 import (
+	"context"
 	"fmt"
+
+	ctrl "sigs.k8s.io/controller-runtime"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	"github.com/epam/edp-codebase-operator/v2/controllers/jiraissuemetadata/chain/handler"
@@ -14,8 +17,9 @@ type ApplyTagsToIssues struct {
 	client jira.Client
 }
 
-func (h ApplyTagsToIssues) ServeRequest(metadata *codebaseApi.JiraIssueMetadata) error {
-	log.Info("start applying tags to issues.")
+func (h ApplyTagsToIssues) ServeRequest(ctx context.Context, metadata *codebaseApi.JiraIssueMetadata) error {
+	log := ctrl.LoggerFrom(ctx)
+	log.Info("Start applying tags to issues")
 
 	requestPayload, err := util.GetFieldsMap(metadata.Spec.Payload, []string{issuesLinksKey})
 	if err != nil {
@@ -30,9 +34,9 @@ func (h ApplyTagsToIssues) ServeRequest(metadata *codebaseApi.JiraIssueMetadata)
 		}
 	}
 
-	log.Info("end applying tags to issues.")
+	log.Info("End applying tags to issues")
 
-	return nextServeOrNil(h.next, metadata)
+	return nextServeOrNil(ctx, h.next, metadata)
 }
 
 func createRequestBody(requestPayload map[string]interface{}) map[string]interface{} {

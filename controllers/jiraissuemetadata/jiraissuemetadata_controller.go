@@ -23,7 +23,6 @@ import (
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	"github.com/epam/edp-codebase-operator/v2/controllers/jiraissuemetadata/chain"
 	"github.com/epam/edp-codebase-operator/v2/pkg/client/jira"
-	"github.com/epam/edp-codebase-operator/v2/pkg/client/jira/adapter"
 	"github.com/epam/edp-codebase-operator/v2/pkg/client/jira/dto"
 	codebasepredicate "github.com/epam/edp-codebase-operator/v2/pkg/predicate"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
@@ -89,7 +88,7 @@ func (r *ReconcileJiraIssueMetadata) SetupWithManager(mgr ctrl.Manager) error {
 
 // Reconcile reads that state of the cluster for a JiraIssueMetadata object and makes changes based on the state.
 func (r *ReconcileJiraIssueMetadata) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	log := r.log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
+	log := ctrl.LoggerFrom(ctx)
 	log.Info("Reconciling JiraIssueMetadata")
 
 	i := &codebaseApi.JiraIssueMetadata{}
@@ -131,7 +130,7 @@ func (r *ReconcileJiraIssueMetadata) Reconcile(ctx context.Context, request reco
 		return reconcile.Result{}, fmt.Errorf("failed to configure `CreateChain`: %w", err)
 	}
 
-	err = ch.ServeRequest(i)
+	err = ch.ServeRequest(ctx, i)
 	if err != nil {
 		setErrorStatus(i, err.Error())
 		timeout := r.setFailureCount(i)
@@ -209,7 +208,7 @@ func (r *ReconcileJiraIssueMetadata) initJiraClient(js *codebaseApi.JiraServer) 
 	user := string(s.Data["username"])
 	pwd := string(s.Data["password"])
 
-	c, err := new(adapter.GoJiraAdapterFactory).New(dto.ConvertSpecToJiraServer(js.Spec.ApiUrl, user, pwd))
+	c, err := new(jira.GoJiraAdapterFactory).New(dto.ConvertSpecToJiraServer(js.Spec.ApiUrl, user, pwd))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Jira client: %w", err)
 	}

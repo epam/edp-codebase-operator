@@ -11,7 +11,7 @@ replace (
 )
 
 require (
-	github.com/andygrunwald/go-jira v1.14.0
+	github.com/andygrunwald/go-jira v1.16.0
 	github.com/bndr/gojenkins v0.2.1-0.20181125150310-de43c03cf849
 	github.com/epam/edp-cd-pipeline-operator/v2 v2.13.0
 	github.com/epam/edp-common v0.0.0-20230104131608-33d095012fe8
@@ -25,7 +25,6 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/openshift/api v3.9.0+incompatible
 	github.com/stretchr/testify v1.8.2
-	github.com/trivago/tgo v1.0.7
 	go.uber.org/multierr v1.10.0
 	golang.org/x/crypto v0.7.0
 	golang.org/x/exp v0.0.0-20230321023759-10a507213a29
@@ -58,7 +57,7 @@ require (
 	github.com/go-openapi/jsonreference v0.20.2 // indirect
 	github.com/go-openapi/swag v0.22.3 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
-	github.com/golang-jwt/jwt v3.2.1+incompatible // indirect
+	github.com/golang-jwt/jwt/v4 v4.4.2 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/google/gnostic v0.6.9 // indirect
@@ -86,6 +85,7 @@ require (
 	github.com/sergi/go-diff v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/objx v0.5.0 // indirect
+	github.com/trivago/tgo v1.0.7 // indirect
 	github.com/xanzy/ssh-agent v0.3.0 // indirect
 	go.uber.org/atomic v1.10.0 // indirect
 	go.uber.org/goleak v1.2.1 // indirect

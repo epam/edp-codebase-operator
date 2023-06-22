@@ -1,15 +1,18 @@
 package chain
 
 import (
+	"context"
 	"encoding/json"
 	"testing"
 
+	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	ctrl "sigs.k8s.io/controller-runtime"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	"github.com/epam/edp-codebase-operator/v2/controllers/jiraissuemetadata/chain/handler"
-	"github.com/epam/edp-codebase-operator/v2/pkg/client/jira/mock"
+	jiraMock "github.com/epam/edp-codebase-operator/v2/pkg/client/jira/mocks"
 )
 
 func TestApplyTagsToIssues_ServeRequest(t *testing.T) {
@@ -27,7 +30,7 @@ func TestApplyTagsToIssues_ServeRequest(t *testing.T) {
 	}
 
 	type configs struct {
-		client func(ticket string) *mock.MockClient
+		client func(ticket string) *jiraMock.Client
 	}
 
 	tests := []struct {
@@ -52,8 +55,8 @@ func TestApplyTagsToIssues_ServeRequest(t *testing.T) {
 				ticket: "fake-ticket",
 			},
 			configs: configs{
-				client: func(ticket string) *mock.MockClient {
-					client := &mock.MockClient{}
+				client: func(ticket string) *jiraMock.Client {
+					client := &jiraMock.Client{}
 
 					client.On(
 						"ApplyTagsToIssue",
@@ -110,7 +113,7 @@ func TestApplyTagsToIssues_ServeRequest(t *testing.T) {
 				},
 			}
 
-			err = h.ServeRequest(metadata)
+			err = h.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), metadata)
 
 			tt.wantErr(t, err)
 		})

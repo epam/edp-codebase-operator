@@ -1,12 +1,15 @@
 package chain
 
 import (
+	"context"
 	"testing"
 
+	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
@@ -30,7 +33,7 @@ func TestDeleteJiraIssueMetadataCr_ServeRequest(t *testing.T) {
 		c: fakeCl,
 	}
 
-	err := dimcr.ServeRequest(jim)
+	err := dimcr.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), jim)
 	assert.NoError(t, err)
 }
 
@@ -55,7 +58,7 @@ func TestDeleteJiraIssueMetadataCr_ServeRequest_StopOnErrors(t *testing.T) {
 		c: fakeCl,
 	}
 
-	err := dimcr.ServeRequest(jim)
+	err := dimcr.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), jim)
 	assert.Error(t, err)
 	assert.Equal(t, err.Error(), "error1\nerror2")
 }

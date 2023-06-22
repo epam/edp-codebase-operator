@@ -1,18 +1,21 @@
 package chain
 
 import (
+	"context"
 	"errors"
 	"testing"
 
+	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	ctrl "sigs.k8s.io/controller-runtime"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
-	"github.com/epam/edp-codebase-operator/v2/pkg/client/jira/mock"
+	jiraMock "github.com/epam/edp-codebase-operator/v2/pkg/client/jira/mocks"
 )
 
 func TestPutIssueWebLink_ServeRequest_ShouldPass(t *testing.T) {
-	mClient := new(mock.MockClient)
+	mClient := new(jiraMock.Client)
 	mClient.On("CreateIssueLink", "fake-issueId", "fake-title", "fake-url").Return(
 		nil)
 
@@ -30,12 +33,12 @@ func TestPutIssueWebLink_ServeRequest_ShouldPass(t *testing.T) {
 		client: mClient,
 	}
 
-	err := piwl.ServeRequest(jim)
+	err := piwl.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), jim)
 	assert.NoError(t, err)
 }
 
 func TestPutIssueWebLink_ServeRequest_ShouldFail(t *testing.T) {
-	mClient := new(mock.MockClient)
+	mClient := new(jiraMock.Client)
 	mClient.On("CreateIssueLink", "DEV-0000",
 		"[DEV-0000] updated components versions [alpha-zeta][build/1.5.0-SNAPSHOT.377]",
 		"https://jenkins.example.com/job/alpha-zeta/job/MASTER-Build-alpha-zeta/890/console").Return(
@@ -55,7 +58,7 @@ func TestPutIssueWebLink_ServeRequest_ShouldFail(t *testing.T) {
 		client: mClient,
 	}
 
-	err := piwl.ServeRequest(jim)
+	err := piwl.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), jim)
 	assert.NoError(t, err)
 	assert.NotNil(t, jim.Status.ErrorStrings)
 }

@@ -1,10 +1,11 @@
-package adapter
+package jira
 
 import (
 	"context"
 	"errors"
 	"fmt"
 	"net/http"
+	url "net/url"
 	"regexp"
 	"strconv"
 	"strings"
@@ -16,6 +17,28 @@ import (
 var log = ctrl.Log.WithName("gojira_adapter")
 
 var ErrNotFound = errors.New("404")
+
+// IssueTypeMeta represents issue metadata response from Jira.
+// It is not full representation of response, only fields that are used in codebase-operator.
+// See https://docs.atlassian.com/software/jira/docs/api/REST/9.4.5/#api/2/issue-getCreateIssueMetaFields.
+type IssueTypeMeta struct {
+	FieldID       string                      `json:"fieldId,omitempty"`
+	AllowedValues []IssueTypeMetaAllowedValue `json:"allowedValues,omitempty"`
+}
+
+// IssueTypeMetaAllowedValue represents allowed value for issue type metadata response from Jira.
+type IssueTypeMetaAllowedValue struct {
+	Name string `json:"name,omitempty"`
+}
+
+// List represents pagination response from Jira.
+type List[T any] struct {
+	MaxResults int  `json:"maxResults"`
+	StartAt    int  `json:"startAt"`
+	Total      int  `json:"total"`
+	IsLat      bool `json:"isLast"`
+	Values     []T  `json:"values"`
+}
 
 type GoJiraAdapter struct {
 	client jira.Client
@@ -34,36 +57,13 @@ func (a *GoJiraAdapter) Connected() (bool, error) {
 	return user != nil, nil
 }
 
-func (a *GoJiraAdapter) GetIssueMetadata(projectKey string) (*jira.CreateMetaInfo, error) {
-	logv := log.WithValues("projectKey", projectKey)
-	logv.V(2).Info("start GetIssueMetadata method.")
-
-	ctx := context.Background()
-
-	meta, _, err := a.client.Issue.GetCreateMetaWithContext(ctx, projectKey)
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch/create jira metadata: %w", err)
-	}
-
-	logv.Info("end GetIssueMetadata method.")
-
-	return meta, nil
-}
-
-func (a *GoJiraAdapter) GetIssueType(issueId string) (string, error) {
-	logv := log.WithValues("issueId", issueId)
-	logv.V(2).Info("start GetIssueType method.")
-
-	ctx := context.Background()
-
+func (a *GoJiraAdapter) GetIssue(ctx context.Context, issueId string) (*jira.Issue, error) {
 	issue, _, err := a.client.Issue.GetWithContext(ctx, issueId, nil)
 	if err != nil {
-		return "", fmt.Errorf("failed to fetch jira issue: %w", err)
+		return nil, fmt.Errorf("failed to fetch jira issue: %w", err)
 	}
 
-	logv.Info("end GetIssueType method.")
-
-	return issue.Fields.Type.Name, nil
+	return issue, nil
 }
 
 func (a *GoJiraAdapter) GetProjectInfo(issueId string) (*jira.Project, error) {
@@ -91,11 +91,9 @@ func (a *GoJiraAdapter) GetProjectInfo(issueId string) (*jira.Project, error) {
 	return &issueResp.Fields.Project, nil
 }
 
-func (a *GoJiraAdapter) CreateFixVersionValue(projectId int, versionName string) error {
-	logv := log.WithValues("project id", projectId, "version name", versionName)
-	logv.V(2).Info("start CreateFixVersionValue method.")
-
-	ctx := context.Background()
+func (a *GoJiraAdapter) CreateFixVersionValue(ctx context.Context, projectId int, versionName string) error {
+	logv := ctrl.LoggerFrom(ctx).WithValues("project id", projectId, "version name", versionName)
+	logv.Info("Start CreateFixVersionValue method")
 
 	_, _, err := a.client.Version.CreateWithContext(ctx, &jira.Version{
 		Name:      versionName,
@@ -105,16 +103,14 @@ func (a *GoJiraAdapter) CreateFixVersionValue(projectId int, versionName string)
 		return fmt.Errorf("failed to create jira version component: %w", err)
 	}
 
-	logv.Info("fix version has been created.")
+	logv.Info("Fix version has been created")
 
 	return nil
 }
 
-func (a *GoJiraAdapter) CreateComponentValue(projectId int, componentName string) error {
-	logv := log.WithValues("project id", projectId, "version name", componentName)
-	logv.V(2).Info("start CreateComponentValue method.")
-
-	ctx := context.Background()
+func (a *GoJiraAdapter) CreateComponentValue(ctx context.Context, projectId int, componentName string) error {
+	logv := ctrl.LoggerFrom(ctx).WithValues("project id", projectId, "component name", componentName)
+	logv.Info("Start CreateComponentValue method")
 
 	project, _, err := a.client.Project.Get(strconv.Itoa(projectId))
 	if err != nil {
@@ -130,7 +126,7 @@ func (a *GoJiraAdapter) CreateComponentValue(projectId int, componentName string
 		return fmt.Errorf("failed to create jira component: %w", err)
 	}
 
-	logv.Info("component value has been created.")
+	logv.Info("Component value has been created")
 
 	return nil
 }
@@ -150,8 +146,8 @@ func (a *GoJiraAdapter) ApplyTagsToIssue(issue string, tags map[string]interface
 	return nil
 }
 
-func (a *GoJiraAdapter) CreateIssueLink(issueId, title, url string) error {
-	logv := log.WithValues("issueId", issueId, "title", title, "url", url)
+func (a *GoJiraAdapter) CreateIssueLink(issueId, title, link string) error {
+	logv := log.WithValues("issueId", issueId, "title", title, "url", link)
 	logv.V(2).Info("start CreateIssueLink method.")
 
 	ctx := context.Background()
@@ -159,9 +155,9 @@ func (a *GoJiraAdapter) CreateIssueLink(issueId, title, url string) error {
 		Relationship: "links to",
 		Object: &jira.RemoteLinkObject{
 			Title: title,
-			URL:   url,
+			URL:   link,
 			Icon: &jira.RemoteLinkIcon{
-				Url16x16: fmt.Sprintf("%v/favicon.ico", getUrlFromUri(url)),
+				Url16x16: fmt.Sprintf("%v/favicon.ico", getUrlFromUri(link)),
 			},
 		},
 	}
@@ -183,4 +179,39 @@ func (a *GoJiraAdapter) CreateIssueLink(issueId, title, url string) error {
 
 func getUrlFromUri(uri string) string {
 	return regexp.MustCompile(`^(?:https?://)?(?:[^@/\n]+@)?(?:www\.)?([^:/\n]+)`).FindAllString(uri, -1)[0]
+}
+
+// GetIssueTypeMeta returns issue type meta for given project and issue type.
+// Map key is issue type meta fieldId, value is IssueTypeMeta.
+// API doc: https://docs.atlassian.com/software/jira/docs/api/REST/9.4.5/#api/2/issue-getCreateIssueMetaFields.
+func (a *GoJiraAdapter) GetIssueTypeMeta(ctx context.Context, projectID, issueTypeID string) (map[string]IssueTypeMeta, error) {
+	u := url.URL{
+		Path: fmt.Sprintf("rest/api/2/issue/createmeta/%s/issuetypes/%s", projectID, issueTypeID),
+	}
+
+	uv := url.Values{}
+	// it is crucial to set maxResults to a high value, otherwise we will not get all the fields(default is 50)
+	uv.Add("maxResults", "1000")
+
+	req, err := a.client.NewRequestWithContext(
+		ctx,
+		http.MethodGet,
+		u.String(),
+		nil,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create GetIssueTypeMeta HTTP request to jira: %w", err)
+	}
+
+	issueTypeMeta := &List[IssueTypeMeta]{}
+	if _, err = a.client.Do(req, issueTypeMeta); err != nil {
+		return nil, fmt.Errorf("failed to perform GetIssueTypeMeta HTTP request to jira: %w", err)
+	}
+
+	issueTypeMetaMap := make(map[string]IssueTypeMeta, len(issueTypeMeta.Values))
+	for _, issueMeta := range issueTypeMeta.Values {
+		issueTypeMetaMap[issueMeta.FieldID] = issueMeta
+	}
+
+	return issueTypeMetaMap, nil
 }

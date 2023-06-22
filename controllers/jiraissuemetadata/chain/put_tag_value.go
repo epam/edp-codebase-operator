@@ -1,17 +1,18 @@
 package chain
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strconv"
 
 	goJira "github.com/andygrunwald/go-jira"
-	"github.com/trivago/tgo/tcontainer"
+	"golang.org/x/exp/slices"
+	ctrl "sigs.k8s.io/controller-runtime"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	"github.com/epam/edp-codebase-operator/v2/controllers/jiraissuemetadata/chain/handler"
 	"github.com/epam/edp-codebase-operator/v2/pkg/client/jira"
-	"github.com/epam/edp-codebase-operator/v2/pkg/client/jira/adapter"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
@@ -25,15 +26,16 @@ const (
 	jiraLabelFieldName = "labels"
 )
 
-func (h PutTagValue) ServeRequest(metadata *codebaseApi.JiraIssueMetadata) error {
-	log.Info("start creating field values in Jira project.")
+func (h PutTagValue) ServeRequest(ctx context.Context, metadata *codebaseApi.JiraIssueMetadata) error {
+	log := ctrl.LoggerFrom(ctx)
+	log.Info("Start creating field values in Jira project")
 
 	requestPayload, err := util.GetFieldsMap(metadata.Spec.Payload, []string{issuesLinksKey, jiraLabelFieldName})
 	if err != nil {
 		return fmt.Errorf("failed to get map with Jira field values: %w", err)
 	}
 
-	createApiMap := map[string]func(projectId int, versionName string) error{
+	createApiMap := map[string]func(ctx context.Context, projectId int, versionName string) error{
 		"fixVersions": h.client.CreateFixVersionValue,
 		"components":  h.client.CreateComponentValue,
 	}
@@ -42,65 +44,64 @@ func (h PutTagValue) ServeRequest(metadata *codebaseApi.JiraIssueMetadata) error
 		return errors.New("JiraIssueMetadata is invalid. Tickets field can't be empty")
 	}
 
-	if err := h.tryToCreateFieldValues(requestPayload, metadata.Spec.Tickets, createApiMap); err != nil {
+	if err := h.tryToCreateFieldValues(ctx, requestPayload, metadata.Spec.Tickets, createApiMap); err != nil {
 		return fmt.Errorf("failed to create field values in Jira project: %w", err)
 	}
 
 	log.Info("end creating field values in Jira project.")
 
-	return nextServeOrNil(h.next, metadata)
+	return nextServeOrNil(ctx, h.next, metadata)
 }
 
-func (h PutTagValue) tryToCreateFieldValues(requestPayload map[string]interface{}, tickets []string,
-	createApiMap map[string]func(projectId int, versionName string) error,
+func (h PutTagValue) tryToCreateFieldValues(
+	ctx context.Context,
+	requestPayload map[string]interface{},
+	tickets []string,
+	createApiMap map[string]func(ctx context.Context, projectId int, versionName string) error,
 ) error {
+	log := ctrl.LoggerFrom(ctx)
+
 	projectInfo, ticket, err := h.getProjectInfo(tickets)
 	if err != nil {
 		return fmt.Errorf("failed to get project info: %w", err)
 	}
 
-	issueTypes, err := h.getIssueTypes(projectInfo.ID, projectInfo.Key)
+	issue, err := h.client.GetIssue(ctx, ticket)
 	if err != nil {
-		return fmt.Errorf("failed to get list of issue types: %w", err)
+		return fmt.Errorf("failed to get issue for %v ticket: %w", ticket, err)
 	}
 
-	issueType, err := h.client.GetIssueType(ticket)
+	issueTypeMeta, err := h.client.GetIssueTypeMeta(ctx, projectInfo.ID, issue.Fields.Type.ID)
 	if err != nil {
-		return fmt.Errorf("failed to get issue type for %v ticket: %w", ticket, err)
+		return fmt.Errorf("failed to get issue type meta: %w", err)
 	}
 
-	metaInfo := findIssueMetaInfo(issueTypes, issueType)
 	for k, v := range requestPayload {
-		fieldProperties, exists := metaInfo.Value(k)
-		if !exists {
-			log.Info("project doesnt contain field", "field", k)
-			continue
-		}
-
-		allowedValues, ok := fieldProperties.(map[string]interface{})["allowedValues"].([]interface{})
+		metaInfo, ok := issueTypeMeta[k]
 		if !ok {
-			return fmt.Errorf("wrong type of value: '%v'", fieldProperties)
+			log.Info(fmt.Sprintf("Issue type %s doesn't contain field %s", issue.Fields.Type.Name, k))
+			continue
 		}
 
 		val, ok := v.(string)
 		if !ok {
-			return fmt.Errorf("wrong type of value, '%v' is not string", v)
+			return fmt.Errorf("wrong type of payload value, '%v' is not string", v)
 		}
 
-		if !doesJiraContainValue(val, allowedValues) {
-			log.Info("Jira doesn't contain value field. try to create.", "value", val)
+		if slices.ContainsFunc(metaInfo.AllowedValues, func(value jira.IssueTypeMetaAllowedValue) bool {
+			return value.Name == val
+		}) {
+			log.Info(fmt.Sprintf("Issue type %s field %s already contains value %s", issue.Fields.Type.Name, k, val))
+			continue
+		}
 
-			var id int
+		id, err := strconv.Atoi(projectInfo.ID)
+		if err != nil {
+			return fmt.Errorf("failed to parse to int project ID: %w", err)
+		}
 
-			id, err = strconv.Atoi(projectInfo.ID)
-			if err != nil {
-				return fmt.Errorf("failed to parse to int project ID: %w", err)
-			}
-
-			err = createApiMap[k](id, val)
-			if err != nil {
-				return fmt.Errorf("failed to create value %v for %v field: %w", val, k, err)
-			}
+		if err = createApiMap[k](ctx, id, val); err != nil {
+			return fmt.Errorf("failed to create value %v for %v field: %w", val, k, err)
 		}
 	}
 
@@ -111,7 +112,7 @@ func (h PutTagValue) getProjectInfo(tickets []string) (*goJira.Project, string, 
 	for _, ticket := range tickets {
 		projectInfo, err := h.client.GetProjectInfo(ticket)
 		if err != nil {
-			if errors.Is(err, adapter.ErrNotFound) {
+			if errors.Is(err, jira.ErrNotFound) {
 				continue
 			}
 
@@ -122,53 +123,4 @@ func (h PutTagValue) getProjectInfo(tickets []string) (*goJira.Project, string, 
 	}
 
 	return nil, "", errors.New("jira issue not found")
-}
-
-func (h PutTagValue) getIssueTypes(projectId, projectKey string) ([]*goJira.MetaIssueType, error) {
-	issueMetadata, err := h.client.GetIssueMetadata(projectKey)
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch Jira issue metadata: %w", err)
-	}
-
-	metaProject := findProject(issueMetadata.Projects, projectId)
-	if metaProject == nil {
-		return nil, fmt.Errorf("project with %v was not found", projectId)
-	}
-
-	return metaProject.IssueTypes, nil
-}
-
-func findProject(projects []*goJira.MetaProject, id string) *goJira.MetaProject {
-	for _, p := range projects {
-		if p.Id == id {
-			return p
-		}
-	}
-
-	return nil
-}
-
-func findIssueMetaInfo(types []*goJira.MetaIssueType, issueType string) tcontainer.MarshalMap {
-	for _, t := range types {
-		if t.Name == issueType {
-			return t.Fields
-		}
-	}
-
-	return nil
-}
-
-func doesJiraContainValue(value string, values []interface{}) bool {
-	for _, v := range values {
-		m, ok := v.(map[string]interface{})
-		if !ok {
-			continue
-		}
-
-		if value == m["name"] {
-			return true
-		}
-	}
-
-	return false
 }

@@ -1,93 +1,446 @@
 package chain
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"testing"
 
-	"github.com/andygrunwald/go-jira"
-	"github.com/stretchr/testify/assert"
-	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	goJira "github.com/andygrunwald/go-jira"
+	"github.com/go-logr/logr"
+	testify "github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
+	ctrl "sigs.k8s.io/controller-runtime"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
-	"github.com/epam/edp-codebase-operator/v2/pkg/client/jira/adapter"
-	"github.com/epam/edp-codebase-operator/v2/pkg/client/jira/mock"
+	"github.com/epam/edp-codebase-operator/v2/pkg/client/jira"
+	jiraMock "github.com/epam/edp-codebase-operator/v2/pkg/client/jira/mocks"
 )
 
 func TestPutTagValue_ServeRequest(t *testing.T) {
-	jiraProject := &jira.Project{
-		Key: "fake-projectKey",
-		ID:  "fake-projectId",
-	}
+	t.Parallel()
 
-	issueMetadata := &jira.CreateMetaInfo{
-		Projects: []*jira.MetaProject{
-			{
-				Id: "fake-projectId",
-				IssueTypes: []*jira.MetaIssueType{
-					{
-						Name: "fake-type",
-					},
+	tests := []struct {
+		name     string
+		metadata *codebaseApi.JiraIssueMetadata
+		client   func(t *testing.T) jira.Client
+		wantErr  require.ErrorAssertionFunc
+	}{
+		{
+			name: "successfully put tag value",
+			metadata: &codebaseApi.JiraIssueMetadata{
+				Spec: codebaseApi.JiraIssueMetadataSpec{
+					Tickets: []string{"TEST-1"},
+					Payload: "{\"components\":\"java11-mvn-create\",\"fixVersions\":\"0.0.1-snapshot-java11\",\"labels\":\"java11\",\"issuesLinks\":[{\"ticket\":\"EPMDEDPSUP-5510\",\"title\":\"[EPMDEDPSUP-5510]: test\",\"url\": \"https://test.com\"}]}",
 				},
+			},
+			client: func(t *testing.T) jira.Client {
+				m := jiraMock.NewClient(t)
+				m.On("GetProjectInfo", "TEST-1").
+					Return(&goJira.Project{
+						ID: "1",
+					}, nil)
+				m.On("GetIssue", testify.Anything, "TEST-1").
+					Return(&goJira.Issue{
+						Fields: &goJira.IssueFields{
+							Type: goJira.IssueType{
+								ID:   "2",
+								Name: "TEST-1",
+							},
+						},
+					}, nil)
+				m.On("GetIssueTypeMeta", testify.Anything, "1", "2").
+					Return(map[string]jira.IssueTypeMeta{
+						"fixVersions": {
+							FieldID: "fixVersions",
+							AllowedValues: []jira.IssueTypeMetaAllowedValue{{
+								Name: "0.0.2-snapshot-java11",
+							}},
+						},
+						"components": {
+							FieldID: "components",
+							AllowedValues: []jira.IssueTypeMetaAllowedValue{{
+								Name: "java11",
+							}},
+						},
+					}, nil)
+				m.On("CreateFixVersionValue", testify.Anything, 1, "0.0.1-snapshot-java11").
+					Return(nil)
+				m.On("CreateComponentValue", testify.Anything, 1, "java11-mvn-create").
+					Return(nil)
+
+				return m
+			},
+			wantErr: require.NoError,
+		},
+		{
+			name: "tag values already exist",
+			metadata: &codebaseApi.JiraIssueMetadata{
+				Spec: codebaseApi.JiraIssueMetadataSpec{
+					Tickets: []string{"TEST-1"},
+					Payload: "{\"components\":\"java11-mvn-create\",\"fixVersions\":\"0.0.1-snapshot-java11\",\"labels\":\"java11\",\"issuesLinks\":[{\"ticket\":\"EPMDEDPSUP-5510\",\"title\":\"[EPMDEDPSUP-5510]: test\",\"url\": \"https://test.com\"}]}",
+				},
+			},
+			client: func(t *testing.T) jira.Client {
+				m := jiraMock.NewClient(t)
+				m.On("GetProjectInfo", "TEST-1").
+					Return(&goJira.Project{
+						ID: "1",
+					}, nil)
+				m.On("GetIssue", testify.Anything, "TEST-1").
+					Return(&goJira.Issue{
+						Fields: &goJira.IssueFields{
+							Type: goJira.IssueType{
+								ID:   "2",
+								Name: "TEST-1",
+							},
+						},
+					}, nil)
+				m.On("GetIssueTypeMeta", testify.Anything, "1", "2").
+					Return(map[string]jira.IssueTypeMeta{
+						"fixVersions": {
+							FieldID: "fixVersions",
+							AllowedValues: []jira.IssueTypeMetaAllowedValue{{
+								Name: "0.0.1-snapshot-java11",
+							}},
+						},
+						"components": {
+							FieldID: "components",
+							AllowedValues: []jira.IssueTypeMetaAllowedValue{{
+								Name: "java11-mvn-create",
+							}},
+						},
+					}, nil)
+
+				return m
+			},
+			wantErr: require.NoError,
+		},
+		{
+			name: "issue type meta doesn't contain fix version field",
+			metadata: &codebaseApi.JiraIssueMetadata{
+				Spec: codebaseApi.JiraIssueMetadataSpec{
+					Tickets: []string{"TEST-1"},
+					Payload: "{\"components\":\"java11-mvn-create\",\"fixVersions\":\"0.0.1-snapshot-java11\",\"labels\":\"java11\",\"issuesLinks\":[{\"ticket\":\"EPMDEDPSUP-5510\",\"title\":\"[EPMDEDPSUP-5510]: test\",\"url\": \"https://test.com\"}]}",
+				},
+			},
+			client: func(t *testing.T) jira.Client {
+				m := jiraMock.NewClient(t)
+				m.On("GetProjectInfo", "TEST-1").
+					Return(&goJira.Project{
+						ID: "1",
+					}, nil)
+				m.On("GetIssue", testify.Anything, "TEST-1").
+					Return(&goJira.Issue{
+						Fields: &goJira.IssueFields{
+							Type: goJira.IssueType{
+								ID:   "2",
+								Name: "TEST-1",
+							},
+						},
+					}, nil)
+				m.On("GetIssueTypeMeta", testify.Anything, "1", "2").
+					Return(map[string]jira.IssueTypeMeta{
+						"components": {
+							FieldID: "components",
+							AllowedValues: []jira.IssueTypeMetaAllowedValue{{
+								Name: "java11",
+							}},
+						},
+					}, nil)
+				m.On("CreateComponentValue", testify.Anything, 1, "java11-mvn-create").
+					Return(nil)
+
+				return m
+			},
+			wantErr: require.NoError,
+		},
+		{
+			name: "failed to put fix version value",
+			metadata: &codebaseApi.JiraIssueMetadata{
+				Spec: codebaseApi.JiraIssueMetadataSpec{
+					Tickets: []string{"TEST-1"},
+					Payload: "{\"components\":\"java11-mvn-create\",\"fixVersions\":\"0.0.1-snapshot-java11\",\"labels\":\"java11\",\"issuesLinks\":[{\"ticket\":\"EPMDEDPSUP-5510\",\"title\":\"[EPMDEDPSUP-5510]: test\",\"url\": \"https://test.com\"}]}",
+				},
+			},
+			client: func(t *testing.T) jira.Client {
+				m := jiraMock.NewClient(t)
+				m.On("GetProjectInfo", "TEST-1").
+					Return(&goJira.Project{
+						ID: "1",
+					}, nil)
+				m.On("GetIssue", testify.Anything, "TEST-1").
+					Return(&goJira.Issue{
+						Fields: &goJira.IssueFields{
+							Type: goJira.IssueType{
+								ID:   "2",
+								Name: "TEST-1",
+							},
+						},
+					}, nil)
+				m.On("GetIssueTypeMeta", testify.Anything, "1", "2").
+					Return(map[string]jira.IssueTypeMeta{
+						"fixVersions": {
+							FieldID: "fixVersions",
+							AllowedValues: []jira.IssueTypeMetaAllowedValue{{
+								Name: "0.0.2-snapshot-java11",
+							}},
+						},
+						"components": {
+							FieldID: "components",
+							AllowedValues: []jira.IssueTypeMetaAllowedValue{{
+								Name: "java11",
+							}},
+						},
+					}, nil)
+				m.On("CreateFixVersionValue", testify.Anything, 1, "0.0.1-snapshot-java11").
+					Return(errors.New("failed"))
+				m.On("CreateComponentValue", testify.Anything, 1, "java11-mvn-create").
+					Return(nil)
+
+				return m
+			},
+			wantErr: func(t require.TestingT, err error, i ...interface{}) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "failed to create value")
+			},
+		},
+		{
+			name: "invalid project ID",
+			metadata: &codebaseApi.JiraIssueMetadata{
+				Spec: codebaseApi.JiraIssueMetadataSpec{
+					Tickets: []string{"TEST-1"},
+					Payload: "{\"components\":\"java11-mvn-create\",\"fixVersions\":\"0.0.1-snapshot-java11\",\"labels\":\"java11\",\"issuesLinks\":[{\"ticket\":\"EPMDEDPSUP-5510\",\"title\":\"[EPMDEDPSUP-5510]: test\",\"url\": \"https://test.com\"}]}",
+				},
+			},
+			client: func(t *testing.T) jira.Client {
+				m := jiraMock.NewClient(t)
+				m.On("GetProjectInfo", "TEST-1").
+					Return(&goJira.Project{
+						ID: "abc",
+					}, nil)
+				m.On("GetIssue", testify.Anything, "TEST-1").
+					Return(&goJira.Issue{
+						Fields: &goJira.IssueFields{
+							Type: goJira.IssueType{
+								ID:   "2",
+								Name: "TEST-1",
+							},
+						},
+					}, nil)
+				m.On("GetIssueTypeMeta", testify.Anything, "abc", "2").
+					Return(map[string]jira.IssueTypeMeta{
+						"fixVersions": {
+							FieldID: "fixVersions",
+							AllowedValues: []jira.IssueTypeMetaAllowedValue{{
+								Name: "0.0.2-snapshot-java11",
+							}},
+						},
+						"components": {
+							FieldID: "components",
+							AllowedValues: []jira.IssueTypeMetaAllowedValue{{
+								Name: "java11",
+							}},
+						},
+					}, nil)
+
+				return m
+			},
+			wantErr: func(t require.TestingT, err error, i ...interface{}) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "failed to parse to int project ID")
+			},
+		},
+		{
+			name: "invalid payload fix version value",
+			metadata: &codebaseApi.JiraIssueMetadata{
+				Spec: codebaseApi.JiraIssueMetadataSpec{
+					Tickets: []string{"TEST-1"},
+					Payload: "{\"components\":\"java11-mvn-create\",\"fixVersions\":{\"data\":\"0.0.1-snapshot-java11\"},\"labels\":\"java11\",\"issuesLinks\":[{\"ticket\":\"EPMDEDPSUP-5510\",\"title\":\"[EPMDEDPSUP-5510]: test\",\"url\": \"https://test.com\"}]}",
+				},
+			},
+			client: func(t *testing.T) jira.Client {
+				m := jiraMock.NewClient(t)
+				m.On("GetProjectInfo", "TEST-1").
+					Return(&goJira.Project{
+						ID: "1",
+					}, nil)
+				m.On("GetIssue", testify.Anything, "TEST-1").
+					Return(&goJira.Issue{
+						Fields: &goJira.IssueFields{
+							Type: goJira.IssueType{
+								ID:   "2",
+								Name: "TEST-1",
+							},
+						},
+					}, nil)
+				m.On("GetIssueTypeMeta", testify.Anything, "1", "2").
+					Return(map[string]jira.IssueTypeMeta{
+						"fixVersions": {
+							FieldID: "fixVersions",
+							AllowedValues: []jira.IssueTypeMetaAllowedValue{{
+								Name: "0.0.2-snapshot-java11",
+							}},
+						},
+						"components": {
+							FieldID: "components",
+							AllowedValues: []jira.IssueTypeMetaAllowedValue{{
+								Name: "java11",
+							}},
+						},
+					}, nil)
+				m.On("CreateComponentValue", testify.Anything, 1, "java11-mvn-create").
+					Return(nil).
+					Maybe()
+
+				return m
+			},
+			wantErr: func(t require.TestingT, err error, i ...interface{}) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "wrong type of payload value")
+			},
+		},
+		{
+			name: "failed to get issue type meta",
+			metadata: &codebaseApi.JiraIssueMetadata{
+				Spec: codebaseApi.JiraIssueMetadataSpec{
+					Tickets: []string{"TEST-1"},
+					Payload: "{\"components\":\"java11-mvn-create\",\"fixVersions\":\"0.0.1-snapshot-java11\",\"labels\":\"java11\",\"issuesLinks\":[{\"ticket\":\"EPMDEDPSUP-5510\",\"title\":\"[EPMDEDPSUP-5510]: test\",\"url\": \"https://test.com\"}]}",
+				},
+			},
+			client: func(t *testing.T) jira.Client {
+				m := jiraMock.NewClient(t)
+				m.On("GetProjectInfo", "TEST-1").
+					Return(&goJira.Project{
+						ID: "1",
+					}, nil)
+				m.On("GetIssue", testify.Anything, "TEST-1").
+					Return(&goJira.Issue{
+						Fields: &goJira.IssueFields{
+							Type: goJira.IssueType{
+								ID:   "2",
+								Name: "TEST-1",
+							},
+						},
+					}, nil)
+				m.On("GetIssueTypeMeta", testify.Anything, "1", "2").
+					Return(nil, errors.New("failed"))
+
+				return m
+			},
+			wantErr: func(t require.TestingT, err error, i ...interface{}) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "failed to get issue type meta")
+			},
+		},
+		{
+			name: "failed to get issue type",
+			metadata: &codebaseApi.JiraIssueMetadata{
+				Spec: codebaseApi.JiraIssueMetadataSpec{
+					Tickets: []string{"TEST-1"},
+					Payload: "{\"components\":\"java11-mvn-create\",\"fixVersions\":\"0.0.1-snapshot-java11\",\"labels\":\"java11\",\"issuesLinks\":[{\"ticket\":\"EPMDEDPSUP-5510\",\"title\":\"[EPMDEDPSUP-5510]: test\",\"url\": \"https://test.com\"}]}",
+				},
+			},
+			client: func(t *testing.T) jira.Client {
+				m := jiraMock.NewClient(t)
+				m.On("GetProjectInfo", "TEST-1").
+					Return(&goJira.Project{
+						ID: "1",
+					}, nil)
+				m.On("GetIssue", testify.Anything, "TEST-1").
+					Return(nil, errors.New("failed"))
+
+				return m
+			},
+			wantErr: func(t require.TestingT, err error, i ...interface{}) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "failed to get issue")
+			},
+		},
+		{
+			name: "failed to get project info",
+			metadata: &codebaseApi.JiraIssueMetadata{
+				Spec: codebaseApi.JiraIssueMetadataSpec{
+					Tickets: []string{"TEST-1"},
+					Payload: "{\"components\":\"java11-mvn-create\",\"fixVersions\":\"0.0.1-snapshot-java11\",\"labels\":\"java11\",\"issuesLinks\":[{\"ticket\":\"EPMDEDPSUP-5510\",\"title\":\"[EPMDEDPSUP-5510]: test\",\"url\": \"https://test.com\"}]}",
+				},
+			},
+			client: func(t *testing.T) jira.Client {
+				m := jiraMock.NewClient(t)
+				m.On("GetProjectInfo", "TEST-1").
+					Return(nil, errors.New("failed"))
+
+				return m
+			},
+			wantErr: func(t require.TestingT, err error, i ...interface{}) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "failed to get project info")
+			},
+		},
+		{
+			name: "project info not found",
+			metadata: &codebaseApi.JiraIssueMetadata{
+				Spec: codebaseApi.JiraIssueMetadataSpec{
+					Tickets: []string{"TEST-1"},
+					Payload: "{\"components\":\"java11-mvn-create\",\"fixVersions\":\"0.0.1-snapshot-java11\",\"labels\":\"java11\",\"issuesLinks\":[{\"ticket\":\"EPMDEDPSUP-5510\",\"title\":\"[EPMDEDPSUP-5510]: test\",\"url\": \"https://test.com\"}]}",
+				},
+			},
+			client: func(t *testing.T) jira.Client {
+				m := jiraMock.NewClient(t)
+				m.On("GetProjectInfo", "TEST-1").
+					Return(nil, fmt.Errorf("project not found %w", jira.ErrNotFound))
+
+				return m
+			},
+			wantErr: func(t require.TestingT, err error, i ...interface{}) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "jira issue not found")
+			},
+		},
+		{
+			name: "invalid payload",
+			metadata: &codebaseApi.JiraIssueMetadata{
+				Spec: codebaseApi.JiraIssueMetadataSpec{
+					Tickets: []string{"TEST-1"},
+					Payload: "{{{{{",
+				},
+			},
+			client: func(t *testing.T) jira.Client {
+				return jiraMock.NewClient(t)
+			},
+			wantErr: func(t require.TestingT, err error, i ...interface{}) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "failed to get map with Jira field values")
+			},
+		},
+		{
+			name: "no tickets",
+			metadata: &codebaseApi.JiraIssueMetadata{
+				Spec: codebaseApi.JiraIssueMetadataSpec{
+					Tickets: []string{},
+					Payload: "{\"components\":\"java11-mvn-create\",\"fixVersions\":\"0.0.1-snapshot-java11\",\"labels\":\"java11\",\"issuesLinks\":[{\"ticket\":\"EPMDEDPSUP-5510\",\"title\":\"[EPMDEDPSUP-5510]: test\",\"url\": \"https://test.com\"}]}",
+				},
+			},
+			client: func(t *testing.T) jira.Client {
+				return jiraMock.NewClient(t)
+			},
+			wantErr: func(t require.TestingT, err error, i ...interface{}) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "JiraIssueMetadata is invalid. Tickets field can't be empty")
 			},
 		},
 	}
 
-	issueType := "fake-type"
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 
-	mClient := new(mock.MockClient)
-	mClient.On("CreateFixVersionValue", "fake-projectId", "fake-versionName").Return(
-		nil)
-	mClient.On("CreateComponentValue", "fake-projectId", "fake-componentName").Return(
-		nil)
-	mClient.On("GetProjectInfo", "fake-issueId").Return(
-		jiraProject, nil)
-	mClient.On("GetIssueType", "fake-issueId").Return(
-		issueType, nil)
-	mClient.On("GetIssueMetadata", "fake-projectKey").Return(
-		issueMetadata, nil)
+			h := PutTagValue{
+				client: tt.client(t),
+			}
 
-	jim := &codebaseApi.JiraIssueMetadata{
-		ObjectMeta: metaV1.ObjectMeta{
-			Name:      "fake-name",
-			Namespace: "fake-namespace",
-		},
-		Spec: codebaseApi.JiraIssueMetadataSpec{
-			Tickets: []string{"fake-issueId"},
-			Payload: `{"issuesLinks": [{"ticket":"fake-issueId", "title":"fake-title", "url":"fake-url"}], "allowedValues": [{"ticket":"fakeId"}]}`,
-		},
+			tt.wantErr(t, h.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), tt.metadata))
+		})
 	}
-
-	ptv := PutTagValue{
-		client: mClient,
-	}
-
-	err := ptv.ServeRequest(jim)
-	assert.NoError(t, err)
-}
-
-func TestPutTagValue_GetProjectInfo(t *testing.T) {
-	mClient := new(mock.MockClient)
-
-	ptv := PutTagValue{
-		client: mClient,
-	}
-
-	mClient.On("GetProjectInfo", "foo").Return(nil,
-		fmt.Errorf("error: %w", adapter.ErrNotFound)).Once()
-
-	mClient.On("GetProjectInfo", "bar").Return(nil,
-		fmt.Errorf("error: %w", adapter.ErrNotFound)).Once()
-
-	_, _, err := ptv.getProjectInfo([]string{"foo", "bar"})
-	assert.Error(t, err)
-	assert.EqualError(t, err, "jira issue not found")
-
-	mClient.On("GetProjectInfo", "baz").Return(nil,
-		errors.New("unknown")).Once()
-
-	_, _, err = ptv.getProjectInfo([]string{"baz"})
-	assert.EqualError(t, err, "failed to get project info: unknown")
-
-	mClient.AssertExpectations(t)
 }

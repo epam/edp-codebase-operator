@@ -1,12 +1,19 @@
-package adapter
+package jira
 
 import (
+	"context"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 
 	"github.com/andygrunwald/go-jira"
+	"github.com/go-logr/logr"
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	ctrl "sigs.k8s.io/controller-runtime"
 
 	"github.com/epam/edp-codebase-operator/v2/pkg/client/jira/dto"
 )
@@ -58,83 +65,6 @@ func TestGoJiraAdapter_UnableCreateJiraClient(t *testing.T) {
 	if !strings.Contains(err.Error(), "parse \"htt\\\\p://\"") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
-}
-
-func TestGoJiraAdapter_GetIssueMetadata_Pass(t *testing.T) {
-	httpmock.Reset()
-	httpmock.Activate()
-
-	jm := jira.CreateMetaInfo{
-		Expand: "expand",
-	}
-
-	httpmock.RegisterResponder("GET", "/j-api/rest/api/2/issue/createmeta?expand=projects.issuetypes.fields&projectKeys=project_key",
-		httpmock.NewJsonResponderOrPanic(200, &jm))
-
-	jc, err := new(GoJiraAdapterFactory).New(dto.ConvertSpecToJiraServer("j-api", "user", "pwd"))
-	if err != nil {
-		t.Fatal("failed to create Jira Client")
-	}
-
-	meta, err := jc.GetIssueMetadata("project_key")
-
-	assert.NoError(t, err)
-	assert.Equal(t, meta.Expand, "expand")
-}
-
-func TestGoJiraAdapter_GetIssueMetadata_Fail(t *testing.T) {
-	httpmock.Reset()
-
-	jc, err := new(GoJiraAdapterFactory).New(dto.ConvertSpecToJiraServer("j-api", "user", "pwd"))
-	if err != nil {
-		t.Fatal("failed to create Jira Client")
-	}
-
-	meta, err := jc.GetIssueMetadata("issueId")
-
-	assert.Error(t, err)
-	assert.Nil(t, meta)
-}
-
-func TestGoJiraAdapter_GetIssueType_Pass(t *testing.T) {
-	httpmock.Reset()
-	httpmock.Activate()
-
-	ji := jira.Issue{
-		Expand: "expand",
-		Fields: &jira.IssueFields{
-			Type: jira.IssueType{
-				Name: "bug",
-			},
-		},
-	}
-
-	httpmock.RegisterResponder("GET", "/j-api/rest/api/2/issue/issueId",
-		httpmock.NewJsonResponderOrPanic(200, &ji))
-
-	jc, err := new(GoJiraAdapterFactory).New(dto.ConvertSpecToJiraServer("j-api", "user", "pwd"))
-	if err != nil {
-		t.Fatal("failed to create Jira Client")
-	}
-
-	issue, err := jc.GetIssueType("issueId")
-
-	assert.NoError(t, err)
-	assert.Equal(t, issue, "bug")
-}
-
-func TestGoJiraAdapter_GetIssueType_Fail(t *testing.T) {
-	httpmock.Reset()
-
-	jc, err := new(GoJiraAdapterFactory).New(dto.ConvertSpecToJiraServer("j-api", "user", "pwd"))
-	if err != nil {
-		t.Fatal("failed to create Jira Client")
-	}
-
-	issue, err := jc.GetIssueType("issueId")
-
-	assert.Error(t, err)
-	assert.Equal(t, "", issue)
 }
 
 func TestGoJiraAdapter_GetProjectInfo_Pass(t *testing.T) {
@@ -215,7 +145,7 @@ func TestGoJiraAdapter_CreateFixVersionValue_Pass(t *testing.T) {
 		t.Fatal("failed to create Jira Client")
 	}
 
-	err = jc.CreateFixVersionValue(1, "100")
+	err = jc.CreateFixVersionValue(ctrl.LoggerInto(context.Background(), logr.Discard()), 1, "100")
 
 	assert.NoError(t, err)
 }
@@ -234,7 +164,7 @@ func TestGoJiraAdapter_CreateFixVersionValue_Fail(t *testing.T) {
 		t.Fatal("failed to create Jira Client")
 	}
 
-	err = jc.CreateFixVersionValue(1, "100")
+	err = jc.CreateFixVersionValue(ctrl.LoggerInto(context.Background(), logr.Discard()), 1, "100")
 
 	assert.Error(t, err)
 }
@@ -256,7 +186,7 @@ func TestGoJiraAdapter_CreateComponentValue_Pass(t *testing.T) {
 		t.Fatal("failed to create Jira Client")
 	}
 
-	err = jc.CreateComponentValue(1, "100")
+	err = jc.CreateComponentValue(ctrl.LoggerInto(context.Background(), logr.Discard()), 1, "100")
 
 	assert.NoError(t, err)
 }
@@ -275,7 +205,7 @@ func TestGoJiraAdapter_CreateComponentValue_FailToGetProject(t *testing.T) {
 		t.Fatal("failed to create Jira Client")
 	}
 
-	err = jc.CreateComponentValue(1, "100")
+	err = jc.CreateComponentValue(ctrl.LoggerInto(context.Background(), logr.Discard()), 1, "100")
 
 	assert.Error(t, err)
 }
@@ -294,7 +224,7 @@ func TestGoJiraAdapter_CreateComponentValue_FailToCreateComponent(t *testing.T) 
 		t.Fatal("failed to create Jira Client")
 	}
 
-	err = jc.CreateComponentValue(1, "100")
+	err = jc.CreateComponentValue(ctrl.LoggerInto(context.Background(), logr.Discard()), 1, "100")
 
 	assert.Error(t, err)
 }
@@ -368,4 +298,122 @@ func TestGoJiraAdapter_CreateIssueLink_Fail(t *testing.T) {
 	err = jc.CreateIssueLink("jiraId", "title", "url")
 
 	assert.Error(t, err)
+}
+
+func TestGoJiraAdapter_GetIssue(t *testing.T) {
+	httpmock.DeactivateAndReset()
+
+	tests := []struct {
+		name     string
+		httpResp http.HandlerFunc
+		wantErr  require.ErrorAssertionFunc
+		want     *jira.Issue
+	}{
+		{
+			name: "successfully get issue",
+			httpResp: func(w http.ResponseWriter, r *http.Request) {
+				jsonResp, _ := json.Marshal(&jira.Issue{
+					ID: "123",
+				})
+
+				w.Write(jsonResp)
+			},
+			wantErr: require.NoError,
+			want: &jira.Issue{
+				ID: "123",
+			},
+		},
+		{
+			name: "failed to get issue",
+			httpResp: func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusInternalServerError)
+			},
+			wantErr: func(t require.TestingT, err error, i ...interface{}) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "failed to fetch jira issue")
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ts := httptest.NewServer(tt.httpResp)
+			defer ts.Close()
+
+			client, err := GoJiraAdapterFactory{}.New(
+				dto.ConvertSpecToJiraServer(ts.URL, "user", "pwd"),
+			)
+			require.NoError(t, err)
+
+			got, err := client.GetIssue(ctrl.LoggerInto(context.Background(), logr.Discard()), "1")
+			tt.wantErr(t, err)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestGoJiraAdapter_GetIssueTypeMeta(t *testing.T) {
+	httpmock.DeactivateAndReset()
+
+	tests := []struct {
+		name     string
+		httpResp http.HandlerFunc
+		wantErr  require.ErrorAssertionFunc
+		want     map[string]IssueTypeMeta
+	}{
+		{
+			name: "successfully get issue",
+			httpResp: func(w http.ResponseWriter, r *http.Request) {
+				jsonResp, _ := json.Marshal(&List[IssueTypeMeta]{
+					MaxResults: 1,
+					StartAt:    0,
+					Total:      1,
+					IsLat:      true,
+					Values: []IssueTypeMeta{{
+						FieldID: "fixVersions",
+						AllowedValues: []IssueTypeMetaAllowedValue{{
+							Name: "1.0.0",
+						}},
+					}},
+				})
+
+				w.Write(jsonResp)
+			},
+			wantErr: require.NoError,
+			want: map[string]IssueTypeMeta{
+				"fixVersions": {
+					FieldID: "fixVersions",
+					AllowedValues: []IssueTypeMetaAllowedValue{{
+						Name: "1.0.0",
+					}},
+				},
+			},
+		},
+		{
+			name: "failed to get issue",
+			httpResp: func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusInternalServerError)
+			},
+			wantErr: func(t require.TestingT, err error, i ...interface{}) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "failed to perform GetIssueTypeMeta HTTP request to jira")
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ts := httptest.NewServer(tt.httpResp)
+			defer ts.Close()
+
+			client, err := GoJiraAdapterFactory{}.New(
+				dto.ConvertSpecToJiraServer(ts.URL, "user", "pwd"),
+			)
+			require.NoError(t, err)
+
+			got, err := client.GetIssueTypeMeta(ctrl.LoggerInto(context.Background(), logr.Discard()), "1", "2")
+			tt.wantErr(t, err)
+			assert.Equal(t, tt.want, got)
+		})
+	}
 }

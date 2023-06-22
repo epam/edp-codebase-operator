@@ -18,7 +18,6 @@ import (
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	"github.com/epam/edp-codebase-operator/v2/controllers/jiraserver/chain"
 	"github.com/epam/edp-codebase-operator/v2/pkg/client/jira"
-	"github.com/epam/edp-codebase-operator/v2/pkg/client/jira/adapter"
 	"github.com/epam/edp-codebase-operator/v2/pkg/client/jira/dto"
 	codebasepredicate "github.com/epam/edp-codebase-operator/v2/pkg/predicate"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
@@ -130,7 +129,7 @@ func (r *ReconcileJiraServer) initJiraClient(js *codebaseApi.JiraServer) (jira.C
 	user := string(s.Data["username"])
 	pwd := string(s.Data["password"])
 
-	c, err := new(adapter.GoJiraAdapterFactory).New(dto.ConvertSpecToJiraServer(js.Spec.ApiUrl, user, pwd))
+	c, err := new(jira.GoJiraAdapterFactory).New(dto.ConvertSpecToJiraServer(js.Spec.ApiUrl, user, pwd))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Jira client: %w", err)
 	}

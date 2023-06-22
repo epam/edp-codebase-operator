@@ -102,6 +102,8 @@ issues:
         - wrapcheck
         - gochecknoinits
         - containedctx
+        - errcheck
+        - errchkjson
     - path: _types\.go
       linters:
         - gochecknoinits

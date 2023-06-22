@@ -1,17 +1,16 @@
-package adapter
+package jira
 
 import (
 	"fmt"
 
 	goJira "github.com/andygrunwald/go-jira"
 
-	"github.com/epam/edp-codebase-operator/v2/pkg/client/jira"
 	"github.com/epam/edp-codebase-operator/v2/pkg/client/jira/dto"
 )
 
 type GoJiraAdapterFactory struct{}
 
-func (GoJiraAdapterFactory) New(js dto.JiraServer) (jira.Client, error) {
+func (GoJiraAdapterFactory) New(js dto.JiraServer) (Client, error) {
 	rl := log.WithValues("jira dto", js)
 	rl.V(2).Info("start new Jira client creation")
 

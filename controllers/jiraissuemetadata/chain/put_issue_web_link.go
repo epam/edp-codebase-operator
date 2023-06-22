@@ -1,9 +1,12 @@
 package chain
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+
+	ctrl "sigs.k8s.io/controller-runtime"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	"github.com/epam/edp-codebase-operator/v2/controllers/jiraissuemetadata/chain/handler"
@@ -25,8 +28,9 @@ type PutIssueWebLink struct {
 	client jira.Client
 }
 
-func (h PutIssueWebLink) ServeRequest(metadata *codebaseApi.JiraIssueMetadata) error {
-	log.Info("start creating web link in issues.")
+func (h PutIssueWebLink) ServeRequest(ctx context.Context, metadata *codebaseApi.JiraIssueMetadata) error {
+	log := ctrl.LoggerFrom(ctx)
+	log.Info("Start creating web link in issues")
 
 	payload := jiraPayload{}
 
@@ -49,7 +53,7 @@ func (h PutIssueWebLink) ServeRequest(metadata *codebaseApi.JiraIssueMetadata) e
 		}
 	}
 
-	log.Info("end creating web link in issues.")
+	log.Info("End creating web link in issues")
 
-	return nextServeOrNil(h.next, metadata)
+	return nextServeOrNil(ctx, h.next, metadata)
 }

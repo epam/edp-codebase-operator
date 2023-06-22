@@ -1,6 +1,7 @@
 package chain
 
 import (
+	"context"
 	"fmt"
 
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -11,8 +12,6 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/pkg/client/jira"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
-
-var log = ctrl.Log.WithName("jira_issue_metadata_handler")
 
 const issuesLinks = "issuesLinks"
 
@@ -53,14 +52,16 @@ func createWithoutApplyingTagsChain(jiraClient jira.Client, c client.Client) han
 	}
 }
 
-func nextServeOrNil(next handler.JiraIssueMetadataHandler, metadata *codebaseApi.JiraIssueMetadata) error {
+func nextServeOrNil(ctx context.Context, next handler.JiraIssueMetadataHandler, metadata *codebaseApi.JiraIssueMetadata) error {
+	log := ctrl.LoggerFrom(ctx)
+
 	if next == nil {
 		log.Info("handling of JiraIssueMetadata has been finished", "name", metadata.Name)
 
 		return nil
 	}
 
-	err := next.ServeRequest(metadata)
+	err := next.ServeRequest(ctx, metadata)
 	if err != nil {
 		return fmt.Errorf("failed to process next handler: %w", err)
 	}
