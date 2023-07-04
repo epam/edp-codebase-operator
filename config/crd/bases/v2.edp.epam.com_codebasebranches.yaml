@@ -26,6 +26,14 @@ spec:
       jsonPath: .status.status
       name: Status
       type: string
+    - description: Owner of object
+      jsonPath: .spec.codebaseName
+      name: Codebase Name
+      type: string
+    - description: Is a release branch
+      jsonPath: .spec.release
+      name: Release
+      type: boolean
     name: v1
     schema:
       openAPIV3Schema:

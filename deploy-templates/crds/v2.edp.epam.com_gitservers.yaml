@@ -22,6 +22,14 @@ spec:
       jsonPath: .status.available
       name: Available
       type: boolean
+    - description: GitSever host
+      jsonPath: .spec.gitHost
+      name: Host
+      type: string
+    - description: Git Provider type
+      jsonPath: .spec.gitProvider
+      name: Git Provider
+      type: string
     name: v1
     schema:
       openAPIV3Schema:

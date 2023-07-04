@@ -40,6 +40,7 @@ type CodebaseImageStreamStatus struct {
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:shortName=cbis
 // +kubebuilder:storageversion
+// +kubebuilder:printcolumn:name="Codebase Name",type="string",JSONPath=".spec.codebase",description="Owner of object"
 
 // CodebaseImageStream is the Schema for the CodebaseImageStreams API.
 type CodebaseImageStream struct {

@@ -68,6 +68,8 @@ type GitServerStatus struct {
 // +kubebuilder:resource:shortName=gs
 // +kubebuilder:storageversion
 // +kubebuilder:printcolumn:name="Available",type="boolean",JSONPath=".status.available",description="Is resource available"
+// +kubebuilder:printcolumn:name="Host",type="string",JSONPath=".spec.gitHost",description="GitSever host"
+// +kubebuilder:printcolumn:name="Git Provider",type="string",JSONPath=".spec.gitProvider",description="Git Provider type"
 
 // GitServer is the Schema for the gitservers API.
 type GitServer struct {

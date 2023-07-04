@@ -17,7 +17,12 @@ spec:
     singular: codebaseimagestream
   scope: Namespaced
   versions:
-  - name: v1
+  - additionalPrinterColumns:
+    - description: Owner of object
+      jsonPath: .spec.codebase
+      name: Codebase Name
+      type: string
+    name: v1
     schema:
       openAPIV3Schema:
         description: CodebaseImageStream is the Schema for the CodebaseImageStreams

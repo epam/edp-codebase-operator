@@ -85,6 +85,8 @@ type CodebaseBranchStatus struct {
 // +kubebuilder:storageversion
 // +kubebuilder:printcolumn:name="Result",type="string",JSONPath=".status.result",description="Result of last action"
 // +kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.status",description="The status of codebasebranch"
+// +kubebuilder:printcolumn:name="Codebase Name",type="string",JSONPath=".spec.codebaseName",description="Owner of object"
+// +kubebuilder:printcolumn:name="Release",type="boolean",JSONPath=".spec.release",description="Is a release branch"
 
 // CodebaseBranch is the Schema for the CodebaseBranches API.
 type CodebaseBranch struct {

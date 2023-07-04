@@ -18,6 +18,10 @@ spec:
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
+    - description: Codebase type
+      jsonPath: .spec.type
+      name: Type
+      type: string
     - description: Is resource available
       jsonPath: .status.available
       name: Available
@@ -25,6 +29,14 @@ spec:
     - description: Result of last action
       jsonPath: .status.result
       name: Result
+      type: string
+    - description: Default Branch
+      jsonPath: .spec.defaultBranch
+      name: Default Branch
+      type: string
+    - description: Repository Web URL
+      jsonPath: .status.gitWebUrl
+      name: GitWebUrl
       type: string
     name: v1
     schema:
