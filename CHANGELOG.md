@@ -1,6 +1,33 @@
 <a name="unreleased"></a>
 ## [Unreleased]
 
+### Features
+
+- Make Codebase GitUrlPath required [EPMDEDP-11431](https://jiraeu.epam.com/browse/EPMDEDP-11431)
+- Make Codebase versioning StartFrom required for edp version type [EPMDEDP-11958](https://jiraeu.epam.com/browse/EPMDEDP-11958)
+- Create Sonar config file during the import strategy [EPMDEDP-11993](https://jiraeu.epam.com/browse/EPMDEDP-11993)
+- Make Codebase framework mandatory field [EPMDEDP-11995](https://jiraeu.epam.com/browse/EPMDEDP-11995)
+- Disallow the use of '--' characters in the Codebase name [EPMDEDP-12008](https://jiraeu.epam.com/browse/EPMDEDP-12008)
+- Add additional printer columns for codebase resources [EPMDEDP-12184](https://jiraeu.epam.com/browse/EPMDEDP-12184)
+
+### Bug Fixes
+
+- Codebase creation failed for an empty project [EPMDEDP-12137](https://jiraeu.epam.com/browse/EPMDEDP-12137)
+- Set default codebase branch for GitLab/GitHub [EPMDEDP-12145](https://jiraeu.epam.com/browse/EPMDEDP-12145)
+- Jira integration failed after the update to Jira 9.4.5 [EPMDEDP-12194](https://jiraeu.epam.com/browse/EPMDEDP-12194)
+
+### Code Refactoring
+
+- Optimize repositories cloning [EPMDEDP-12096](https://jiraeu.epam.com/browse/EPMDEDP-12096)
+
+### Routine
+
+- Update current development version [EPMDEDP-11826](https://jiraeu.epam.com/browse/EPMDEDP-11826)
+- Remove liveness and readiness probe hardcode from helm templates [EPMDEDP-11986](https://jiraeu.epam.com/browse/EPMDEDP-11986)
+- Fix sonar exclusions for git.go [EPMDEDP-12162](https://jiraeu.epam.com/browse/EPMDEDP-12162)
+- Disable git provider from sonar code coverage [EPMDEDP-12162](https://jiraeu.epam.com/browse/EPMDEDP-12162)
+- Add printcolumn in CRs for better UX [EPMDEDP-12184](https://jiraeu.epam.com/browse/EPMDEDP-12184)
+
 
 <a name="v2.16.0"></a>
 ## [v2.16.0] - 2023-05-25
@@ -30,6 +57,7 @@
 ### Routine
 
 - Update current development version [EPMDEDP-11472](https://jiraeu.epam.com/browse/EPMDEDP-11472)
+- Upgrade alpine image version to 3.16.4 [EPMDEDP-11764](https://jiraeu.epam.com/browse/EPMDEDP-11764)
 - Refactor codebase template chart [EPMDEDP-11846](https://jiraeu.epam.com/browse/EPMDEDP-11846)
 - Remove unused templates [EPMDEDP-11915](https://jiraeu.epam.com/browse/EPMDEDP-11915)
 - Add templates for github issues [EPMDEDP-11928](https://jiraeu.epam.com/browse/EPMDEDP-11928)
@@ -87,7 +115,6 @@
 - Updated cd-pipeline-operator dependency [EPMDEDP-11275](https://jiraeu.epam.com/browse/EPMDEDP-11275)
 - Update git-chglog for codebase-operator [EPMDEDP-11518](https://jiraeu.epam.com/browse/EPMDEDP-11518)
 - Bump golang.org/x/net from 0.5.0 to 0.8.0 [EPMDEDP-11578](https://jiraeu.epam.com/browse/EPMDEDP-11578)
-- Upgrade alpine image version to 3.16.4 [EPMDEDP-11764](https://jiraeu.epam.com/browse/EPMDEDP-11764)
 
 
 <a name="v2.14.1"></a>
