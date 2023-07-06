@@ -1,0 +1,12 @@
+apiVersion: v2.edp.epam.com/v1alpha1
+kind: Template
+metadata:
+  labels:
+    app.kubernetes.io/name: template
+    app.kubernetes.io/instance: template-sample
+    app.kubernetes.io/part-of: edp-codebase-operator
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: edp-codebase-operator
+  name: template-sample
+spec:
+  # TODO(user): Add fields here

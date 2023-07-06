@@ -153,6 +153,32 @@ annotations:
         apiUrl: https://jiraeu-api.test.com
         credentialName: test-jira-user
         rootUrl: https://jiraeu.test.com
+    - apiVersion: v2.edp.epam.com/v1alpha1
+      kind: Template
+      metadata:
+        name: my-template
+      spec:
+        displayName: MyTemplate
+        buildTool: tool
+        type: application
+        framework: framework
+        language: programming-language
+        description: description
+        category: category
+        # Icon defines the image that UIs can use to represent this package.
+        icon:
+          - base64data: <base64-encoded-data>
+            mediatype: image/svg+xml
+        keywords:
+          - keyword1
+          - keyword2
+        maintainers:
+          - name: team
+            email: team@example.com
+        source: https://github.com/epam/edp-codebase-operator
+        version: 1.0.1
+        minEDPVersion: 2.0.0
+        maturity: stable
   artifacthub.io/links: |
     - name: EDP Documentation
       url: https://epam.github.io/edp-install/

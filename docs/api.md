@@ -1781,6 +1781,8 @@ Resource Types:
 
 - [JiraServer](#jiraserver)
 
+- [Template](#template)
+
 
 
 
@@ -3484,5 +3486,246 @@ JiraServerStatus defines the observed state of JiraServer.
           Detailed information regarding action result which were performed<br/>
         </td>
         <td>false</td>
+      </tr></tbody>
+</table>
+
+## Template
+<sup><sup>[↩ Parent](#v2edpepamcomv1alpha1 )</sup></sup>
+
+
+
+
+
+
+Template is the Schema for the templates API.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+      <td><b>apiVersion</b></td>
+      <td>string</td>
+      <td>v2.edp.epam.com/v1alpha1</td>
+      <td>true</td>
+      </tr>
+      <tr>
+      <td><b>kind</b></td>
+      <td>string</td>
+      <td>Template</td>
+      <td>true</td>
+      </tr>
+      <tr>
+      <td><b><a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#objectmeta-v1-meta">metadata</a></b></td>
+      <td>object</td>
+      <td>Refer to the Kubernetes API documentation for the fields of the `metadata` field.</td>
+      <td>true</td>
+      </tr><tr>
+        <td><b><a href="#templatespec">spec</a></b></td>
+        <td>object</td>
+        <td>
+          TemplateSpec defines the desired state of Template.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>status</b></td>
+        <td>object</td>
+        <td>
+          TemplateStatus defines the observed state of Template.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Template.spec
+<sup><sup>[↩ Parent](#template)</sup></sup>
+
+
+
+TemplateSpec defines the desired state of Template.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>buildTool</b></td>
+        <td>string</td>
+        <td>
+          The build tool used to build the component from the template.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>description</b></td>
+        <td>string</td>
+        <td>
+          The description of the template.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>displayName</b></td>
+        <td>string</td>
+        <td>
+          The name of the template.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>framework</b></td>
+        <td>string</td>
+        <td>
+          The framework used to build the component from the template.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>language</b></td>
+        <td>string</td>
+        <td>
+          The programming language used to build the component from the template.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>source</b></td>
+        <td>string</td>
+        <td>
+          A repository containing the source code for the template.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>type</b></td>
+        <td>string</td>
+        <td>
+          The type of the template, e.g application, library, autotest, infrastructure, etc.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>version</b></td>
+        <td>string</td>
+        <td>
+          Version is the version of the template.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>category</b></td>
+        <td>string</td>
+        <td>
+          Category is the category of the template.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#templatespeciconindex">icon</a></b></td>
+        <td>[]object</td>
+        <td>
+          The icon for this template.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>keywords</b></td>
+        <td>[]string</td>
+        <td>
+          A list of keywords describing the template.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#templatespecmaintainersindex">maintainers</a></b></td>
+        <td>[]object</td>
+        <td>
+          A list of organizational entities maintaining the Template.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>maturity</b></td>
+        <td>enum</td>
+        <td>
+          The level of maturity the template has achieved at this version. Options include planning, pre-alpha, alpha, beta, stable, mature, inactive, and deprecated.<br/>
+          <br/>
+            <i>Enum</i>: planning, pre-alpha, alpha, beta, stable, mature, inactive, deprecated<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>minEDPVersion</b></td>
+        <td>string</td>
+        <td>
+          MinEDPVersion is the minimum EDP version that this template is compatible with.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Template.spec.icon[index]
+<sup><sup>[↩ Parent](#templatespec)</sup></sup>
+
+
+
+
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>base64data</b></td>
+        <td>string</td>
+        <td>
+          A base64 encoded PNG, JPEG or SVG image.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>mediatype</b></td>
+        <td>string</td>
+        <td>
+          The media type of the image. E.g image/svg+xml, image/png, image/jpeg.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### Template.spec.maintainers[index]
+<sup><sup>[↩ Parent](#templatespec)</sup></sup>
+
+
+
+
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>email</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>true</td>
       </tr></tbody>
 </table>
