@@ -77,6 +77,11 @@ type TemplateStatus struct {
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="Version",type="string",JSONPath=".spec.version",description="Template version"
+// +kubebuilder:printcolumn:name="Type",type="string",JSONPath=".spec.type",description="Codebase type"
+// +kubebuilder:printcolumn:name="Framework",type="string",JSONPath=".spec.framework",description="Framework"
+// +kubebuilder:printcolumn:name="Language",type="string",JSONPath=".spec.language",description="Language"
+// +kubebuilder:printcolumn:name="BuildTool",type="string",JSONPath=".spec.buildTool",description="Build tool"
 
 // Template is the Schema for the templates API.
 type Template struct {

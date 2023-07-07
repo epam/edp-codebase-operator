@@ -15,7 +15,28 @@ spec:
     singular: template
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - description: Template version
+      jsonPath: .spec.version
+      name: Version
+      type: string
+    - description: Codebase type
+      jsonPath: .spec.type
+      name: Type
+      type: string
+    - description: Framework
+      jsonPath: .spec.framework
+      name: Framework
+      type: string
+    - description: Language
+      jsonPath: .spec.language
+      name: Language
+      type: string
+    - description: Build tool
+      jsonPath: .spec.buildTool
+      name: BuildTool
+      type: string
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: Template is the Schema for the templates API.
