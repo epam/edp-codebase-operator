@@ -186,23 +186,6 @@ package com.epam.edp.codebase {
   }
 }
 
-class ImageStreamTag {
-    -- metadata --
-    String name
-    -- spec --
-    String codebaseImageStreamName
-    String tag
-}
-
-class GitTag {
-    -- metadata --
-    String name
-    -- spec --
-    String codebase
-    String branch
-    String tag
-}
-
 class Service {
     -- metadata --
     String name

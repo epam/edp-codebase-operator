@@ -64,16 +64,6 @@ annotations:
       name: gitserver
       displayName: GitServer
       description: Communicates with Git server
-    - kind: GitTag
-      version: v2.edp.epam.com/v1
-      name: gittag
-      displayName: GitTag
-      description: Tags a git branch
-    - kind: ImageStreamTag
-      version: v2.edp.epam.com/v1
-      name: imagestreamtag
-      displayName: ImageStreamTag
-      description: Tags an image
     - kind: JiraIssueMetadata
       version: v2.edp.epam.com/v1
       name: jiraissuemetadata

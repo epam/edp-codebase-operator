@@ -110,42 +110,6 @@ resources:
   controller: true
   domain: edp.epam.com
   group: v2
-  kind: GitTag
-  path: github.com/epam/edp-codebase-operator/api/v1alpha1
-  version: v1alpha1
-- api:
-    crdVersion: v1
-    namespaced: true
-  controller: true
-  domain: edp.epam.com
-  group: v2
-  kind: GitTag
-  path: github.com/epam/edp-codebase-operator/api/v1
-  version: v1
-- api:
-    crdVersion: v1
-    namespaced: true
-  controller: true
-  domain: edp.epam.com
-  group: v2
-  kind: ImageStreamTag
-  path: github.com/epam/edp-codebase-operator/api/v1alpha1
-  version: v1alpha1
-- api:
-    crdVersion: v1
-    namespaced: true
-  controller: true
-  domain: edp.epam.com
-  group: v2
-  kind: ImageStreamTag
-  path: github.com/epam/edp-codebase-operator/api/v1
-  version: v1
-- api:
-    crdVersion: v1
-    namespaced: true
-  controller: true
-  domain: edp.epam.com
-  group: v2
   kind: JiraIssueMetadata
   path: github.com/epam/edp-codebase-operator/api/v1alpha1
   version: v1alpha1

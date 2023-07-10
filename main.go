@@ -37,8 +37,6 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/controllers/codebasebranch"
 	"github.com/epam/edp-codebase-operator/v2/controllers/codebaseimagestream"
 	"github.com/epam/edp-codebase-operator/v2/controllers/gitserver"
-	"github.com/epam/edp-codebase-operator/v2/controllers/gittag"
-	"github.com/epam/edp-codebase-operator/v2/controllers/imagestreamtag"
 	"github.com/epam/edp-codebase-operator/v2/controllers/jiraissuemetadata"
 	"github.com/epam/edp-codebase-operator/v2/controllers/jiraserver"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
@@ -161,18 +159,6 @@ func main() {
 	gitServerCtrl := gitserver.NewReconcileGitServer(mgr.GetClient(), ctrlLog)
 	if err = gitServerCtrl.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, logFailCtrlCreateMessage, "controller", "git-server")
-		os.Exit(1)
-	}
-
-	gitTagCtrl := gittag.NewReconcileGitTag(mgr.GetClient(), ctrlLog)
-	if err = gitTagCtrl.SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, logFailCtrlCreateMessage, "controller", "git-tag")
-		os.Exit(1)
-	}
-
-	istCtrl := imagestreamtag.NewReconcileImageStreamTag(mgr.GetClient(), ctrlLog)
-	if err = istCtrl.SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, logFailCtrlCreateMessage, "controller", "image-stream-tag")
 		os.Exit(1)
 	}
 

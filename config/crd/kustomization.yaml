@@ -7,8 +7,6 @@ resources:
 - bases/v2.edp.epam.com_codebaseimagestreams.yaml
 - bases/v2.edp.epam.com_codebases.yaml
 - bases/v2.edp.epam.com_gitservers.yaml
-- bases/v2.edp.epam.com_gittags.yaml
-- bases/v2.edp.epam.com_imagestreamtags.yaml
 - bases/v2.edp.epam.com_jiraissuemetadatas.yaml
 - bases/v2.edp.epam.com_jiraservers.yaml
 - bases/v2.edp.epam.com_templates.yaml
@@ -22,8 +20,6 @@ patchesStrategicMerge:
 #- patches/webhook_in_codebaseimagestreams.yaml
 #- patches/webhook_in_codebases.yaml
 #- patches/webhook_in_gitservers.yaml
-#- patches/webhook_in_gittags.yaml
-#- patches/webhook_in_imagestreamtags.yaml
 #- patches/webhook_in_jiraissuemetadatas.yaml
 #- patches/webhook_in_jiraservers.yaml
 #- patches/webhook_in_templates.yaml
@@ -36,8 +32,6 @@ patchesStrategicMerge:
 #- patches/cainjection_in_codebaseimagestreams.yaml
 #- patches/cainjection_in_codebases.yaml
 #- patches/cainjection_in_gitservers.yaml
-#- patches/cainjection_in_gittags.yaml
-#- patches/cainjection_in_imagestreamtags.yaml
 #- patches/cainjection_in_jiraissuemetadatas.yaml
 #- patches/cainjection_in_jiraservers.yaml
 #- patches/cainjection_in_templates.yaml
