@@ -117,19 +117,6 @@ spec:
               lang:
                 description: Programming language used in codebase.
                 type: string
-              perf:
-                nullable: true
-                properties:
-                  dataSources:
-                    items:
-                      type: string
-                    type: array
-                  name:
-                    type: string
-                required:
-                - dataSources
-                - name
-                type: object
               repository:
                 nullable: true
                 properties:
@@ -325,19 +312,6 @@ spec:
               lang:
                 description: Programming language used in codebase.
                 type: string
-              perf:
-                nullable: true
-                properties:
-                  dataSources:
-                    items:
-                      type: string
-                    type: array
-                  name:
-                    type: string
-                required:
-                - dataSources
-                - name
-                type: object
               repository:
                 nullable: true
                 properties:

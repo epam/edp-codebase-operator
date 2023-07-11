@@ -107,8 +107,7 @@ func TestCleaner_ShouldFail(t *testing.T) {
 	}
 
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(coreV1.SchemeGroupVersion)
-	scheme.AddKnownTypes(codebaseApi.GroupVersion, c)
+	require.NoError(t, codebaseApi.AddToScheme(scheme))
 
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c).Build()
 
@@ -116,6 +115,6 @@ func TestCleaner_ShouldFail(t *testing.T) {
 
 	err = cl.ServeRequest(ctx, c)
 
-	assert.NotNil(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to delete secret repository-codebase-fake-name-temp")
 }

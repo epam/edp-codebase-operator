@@ -5,7 +5,6 @@ go 1.19
 replace (
 	github.com/epam/edp-cd-pipeline-operator/v2 v2.13.0 => github.com/epam/edp-cd-pipeline-operator/v2 v2.3.0-58.0.20230125151029-744b0fbb137f
 	github.com/epam/edp-component-operator => github.com/epam/edp-component-operator v0.1.1-0.20230118145658-7283b2b5cbf9
-	github.com/epam/edp-perf-operator/v2 v2.12.0 => github.com/epam/edp-perf-operator/v2 v2.0.0-20230125131439-17d2df0b44eb
 	github.com/kubernetes-incubator/reference-docs => github.com/kubernetes-sigs/reference-docs v0.0.0-20170929004150-fcf65347b256
 	github.com/markbates/inflect => github.com/markbates/inflect v1.0.4
 )
@@ -17,7 +16,6 @@ require (
 	github.com/epam/edp-common v0.0.0-20230104131608-33d095012fe8
 	github.com/epam/edp-component-operator v0.12.0
 	github.com/epam/edp-jenkins-operator/v2 v2.14.0
-	github.com/epam/edp-perf-operator/v2 v2.12.0
 	github.com/go-git/go-git/v5 v5.4.3-0.20210630082519-b4368b2a2ca4
 	github.com/go-logr/logr v1.2.3
 	github.com/go-resty/resty/v2 v2.6.0

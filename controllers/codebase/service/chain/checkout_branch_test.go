@@ -17,7 +17,10 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
-const fakeNamespace = "fake_namespace"
+const (
+	fakeNamespace = "fake_namespace"
+	fakeName      = "fake-name"
+)
 
 func TestGetRepositoryCredentialsIfExists_ShouldPass(t *testing.T) {
 	c := &codebaseApi.Codebase{

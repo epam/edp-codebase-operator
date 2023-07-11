@@ -13,7 +13,6 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/controllers/codebasebranch/chain/put_branch_in_git"
 	"github.com/epam/edp-codebase-operator/v2/controllers/codebasebranch/chain/put_codebase_image_stream"
 	"github.com/epam/edp-codebase-operator/v2/controllers/codebasebranch/chain/trigger_job"
-	"github.com/epam/edp-codebase-operator/v2/controllers/codebasebranch/chain/update_perf_data_sources"
 	"github.com/epam/edp-codebase-operator/v2/controllers/codebasebranch/service"
 	"github.com/epam/edp-codebase-operator/v2/pkg/git"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
@@ -33,12 +32,9 @@ func createJenkinsDefChain(c client.Client) handler.CodebaseBranchHandler {
 				Service: &service.CodebaseBranchServiceProvider{
 					Client: c,
 				},
-				Next: update_perf_data_sources.UpdatePerfDataSources{
+				Next: put_codebase_image_stream.PutCodebaseImageStream{
 					Client: c,
-					Next: put_codebase_image_stream.PutCodebaseImageStream{
-						Client: c,
-						Next:   &clean_tmp_directory.CleanTempDirectory{},
-					},
+					Next:   &clean_tmp_directory.CleanTempDirectory{},
 				},
 			},
 		},
@@ -51,12 +47,9 @@ func createTektonDefChain(c client.Client) handler.CodebaseBranchHandler {
 	return put_branch_in_git.PutBranchInGit{
 		Client: c,
 		Git:    &git.GitProvider{},
-		Next: update_perf_data_sources.UpdatePerfDataSources{
-			Next: put_codebase_image_stream.PutCodebaseImageStream{
-				Client: c,
-				Next:   &clean_tmp_directory.CleanTempDirectory{},
-			},
+		Next: put_codebase_image_stream.PutCodebaseImageStream{
 			Client: c,
+			Next:   &clean_tmp_directory.CleanTempDirectory{},
 		},
 		Service: &service.CodebaseBranchServiceProvider{
 			Client: c,

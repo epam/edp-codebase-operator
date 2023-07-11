@@ -39,11 +39,6 @@ type Repository struct {
 	Url string `json:"url"`
 }
 
-type Perf struct {
-	Name        string   `json:"name"`
-	DataSources []string `json:"dataSources"`
-}
-
 // CodebaseSpec defines the desired state of Codebase.
 type CodebaseSpec struct {
 	// Programming language used in codebase.
@@ -114,10 +109,6 @@ type CodebaseSpec struct {
 	// A name of tool which should be used as CI.
 	CiTool string `json:"ciTool"`
 
-	// +nullable
-	// +optional
-	Perf *Perf `json:"perf,omitempty"`
-
 	// Name of default branch.
 	DefaultBranch string `json:"defaultBranch"`
 
@@ -156,7 +147,6 @@ const (
 	PutCodebaseImageStream           ActionType = "put_codebase_image_stream"
 	TriggerReleaseJob                ActionType = "trigger_release_job"
 	TriggerDeletionJob               ActionType = "trigger_deletion_job"
-	PerfDataSourceCrUpdate           ActionType = "perf_data_source_cr_update"
 )
 
 // Result describes how action were performed.

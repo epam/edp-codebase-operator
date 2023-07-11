@@ -25,7 +25,6 @@ func MakeChain(ctx context.Context, c client.Client) handler.CodebaseHandler {
 		NewPutGitWebRepoUrl(c),
 		NewPutProject(c, gp, &gerrit.SSHGerritClient{}, gitprovider.NewGitProjectProvider),
 		NewPutWebHook(c, resty.New()),
-		NewPutPerfDataSources(c),
 		NewPutDeployConfigs(c, gp),
 		NewPutJenkinsFolder(c),
 		NewPutDefaultCodeBaseBranch(c),

@@ -840,13 +840,6 @@ CodebaseSpec defines the desired state of Codebase.
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b><a href="#codebasespecperf">perf</a></b></td>
-        <td>object</td>
-        <td>
-          <br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
         <td><b><a href="#codebasespecrepository">repository</a></b></td>
         <td>object</td>
         <td>
@@ -901,40 +894,6 @@ CodebaseSpec defines the desired state of Codebase.
           StartFrom is required when versioning type is not default.<br/>
         </td>
         <td>false</td>
-      </tr></tbody>
-</table>
-
-
-### Codebase.spec.perf
-<sup><sup>[↩ Parent](#codebasespec)</sup></sup>
-
-
-
-
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>dataSources</b></td>
-        <td>[]string</td>
-        <td>
-          <br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
-        <td><b>name</b></td>
-        <td>string</td>
-        <td>
-          <br/>
-        </td>
-        <td>true</td>
       </tr></tbody>
 </table>
 
@@ -2404,13 +2363,6 @@ CodebaseSpec defines the desired state of Codebase.
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b><a href="#codebasespecperf-1">perf</a></b></td>
-        <td>object</td>
-        <td>
-          <br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
         <td><b><a href="#codebasespecrepository-1">repository</a></b></td>
         <td>object</td>
         <td>
@@ -2465,40 +2417,6 @@ CodebaseSpec defines the desired state of Codebase.
           <br/>
         </td>
         <td>false</td>
-      </tr></tbody>
-</table>
-
-
-### Codebase.spec.perf
-<sup><sup>[↩ Parent](#codebasespec-1)</sup></sup>
-
-
-
-
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>dataSources</b></td>
-        <td>[]string</td>
-        <td>
-          <br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
-        <td><b>name</b></td>
-        <td>string</td>
-        <td>
-          <br/>
-        </td>
-        <td>true</td>
       </tr></tbody>
 </table>
 

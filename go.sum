@@ -57,8 +57,6 @@ github.com/epam/edp-component-operator v0.1.1-0.20230118145658-7283b2b5cbf9 h1:J
 github.com/epam/edp-component-operator v0.1.1-0.20230118145658-7283b2b5cbf9/go.mod h1:HkT0L+dswHFhCqMD1lFNMsbyLkDqg3ZbCmEdEfRnMxY=
 github.com/epam/edp-jenkins-operator/v2 v2.14.0 h1:d5zzL61JHICsnCaXujnHWfvBBKN4y8p20c0DiKNPWcc=
 github.com/epam/edp-jenkins-operator/v2 v2.14.0/go.mod h1:4regFTi8q6nzKjaIzzb8duCE0MEk2PjM0Tc2MhGlufI=
-github.com/epam/edp-perf-operator/v2 v2.0.0-20230125131439-17d2df0b44eb h1:2/fmcg356E6nw2tWd1sLLZgqiMIlVlNW93jC6YyGiQc=
-github.com/epam/edp-perf-operator/v2 v2.0.0-20230125131439-17d2df0b44eb/go.mod h1:pUOWs2+HFj8jhFPpJHimIujNX1BNozK+7Rn71qjfSmw=
 github.com/evanphx/json-patch v0.5.2/go.mod h1:ZWS5hhDbVDyob71nXKNL0+PWn6ToqBHMikGIFbs31qQ=
 github.com/evanphx/json-patch v5.6.0+incompatible h1:jBYDEEiFBPxA0v50tFdvOzQQTCvpL6mnFh5mB2/l16U=
 github.com/evanphx/json-patch v5.6.0+incompatible/go.mod h1:50XU6AFN0ol/bzJsmQLiYLvXMP4fmwYFNcr97nuDLSk=
