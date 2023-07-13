@@ -52,7 +52,7 @@ func (h *PutDeployConfigs) tryToPushConfigs(ctx context.Context, codebase *codeb
 	log := ctrl.LoggerFrom(ctx)
 
 	if codebase.Status.Git == util.ProjectTemplatesPushedStatus {
-		log.Info("Skip pushing templates to gerrit. Templates already pushed")
+		log.Info("Skip pushing templates. Templates already pushed")
 
 		return nil
 	}

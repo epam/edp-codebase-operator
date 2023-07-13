@@ -24,17 +24,19 @@ _**NOTE:** Operator is platform-independent, that is why there is a unified inst
 In order to install the Codebase Operator, follow the steps below:
 
 1. To add the Helm EPAMEDP Charts for local client, run "helm repo add":
+
      ```bash
      helm repo add epamedp https://epam.github.io/edp-helm-charts/stable
      ```
+
 2. Choose available Helm chart version:
+
      ```bash
      helm search repo epamedp/codebase-operator -l
      NAME                           CHART VERSION   APP VERSION     DESCRIPTION
      epamedp/codebase-operator      2.13.0          2.13.0          A Helm chart for EDP Codebase Operator
      epamedp/codebase-operator      2.12.0          2.12.0          A Helm chart for EDP Codebase Operator
      epamedp/codebase-operator      2.10.1          2.10.1          A Helm chart for EDP Codebase Operator
-     epamedp/codebase-operator      2.10.0          2.10.0          A Helm chart for EDP Codebase Operator
      ```
 
     _**NOTE:** It is highly recommended to use the latest released version._
@@ -42,9 +44,11 @@ In order to install the Codebase Operator, follow the steps below:
 3. Full chart parameters available in [deploy-templates/README.md](deploy-templates/README.md).
 
 4. Install operator in the <edp-project> namespace with the helm command; find below the installation command example:
+
     ```bash
     helm install codebase-operator epamedp/codebase-operator --version <chart_version> --namespace <edp-project> --set name=codebase-operator --set global.edpName=<edp-project> --set global.platform=<platform_type> --set jira.integration=false
     ```
+
 5. Check the <edp-project> namespace that should contain operator deployment with your operator in a running status.
 
 ## Local Development
