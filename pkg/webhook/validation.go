@@ -10,7 +10,7 @@ import (
 var allowedCodebaseSettings = map[string][]string{
 	"add_repo_strategy": {"create", "clone", "import"},
 	"language": {"java", "dotnet", "javascript",
-		"groovy-pipeline", "other", "go", "python", "terraform", "rego", "container", "helm", "csharp"},
+		"groovy-pipeline", "other", "go", "python", "terraform", "rego", "container", "helm", "csharp", "hcl"},
 }
 
 func IsCodebaseValid(codebase *codebaseApi.Codebase) error {
