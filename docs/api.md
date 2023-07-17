@@ -795,6 +795,8 @@ CodebaseSpec defines the desired state of Codebase.
         <td>string</td>
         <td>
           <br/>
+          <br/>
+            <i>Default</i>: helm-chart<br/>
         </td>
         <td>false</td>
       </tr><tr>

@@ -90,6 +90,7 @@ type CodebaseSpec struct {
 	JobProvisioning *string `json:"jobProvisioning"`
 
 	// +optional
+	// +kubebuilder:default:=helm-chart
 	DeploymentScript string `json:"deploymentScript,omitempty"`
 
 	Versioning Versioning `json:"versioning"`

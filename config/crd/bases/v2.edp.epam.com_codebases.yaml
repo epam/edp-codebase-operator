@@ -76,6 +76,7 @@ spec:
                 description: Name of default branch.
                 type: string
               deploymentScript:
+                default: helm-chart
                 type: string
               description:
                 description: A short description of codebase.
