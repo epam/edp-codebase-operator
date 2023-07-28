@@ -4,6 +4,7 @@ const (
 	HelmChartDeploymentScriptType = "helm-chart"
 
 	ChartTemplate       = "Chart.tmpl"
+	ReadmeTemplate      = "README.tmpl"
 	ChartValuesTemplate = "values.tmpl"
 	TemplateFolder      = "templates"
 	TestFolder          = "tests"

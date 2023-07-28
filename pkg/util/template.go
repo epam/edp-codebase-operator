@@ -13,6 +13,7 @@ import (
 const (
 	logDirCreatedMessage = "directory is created"
 	logPathKey           = "path"
+	fileLogKey           = "file"
 )
 
 func CopyHelmChartTemplates(deploymentScript, templatesDest, assetsDir string, config *model.ConfigGoTemplating) error {
@@ -36,7 +37,7 @@ func CopyHelmChartTemplates(deploymentScript, templatesDest, assetsDir string, c
 		return fmt.Errorf("failed to create Values file %q: %w", valuesFileName, err)
 	}
 
-	log.Info("file is created", "file", valuesFileName)
+	log.Info("file is created", fileLogKey, valuesFileName)
 
 	chartFileName := path.Join(templatesDest, "Chart.yaml")
 
@@ -45,7 +46,16 @@ func CopyHelmChartTemplates(deploymentScript, templatesDest, assetsDir string, c
 		return fmt.Errorf("failed to create chart file %q: %w", chartFileName, err)
 	}
 
-	log.Info("file is created", "file", chartFileName)
+	log.Info("file is created", fileLogKey, chartFileName)
+
+	readmeFileName := path.Join(templatesDest, "README.md")
+
+	readmeFile, err := os.Create(readmeFileName)
+	if err != nil {
+		return fmt.Errorf("failed to create chart file %q: %w", readmeFileName, err)
+	}
+
+	log.Info("file is created", fileLogKey, readmeFileName)
 
 	templateFolder := path.Join(templatesDest, TemplateFolder)
 
@@ -74,6 +84,21 @@ func CopyHelmChartTemplates(deploymentScript, templatesDest, assetsDir string, c
 
 	log.Info("files were copied", "from", templateSourceFolder, "to", templateFolder)
 
+	readmegoFileName := path.Join(templateBasePath, "README.md.gotmpl")
+
+	bytesRead, err := os.ReadFile(readmegoFileName)
+	if err != nil {
+		return fmt.Errorf("failed to read file %q: %w", readmegoFileName, err)
+	}
+
+	readmeFileNameCopy := path.Join(templatesDest, "README.md.gotmpl")
+
+	if err = os.WriteFile(readmeFileNameCopy, bytesRead, readWriteMode); err != nil {
+		return fmt.Errorf("failed to write file %q: %w", readmeFileNameCopy, err)
+	}
+
+	log.Info("file is copied", fileLogKey, readmeFileNameCopy)
+
 	testsSourceFolder := path.Join(templateBasePath, TemplateFolder, TestFolder)
 
 	err = CopyFiles(testsSourceFolder, testFolder)
@@ -99,6 +124,11 @@ func CopyHelmChartTemplates(deploymentScript, templatesDest, assetsDir string, c
 	}
 
 	err = renderTemplate(chartFile, path.Join(templateBasePath, ChartTemplate), ChartTemplate, config)
+	if err != nil {
+		return err
+	}
+
+	err = renderTemplate(readmeFile, path.Join(templateBasePath, ReadmeTemplate), ReadmeTemplate, config)
 	if err != nil {
 		return err
 	}

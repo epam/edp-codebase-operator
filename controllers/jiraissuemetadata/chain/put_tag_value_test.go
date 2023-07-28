@@ -195,7 +195,7 @@ func TestPutTagValue_ServeRequest(t *testing.T) {
 					}, nil)
 				m.On("CreateFixVersionValue", testify.Anything, 1, "0.0.1-snapshot-java11").
 					Return(errors.New("failed"))
-				m.On("CreateComponentValue", testify.Anything, 1, "java11-mvn-create").
+				m.On("CreateComponentValue", testify.Anything, 1, "java11-mvn-create").Maybe().
 					Return(nil)
 
 				return m
