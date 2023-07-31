@@ -105,6 +105,7 @@ func (s *PutWebHook) ServeRequest(ctx context.Context, codebase *codebaseApi.Cod
 		projectID,
 		string(secret.Data[util.GitServerSecretWebhookSecretField]),
 		webHookURL,
+		gitServer.Spec.SkipWebhookSSLVerification,
 	)
 	if err != nil {
 		return s.processCodebaseError(codebase, fmt.Errorf("failed to create web hook: %w", err))

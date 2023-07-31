@@ -30,6 +30,10 @@ type GitServerSpec struct {
 	// +kubebuilder:default:=gerrit
 	// +optional
 	GitProvider string `json:"gitProvider,omitempty"`
+
+	// SkipWebhookSSLVerification is a flag to skip webhook tls verification.
+	// +optional
+	SkipWebhookSSLVerification bool `json:"skipWebhookSSLVerification"`
 }
 
 // GitServerStatus defines the observed state of GitServer.

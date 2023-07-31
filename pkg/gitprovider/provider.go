@@ -19,6 +19,7 @@ type GitWebHookProvider interface {
 		projectID,
 		webHookSecret,
 		webHookURL string,
+		skipTLS bool,
 	) (*WebHook, error)
 	CreateWebHookIfNotExists(
 		ctx context.Context,
@@ -27,6 +28,7 @@ type GitWebHookProvider interface {
 		projectID,
 		webHookSecret,
 		webHookURL string,
+		skipTLS bool,
 	) (*WebHook, error)
 	GetWebHook(
 		ctx context.Context,

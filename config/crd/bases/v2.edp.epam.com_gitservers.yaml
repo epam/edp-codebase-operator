@@ -70,6 +70,10 @@ spec:
                 type: integer
               nameSshKeySecret:
                 type: string
+              skipWebhookSSLVerification:
+                description: SkipWebhookSSLVerification is a flag to skip webhook
+                  tls verification.
+                type: boolean
               sshPort:
                 format: int32
                 type: integer

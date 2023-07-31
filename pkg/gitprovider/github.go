@@ -50,6 +50,7 @@ func (c *GitHubClient) CreateWebHook(
 	projectID,
 	webHookSecret,
 	webHookURL string,
+	skipTLS bool,
 ) (*WebHook, error) {
 	owner, repo, err := parseProjectID(projectID)
 	if err != nil {
@@ -58,6 +59,11 @@ func (c *GitHubClient) CreateWebHook(
 
 	c.restyClient.HostURL = githubURL
 	webHook := &gitHubWebHook{}
+	insecure := 0
+
+	if skipTLS {
+		insecure = 1
+	}
 
 	resp, err := c.restyClient.
 		R().
@@ -70,7 +76,7 @@ func (c *GitHubClient) CreateWebHook(
 			"config": map[string]string{
 				"url":          webHookURL,
 				"content_type": "json",
-				"insecure_ssl": "0",
+				"insecure_ssl": strconv.Itoa(insecure),
 				"secret":       webHookSecret,
 			},
 		}).
@@ -100,6 +106,7 @@ func (c *GitHubClient) CreateWebHookIfNotExists(
 	projectID,
 	webHookSecret,
 	webHookURL string,
+	skipTLS bool,
 ) (*WebHook, error) {
 	webHooks, err := c.GetWebHooks(ctx, githubURL, token, projectID)
 	if err != nil {
@@ -112,7 +119,7 @@ func (c *GitHubClient) CreateWebHookIfNotExists(
 		}
 	}
 
-	return c.CreateWebHook(ctx, githubURL, token, projectID, webHookSecret, webHookURL)
+	return c.CreateWebHook(ctx, githubURL, token, projectID, webHookSecret, webHookURL, skipTLS)
 }
 
 // GetWebHook gets a webhook by ID for the given project.

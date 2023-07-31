@@ -52,6 +52,7 @@ func (c *GitLabClient) CreateWebHook(
 	projectID,
 	webHookSecret,
 	webHookURL string,
+	skipTLS bool,
 ) (*WebHook, error) {
 	c.restyClient.HostURL = gitlabURL
 	webHook := &WebHook{}
@@ -61,11 +62,12 @@ func (c *GitLabClient) CreateWebHook(
 		SetContext(ctx).
 		SetHeader(gitLabTokenHeaderName, token).
 		SetBody(map[string]interface{}{
-			"url":                   webHookURL,
-			"merge_requests_events": true,
-			"note_events":           true,
-			"push_events":           false,
-			"token":                 webHookSecret,
+			"url":                     webHookURL,
+			"merge_requests_events":   true,
+			"note_events":             true,
+			"push_events":             false,
+			"token":                   webHookSecret,
+			"enable_ssl_verification": !skipTLS,
 		}).
 		SetPathParams(map[string]string{
 			projectIDPathParam: projectID,
@@ -92,6 +94,7 @@ func (c *GitLabClient) CreateWebHookIfNotExists(
 	projectID,
 	webHookSecret,
 	webHookURL string,
+	skipTLS bool,
 ) (*WebHook, error) {
 	webHooks, err := c.GetWebHooks(ctx, gitlabURL, token, projectID)
 	if err != nil {
@@ -104,7 +107,7 @@ func (c *GitLabClient) CreateWebHookIfNotExists(
 		}
 	}
 
-	return c.CreateWebHook(ctx, gitlabURL, token, projectID, webHookSecret, webHookURL)
+	return c.CreateWebHook(ctx, gitlabURL, token, projectID, webHookSecret, webHookURL, skipTLS)
 }
 
 // GetWebHook gets a webhook by ID for the given project.

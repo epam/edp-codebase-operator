@@ -1157,6 +1157,13 @@ GitServerSpec defines the desired state of GitServer.
             <i>Default</i>: git<br/>
         </td>
         <td>false</td>
+      </tr><tr>
+        <td><b>skipWebhookSSLVerification</b></td>
+        <td>boolean</td>
+        <td>
+          SkipWebhookSSLVerification is a flag to skip webhook tls verification.<br/>
+        </td>
+        <td>false</td>
       </tr></tbody>
 </table>
 

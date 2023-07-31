@@ -64,7 +64,7 @@ func TestGitHubClient_CreateWebHook(t *testing.T) {
 
 			c := NewGitHubClient(restyClient)
 
-			got, err := c.CreateWebHook(context.Background(), "url", "token", tt.projectID, "secret", "webHookURL")
+			got, err := c.CreateWebHook(context.Background(), "url", "token", tt.projectID, "secret", "webHookURL", false)
 
 			tt.wantErr(t, err)
 			if tt.errContains != "" {
@@ -386,7 +386,7 @@ func TestGitHubClient_CreateWebHookIfNotExists(t *testing.T) {
 
 			c := NewGitHubClient(restyClient)
 
-			got, err := c.CreateWebHookIfNotExists(context.Background(), "url", "token", tt.projectID, "secret", tt.webHookURL)
+			got, err := c.CreateWebHookIfNotExists(context.Background(), "url", "token", tt.projectID, "secret", tt.webHookURL, false)
 
 			tt.wantErr(t, err)
 			if tt.errContains != "" {
