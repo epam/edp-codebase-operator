@@ -53,3 +53,47 @@ func TestCopyTemplate_ShouldFailOnUnsupportedDeploymemntType(t *testing.T) {
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "Unsupported deployment type")
 }
+
+func TestCopyHelmChartTemplates(t *testing.T) {
+	tmp := t.TempDir()
+
+	type args struct {
+		deploymentScript string
+		templatesDest    string
+		assetsDir        string
+		config           *model.ConfigGoTemplating
+	}
+
+	tests := []struct {
+		name    string
+		args    args
+		wantErr require.ErrorAssertionFunc
+	}{
+		{
+			name: "invalid assets dir",
+			args: args{
+				deploymentScript: HelmChartDeploymentScriptType,
+				templatesDest:    tmp,
+				assetsDir:        "",
+				config:           &model.ConfigGoTemplating{},
+			},
+			wantErr: func(t require.TestingT, err error, i ...interface{}) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "failed to read a content of directory")
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := CopyHelmChartTemplates(
+				tt.args.deploymentScript,
+				tt.args.templatesDest,
+				tt.args.assetsDir,
+				tt.args.config,
+			)
+
+			tt.wantErr(t, err)
+		})
+	}
+}
