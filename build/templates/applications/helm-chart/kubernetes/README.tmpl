@@ -4,7 +4,7 @@
 
 A Helm chart for Kubernetes
 
-**Homepage:** <https://github.com/epmd-edp/javascript-npm-react.git>
+**Homepage:** <{{.GitURL}}>
 
 ## Maintainers
 
@@ -14,7 +14,7 @@ A Helm chart for Kubernetes
 
 ## Source Code
 
-* <https://github.com/epmd-edp/javascript-npm-react.git>
+* <{{.GitURL}}>
 
 ## Values
 
@@ -30,7 +30,7 @@ A Helm chart for Kubernetes
 | image.pullPolicy | string | `"IfNotPresent"` |  |
 | image.repository | string | `"{{.Name}}"` |  |
 | image.tag | string | `""` | Overrides the image tag whose default is the chart appVersion. |
-| imagePullSecrets | list | `[]` |  |
+| imagePullSecrets[0].name | string | `"regcred"` |  |
 | ingress.annotations | object | `{}` |  |
 | ingress.dnsWildcard | string | `"{{.DnsWildcard}}"` |  |
 | ingress.enabled | bool | `false` |  |
