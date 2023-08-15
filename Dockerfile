@@ -1,4 +1,4 @@
-FROM alpine:3.18.2
+FROM alpine:3.18.3
 
 ENV ASSETS_DIR=/usr/local/bin \
     HOME=/home/codebase-operator \
