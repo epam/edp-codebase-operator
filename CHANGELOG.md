@@ -1,20 +1,31 @@
 <a name="unreleased"></a>
 ## [Unreleased]
 
+
+<a name="v2.17.0"></a>
+## [v2.17.0] - 2023-08-15
 ### Features
 
+- Align template for helm-docs [EPMDEDP-10380](https://jiraeu.epam.com/browse/EPMDEDP-10380)
 - Make Codebase GitUrlPath required [EPMDEDP-11431](https://jiraeu.epam.com/browse/EPMDEDP-11431)
+- Render template for helm-docs [EPMDEDP-11537](https://jiraeu.epam.com/browse/EPMDEDP-11537)
 - Make Codebase versioning StartFrom required for edp version type [EPMDEDP-11958](https://jiraeu.epam.com/browse/EPMDEDP-11958)
 - Create Sonar config file during the import strategy [EPMDEDP-11993](https://jiraeu.epam.com/browse/EPMDEDP-11993)
 - Make Codebase framework mandatory field [EPMDEDP-11995](https://jiraeu.epam.com/browse/EPMDEDP-11995)
 - Disallow the use of '--' characters in the Codebase name [EPMDEDP-12008](https://jiraeu.epam.com/browse/EPMDEDP-12008)
 - Add additional printer columns for codebase resources [EPMDEDP-12184](https://jiraeu.epam.com/browse/EPMDEDP-12184)
+- Add SkipWebhookSSLVerification parameter to GitServer [EPMDEDP-12222](https://jiraeu.epam.com/browse/EPMDEDP-12222)
+- Add imagePullSecrets usage by default [EPMDEDP-12241](https://jiraeu.epam.com/browse/EPMDEDP-12241)
+- Introduce Template management support [EPMDEDP-12267](https://jiraeu.epam.com/browse/EPMDEDP-12267)
+- Remove perf-operator dependency [EPMDEDP-12289](https://jiraeu.epam.com/browse/EPMDEDP-12289)
 
 ### Bug Fixes
 
+- Increase test coverage for CopyHelmChartTemplates [EPMDEDP-11537](https://jiraeu.epam.com/browse/EPMDEDP-11537)
 - Codebase creation failed for an empty project [EPMDEDP-12137](https://jiraeu.epam.com/browse/EPMDEDP-12137)
 - Set default codebase branch for GitLab/GitHub [EPMDEDP-12145](https://jiraeu.epam.com/browse/EPMDEDP-12145)
 - Jira integration failed after the update to Jira 9.4.5 [EPMDEDP-12194](https://jiraeu.epam.com/browse/EPMDEDP-12194)
+- Set default deploymentScript for codebase to helm-chart [EPMDEDP-12267](https://jiraeu.epam.com/browse/EPMDEDP-12267)
 
 ### Code Refactoring
 
@@ -22,11 +33,19 @@
 
 ### Routine
 
+- Update readme template [EPMDEDP-10380](https://jiraeu.epam.com/browse/EPMDEDP-10380)
 - Update current development version [EPMDEDP-11826](https://jiraeu.epam.com/browse/EPMDEDP-11826)
 - Remove liveness and readiness probe hardcode from helm templates [EPMDEDP-11986](https://jiraeu.epam.com/browse/EPMDEDP-11986)
-- Fix sonar exclusions for git.go [EPMDEDP-12162](https://jiraeu.epam.com/browse/EPMDEDP-12162)
 - Disable git provider from sonar code coverage [EPMDEDP-12162](https://jiraeu.epam.com/browse/EPMDEDP-12162)
+- Fix sonar exclusions for git.go [EPMDEDP-12162](https://jiraeu.epam.com/browse/EPMDEDP-12162)
 - Add printcolumn in CRs for better UX [EPMDEDP-12184](https://jiraeu.epam.com/browse/EPMDEDP-12184)
+- Update logging output [EPMDEDP-12222](https://jiraeu.epam.com/browse/EPMDEDP-12222)
+- Bump alpine docker image to 3.18.2 [EPMDEDP-12253](https://jiraeu.epam.com/browse/EPMDEDP-12253)
+- Bump alpine docker image to 3.18.2 [EPMDEDP-12253](https://jiraeu.epam.com/browse/EPMDEDP-12253)
+- Add additional printcolumns for Template [EPMDEDP-12267](https://jiraeu.epam.com/browse/EPMDEDP-12267)
+- Remove deprecated resources Gittag and Imagestreamtag [EPMDEDP-12283](https://jiraeu.epam.com/browse/EPMDEDP-12283)
+- Add HCL language support [EPMDEDP-12291](https://jiraeu.epam.com/browse/EPMDEDP-12291)
+- Bump alpine docker image to 3.18.3 [EPMDEDP-12461](https://jiraeu.epam.com/browse/EPMDEDP-12461)
 
 
 <a name="v2.16.0"></a>
@@ -57,7 +76,6 @@
 ### Routine
 
 - Update current development version [EPMDEDP-11472](https://jiraeu.epam.com/browse/EPMDEDP-11472)
-- Upgrade alpine image version to 3.16.4 [EPMDEDP-11764](https://jiraeu.epam.com/browse/EPMDEDP-11764)
 - Refactor codebase template chart [EPMDEDP-11846](https://jiraeu.epam.com/browse/EPMDEDP-11846)
 - Remove unused templates [EPMDEDP-11915](https://jiraeu.epam.com/browse/EPMDEDP-11915)
 - Add templates for github issues [EPMDEDP-11928](https://jiraeu.epam.com/browse/EPMDEDP-11928)
@@ -115,6 +133,7 @@
 - Updated cd-pipeline-operator dependency [EPMDEDP-11275](https://jiraeu.epam.com/browse/EPMDEDP-11275)
 - Update git-chglog for codebase-operator [EPMDEDP-11518](https://jiraeu.epam.com/browse/EPMDEDP-11518)
 - Bump golang.org/x/net from 0.5.0 to 0.8.0 [EPMDEDP-11578](https://jiraeu.epam.com/browse/EPMDEDP-11578)
+- Upgrade alpine image version to 3.16.4 [EPMDEDP-11764](https://jiraeu.epam.com/browse/EPMDEDP-11764)
 
 
 <a name="v2.14.1"></a>
@@ -415,7 +434,8 @@ Jenkins pipelines for code-review, build, create-release flow.
 - [MDTUDDM-673] Save git status in the intermediate operations
 
 
-[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.16.0...HEAD
+[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.17.0...HEAD
+[v2.17.0]: https://github.com/epam/edp-codebase-operator/compare/v2.16.0...v2.17.0
 [v2.16.0]: https://github.com/epam/edp-codebase-operator/compare/v2.15.0...v2.16.0
 [v2.15.0]: https://github.com/epam/edp-codebase-operator/compare/v2.14.1...v2.15.0
 [v2.14.1]: https://github.com/epam/edp-codebase-operator/compare/v2.14.0...v2.14.1
