@@ -3,14 +3,14 @@ kind: ValidatingWebhookConfiguration
 metadata:
   labels:
     {{- include "codebase-operator.labels" . | nindent 4 }}
-  name: edp-codebase-operator-validating-webhook-configuration-{{ .Values.global.edpName }}
+  name: edp-codebase-operator-validating-webhook-configuration-{{ .Release.Namespace }}
 webhooks:
   - admissionReviewVersions:
       - v1
     clientConfig:
       service:
         name: edp-codebase-operator-webhook-service
-        namespace: {{ .Values.global.edpName }}
+        namespace: {{ .Release.Namespace }}
         path: /validate-v2-edp-epam-com-v1-codebase
     failurePolicy: Fail
     name: vcodebase.kb.io
@@ -19,7 +19,7 @@ webhooks:
         - key: kubernetes.io/metadata.name
           operator: In
           values:
-            - {{ .Values.global.edpName }}
+            - {{ .Release.Namespace }}
     rules:
       - apiGroups:
           - v2.edp.epam.com

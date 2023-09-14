@@ -2,7 +2,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  namespace: {{ .Values.global.edpName }}
+  namespace: {{ .Release.Namespace }}
   labels:
     {{- include "codebase-operator.labels" . | nindent 4 }}
   name: edp-{{ .Values.name }}

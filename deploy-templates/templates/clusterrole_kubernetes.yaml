@@ -4,7 +4,7 @@ kind: ClusterRole
 metadata:
   labels:
     {{- include "codebase-operator.labels" . | nindent 4 }}
-  name: edp-{{ .Values.name }}-{{ .Values.global.edpName }}
+  name: edp-{{ .Values.name }}-{{ .Release.Namespace }}
 rules:
 - apiGroups:
     - admissionregistration.k8s.io
