@@ -31,7 +31,7 @@ A Helm chart for EDP Codebase Operator
 | image.tag | string | `nil` | EDP codebase-operator Docker image tag. The released image can be found on [Dockerhub](https://hub.docker.com/r/epamedp/codebase-operator/tags) |
 | imagePullPolicy | string | `"IfNotPresent"` |  |
 | jira.apiUrl | string | `"https://jiraeu-api.example.com"` | API URL for development |
-| jira.credentialName | string | `"jira-user"` | Name of secret with credentials to Jira server |
+| jira.credentialName | string | `"ci-jira"` | Name of secret with credentials to Jira server |
 | jira.integration | bool | `false` | Flag to enable/disable Jira integration |
 | jira.name | string | `"jira"` | JiraServer CR name |
 | jira.rootUrl | string | `"https://jiraeu.example.com"` | URL to Jira server |

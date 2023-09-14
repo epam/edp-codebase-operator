@@ -39,4 +39,4 @@ jira:
   # -- URL to Jira server
   rootUrl: "https://jiraeu.example.com"
   # -- Name of secret with credentials to Jira server
-  credentialName: "jira-user"
+  credentialName: "ci-jira"
