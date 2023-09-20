@@ -2,8 +2,15 @@
 ## [Unreleased]
 
 
-<a name="v2.17.0"></a>
-## [v2.17.0] - 2023-08-17
+<a name="v2.18.0"></a>
+## v2.18.0 - 2023-09-14
+### Code Refactoring
 
-[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.17.0...HEAD
-[v2.17.0]: https://github.com/epam/edp-codebase-operator/compare/v2.16.0...v2.17.0
+- Replace edpName with helm Release Namespace value ([#10](https://github.com/epam/edp-codebase-operator/issues/10))
+
+### Routine
+
+- Align secret name for new secret approach ([#65](https://github.com/epam/edp-codebase-operator/issues/65))
+
+
+[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.18.0...HEAD
