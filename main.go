@@ -154,8 +154,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	gitServerCtrl := gitserver.NewReconcileGitServer(mgr.GetClient(), ctrlLog)
-	if err = gitServerCtrl.SetupWithManager(mgr); err != nil {
+	if err = gitserver.NewReconcileGitServer(mgr.GetClient()).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, logFailCtrlCreateMessage, "controller", "git-server")
 		os.Exit(1)
 	}

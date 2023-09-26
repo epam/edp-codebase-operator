@@ -1185,61 +1185,17 @@ GitServerStatus defines the observed state of GitServer.
         </tr>
     </thead>
     <tbody><tr>
-        <td><b>action</b></td>
-        <td>string</td>
-        <td>
-          The last Action was performed.<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
-        <td><b>available</b></td>
+        <td><b>connected</b></td>
         <td>boolean</td>
         <td>
-          This flag indicates neither JiraServer are initialized and ready to work. Defaults to false.<br/>
+          Connected shows if operator is connected to git server.<br/>
         </td>
-        <td>true</td>
+        <td>false</td>
       </tr><tr>
-        <td><b>last_time_updated</b></td>
+        <td><b>error</b></td>
         <td>string</td>
         <td>
-          Information when the last time the action were performed.<br/>
-          <br/>
-            <i>Format</i>: date-time<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
-        <td><b>result</b></td>
-        <td>string</td>
-        <td>
-          A result of an action which were performed. - "success": action where performed successfully; - "error": error has occurred;<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
-        <td><b>status</b></td>
-        <td>string</td>
-        <td>
-          Specifies a current status of GitServer.<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
-        <td><b>username</b></td>
-        <td>string</td>
-        <td>
-          Name of user who made a last change.<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
-        <td><b>value</b></td>
-        <td>string</td>
-        <td>
-          Specifies a current state of GitServer.<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
-        <td><b>detailed_message</b></td>
-        <td>string</td>
-        <td>
-          Detailed information regarding action result which were performed<br/>
+          Error represents error message if something went wrong.<br/>
         </td>
         <td>false</td>
       </tr></tbody>

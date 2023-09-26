@@ -38,40 +38,20 @@ type GitServerSpec struct {
 
 // GitServerStatus defines the observed state of GitServer.
 type GitServerStatus struct {
-	// This flag indicates neither JiraServer are initialized and ready to work. Defaults to false.
-	Available bool `json:"available"`
-
-	// Information when the last time the action were performed.
-	LastTimeUpdated metaV1.Time `json:"last_time_updated"`
-
-	// Specifies a current status of GitServer.
-	Status string `json:"status"`
-
-	// Name of user who made a last change.
-	Username string `json:"username"`
-
-	// The last Action was performed.
-	Action string `json:"action"`
-
-	// A result of an action which were performed.
-	// - "success": action where performed successfully;
-	// - "error": error has occurred;
-	Result string `json:"result"`
-
-	// Detailed information regarding action result
-	// which were performed
+	// Error represents error message if something went wrong.
 	// +optional
-	DetailedMessage string `json:"detailed_message,omitempty"`
+	Error string `json:"error,omitempty"`
 
-	// Specifies a current state of GitServer.
-	Value string `json:"value"`
+	// Connected shows if operator is connected to git server.
+	// +optional
+	Connected bool `json:"connected"`
 }
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:shortName=gs
 // +kubebuilder:storageversion
-// +kubebuilder:printcolumn:name="Available",type="boolean",JSONPath=".status.available",description="Is resource available"
+// +kubebuilder:printcolumn:name="Connected",type="boolean",JSONPath=".status.connected",description="Is connected to git server"
 // +kubebuilder:printcolumn:name="Host",type="string",JSONPath=".spec.gitHost",description="GitSever host"
 // +kubebuilder:printcolumn:name="Git Provider",type="string",JSONPath=".spec.gitProvider",description="Git Provider type"
 

@@ -12,10 +12,10 @@ func TestConvertToGitServer(t *testing.T) {
 	t.Parallel()
 
 	gs := ConvertToGitServer(&codebaseApi.GitServer{
-		Status: codebaseApi.GitServerStatus{
-			Status: "hello world",
+		Spec: codebaseApi.GitServerSpec{
+			GitHost: "github.com",
 		},
 	})
 
-	assert.Equal(t, gs.ActionLog.Event, "hello_world")
+	assert.Equal(t, gs.GitHost, "github.com")
 }

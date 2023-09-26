@@ -1,7 +1,6 @@
 package model
 
 import (
-	"strings"
 	"time"
 
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -46,31 +45,13 @@ func ConvertToGitServer(k8sObj *codebaseApi.GitServer) *GitServer {
 
 	spec := k8sObj.Spec
 
-	actionLog := convertGitServerActionLog(&k8sObj.Status)
-
 	return &GitServer{
 		GitHost:          spec.GitHost,
 		GitUser:          spec.GitUser,
 		HttpsPort:        spec.HttpsPort,
 		SshPort:          spec.SshPort,
 		NameSshKeySecret: spec.NameSshKeySecret,
-		ActionLog:        *actionLog,
 		Namespace:        k8sObj.Namespace,
 		Name:             k8sObj.Name,
 	}
-}
-
-func convertGitServerActionLog(status *codebaseApi.GitServerStatus) *ActionLog {
-	return &ActionLog{
-		Event:           formatStatus(status.Status),
-		DetailedMessage: status.DetailedMessage,
-		Username:        status.Username,
-		UpdatedAt:       status.LastTimeUpdated.Time,
-		Action:          status.Action,
-		Result:          status.Result,
-	}
-}
-
-func formatStatus(status string) string {
-	return strings.ToLower(strings.ReplaceAll(status, " ", "_"))
 }

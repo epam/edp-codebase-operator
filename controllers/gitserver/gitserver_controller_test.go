@@ -4,12 +4,11 @@ import (
 	"context"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	coreV1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -30,7 +29,6 @@ func TestReconcileGitServer_Reconcile_ShouldPassNotFound(t *testing.T) {
 	scheme.AddKnownTypes(codebaseApi.GroupVersion, gs)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(gs).Build()
 
-	// request
 	req := reconcile.Request{
 		NamespacedName: types.NamespacedName{
 			Name:      "NewGitServer",
@@ -40,10 +38,9 @@ func TestReconcileGitServer_Reconcile_ShouldPassNotFound(t *testing.T) {
 
 	r := ReconcileGitServer{
 		client: fakeCl,
-		log:    logr.Discard(),
 	}
 
-	res, err := r.Reconcile(context.TODO(), req)
+	res, err := r.Reconcile(ctrl.LoggerInto(context.Background(), logr.Discard()), req)
 
 	assert.NoError(t, err)
 	assert.False(t, res.Requeue)
@@ -53,7 +50,6 @@ func TestReconcileGitServer_Reconcile_ShouldFailNotFound(t *testing.T) {
 	scheme := runtime.NewScheme()
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects().Build()
 
-	// request
 	req := reconcile.Request{
 		NamespacedName: types.NamespacedName{
 			Name:      "NewGitServer",
@@ -63,10 +59,9 @@ func TestReconcileGitServer_Reconcile_ShouldFailNotFound(t *testing.T) {
 
 	r := ReconcileGitServer{
 		client: fakeCl,
-		log:    logr.Discard(),
 	}
 
-	res, err := r.Reconcile(context.TODO(), req)
+	res, err := r.Reconcile(ctrl.LoggerInto(context.Background(), logr.Discard()), req)
 
 	assert.Error(t, err)
 
@@ -89,10 +84,11 @@ func TestReconcileGitServer_Reconcile_ShouldFailToGetSecret(t *testing.T) {
 		},
 	}
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(codebaseApi.GroupVersion, gs)
+	require.NoError(t, corev1.AddToScheme(scheme))
+	require.NoError(t, codebaseApi.AddToScheme(scheme))
+
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(gs).Build()
 
-	// request
 	req := reconcile.Request{
 		NamespacedName: types.NamespacedName{
 			Name:      "NewGitServer",
@@ -102,18 +98,17 @@ func TestReconcileGitServer_Reconcile_ShouldFailToGetSecret(t *testing.T) {
 
 	r := ReconcileGitServer{
 		client: fakeCl,
-		log:    logr.Discard(),
 	}
 
-	res, err := r.Reconcile(context.TODO(), req)
+	logger := platform.NewLoggerMock()
+	loggerSink, ok := logger.GetSink().(*platform.LoggerMock)
+	require.True(t, ok)
 
-	assert.Error(t, err)
+	_, err := r.Reconcile(ctrl.LoggerInto(context.Background(), logger), req)
 
-	if !strings.Contains(err.Error(), "failed to get ssh-secret secret") {
-		t.Fatalf("wrong error returned: %s", err.Error())
-	}
-
-	assert.False(t, res.Requeue)
+	require.NoError(t, err)
+	require.Error(t, loggerSink.LastError())
+	assert.Contains(t, loggerSink.LastError().Error(), "failed to get secret ssh-secret")
 }
 
 func TestReconcileGitServer_UpdateStatus_ShouldPassWithSuccess(t *testing.T) {
@@ -133,16 +128,20 @@ func TestReconcileGitServer_UpdateStatus_ShouldPassWithSuccess(t *testing.T) {
 
 	r := ReconcileGitServer{
 		client: fakeCl,
-		log:    logr.Discard(),
 	}
 
-	err := r.updateStatus(context.TODO(), fakeCl, gs, true)
+	err := r.updateGitServerStatus(
+		ctrl.LoggerInto(context.Background(), logr.Discard()),
+		gs,
+		codebaseApi.GitServerStatus{
+			Connected: true,
+		},
+	)
 
 	assert.NoError(t, err)
-	assert.Equal(t, gs.Status.Result, "success")
 }
 
-func TestReconcileGitServer_UpdateStatus_ShouldPassWithFailure(t *testing.T) {
+func TestReconcileGitServer_UpdateStatus_Failure(t *testing.T) {
 	gs := &codebaseApi.GitServer{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "NewGitServer",
@@ -159,13 +158,17 @@ func TestReconcileGitServer_UpdateStatus_ShouldPassWithFailure(t *testing.T) {
 
 	r := ReconcileGitServer{
 		client: fakeCl,
-		log:    logr.Discard(),
 	}
 
-	err := r.updateStatus(context.TODO(), fakeCl, gs, false)
+	err := r.updateGitServerStatus(
+		ctrl.LoggerInto(context.Background(), logr.Discard()),
+		&codebaseApi.GitServer{},
+		codebaseApi.GitServerStatus{
+			Connected: true,
+		},
+	)
 
-	assert.NoError(t, err)
-	assert.Equal(t, gs.Status.Result, "error")
+	assert.Error(t, err)
 }
 
 const testKey = `-----BEGIN OPENSSH PRIVATE KEY-----
@@ -220,10 +223,10 @@ func TestReconcileGitServer_ServerUnavailable(t *testing.T) {
 	}
 	scheme := runtime.NewScheme()
 	scheme.AddKnownTypes(codebaseApi.GroupVersion, gs)
-	err := coreV1.AddToScheme(scheme)
+	err := corev1.AddToScheme(scheme)
 	assert.NoError(t, err)
 
-	secret := coreV1.Secret{ObjectMeta: metaV1.ObjectMeta{Name: "ssh-secret", Namespace: gs.Namespace}, Data: map[string][]byte{
+	secret := corev1.Secret{ObjectMeta: metaV1.ObjectMeta{Name: "ssh-secret", Namespace: gs.Namespace}, Data: map[string][]byte{
 		util.PrivateSShKeyName: []byte(testKey),
 	}}
 
@@ -235,7 +238,6 @@ func TestReconcileGitServer_ServerUnavailable(t *testing.T) {
 
 	r := ReconcileGitServer{
 		client: fakeCl,
-		log:    logger,
 	}
 
 	req := reconcile.Request{
@@ -247,15 +249,14 @@ func TestReconcileGitServer_ServerUnavailable(t *testing.T) {
 
 	res, err := r.Reconcile(ctrl.LoggerInto(context.Background(), logger), req)
 	assert.NoError(t, err)
-	assert.Equal(t, res.RequeueAfter, time.Second*30)
-
-	_, ok = loggerSink.InfoMessages()["GitServer does not have connection, will try again later"]
-	assert.True(t, ok)
+	assert.Equal(t, res.RequeueAfter, defaultRequeueTime)
+	require.Error(t, loggerSink.LastError())
+	assert.Contains(t, loggerSink.LastError().Error(), "failed to establish connection to Git Server")
 }
 
 func TestReconcileGitServer_InvalidSSHKey(t *testing.T) {
 	scheme := runtime.NewScheme()
-	err := coreV1.AddToScheme(scheme)
+	err := corev1.AddToScheme(scheme)
 	require.NoError(t, err)
 
 	err = codebaseApi.AddToScheme(scheme)
@@ -272,7 +273,7 @@ func TestReconcileGitServer_InvalidSSHKey(t *testing.T) {
 		},
 	}
 
-	secret := &coreV1.Secret{
+	secret := &corev1.Secret{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "ssh-secret",
 			Namespace: gs.Namespace,
@@ -284,11 +285,8 @@ func TestReconcileGitServer_InvalidSSHKey(t *testing.T) {
 
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(gs, secret).Build()
 
-	logger := platform.NewLoggerMock()
-
 	r := ReconcileGitServer{
 		client: fakeCl,
-		log:    logger,
 	}
 
 	req := reconcile.Request{
@@ -298,14 +296,19 @@ func TestReconcileGitServer_InvalidSSHKey(t *testing.T) {
 		},
 	}
 
-	_, err = r.Reconcile(context.Background(), req)
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "failed to parse private key")
+	logger := platform.NewLoggerMock()
+	loggerSink, ok := logger.GetSink().(*platform.LoggerMock)
+	require.True(t, ok)
+
+	_, err = r.Reconcile(ctrl.LoggerInto(context.Background(), logger), req)
+	require.NoError(t, err)
+	require.Error(t, loggerSink.LastError())
+	require.Contains(t, loggerSink.LastError().Error(), "failed to parse private key")
 
 	gotGitServer := &codebaseApi.GitServer{}
 	err = fakeCl.Get(context.Background(), req.NamespacedName, gotGitServer)
 	require.NoError(t, err)
-	assert.False(t, gotGitServer.Status.Available)
+	assert.False(t, gotGitServer.Status.Connected)
 }
 
 func TestNewReconcileGitServer(t *testing.T) {
@@ -335,14 +338,11 @@ func TestNewReconcileGitServer(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			log := logr.Discard()
-
 			want := &ReconcileGitServer{
 				client: tt.args.c,
-				log:    log,
 			}
 
-			got := NewReconcileGitServer(tt.args.c, log)
+			got := NewReconcileGitServer(tt.args.c)
 
 			assert.Equal(t, want, got)
 		})
