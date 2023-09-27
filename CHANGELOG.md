@@ -2,21 +2,37 @@
 ## [Unreleased]
 
 
-<a name="v2.18.0"></a>
-## [v2.18.0] - 2023-09-20
+<a name="v2.19.0"></a>
+## v2.19.0 - 2023-09-26
+### Features
+
+- Add valid error in status field of GitServer ([#15](https://github.com/epam/edp-codebase-operator/issues/15))
+
+### Bug Fixes
+
+- Build pipeline failed for go operator sdk on sonar step ([#12](https://github.com/epam/edp-codebase-operator/issues/12))
+
 ### Code Refactoring
 
 - Replace edpName with helm Release Namespace value ([#10](https://github.com/epam/edp-codebase-operator/issues/10))
 
 ### Routine
 
+- Upgrade Go to 1.20 ([#14](https://github.com/epam/edp-codebase-operator/issues/14))
+- Update current development version ([#11](https://github.com/epam/edp-codebase-operator/issues/11))
 - Align secret name for new secret approach ([#65](https://github.com/epam/edp-codebase-operator/issues/65))
 - Update current development version ([#9](https://github.com/epam/edp-codebase-operator/issues/9))
 
+### Reverts
 
-<a name="v2.17.0"></a>
-## [v2.17.0] - 2023-08-17
+- [MDTUDDM-673] Save git status in the intermediate operations
+- [EPMDEDP-3421] - Fix job+provisioning bug
+- [EPMDEDP-868] Add functionality generates correct ssh URL for replication config for Gerrit
 
-[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.18.0...HEAD
-[v2.18.0]: https://github.com/epam/edp-codebase-operator/compare/v2.17.0...v2.18.0
-[v2.17.0]: https://github.com/epam/edp-codebase-operator/compare/v2.16.0...v2.17.0
+### BREAKING CHANGE:
+
+
+removed required fields from the GitServer status. CRD should be updated.
+
+
+[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.19.0...HEAD
