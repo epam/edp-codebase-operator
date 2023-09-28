@@ -51,7 +51,7 @@ func (h PutCodebaseImageStream) ServeRequest(ctx context.Context, cb *codebaseAp
 	}
 
 	cisName := fmt.Sprintf("%v-%v", c.Name, processNameToK8sConvention(cb.Spec.BranchName))
-	imageName := fmt.Sprintf("%v/%v/%v", ec.Spec.Url, cb.Namespace, cb.Spec.CodebaseName)
+	imageName := fmt.Sprintf("%v/%v", ec.Spec.Url, cb.Spec.CodebaseName)
 
 	if err = h.createCodebaseImageStreamIfNotExists(
 		ctrl.LoggerInto(ctx, log),

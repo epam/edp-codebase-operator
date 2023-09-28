@@ -486,7 +486,7 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldPassWithCreatingCIS(t *testing.
 		},
 		cResp)
 	assert.NoError(t, err)
-	assert.Equal(t, cResp.Spec.ImageName, "stub-url/namespace/NewCodebase")
+	assert.Equal(t, cResp.Spec.ImageName, "stub-url/NewCodebase")
 
 	gotCodebaseBranch := &codebaseApi.CodebaseBranch{}
 
