@@ -31,10 +31,8 @@ const (
 	LanguagePython     = "python"
 	LanguageGo         = "go"
 
-	JenkinsFolderKind            = "JenkinsFolder"
-	CDStageDeployKind            = "CDStageDeploy"
-	CDStageJenkinsDeploymentKind = "CDStageJenkinsDeployment"
-	V2APIVersion                 = "v2.edp.epam.com/v1"
+	CDStageDeployKind = "CDStageDeploy"
+	V2APIVersion      = "v2.edp.epam.com/v1"
 
 	ProjectPushedStatus          = "pushed"
 	ProjectTemplatesPushedStatus = "templates_pushed"
@@ -42,8 +40,6 @@ const (
 	GithubDomain = "https://github.com/epmd-edp"
 
 	CITekton = "tekton"
-
-	CIJenkins = "jenkins"
 
 	// finalizers.
 	ForegroundDeletionFinalizerName = "foregroundDeletion"

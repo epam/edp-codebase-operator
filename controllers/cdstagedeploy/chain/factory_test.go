@@ -27,32 +27,6 @@ func TestCreateDefChain(t *testing.T) {
 		wantErr require.ErrorAssertionFunc
 	}{
 		{
-			name: "should create jenkins chain",
-			deploy: &codebaseApi.CDStageDeploy{
-				ObjectMeta: metaV1.ObjectMeta{
-					Name:      "test",
-					Namespace: "default",
-				},
-				Spec: codebaseApi.CDStageDeploySpec{
-					Tag: codebaseApi.CodebaseTag{
-						Codebase: "app1",
-					},
-				},
-			},
-			objects: []runtime.Object{
-				&codebaseApi.Codebase{
-					ObjectMeta: metaV1.ObjectMeta{
-						Name:      "app1",
-						Namespace: "default",
-					},
-					Spec: codebaseApi.CodebaseSpec{
-						CiTool: util.CIJenkins,
-					},
-				},
-			},
-			wantErr: require.NoError,
-		},
-		{
 			name: "should create tekton chain",
 			deploy: &codebaseApi.CDStageDeploy{
 				ObjectMeta: metaV1.ObjectMeta{

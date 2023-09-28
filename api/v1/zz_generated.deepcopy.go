@@ -392,16 +392,6 @@ func (in *CodebaseSpec) DeepCopyInto(out *CodebaseSpec) {
 		*out = new(string)
 		**out = **in
 	}
-	if in.JenkinsSlave != nil {
-		in, out := &in.JenkinsSlave, &out.JenkinsSlave
-		*out = new(string)
-		**out = **in
-	}
-	if in.JobProvisioning != nil {
-		in, out := &in.JobProvisioning, &out.JobProvisioning
-		*out = new(string)
-		**out = **in
-	}
 	in.Versioning.DeepCopyInto(&out.Versioning)
 	if in.JiraServer != nil {
 		in, out := &in.JiraServer, &out.JiraServer

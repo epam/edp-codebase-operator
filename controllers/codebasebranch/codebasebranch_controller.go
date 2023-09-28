@@ -133,7 +133,7 @@ func (r *ReconcileCodebaseBranch) Reconcile(ctx context.Context, request reconci
 		log.Error(err, "set labels failed")
 	}
 
-	result, err := r.tryToDeleteCodebaseBranch(ctx, cb, factory.GetDeletionChain(c.Spec.CiTool, r.client))
+	result, err := r.tryToDeleteCodebaseBranch(ctx, cb, factory.GetDeletionChain())
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to remove codebasebranch %v: %w", cb.Name, err)
 	}
@@ -150,7 +150,7 @@ func (r *ReconcileCodebaseBranch) Reconcile(ctx context.Context, request reconci
 		cb.Status.Build = &buildNumber
 	}
 
-	cbChain := factory.GetChain(c.Spec.CiTool, r.client)
+	cbChain := factory.GetChain(r.client)
 	if err := cbChain.ServeRequest(ctx, cb); err != nil {
 		const defaultPostponeTime = 5 * time.Second
 
@@ -163,8 +163,8 @@ func (r *ReconcileCodebaseBranch) Reconcile(ctx context.Context, request reconci
 
 		timeout := r.setFailureCount(cb)
 
-		if err = r.client.Status().Update(ctx, cb); err != nil {
-			ctrl.LoggerFrom(ctx).Error(err, "failed to update CodebaseBranch status with failure count")
+		if statErr := r.client.Status().Update(ctx, cb); statErr != nil {
+			ctrl.LoggerFrom(ctx).Error(statErr, "failed to update CodebaseBranch status with failure count")
 		}
 
 		return reconcile.Result{RequeueAfter: timeout}, fmt.Errorf("failed to process default chain: %w", err)

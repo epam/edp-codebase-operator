@@ -80,15 +80,6 @@ type CodebaseSpec struct {
 	// +optional
 	GitUrlPath *string `json:"gitUrlPath,omitempty"`
 
-	// A name of Jenkins slave instance which will be used to handle codebase.
-	// +nullable
-	// +optional
-	JenkinsSlave *string `json:"jenkinsSlave"`
-
-	// +nullable
-	// +optional
-	JobProvisioning *string `json:"jobProvisioning"`
-
 	// +optional
 	DeploymentScript string `json:"deploymentScript,omitempty"`
 
@@ -130,24 +121,6 @@ type CodebaseSpec struct {
 }
 
 type ActionType string
-
-const (
-	AcceptCodebaseRegistration       ActionType = "accept_codebase_registration"
-	GerritRepositoryProvisioning     ActionType = "gerrit_repository_provisioning"
-	CIConfiguration                  ActionType = "ci_configuration"
-	SetupDeploymentTemplates         ActionType = "setup_deployment_templates"
-	AcceptCodebaseBranchRegistration ActionType = "accept_codebase_branch_registration"
-	PutS2I                           ActionType = "put_s2i"
-	PutJenkinsFolder                 ActionType = "put_jenkins_folder"
-	CleanData                        ActionType = "clean_data"
-	ImportProject                    ActionType = "import_project"
-	PutVersionFile                   ActionType = "put_version_file"
-	PutGitlabCIFile                  ActionType = "put_gitlab_ci_file"
-	PutBranchForGitlabCiCodebase     ActionType = "put_branch_for_gitlab_ci_codebase"
-	PutCodebaseImageStream           ActionType = "put_codebase_image_stream"
-	TriggerReleaseJob                ActionType = "trigger_release_job"
-	TriggerDeletionJob               ActionType = "trigger_deletion_job"
-)
 
 // Result describes how action were performed.
 // Once action ended, we record a result of this action.

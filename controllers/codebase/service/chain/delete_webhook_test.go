@@ -388,7 +388,7 @@ func TestDeleteWebHook_ServeRequest(t *testing.T) {
 				Spec: codebaseApi.CodebaseSpec{
 					GitServer:  "test-git-server",
 					GitUrlPath: gitURL,
-					CiTool:     util.CIJenkins,
+					CiTool:     "not-tekton",
 				},
 				Status: codebaseApi.CodebaseStatus{
 					WebHookID: 1,

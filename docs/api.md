@@ -705,13 +705,6 @@ CodebaseSpec defines the desired state of Codebase.
         </td>
         <td>true</td>
       </tr><tr>
-        <td><b>ciTool</b></td>
-        <td>string</td>
-        <td>
-          A name of tool which should be used as CI.<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
         <td><b>defaultBranch</b></td>
         <td>string</td>
         <td>
@@ -784,6 +777,15 @@ CodebaseSpec defines the desired state of Codebase.
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>ciTool</b></td>
+        <td>string</td>
+        <td>
+          A name of tool which should be used as CI.<br/>
+          <br/>
+            <i>Default</i>: tekton<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>commitMessagePattern</b></td>
         <td>string</td>
         <td>
@@ -814,13 +816,6 @@ CodebaseSpec defines the desired state of Codebase.
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b>jenkinsSlave</b></td>
-        <td>string</td>
-        <td>
-          A name of Jenkins slave instance which will be used to handle codebase.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
         <td><b>jiraIssueMetadataPayload</b></td>
         <td>string</td>
         <td>
@@ -829,13 +824,6 @@ CodebaseSpec defines the desired state of Codebase.
         <td>false</td>
       </tr><tr>
         <td><b>jiraServer</b></td>
-        <td>string</td>
-        <td>
-          <br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>jobProvisioning</b></td>
         <td>string</td>
         <td>
           <br/>
@@ -2300,13 +2288,6 @@ CodebaseSpec defines the desired state of Codebase.
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b>jenkinsSlave</b></td>
-        <td>string</td>
-        <td>
-          A name of Jenkins slave instance which will be used to handle codebase.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
         <td><b>jiraIssueMetadataPayload</b></td>
         <td>string</td>
         <td>
@@ -2315,13 +2296,6 @@ CodebaseSpec defines the desired state of Codebase.
         <td>false</td>
       </tr><tr>
         <td><b>jiraServer</b></td>
-        <td>string</td>
-        <td>
-          <br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>jobProvisioning</b></td>
         <td>string</td>
         <td>
           <br/>

@@ -2,9 +2,7 @@ package cdstagedeploy
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"time"
 
 	"github.com/go-logr/logr"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
@@ -127,32 +125,12 @@ func (r *ReconcileCDStageDeploy) Reconcile(ctx context.Context, request reconcil
 	if err = ch.ServeRequest(ctx, i); err != nil {
 		i.SetFailedStatus(err)
 
-		if errors.Is(err, chain.ErrCDStageJenkinsDeploymentHasNotBeenProcessed) {
-			log.Error(err, "Failed to continue auto-deploy",
-				"pipe", i.Spec.Pipeline, "stage", i.Spec.Stage)
-
-			p := r.setReconciliationPeriod(i)
-
-			return reconcile.Result{RequeueAfter: p}, nil
-		}
-
 		return reconcile.Result{}, fmt.Errorf("failed to process default chainFactory: %w", err)
 	}
 
 	log.Info("Reconciling has been finished")
 
 	return reconcile.Result{}, nil
-}
-
-func (r *ReconcileCDStageDeploy) setReconciliationPeriod(sd *codebaseApi.CDStageDeploy) time.Duration {
-	const timeoutDuration = 10 * time.Second
-	timeout := util.GetTimeout(sd.Status.FailureCount, timeoutDuration)
-
-	r.log.Info("wait for next reconciliation", "next reconciliation in", timeout)
-
-	sd.Status.FailureCount++
-
-	return timeout
 }
 
 func (r *ReconcileCDStageDeploy) updateStatus(ctx context.Context, stageDeploy *codebaseApi.CDStageDeploy) error {

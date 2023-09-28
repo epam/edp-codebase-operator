@@ -5,12 +5,10 @@ import (
 	"fmt"
 
 	"k8s.io/apimachinery/pkg/types"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	"github.com/epam/edp-codebase-operator/v2/controllers/cdstagedeploy/chain/handler"
-	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
 type CDStageDeployChain func(ctx context.Context, cl client.Client, deploy *codebaseApi.CDStageDeploy) (handler.CDStageDeployHandler, error)
@@ -26,18 +24,11 @@ func CreateDefChain(ctx context.Context, cl client.Client, deploy *codebaseApi.C
 		return nil, fmt.Errorf("failed to get codebase: %w", err)
 	}
 
-	if codebase.Spec.CiTool == util.CITekton {
-		return &UpdateArgoApplicationTag{
-			client: cl,
-			next: &DeleteCDStageDeploy{
-				client: cl,
-			},
-		}, nil
-	}
-
-	return &PutCDStageJenkinsDeployment{
+	return &UpdateArgoApplicationTag{
 		client: cl,
-		log:    ctrl.Log.WithName("put-cd-stage-jenkins-deployment-controller"),
+		next: &DeleteCDStageDeploy{
+			client: cl,
+		},
 	}, nil
 }
 

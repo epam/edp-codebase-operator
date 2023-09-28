@@ -81,7 +81,7 @@ annotations:
         name: javascript-deploy-edp
       spec:
         buildTool: NPM
-        ciTool: Jenkins
+        ciTool: tekton
         commitMessagePattern: null
         defaultBranch: branch/dev-1
         deploymentScript: helm-chart
@@ -90,11 +90,8 @@ annotations:
         framework: react
         gitServer: gerrit
         gitUrlPath: null
-        jenkinsSlave: npm
         jiraIssueMetadataPayload: null
-        jobProvisioning: default
         lang: JavaScript
-        perf: null
         repository: null
         strategy: create
         testReportFramework: null
@@ -131,7 +128,7 @@ annotations:
         name: gerrit
       spec:
         gitHost: gerrit.edp-dev
-        gitUser: jenkins
+        gitUser: git
         httpsPort: 443
         nameSshKeySecret: gerrit-ciuser-sshkey
         sshPort: 30002

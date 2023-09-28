@@ -11,11 +11,9 @@ replace (
 
 require (
 	github.com/andygrunwald/go-jira v1.16.0
-	github.com/bndr/gojenkins v0.2.1-0.20181125150310-de43c03cf849
 	github.com/epam/edp-cd-pipeline-operator/v2 v2.13.0
 	github.com/epam/edp-common v0.0.0-20230104131608-33d095012fe8
 	github.com/epam/edp-component-operator v0.12.0
-	github.com/epam/edp-jenkins-operator/v2 v2.14.0
 	github.com/go-git/go-git/v5 v5.4.3-0.20210630082519-b4368b2a2ca4
 	github.com/go-logr/logr v1.2.3
 	github.com/go-resty/resty/v2 v2.6.0

@@ -26,7 +26,6 @@ import (
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
 	buildInfo "github.com/epam/edp-common/pkg/config"
 	edpCompApi "github.com/epam/edp-component-operator/api/v1"
-	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
 
 	codebaseApiV1 "github.com/epam/edp-codebase-operator/v2/api/v1"
 	codebaseApiV1Alpha1 "github.com/epam/edp-codebase-operator/v2/api/v1alpha1"
@@ -98,7 +97,6 @@ func main() {
 	utilruntime.Must(codebaseApiV1.AddToScheme(scheme))
 	utilruntime.Must(cdPipeApi.AddToScheme(scheme))
 	utilruntime.Must(edpCompApi.AddToScheme(scheme))
-	utilruntime.Must(jenkinsApi.AddToScheme(scheme))
 	utilruntime.Must(networkingV1.AddToScheme(scheme))
 	utilruntime.Must(routeApi.AddToScheme(scheme))
 

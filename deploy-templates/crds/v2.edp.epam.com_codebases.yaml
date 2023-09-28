@@ -67,6 +67,7 @@ spec:
                 description: A build tool which is used on codebase.
                 type: string
               ciTool:
+                default: tekton
                 description: A name of tool which should be used as CI.
                 type: string
               commitMessagePattern:
@@ -101,18 +102,10 @@ spec:
                 description: 'A relative path for git repository. Should start from
                   /. Example: /company/api-app.'
                 type: string
-              jenkinsSlave:
-                description: A name of Jenkins slave instance which will be used to
-                  handle codebase.
-                nullable: true
-                type: string
               jiraIssueMetadataPayload:
                 nullable: true
                 type: string
               jiraServer:
-                nullable: true
-                type: string
-              jobProvisioning:
                 nullable: true
                 type: string
               lang:
@@ -157,7 +150,6 @@ spec:
                 type: object
             required:
             - buildTool
-            - ciTool
             - defaultBranch
             - emptyProject
             - framework
@@ -296,18 +288,10 @@ spec:
                 description: A link to external git server, used for "import" strategy.
                 nullable: true
                 type: string
-              jenkinsSlave:
-                description: A name of Jenkins slave instance which will be used to
-                  handle codebase.
-                nullable: true
-                type: string
               jiraIssueMetadataPayload:
                 nullable: true
                 type: string
               jiraServer:
-                nullable: true
-                type: string
-              jobProvisioning:
                 nullable: true
                 type: string
               lang:

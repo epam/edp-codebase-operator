@@ -23,8 +23,6 @@ github.com/beorn7/perks v1.0.1 h1:VlbKKnNfV8bJzeqoa4cOKqO6bYr3WgKZxO8Z16+hsOM=
 github.com/beorn7/perks v1.0.1/go.mod h1:G2ZrVWU2WbWT9wwq4/hrbKbnv/1ERSJQ0ibhJ6rlkpw=
 github.com/blendle/zapdriver v1.3.1 h1:C3dydBOWYRiOk+B8X9IVZ5IOe+7cl+tGOexN4QqHfpE=
 github.com/blendle/zapdriver v1.3.1/go.mod h1:mdXfREi6u5MArG4j9fewC+FGnXaBR+T4Ox4J2u4eHCc=
-github.com/bndr/gojenkins v0.2.1-0.20181125150310-de43c03cf849 h1:TgiR4qbnQqEN3Qx8NT6/vVMGQACRFwjdxkymqt9Utis=
-github.com/bndr/gojenkins v0.2.1-0.20181125150310-de43c03cf849/go.mod h1:J2FxlujWW87NJJrdysyctcDllRVYUONGGlHX16134P4=
 github.com/buger/jsonparser v1.1.1/go.mod h1:6RYKKt7H4d4+iWqouImQ9R2FZql3VbhNgx27UK13J/0=
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=
 github.com/cespare/xxhash v1.1.0/go.mod h1:XrSqR1VqqWfGrhpAt58auRo0WTKS1nRRg3ghfAqPWnc=
@@ -55,8 +53,6 @@ github.com/epam/edp-common v0.0.0-20230104131608-33d095012fe8 h1:Yu3L0n5+InqUHwL
 github.com/epam/edp-common v0.0.0-20230104131608-33d095012fe8/go.mod h1:fBJOEpuQC0Bi69gJILqYajwY53Sp8C1V872wU/5k5fE=
 github.com/epam/edp-component-operator v0.1.1-0.20230118145658-7283b2b5cbf9 h1:JW+BPXS3AfW/mCKxGGz/MsMyoEAU1vTzNiNZdbkZVzk=
 github.com/epam/edp-component-operator v0.1.1-0.20230118145658-7283b2b5cbf9/go.mod h1:HkT0L+dswHFhCqMD1lFNMsbyLkDqg3ZbCmEdEfRnMxY=
-github.com/epam/edp-jenkins-operator/v2 v2.14.0 h1:d5zzL61JHICsnCaXujnHWfvBBKN4y8p20c0DiKNPWcc=
-github.com/epam/edp-jenkins-operator/v2 v2.14.0/go.mod h1:4regFTi8q6nzKjaIzzb8duCE0MEk2PjM0Tc2MhGlufI=
 github.com/evanphx/json-patch v0.5.2/go.mod h1:ZWS5hhDbVDyob71nXKNL0+PWn6ToqBHMikGIFbs31qQ=
 github.com/evanphx/json-patch v5.6.0+incompatible h1:jBYDEEiFBPxA0v50tFdvOzQQTCvpL6mnFh5mB2/l16U=
 github.com/evanphx/json-patch v5.6.0+incompatible/go.mod h1:50XU6AFN0ol/bzJsmQLiYLvXMP4fmwYFNcr97nuDLSk=

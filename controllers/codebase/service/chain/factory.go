@@ -26,7 +26,6 @@ func MakeChain(ctx context.Context, c client.Client) handler.CodebaseHandler {
 		NewPutProject(c, gp, &gerrit.SSHGerritClient{}, gitprovider.NewGitProjectProvider),
 		NewPutWebHook(c, resty.New()),
 		NewPutDeployConfigs(c, gp),
-		NewPutJenkinsFolder(c),
 		NewPutDefaultCodeBaseBranch(c),
 		NewCleaner(c),
 	)
@@ -42,7 +41,6 @@ func MakeDeletionChain(ctx context.Context, c client.Client) handler.CodebaseHan
 	ch := &chain{}
 
 	ch.Use(NewDeleteWebHook(c, resty.New(), log))
-	ch.Use(NewDropJenkinsFolders(c))
 
 	return ch
 }

@@ -80,15 +80,6 @@ type CodebaseSpec struct {
 	// A relative path for git repository. Should start from /. Example: /company/api-app.
 	GitUrlPath string `json:"gitUrlPath"`
 
-	// A name of Jenkins slave instance which will be used to handle codebase.
-	// +nullable
-	// +optional
-	JenkinsSlave *string `json:"jenkinsSlave"`
-
-	// +nullable
-	// +optional
-	JobProvisioning *string `json:"jobProvisioning"`
-
 	// +optional
 	// +kubebuilder:default:=helm-chart
 	DeploymentScript string `json:"deploymentScript,omitempty"`
@@ -108,6 +99,8 @@ type CodebaseSpec struct {
 	TicketNamePattern *string `json:"ticketNamePattern"`
 
 	// A name of tool which should be used as CI.
+	// +optional
+	// +kubebuilder:default:=tekton
 	CiTool string `json:"ciTool"`
 
 	// Name of default branch.
@@ -142,15 +135,12 @@ const (
 	CIConfiguration                  ActionType = "ci_configuration"
 	SetupDeploymentTemplates         ActionType = "setup_deployment_templates"
 	AcceptCodebaseBranchRegistration ActionType = "accept_codebase_branch_registration"
-	PutJenkinsFolder                 ActionType = "put_jenkins_folder"
 	CleanData                        ActionType = "clean_data"
 	PutWebHook                       ActionType = "put_web_hook"
 	PutGitWebRepoUrl                 ActionType = "put_git_web_repo_url"
 	PutGitBranch                     ActionType = "put_git_branch"
 	PutCodebaseImageStream           ActionType = "put_codebase_image_stream"
-	TriggerReleaseJob                ActionType = "trigger_release_job"
 	CheckCommitHashExists            ActionType = "check_commit_hash_exists"
-	TriggerDeletionJob               ActionType = "trigger_deletion_job"
 )
 
 // Result describes how action were performed.

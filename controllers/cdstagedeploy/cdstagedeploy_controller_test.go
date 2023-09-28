@@ -17,7 +17,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
-	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	"github.com/epam/edp-codebase-operator/v2/controllers/cdstagedeploy/chain"
@@ -33,11 +32,8 @@ func TestReconcileCDStageDeploy_Reconcile(t *testing.T) {
 	}
 
 	type env struct {
-		j     *jenkinsApi.Jenkins
-		jl    *jenkinsApi.JenkinsList
-		jcdsd *jenkinsApi.CDStageJenkinsDeployment
-		s     *cdPipeApi.Stage
-		cdsd  *codebaseApi.CDStageDeploy
+		s    *cdPipeApi.Stage
+		cdsd *codebaseApi.CDStageDeploy
 	}
 
 	type configs struct {
@@ -67,18 +63,6 @@ func TestReconcileCDStageDeploy_Reconcile(t *testing.T) {
 				},
 			},
 			env: env{
-				j: &jenkinsApi.Jenkins{},
-				jl: &jenkinsApi.JenkinsList{
-					Items: []jenkinsApi.Jenkins{
-						{
-							ObjectMeta: metaV1.ObjectMeta{
-								Name:      "jenkins",
-								Namespace: "namespace",
-							},
-						},
-					},
-				},
-				jcdsd: &jenkinsApi.CDStageJenkinsDeployment{},
 				s: &cdPipeApi.Stage{
 					ObjectMeta: metaV1.ObjectMeta{
 						Name:      "pipeline-stage",
@@ -104,17 +88,16 @@ func TestReconcileCDStageDeploy_Reconcile(t *testing.T) {
 				scheme: func(env env) *runtime.Scheme {
 					scheme := runtime.NewScheme()
 
-					scheme.AddKnownTypes(metaV1.SchemeGroupVersion, env.jl, env.j)
+					scheme.AddKnownTypes(metaV1.SchemeGroupVersion)
 					scheme.AddKnownTypes(codebaseApi.GroupVersion, env.cdsd)
 					scheme.AddKnownTypes(cdPipeApi.GroupVersion, env.s)
-					scheme.AddKnownTypes(jenkinsApi.SchemeGroupVersion, env.jcdsd)
 
 					return scheme
 				},
 				client: func(scheme *runtime.Scheme, env env) client.Client {
 					return fake.NewClientBuilder().
 						WithScheme(scheme).
-						WithRuntimeObjects(env.cdsd, env.s, env.jcdsd, env.j, env.jl).
+						WithRuntimeObjects(env.cdsd, env.s).
 						Build()
 				},
 				chain: func(t *testing.T) chain.CDStageDeployChain {
