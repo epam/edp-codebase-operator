@@ -275,8 +275,10 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldPassWithCreatingCIS(t *testing.
 	cis := &codebaseApi.CodebaseImageStream{}
 
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(codebaseApi.GroupVersion, c, cb, ec, cis)
-	scheme.AddKnownTypes(coreV1.SchemeGroupVersion, s)
+	require.NoError(t, codebaseApi.AddToScheme(scheme))
+	require.NoError(t, edpComponentApi.AddToScheme(scheme))
+	require.NoError(t, coreV1.AddToScheme(scheme))
+
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, cb, s, ec, cis).Build()
 
 	req := reconcile.Request{
