@@ -22,16 +22,8 @@ import (
 // argoApplicationImagePatch is a struct that represents ArgoCD Application image patch.
 type argoApplicationImagePatch struct {
 	Spec struct {
-		Source struct {
-			Helm struct {
-				Parameters []struct {
-					Name        string `json:"name,omitempty"`
-					Value       string `json:"value,omitempty"`
-					ForceString bool   `json:"forceString,omitempty"`
-				} `json:"parameters,omitempty"`
-			} `json:"helm,omitempty"`
-			TargetRevision string `json:"targetRevision,omitempty"`
-		} `json:"source,omitempty"`
+		Source  *argocd.ApplicationSource  `json:"source,omitempty"`
+		Sources []argocd.ApplicationSource `json:"sources,omitempty"`
 	} `json:"spec,omitempty"`
 }
 
@@ -126,13 +118,7 @@ func (h *UpdateArgoApplicationTag) updateArgoApplication(
 		return fmt.Errorf("failed to decode ArgoCD Application spec: %w", err)
 	}
 
-	applicationPatch.Spec.Source.TargetRevision = targetRevision
-
-	for i := range applicationPatch.Spec.Source.Helm.Parameters {
-		if applicationPatch.Spec.Source.Helm.Parameters[i].Name == "image.tag" {
-			applicationPatch.Spec.Source.Helm.Parameters[i].Value = imageTag
-		}
-	}
+	setApplicationPatchVersion(&applicationPatch, targetRevision, imageTag)
 
 	rawPatch, _ := json.Marshal(applicationPatch)
 
@@ -157,4 +143,33 @@ func (h *UpdateArgoApplicationTag) getTargetRevision(ctx context.Context, deploy
 	}
 
 	return deploy.Spec.Tag.Tag, nil
+}
+
+func setApplicationPatchVersion(applicationPatch *argoApplicationImagePatch, targetRevision, imageTag string) {
+	if applicationPatch.Spec.Sources != nil {
+		for i := range applicationPatch.Spec.Sources {
+			if applicationPatch.Spec.Sources[i].Helm == nil {
+				continue
+			}
+
+			applicationPatch.Spec.Sources[i].TargetRevision = targetRevision
+			for j := range applicationPatch.Spec.Sources[i].Helm.Parameters {
+				if applicationPatch.Spec.Sources[i].Helm.Parameters[j].Name == "image.tag" {
+					applicationPatch.Spec.Sources[i].Helm.Parameters[j].Value = imageTag
+				}
+			}
+
+			return
+		}
+	}
+
+	if applicationPatch.Spec.Source != nil {
+		applicationPatch.Spec.Source.TargetRevision = targetRevision
+
+		for i := range applicationPatch.Spec.Source.Helm.Parameters {
+			if applicationPatch.Spec.Source.Helm.Parameters[i].Name == "image.tag" {
+				applicationPatch.Spec.Source.Helm.Parameters[i].Value = imageTag
+			}
+		}
+	}
 }

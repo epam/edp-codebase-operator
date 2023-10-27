@@ -262,7 +262,7 @@ func TestUpdateArgoApplicationTag_ServeRequest(t *testing.T) {
 				var patch argoApplicationImagePatch
 				require.NoError(t, mapstructure.Decode(app.Object, &patch))
 
-				assert.Equal(t, "2.0.0", patch.Spec.Source.TargetRevision)
+				assert.Nil(t, patch.Spec.Source)
 			},
 		},
 		{
@@ -326,6 +326,75 @@ func TestUpdateArgoApplicationTag_ServeRequest(t *testing.T) {
 			},
 			wantErr: require.NoError,
 			assert:  func(t *testing.T, deploy *codebaseApi.CDStageDeploy, reader client.Reader) {},
+		},
+		{
+			name: "should update argo application tag in sources",
+			deploy: &codebaseApi.CDStageDeploy{
+				ObjectMeta: ctrl.ObjectMeta{
+					Name:      "test",
+					Namespace: "default",
+				},
+				Spec: codebaseApi.CDStageDeploySpec{
+					Pipeline: "test-pipeline",
+					Stage:    "test-stage",
+					Tag: codebaseApi.CodebaseTag{
+						Codebase: "test-codebase",
+						Tag:      "2.0.0",
+					},
+				},
+			},
+			objects: []client.Object{
+				argocd.NewArgoCDApplication(
+					argocd.WithName("test"),
+					argocd.WithNamespace("default"),
+					argocd.WithLabels(map[string]string{
+						"app.edp.epam.com/app-name": "test-codebase",
+						"app.edp.epam.com/pipeline": "test-pipeline",
+						"app.edp.epam.com/stage":    "test-stage",
+					}),
+					argocd.WithSpec(map[string]interface{}{
+						"sources": []interface{}{
+							map[string]interface{}{
+								"targetRevision": "1.0.0",
+								"helm": map[string]interface{}{
+									"parameters": []interface{}{
+										map[string]interface{}{
+											"name":  "image.tag",
+											"value": "1.0.0",
+										},
+										map[string]interface{}{
+											"name":  "image.repository",
+											"value": "test-repo",
+										},
+									},
+								},
+							},
+						},
+					}),
+				),
+				&codebaseApi.Codebase{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test-codebase",
+						Namespace: "default",
+					},
+				},
+			},
+			wantErr: require.NoError,
+			assert: func(t *testing.T, deploy *codebaseApi.CDStageDeploy, reader client.Reader) {
+				app := argocd.NewArgoCDApplication()
+				require.NoError(t, reader.Get(context.Background(), client.ObjectKey{
+					Name:      "test",
+					Namespace: "default",
+				}, app))
+
+				var patch argoApplicationImagePatch
+				require.NoError(t, mapstructure.Decode(app.Object, &patch))
+
+				require.Len(t, patch.Spec.Sources, 1)
+				assert.Equal(t, "2.0.0", patch.Spec.Sources[0].TargetRevision)
+				require.Len(t, patch.Spec.Sources[0].Helm.Parameters, 2)
+				assert.Equal(t, "2.0.0", patch.Spec.Sources[0].Helm.Parameters[0].Value)
+			},
 		},
 	}
 

@@ -76,3 +76,26 @@ func NewArgoCDApplicationList() *unstructured.UnstructuredList {
 
 	return list
 }
+
+// ApplicationSource is a struct that represents ArgoCD Application source.
+type ApplicationSource struct {
+	Helm           *SourceHelm `json:"helm,omitempty"`
+	TargetRevision string      `json:"targetRevision,omitempty"`
+	RepoURL        string      `json:"repoURL,omitempty"`
+	Path           string      `json:"path,omitempty"`
+	Ref            string      `json:"ref,omitempty"`
+}
+
+// SourceHelm is a struct that represents ArgoCD Application Helm source.
+type SourceHelm struct {
+	ReleaseName string          `json:"releaseName,omitempty"`
+	ValueFiles  []string        `json:"valueFiles,omitempty"`
+	Parameters  []HelmParameter `json:"parameters,omitempty"`
+}
+
+// HelmParameter is a struct that represents ArgoCD Application Helm parameter.
+type HelmParameter struct {
+	Name        string `json:"name,omitempty"`
+	Value       string `json:"value,omitempty"`
+	ForceString bool   `json:"forceString,omitempty"`
+}
