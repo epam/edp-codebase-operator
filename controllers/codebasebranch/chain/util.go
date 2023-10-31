@@ -3,6 +3,8 @@ package chain
 import (
 	"fmt"
 
+	"golang.org/x/exp/slices"
+
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
@@ -13,7 +15,7 @@ func HasNewVersion(codebaseBranch *codebaseApi.CodebaseBranch) (bool, error) {
 		return false, fmt.Errorf("codebase branch %v doesn't have version", codebaseBranch.Name)
 	}
 
-	return !util.SearchVersion(codebaseBranch.Status.VersionHistory, *codebaseBranch.Spec.Version), nil
+	return !slices.Contains(codebaseBranch.Status.VersionHistory, *codebaseBranch.Spec.Version), nil
 }
 
 // DirectoryExistsNotEmpty checks if directory exists and not empty.

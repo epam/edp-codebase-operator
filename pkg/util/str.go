@@ -5,16 +5,6 @@ import (
 	"fmt"
 )
 
-func SearchVersion(a []string, b string) bool {
-	for _, v := range a {
-		if v == b {
-			return true
-		}
-	}
-
-	return false
-}
-
 func GetFieldsMap(payload string, keysToDelete []string) (map[string]interface{}, error) {
 	requestPayload := make(map[string]interface{})
 

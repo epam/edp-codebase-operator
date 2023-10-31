@@ -10,7 +10,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
-	"github.com/epam/edp-codebase-operator/v2/controllers/codebasebranch/chain"
 	"github.com/epam/edp-codebase-operator/v2/controllers/codebasebranch/chain/handler"
 	"github.com/epam/edp-codebase-operator/v2/controllers/codebasebranch/service"
 	"github.com/epam/edp-codebase-operator/v2/pkg/git"
@@ -57,14 +56,6 @@ func (h PutBranchInGit) ServeRequest(ctx context.Context, branch *codebaseApi.Co
 	if !codebase.Status.Available {
 		log.Info("failed to start reconciling for branch; codebase is unavailable", "codebase", codebase.Name)
 		return util.NewCodebaseBranchReconcileError(fmt.Sprintf("%v codebase is unavailable", codebase.Name))
-	}
-
-	if err := h.processNewVersion(branch, codebase); err != nil {
-		err = fmt.Errorf("failed to process new version for %s branch: %w", branch.Name, err)
-
-		setFailedFields(branch, codebaseApi.PutGitBranch, err.Error())
-
-		return err
 	}
 
 	gitServer := &codebaseApi.GitServer{}
@@ -182,36 +173,4 @@ func setFailedFields(cb *codebaseApi.CodebaseBranch, a codebaseApi.ActionType, m
 
 func checkDirectory(path string) bool {
 	return util.DoesDirectoryExist(path) && !util.IsDirectoryEmpty(path)
-}
-
-func (h PutBranchInGit) processNewVersion(codebaseBranch *codebaseApi.CodebaseBranch, codeBase *codebaseApi.Codebase) error {
-	if codeBase.Spec.Versioning.Type != codebaseApi.VersioningTypeEDP {
-		return nil
-	}
-
-	hasVersion, err := chain.HasNewVersion(codebaseBranch)
-	if err != nil {
-		return fmt.Errorf("failed to check if branch %v has new version: %w", codebaseBranch.Name, err)
-	}
-
-	if !hasVersion {
-		return nil
-	}
-
-	err = h.Service.ResetBranchBuildCounter(codebaseBranch)
-	if err != nil {
-		return fmt.Errorf("failed to reset bulid counterL %w", err)
-	}
-
-	err = h.Service.ResetBranchSuccessBuildCounter(codebaseBranch)
-	if err != nil {
-		return fmt.Errorf("failed to reset success bulid counter: %w", err)
-	}
-
-	err = h.Service.AppendVersionToTheHistorySlice(codebaseBranch)
-	if err != nil {
-		return fmt.Errorf("failed to append version to hitory slice: %w", err)
-	}
-
-	return nil
 }

@@ -7,66 +7,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestSearchVersion(t *testing.T) {
-	t.Parallel()
-
-	type args struct {
-		a []string
-		b string
-	}
-
-	tests := []struct {
-		name string
-		args args
-		want bool
-	}{
-		{
-			name: "should return false",
-			args: args{
-				a: []string{"0-0-0"},
-				b: "0-0-1",
-			},
-			want: false,
-		},
-		{
-			name: "should return false for len is zero",
-			args: args{
-				a: []string{},
-				b: "0-0-1",
-			},
-			want: false,
-		},
-		{
-			name: "should return true",
-			args: args{
-				a: []string{"fake", "found"},
-				b: "found",
-			},
-			want: true,
-		},
-		{
-			name: "should return false for the array is nil",
-			args: args{
-				a: nil,
-				b: "text",
-			},
-			want: false,
-		},
-	}
-
-	for _, tt := range tests {
-		tt := tt
-
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
-			got := SearchVersion(tt.args.a, tt.args.b)
-
-			assert.Equal(t, tt.want, got)
-		})
-	}
-}
-
 func TestGetFieldsMap(t *testing.T) {
 	t.Parallel()
 
