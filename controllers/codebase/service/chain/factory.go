@@ -40,7 +40,10 @@ func MakeDeletionChain(ctx context.Context, c client.Client) handler.CodebaseHan
 
 	ch := &chain{}
 
-	ch.Use(NewDeleteWebHook(c, resty.New(), log))
+	ch.Use(
+		NewDeleteWebHook(c, resty.New(), log),
+		NewCleaner(c),
+	)
 
 	return ch
 }
