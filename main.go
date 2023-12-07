@@ -35,6 +35,7 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/controllers/codebasebranch"
 	"github.com/epam/edp-codebase-operator/v2/controllers/codebaseimagestream"
 	"github.com/epam/edp-codebase-operator/v2/controllers/gitserver"
+	"github.com/epam/edp-codebase-operator/v2/controllers/integrationsecret"
 	"github.com/epam/edp-codebase-operator/v2/controllers/jiraissuemetadata"
 	"github.com/epam/edp-codebase-operator/v2/controllers/jiraserver"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
@@ -166,6 +167,11 @@ func main() {
 	jsCtrl := jiraserver.NewReconcileJiraServer(mgr.GetClient(), mgr.GetScheme(), ctrlLog)
 	if err = jsCtrl.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, logFailCtrlCreateMessage, "controller", "jira-server")
+		os.Exit(1)
+	}
+
+	if err = integrationsecret.NewReconcileIntegrationSecret(mgr.GetClient()).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, logFailCtrlCreateMessage, "controller", "integration-secret")
 		os.Exit(1)
 	}
 

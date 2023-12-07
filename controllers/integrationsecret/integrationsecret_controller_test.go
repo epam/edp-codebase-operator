@@ -1,0 +1,281 @@
+package integrationsecret
+
+import (
+	"context"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+
+	"github.com/go-logr/logr"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+)
+
+func TestReconcileIntegrationSecret_Reconcile(t *testing.T) {
+	t.Parallel()
+
+	ns := "default"
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.Contains(r.URL.String(), "success") {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+
+	defer server.Close()
+
+	s := runtime.NewScheme()
+	require.NoError(t, corev1.AddToScheme(s))
+
+	tests := []struct {
+		name           string
+		secretName     string
+		client         func(t *testing.T) client.Client
+		wantRes        reconcile.Result
+		wantErr        require.ErrorAssertionFunc
+		wantAnnotation string
+	}{
+		{
+			name:       "success sonarqube",
+			secretName: "sonarqube",
+			client: func(t *testing.T) client.Client {
+				return fake.NewClientBuilder().WithScheme(s).WithObjects(
+					&corev1.Secret{
+						ObjectMeta: metav1.ObjectMeta{
+							Namespace: ns,
+							Name:      "sonarqube",
+							Labels: map[string]string{
+								integrationSecretTypeLabel: "sonarqube",
+							},
+						},
+						Data: map[string][]byte{
+							"url":   []byte(server.URL + "/success"),
+							"token": []byte("token"),
+						},
+					},
+				).Build()
+			},
+			wantRes: reconcile.Result{
+				RequeueAfter: successConnectionRequeueTime,
+			},
+			wantErr:        require.NoError,
+			wantAnnotation: "true",
+		},
+		{
+			name:       "fail sonarqube",
+			secretName: "sonarqube",
+			client: func(t *testing.T) client.Client {
+				return fake.NewClientBuilder().WithScheme(s).WithObjects(
+					&corev1.Secret{
+						ObjectMeta: metav1.ObjectMeta{
+							Namespace: ns,
+							Name:      "sonarqube",
+							Labels: map[string]string{
+								integrationSecretTypeLabel: "sonarqube",
+							},
+						},
+						Data: map[string][]byte{
+							"url":   []byte(server.URL + "/fail"),
+							"token": []byte("token"),
+						},
+					},
+				).Build()
+			},
+			wantRes: reconcile.Result{
+				RequeueAfter: failConnectionRequeueTime,
+			},
+			wantErr:        require.NoError,
+			wantAnnotation: "false",
+		},
+		{
+			name:       "success nexus with basic auth",
+			secretName: "nexus",
+			client: func(t *testing.T) client.Client {
+				return fake.NewClientBuilder().WithScheme(s).WithObjects(
+					&corev1.Secret{
+						ObjectMeta: metav1.ObjectMeta{
+							Namespace: ns,
+							Name:      "nexus",
+							Labels: map[string]string{
+								integrationSecretTypeLabel: "nexus",
+							},
+						},
+						Data: map[string][]byte{
+							"url":      []byte(server.URL + "/success"),
+							"username": []byte("username"),
+							"password": []byte("password"),
+						},
+					},
+				).Build()
+			},
+			wantRes: reconcile.Result{
+				RequeueAfter: successConnectionRequeueTime,
+			},
+			wantErr:        require.NoError,
+			wantAnnotation: "true",
+		},
+		{
+			name:       "success dependency-track",
+			secretName: "dependency-track",
+			client: func(t *testing.T) client.Client {
+				return fake.NewClientBuilder().WithScheme(s).WithObjects(
+					&corev1.Secret{
+						ObjectMeta: metav1.ObjectMeta{
+							Namespace: ns,
+							Name:      "dependency-track",
+							Labels: map[string]string{
+								integrationSecretTypeLabel: "dependency-track",
+							},
+						},
+						Data: map[string][]byte{
+							"url":   []byte(server.URL + "/success"),
+							"token": []byte("token"),
+						},
+					},
+				).Build()
+			},
+			wantRes: reconcile.Result{
+				RequeueAfter: successConnectionRequeueTime,
+			},
+			wantErr:        require.NoError,
+			wantAnnotation: "true",
+		},
+		{
+			name:       "success defectdojo",
+			secretName: "defectdojo",
+			client: func(t *testing.T) client.Client {
+				return fake.NewClientBuilder().WithScheme(s).WithObjects(
+					&corev1.Secret{
+						ObjectMeta: metav1.ObjectMeta{
+							Namespace: ns,
+							Name:      "defectdojo",
+							Labels: map[string]string{
+								integrationSecretTypeLabel: "defectdojo",
+							},
+						},
+						Data: map[string][]byte{
+							"url":   []byte(server.URL + "/success"),
+							"token": []byte("token"),
+						},
+					},
+				).Build()
+			},
+			wantRes: reconcile.Result{
+				RequeueAfter: successConnectionRequeueTime,
+			},
+			wantErr:        require.NoError,
+			wantAnnotation: "true",
+		},
+		{
+			name:       "not reachable server",
+			secretName: "integration-secret",
+			client: func(t *testing.T) client.Client {
+				return fake.NewClientBuilder().WithScheme(s).WithObjects(
+					&corev1.Secret{
+						ObjectMeta: metav1.ObjectMeta{
+							Namespace: ns,
+							Name:      "integration-secret",
+						},
+						Data: map[string][]byte{
+							"url": []byte("http://not-reachable-server"),
+						},
+					},
+				).Build()
+			},
+			wantRes: reconcile.Result{
+				RequeueAfter: failConnectionRequeueTime,
+			},
+			wantErr:        require.NoError,
+			wantAnnotation: "false",
+		},
+		{
+			name:       "secret not found",
+			secretName: "not-exists",
+			client: func(t *testing.T) client.Client {
+				return fake.NewClientBuilder().WithScheme(s).Build()
+			},
+			wantRes:        reconcile.Result{},
+			wantErr:        require.NoError,
+			wantAnnotation: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cl := tt.client(t)
+			r := NewReconcileIntegrationSecret(cl)
+			got, err := r.Reconcile(
+				ctrl.LoggerInto(context.Background(), logr.Discard()),
+				reconcile.Request{
+					NamespacedName: client.ObjectKey{
+						Namespace: ns,
+						Name:      tt.secretName,
+					},
+				},
+			)
+
+			tt.wantErr(t, err)
+			require.Equal(t, tt.wantRes, got)
+
+			if tt.wantAnnotation == "" {
+				return
+			}
+
+			s := &corev1.Secret{}
+			require.NoError(t, cl.Get(context.Background(), client.ObjectKey{
+				Namespace: ns,
+				Name:      tt.secretName,
+			}, s))
+
+			require.Equal(t, tt.wantAnnotation, s.GetAnnotations()[integrationSecretConnectionAnnotation])
+		})
+	}
+}
+
+func Test_hasIntegrationSecretLabelLabel(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name   string
+		Object client.Object
+		want   bool
+	}{
+		{
+			name: "has label",
+			Object: &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						integrationSecretLabel: "",
+					},
+				},
+			},
+			want: true,
+		},
+		{
+			name: "has not label",
+			Object: &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{},
+				},
+			},
+			want: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := hasIntegrationSecretLabelLabel(tt.Object)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}

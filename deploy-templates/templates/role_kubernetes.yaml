@@ -83,11 +83,11 @@ rules:
     - ''
   verbs:
     - get
+    - watch
+    - list
     - patch
     - update
     - create
   resources:
     - secrets
-  resourceNames:
-    - edp-codebase-operator-webhook-certs
 {{ end }}
