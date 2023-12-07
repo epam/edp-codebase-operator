@@ -18,9 +18,9 @@ import (
 )
 
 const (
-	integrationSecretLabel                = "edp.epam.com/integration-secret"
+	integrationSecretLabel                = "app.edp.epam.com/integration-secret"
 	integrationSecretTypeLabel            = "app.edp.epam.com/secret-type"
-	integrationSecretConnectionAnnotation = "edp.epam.com/integration-secret-connected"
+	integrationSecretConnectionAnnotation = "app.edp.epam.com/integration-secret-connected"
 	successConnectionRequeueTime          = time.Minute * 30
 	failConnectionRequeueTime             = time.Minute * 1
 )
