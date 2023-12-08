@@ -2,8 +2,12 @@ package integrationsecret
 
 import (
 	"context"
+	"crypto/tls"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/go-resty/resty/v2"
@@ -130,29 +134,37 @@ func (r *ReconcileIntegrationSecret) updateConnectionAnnotation(ctx context.Cont
 
 func checkConnection(ctx context.Context, secret *corev1.Secret) error {
 	var (
-		url string
-		req *resty.Request
+		path string
+		req  *resty.Request
 	)
 
 	switch secret.GetLabels()[integrationSecretTypeLabel] {
 	case "sonarqube":
-		url = "/api/system/ping"
+		path = "/api/system/ping"
 		req = newRequestWithAuth(ctx, secret)
 	case "nexus":
-		url = "/service/rest/v1/status"
+		path = "/service/rest/v1/status"
 		req = newRequestWithAuth(ctx, secret)
 	case "dependency-track":
-		url = "/v1/team/self"
+		path = "/v1/team/self"
 		req = newRequest(ctx, string(secret.Data["url"])).SetHeader("X-Api-Key", string(secret.Data["token"]))
 	case "defectdojo":
-		url = "/api/v2/user_profile"
+		path = "/api/v2/user_profile"
 		req = newRequest(ctx, string(secret.Data["url"])).SetHeader("Authorization", "Token "+string(secret.Data["token"]))
+	case "registry":
+		// docker registry specification endpoint https://github.com/opencontainers/distribution-spec/blob/v1.0.1/spec.md#endpoints
+		path = "/v2"
+
+		var err error
+		if req, err = newRegistryRequest(ctx, secret); err != nil {
+			return err
+		}
 	default:
-		url = "/"
+		path = "/"
 		req = newRequest(ctx, string(secret.Data["url"]))
 	}
 
-	resp, err := req.Get(url)
+	resp, err := req.Get(path)
 	if err != nil {
 		return fmt.Errorf("%w", err)
 	}
@@ -175,7 +187,44 @@ func newRequestWithAuth(ctx context.Context, secret *corev1.Secret) *resty.Reque
 }
 
 func newRequest(ctx context.Context, url string) *resty.Request {
-	return resty.New().SetHostURL(url).SetTimeout(time.Second * 5).R().SetContext(ctx)
+	return resty.New().
+		SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true}).
+		SetHostURL(url).
+		SetTimeout(time.Second * 5).
+		R().
+		SetContext(ctx)
+}
+
+type registryAuth struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
+type registryConfig struct {
+	Auths map[string]registryAuth `json:"auths"`
+}
+
+func newRegistryRequest(ctx context.Context, secret *corev1.Secret) (*resty.Request, error) {
+	rawConf := secret.Data[".dockerconfigjson"]
+
+	if len(rawConf) == 0 {
+		return nil, fmt.Errorf("no .dockerconfigjson key in secret %s", secret.Name)
+	}
+
+	var conf registryConfig
+	if err := json.Unmarshal(rawConf, &conf); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal .dockerconfigjson: %w", err)
+	}
+
+	for url, auth := range conf.Auths {
+		if !strings.HasPrefix(url, "https://") {
+			url = "https://" + url
+		}
+
+		return newRequest(ctx, url).SetBasicAuth(auth.Username, auth.Password), nil
+	}
+
+	return nil, errors.New("no auths in .dockerconfigjson")
 }
 
 func hasIntegrationSecretLabelLabel(object client.Object) bool {

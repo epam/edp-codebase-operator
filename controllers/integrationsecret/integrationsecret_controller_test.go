@@ -23,7 +23,7 @@ func TestReconcileIntegrationSecret_Reconcile(t *testing.T) {
 	t.Parallel()
 
 	ns := "default"
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if strings.Contains(r.URL.String(), "success") {
 			w.WriteHeader(http.StatusOK)
 			return
@@ -177,6 +177,111 @@ func TestReconcileIntegrationSecret_Reconcile(t *testing.T) {
 			},
 			wantErr:           require.NoError,
 			wantConAnnotation: "true",
+		},
+		{
+			name:       "success registry",
+			secretName: "registry",
+			client: func(t *testing.T) client.Client {
+				return fake.NewClientBuilder().WithScheme(s).WithObjects(
+					&corev1.Secret{
+						ObjectMeta: metav1.ObjectMeta{
+							Namespace: ns,
+							Name:      "registry",
+							Labels: map[string]string{
+								integrationSecretTypeLabel: "registry",
+							},
+						},
+						Type: corev1.SecretTypeDockerConfigJson,
+						Data: map[string][]byte{
+							".dockerconfigjson": []byte(`{"auths":{"` + server.URL + `/success":{"username":"user1", "password":"password1"}}}`),
+						},
+					},
+				).Build()
+			},
+			wantRes: reconcile.Result{
+				RequeueAfter: successConnectionRequeueTime,
+			},
+			wantErr:           require.NoError,
+			wantConAnnotation: "true",
+		},
+		{
+			name:       "registry without auth",
+			secretName: "registry",
+			client: func(t *testing.T) client.Client {
+				return fake.NewClientBuilder().WithScheme(s).WithObjects(
+					&corev1.Secret{
+						ObjectMeta: metav1.ObjectMeta{
+							Namespace: ns,
+							Name:      "registry",
+							Labels: map[string]string{
+								integrationSecretTypeLabel: "registry",
+							},
+						},
+						Type: corev1.SecretTypeDockerConfigJson,
+						Data: map[string][]byte{
+							".dockerconfigjson": []byte("{}"),
+						},
+					},
+				).Build()
+			},
+			wantRes: reconcile.Result{
+				RequeueAfter: failConnectionRequeueTime,
+			},
+			wantErr:              require.NoError,
+			wantConAnnotation:    "false",
+			wantConErrAnnotation: "no auths in .dockerconfigjson",
+		},
+		{
+			name:       "registry with invalid config",
+			secretName: "registry",
+			client: func(t *testing.T) client.Client {
+				return fake.NewClientBuilder().WithScheme(s).WithObjects(
+					&corev1.Secret{
+						ObjectMeta: metav1.ObjectMeta{
+							Namespace: ns,
+							Name:      "registry",
+							Labels: map[string]string{
+								integrationSecretTypeLabel: "registry",
+							},
+						},
+						Type: corev1.SecretTypeDockerConfigJson,
+						Data: map[string][]byte{
+							".dockerconfigjson": []byte("not a json"),
+						},
+					},
+				).Build()
+			},
+			wantRes: reconcile.Result{
+				RequeueAfter: failConnectionRequeueTime,
+			},
+			wantErr:              require.NoError,
+			wantConAnnotation:    "false",
+			wantConErrAnnotation: "failed to unmarshal .dockerconfigjson",
+		},
+		{
+			name:       "registry without .dockerconfigjson",
+			secretName: "registry",
+			client: func(t *testing.T) client.Client {
+				return fake.NewClientBuilder().WithScheme(s).WithObjects(
+					&corev1.Secret{
+						ObjectMeta: metav1.ObjectMeta{
+							Namespace: ns,
+							Name:      "registry",
+							Labels: map[string]string{
+								integrationSecretTypeLabel: "registry",
+							},
+						},
+						Type: corev1.SecretTypeDockerConfigJson,
+						Data: map[string][]byte{},
+					},
+				).Build()
+			},
+			wantRes: reconcile.Result{
+				RequeueAfter: failConnectionRequeueTime,
+			},
+			wantErr:              require.NoError,
+			wantConAnnotation:    "false",
+			wantConErrAnnotation: "no .dockerconfigjson key in secret",
 		},
 		{
 			name:       "not reachable server",
