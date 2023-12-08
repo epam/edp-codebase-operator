@@ -3,8 +3,10 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"os"
 	"strconv"
+	"time"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -52,6 +54,8 @@ const (
 	codebaseOperatorLock                     = "edp-codebase-operator-lock"
 	codebaseBranchMaxConcurrentReconcilesEnv = "CODEBASE_BRANCH_MAX_CONCURRENT_RECONCILES"
 	logFailCtrlCreateMessage                 = "failed to create controller"
+
+	defaultCIRequestDelay = 5 * time.Second
 )
 
 func main() {
@@ -141,7 +145,17 @@ func main() {
 		os.Exit(1)
 	}
 
-	cbCtrl := codebasebranch.NewReconcileCodebaseBranch(mgr.GetClient(), mgr.GetScheme(), ctrlLog)
+	ciRequestDelay, err := getCIRequestDelay("CI_REQUEST_DELAY_SEC")
+	if err != nil {
+		setupLog.Error(err, "failed to read CI Request Delay from env vars", "controller", "codebase-branch")
+		setupLog.Info("Using default CI Request Delay")
+
+		ciRequestDelay = defaultCIRequestDelay
+	}
+
+	setupLog.Info("Request delay set", "CI Request delay", ciRequestDelay)
+
+	cbCtrl := codebasebranch.NewReconcileCodebaseBranch(mgr.GetClient(), mgr.GetScheme(), ctrlLog, ciRequestDelay)
 	if err = cbCtrl.SetupWithManager(mgr,
 		getMaxConcurrentReconciles(codebaseBranchMaxConcurrentReconcilesEnv)); err != nil {
 		setupLog.Error(err, logFailCtrlCreateMessage, "controller", "codebase-branch")
@@ -211,4 +225,18 @@ func getMaxConcurrentReconciles(envVar string) int {
 	}
 
 	return int(n)
+}
+
+func getCIRequestDelay(envVar string) (time.Duration, error) {
+	value, exists := os.LookupEnv(envVar)
+	if !exists {
+		return defaultCIRequestDelay, nil
+	}
+
+	intValue, err := strconv.Atoi(value)
+	if err != nil {
+		return 0, fmt.Errorf("failed to parse delay: %w", err)
+	}
+
+	return time.Duration(intValue) * time.Second, nil
 }

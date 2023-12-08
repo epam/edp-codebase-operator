@@ -2,6 +2,7 @@ package factory
 
 import (
 	"strings"
+	"time"
 
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -20,7 +21,7 @@ import (
 
 var log = ctrl.Log.WithName("codebase_branch_factory")
 
-func createJenkinsDefChain(c client.Client) handler.CodebaseBranchHandler {
+func createJenkinsDefChain(requestRequeueDelay time.Duration, c client.Client) handler.CodebaseBranchHandler {
 	log.Info("chain is selected", "type", "jenkins chain")
 
 	return chain.CheckCommitHashExists{
@@ -30,7 +31,8 @@ func createJenkinsDefChain(c client.Client) handler.CodebaseBranchHandler {
 			TriggerJob: trigger_job.TriggerJob{
 				Client: c,
 				Service: &service.CodebaseBranchServiceProvider{
-					Client: c,
+					TimeoutDuration: requestRequeueDelay,
+					Client:          c,
 				},
 				Next: put_codebase_image_stream.PutCodebaseImageStream{
 					Client: c,
@@ -41,7 +43,7 @@ func createJenkinsDefChain(c client.Client) handler.CodebaseBranchHandler {
 	}
 }
 
-func createTektonDefChain(c client.Client) handler.CodebaseBranchHandler {
+func createTektonDefChain(requestRequeueDelay time.Duration, c client.Client) handler.CodebaseBranchHandler {
 	log.Info("chain is selected", "type", "tekton chain")
 
 	return put_branch_in_git.PutBranchInGit{
@@ -52,12 +54,13 @@ func createTektonDefChain(c client.Client) handler.CodebaseBranchHandler {
 			Next:   &clean_tmp_directory.CleanTempDirectory{},
 		},
 		Service: &service.CodebaseBranchServiceProvider{
-			Client: c,
+			TimeoutDuration: requestRequeueDelay,
+			Client:          c,
 		},
 	}
 }
 
-func GetDeletionChain(ciType string, c client.Client) handler.CodebaseBranchHandler {
+func GetDeletionChain(ciType string, requestRequeueDelay time.Duration, c client.Client) handler.CodebaseBranchHandler {
 	if strings.EqualFold(ciType, util.CITekton) {
 		return empty.MakeChain("no deletion chain for tekton", false)
 	}
@@ -66,16 +69,17 @@ func GetDeletionChain(ciType string, c client.Client) handler.CodebaseBranchHand
 		TriggerJob: trigger_job.TriggerJob{
 			Client: c,
 			Service: &service.CodebaseBranchServiceProvider{
-				Client: c,
+				TimeoutDuration: requestRequeueDelay,
+				Client:          c,
 			},
 		},
 	}
 }
 
-func GetChain(ciType string, c client.Client) handler.CodebaseBranchHandler {
+func GetChain(ciType string, requestRequeueDelay time.Duration, c client.Client) handler.CodebaseBranchHandler {
 	if strings.EqualFold(ciType, util.CITekton) {
-		return createTektonDefChain(c)
+		return createTektonDefChain(requestRequeueDelay, c)
 	}
 
-	return createJenkinsDefChain(c)
+	return createJenkinsDefChain(requestRequeueDelay, c)
 }

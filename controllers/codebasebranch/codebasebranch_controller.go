@@ -32,24 +32,26 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
-func NewReconcileCodebaseBranch(c client.Client, scheme *runtime.Scheme, log logr.Logger) *ReconcileCodebaseBranch {
-	return &ReconcileCodebaseBranch{
-		client: c,
-		scheme: scheme,
-		log:    log.WithName("codebase-branch"),
-	}
-}
-
-type ReconcileCodebaseBranch struct {
-	client client.Client
-	scheme *runtime.Scheme
-	log    logr.Logger
-}
-
 const (
 	codebaseBranchOperatorFinalizerName = "codebase.branch.operator.finalizer.name"
 	errorStatus                         = "error"
 )
+
+func NewReconcileCodebaseBranch(c client.Client, scheme *runtime.Scheme, log logr.Logger, ciRequestDelay time.Duration) *ReconcileCodebaseBranch {
+	return &ReconcileCodebaseBranch{
+		ciRequestDelay: ciRequestDelay,
+		client:         c,
+		scheme:         scheme,
+		log:            log.WithName("codebase-branch"),
+	}
+}
+
+type ReconcileCodebaseBranch struct {
+	ciRequestDelay time.Duration
+	client         client.Client
+	scheme         *runtime.Scheme
+	log            logr.Logger
+}
 
 func (r *ReconcileCodebaseBranch) SetupWithManager(mgr ctrl.Manager, maxConcurrentReconciles int) error {
 	p := predicate.Funcs{
@@ -133,7 +135,7 @@ func (r *ReconcileCodebaseBranch) Reconcile(ctx context.Context, request reconci
 		log.Error(err, "set labels failed")
 	}
 
-	result, err := r.tryToDeleteCodebaseBranch(ctx, cb, factory.GetDeletionChain(c.Spec.CiTool, r.client))
+	result, err := r.tryToDeleteCodebaseBranch(ctx, cb, factory.GetDeletionChain(c.Spec.CiTool, r.ciRequestDelay, r.client))
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to remove codebasebranch %v: %w", cb.Name, err)
 	}
@@ -150,7 +152,7 @@ func (r *ReconcileCodebaseBranch) Reconcile(ctx context.Context, request reconci
 		cb.Status.Build = &buildNumber
 	}
 
-	cbChain := factory.GetChain(c.Spec.CiTool, r.client)
+	cbChain := factory.GetChain(c.Spec.CiTool, r.ciRequestDelay, r.client)
 	if err := cbChain.ServeRequest(ctx, cb); err != nil {
 		const defaultPostponeTime = 5 * time.Second
 

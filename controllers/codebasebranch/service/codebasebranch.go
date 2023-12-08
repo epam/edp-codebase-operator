@@ -20,7 +20,6 @@ var log = ctrl.Log.WithName("codebase_branch_service")
 
 const (
 	jenkinsJobSuccessStatus = "blue"
-	defaultTimeoutDuration  = 5 * time.Second
 	defaultRetryCount       = 50
 )
 
@@ -35,7 +34,8 @@ type CodebaseBranchService interface {
 }
 
 type CodebaseBranchServiceProvider struct {
-	Client client.Client
+	TimeoutDuration time.Duration
+	Client          client.Client
 }
 
 var ErrJobFailed = errors.New("deletion job failed")
@@ -63,7 +63,7 @@ func (s *CodebaseBranchServiceProvider) TriggerDeletionJob(cb *codebaseApi.Codeb
 
 	rj := fmt.Sprintf("%v/job/Delete-release-%v", cb.Spec.CodebaseName, cb.Spec.CodebaseName)
 
-	js, err := jc.GetJobStatus(rj, defaultTimeoutDuration, defaultRetryCount)
+	js, err := jc.GetJobStatus(rj, s.TimeoutDuration, defaultRetryCount)
 	if err != nil {
 		return fmt.Errorf("failed to get deletion job status: %w", err)
 	}
@@ -115,7 +115,7 @@ func (s *CodebaseBranchServiceProvider) TriggerReleaseJob(cb *codebaseApi.Codeba
 
 	rj := fmt.Sprintf("%v/job/Create-release-%v", cb.Spec.CodebaseName, cb.Spec.CodebaseName)
 
-	js, err := jc.GetJobStatus(rj, defaultTimeoutDuration, defaultRetryCount)
+	js, err := jc.GetJobStatus(rj, s.TimeoutDuration, defaultRetryCount)
 	if err != nil {
 		return fmt.Errorf("failed to fetch Jenkins job status: %w", err)
 	}
