@@ -38,12 +38,13 @@ func TestReconcileIntegrationSecret_Reconcile(t *testing.T) {
 	require.NoError(t, corev1.AddToScheme(s))
 
 	tests := []struct {
-		name           string
-		secretName     string
-		client         func(t *testing.T) client.Client
-		wantRes        reconcile.Result
-		wantErr        require.ErrorAssertionFunc
-		wantAnnotation string
+		name                 string
+		secretName           string
+		client               func(t *testing.T) client.Client
+		wantRes              reconcile.Result
+		wantErr              require.ErrorAssertionFunc
+		wantConAnnotation    string
+		wantConErrAnnotation string
 	}{
 		{
 			name:       "success sonarqube",
@@ -68,8 +69,8 @@ func TestReconcileIntegrationSecret_Reconcile(t *testing.T) {
 			wantRes: reconcile.Result{
 				RequeueAfter: successConnectionRequeueTime,
 			},
-			wantErr:        require.NoError,
-			wantAnnotation: "true",
+			wantErr:           require.NoError,
+			wantConAnnotation: "true",
 		},
 		{
 			name:       "fail sonarqube",
@@ -94,8 +95,9 @@ func TestReconcileIntegrationSecret_Reconcile(t *testing.T) {
 			wantRes: reconcile.Result{
 				RequeueAfter: failConnectionRequeueTime,
 			},
-			wantErr:        require.NoError,
-			wantAnnotation: "false",
+			wantErr:              require.NoError,
+			wantConAnnotation:    "false",
+			wantConErrAnnotation: "connection failed",
 		},
 		{
 			name:       "success nexus with basic auth",
@@ -121,8 +123,8 @@ func TestReconcileIntegrationSecret_Reconcile(t *testing.T) {
 			wantRes: reconcile.Result{
 				RequeueAfter: successConnectionRequeueTime,
 			},
-			wantErr:        require.NoError,
-			wantAnnotation: "true",
+			wantErr:           require.NoError,
+			wantConAnnotation: "true",
 		},
 		{
 			name:       "success dependency-track",
@@ -147,8 +149,8 @@ func TestReconcileIntegrationSecret_Reconcile(t *testing.T) {
 			wantRes: reconcile.Result{
 				RequeueAfter: successConnectionRequeueTime,
 			},
-			wantErr:        require.NoError,
-			wantAnnotation: "true",
+			wantErr:           require.NoError,
+			wantConAnnotation: "true",
 		},
 		{
 			name:       "success defectdojo",
@@ -173,8 +175,8 @@ func TestReconcileIntegrationSecret_Reconcile(t *testing.T) {
 			wantRes: reconcile.Result{
 				RequeueAfter: successConnectionRequeueTime,
 			},
-			wantErr:        require.NoError,
-			wantAnnotation: "true",
+			wantErr:           require.NoError,
+			wantConAnnotation: "true",
 		},
 		{
 			name:       "not reachable server",
@@ -195,8 +197,9 @@ func TestReconcileIntegrationSecret_Reconcile(t *testing.T) {
 			wantRes: reconcile.Result{
 				RequeueAfter: failConnectionRequeueTime,
 			},
-			wantErr:        require.NoError,
-			wantAnnotation: "false",
+			wantErr:              require.NoError,
+			wantConAnnotation:    "false",
+			wantConErrAnnotation: "connection failed",
 		},
 		{
 			name:       "secret not found",
@@ -204,9 +207,9 @@ func TestReconcileIntegrationSecret_Reconcile(t *testing.T) {
 			client: func(t *testing.T) client.Client {
 				return fake.NewClientBuilder().WithScheme(s).Build()
 			},
-			wantRes:        reconcile.Result{},
-			wantErr:        require.NoError,
-			wantAnnotation: "",
+			wantRes:           reconcile.Result{},
+			wantErr:           require.NoError,
+			wantConAnnotation: "",
 		},
 	}
 
@@ -227,7 +230,7 @@ func TestReconcileIntegrationSecret_Reconcile(t *testing.T) {
 			tt.wantErr(t, err)
 			require.Equal(t, tt.wantRes, got)
 
-			if tt.wantAnnotation == "" {
+			if tt.wantConAnnotation == "" {
 				return
 			}
 
@@ -237,7 +240,8 @@ func TestReconcileIntegrationSecret_Reconcile(t *testing.T) {
 				Name:      tt.secretName,
 			}, s))
 
-			require.Equal(t, tt.wantAnnotation, s.GetAnnotations()[integrationSecretConnectionAnnotation])
+			require.Equal(t, tt.wantConAnnotation, s.GetAnnotations()[integrationSecretConnectionAnnotation])
+			require.Contains(t, s.GetAnnotations()[integrationSecretErrorAnnotation], tt.wantConErrAnnotation)
 		})
 	}
 }
@@ -255,11 +259,22 @@ func Test_hasIntegrationSecretLabelLabel(t *testing.T) {
 			Object: &corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						integrationSecretLabel: "",
+						integrationSecretLabel: "true",
 					},
 				},
 			},
 			want: true,
+		},
+		{
+			name: "label is false",
+			Object: &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						integrationSecretLabel: "false",
+					},
+				},
+			},
+			want: false,
 		},
 		{
 			name: "has not label",

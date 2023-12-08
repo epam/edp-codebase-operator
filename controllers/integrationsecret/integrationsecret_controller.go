@@ -21,6 +21,7 @@ const (
 	integrationSecretLabel                = "app.edp.epam.com/integration-secret"
 	integrationSecretTypeLabel            = "app.edp.epam.com/secret-type"
 	integrationSecretConnectionAnnotation = "app.edp.epam.com/integration-secret-connected"
+	integrationSecretErrorAnnotation      = "app.edp.epam.com/integration-secret-error"
 	successConnectionRequeueTime          = time.Minute * 30
 	failConnectionRequeueTime             = time.Minute * 1
 )
@@ -73,22 +74,20 @@ func (r *ReconcileIntegrationSecret) Reconcile(ctx context.Context, request reco
 	}
 
 	log := ctrl.LoggerFrom(ctx).WithValues("url", string(secret.Data["url"]))
-	reachable := isReachable(ctx, secret)
 
-	log.Info("Secret connection status", "reachable", reachable)
+	log.Info("Start checking connection")
 
-	if secret.GetAnnotations()[integrationSecretConnectionAnnotation] != strconv.FormatBool(reachable) {
-		log.Info("Updating Secret connection status")
+	err := checkConnection(ctx, secret)
+	reachable := err == nil
+	errMess := ""
 
-		if secret.GetAnnotations() == nil {
-			secret.SetAnnotations(map[string]string{})
-		}
+	if err != nil {
+		log.Info("Connection failed", "error", err.Error())
+		errMess = fmt.Sprintf("connection failed: %s", err.Error())
+	}
 
-		secret.GetAnnotations()[integrationSecretConnectionAnnotation] = strconv.FormatBool(reachable)
-
-		if err := r.client.Update(ctx, secret); err != nil {
-			return reconcile.Result{}, fmt.Errorf("failed to update Secret: %w", err)
-		}
+	if err = r.updateConnectionAnnotation(ctx, secret, reachable, errMess); err != nil {
+		return reconcile.Result{}, err
 	}
 
 	requeue := successConnectionRequeueTime
@@ -103,9 +102,33 @@ func (r *ReconcileIntegrationSecret) Reconcile(ctx context.Context, request reco
 	}, nil
 }
 
-func isReachable(ctx context.Context, secret *corev1.Secret) bool {
+func (r *ReconcileIntegrationSecret) updateConnectionAnnotation(ctx context.Context, secret *corev1.Secret, reachable bool, errMess string) error {
 	log := ctrl.LoggerFrom(ctx).WithValues("url", string(secret.Data["url"]))
 
+	if secret.GetAnnotations()[integrationSecretConnectionAnnotation] != strconv.FormatBool(reachable) ||
+		secret.GetAnnotations()[integrationSecretConnectionAnnotation] != errMess {
+		log.Info("Updating Secret connection status")
+
+		if secret.GetAnnotations() == nil {
+			secret.SetAnnotations(map[string]string{})
+		}
+
+		secret.GetAnnotations()[integrationSecretConnectionAnnotation] = strconv.FormatBool(reachable)
+		delete(secret.GetAnnotations(), integrationSecretErrorAnnotation)
+
+		if errMess != "" {
+			secret.GetAnnotations()[integrationSecretErrorAnnotation] = errMess
+		}
+
+		if err := r.client.Update(ctx, secret); err != nil {
+			return fmt.Errorf("failed to update Secret: %w", err)
+		}
+	}
+
+	return nil
+}
+
+func checkConnection(ctx context.Context, secret *corev1.Secret) error {
 	var (
 		url string
 		req *resty.Request
@@ -131,16 +154,14 @@ func isReachable(ctx context.Context, secret *corev1.Secret) bool {
 
 	resp, err := req.Get(url)
 	if err != nil {
-		log.Info("Error during integration secret request", "error", err)
-		return false
+		return fmt.Errorf("%w", err)
 	}
 
 	if !resp.IsSuccess() {
-		log.Info("Integration secret is not reachable", "status", resp.Status())
-		return false
+		return fmt.Errorf("http status code %s", resp.Status())
 	}
 
-	return true
+	return nil
 }
 
 func newRequestWithAuth(ctx context.Context, secret *corev1.Secret) *resty.Request {
@@ -158,6 +179,7 @@ func newRequest(ctx context.Context, url string) *resty.Request {
 }
 
 func hasIntegrationSecretLabelLabel(object client.Object) bool {
-	_, ok := object.GetLabels()[integrationSecretLabel]
-	return ok
+	label := object.GetLabels()[integrationSecretLabel]
+
+	return label == "true"
 }
