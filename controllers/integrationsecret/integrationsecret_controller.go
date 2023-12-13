@@ -77,7 +77,7 @@ func (r *ReconcileIntegrationSecret) Reconcile(ctx context.Context, request reco
 		return reconcile.Result{}, fmt.Errorf("failed to get Secret: %w", err)
 	}
 
-	log := ctrl.LoggerFrom(ctx).WithValues("url", string(secret.Data["url"]))
+	log := ctrl.LoggerFrom(ctx)
 
 	log.Info("Start checking connection")
 
@@ -107,7 +107,7 @@ func (r *ReconcileIntegrationSecret) Reconcile(ctx context.Context, request reco
 }
 
 func (r *ReconcileIntegrationSecret) updateConnectionAnnotation(ctx context.Context, secret *corev1.Secret, reachable bool, errMess string) error {
-	log := ctrl.LoggerFrom(ctx).WithValues("url", string(secret.Data["url"]))
+	log := ctrl.LoggerFrom(ctx)
 
 	if secret.GetAnnotations()[integrationSecretConnectionAnnotation] != strconv.FormatBool(reachable) ||
 		secret.GetAnnotations()[integrationSecretConnectionAnnotation] != errMess {
@@ -152,17 +152,14 @@ func checkConnection(ctx context.Context, secret *corev1.Secret) error {
 		path = "/api/v2/user_profile"
 		req = newRequest(ctx, string(secret.Data["url"])).SetHeader("Authorization", "Token "+string(secret.Data["token"]))
 	case "registry":
-		// docker registry specification endpoint https://github.com/opencontainers/distribution-spec/blob/v1.0.1/spec.md#endpoints
-		path = "/v2"
-
-		var err error
-		if req, err = newRegistryRequest(ctx, secret); err != nil {
-			return err
-		}
+		return checkRegistry(ctx, secret)
 	default:
 		path = "/"
 		req = newRequest(ctx, string(secret.Data["url"]))
 	}
+
+	log := ctrl.LoggerFrom(ctx).WithValues("url", req.URL+path)
+	log.Info("Making request")
 
 	resp, err := req.Get(path)
 	if err != nil {
@@ -204,27 +201,69 @@ type registryConfig struct {
 	Auths map[string]registryAuth `json:"auths"`
 }
 
-func newRegistryRequest(ctx context.Context, secret *corev1.Secret) (*resty.Request, error) {
+func checkRegistry(ctx context.Context, secret *corev1.Secret) error {
 	rawConf := secret.Data[".dockerconfigjson"]
 
 	if len(rawConf) == 0 {
-		return nil, fmt.Errorf("no .dockerconfigjson key in secret %s", secret.Name)
+		return fmt.Errorf("no .dockerconfigjson key in secret %s", secret.Name)
 	}
 
 	var conf registryConfig
 	if err := json.Unmarshal(rawConf, &conf); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal .dockerconfigjson: %w", err)
+		return fmt.Errorf("failed to unmarshal .dockerconfigjson: %w", err)
 	}
 
 	for url, auth := range conf.Auths {
+		// for docker hub we need to use custom endpoint
+		// see thttps://github.com/GoogleContainerTools/kaniko/blob/v1.19.0/README.md?plain=1#L540
+		if url == "https://index.docker.io/v1/" {
+			return checkDockerHub(ctx, auth.Username, auth.Password)
+		}
+
 		if !strings.HasPrefix(url, "https://") {
 			url = "https://" + url
 		}
 
-		return newRequest(ctx, url).SetBasicAuth(auth.Username, auth.Password), nil
+		log := ctrl.LoggerFrom(ctx).WithValues("url", url+"/v2")
+		log.Info("Making request")
+
+		// docker registry specification endpoint https://github.com/opencontainers/distribution-spec/blob/v1.0.1/spec.md#endpoints
+		resp, err := newRequest(ctx, url).SetBasicAuth(auth.Username, auth.Password).Get("/v2")
+		if err != nil {
+			return fmt.Errorf("%w", err)
+		}
+
+		if !resp.IsSuccess() {
+			return fmt.Errorf("http status code %s", resp.Status())
+		}
+
+		return nil
 	}
 
-	return nil, errors.New("no auths in .dockerconfigjson")
+	return errors.New("no auths in .dockerconfigjson")
+}
+
+func checkDockerHub(ctx context.Context, username, password string) error {
+	log := ctrl.LoggerFrom(ctx).WithValues("url", "https://hub.docker.com/v2")
+	log.Info("Making request")
+
+	resp, err := newRequest(ctx, "https://hub.docker.com").
+		SetHeader("Content-Type", "application/json").
+		SetBody(map[string]string{
+			"username": username,
+			"password": password,
+		}).
+		Post("/v2/users/login")
+
+	if err != nil {
+		return fmt.Errorf("%w", err)
+	}
+
+	if !resp.IsSuccess() {
+		return fmt.Errorf("http status code %s", resp.Status())
+	}
+
+	return nil
 }
 
 func hasIntegrationSecretLabelLabel(object client.Object) bool {

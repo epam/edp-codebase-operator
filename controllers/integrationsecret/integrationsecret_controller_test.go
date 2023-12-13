@@ -205,6 +205,58 @@ func TestReconcileIntegrationSecret_Reconcile(t *testing.T) {
 			wantConAnnotation: "true",
 		},
 		{
+			name:       "registry with invalid credentials",
+			secretName: "registry",
+			client: func(t *testing.T) client.Client {
+				return fake.NewClientBuilder().WithScheme(s).WithObjects(
+					&corev1.Secret{
+						ObjectMeta: metav1.ObjectMeta{
+							Namespace: ns,
+							Name:      "registry",
+							Labels: map[string]string{
+								integrationSecretTypeLabel: "registry",
+							},
+						},
+						Type: corev1.SecretTypeDockerConfigJson,
+						Data: map[string][]byte{
+							".dockerconfigjson": []byte(`{"auths":{"` + server.URL + `/fail":{"username":"user1", "password":"password1"}}}`),
+						},
+					},
+				).Build()
+			},
+			wantRes: reconcile.Result{
+				RequeueAfter: failConnectionRequeueTime,
+			},
+			wantErr:           require.NoError,
+			wantConAnnotation: "false",
+		},
+		{
+			name:       "dockerhub with invalid credentials",
+			secretName: "registry",
+			client: func(t *testing.T) client.Client {
+				return fake.NewClientBuilder().WithScheme(s).WithObjects(
+					&corev1.Secret{
+						ObjectMeta: metav1.ObjectMeta{
+							Namespace: ns,
+							Name:      "registry",
+							Labels: map[string]string{
+								integrationSecretTypeLabel: "registry",
+							},
+						},
+						Type: corev1.SecretTypeDockerConfigJson,
+						Data: map[string][]byte{
+							".dockerconfigjson": []byte(`{"auths":{"https://index.docker.io/v1/":{"username":"user1", "password":"password1"}}}`),
+						},
+					},
+				).Build()
+			},
+			wantRes: reconcile.Result{
+				RequeueAfter: failConnectionRequeueTime,
+			},
+			wantErr:           require.NoError,
+			wantConAnnotation: "false",
+		},
+		{
 			name:       "registry without auth",
 			secretName: "registry",
 			client: func(t *testing.T) client.Client {
