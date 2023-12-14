@@ -48,6 +48,8 @@ spec:
               value: {{ .Values.name }}
             - name: PLATFORM_TYPE
               value: "{{ .Values.global.platform }}"
+            - name: METRICS_ENABLED
+              value: "{{ .Values.metricsEnabled }}"
 {{ toYaml .Values.envs | indent 12 }}
           resources:
 {{ toYaml .Values.resources | indent 12 }}

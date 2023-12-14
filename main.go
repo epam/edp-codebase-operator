@@ -5,6 +5,7 @@ import (
 	"flag"
 	"os"
 	"strconv"
+	"time"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -38,6 +39,7 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/controllers/integrationsecret"
 	"github.com/epam/edp-codebase-operator/v2/controllers/jiraissuemetadata"
 	"github.com/epam/edp-codebase-operator/v2/controllers/jiraserver"
+	"github.com/epam/edp-codebase-operator/v2/pkg/metrics"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	"github.com/epam/edp-codebase-operator/v2/pkg/webhook"
 )
@@ -52,6 +54,9 @@ const (
 	codebaseOperatorLock                     = "edp-codebase-operator-lock"
 	codebaseBranchMaxConcurrentReconcilesEnv = "CODEBASE_BRANCH_MAX_CONCURRENT_RECONCILES"
 	logFailCtrlCreateMessage                 = "failed to create controller"
+	metricsDefaultDelay                      = time.Hour
+	metricsSendEvery                         = time.Hour * 24
+	metricsUrl                               = "https://telemetry.edp-epam.com"
 )
 
 func main() {
@@ -63,7 +68,7 @@ func main() {
 
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
-	flag.BoolVar(&enableLeaderElection, "leader-elect", true,
+	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
 
@@ -196,7 +201,14 @@ func main() {
 
 	setupLog.Info("starting manager")
 
-	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
+	ctx := ctrl.SetupSignalHandler()
+
+	metricsEnabled, _ := strconv.ParseBool(os.Getenv("METRICS_ENABLED"))
+	if metricsEnabled {
+		go metrics.NewCollector(ns, metricsUrl, mgr.GetClient()).Start(ctx, getMetricsDelay(), metricsSendEvery)
+	}
+
+	if err := mgr.Start(ctx); err != nil {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
@@ -214,4 +226,18 @@ func getMaxConcurrentReconciles(envVar string) int {
 	}
 
 	return int(n)
+}
+
+func getMetricsDelay() time.Duration {
+	val, exists := os.LookupEnv("METRICS_DELAY")
+	if !exists {
+		return metricsDefaultDelay
+	}
+
+	d, err := strconv.Atoi(val)
+	if err != nil {
+		return metricsDefaultDelay
+	}
+
+	return time.Duration(d)
 }

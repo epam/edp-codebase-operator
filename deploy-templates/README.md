@@ -35,6 +35,7 @@ A Helm chart for EDP Codebase Operator
 | jira.integration | bool | `false` | Flag to enable/disable Jira integration |
 | jira.name | string | `"jira"` | JiraServer CR name |
 | jira.rootUrl | string | `"https://jiraeu.example.com"` | URL to Jira server |
+| metricsEnabled | bool | `true` | Flag to enable/disable telemetry metrics |
 | name | string | `"codebase-operator"` | component name |
 | nodeSelector | object | `{}` |  |
 | resources.limits.memory | string | `"192Mi"` |  |

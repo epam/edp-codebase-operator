@@ -50,6 +50,7 @@ rules:
     - stages
     - stages/finalizers
     - stages/status
+    - cdpipelines
   verbs:
     - '*'
 - apiGroups:
