@@ -1,4 +1,4 @@
-package metrics
+package telemetry
 
 type CodebaseMetrics struct {
 	Lang       string `json:"lang"`

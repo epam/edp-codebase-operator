@@ -39,7 +39,7 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/controllers/integrationsecret"
 	"github.com/epam/edp-codebase-operator/v2/controllers/jiraissuemetadata"
 	"github.com/epam/edp-codebase-operator/v2/controllers/jiraserver"
-	"github.com/epam/edp-codebase-operator/v2/pkg/metrics"
+	"github.com/epam/edp-codebase-operator/v2/pkg/telemetry"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	"github.com/epam/edp-codebase-operator/v2/pkg/webhook"
 )
@@ -54,9 +54,9 @@ const (
 	codebaseOperatorLock                     = "edp-codebase-operator-lock"
 	codebaseBranchMaxConcurrentReconcilesEnv = "CODEBASE_BRANCH_MAX_CONCURRENT_RECONCILES"
 	logFailCtrlCreateMessage                 = "failed to create controller"
-	metricsDefaultDelay                      = time.Hour
-	metricsSendEvery                         = time.Hour * 24
-	metricsUrl                               = "https://telemetry.edp-epam.com"
+	telemetryDefaultDelay                    = time.Hour
+	telemetrySendEvery                       = time.Hour * 24
+	telemetryUrl                             = "https://telemetry.edp-epam.com"
 )
 
 func main() {
@@ -203,9 +203,9 @@ func main() {
 
 	ctx := ctrl.SetupSignalHandler()
 
-	metricsEnabled, _ := strconv.ParseBool(os.Getenv("METRICS_ENABLED"))
-	if metricsEnabled {
-		go metrics.NewCollector(ns, metricsUrl, mgr.GetClient()).Start(ctx, getMetricsDelay(), metricsSendEvery)
+	telemetryEnabled, _ := strconv.ParseBool(os.Getenv("TELEMETRY_ENABLED"))
+	if telemetryEnabled {
+		go telemetry.NewCollector(ns, telemetryUrl, mgr.GetClient()).Start(ctx, getTelemetryDelay(), telemetrySendEvery)
 	}
 
 	if err := mgr.Start(ctx); err != nil {
@@ -228,16 +228,16 @@ func getMaxConcurrentReconciles(envVar string) int {
 	return int(n)
 }
 
-func getMetricsDelay() time.Duration {
-	val, exists := os.LookupEnv("METRICS_DELAY")
+func getTelemetryDelay() time.Duration {
+	val, exists := os.LookupEnv("TELEMETRY_DELAY")
 	if !exists {
-		return metricsDefaultDelay
+		return telemetryDefaultDelay
 	}
 
 	d, err := strconv.Atoi(val)
 	if err != nil {
-		return metricsDefaultDelay
+		return telemetryDefaultDelay
 	}
 
-	return time.Duration(d)
+	return time.Duration(d) * time.Minute
 }

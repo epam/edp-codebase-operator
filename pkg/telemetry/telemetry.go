@@ -1,4 +1,4 @@
-package metrics
+package telemetry
 
 import (
 	"context"
@@ -17,17 +17,17 @@ import (
 )
 
 type Collector struct {
-	namespace  string
-	metricsUrl string
-	k8sClient  client.Client
+	namespace    string
+	telemetryUrl string
+	k8sClient    client.Client
 }
 
-func NewCollector(namespace, metricsUrl string, k8sClient client.Client) *Collector {
-	return &Collector{namespace: namespace, metricsUrl: metricsUrl, k8sClient: k8sClient}
+func NewCollector(namespace, telemetryUrl string, k8sClient client.Client) *Collector {
+	return &Collector{namespace: namespace, telemetryUrl: telemetryUrl, k8sClient: k8sClient}
 }
 
 func (c *Collector) Start(ctx context.Context, delay, sendEvery time.Duration) {
-	log := ctrl.Log.WithName("metrics-collector")
+	log := ctrl.Log.WithName("telemetry-collector")
 
 	go func() {
 		timeToSend := time.Now().Add(delay)
@@ -38,16 +38,16 @@ func (c *Collector) Start(ctx context.Context, delay, sendEvery time.Duration) {
 		for {
 			select {
 			case <-ctx.Done():
-				log.Info("Stop metrics collector")
+				log.Info("Stop telemetry-metrics collector")
 				return
 			case now := <-ticker.C:
 				if timeToSend.Before(now) {
-					if err := c.sendMetrics(ctx); err != nil {
-						log.Error(err, "Failed to send metrics")
+					if err := c.sendTelemetry(ctx); err != nil {
+						log.Error(err, "Failed to send telemetry-metrics")
 						return
 					}
 
-					log.Info("Metrics were sent")
+					log.Info("Telemetry-metrics were sent")
 
 					return
 				}
@@ -61,20 +61,20 @@ func (c *Collector) Start(ctx context.Context, delay, sendEvery time.Duration) {
 	for {
 		select {
 		case <-ctx.Done():
-			log.Info("Stop metrics collector")
+			log.Info("Stop telemetry-metrics collector")
 			return
 		case <-ticker.C:
-			if err := c.sendMetrics(ctx); err != nil {
-				log.Error(err, "Failed to send metrics")
+			if err := c.sendTelemetry(ctx); err != nil {
+				log.Error(err, "Failed to send telemetry-metrics")
 				break
 			}
 
-			log.Info("Metrics were sent")
+			log.Info("Telemetry-metrics were sent")
 		}
 	}
 }
 
-func (c *Collector) sendMetrics(ctx context.Context) error {
+func (c *Collector) sendTelemetry(ctx context.Context) error {
 	edpConfig := &corev1.ConfigMap{}
 	if err := c.k8sClient.Get(ctx, client.ObjectKey{
 		Namespace: c.namespace,
@@ -83,9 +83,9 @@ func (c *Collector) sendMetrics(ctx context.Context) error {
 		return fmt.Errorf("failed to get edp config: %w", err)
 	}
 
-	metrics := PlatformMetrics{}
-	metrics.RegistryType = edpConfig.Data["container_registry_type"]
-	metrics.Version = edpConfig.Data["edp_version"]
+	telemetry := PlatformMetrics{}
+	telemetry.RegistryType = edpConfig.Data["container_registry_type"]
+	telemetry.Version = edpConfig.Data["edp_version"]
 
 	codebases := &codebaseApi.CodebaseList{}
 	if err := c.k8sClient.List(ctx, codebases, client.InNamespace(c.namespace)); err != nil {
@@ -93,7 +93,7 @@ func (c *Collector) sendMetrics(ctx context.Context) error {
 	}
 
 	for i := 0; i < len(codebases.Items); i++ {
-		metrics.CodebaseMetrics = append(metrics.CodebaseMetrics, CodebaseMetrics{
+		telemetry.CodebaseMetrics = append(telemetry.CodebaseMetrics, CodebaseMetrics{
 			Lang:       codebases.Items[i].Spec.Lang,
 			Framework:  codebases.Items[i].Spec.Framework,
 			BuildTool:  codebases.Items[i].Spec.BuildTool,
@@ -109,7 +109,7 @@ func (c *Collector) sendMetrics(ctx context.Context) error {
 	}
 
 	if len(gitProviders.Items) > 0 {
-		metrics.GitProviders = append(metrics.GitProviders, gitProviders.Items[0].Spec.GitProvider)
+		telemetry.GitProviders = append(telemetry.GitProviders, gitProviders.Items[0].Spec.GitProvider)
 	}
 
 	stages := &pipelineAPi.StageList{}
@@ -139,7 +139,7 @@ func (c *Collector) sendMetrics(ctx context.Context) error {
 			pipeDeployment = val
 		}
 
-		metrics.CdPipelineMetrics = append(metrics.CdPipelineMetrics, CdPipelineMetrics{
+		telemetry.CdPipelineMetrics = append(telemetry.CdPipelineMetrics, CdPipelineMetrics{
 			DeploymentType: pipeDeployment,
 			NumberOfStages: stagesCount[cdPipelines.Items[i].Name],
 		})
@@ -150,20 +150,20 @@ func (c *Collector) sendMetrics(ctx context.Context) error {
 		return fmt.Errorf("failed to get jira servers: %w", err)
 	}
 
-	metrics.JiraEnabled = len(jiraServers.Items) > 0
+	telemetry.JiraEnabled = len(jiraServers.Items) > 0
 
 	resp, err := resty.New().
-		SetHostURL(c.metricsUrl).
+		SetHostURL(c.telemetryUrl).
 		R().
 		SetContext(ctx).
-		SetBody(map[string]PlatformMetrics{"platformMetrics": metrics}).
+		SetBody(map[string]PlatformMetrics{"platformMetrics": telemetry}).
 		Post("/v1/submit")
 	if err != nil {
-		return fmt.Errorf("failed to send metrics: %w", err)
+		return fmt.Errorf("failed to send telemetry: %w", err)
 	}
 
 	if resp.IsError() {
-		return fmt.Errorf("failed to send metrics: http status code: %s, body: %s", resp.Status(), resp.String())
+		return fmt.Errorf("failed to send telemetry: http status code: %s, body: %s", resp.Status(), resp.String())
 	}
 
 	return nil

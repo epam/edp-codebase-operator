@@ -41,5 +41,5 @@ jira:
   # -- Name of secret with credentials to Jira server
   credentialName: "ci-jira"
 
-# -- Flag to enable/disable telemetry metrics
-metricsEnabled: true
+# -- Flag to enable/disable telemetry
+telemetryEnabled: true
