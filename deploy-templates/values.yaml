@@ -41,5 +41,11 @@ jira:
   # -- Name of secret with credentials to Jira server
   credentialName: "ci-jira"
 
+# The TELEMETRY_ENABLED flag configuration grants users the authority
+# to manage anonymized data collection for telemetry purposes. By activating this flag, users support
+# the continual collection of anonymized statistics, essential for informed decision-making and strategic
+# platform enhancements. This feature respects user preferences, offering the choice to participate in shaping
+# the platform's improvement initiatives while ensuring anonymity and data privacy.
+# Read more about EDP telemetry here: https://epam.github.io/edp-install/developer-guide/telemetry/
 # -- Flag to enable/disable telemetry
 telemetryEnabled: true
