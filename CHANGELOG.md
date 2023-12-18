@@ -1,6 +1,32 @@
 <a name="unreleased"></a>
 ## [Unreleased]
 
+### Documentation
+
+- Add more details regarding telemetry option ([#31](https://github.com/epam/edp-codebase-operator/issues/31))
+
+
+<a name="v2.21.0"></a>
+## [v2.21.0] - 2023-12-18
+### Features
+
+- Send telemetry metrics to the EDP backend ([#31](https://github.com/epam/edp-codebase-operator/issues/31))
+- Add connection status to registry integration secret ([#29](https://github.com/epam/edp-codebase-operator/issues/29))
+- Add connection error to integration secret ([#29](https://github.com/epam/edp-codebase-operator/issues/29))
+- Add connection status to the integration secret annotation ([#29](https://github.com/epam/edp-codebase-operator/issues/29))
+- Automate rekor uuid in release tag ([#27](https://github.com/epam/edp-codebase-operator/issues/27))
+
+### Bug Fixes
+
+- Fix deployment template for telemetry ([#31](https://github.com/epam/edp-codebase-operator/issues/31))
+- Use minutes for telemetry delay ([#31](https://github.com/epam/edp-codebase-operator/issues/31))
+- Integration status for dockerhub registry failed ([#29](https://github.com/epam/edp-codebase-operator/issues/29))
+- Use EDP approach for label naming ([#29](https://github.com/epam/edp-codebase-operator/issues/29))
+
+### Routine
+
+- Update current development version ([#26](https://github.com/epam/edp-codebase-operator/issues/26))
+
 
 <a name="v2.20.0"></a>
 ## [v2.20.0] - 2023-11-03
@@ -69,12 +95,21 @@ removed required fields from the GitServer status. CRD should be updated.
 - Update current development version ([#9](https://github.com/epam/edp-codebase-operator/issues/9))
 
 
+<a name="v2.17.1"></a>
+## [v2.17.1] - 2023-12-11
+### Features
+
+- Make CI request timeouts configurable ([#30](https://github.com/epam/edp-codebase-operator/issues/30))
+
+
 <a name="v2.17.0"></a>
 ## [v2.17.0] - 2023-08-17
 
-[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.20.0...HEAD
+[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.21.0...HEAD
+[v2.21.0]: https://github.com/epam/edp-codebase-operator/compare/v2.20.0...v2.21.0
 [v2.20.0]: https://github.com/epam/edp-codebase-operator/compare/v2.19.0...v2.20.0
 [v2.19.0]: https://github.com/epam/edp-codebase-operator/compare/v2.18.1...v2.19.0
 [v2.18.1]: https://github.com/epam/edp-codebase-operator/compare/v2.18.0...v2.18.1
-[v2.18.0]: https://github.com/epam/edp-codebase-operator/compare/v2.17.0...v2.18.0
+[v2.18.0]: https://github.com/epam/edp-codebase-operator/compare/v2.17.1...v2.18.0
+[v2.17.1]: https://github.com/epam/edp-codebase-operator/compare/v2.17.0...v2.17.1
 [v2.17.0]: https://github.com/epam/edp-codebase-operator/compare/v2.16.0...v2.17.0
