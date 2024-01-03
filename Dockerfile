@@ -1,4 +1,4 @@
-FROM alpine:3.18.3
+FROM alpine:3.18.5
 
 ENV ASSETS_DIR=/usr/local/bin \
     HOME=/home/codebase-operator \
@@ -8,7 +8,7 @@ ENV ASSETS_DIR=/usr/local/bin \
     USER_UID=1001
 
 RUN apk add --no-cache ca-certificates=20230506-r0 \
-                       openssh-client==9.3_p2-r0 \
+                       openssh-client==9.3_p2-r1 \
                        git==2.40.1-r0
 
 RUN adduser -h ${HOME} -s /bin/ash -D -u ${USER_UID} codebase-operator
