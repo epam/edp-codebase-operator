@@ -17,6 +17,7 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/go-git/go-git/v5/plumbing/storer"
+	"github.com/go-git/go-git/v5/plumbing/transport"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/go-git/go-git/v5/storage/memory"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -317,12 +318,18 @@ func (*GitProvider) CheckPermissions(ctx context.Context, repo string, user, pas
 		},
 	})
 	if err != nil {
+		if errors.Is(err, transport.ErrEmptyRemoteRepository) {
+			l.Error(err, "No refs in repository")
+			return false
+		}
+
 		l.Error(err, fmt.Sprintf("User %v do not have access to %v repository", user, repo))
+
 		return false
 	}
 
 	if len(rfs) == 0 {
-		l.Error(errors.New("there are not refs in repository"), "no refs in repository")
+		l.Error(errors.New("there are not refs in repository"), "No refs in repository")
 		return false
 	}
 

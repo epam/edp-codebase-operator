@@ -4,14 +4,14 @@ import (
 	"context"
 	"encoding/base64"
 	"errors"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path"
 	"testing"
 
 	gogit "github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/object"
-	"github.com/go-logr/logr"
-	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -26,20 +26,17 @@ func TestGitProvider_CheckPermissions(t *testing.T) {
 	user := "user"
 	pass := "pass"
 
-	httpmock.Reset()
-	httpmock.Activate()
-
 	bts, err := base64.StdEncoding.DecodeString(`MDAxZSMgc2VydmljZT1naXQtdXBsb2FkLXBhY2sKMDAwMDAxNTY2ZWNmMGVmMmMyZGZmYjc5NjAzM2U1YTAyMjE5YWY4NmVjNjU4NGU1IEhFQUQAbXVsdGlfYWNrIHRoaW4tcGFjayBzaWRlLWJhbmQgc2lkZS1iYW5kLTY0ayBvZnMtZGVsdGEgc2hhbGxvdyBkZWVwZW4tc2luY2UgZGVlcGVuLW5vdCBkZWVwZW4tcmVsYXRpdmUgbm8tcHJvZ3Jlc3MgaW5jbHVkZS10YWcgbXVsdGlfYWNrX2RldGFpbGVkIGFsbG93LXRpcC1zaGExLWluLXdhbnQgYWxsb3ctcmVhY2hhYmxlLXNoYTEtaW4td2FudCBuby1kb25lIHN5bXJlZj1IRUFEOnJlZnMvaGVhZHMvbWFzdGVyIGZpbHRlciBvYmplY3QtZm9ybWF0PXNoYTEgYWdlbnQ9Z2l0L2dpdGh1Yi1nNzhiNDUyNDEzZThiCjAwM2ZlOGQzZmZhYjU1Mjg5NWMxOWI5ZmNmN2FhMjY0ZDI3N2NkZTMzODgxIHJlZnMvaGVhZHMvYnJhbmNoCjAwM2Y2ZWNmMGVmMmMyZGZmYjc5NjAzM2U1YTAyMjE5YWY4NmVjNjU4NGU1IHJlZnMvaGVhZHMvbWFzdGVyCjAwM2ViOGU0NzFmNThiY2JjYTYzYjA3YmRhMjBlNDI4MTkwNDA5YzJkYjQ3IHJlZnMvcHVsbC8xL2hlYWQKMDAzZTk2MzJmMDI4MzNiMmY5NjEzYWZiNWU3NTY4MjEzMmIwYjIyZTRhMzEgcmVmcy9wdWxsLzIvaGVhZAowMDNmYzM3ZjU4YTEzMGNhNTU1ZTQyZmY5NmEwNzFjYjljY2IzZjQzNzUwNCByZWZzL3B1bGwvMi9tZXJnZQowMDAw`)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
-	httpmock.RegisterResponder("GET", "http://repo.git/info/refs?service=git-upload-pack",
-		httpmock.NewBytesResponder(200, bts))
+	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, err = w.Write(bts)
+		assert.NoError(t, err, "failed to write response")
+	}))
+	defer s.Close()
 
-	if !gp.CheckPermissions(ctrl.LoggerInto(context.Background(), logr.Discard()), "http://repo.git", &user, &pass) {
-		t.Fatal("repo must be accessible")
-	}
+	require.True(t, gp.CheckPermissions(context.Background(), s.URL, &user, &pass), "repo must be accessible")
 }
 
 func TestGitProvider_CheckPermissions_NoRefs(t *testing.T) {
@@ -47,25 +44,24 @@ func TestGitProvider_CheckPermissions_NoRefs(t *testing.T) {
 	user := "user"
 	pass := "pass"
 
-	httpmock.Reset()
-	httpmock.Activate()
-
 	bts, err := base64.StdEncoding.DecodeString(`MDAxZSMgc2VydmljZT1naXQtdXBsb2FkLXBhY2sKMDAwMDAwZGUwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwIGNhcGFiaWxpdGllc157fQAgaW5jbHVkZS10YWcgbXVsdGlfYWNrX2RldGFpbGVkIG11bHRpX2FjayBvZnMtZGVsdGEgc2lkZS1iYW5kIHNpZGUtYmFuZC02NGsgdGhpbi1wYWNrIG5vLXByb2dyZXNzIHNoYWxsb3cgbm8tZG9uZSBhZ2VudD1KR2l0L3Y1LjkuMC4yMDIwMDkwODA1MDEtci00MS1nNWQ5MjVlY2JiCjAwMDA=`)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+
+	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, err = w.Write(bts)
+		assert.NoError(t, err, "failed to write response")
+	}))
+	defer s.Close()
 
 	mockLogger := platform.NewLoggerMock()
 	loggerSink, ok := mockLogger.GetSink().(*platform.LoggerMock)
 	require.True(t, ok)
 
-	httpmock.RegisterResponder("GET", "http://repo.git/info/refs?service=git-upload-pack",
-		httpmock.NewBytesResponder(200, bts))
-
-	accessible := gp.CheckPermissions(ctrl.LoggerInto(context.Background(), mockLogger), "http://repo.git", &user, &pass)
+	accessible := gp.CheckPermissions(ctrl.LoggerInto(context.Background(), mockLogger), s.URL, &user, &pass)
 	require.False(t, accessible, "repo must not be accessible")
 	require.Error(t, loggerSink.LastError())
-	require.Contains(t, loggerSink.LastError().Error(), "there are not refs in repository")
+	require.Contains(t, loggerSink.LastError().Error(), "remote repository is empty")
 }
 
 func TestInitAuth(t *testing.T) {
