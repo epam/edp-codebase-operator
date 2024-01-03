@@ -20,8 +20,7 @@ import (
 
 const (
 	webhookTokenLength = 20
-	gitLabIngressName  = "el-gitlab-listener"
-	gitHubIngressName  = "el-github-listener"
+	ingressName        = "event-listener"
 )
 
 // PutWebHook is a chain element to create webhook.
@@ -149,17 +148,6 @@ func (s *PutWebHook) getGitServerSecret(ctx context.Context, secretName, namespa
 }
 
 func (s *PutWebHook) getWebHookUrl(ctx context.Context, gitServer *codebaseApi.GitServer) (string, error) {
-	var ingressName string
-
-	switch gitServer.Spec.GitProvider {
-	case codebaseApi.GitProviderGithub:
-		ingressName = gitHubIngressName
-	case codebaseApi.GitProviderGitlab:
-		ingressName = gitLabIngressName
-	default:
-		return "", fmt.Errorf("unsupported git provider %s", gitServer.Spec.GitProvider)
-	}
-
 	if platform.IsK8S() {
 		return s.getWebhookIngressUrl(ctx, ingressName, gitServer.Namespace)
 	}

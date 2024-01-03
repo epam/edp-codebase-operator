@@ -99,7 +99,7 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 						util.GitServerSecretWebhookSecretField: []byte("test-webhook-secret"),
 					},
 				},
-				fakeIngress(namespace, gitLabIngressName, "fake.gitlab.com"),
+				fakeIngress(namespace, ingressName, "fake.gitlab.com"),
 			},
 			responder: func(t *testing.T) {
 				POSTResponder := httpmock.NewStringResponder(http.StatusOK, "")
@@ -161,7 +161,7 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 				&routeApi.Route{
 					ObjectMeta: metaV1.ObjectMeta{
 						Namespace: namespace,
-						Name:      gitLabIngressName,
+						Name:      ingressName,
 					},
 					Status: routeApi.RouteStatus{
 						Ingress: []routeApi.RouteIngress{
@@ -229,7 +229,7 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 						util.GitServerSecretWebhookSecretField: []byte("test-webhook-secret"),
 					},
 				},
-				fakeIngress(namespace, gitHubIngressName, "fake.github.com"),
+				fakeIngress(namespace, ingressName, "fake.github.com"),
 			},
 			responder: func(t *testing.T) {
 				POSTResponder := httpmock.NewStringResponder(http.StatusOK, "")
@@ -288,7 +288,7 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 						util.GitServerSecretWebhookSecretField: []byte("test-webhook-secret"),
 					},
 				},
-				fakeIngress(namespace, gitLabIngressName, "fake.gitlab.com"),
+				fakeIngress(namespace, ingressName, "fake.gitlab.com"),
 			},
 			responder: func(t *testing.T) {
 				getHookResponder, err := httpmock.NewJsonResponder(http.StatusNotFound, map[string]string{"message": "404 Not Found"})
@@ -348,7 +348,7 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 						util.GitServerSecretTokenField: []byte("test-token"),
 					},
 				},
-				fakeIngress(namespace, gitLabIngressName, "fake.gitlab.com"),
+				fakeIngress(namespace, ingressName, "fake.gitlab.com"),
 			},
 			responder: func(t *testing.T) {
 				POSTResponder := httpmock.NewStringResponder(http.StatusOK, "")
@@ -461,7 +461,7 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 						util.GitServerSecretWebhookSecretField: []byte("test-webhook-secret"),
 					},
 				},
-				fakeIngress(namespace, gitLabIngressName, "fake.gitlab.com"),
+				fakeIngress(namespace, ingressName, "fake.gitlab.com"),
 			},
 			responder: func(t *testing.T) {
 				getHookResponder, err := httpmock.NewJsonResponder(http.StatusNotFound, map[string]string{"message": "404 Not Found"})
@@ -603,7 +603,7 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 						util.GitServerSecretTokenField: []byte("test-token"),
 					},
 				},
-				fakeIngress(namespace, gitLabIngressName, "fake.gitlab.com"),
+				fakeIngress(namespace, ingressName, "fake.gitlab.com"),
 			},
 			responder: func(t *testing.T) {
 				responder := httpmock.NewStringResponder(http.StatusInternalServerError, "")
@@ -654,7 +654,7 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 				&networkingV1.Ingress{
 					ObjectMeta: metaV1.ObjectMeta{
 						Namespace: namespace,
-						Name:      gitLabIngressName,
+						Name:      ingressName,
 					},
 				},
 			},
@@ -704,7 +704,7 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 			},
 			responder:   func(t *testing.T) {},
 			wantErr:     require.Error,
-			errContains: fmt.Sprintf("failed to get %s ingress", gitLabIngressName),
+			errContains: fmt.Sprintf("failed to get %s ingress", ingressName),
 		},
 		{
 			name: "failed to get secret - no required field",
