@@ -111,6 +111,65 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 			wantErr: require.NoError,
 		},
 		{
+			name: "success gitlab with provided webhook url",
+			codebase: &codebaseApi.Codebase{
+				ObjectMeta: metaV1.ObjectMeta{
+					Namespace:       namespace,
+					Name:            "test-codebase",
+					ResourceVersion: "1",
+				},
+				Spec: codebaseApi.CodebaseSpec{
+					GitServer:  "test-git-server",
+					GitUrlPath: gitURL,
+					CiTool:     util.CITekton,
+				},
+			},
+			prepare: func(t *testing.T) {
+				t.Setenv(platform.TypeEnv, platform.K8S)
+			},
+			k8sObjects: []client.Object{
+				&codebaseApi.Codebase{
+					ObjectMeta: metaV1.ObjectMeta{
+						Namespace:       namespace,
+						Name:            "test-codebase",
+						ResourceVersion: "1",
+					},
+				},
+				&codebaseApi.GitServer{
+					ObjectMeta: metaV1.ObjectMeta{
+						Namespace: namespace,
+						Name:      "test-git-server",
+					},
+					Spec: codebaseApi.GitServerSpec{
+						GitHost:          "fake.gitlab.com",
+						GitUser:          "git",
+						HttpsPort:        443,
+						NameSshKeySecret: "test-secret",
+						GitProvider:      codebaseApi.GitProviderGitlab,
+						WebhookUrl:       "https://fake.gitlab.com/webhook",
+					},
+				},
+				&coreV1.Secret{
+					ObjectMeta: metaV1.ObjectMeta{
+						Namespace: namespace,
+						Name:      "test-secret",
+					},
+					Data: map[string][]byte{
+						util.GitServerSecretTokenField:         []byte("test-token"),
+						util.GitServerSecretWebhookSecretField: []byte("test-webhook-secret"),
+					},
+				},
+			},
+			responder: func(t *testing.T) {
+				POSTResponder := httpmock.NewStringResponder(http.StatusOK, "")
+				httpmock.RegisterRegexpResponder(http.MethodPost, fakeUrlRegexp, POSTResponder)
+
+				GETResponder := httpmock.NewStringResponder(http.StatusOK, "")
+				httpmock.RegisterRegexpResponder(http.MethodGet, fakeUrlRegexp, GETResponder)
+			},
+			wantErr: require.NoError,
+		},
+		{
 			name: "success gitlab with route",
 			codebase: &codebaseApi.Codebase{
 				ObjectMeta: metaV1.ObjectMeta{

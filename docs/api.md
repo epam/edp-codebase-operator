@@ -1152,6 +1152,13 @@ GitServerSpec defines the desired state of GitServer.
           SkipWebhookSSLVerification is a flag to skip webhook tls verification.<br/>
         </td>
         <td>false</td>
+      </tr><tr>
+        <td><b>webhookUrl</b></td>
+        <td>string</td>
+        <td>
+          WebhookUrl is a URL for webhook that will be created in the git provider. If it is not set, a webhook will be created from Ingress with the name "event-listener".<br/>
+        </td>
+        <td>false</td>
       </tr></tbody>
 </table>
 

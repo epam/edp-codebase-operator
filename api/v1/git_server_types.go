@@ -34,6 +34,12 @@ type GitServerSpec struct {
 	// SkipWebhookSSLVerification is a flag to skip webhook tls verification.
 	// +optional
 	SkipWebhookSSLVerification bool `json:"skipWebhookSSLVerification"`
+
+	// WebhookUrl is a URL for webhook that will be created in the git provider.
+	// If it is not set, a webhook will be created from Ingress with the name "event-listener".
+	// +optional
+	// +kubebuilder:example:=`https://webhook-url.com`
+	WebhookUrl string `json:"webhookUrl,omitempty"`
 }
 
 // GitServerStatus defines the observed state of GitServer.

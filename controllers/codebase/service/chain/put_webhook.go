@@ -148,6 +148,10 @@ func (s *PutWebHook) getGitServerSecret(ctx context.Context, secretName, namespa
 }
 
 func (s *PutWebHook) getWebHookUrl(ctx context.Context, gitServer *codebaseApi.GitServer) (string, error) {
+	if gitServer.Spec.WebhookUrl != "" {
+		return gitServer.Spec.WebhookUrl, nil
+	}
+
 	if platform.IsK8S() {
 		return s.getWebhookIngressUrl(ctx, ingressName, gitServer.Namespace)
 	}
