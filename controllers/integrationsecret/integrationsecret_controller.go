@@ -153,6 +153,9 @@ func checkConnection(ctx context.Context, secret *corev1.Secret) error {
 		req = newRequest(ctx, string(secret.Data["url"])).SetHeader("Authorization", "Token "+string(secret.Data["token"]))
 	case "registry":
 		return checkRegistry(ctx, secret)
+	case "argocd":
+		path = "/api/v1/projects"
+		req = newRequest(ctx, string(secret.Data["url"])).SetHeader("Authorization", "Bearer "+string(secret.Data["token"]))
 	default:
 		path = "/"
 		req = newRequest(ctx, string(secret.Data["url"]))
