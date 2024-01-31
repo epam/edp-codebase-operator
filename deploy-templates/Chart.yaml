@@ -74,6 +74,11 @@ annotations:
       name: jiraserver
       displayName: JiraServer
       description: Operates with Jira server
+    - kind: EDPComponent
+      version: v1.edp.epam.com/v1
+      name: edpcomponent
+      displayName: EDPComponent
+      description: Manages components of the EDP platform
   artifacthub.io/crdsExamples: |
     - apiVersion: v2.edp.epam.com/v1
       kind: Codebase
@@ -166,6 +171,15 @@ annotations:
         version: 1.0.1
         minEDPVersion: 2.0.0
         maturity: stable
+    - apiVersion: v1.edp.epam.com/v1
+      kind: EDPComponent
+      metadata:
+        name: docker-registry
+      spec:
+        icon: hash
+        type: docker-registry
+        url: docker.io
+        visible: true
   artifacthub.io/links: |
     - name: EDP Documentation
       url: https://epam.github.io/edp-install/
