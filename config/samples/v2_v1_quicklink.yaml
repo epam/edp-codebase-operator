@@ -1,0 +1,12 @@
+apiVersion: v2.edp.epam.com/v1
+kind: QuickLink
+metadata:
+  labels:
+    app.kubernetes.io/name: quicklink
+    app.kubernetes.io/instance: quicklink-sample
+    app.kubernetes.io/part-of: edp-codebase-operator
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: edp-codebase-operator
+  name: quicklink-sample
+spec:
+  # TODO(user): Add fields here

@@ -148,4 +148,12 @@ resources:
   kind: Template
   path: github.com/epam/edp-codebase-operator/api/v1alpha1
   version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  domain: edp.epam.com
+  group: v2
+  kind: QuickLink
+  path: github.com/epam/edp-codebase-operator/api/v1
+  version: v1
 version: "3"

@@ -245,6 +245,8 @@ Resource Types:
 
 - [JiraServer](#jiraserver)
 
+- [QuickLink](#quicklink)
+
 
 
 
@@ -1712,6 +1714,114 @@ JiraServerStatus defines the observed state of JiraServer.
           Detailed information regarding action result which were performed<br/>
         </td>
         <td>false</td>
+      </tr></tbody>
+</table>
+
+## QuickLink
+<sup><sup>[↩ Parent](#v2edpepamcomv1 )</sup></sup>
+
+
+
+
+
+
+QuickLink is the Schema for the quicklinks API
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+      <td><b>apiVersion</b></td>
+      <td>string</td>
+      <td>v2.edp.epam.com/v1</td>
+      <td>true</td>
+      </tr>
+      <tr>
+      <td><b>kind</b></td>
+      <td>string</td>
+      <td>QuickLink</td>
+      <td>true</td>
+      </tr>
+      <tr>
+      <td><b><a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#objectmeta-v1-meta">metadata</a></b></td>
+      <td>object</td>
+      <td>Refer to the Kubernetes API documentation for the fields of the `metadata` field.</td>
+      <td>true</td>
+      </tr><tr>
+        <td><b><a href="#quicklinkspec">spec</a></b></td>
+        <td>object</td>
+        <td>
+          QuickLinkSpec defines the desired state of QuickLink<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>status</b></td>
+        <td>object</td>
+        <td>
+          QuickLinkStatus defines the observed state of QuickLink<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### QuickLink.spec
+<sup><sup>[↩ Parent](#quicklink)</sup></sup>
+
+
+
+QuickLinkSpec defines the desired state of QuickLink
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>icon</b></td>
+        <td>string</td>
+        <td>
+          Icon is a base64 encoded SVG icon of the component.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>type</b></td>
+        <td>enum</td>
+        <td>
+          Type is a quicklink type. It can be default or system. Default value is default.<br/>
+          <br/>
+            <i>Enum</i>: default, system<br/>
+            <i>Default</i>: default<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>url</b></td>
+        <td>string</td>
+        <td>
+          Url specifies a link to the component.<br/>
+          <br/>
+            <i>Default</i>: <br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>visible</b></td>
+        <td>boolean</td>
+        <td>
+          Visible specifies whether a component is visible. The default value is true.<br/>
+          <br/>
+            <i>Default</i>: true<br/>
+        </td>
+        <td>true</td>
       </tr></tbody>
 </table>
 

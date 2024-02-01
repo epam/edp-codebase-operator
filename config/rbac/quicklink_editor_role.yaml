@@ -1,0 +1,31 @@
+# permissions for end users to edit quicklinks.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: quicklink-editor-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: edp-codebase-operator
+    app.kubernetes.io/part-of: edp-codebase-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: quicklink-editor-role
+rules:
+- apiGroups:
+  - v2.edp.epam.com
+  resources:
+  - quicklinks
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - v2.edp.epam.com
+  resources:
+  - quicklinks/status
+  verbs:
+  - get
