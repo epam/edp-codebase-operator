@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/http"
 	url "net/url"
-	"regexp"
 	"strconv"
 	"strings"
 
@@ -157,7 +156,7 @@ func (a *GoJiraAdapter) CreateIssueLink(issueId, title, link string) error {
 			Title: title,
 			URL:   link,
 			Icon: &jira.RemoteLinkIcon{
-				Url16x16: fmt.Sprintf("%v/favicon.ico", getUrlFromUri(link)),
+				Url16x16: "https://raw.githubusercontent.com/epam/edp-install/master/docs/assets/favicon.png",
 			},
 		},
 	}
@@ -175,10 +174,6 @@ func (a *GoJiraAdapter) CreateIssueLink(issueId, title, link string) error {
 	log.Info("end CreateIssueLink method.")
 
 	return nil
-}
-
-func getUrlFromUri(uri string) string {
-	return regexp.MustCompile(`^(?:https?://)?(?:[^@/\n]+@)?(?:www\.)?([^:/\n]+)`).FindAllString(uri, -1)[0]
 }
 
 // GetIssueTypeMeta returns issue type meta for given project and issue type.
