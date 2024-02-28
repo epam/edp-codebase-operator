@@ -205,6 +205,7 @@ func (*GitProvider) CommitChanges(directory, commitMsg string, ops ...CommitOps)
 			Email: "codebase@edp.local",
 			When:  time.Now(),
 		},
+		AllowEmptyCommits: option.allowEmptyCommit,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to commit: %w", err)

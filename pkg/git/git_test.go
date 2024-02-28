@@ -210,6 +210,7 @@ func TestGitProvider_CommitChanges(t *testing.T) {
 
 	tests := []struct {
 		name      string
+		ops       []git.CommitOps
 		initRepo  func(t *testing.T) string
 		wantErr   require.ErrorAssertionFunc
 		checkRepo func(t *testing.T, dir string)
@@ -271,6 +272,36 @@ func TestGitProvider_CommitChanges(t *testing.T) {
 				require.Equalf(t, 0, count, "expected 0 commits, got %d", count)
 			},
 		},
+		{
+			name: "should create empty commit",
+			ops: []git.CommitOps{
+				git.CommitAllowEmpty(),
+			},
+			initRepo: func(t *testing.T) string {
+				dir := t.TempDir()
+				_, err := gogit.PlainInit(dir, false)
+				require.NoError(t, err)
+
+				return dir
+			},
+			wantErr: require.NoError,
+			checkRepo: func(t *testing.T, dir string) {
+				r, err := gogit.PlainOpen(dir)
+				require.NoError(t, err)
+
+				commits, err := r.CommitObjects()
+				require.NoError(t, err)
+
+				count := 0
+				_ = commits.ForEach(func(*object.Commit) error {
+					count++
+
+					return nil
+				})
+
+				require.Equalf(t, 1, count, "expected 1 commits, got %d", count)
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -281,7 +312,7 @@ func TestGitProvider_CommitChanges(t *testing.T) {
 			gp := &git.GitProvider{}
 			dir := tt.initRepo(t)
 
-			err := gp.CommitChanges(dir, "test commit message")
+			err := gp.CommitChanges(dir, "test commit message", tt.ops...)
 			tt.wantErr(t, err)
 			tt.checkRepo(t, dir)
 		})
