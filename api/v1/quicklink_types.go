@@ -4,7 +4,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// QuickLinkSpec defines the desired state of QuickLink
+// QuickLinkSpec defines the desired state of QuickLink.
 type QuickLinkSpec struct {
 	// Type is a quicklink type. It can be default or system. Default value is default.
 	// +kubebuilder:validation:Enum=default;system
@@ -23,14 +23,14 @@ type QuickLinkSpec struct {
 	Visible bool `json:"visible"`
 }
 
-// QuickLinkStatus defines the observed state of QuickLink
+// QuickLinkStatus defines the observed state of QuickLink.
 type QuickLinkStatus struct {
 }
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 
-// QuickLink is the Schema for the quicklinks API
+// QuickLink is the Schema for the quicklinks API.
 type QuickLink struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -41,7 +41,7 @@ type QuickLink struct {
 
 //+kubebuilder:object:root=true
 
-// QuickLinkList contains a list of QuickLink
+// QuickLinkList contains a list of QuickLink.
 type QuickLinkList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

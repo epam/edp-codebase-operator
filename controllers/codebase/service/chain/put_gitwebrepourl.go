@@ -8,13 +8,11 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	edpComponentApi "github.com/epam/edp-component-operator/api/v1"
-
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
-const gerritEdpComponentName = "gerrit"
+const gerritQuickLinkName = "gerrit"
 
 // PutGitWebRepoUrl is a chain element that puts GitWebUrlPath for codebase status subresource.
 type PutGitWebRepoUrl struct {
@@ -67,14 +65,13 @@ func (s *PutGitWebRepoUrl) getGitWebURL(ctx context.Context, gitServer *codebase
 		return fmt.Sprintf("%s/%s", urlLink, codebase.Spec.GetProjectID()), nil
 
 	case codebaseApi.GitProviderGerrit:
-		// get EDPComponent with the name gerrit.
-		component := &edpComponentApi.EDPComponent{}
-		if err := s.client.Get(ctx, client.ObjectKey{Name: gerritEdpComponentName, Namespace: gitServer.Namespace}, component); err != nil {
-			return "", fmt.Errorf("failed to fetch EDPComponent %s: %w", gerritEdpComponentName, err)
+		link := &codebaseApi.QuickLink{}
+		if err := s.client.Get(ctx, client.ObjectKey{Name: gerritQuickLinkName, Namespace: gitServer.Namespace}, link); err != nil {
+			return "", fmt.Errorf("failed to get QuickLink %s: %w", gerritQuickLinkName, err)
 		}
-		// EDPComponents has https:// prefix in the URL.
+		// QuickLink has https:// prefix in the URL.
 		// For Gerrit, we return link to the repository in format: https://<gerrit_host>/gitweb?p=<codebase>.git
-		gerritProjectUrl := strings.TrimSuffix(component.Spec.Url, "/")
+		gerritProjectUrl := strings.TrimSuffix(link.Spec.Url, "/")
 
 		return fmt.Sprintf("%s/gitweb?p=%s.git", gerritProjectUrl, codebase.Spec.GetProjectID()), nil
 	default:

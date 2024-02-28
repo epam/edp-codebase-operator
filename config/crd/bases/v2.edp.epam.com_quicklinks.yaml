@@ -17,7 +17,7 @@ spec:
   - name: v1
     schema:
       openAPIV3Schema:
-        description: QuickLink is the Schema for the quicklinks API
+        description: QuickLink is the Schema for the quicklinks API.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -32,7 +32,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: QuickLinkSpec defines the desired state of QuickLink
+            description: QuickLinkSpec defines the desired state of QuickLink.
             properties:
               icon:
                 description: Icon is a base64 encoded SVG icon of the component.
@@ -61,7 +61,7 @@ spec:
             - visible
             type: object
           status:
-            description: QuickLinkStatus defines the observed state of QuickLink
+            description: QuickLinkStatus defines the observed state of QuickLink.
             type: object
         type: object
     served: true

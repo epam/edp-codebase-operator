@@ -1725,7 +1725,7 @@ JiraServerStatus defines the observed state of JiraServer.
 
 
 
-QuickLink is the Schema for the quicklinks API
+QuickLink is the Schema for the quicklinks API.
 
 <table>
     <thead>
@@ -1757,14 +1757,14 @@ QuickLink is the Schema for the quicklinks API
         <td><b><a href="#quicklinkspec">spec</a></b></td>
         <td>object</td>
         <td>
-          QuickLinkSpec defines the desired state of QuickLink<br/>
+          QuickLinkSpec defines the desired state of QuickLink.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>status</b></td>
         <td>object</td>
         <td>
-          QuickLinkStatus defines the observed state of QuickLink<br/>
+          QuickLinkStatus defines the observed state of QuickLink.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -1776,7 +1776,7 @@ QuickLink is the Schema for the quicklinks API
 
 
 
-QuickLinkSpec defines the desired state of QuickLink
+QuickLinkSpec defines the desired state of QuickLink.
 
 <table>
     <thead>

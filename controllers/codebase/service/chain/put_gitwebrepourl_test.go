@@ -11,8 +11,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	edpComponentApi "github.com/epam/edp-component-operator/api/v1"
-
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 )
 
@@ -22,7 +20,6 @@ func TestPutGitWebRepoUrl_ServeRequest(t *testing.T) {
 	schema := runtime.NewScheme()
 
 	require.NoError(t, codebaseApi.AddToScheme(schema))
-	require.NoError(t, edpComponentApi.AddToScheme(schema))
 
 	const namespace = "test-ns"
 
@@ -121,7 +118,6 @@ func TestPutGitWebRepoUrl_getGitWebURL(t *testing.T) {
 	schema := runtime.NewScheme()
 
 	require.NoError(t, codebaseApi.AddToScheme(schema))
-	require.NoError(t, edpComponentApi.AddToScheme(schema))
 
 	const namespace = "test-ns"
 
@@ -161,7 +157,7 @@ func TestPutGitWebRepoUrl_getGitWebURL(t *testing.T) {
 			wantErr: require.NoError,
 		},
 		{
-			name:           "should return correct GitWebUrl for Gerrit with trailing slash in EDPComponent.Url",
+			name:           "should return correct GitWebUrl for Gerrit with trailing slash in QuickLink.Url",
 			expectedWebUrl: "https://gerrit.example.com/gitweb?p=test-app.git",
 			codebase: &codebaseApi.Codebase{
 				ObjectMeta: metaV1.ObjectMeta{Name: "test", Namespace: namespace, ResourceVersion: "1"},
@@ -180,15 +176,15 @@ func TestPutGitWebRepoUrl_getGitWebURL(t *testing.T) {
 				&codebaseApi.Codebase{
 					ObjectMeta: metaV1.ObjectMeta{Name: "test", Namespace: namespace, ResourceVersion: "1"},
 				},
-				&edpComponentApi.EDPComponent{
+				&codebaseApi.QuickLink{
 					ObjectMeta: metaV1.ObjectMeta{Name: "gerrit", Namespace: namespace},
-					Spec:       edpComponentApi.EDPComponentSpec{Url: "https://gerrit.example.com/"},
+					Spec:       codebaseApi.QuickLinkSpec{Url: "https://gerrit.example.com/"},
 				},
 			},
 			wantErr: require.NoError,
 		},
 		{
-			name:           "should fail if gerrit EDP Component is not found",
+			name:           "should fail if gerrit QuickLink is not found",
 			expectedWebUrl: "",
 			codebase: &codebaseApi.Codebase{
 				ObjectMeta: metaV1.ObjectMeta{Name: "test", Namespace: namespace},
@@ -211,7 +207,7 @@ func TestPutGitWebRepoUrl_getGitWebURL(t *testing.T) {
 			wantErr: func(t require.TestingT, err error, _ ...any) {
 				require.Error(t, err)
 
-				require.Contains(t, err.Error(), "failed to fetch EDPComponent gerrit")
+				require.Contains(t, err.Error(), "failed to get QuickLink gerrit")
 			},
 		},
 		{
