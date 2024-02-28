@@ -34,9 +34,6 @@ rules:
     - codebaseimagestreams/finalizers
     - configmaps
     - quicklinks
-    - edpcomponents
-    - edpcomponents/finalizers
-    - edpcomponents/status
     - jiraservers
     - jiraservers/finalizers
     - jiraservers/status

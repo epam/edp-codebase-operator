@@ -12,8 +12,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	edpComponentApi "github.com/epam/edp-component-operator/api/v1"
-
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	"github.com/epam/edp-codebase-operator/v2/controllers/codebasebranch/chain/handler"
 	"github.com/epam/edp-codebase-operator/v2/pkg/model"
@@ -26,9 +24,8 @@ type PutCodebaseImageStream struct {
 }
 
 const (
-	dockerRegistryName              = "docker-registry"
-	edpConfigContainerRegistryHost  = "container_registry_host"
-	edpConfigContainerRegistrySpace = "container_registry_space"
+	EdpConfigContainerRegistryHost  = "container_registry_host"
+	EdpConfigContainerRegistrySpace = "container_registry_space"
 )
 
 func (h PutCodebaseImageStream) ServeRequest(ctx context.Context, cb *codebaseApi.CodebaseBranch) error {
@@ -94,32 +91,18 @@ func (h PutCodebaseImageStream) getDockerRegistryUrl(ctx context.Context, namesp
 		Name:      util.EdpConfigMap,
 		Namespace: namespace,
 	}, config); err != nil {
-		if !k8sErrors.IsNotFound(err) {
-			return "", fmt.Errorf("failed to get %s config map: %w", util.EdpConfigMap, err)
-		}
-
-		// to save backward compatibility we need to get docker registry url
-		// from edp component if config map doesn't exist. We can remove this in the future.
-		ec := &edpComponentApi.EDPComponent{}
-		if err = h.Client.Get(ctx, types.NamespacedName{
-			Name:      dockerRegistryName,
-			Namespace: namespace,
-		}, ec); err != nil {
-			return "", fmt.Errorf("failed to fetch %q resource %q: %w", ec.TypeMeta.Kind, dockerRegistryName, err)
-		}
-
-		return ec.Spec.Url, nil
+		return "", fmt.Errorf("failed to get %s config map: %w", util.EdpConfigMap, err)
 	}
 
-	if _, ok := config.Data[edpConfigContainerRegistryHost]; !ok {
-		return "", fmt.Errorf("%s is not set in %s config map", edpConfigContainerRegistryHost, util.EdpConfigMap)
+	if _, ok := config.Data[EdpConfigContainerRegistryHost]; !ok {
+		return "", fmt.Errorf("%s is not set in %s config map", EdpConfigContainerRegistryHost, util.EdpConfigMap)
 	}
 
-	if _, ok := config.Data[edpConfigContainerRegistrySpace]; !ok {
-		return "", fmt.Errorf("%s is not set in %s config map", edpConfigContainerRegistrySpace, util.EdpConfigMap)
+	if _, ok := config.Data[EdpConfigContainerRegistrySpace]; !ok {
+		return "", fmt.Errorf("%s is not set in %s config map", EdpConfigContainerRegistrySpace, util.EdpConfigMap)
 	}
 
-	return fmt.Sprintf("%s/%s", config.Data[edpConfigContainerRegistryHost], config.Data[edpConfigContainerRegistrySpace]), nil
+	return fmt.Sprintf("%s/%s", config.Data[EdpConfigContainerRegistryHost], config.Data[EdpConfigContainerRegistrySpace]), nil
 }
 
 func (h PutCodebaseImageStream) createCodebaseImageStreamIfNotExists(ctx context.Context, name, imageName, codebaseName, namespace string) error {

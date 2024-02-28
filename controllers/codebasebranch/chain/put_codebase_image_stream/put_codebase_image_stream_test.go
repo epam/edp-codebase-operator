@@ -13,8 +13,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	edpComponentApi "github.com/epam/edp-component-operator/api/v1"
-
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
@@ -53,39 +51,8 @@ func TestPutCodebaseImageStream_ServeRequest(t *testing.T) {
 						Namespace: "default",
 					},
 					Data: map[string]string{
-						edpConfigContainerRegistryHost:  "test-registry",
-						edpConfigContainerRegistrySpace: "test-space",
-					},
-				},
-			},
-			wantErr: require.NoError,
-		},
-		{
-			name: "successfully put codebase image stream - get docker registry url from EDPComponent",
-			codebaseBranch: &codebaseApi.CodebaseBranch{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-branch",
-					Namespace: "default",
-				},
-				Spec: codebaseApi.CodebaseBranchSpec{
-					CodebaseName: "test-codebase",
-					BranchName:   "test-branch-master",
-				},
-			},
-			objects: []client.Object{
-				&codebaseApi.Codebase{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "test-codebase",
-						Namespace: "default",
-					},
-				},
-				&edpComponentApi.EDPComponent{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      dockerRegistryName,
-						Namespace: "default",
-					},
-					Spec: edpComponentApi.EDPComponentSpec{
-						Url: "test-registry/test-space",
+						EdpConfigContainerRegistryHost:  "test-registry",
+						EdpConfigContainerRegistrySpace: "test-space",
 					},
 				},
 			},
@@ -122,8 +89,8 @@ func TestPutCodebaseImageStream_ServeRequest(t *testing.T) {
 						Namespace: "default",
 					},
 					Data: map[string]string{
-						edpConfigContainerRegistryHost:  "test-registry",
-						edpConfigContainerRegistrySpace: "test-space",
+						EdpConfigContainerRegistryHost:  "test-registry",
+						EdpConfigContainerRegistrySpace: "test-space",
 					},
 				},
 			},
@@ -181,7 +148,6 @@ func TestPutCodebaseImageStream_ServeRequest(t *testing.T) {
 
 			scheme := runtime.NewScheme()
 			require.NoError(t, codebaseApi.AddToScheme(scheme))
-			require.NoError(t, edpComponentApi.AddToScheme(scheme))
 			require.NoError(t, corev1.AddToScheme(scheme))
 
 			h := PutCodebaseImageStream{

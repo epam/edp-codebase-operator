@@ -11,8 +11,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	edpComponentApi "github.com/epam/edp-component-operator/api/v1"
-
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 )
 
@@ -77,24 +75,6 @@ func TestGetGerritPort_ShouldNotFound(t *testing.T) {
 	assert.Error(t, err)
 
 	assert.Contains(t, err.Error(), "failed to get gerrit Git Server CR")
-}
-
-func TestGetEdpComponent_ShouldPass(t *testing.T) {
-	c := &edpComponentApi.EDPComponent{
-		ObjectMeta: metaV1.ObjectMeta{
-			Name:      "stub-name",
-			Namespace: "stub-namespace",
-		},
-		Spec: edpComponentApi.EDPComponentSpec{},
-	}
-
-	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1.SchemeGroupVersion, c)
-	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c).Build()
-
-	edc, err := GetEdpComponent(fakeCl, "stub-name", "stub-namespace")
-	assert.Equal(t, edc.Name, "stub-name")
-	assert.NoError(t, err)
 }
 
 func TestGetCodebase_ShouldPass(t *testing.T) {

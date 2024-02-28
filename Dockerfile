@@ -16,7 +16,6 @@ RUN adduser -h ${HOME} -s /bin/ash -D -u ${USER_UID} codebase-operator
 COPY build/bin ${ASSETS_DIR}
 COPY --chmod=0775 build/templates ${ASSETS_DIR}/templates
 COPY build/configs ${ASSETS_DIR}/configs
-COPY build/img ${ASSETS_DIR}/img
 
 RUN  chmod u+x ${ASSETS_DIR}/user_setup && \
      chmod ugo+x ${ASSETS_DIR}/entrypoint && \

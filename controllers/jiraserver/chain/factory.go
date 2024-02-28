@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	"github.com/epam/edp-codebase-operator/v2/controllers/jiraserver/chain/handler"
@@ -13,12 +12,8 @@ import (
 
 var log = ctrl.Log.WithName("jira_server_handler")
 
-func CreateDefChain(jc jira.Client, c client.Client) handler.JiraServerHandler {
+func CreateDefChain(jc jira.Client) handler.JiraServerHandler {
 	return CheckConnection{
-		next: PutJiraEDPComponent{
-			next:   nil,
-			client: c,
-		},
 		client: jc,
 	}
 }

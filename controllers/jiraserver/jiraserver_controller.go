@@ -98,7 +98,7 @@ func (r *ReconcileJiraServer) Reconcile(ctx context.Context, request reconcile.R
 		return reconcile.Result{}, err
 	}
 
-	jiraHandler := chain.CreateDefChain(c, r.client)
+	jiraHandler := chain.CreateDefChain(c)
 	if err := jiraHandler.ServeRequest(i); err != nil {
 		i.Status.Status = statusError
 		i.Status.DetailedMessage = err.Error()

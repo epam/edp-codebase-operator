@@ -12,8 +12,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	edpComponentApi "github.com/epam/edp-component-operator/api/v1"
-
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/model"
 )
@@ -139,20 +137,6 @@ func GetCodebase(c client.Client, name, namespace string) (*codebaseApi.Codebase
 	}
 
 	return instance, nil
-}
-
-func GetEdpComponent(c client.Client, name, namespace string) (*edpComponentApi.EDPComponent, error) {
-	ec := &edpComponentApi.EDPComponent{}
-
-	err := c.Get(context.TODO(), types.NamespacedName{
-		Name:      name,
-		Namespace: namespace,
-	}, ec)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get EDPComponent %v: %w", name, err)
-	}
-
-	return ec, nil
 }
 
 // GetWatchNamespace returns the namespace the operator should be watching for changes.

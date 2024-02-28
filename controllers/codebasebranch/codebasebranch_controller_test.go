@@ -16,9 +16,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	edpComponentApi "github.com/epam/edp-component-operator/api/v1"
-
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
+	"github.com/epam/edp-codebase-operator/v2/controllers/codebasebranch/chain/put_codebase_image_stream"
 	"github.com/epam/edp-codebase-operator/v2/pkg/codebasebranch"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
@@ -251,7 +250,16 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldPassWithCreatingCIS(t *testing.
 			Available: true,
 		},
 	}
-
+	edpConfig := &coreV1.ConfigMap{
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      util.EdpConfigMap,
+			Namespace: "namespace",
+		},
+		Data: map[string]string{
+			put_codebase_image_stream.EdpConfigContainerRegistryHost:  "stub-url",
+			put_codebase_image_stream.EdpConfigContainerRegistrySpace: "stub-space",
+		},
+	}
 	s := &coreV1.Secret{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "fake-admin-token",
@@ -262,24 +270,13 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldPassWithCreatingCIS(t *testing.
 			"password": []byte("j-token"),
 		},
 	}
-
-	ec := &edpComponentApi.EDPComponent{
-		ObjectMeta: metaV1.ObjectMeta{
-			Name:      "docker-registry",
-			Namespace: "namespace",
-		},
-		Spec: edpComponentApi.EDPComponentSpec{
-			Url: "stub-url",
-		},
-	}
 	cis := &codebaseApi.CodebaseImageStream{}
 
 	scheme := runtime.NewScheme()
 	require.NoError(t, codebaseApi.AddToScheme(scheme))
-	require.NoError(t, edpComponentApi.AddToScheme(scheme))
 	require.NoError(t, coreV1.AddToScheme(scheme))
 
-	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, cb, s, ec, cis).Build()
+	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, cb, s, cis, edpConfig).Build()
 
 	req := reconcile.Request{
 		NamespacedName: types.NamespacedName{
@@ -308,7 +305,7 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldPassWithCreatingCIS(t *testing.
 		},
 		cResp)
 	assert.NoError(t, err)
-	assert.Equal(t, cResp.Spec.ImageName, "stub-url/NewCodebase")
+	assert.Equal(t, "stub-url/stub-space/NewCodebase", cResp.Spec.ImageName)
 
 	gotCodebaseBranch := &codebaseApi.CodebaseBranch{}
 

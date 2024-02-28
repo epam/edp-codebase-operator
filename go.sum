@@ -55,8 +55,6 @@ github.com/epam/edp-cd-pipeline-operator/v2 v2.3.0-58.0.20230125151029-744b0fbb1
 github.com/epam/edp-cd-pipeline-operator/v2 v2.3.0-58.0.20230125151029-744b0fbb137f/go.mod h1:Fnsv2GkywnpqiAP8K4z4RgzVfeyO71bUwaWMUczwitc=
 github.com/epam/edp-common v0.0.0-20230104131608-33d095012fe8 h1:Yu3L0n5+InqUHwLM5Am7ZgCR/YeWG1jMztV2zc/wGtc=
 github.com/epam/edp-common v0.0.0-20230104131608-33d095012fe8/go.mod h1:fBJOEpuQC0Bi69gJILqYajwY53Sp8C1V872wU/5k5fE=
-github.com/epam/edp-component-operator v0.1.1-0.20230118145658-7283b2b5cbf9 h1:JW+BPXS3AfW/mCKxGGz/MsMyoEAU1vTzNiNZdbkZVzk=
-github.com/epam/edp-component-operator v0.1.1-0.20230118145658-7283b2b5cbf9/go.mod h1:HkT0L+dswHFhCqMD1lFNMsbyLkDqg3ZbCmEdEfRnMxY=
 github.com/evanphx/json-patch v0.5.2/go.mod h1:ZWS5hhDbVDyob71nXKNL0+PWn6ToqBHMikGIFbs31qQ=
 github.com/evanphx/json-patch v5.6.0+incompatible h1:jBYDEEiFBPxA0v50tFdvOzQQTCvpL6mnFh5mB2/l16U=
 github.com/evanphx/json-patch v5.6.0+incompatible/go.mod h1:50XU6AFN0ol/bzJsmQLiYLvXMP4fmwYFNcr97nuDLSk=
