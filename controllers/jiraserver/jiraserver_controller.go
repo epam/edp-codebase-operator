@@ -23,7 +23,10 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
-const statusError = "error"
+const (
+	statusError    = "error"
+	statusFinished = "finished"
+)
 
 func NewReconcileJiraServer(c client.Client, scheme *runtime.Scheme, log logr.Logger) *ReconcileJiraServer {
 	return &ReconcileJiraServer{
@@ -105,6 +108,8 @@ func (r *ReconcileJiraServer) Reconcile(ctx context.Context, request reconcile.R
 
 		return reconcile.Result{}, fmt.Errorf("failed serving default chain: %w", err)
 	}
+
+	i.Status.Status = statusFinished
 
 	log.Info("Reconciling JiraServer has been finished")
 

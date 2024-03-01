@@ -220,6 +220,15 @@ func TestReconcileJiraServer_Reconcile_ShouldPass(t *testing.T) {
 
 	res, err := r.Reconcile(context.TODO(), req)
 
-	assert.NoError(t, err)
-	assert.False(t, res.Requeue)
+	require.NoError(t, err)
+	require.False(t, res.Requeue)
+
+	jiraServer := &codebaseApi.JiraServer{}
+	err = fakeCl.Get(context.Background(), types.NamespacedName{
+		Name:      "NewJira",
+		Namespace: "namespace",
+	}, jiraServer)
+
+	require.NoError(t, err)
+	require.Equal(t, statusFinished, jiraServer.Status.Status)
 }
