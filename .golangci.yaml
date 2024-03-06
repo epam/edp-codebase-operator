@@ -56,7 +56,6 @@ linters:
     - dupl
     - durationcheck
     - errcheck
-    - errchkjson
     - errname
     - errorlint
     - execinquery

@@ -12,6 +12,7 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
 	routeApi "github.com/openshift/api/route/v1"
+	tektonTriggersApi "github.com/tektoncd/triggers/pkg/apis/triggers/v1beta1"
 	networkingV1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
@@ -103,6 +104,7 @@ func main() {
 	utilruntime.Must(cdPipeApi.AddToScheme(scheme))
 	utilruntime.Must(networkingV1.AddToScheme(scheme))
 	utilruntime.Must(routeApi.AddToScheme(scheme))
+	utilruntime.Must(tektonTriggersApi.AddToScheme(scheme))
 
 	ns, err := util.GetWatchNamespace()
 	if err != nil {

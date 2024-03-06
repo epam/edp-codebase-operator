@@ -1,6 +1,8 @@
 package v1
 
 import (
+	"fmt"
+
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -59,6 +61,10 @@ type CDStageDeploy struct {
 func (in *CDStageDeploy) SetFailedStatus(err error) {
 	in.Status.Status = failed
 	in.Status.Message = err.Error()
+}
+
+func (in *CDStageDeploy) GetStageCRName() string {
+	return fmt.Sprintf("%s-%s", in.Spec.Pipeline, in.Spec.Stage)
 }
 
 // +kubebuilder:object:root=true

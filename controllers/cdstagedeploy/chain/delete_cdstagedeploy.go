@@ -15,6 +15,10 @@ type DeleteCDStageDeploy struct {
 	client client.Client
 }
 
+func NewDeleteCDStageDeploy(k8sClient client.Client) *DeleteCDStageDeploy {
+	return &DeleteCDStageDeploy{client: k8sClient}
+}
+
 // ServeRequest handles the request to delete CDStageDeploy.
 func (h *DeleteCDStageDeploy) ServeRequest(ctx context.Context, stageDeploy *codebaseApi.CDStageDeploy) error {
 	log := ctrl.LoggerFrom(ctx)

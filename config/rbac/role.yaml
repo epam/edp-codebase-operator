@@ -92,6 +92,20 @@ rules:
   - list
   - watch
 - apiGroups:
+  - tekton.dev
+  resources:
+  - pipelineruns
+  verbs:
+  - create
+- apiGroups:
+  - triggers.tekton.dev
+  resources:
+  - triggertemplates
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - v2.edp.epam.com
   resources:
   - cdstagedeployments

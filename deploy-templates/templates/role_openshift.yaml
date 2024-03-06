@@ -77,4 +77,18 @@ rules:
   verbs:
     - create
     - patch
+- apiGroups:
+    - tekton.dev
+  resources:
+    - pipelineruns
+  verbs:
+    - create
+- apiGroups:
+    - triggers.tekton.dev
+  resources:
+    - triggertemplates
+  verbs:
+    - get
+    - list
+    - watch
 {{ end }}

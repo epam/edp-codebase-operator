@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
-	"time"
 
 	"github.com/go-logr/logr"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
@@ -15,6 +14,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
+	"github.com/epam/edp-codebase-operator/v2/pkg/codebaseimagestream"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
@@ -145,7 +145,7 @@ func (h PutCDStageDeploy) getCDStageDeploy(name, namespace string) (*codebaseApi
 func getCreateCommand(envLabel, name, namespace, codebase string, tags []codebaseApi.Tag, log logr.Logger) (*cdStageDeployCommand, error) {
 	env := strings.Split(envLabel, "/")
 
-	lastTag, err := getLastTag(tags, log)
+	lastTag, err := codebaseimagestream.GetLastTag(tags, log)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create cdStageDeployCommand with name %v: %w", name, err)
 	}
@@ -166,31 +166,6 @@ func getCreateCommand(envLabel, name, namespace, codebase string, tags []codebas
 			},
 		},
 	}, nil
-}
-
-func getLastTag(tags []codebaseApi.Tag, log logr.Logger) (codebaseApi.Tag, error) {
-	var (
-		latestTag     codebaseApi.Tag
-		latestTagTime = time.Time{}
-	)
-
-	for i, s := range tags {
-		current, err := time.Parse(time.RFC3339, tags[i].Created)
-		if err != nil {
-			log.Error(err, "Failed to parse tag created time. Skip tag.", "tag", s.Name)
-		}
-
-		if current.After(latestTagTime) {
-			latestTagTime = current
-			latestTag = s
-		}
-	}
-
-	if latestTag.Name == "" {
-		return latestTag, errors.New("latest tag is not found")
-	}
-
-	return latestTag, nil
 }
 
 func (h PutCDStageDeploy) create(command *cdStageDeployCommand) error {
