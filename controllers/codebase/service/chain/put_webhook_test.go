@@ -37,7 +37,10 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 	require.NoError(t, networkingV1.AddToScheme(schema))
 	require.NoError(t, routeApi.AddToScheme(schema))
 
-	const namespace = "test-ns"
+	const (
+		namespace   = "test-ns"
+		ingressName = "test-ingress"
+	)
 
 	gitURL := "test-owner/test-repo"
 	fakeUrlRegexp := regexp.MustCompile(`.*`)
@@ -221,6 +224,9 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 					ObjectMeta: metaV1.ObjectMeta{
 						Namespace: namespace,
 						Name:      ingressName,
+						Labels: map[string]string{
+							"app.edp.epam.com/gitServer": "test-git-server",
+						},
 					},
 					Status: routeApi.RouteStatus{
 						Ingress: []routeApi.RouteIngress{
@@ -714,6 +720,9 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 					ObjectMeta: metaV1.ObjectMeta{
 						Namespace: namespace,
 						Name:      ingressName,
+						Labels: map[string]string{
+							"app.edp.epam.com/gitServer": "test-git-server",
+						},
 					},
 				},
 			},
@@ -763,7 +772,7 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 			},
 			responder:   func(t *testing.T) {},
 			wantErr:     require.Error,
-			errContains: fmt.Sprintf("failed to get %s ingress", ingressName),
+			errContains: "no ingress found for the GitServer test-git-server",
 		},
 		{
 			name: "failed to get secret - no required field",
@@ -874,6 +883,7 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 
 			gotErr := s.ServeRequest(context.Background(), tt.codebase)
 			tt.wantErr(t, gotErr)
+
 			if tt.errContains != "" {
 				assert.Contains(t, gotErr.Error(), tt.errContains)
 			}
@@ -886,6 +896,9 @@ func fakeIngress(namespace, name, host string) *networkingV1.Ingress {
 		ObjectMeta: metaV1.ObjectMeta{
 			Namespace: namespace,
 			Name:      name,
+			Labels: map[string]string{
+				"app.edp.epam.com/gitServer": "test-git-server",
+			},
 		},
 		Spec: networkingV1.IngressSpec{
 			Rules: []networkingV1.IngressRule{

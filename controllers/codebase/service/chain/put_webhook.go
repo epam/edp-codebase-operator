@@ -9,6 +9,7 @@ import (
 	routeApi "github.com/openshift/api/route/v1"
 	coreV1 "k8s.io/api/core/v1"
 	networkingV1 "k8s.io/api/networking/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -20,7 +21,6 @@ import (
 
 const (
 	webhookTokenLength = 20
-	ingressName        = "event-listener"
 )
 
 // PutWebHook is a chain element to create webhook.
@@ -153,10 +153,10 @@ func (s *PutWebHook) getWebHookUrl(ctx context.Context, gitServer *codebaseApi.G
 	}
 
 	if platform.IsK8S() {
-		return s.getWebhookIngressUrl(ctx, ingressName, gitServer.Namespace)
+		return s.getWebhookIngressUrl(ctx, gitServer.Name, gitServer.Namespace)
 	}
 
-	return s.getWebhookRouteUrl(ctx, ingressName, gitServer.Namespace)
+	return s.getWebhookRouteUrl(ctx, gitServer.Name, gitServer.Namespace)
 }
 
 func (*PutWebHook) processCodebaseError(codebase *codebaseApi.Codebase, err error) error {
@@ -165,28 +165,69 @@ func (*PutWebHook) processCodebaseError(codebase *codebaseApi.Codebase, err erro
 	return err
 }
 
-func (s *PutWebHook) getWebhookIngressUrl(ctx context.Context, ingressName, namespace string) (string, error) {
-	ingress := &networkingV1.Ingress{}
-	if err := s.client.Get(ctx, client.ObjectKey{Name: ingressName, Namespace: namespace}, ingress); err != nil {
-		return "", fmt.Errorf("failed to get %s ingress: %w", ingressName, err)
+func (s *PutWebHook) getWebhookIngressUrl(ctx context.Context, gsName, namespace string) (string, error) {
+	labelSelector := labels.SelectorFromSet(map[string]string{
+		"app.edp.epam.com/gitServer": gsName,
+	})
+
+	ingressList := &networkingV1.IngressList{}
+	err := s.getResource(ctx, namespace, labelSelector, ingressList)
+
+	if err != nil {
+		return "", err
 	}
 
+	if len(ingressList.Items) == 0 {
+		return "", fmt.Errorf("no ingress found for the GitServer %s", gsName)
+	} else if len(ingressList.Items) > 1 {
+		return "", fmt.Errorf("more than one ingress found for the GitServer %s", gsName)
+	}
+
+	ingress := &ingressList.Items[0]
 	if len(ingress.Spec.Rules) == 0 {
-		return "", fmt.Errorf("ingress %s doesn't have rules", ingressName)
+		return "", fmt.Errorf("ingress %s doesn't have rules", gsName)
 	}
 
 	return util.GetHostWithProtocol(ingress.Spec.Rules[0].Host), nil
 }
 
-func (s *PutWebHook) getWebhookRouteUrl(ctx context.Context, routeName, namespace string) (string, error) {
-	route := &routeApi.Route{}
-	if err := s.client.Get(ctx, client.ObjectKey{Name: routeName, Namespace: namespace}, route); err != nil {
-		return "", fmt.Errorf("failed to get %s route: %w", routeName, err)
+func (s *PutWebHook) getWebhookRouteUrl(ctx context.Context, gsName, namespace string) (string, error) {
+	labelSelector := labels.SelectorFromSet(map[string]string{
+		"app.edp.epam.com/gitServer": gsName,
+	})
+
+	routeList := &routeApi.RouteList{}
+	err := s.getResource(ctx, namespace, labelSelector, routeList)
+
+	if err != nil {
+		return "", err
 	}
 
+	if len(routeList.Items) == 0 {
+		return "", fmt.Errorf("no route found for the GitServer %s", gsName)
+	} else if len(routeList.Items) > 1 {
+		return "", fmt.Errorf("more than one route found for the GitServer %s", gsName)
+	}
+
+	route := &routeList.Items[0]
 	if len(route.Status.Ingress) == 0 {
-		return "", fmt.Errorf("route %s doesn't have ingresses", routeName)
+		return "", fmt.Errorf("route %s doesn't have ingresses", gsName)
 	}
 
 	return util.GetHostWithProtocol(route.Status.Ingress[0].Host), nil
+}
+
+func (s *PutWebHook) getResource(ctx context.Context, namespace string, labelSelector labels.Selector, obj client.ObjectList) error {
+	if err := s.client.List(
+		ctx,
+		obj,
+		&client.ListOptions{
+			Namespace:     namespace,
+			LabelSelector: labelSelector,
+		},
+	); err != nil {
+		return fmt.Errorf("failed to get resources with the labels %s: %w", labelSelector, err)
+	}
+
+	return nil
 }
