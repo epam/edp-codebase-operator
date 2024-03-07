@@ -69,7 +69,7 @@ func (h *ProcessTriggerTemplate) ServeRequest(ctx context.Context, stageDeploy *
 	rawResource, err := h.getRawTriggerTemplateResource(ctx, stage.Spec.TriggerTemplate, stageDeploy.Namespace)
 	if err != nil {
 		if errors.Is(err, errEmptyTriggerTemplateResources) {
-			log.Info("No resource templates found in the trigger template %s. Skip processing.", stage.Spec.TriggerType)
+			log.Info("No resource templates found in the trigger template. Skip processing.", "triggertemplate", stage.Spec.TriggerType)
 
 			return nil
 		}
@@ -115,7 +115,7 @@ func (h *ProcessTriggerTemplate) getAppPayload(ctx context.Context, pipeline *pi
 		var tag codebaseApi.Tag
 
 		if tag, err = codebaseimagestream.GetLastTag(imageStream.Spec.Tags, log); err != nil {
-			log.Info("Codebase %s doesn't have tags in the CodebaseImageStream %s. Skip auto-deploy.", codebase, stream)
+			log.Info("Codebase doesn't have tags in the CodebaseImageStream. Skip auto-deploy.", "codebase", codebase, "imagestream", stream)
 
 			return nil, errLasTagNotFound
 		}
