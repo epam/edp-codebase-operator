@@ -143,7 +143,7 @@ func TestPutCDStageDeploy_CdstagedeployShouldFailOnSearch(t *testing.T) {
 			Name:      "cbis-name",
 			Namespace: "stub-namespace",
 			Labels: map[string]string{
-				"pipeline-name/stage-name": "cb-name",
+				"pipeline-name/stage-name": "",
 			},
 		},
 		Spec: codebaseApi.CodebaseImageStreamSpec{
@@ -169,7 +169,7 @@ func TestPutCDStageDeploy_CdstagedeployShouldFailOnSearch(t *testing.T) {
 	err := chain.ServeRequest(cis)
 	assert.Error(t, err)
 
-	if !strings.Contains(err.Error(), "failed to get pipeline-name-stage-name-cb-name cd stage deploy") {
+	if !strings.Contains(err.Error(), "failed to get pipeline-name-stage-name cd stage deploy") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
 }
@@ -180,7 +180,7 @@ func TestPutCDStageDeploy_ShouldFailWhenCdstagedeployExist(t *testing.T) {
 			Name:      "cbis-name",
 			Namespace: "stub-namespace",
 			Labels: map[string]string{
-				"pipeline-name/stage-name": "cb-name",
+				"pipeline-name/stage-name": "",
 			},
 		},
 		Spec: codebaseApi.CodebaseImageStreamSpec{
@@ -196,7 +196,7 @@ func TestPutCDStageDeploy_ShouldFailWhenCdstagedeployExist(t *testing.T) {
 
 	cdsd := &codebaseApi.CDStageDeploy{
 		ObjectMeta: metaV1.ObjectMeta{
-			Name:      "pipeline-name-stage-name-cb-name",
+			Name:      "pipeline-name-stage-name",
 			Namespace: "stub-namespace",
 		},
 		Spec: codebaseApi.CDStageDeploySpec{},
@@ -214,7 +214,7 @@ func TestPutCDStageDeploy_ShouldFailWhenCdstagedeployExist(t *testing.T) {
 	err := chain.ServeRequest(cis)
 	assert.Error(t, err)
 
-	if !strings.Contains(err.Error(), "stage-name-cb-name has not been processed for previous version of application yet") {
+	if !strings.Contains(err.Error(), "pipeline-name-stage-name has not been processed for previous version of application yet") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
 }
@@ -225,7 +225,7 @@ func TestPutCDStageDeploy_ShouldCreateCdstagedeploy(t *testing.T) {
 			Name:      "cbis-name",
 			Namespace: "stub-namespace",
 			Labels: map[string]string{
-				"pipeline-name/stage-name": "cb-name",
+				"pipeline-name/stage-name": "",
 			},
 		},
 		Spec: codebaseApi.CodebaseImageStreamSpec{
@@ -266,7 +266,7 @@ func TestPutCDStageDeploy_ShouldCreateCdstagedeploy(t *testing.T) {
 	cdsdResp := &codebaseApi.CDStageDeploy{}
 	err = fakeCl.Get(context.TODO(),
 		types.NamespacedName{
-			Name:      "pipeline-name-stage-name-cb-name",
+			Name:      "pipeline-name-stage-name",
 			Namespace: "stub-namespace",
 		},
 		cdsdResp)
@@ -274,13 +274,13 @@ func TestPutCDStageDeploy_ShouldCreateCdstagedeploy(t *testing.T) {
 	assert.Equal(t, cdsdResp.Spec.Tag.Tag, "master-0.0.1-2")
 }
 
-func TestPutCDStageDeploy_ShouldFailWithIncorrectTagstimestamp(t *testing.T) {
+func TestPutCDStageDeploy_ShouldFailWithIncorrectTagsTimestamp(t *testing.T) {
 	cis := &codebaseApi.CodebaseImageStream{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "cbis-name",
 			Namespace: "stub-namespace",
 			Labels: map[string]string{
-				"pipeline-name/stage-name": "cb-name",
+				"pipeline-name/stage-name": "",
 			},
 		},
 		Spec: codebaseApi.CodebaseImageStreamSpec{
@@ -318,32 +318,7 @@ func TestPutCDStageDeploy_ShouldFailWithIncorrectTagstimestamp(t *testing.T) {
 	err := chain.ServeRequest(cis)
 	assert.Error(t, err)
 
-	if !strings.Contains(err.Error(), "failed to construct command to create pipeline-name-stage-name-cb-name cd stage deploy") {
+	if !strings.Contains(err.Error(), "failed to construct command to create pipeline-name-stage-name cd stage deploy") {
 		t.Fatalf("wrong error returned: %s", err.Error())
-	}
-}
-
-func Test_generateCdStageDeployName(t *testing.T) {
-	type args struct {
-		env      string
-		codebase string
-	}
-
-	tests := []struct {
-		name string
-		args args
-		want string
-	}{
-		{"1", args{"env", "codebase"}, "env-codebase"},
-		{"2", args{"env/2", "codebase"}, "env-2-codebase"},
-		{"3", args{"env/1/1-2", "codebase"}, "env-1-1-2-codebase"},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := generateCdStageDeployName(tt.args.env, tt.args.codebase); got != tt.want {
-				t.Errorf("generateCdStageDeployName() = %v, want %v", got, tt.want)
-			}
-		})
 	}
 }

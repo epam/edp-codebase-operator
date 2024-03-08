@@ -51,7 +51,7 @@ func (h PutCDStageDeploy) ServeRequest(imageStream *codebaseApi.CodebaseImageStr
 
 func (h PutCDStageDeploy) handleCodebaseImageStreamEnvLabels(imageStream *codebaseApi.CodebaseImageStream) error {
 	if imageStream.ObjectMeta.Labels == nil || len(imageStream.ObjectMeta.Labels) == 0 {
-		h.log.Info("codebase image stream doesnt contain env labels. skip CDStageDeploy creating...")
+		h.log.Info("codebase image stream does not contain env labels. skip CDStageDeploy creating...")
 		return nil
 	}
 
@@ -89,7 +89,8 @@ func validateCbis(imageStream *codebaseApi.CodebaseImageStream, envLabel string,
 }
 
 func (h PutCDStageDeploy) putCDStageDeploy(envLabel, namespace string, spec codebaseApi.CodebaseImageStreamSpec) error {
-	name := generateCdStageDeployName(envLabel, spec.Codebase)
+	// use name for CDStageDeploy, it is converted from envLabel and cdpipeline/stage now is cdpipeline-stage
+	name := strings.ReplaceAll(envLabel, "/", "-")
 
 	stageDeploy, err := h.getCDStageDeploy(name, namespace)
 	if err != nil {
@@ -114,11 +115,6 @@ func (h PutCDStageDeploy) putCDStageDeploy(envLabel, namespace string, spec code
 	}
 
 	return nil
-}
-
-func generateCdStageDeployName(env, codebase string) string {
-	env = strings.ReplaceAll(env, "/", "-")
-	return fmt.Sprintf("%v-%v", env, codebase)
 }
 
 func (h PutCDStageDeploy) getCDStageDeploy(name, namespace string) (*codebaseApi.CDStageDeploy, error) {
@@ -192,7 +188,7 @@ func (h PutCDStageDeploy) create(command *cdStageDeployCommand) error {
 
 	err := h.client.Create(ctx, stageDeploy)
 	if err != nil {
-		return fmt.Errorf("failed to create CDStageDeploy reasource %q: %w", command.Name, err)
+		return fmt.Errorf("failed to create CDStageDeploy resource %q: %w", command.Name, err)
 	}
 
 	log.Info("cd stage deploy has been created.")
