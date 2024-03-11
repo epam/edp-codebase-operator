@@ -57,6 +57,7 @@ const (
 	telemetryDefaultDelay                    = time.Hour
 	telemetrySendEvery                       = time.Hour * 24
 	telemetryUrl                             = "https://telemetry.edp-epam.com"
+	cdStageDeployReconcileDelaySeconds       = 15
 )
 
 func main() {
@@ -133,7 +134,7 @@ func main() {
 
 	ctrlLog := ctrl.Log.WithName("controllers")
 
-	cdStageDeployCtrl := cdstagedeploy.NewReconcileCDStageDeploy(mgr.GetClient(), mgr.GetScheme(), ctrlLog, chain.CreateDefChain)
+	cdStageDeployCtrl := cdstagedeploy.NewReconcileCDStageDeploy(mgr.GetClient(), mgr.GetScheme(), ctrlLog, chain.CreateDefChain, cdStageDeployReconcileDelaySeconds)
 	if err = cdStageDeployCtrl.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "failed to create controller", "controller", "cd-stage-deploy")
 		os.Exit(1)

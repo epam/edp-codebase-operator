@@ -3,6 +3,7 @@ package cdstagedeploy
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/go-logr/logr"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
@@ -11,6 +12,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
@@ -29,12 +31,14 @@ func NewReconcileCDStageDeploy(
 	scheme *runtime.Scheme,
 	log logr.Logger,
 	chainFactory chain.CDStageDeployChain,
+	reconcileDelay int,
 ) *ReconcileCDStageDeploy {
 	return &ReconcileCDStageDeploy{
-		client:       c,
-		scheme:       scheme,
-		log:          log.WithName("cd-stage-deploy"),
-		chainFactory: chainFactory,
+		client:         c,
+		scheme:         scheme,
+		log:            log.WithName("cd-stage-deploy"),
+		chainFactory:   chainFactory,
+		reconcileDelay: reconcileDelay,
 	}
 }
 
@@ -43,6 +47,9 @@ type ReconcileCDStageDeploy struct {
 	scheme       *runtime.Scheme
 	log          logr.Logger
 	chainFactory chain.CDStageDeployChain
+
+	// Waiting time in seconds before starting reconciling.
+	reconcileDelay int
 }
 
 func (r *ReconcileCDStageDeploy) SetupWithManager(mgr ctrl.Manager) error {
@@ -70,6 +77,10 @@ func (r *ReconcileCDStageDeploy) SetupWithManager(mgr ctrl.Manager) error {
 
 	err := ctrl.NewControllerManagedBy(mgr).
 		For(&codebaseApi.CDStageDeploy{}, builder.WithPredicates(p, pause)).
+		WithOptions(controller.Options{
+			// We need to process only one CDStageDeploy at a time to support reconcileDelay.
+			MaxConcurrentReconciles: 1,
+		}).
 		Complete(r)
 	if err != nil {
 		return fmt.Errorf("failed to build CDStageDeploy controller: %w", err)
@@ -87,6 +98,10 @@ func (r *ReconcileCDStageDeploy) SetupWithManager(mgr ctrl.Manager) error {
 
 // Reconcile reads that state of the cluster for a CDStageDeploy object and makes changes based on the state.
 func (r *ReconcileCDStageDeploy) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+	if !r.wait(ctx) {
+		return reconcile.Result{}, nil
+	}
+
 	log := ctrl.LoggerFrom(ctx)
 	log.Info("Reconciling CDStageDeploy has been started")
 
@@ -197,4 +212,23 @@ func (r *ReconcileCDStageDeploy) getCDStage(ctx context.Context, name, namespace
 	}
 
 	return i, nil
+}
+
+// wait for a specified time before starting reconciling.
+// If the context is canceled, the function returns false.
+func (r *ReconcileCDStageDeploy) wait(ctx context.Context) bool {
+	w := time.After(time.Second * time.Duration(r.reconcileDelay))
+	l := ctrl.LoggerFrom(ctx)
+
+	l.Info(fmt.Sprintf("Waiting for %d seconds to start reconciling.", r.reconcileDelay))
+
+	for {
+		select {
+		case <-ctx.Done():
+			l.Info("CDStageDeploy reconciling has been stopped")
+			return false
+		case <-w:
+			return true
+		}
+	}
 }
