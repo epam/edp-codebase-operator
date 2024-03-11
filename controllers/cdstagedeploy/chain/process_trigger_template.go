@@ -84,6 +84,7 @@ func (h *ProcessTriggerTemplate) ServeRequest(ctx context.Context, stageDeploy *
 		appPayload,
 		[]byte(stage.Spec.Name),
 		[]byte(pipeline.Spec.Name),
+		[]byte(stage.Spec.ClusterName),
 	); err != nil {
 		return err
 	}
@@ -152,10 +153,19 @@ func (h *ProcessTriggerTemplate) getRawTriggerTemplateResource(ctx context.Conte
 	return rawPipeRun, nil
 }
 
-func (h *ProcessTriggerTemplate) createTriggerTemplateResource(ctx context.Context, ns string, rawPipeRun, appPayload, stage, pipeline []byte) error {
+func (h *ProcessTriggerTemplate) createTriggerTemplateResource(
+	ctx context.Context,
+	ns string,
+	rawPipeRun,
+	appPayload,
+	stage,
+	pipeline,
+	clusterSecret []byte,
+) error {
 	rawPipeRun = bytes.ReplaceAll(rawPipeRun, []byte("$(tt.params.APPLICATIONS_PAYLOAD)"), bytes.ReplaceAll(appPayload, []byte(`"`), []byte(`\"`)))
 	rawPipeRun = bytes.ReplaceAll(rawPipeRun, []byte("$(tt.params.CDSTAGE)"), stage)
 	rawPipeRun = bytes.ReplaceAll(rawPipeRun, []byte("$(tt.params.CDPIPELINE)"), pipeline)
+	rawPipeRun = bytes.ReplaceAll(rawPipeRun, []byte("$(tt.params.KUBECONFIG_SECRET_NAME)"), clusterSecret)
 
 	data := &unstructured.Unstructured{}
 	if err := data.UnmarshalJSON(rawPipeRun); err != nil {

@@ -44,7 +44,11 @@ var (
 		  {
 			"name": "CDPIPELINE",
 			"value": "$(tt.params.CDPIPELINE)"
-		  }
+		  },
+          {
+			"name": "KUBECONFIG_SECRET_NAME",
+			"value": "$(tt.params.KUBECONFIG_SECRET_NAME)"
+          }
 		],
 		"pipelineRef": {
 		  "name": "cd-stage-deploy"
@@ -140,6 +144,7 @@ func TestProcessTriggerTemplate_ServeRequest(t *testing.T) {
 							Spec: pipelineAPi.StageSpec{
 								Name:            "qa",
 								TriggerTemplate: "auto-deploy",
+								ClusterName:     pipelineAPi.InCluster,
 							},
 						},
 						&tektonTriggersApi.TriggerTemplate{
