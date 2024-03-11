@@ -218,7 +218,7 @@ func checkRegistry(ctx context.Context, secret *corev1.Secret) error {
 
 	for url, auth := range conf.Auths {
 		// for docker hub we need to use custom endpoint
-		// see thttps://github.com/GoogleContainerTools/kaniko/blob/v1.19.0/README.md?plain=1#L540
+		// see https://github.com/GoogleContainerTools/kaniko/blob/v1.19.0/README.md?plain=1#L540
 		if url == "https://index.docker.io/v1/" {
 			return checkDockerHub(ctx, auth.Username, auth.Password)
 		}
@@ -227,11 +227,11 @@ func checkRegistry(ctx context.Context, secret *corev1.Secret) error {
 			url = "https://" + url
 		}
 
-		log := ctrl.LoggerFrom(ctx).WithValues("url", url+"/v2")
+		log := ctrl.LoggerFrom(ctx).WithValues("url", url+"/v2/")
 		log.Info("Making request")
 
 		// docker registry specification endpoint https://github.com/opencontainers/distribution-spec/blob/v1.0.1/spec.md#endpoints
-		resp, err := newRequest(ctx, url).SetBasicAuth(auth.Username, auth.Password).Get("/v2")
+		resp, err := newRequest(ctx, url).SetBasicAuth(auth.Username, auth.Password).Get("/v2/")
 		if err != nil {
 			return fmt.Errorf("%w", err)
 		}
