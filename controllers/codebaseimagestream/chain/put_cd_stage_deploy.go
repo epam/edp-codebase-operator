@@ -100,9 +100,7 @@ func (h PutCDStageDeploy) putCDStageDeploy(envLabel, namespace string, spec code
 	if stageDeploy != nil {
 		h.log.Info("CDStageDeploy already exists. skip creating.", logNameKey, stageDeploy.Name)
 
-		return &util.CDStageDeployHasNotBeenProcessedError{
-			Message: fmt.Sprintf("%v has not been processed for previous version of application yet", name),
-		}
+		return nil
 	}
 
 	cdsd, err := getCreateCommand(envLabel, name, namespace, spec.Codebase, spec.Tags, log)

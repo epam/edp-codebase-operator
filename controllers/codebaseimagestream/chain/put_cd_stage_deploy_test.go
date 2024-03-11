@@ -174,7 +174,7 @@ func TestPutCDStageDeploy_CdstagedeployShouldFailOnSearch(t *testing.T) {
 	}
 }
 
-func TestPutCDStageDeploy_ShouldFailWhenCdstagedeployExist(t *testing.T) {
+func TestPutCDStageDeploy_ShouldPassWhenCdstagedeployExist(t *testing.T) {
 	cis := &codebaseApi.CodebaseImageStream{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "cbis-name",
@@ -212,10 +212,10 @@ func TestPutCDStageDeploy_ShouldFailWhenCdstagedeployExist(t *testing.T) {
 	}
 
 	err := chain.ServeRequest(cis)
-	assert.Error(t, err)
+	assert.NoError(t, err)
 
-	if !strings.Contains(err.Error(), "pipeline-name-stage-name has not been processed for previous version of application yet") {
-		t.Fatalf("wrong error returned: %s", err.Error())
+	if err != nil {
+		t.Fatalf("unexpected error returned: %s", err.Error())
 	}
 }
 
