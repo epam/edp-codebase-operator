@@ -145,6 +145,10 @@ func (r *ReconcileCodebase) Reconcile(ctx context.Context, request reconcile.Req
 		log.Error(err, "Error during codebase reconciliation")
 		log.Info("Wait for next reconciliation", "timeout", timeout)
 
+		if cleanErr := removeDirectoryIfExists(ctx, codebase); cleanErr != nil {
+			log.Error(cleanErr, "Failed to remove Codebase directory")
+		}
+
 		return reconcile.Result{RequeueAfter: timeout}, nil
 	}
 
