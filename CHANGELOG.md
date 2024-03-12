@@ -1,6 +1,46 @@
 <a name="unreleased"></a>
 ## [Unreleased]
 
+
+<a name="v2.22.0"></a>
+## [v2.22.0] - 2024-03-12
+### Features
+
+- Add delay for reconciling CDStageDeploy ([#47](https://github.com/epam/edp-codebase-operator/issues/47))
+- Change naming approach for CDStageDeploy CR ([#47](https://github.com/epam/edp-codebase-operator/issues/47))
+- Get EventListener Ingress by GitServer name ([#45](https://github.com/epam/edp-codebase-operator/issues/45))
+- Change auto-deploy flow to a new approach ([#44](https://github.com/epam/edp-codebase-operator/issues/44))
+- Migrate from EDPComponent to QuickLink ([#42](https://github.com/epam/edp-codebase-operator/issues/42))
+- Migrate from EDPComponent to QuickLink ([#42](https://github.com/epam/edp-codebase-operator/issues/42))
+- Change EDP icon for Jira weblinks ([#41](https://github.com/epam/edp-codebase-operator/issues/41))
+- Implement a new QuickLink CRD ([#40](https://github.com/epam/edp-codebase-operator/issues/40))
+- Enable secret status in annotation for argocd ([#39](https://github.com/epam/edp-codebase-operator/issues/39))
+- Add webhookUrl optional property to the GitServer spec ([#37](https://github.com/epam/edp-codebase-operator/issues/37))
+- Use event-listener name for Ingress and Route ([#36](https://github.com/epam/edp-codebase-operator/issues/36))
+
+### Bug Fixes
+
+- Do not fail reconciliation when CDStageDeploy exists ([#47](https://github.com/epam/edp-codebase-operator/issues/47))
+- Auto-deploy failed into a remote cluster ([#49](https://github.com/epam/edp-codebase-operator/issues/49))
+- Connection status for docker repository is failed ([#48](https://github.com/epam/edp-codebase-operator/issues/48))
+- Empty auto-deploy flow logs attributes ([#44](https://github.com/epam/edp-codebase-operator/issues/44))
+- Set success status for JiraServer ([#42](https://github.com/epam/edp-codebase-operator/issues/42))
+- Empty project failed status ([#43](https://github.com/epam/edp-codebase-operator/issues/43))
+
+### Code Refactoring
+
+- Migrate EDPComponent CRD to edp-codebase-operator ([#40](https://github.com/epam/edp-codebase-operator/issues/40))
+
+### Routine
+
+- Remove Jira EDPComponent CR ([#168](https://github.com/epam/edp-codebase-operator/issues/168))
+- Add jira QuickLink ([#168](https://github.com/epam/edp-codebase-operator/issues/168))
+- Bump github.com/cloudflare/circl from 1.3.3 to 1.3.7 ([#38](https://github.com/epam/edp-codebase-operator/issues/38))
+- Bump github.com/go-git/go-git/v5 to 5.11.0 ([#34](https://github.com/epam/edp-codebase-operator/issues/34))
+- Bump golang.org/x/crypto from 0.14.0 to 0.17.0 ([#33](https://github.com/epam/edp-codebase-operator/issues/33))
+- Update alpine image to the latest stable ([#35](https://github.com/epam/edp-codebase-operator/issues/35))
+- Update current development version ([#32](https://github.com/epam/edp-codebase-operator/issues/32))
+
 ### Documentation
 
 - Add more details regarding telemetry option ([#31](https://github.com/epam/edp-codebase-operator/issues/31))
@@ -105,7 +145,8 @@ removed required fields from the GitServer status. CRD should be updated.
 <a name="v2.17.0"></a>
 ## [v2.17.0] - 2023-08-17
 
-[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.21.0...HEAD
+[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.22.0...HEAD
+[v2.22.0]: https://github.com/epam/edp-codebase-operator/compare/v2.21.0...v2.22.0
 [v2.21.0]: https://github.com/epam/edp-codebase-operator/compare/v2.20.0...v2.21.0
 [v2.20.0]: https://github.com/epam/edp-codebase-operator/compare/v2.19.0...v2.20.0
 [v2.19.0]: https://github.com/epam/edp-codebase-operator/compare/v2.18.1...v2.19.0
