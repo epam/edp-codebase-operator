@@ -2,8 +2,8 @@
 ## [Unreleased]
 
 
-<a name="v2.22.0"></a>
-## v2.22.0 - 2024-03-11
+<a name="v2.22.1"></a>
+## v2.22.1 - 2024-03-12
 ### Features
 
 - Add delay for reconciling CDStageDeploy ([#47](https://github.com/epam/edp-codebase-operator/issues/47))
@@ -50,6 +50,7 @@
 
 ### Routine
 
+- Bump alpine version ([#51](https://github.com/epam/edp-codebase-operator/issues/51))
 - Remove Jira EDPComponent CR ([#168](https://github.com/epam/edp-codebase-operator/issues/168))
 - Add jira QuickLink ([#168](https://github.com/epam/edp-codebase-operator/issues/168))
 - Bump github.com/cloudflare/circl from 1.3.3 to 1.3.7 ([#38](https://github.com/epam/edp-codebase-operator/issues/38))
@@ -84,4 +85,4 @@
 removed required fields from the GitServer status. CRD should be updated.
 
 
-[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.22.0...HEAD
+[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.22.1...HEAD
