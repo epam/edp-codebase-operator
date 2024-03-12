@@ -1,6 +1,18 @@
 <a name="unreleased"></a>
 ## [Unreleased]
 
+### Routine
+
+- Bump alpine version ([#51](https://github.com/epam/edp-codebase-operator/issues/51))
+- Update current development version ([#50](https://github.com/epam/edp-codebase-operator/issues/50))
+
+
+<a name="v2.22.1"></a>
+## [v2.22.1] - 2024-03-12
+### Routine
+
+- Bump alpine version ([#51](https://github.com/epam/edp-codebase-operator/issues/51))
+
 
 <a name="v2.22.0"></a>
 ## [v2.22.0] - 2024-03-12
@@ -145,7 +157,8 @@ removed required fields from the GitServer status. CRD should be updated.
 <a name="v2.17.0"></a>
 ## [v2.17.0] - 2023-08-17
 
-[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.22.0...HEAD
+[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.22.1...HEAD
+[v2.22.1]: https://github.com/epam/edp-codebase-operator/compare/v2.22.0...v2.22.1
 [v2.22.0]: https://github.com/epam/edp-codebase-operator/compare/v2.21.0...v2.22.0
 [v2.21.0]: https://github.com/epam/edp-codebase-operator/compare/v2.20.0...v2.21.0
 [v2.20.0]: https://github.com/epam/edp-codebase-operator/compare/v2.19.0...v2.20.0
