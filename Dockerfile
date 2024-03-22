@@ -7,7 +7,7 @@ ENV ASSETS_DIR=/usr/local/bin \
     USER_NAME=codebase-operator \
     USER_UID=1001
 
-RUN apk add --no-cache ca-certificates=20230506-r0 \
+RUN apk add --no-cache ca-certificates=20240226-r0 \
                        openssh-client==9.3_p2-r1 \
                        git==2.40.1-r0
 
