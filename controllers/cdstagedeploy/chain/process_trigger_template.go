@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"strings"
 
 	tektonTriggersApi "github.com/tektoncd/triggers/pkg/apis/triggers/v1beta1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -16,6 +15,7 @@ import (
 	pipelineAPi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
+	"github.com/epam/edp-codebase-operator/v2/controllers/codebasebranch/chain/put_codebase_image_stream"
 	"github.com/epam/edp-codebase-operator/v2/pkg/codebaseimagestream"
 )
 
@@ -97,31 +97,27 @@ func (h *ProcessTriggerTemplate) ServeRequest(ctx context.Context, stageDeploy *
 func (h *ProcessTriggerTemplate) getAppPayload(ctx context.Context, pipeline *pipelineAPi.CDPipeline) (json.RawMessage, error) {
 	log := ctrl.LoggerFrom(ctx)
 
-	imageStreams, err := getCodebaseImageStreamMap(pipeline)
-	if err != nil {
-		return nil, err
-	}
+	appPayload := make(map[string]TriggerTemplateApplicationPayload, len(pipeline.Spec.InputDockerStreams))
 
-	appPayload := make(map[string]TriggerTemplateApplicationPayload, len(imageStreams))
+	for _, stream := range pipeline.Spec.InputDockerStreams {
+		imageStreamName := put_codebase_image_stream.ProcessNameToK8sConvention(stream)
 
-	for codebase, stream := range imageStreams {
 		imageStream := &codebaseApi.CodebaseImageStream{}
-		if err = h.k8sClient.Get(ctx, client.ObjectKey{
+		if err := h.k8sClient.Get(ctx, client.ObjectKey{
 			Namespace: pipeline.Namespace,
-			Name:      stream,
+			Name:      put_codebase_image_stream.ProcessNameToK8sConvention(imageStreamName),
 		}, imageStream); err != nil {
-			return nil, fmt.Errorf("failed to get %s CodebaseImageStream: %w", stream, err)
+			return nil, fmt.Errorf("failed to get %s CodebaseImageStream: %w", imageStreamName, err)
 		}
 
-		var tag codebaseApi.Tag
-
-		if tag, err = codebaseimagestream.GetLastTag(imageStream.Spec.Tags, log); err != nil {
-			log.Info("Codebase doesn't have tags in the CodebaseImageStream. Skip auto-deploy.", "codebase", codebase, "imagestream", stream)
+		tag, err := codebaseimagestream.GetLastTag(imageStream.Spec.Tags, log)
+		if err != nil {
+			log.Info("Codebase doesn't have tags in the CodebaseImageStream. Skip auto-deploy.", "codebase", imageStream.Spec.Codebase, "imagestream", imageStreamName)
 
 			return nil, errLasTagNotFound
 		}
 
-		appPayload[codebase] = TriggerTemplateApplicationPayload{
+		appPayload[imageStream.Spec.Codebase] = TriggerTemplateApplicationPayload{
 			ImageTag: tag.Name,
 		}
 	}
@@ -179,21 +175,4 @@ func (h *ProcessTriggerTemplate) createTriggerTemplateResource(
 	}
 
 	return nil
-}
-
-// getCodebaseImageStreamMap returns map of codebase name and image stream name.
-func getCodebaseImageStreamMap(pipeline *pipelineAPi.CDPipeline) (map[string]string, error) {
-	m := make(map[string]string, len(pipeline.Spec.InputDockerStreams))
-
-	for _, stream := range pipeline.Spec.InputDockerStreams {
-		i := strings.LastIndex(stream, "-")
-
-		if i == -1 {
-			return nil, fmt.Errorf("invalid image stream name %s", stream)
-		}
-
-		m[stream[:i]] = stream
-	}
-
-	return m, nil
 }

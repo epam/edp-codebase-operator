@@ -55,7 +55,7 @@ func (h PutCodebaseImageStream) ServeRequest(ctx context.Context, cb *codebaseAp
 		return err
 	}
 
-	cisName := fmt.Sprintf("%v-%v", c.Name, processNameToK8sConvention(cb.Spec.BranchName))
+	cisName := fmt.Sprintf("%v-%v", c.Name, ProcessNameToK8sConvention(cb.Spec.BranchName))
 	imageName := fmt.Sprintf("%v/%v", registryUrl, cb.Spec.CodebaseName)
 
 	if err = h.createCodebaseImageStreamIfNotExists(
@@ -80,7 +80,7 @@ func (h PutCodebaseImageStream) ServeRequest(ctx context.Context, cb *codebaseAp
 	return nil
 }
 
-func processNameToK8sConvention(name string) string {
+func ProcessNameToK8sConvention(name string) string {
 	r := strings.NewReplacer("/", "-", ".", "-")
 	return r.Replace(name)
 }
