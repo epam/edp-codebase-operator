@@ -34,9 +34,9 @@ In order to install the Codebase Operator, follow the steps below:
      ```bash
      helm search repo epamedp/codebase-operator -l
      NAME                           CHART VERSION   APP VERSION     DESCRIPTION
-     epamedp/codebase-operator      2.13.0          2.13.0          A Helm chart for EDP Codebase Operator
-     epamedp/codebase-operator      2.12.0          2.12.0          A Helm chart for EDP Codebase Operator
-     epamedp/codebase-operator      2.10.1          2.10.1          A Helm chart for EDP Codebase Operator
+     epamedp/codebase-operator      2.22.1          2.22.1          A Helm chart for EDP Codebase Operator
+     epamedp/codebase-operator      2.22.0          2.22.0          A Helm chart for EDP Codebase Operator
+     epamedp/codebase-operator      2.21.0          2.21.0          A Helm chart for EDP Codebase Operator
      ```
 
     _**NOTE:** It is highly recommended to use the latest released version._

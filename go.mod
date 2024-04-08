@@ -1,6 +1,8 @@
 module github.com/epam/edp-codebase-operator/v2
 
-go 1.20
+go 1.21
+
+toolchain go1.21.5
 
 replace (
 	github.com/epam/edp-cd-pipeline-operator/v2 v2.18.0 => github.com/epam/edp-cd-pipeline-operator/v2 v2.3.0-58.0.20240220142416-885084baa79c
@@ -16,7 +18,6 @@ require (
 	github.com/go-logr/logr v1.3.0
 	github.com/go-resty/resty/v2 v2.6.0
 	github.com/jarcoal/httpmock v1.0.8
-	github.com/mitchellh/mapstructure v1.5.0
 	github.com/openshift/api v3.9.0+incompatible
 	github.com/stretchr/testify v1.8.4
 	github.com/tektoncd/triggers v0.24.2
