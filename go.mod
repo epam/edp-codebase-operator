@@ -16,7 +16,6 @@ require (
 	github.com/go-logr/logr v1.3.0
 	github.com/go-resty/resty/v2 v2.6.0
 	github.com/jarcoal/httpmock v1.0.8
-	github.com/mitchellh/mapstructure v1.5.0
 	github.com/openshift/api v3.9.0+incompatible
 	github.com/stretchr/testify v1.8.4
 	github.com/tektoncd/triggers v0.24.2
