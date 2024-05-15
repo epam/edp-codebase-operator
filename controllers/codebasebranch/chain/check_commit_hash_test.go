@@ -73,7 +73,7 @@ func TestCheckCommitHashExists_ServeRequest(t *testing.T) {
 				},
 			},
 			gitClient: func() git.Git {
-				mGit := gitServerMocks.NewGit(t)
+				mGit := gitServerMocks.NewMockGit(t)
 				mGit.On(
 					"CloneRepositoryBySsh",
 					testifymock.Anything,
@@ -133,7 +133,7 @@ func TestCheckCommitHashExists_ServeRequest(t *testing.T) {
 				},
 			},
 			gitClient: func() git.Git {
-				mGit := gitServerMocks.NewGit(t)
+				mGit := gitServerMocks.NewMockGit(t)
 				mGit.On(
 					"CloneRepositoryBySsh",
 					testifymock.Anything,
@@ -166,7 +166,7 @@ func TestCheckCommitHashExists_ServeRequest(t *testing.T) {
 				},
 			},
 			gitClient: func() git.Git {
-				return gitServerMocks.NewGit(t)
+				return gitServerMocks.NewMockGit(t)
 			},
 			wantErr: require.NoError,
 		},
@@ -187,7 +187,7 @@ func TestCheckCommitHashExists_ServeRequest(t *testing.T) {
 				},
 			},
 			gitClient: func() git.Git {
-				return gitServerMocks.NewGit(t)
+				return gitServerMocks.NewMockGit(t)
 			},
 			wantErr: require.NoError,
 		},

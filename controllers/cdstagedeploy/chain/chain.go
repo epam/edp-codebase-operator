@@ -9,6 +9,7 @@ import (
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 )
 
+// CDStageDeployHandler is an interface for handling CDStageDeploy.
 type CDStageDeployHandler interface {
 	ServeRequest(context.Context, *codebaseApi.CDStageDeploy) error
 }

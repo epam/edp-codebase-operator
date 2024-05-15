@@ -31,7 +31,7 @@ func Test_chain_Use(t *testing.T) {
 				handlers: []handler.CodebaseHandler{},
 			},
 			args: args{
-				handlers: []handler.CodebaseHandler{handlermocks.NewCodebaseHandler(t)},
+				handlers: []handler.CodebaseHandler{handlermocks.NewMockCodebaseHandler(t)},
 			},
 		},
 	}

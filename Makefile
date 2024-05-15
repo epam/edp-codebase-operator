@@ -155,7 +155,7 @@ crdoc: ## Download crdoc locally if necessary.
 CONTROLLER_GEN = $(LOCALBIN)/controller-gen
 .PHONY: controller-gen
 controller-gen: ## Download controller-gen locally if necessary.
-	$(call go-get-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen,v0.13.0)
+	$(call go-get-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen,v0.15.0)
 # go-get-tool will 'go get' any package $2 and install it to $1.
 PROJECT_DIR := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))
 define go-get-tool
@@ -178,6 +178,10 @@ bundle: manifests kustomize ## Generate bundle manifests and metadata, then vali
 	$(KUSTOMIZE) build config/manifests | operator-sdk generate bundle $(BUNDLE_GEN_FLAGS)
 	operator-sdk bundle validate ./bundle
 
-.PHONY: go-generate
-go-generate: ## Run go generate to generate mocks
-	go generate ./...
+mocks: mockery
+	$(MOCKERY)
+
+MOCKERY = $(LOCALBIN)/mockery
+.PHONY: mockery
+mockery: ## Download mockery locally if necessary.
+	$(call go-get-tool,$(MOCKERY),github.com/vektra/mockery/v2,v2.43.0)

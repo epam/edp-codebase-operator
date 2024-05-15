@@ -401,7 +401,9 @@ CodebaseBranchStatus defines the observed state of CodebaseBranch.
         <td><b>result</b></td>
         <td>enum</td>
         <td>
-          A result of an action which were performed. - "success": action where performed successfully; - "error": error has occurred;<br/>
+          A result of an action which were performed.
+- "success": action where performed successfully;
+- "error": error has occurred;<br/>
           <br/>
             <i>Enum</i>: success, error<br/>
         </td>
@@ -438,7 +440,8 @@ CodebaseBranchStatus defines the observed state of CodebaseBranch.
         <td><b>detailedMessage</b></td>
         <td>string</td>
         <td>
-          Detailed information regarding action result which were performed<br/>
+          Detailed information regarding action result
+which were performed<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -623,7 +626,8 @@ CodebaseImageStreamStatus defines the observed state of CodebaseImageStream.
         <td><b>detailed_message</b></td>
         <td>string</td>
         <td>
-          Detailed information regarding action result which were performed<br/>
+          Detailed information regarding action result
+which were performed<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -731,7 +735,8 @@ CodebaseSpec defines the desired state of Codebase.
         <td><b>gitServer</b></td>
         <td>string</td>
         <td>
-          A name of git server which will be used as VCS. Example: "gerrit".<br/>
+          A name of git server which will be used as VCS.
+Example: "gerrit".<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -775,7 +780,8 @@ CodebaseSpec defines the desired state of Codebase.
         <td><b>branchToCopyInDefaultBranch</b></td>
         <td>string</td>
         <td>
-          While we clone new codebase we can select specific branch to clone. Selected branch will become a default branch for a new codebase (e.g. master, main).<br/>
+          While we clone new codebase we can select specific branch to clone.
+Selected branch will become a default branch for a new codebase (e.g. master, main).<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -976,7 +982,9 @@ CodebaseStatus defines the observed state of Codebase.
         <td><b>result</b></td>
         <td>enum</td>
         <td>
-          A result of an action which were performed. - "success": action where performed successfully; - "error": error has occurred;<br/>
+          A result of an action which were performed.
+- "success": action where performed successfully;
+- "error": error has occurred;<br/>
           <br/>
             <i>Enum</i>: success, error<br/>
         </td>
@@ -1006,7 +1014,8 @@ CodebaseStatus defines the observed state of Codebase.
         <td><b>detailedMessage</b></td>
         <td>string</td>
         <td>
-          Detailed information regarding action result which were performed<br/>
+          Detailed information regarding action result
+which were performed<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1158,7 +1167,8 @@ GitServerSpec defines the desired state of GitServer.
         <td><b>webhookUrl</b></td>
         <td>string</td>
         <td>
-          WebhookUrl is a URL for webhook that will be created in the git provider. If it is not set, a webhook will be created from Ingress with the name "event-listener".<br/>
+          WebhookUrl is a URL for webhook that will be created in the git provider.
+If it is not set, a webhook will be created from Ingress with the name "event-listener".<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -1345,7 +1355,8 @@ JiraIssueMetadataStatus defines the observed state of JiraIssueMetadata.
         <td><b>detailed_message</b></td>
         <td>string</td>
         <td>
-          Detailed information regarding action result which were performed<br/>
+          Detailed information regarding action result
+which were performed<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -1489,7 +1500,8 @@ JiraServerStatus defines the observed state of JiraServer.
         <td><b>detailed_message</b></td>
         <td>string</td>
         <td>
-          Detailed information regarding action result which were performed<br/>
+          Detailed information regarding action result
+which were performed<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -1999,7 +2011,9 @@ CodebaseBranchStatus defines the observed state of CodebaseBranch.
         <td><b>result</b></td>
         <td>enum</td>
         <td>
-          A result of an action which were performed. - "success": action where performed successfully; - "error": error has occurred;<br/>
+          A result of an action which were performed.
+- "success": action where performed successfully;
+- "error": error has occurred;<br/>
           <br/>
             <i>Enum</i>: success, error<br/>
         </td>
@@ -2036,7 +2050,8 @@ CodebaseBranchStatus defines the observed state of CodebaseBranch.
         <td><b>detailedMessage</b></td>
         <td>string</td>
         <td>
-          Detailed information regarding action result which were performed<br/>
+          Detailed information regarding action result
+which were performed<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -2214,7 +2229,8 @@ CodebaseImageStreamStatus defines the observed state of CodebaseImageStream.
         <td><b>detailed_message</b></td>
         <td>string</td>
         <td>
-          Detailed information regarding action result which were performed<br/>
+          Detailed information regarding action result
+which were performed<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -2322,7 +2338,8 @@ CodebaseSpec defines the desired state of Codebase.
         <td><b>gitServer</b></td>
         <td>string</td>
         <td>
-          A name of git server which will be used as VCS. Example: "gerrit".<br/>
+          A name of git server which will be used as VCS.
+Example: "gerrit".<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -2359,7 +2376,8 @@ CodebaseSpec defines the desired state of Codebase.
         <td><b>branchToCopyInDefaultBranch</b></td>
         <td>string</td>
         <td>
-          While we clone new codebase we can select specific branch to clone. Selected branch will become a default branch for a new codebase (e.g. master, main).<br/>
+          While we clone new codebase we can select specific branch to clone.
+Selected branch will become a default branch for a new codebase (e.g. master, main).<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -2563,7 +2581,9 @@ CodebaseStatus defines the observed state of Codebase.
         <td><b>result</b></td>
         <td>enum</td>
         <td>
-          A result of an action which were performed. - "success": action where performed successfully; - "error": error has occurred;<br/>
+          A result of an action which were performed.
+- "success": action where performed successfully;
+- "error": error has occurred;<br/>
           <br/>
             <i>Enum</i>: success, error<br/>
         </td>
@@ -2593,7 +2613,8 @@ CodebaseStatus defines the observed state of Codebase.
         <td><b>detailedMessage</b></td>
         <td>string</td>
         <td>
-          Detailed information regarding action result which were performed<br/>
+          Detailed information regarding action result
+which were performed<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -2762,7 +2783,9 @@ GitServerStatus defines the observed state of GitServer.
         <td><b>result</b></td>
         <td>string</td>
         <td>
-          A result of an action which were performed. - "success": action where performed successfully; - "error": error has occurred;<br/>
+          A result of an action which were performed.
+- "success": action where performed successfully;
+- "error": error has occurred;<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -2790,7 +2813,8 @@ GitServerStatus defines the observed state of GitServer.
         <td><b>detailed_message</b></td>
         <td>string</td>
         <td>
-          Detailed information regarding action result which were performed<br/>
+          Detailed information regarding action result
+which were performed<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -2943,7 +2967,8 @@ JiraIssueMetadataStatus defines the observed state of JiraIssueMetadata.
         <td><b>detailed_message</b></td>
         <td>string</td>
         <td>
-          Detailed information regarding action result which were performed<br/>
+          Detailed information regarding action result
+which were performed<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -3087,7 +3112,8 @@ JiraServerStatus defines the observed state of JiraServer.
         <td><b>detailed_message</b></td>
         <td>string</td>
         <td>
-          Detailed information regarding action result which were performed<br/>
+          Detailed information regarding action result
+which were performed<br/>
         </td>
         <td>false</td>
       </tr></tbody>

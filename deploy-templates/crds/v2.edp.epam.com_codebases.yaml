@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.13.0
+    controller-gen.kubebuilder.io/version: v0.15.0
   name: codebases.v2.edp.epam.com
 spec:
   group: v2.edp.epam.com
@@ -43,14 +43,19 @@ spec:
         description: Codebase is the Schema for the Codebases API.
         properties:
           apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation
-              of an object. Servers should convert recognized schemas to the latest
-              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
             type: string
           kind:
-            description: 'Kind is a string value representing the REST resource this
-              object represents. Servers may infer this from the endpoint the client
-              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
             type: string
           metadata:
             type: object
@@ -58,9 +63,9 @@ spec:
             description: CodebaseSpec defines the desired state of Codebase.
             properties:
               branchToCopyInDefaultBranch:
-                description: While we clone new codebase we can select specific branch
-                  to clone. Selected branch will become a default branch for a new
-                  codebase (e.g. master, main).
+                description: |-
+                  While we clone new codebase we can select specific branch to clone.
+                  Selected branch will become a default branch for a new codebase (e.g. master, main).
                 type: string
               buildTool:
                 description: A build tool which is used on codebase.
@@ -94,8 +99,9 @@ spec:
                 description: A framework used in codebase.
                 type: string
               gitServer:
-                description: 'A name of git server which will be used as VCS. Example:
-                  "gerrit".'
+                description: |-
+                  A name of git server which will be used as VCS.
+                  Example: "gerrit".
                 type: string
               gitUrlPath:
                 description: 'A relative path for git repository. Should start from
@@ -170,8 +176,9 @@ spec:
                   and ready to work. Defaults to false.
                 type: boolean
               detailedMessage:
-                description: Detailed information regarding action result which were
-                  performed
+                description: |-
+                  Detailed information regarding action result
+                  which were performed
                 type: string
               failureCount:
                 description: Amount of times, operator fail to serve with existing
@@ -189,8 +196,10 @@ spec:
                 format: date-time
                 type: string
               result:
-                description: 'A result of an action which were performed. - "success":
-                  action where performed successfully; - "error": error has occurred;'
+                description: |-
+                  A result of an action which were performed.
+                  - "success": action where performed successfully;
+                  - "error": error has occurred;
                 enum:
                 - success
                 - error
@@ -230,14 +239,19 @@ spec:
         description: Codebase is the Schema for the Codebases API.
         properties:
           apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation
-              of an object. Servers should convert recognized schemas to the latest
-              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
             type: string
           kind:
-            description: 'Kind is a string value representing the REST resource this
-              object represents. Servers may infer this from the endpoint the client
-              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
             type: string
           metadata:
             type: object
@@ -245,9 +259,9 @@ spec:
             description: CodebaseSpec defines the desired state of Codebase.
             properties:
               branchToCopyInDefaultBranch:
-                description: While we clone new codebase we can select specific branch
-                  to clone. Selected branch will become a default branch for a new
-                  codebase (e.g. master, main).
+                description: |-
+                  While we clone new codebase we can select specific branch to clone.
+                  Selected branch will become a default branch for a new codebase (e.g. master, main).
                 type: string
               buildTool:
                 description: A build tool which is used on codebase.
@@ -280,8 +294,9 @@ spec:
                 nullable: true
                 type: string
               gitServer:
-                description: 'A name of git server which will be used as VCS. Example:
-                  "gerrit".'
+                description: |-
+                  A name of git server which will be used as VCS.
+                  Example: "gerrit".
                 type: string
               gitUrlPath:
                 description: A link to external git server, used for "import" strategy.
@@ -353,8 +368,9 @@ spec:
                   and ready to work. Defaults to false.
                 type: boolean
               detailedMessage:
-                description: Detailed information regarding action result which were
-                  performed
+                description: |-
+                  Detailed information regarding action result
+                  which were performed
                 type: string
               failureCount:
                 description: Amount of times, operator fail to serve with existing
@@ -369,8 +385,10 @@ spec:
                 format: date-time
                 type: string
               result:
-                description: 'A result of an action which were performed. - "success":
-                  action where performed successfully; - "error": error has occurred;'
+                description: |-
+                  A result of an action which were performed.
+                  - "success": action where performed successfully;
+                  - "error": error has occurred;
                 enum:
                 - success
                 - error

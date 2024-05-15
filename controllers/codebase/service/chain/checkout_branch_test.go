@@ -96,7 +96,7 @@ func TestCheckoutBranch_ShouldFailOnGetSecret(t *testing.T) {
 	scheme.AddKnownTypes(codebaseApi.GroupVersion, c)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c).Build()
 
-	mGit := gitServerMocks.NewGit(t)
+	mGit := gitServerMocks.NewMockGit(t)
 
 	err := CheckoutBranch("repo", "project-path", "branch", mGit, c, fakeCl)
 	assert.Error(t, err)
@@ -135,7 +135,7 @@ func TestCheckoutBranch_ShouldFailOnCheckPermission(t *testing.T) {
 
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(s, c).Build()
 
-	mGit := gitServerMocks.NewGit(t)
+	mGit := gitServerMocks.NewMockGit(t)
 	mGit.On("CheckPermissions", testify.Anything, "repo", util.GetStringP("user"), util.GetStringP("pass")).Return(false)
 
 	err := CheckoutBranch("repo", "project-path", "branch", mGit, c, fakeCl)
@@ -173,7 +173,7 @@ func TestCheckoutBranch_ShouldFailOnGetCurrentBranchName(t *testing.T) {
 	scheme.AddKnownTypes(codebaseApi.GroupVersion, c)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(s, c).Build()
 
-	mGit := gitServerMocks.NewGit(t)
+	mGit := gitServerMocks.NewMockGit(t)
 	mGit.On("CheckPermissions", testify.Anything, "repo", util.GetStringP("user"), util.GetStringP("pass")).Return(true)
 	mGit.On("GetCurrentBranchName", "project-path").Return("", errors.New("FATAL:FAILED"))
 
@@ -216,7 +216,7 @@ func TestCheckoutBranch_ShouldFailOnCheckout(t *testing.T) {
 	scheme.AddKnownTypes(codebaseApi.GroupVersion, c)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(s, c).Build()
 
-	mGit := gitServerMocks.NewGit(t)
+	mGit := gitServerMocks.NewMockGit(t)
 	mGit.On("CheckPermissions", testify.Anything, "repo", &u, &p).Return(true)
 	mGit.On("GetCurrentBranchName", "project-path").Return("some-other-branch", nil)
 	mGit.On("Checkout", &u, &p, "project-path", "branch", true).Return(errors.New("FATAL:FAILED"))
@@ -282,7 +282,7 @@ func TestCheckoutBranch_ShouldPassForCloneStrategy(t *testing.T) {
 	scheme.AddKnownTypes(codebaseApi.GroupVersion, c, gs)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(s, c, gs, ssh).Build()
 
-	mGit := gitServerMocks.NewGit(t)
+	mGit := gitServerMocks.NewMockGit(t)
 	mGit.On("CheckPermissions", testify.Anything, "repo", &u, &p).Return(true)
 	mGit.On("GetCurrentBranchName", "project-path").Return("some-other-branch", nil)
 	mGit.On("CheckoutRemoteBranchBySSH", "fake", fakeName, "project-path", "branch").Return(nil)

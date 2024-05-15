@@ -15,7 +15,7 @@ import (
 )
 
 func TestPutIssueWebLink_ServeRequest_ShouldPass(t *testing.T) {
-	mClient := new(jiraMock.Client)
+	mClient := jiraMock.NewMockClient(t)
 	mClient.On("CreateIssueLink", "fake-issueId", "fake-title", "fake-url").Return(
 		nil)
 
@@ -38,7 +38,7 @@ func TestPutIssueWebLink_ServeRequest_ShouldPass(t *testing.T) {
 }
 
 func TestPutIssueWebLink_ServeRequest_ShouldFail(t *testing.T) {
-	mClient := new(jiraMock.Client)
+	mClient := jiraMock.NewMockClient(t)
 	mClient.On("CreateIssueLink", "DEV-0000",
 		"[DEV-0000] updated components versions [alpha-zeta][build/1.5.0-SNAPSHOT.377]",
 		"https://example.com/job/alpha-zeta/job/MASTER-Build-alpha-zeta/890/console").Return(

@@ -23,7 +23,7 @@ func MakeChain(ctx context.Context, c client.Client) handler.CodebaseHandler {
 
 	ch.Use(
 		NewPutGitWebRepoUrl(c),
-		NewPutProject(c, gp, &gerrit.SSHGerritClient{}, gitprovider.NewGitProjectProvider),
+		NewPutProject(c, gp, &gerrit.SSHGerritClient{}, gitprovider.NewMockGitProjectProvider),
 		NewPutWebHook(c, resty.New()),
 		NewPutDeployConfigs(c, gp),
 		NewPutDefaultCodeBaseBranch(c),

@@ -83,7 +83,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 	}
 	defaultGitProvider := func(t *testing.T) func(gitServer *codebaseApi.GitServer) (gitprovider.GitProjectProvider, error) {
 		return func(gitServer *codebaseApi.GitServer) (gitprovider.GitProjectProvider, error) {
-			return gitprovidermock.NewGitProjectProvider(t), nil
+			return gitprovidermock.NewMockGitProjectProvider(t), nil
 		}
 	}
 
@@ -114,7 +114,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 			},
 			objects: []runtime.Object{gerritGitServer, gerritGitServerSecret},
 			gitClient: func(t *testing.T) git.Git {
-				mock := gitmocks.NewGit(t)
+				mock := gitmocks.NewMockGit(t)
 
 				mock.On("CheckPermissions", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(true).
@@ -140,7 +140,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 				return mock
 			},
 			gerritClient: func(t *testing.T) gerrit.Client {
-				mock := gerritmocks.NewClient(t)
+				mock := gerritmocks.NewMockClient(t)
 
 				mock.
 					On(
@@ -200,7 +200,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 			},
 			objects: []runtime.Object{gerritGitServer, gerritGitServerSecret},
 			gitClient: func(t *testing.T) git.Git {
-				mock := gitmocks.NewGit(t)
+				mock := gitmocks.NewMockGit(t)
 
 				mock.On("CheckPermissions", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(true).
@@ -220,7 +220,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 				return mock
 			},
 			gerritClient: func(t *testing.T) gerrit.Client {
-				mock := gerritmocks.NewClient(t)
+				mock := gerritmocks.NewMockClient(t)
 
 				mock.
 					On(
@@ -280,7 +280,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 			},
 			objects: []runtime.Object{gerritGitServer, gerritGitServerSecret},
 			gitClient: func(t *testing.T) git.Git {
-				mock := gitmocks.NewGit(t)
+				mock := gitmocks.NewMockGit(t)
 
 				mock.
 					On("CheckPermissions", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
@@ -299,7 +299,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 				return mock
 			},
 			gerritClient: func(t *testing.T) gerrit.Client {
-				mock := gerritmocks.NewClient(t)
+				mock := gerritmocks.NewMockClient(t)
 
 				mock.
 					On(
@@ -359,7 +359,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 			},
 			objects: []runtime.Object{gerritGitServer, gerritGitServerSecret},
 			gitClient: func(t *testing.T) git.Git {
-				mock := gitmocks.NewGit(t)
+				mock := gitmocks.NewMockGit(t)
 
 				mock.On("CheckPermissions", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(true).
@@ -377,7 +377,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 				return mock
 			},
 			gerritClient: func(t *testing.T) gerrit.Client {
-				mock := gerritmocks.NewClient(t)
+				mock := gerritmocks.NewMockClient(t)
 
 				mock.
 					On(
@@ -443,7 +443,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 			},
 			objects: []runtime.Object{gerritGitServer, gerritGitServerSecret},
 			gitClient: func(t *testing.T) git.Git {
-				mock := gitmocks.NewGit(t)
+				mock := gitmocks.NewMockGit(t)
 
 				mock.On("CheckPermissions", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(true).
@@ -461,7 +461,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 				return mock
 			},
 			gerritClient: func(t *testing.T) gerrit.Client {
-				mock := gerritmocks.NewClient(t)
+				mock := gerritmocks.NewMockClient(t)
 
 				mock.
 					On(
@@ -516,7 +516,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 			},
 			objects: []runtime.Object{gerritGitServer, gerritGitServerSecret},
 			gitClient: func(t *testing.T) git.Git {
-				mock := gitmocks.NewGit(t)
+				mock := gitmocks.NewMockGit(t)
 
 				mock.On("CheckPermissions", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(true).
@@ -530,7 +530,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 				return mock
 			},
 			gerritClient: func(t *testing.T) gerrit.Client {
-				mock := gerritmocks.NewClient(t)
+				mock := gerritmocks.NewMockClient(t)
 
 				mock.
 					On(
@@ -585,7 +585,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 			},
 			objects: []runtime.Object{gerritGitServer, gerritGitServerSecret},
 			gitClient: func(t *testing.T) git.Git {
-				mock := gitmocks.NewGit(t)
+				mock := gitmocks.NewMockGit(t)
 
 				mock.On("CheckPermissions", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(true).
@@ -601,7 +601,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 				return mock
 			},
 			gerritClient: func(t *testing.T) gerrit.Client {
-				mock := gerritmocks.NewClient(t)
+				mock := gerritmocks.NewMockClient(t)
 
 				mock.
 					On(
@@ -656,7 +656,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 			},
 			objects: []runtime.Object{gerritGitServer, gerritGitServerSecret},
 			gitClient: func(t *testing.T) git.Git {
-				mock := gitmocks.NewGit(t)
+				mock := gitmocks.NewMockGit(t)
 
 				mock.On("CheckPermissions", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(true).
@@ -670,7 +670,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 				return mock
 			},
 			gerritClient: func(t *testing.T) gerrit.Client {
-				mock := gerritmocks.NewClient(t)
+				mock := gerritmocks.NewMockClient(t)
 
 				mock.
 					On(
@@ -725,7 +725,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 			},
 			objects: []runtime.Object{gerritGitServer, gerritGitServerSecret},
 			gitClient: func(t *testing.T) git.Git {
-				mock := gitmocks.NewGit(t)
+				mock := gitmocks.NewMockGit(t)
 
 				mock.On("CheckPermissions", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(true).
@@ -739,7 +739,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 				return mock
 			},
 			gerritClient: func(t *testing.T) gerrit.Client {
-				mock := gerritmocks.NewClient(t)
+				mock := gerritmocks.NewMockClient(t)
 
 				mock.
 					On(
@@ -784,7 +784,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 			},
 			objects: []runtime.Object{gerritGitServer},
 			gitClient: func(t *testing.T) git.Git {
-				mock := gitmocks.NewGit(t)
+				mock := gitmocks.NewMockGit(t)
 
 				mock.On("CheckPermissions", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(true).
@@ -798,7 +798,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 				return mock
 			},
 			gerritClient: func(t *testing.T) gerrit.Client {
-				return gerritmocks.NewClient(t)
+				return gerritmocks.NewMockClient(t)
 			},
 			gitProvider: defaultGitProvider,
 			wantErr: func(t require.TestingT, err error, i ...interface{}) {
@@ -829,7 +829,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 			},
 			objects: []runtime.Object{gerritGitServer, gerritGitServerSecret},
 			gitClient: func(t *testing.T) git.Git {
-				mock := gitmocks.NewGit(t)
+				mock := gitmocks.NewMockGit(t)
 
 				mock.On("CheckPermissions", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(true).
@@ -843,7 +843,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 				return mock
 			},
 			gerritClient: func(t *testing.T) gerrit.Client {
-				return gerritmocks.NewClient(t)
+				return gerritmocks.NewMockClient(t)
 			},
 			gitProvider: defaultGitProvider,
 			wantErr: func(t require.TestingT, err error, i ...interface{}) {
@@ -873,7 +873,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 			},
 			objects: []runtime.Object{githubGitServer, githubGitServerSecret},
 			gitClient: func(t *testing.T) git.Git {
-				mock := gitmocks.NewGit(t)
+				mock := gitmocks.NewMockGit(t)
 
 				mock.On("CheckPermissions", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(true).
@@ -895,10 +895,10 @@ func TestPutProject_ServeRequest(t *testing.T) {
 				return mock
 			},
 			gerritClient: func(t *testing.T) gerrit.Client {
-				return gerritmocks.NewClient(t)
+				return gerritmocks.NewMockClient(t)
 			},
 			gitProvider: func(t *testing.T) func(gitServer *codebaseApi.GitServer) (gitprovider.GitProjectProvider, error) {
-				mock := gitprovidermock.NewGitProjectProvider(t)
+				mock := gitprovidermock.NewMockGitProjectProvider(t)
 
 				mock.On("ProjectExists", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(false, nil).
@@ -933,7 +933,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 			},
 			objects: []runtime.Object{githubGitServer, githubGitServerSecret},
 			gitClient: func(t *testing.T) git.Git {
-				mock := gitmocks.NewGit(t)
+				mock := gitmocks.NewMockGit(t)
 
 				mock.On("CheckPermissions", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(true).
@@ -951,10 +951,10 @@ func TestPutProject_ServeRequest(t *testing.T) {
 				return mock
 			},
 			gerritClient: func(t *testing.T) gerrit.Client {
-				return gerritmocks.NewClient(t)
+				return gerritmocks.NewMockClient(t)
 			},
 			gitProvider: func(t *testing.T) func(gitServer *codebaseApi.GitServer) (gitprovider.GitProjectProvider, error) {
-				mock := gitprovidermock.NewGitProjectProvider(t)
+				mock := gitprovidermock.NewMockGitProjectProvider(t)
 
 				mock.On("ProjectExists", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(false, nil).
@@ -988,7 +988,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 			},
 			objects: []runtime.Object{gitlabGitServer, gitlabGitServerSecret},
 			gitClient: func(t *testing.T) git.Git {
-				mock := gitmocks.NewGit(t)
+				mock := gitmocks.NewMockGit(t)
 
 				mock.On("CheckPermissions", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(true).
@@ -1010,10 +1010,10 @@ func TestPutProject_ServeRequest(t *testing.T) {
 				return mock
 			},
 			gerritClient: func(t *testing.T) gerrit.Client {
-				return gerritmocks.NewClient(t)
+				return gerritmocks.NewMockClient(t)
 			},
 			gitProvider: func(t *testing.T) func(gitServer *codebaseApi.GitServer) (gitprovider.GitProjectProvider, error) {
-				mock := gitprovidermock.NewGitProjectProvider(t)
+				mock := gitprovidermock.NewMockGitProjectProvider(t)
 
 				mock.On("ProjectExists", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(false, nil).
@@ -1048,7 +1048,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 			},
 			objects: []runtime.Object{gitlabGitServer, gitlabGitServerSecret},
 			gitClient: func(t *testing.T) git.Git {
-				mock := gitmocks.NewGit(t)
+				mock := gitmocks.NewMockGit(t)
 
 				mock.On("CheckPermissions", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(true).
@@ -1066,10 +1066,10 @@ func TestPutProject_ServeRequest(t *testing.T) {
 				return mock
 			},
 			gerritClient: func(t *testing.T) gerrit.Client {
-				return gerritmocks.NewClient(t)
+				return gerritmocks.NewMockClient(t)
 			},
 			gitProvider: func(t *testing.T) func(gitServer *codebaseApi.GitServer) (gitprovider.GitProjectProvider, error) {
-				mock := gitprovidermock.NewGitProjectProvider(t)
+				mock := gitprovidermock.NewMockGitProjectProvider(t)
 
 				mock.On("ProjectExists", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(false, nil).
@@ -1104,7 +1104,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 			},
 			objects: []runtime.Object{gitlabGitServer, gitlabGitServerSecret},
 			gitClient: func(t *testing.T) git.Git {
-				mock := gitmocks.NewGit(t)
+				mock := gitmocks.NewMockGit(t)
 
 				mock.On("CheckPermissions", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(true).
@@ -1122,10 +1122,10 @@ func TestPutProject_ServeRequest(t *testing.T) {
 				return mock
 			},
 			gerritClient: func(t *testing.T) gerrit.Client {
-				return gerritmocks.NewClient(t)
+				return gerritmocks.NewMockClient(t)
 			},
 			gitProvider: func(t *testing.T) func(gitServer *codebaseApi.GitServer) (gitprovider.GitProjectProvider, error) {
-				mock := gitprovidermock.NewGitProjectProvider(t)
+				mock := gitprovidermock.NewMockGitProjectProvider(t)
 
 				mock.On("ProjectExists", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(false, nil).

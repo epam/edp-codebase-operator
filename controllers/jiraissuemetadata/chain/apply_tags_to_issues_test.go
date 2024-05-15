@@ -30,7 +30,7 @@ func TestApplyTagsToIssues_ServeRequest(t *testing.T) {
 	}
 
 	type configs struct {
-		client func(ticket string) *jiraMock.Client
+		client func(ticket string) *jiraMock.MockClient
 	}
 
 	tests := []struct {
@@ -55,8 +55,8 @@ func TestApplyTagsToIssues_ServeRequest(t *testing.T) {
 				ticket: "fake-ticket",
 			},
 			configs: configs{
-				client: func(ticket string) *jiraMock.Client {
-					client := &jiraMock.Client{}
+				client: func(ticket string) *jiraMock.MockClient {
+					client := jiraMock.NewMockClient(t)
 
 					client.On(
 						"ApplyTagsToIssue",

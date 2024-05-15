@@ -97,7 +97,7 @@ func TestPutDeployConfigs_ShouldPass(t *testing.T) {
 	p := "pass"
 	wd := util.GetWorkDir(fakeName, fakeNamespace)
 
-	mGit := gitServerMocks.NewGit(t)
+	mGit := gitServerMocks.NewMockGit(t)
 
 	mGit.On("CheckPermissions", testify.Anything, "https://github.com/epmd-edp/go--.git", &u, &p).Return(true)
 	mGit.On("GetCurrentBranchName", wd).Return("master", nil)
@@ -132,7 +132,7 @@ func TestPutDeployConfigs_ShouldPassWithNonApplication(t *testing.T) {
 
 	t.Setenv(util.AssetsDirEnv, "../../../../build")
 
-	mGit := gitServerMocks.NewGit(t)
+	mGit := gitServerMocks.NewMockGit(t)
 
 	pdc := NewPutDeployConfigs(fakeCl, mGit)
 
