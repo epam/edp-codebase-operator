@@ -35,7 +35,7 @@ func TestPutTagValue_ServeRequest(t *testing.T) {
 				},
 			},
 			client: func(t *testing.T) jira.Client {
-				m := jiraMock.NewClient(t)
+				m := jiraMock.NewMockClient(t)
 				m.On("GetProjectInfo", "TEST-1").
 					Return(&goJira.Project{
 						ID: "1",
@@ -82,7 +82,7 @@ func TestPutTagValue_ServeRequest(t *testing.T) {
 				},
 			},
 			client: func(t *testing.T) jira.Client {
-				m := jiraMock.NewClient(t)
+				m := jiraMock.NewMockClient(t)
 				m.On("GetProjectInfo", "TEST-1").
 					Return(&goJira.Project{
 						ID: "1",
@@ -125,7 +125,7 @@ func TestPutTagValue_ServeRequest(t *testing.T) {
 				},
 			},
 			client: func(t *testing.T) jira.Client {
-				m := jiraMock.NewClient(t)
+				m := jiraMock.NewMockClient(t)
 				m.On("GetProjectInfo", "TEST-1").
 					Return(&goJira.Project{
 						ID: "1",
@@ -164,7 +164,7 @@ func TestPutTagValue_ServeRequest(t *testing.T) {
 				},
 			},
 			client: func(t *testing.T) jira.Client {
-				m := jiraMock.NewClient(t)
+				m := jiraMock.NewMockClient(t)
 				m.On("GetProjectInfo", "TEST-1").
 					Return(&goJira.Project{
 						ID: "1",
@@ -214,7 +214,7 @@ func TestPutTagValue_ServeRequest(t *testing.T) {
 				},
 			},
 			client: func(t *testing.T) jira.Client {
-				m := jiraMock.NewClient(t)
+				m := jiraMock.NewMockClient(t)
 				m.On("GetProjectInfo", "TEST-1").
 					Return(&goJira.Project{
 						ID: "abc",
@@ -260,7 +260,7 @@ func TestPutTagValue_ServeRequest(t *testing.T) {
 				},
 			},
 			client: func(t *testing.T) jira.Client {
-				m := jiraMock.NewClient(t)
+				m := jiraMock.NewMockClient(t)
 				m.On("GetProjectInfo", "TEST-1").
 					Return(&goJira.Project{
 						ID: "1",
@@ -309,7 +309,7 @@ func TestPutTagValue_ServeRequest(t *testing.T) {
 				},
 			},
 			client: func(t *testing.T) jira.Client {
-				m := jiraMock.NewClient(t)
+				m := jiraMock.NewMockClient(t)
 				m.On("GetProjectInfo", "TEST-1").
 					Return(&goJira.Project{
 						ID: "1",
@@ -342,7 +342,7 @@ func TestPutTagValue_ServeRequest(t *testing.T) {
 				},
 			},
 			client: func(t *testing.T) jira.Client {
-				m := jiraMock.NewClient(t)
+				m := jiraMock.NewMockClient(t)
 				m.On("GetProjectInfo", "TEST-1").
 					Return(&goJira.Project{
 						ID: "1",
@@ -366,7 +366,7 @@ func TestPutTagValue_ServeRequest(t *testing.T) {
 				},
 			},
 			client: func(t *testing.T) jira.Client {
-				m := jiraMock.NewClient(t)
+				m := jiraMock.NewMockClient(t)
 				m.On("GetProjectInfo", "TEST-1").
 					Return(nil, errors.New("failed"))
 
@@ -386,7 +386,7 @@ func TestPutTagValue_ServeRequest(t *testing.T) {
 				},
 			},
 			client: func(t *testing.T) jira.Client {
-				m := jiraMock.NewClient(t)
+				m := jiraMock.NewMockClient(t)
 				m.On("GetProjectInfo", "TEST-1").
 					Return(nil, fmt.Errorf("project not found %w", jira.ErrNotFound))
 
@@ -406,7 +406,7 @@ func TestPutTagValue_ServeRequest(t *testing.T) {
 				},
 			},
 			client: func(t *testing.T) jira.Client {
-				return jiraMock.NewClient(t)
+				return jiraMock.NewMockClient(t)
 			},
 			wantErr: func(t require.TestingT, err error, i ...interface{}) {
 				require.Error(t, err)
@@ -422,7 +422,7 @@ func TestPutTagValue_ServeRequest(t *testing.T) {
 				},
 			},
 			client: func(t *testing.T) jira.Client {
-				return jiraMock.NewClient(t)
+				return jiraMock.NewMockClient(t)
 			},
 			wantErr: func(t require.TestingT, err error, i ...interface{}) {
 				require.Error(t, err)

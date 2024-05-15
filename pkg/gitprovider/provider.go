@@ -53,8 +53,6 @@ type GitWebHookProvider interface {
 }
 
 // GitProjectProvider is an interface for Git project provider.
-//
-//go:generate mockery --name GitProjectProvider --filename provider_mock.go
 type GitProjectProvider interface {
 	CreateProject(
 		ctx context.Context,
@@ -86,16 +84,16 @@ type GitProvider interface {
 func NewProvider(gitServer *codebaseApi.GitServer, restyClient *resty.Client) (GitProvider, error) {
 	switch gitServer.Spec.GitProvider {
 	case codebaseApi.GitProviderGithub:
-		return NewGitHubClient(restyClient), nil
+		return NewMockGitHubClient(restyClient), nil
 	case codebaseApi.GitProviderGitlab:
-		return NewGitLabClient(restyClient), nil
+		return NewMockGitLabClient(restyClient), nil
 	default:
 		return nil, fmt.Errorf("unsupported git provider %s", gitServer.Spec.GitProvider)
 	}
 }
 
-// NewGitProjectProvider creates a new Git project provider based on gitServer.
-func NewGitProjectProvider(gitServer *codebaseApi.GitServer) (GitProjectProvider, error) {
+// NewMockGitProjectProvider creates a new Git project provider based on gitServer.
+func NewMockGitProjectProvider(gitServer *codebaseApi.GitServer) (GitProjectProvider, error) {
 	return NewProvider(gitServer, resty.New())
 }
 

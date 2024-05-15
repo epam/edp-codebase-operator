@@ -30,8 +30,8 @@ const (
 	ownerPathParam = "owner"
 )
 
-// NewGitHubClient creates a new GitHub client.
-func NewGitHubClient(restyClient *resty.Client) *GitHubClient {
+// NewMockGitHubClient creates a new GitHub client.
+func NewMockGitHubClient(restyClient *resty.Client) *GitHubClient {
 	restyClient.SetRetryCount(retryCount)
 	restyClient.AddRetryCondition(
 		func(response *resty.Response, err error) bool {

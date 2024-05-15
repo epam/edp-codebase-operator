@@ -12,8 +12,6 @@ import (
 )
 
 // Client is an interface for Gerrit client.
-//
-//go:generate mockery --name Client --filename client_mock.go
 type Client interface {
 	CreateProject(port int32, sshPrivateKey, host, user, appName string, logger logr.Logger) error
 	CheckProjectExist(port int32, sshPrivateKey, host, user, appName string, logger logr.Logger) (bool, error)

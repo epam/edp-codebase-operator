@@ -61,8 +61,6 @@ func CommitAllowEmpty() func(*commitOps) {
 }
 
 // Git interface provides methods for working with git.
-//
-//go:generate mockery --name Git --filename git_mock.go
 type Git interface {
 	CommitChanges(directory, commitMsg string, opts ...CommitOps) error
 	PushChanges(key, user, directory string, port int32, pushParams ...string) error

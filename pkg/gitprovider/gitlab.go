@@ -32,8 +32,8 @@ const (
 	projectIDPathParam    = "project-id"
 )
 
-// NewGitLabClient creates a new GitLab client.
-func NewGitLabClient(restyClient *resty.Client) *GitLabClient {
+// NewMockGitLabClient creates a new GitLab client.
+func NewMockGitLabClient(restyClient *resty.Client) *GitLabClient {
 	restyClient.SetRetryCount(retryCount)
 	restyClient.AddRetryCondition(
 		func(response *resty.Response, err error) bool {

@@ -31,7 +31,7 @@ func TestReconcileGitServer_Reconcile_ShouldPassNotFound(t *testing.T) {
 
 	req := reconcile.Request{
 		NamespacedName: types.NamespacedName{
-			Name:      "NewGitServer",
+			Name:      "NewMockGitServer",
 			Namespace: "namespace",
 		},
 	}
@@ -52,7 +52,7 @@ func TestReconcileGitServer_Reconcile_ShouldFailNotFound(t *testing.T) {
 
 	req := reconcile.Request{
 		NamespacedName: types.NamespacedName{
-			Name:      "NewGitServer",
+			Name:      "NewMockGitServer",
 			Namespace: "namespace",
 		},
 	}
@@ -75,7 +75,7 @@ func TestReconcileGitServer_Reconcile_ShouldFailNotFound(t *testing.T) {
 func TestReconcileGitServer_Reconcile_ShouldFailToGetSecret(t *testing.T) {
 	gs := &codebaseApi.GitServer{
 		ObjectMeta: metaV1.ObjectMeta{
-			Name:      "NewGitServer",
+			Name:      "NewMockGitServer",
 			Namespace: "namespace",
 		},
 		Spec: codebaseApi.GitServerSpec{
@@ -91,7 +91,7 @@ func TestReconcileGitServer_Reconcile_ShouldFailToGetSecret(t *testing.T) {
 
 	req := reconcile.Request{
 		NamespacedName: types.NamespacedName{
-			Name:      "NewGitServer",
+			Name:      "NewMockGitServer",
 			Namespace: "namespace",
 		},
 	}
@@ -114,7 +114,7 @@ func TestReconcileGitServer_Reconcile_ShouldFailToGetSecret(t *testing.T) {
 func TestReconcileGitServer_UpdateStatus_ShouldPassWithSuccess(t *testing.T) {
 	gs := &codebaseApi.GitServer{
 		ObjectMeta: metaV1.ObjectMeta{
-			Name:      "NewGitServer",
+			Name:      "NewMockGitServer",
 			Namespace: "namespace",
 		},
 		Spec: codebaseApi.GitServerSpec{
@@ -144,7 +144,7 @@ func TestReconcileGitServer_UpdateStatus_ShouldPassWithSuccess(t *testing.T) {
 func TestReconcileGitServer_UpdateStatus_Failure(t *testing.T) {
 	gs := &codebaseApi.GitServer{
 		ObjectMeta: metaV1.ObjectMeta{
-			Name:      "NewGitServer",
+			Name:      "NewMockGitServer",
 			Namespace: "namespace",
 		},
 		Spec: codebaseApi.GitServerSpec{
@@ -213,7 +213,7 @@ jDUnjND10WwDI7AAAAIm15a2hhaWxvX2JvbHN1bm92c2t5aUBFUFVBS1lJVzBBNkI=
 func TestReconcileGitServer_ServerUnavailable(t *testing.T) {
 	gs := &codebaseApi.GitServer{
 		ObjectMeta: metaV1.ObjectMeta{
-			Name:      "NewGitServer",
+			Name:      "NewMockGitServer",
 			Namespace: "namespace",
 		},
 		Spec: codebaseApi.GitServerSpec{
@@ -264,7 +264,7 @@ func TestReconcileGitServer_InvalidSSHKey(t *testing.T) {
 
 	gs := &codebaseApi.GitServer{
 		ObjectMeta: metaV1.ObjectMeta{
-			Name:      "NewGitServer",
+			Name:      "NewMockGitServer",
 			Namespace: "namespace",
 		},
 		Spec: codebaseApi.GitServerSpec{

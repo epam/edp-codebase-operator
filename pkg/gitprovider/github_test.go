@@ -62,7 +62,7 @@ func TestGitHubClient_CreateWebHook(t *testing.T) {
 			require.NoError(t, err)
 			httpmock.RegisterRegexpResponder(http.MethodPost, fakeUrlRegexp, responder)
 
-			c := NewGitHubClient(restyClient)
+			c := NewMockGitHubClient(restyClient)
 
 			got, err := c.CreateWebHook(context.Background(), "url", "token", tt.projectID, "secret", "webHookURL", false)
 
@@ -137,7 +137,7 @@ func TestGitHubClient_GetWebHook(t *testing.T) {
 			require.NoError(t, err)
 			httpmock.RegisterRegexpResponder(http.MethodGet, fakeUrlRegexp, responder)
 
-			c := NewGitHubClient(restyClient)
+			c := NewMockGitHubClient(restyClient)
 
 			got, err := c.GetWebHook(context.Background(), "url", "token", tt.projectID, 999)
 
@@ -205,7 +205,7 @@ func TestGitHubClient_DeleteWebHook(t *testing.T) {
 			responder := httpmock.NewStringResponder(tt.respStatus, "")
 			httpmock.RegisterRegexpResponder(http.MethodDelete, fakeUrlRegexp, responder)
 
-			c := NewGitHubClient(restyClient)
+			c := NewMockGitHubClient(restyClient)
 
 			err := c.DeleteWebHook(context.Background(), "url", "token", tt.projectID, 999)
 
@@ -280,7 +280,7 @@ func TestGitHubClient_GetWebHooks(t *testing.T) {
 			require.NoError(t, err)
 			httpmock.RegisterRegexpResponder(http.MethodGet, fakeUrlRegexp, responder)
 
-			c := NewGitHubClient(restyClient)
+			c := NewMockGitHubClient(restyClient)
 
 			got, err := c.GetWebHooks(context.Background(), "url", "token", tt.projectID)
 
@@ -384,7 +384,7 @@ func TestGitHubClient_CreateWebHookIfNotExists(t *testing.T) {
 			require.NoError(t, err)
 			httpmock.RegisterRegexpResponder(http.MethodPost, fakeUrlRegexp, POSTResponder)
 
-			c := NewGitHubClient(restyClient)
+			c := NewMockGitHubClient(restyClient)
 
 			got, err := c.CreateWebHookIfNotExists(context.Background(), "url", "token", tt.projectID, "secret", tt.webHookURL, false)
 
@@ -482,7 +482,7 @@ func TestGitHubClient_CreateProject(t *testing.T) {
 			require.NoError(t, err)
 			httpmock.RegisterRegexpResponder(http.MethodGet, fakeUrlRegexp, GetOrgResponder)
 
-			c := NewGitHubClient(restyClient)
+			c := NewMockGitHubClient(restyClient)
 			err = c.CreateProject(context.Background(), "url", "token", tt.projectID)
 			tt.wantErr(t, err)
 		})
@@ -543,7 +543,7 @@ func TestGitHubClient_ProjectExists(t *testing.T) {
 			require.NoError(t, err)
 			httpmock.RegisterRegexpResponder(http.MethodGet, fakeUrlRegexp, GETResponder)
 
-			c := NewGitHubClient(restyClient)
+			c := NewMockGitHubClient(restyClient)
 			got, err := c.ProjectExists(context.Background(), "url", "token", tt.projectID)
 			tt.wantErr(t, err)
 			assert.Equal(t, tt.want, got)
@@ -598,7 +598,7 @@ func TestGitHubClient_SetDefaultBranch(t *testing.T) {
 			require.NoError(t, err)
 			httpmock.RegisterRegexpResponder(http.MethodPatch, fakeUrlRegexp, GETResponder)
 
-			c := NewGitHubClient(restyClient)
+			c := NewMockGitHubClient(restyClient)
 			err = c.SetDefaultBranch(context.Background(), "url", "token", tt.projectID, "main")
 			tt.wantErr(t, err)
 		})

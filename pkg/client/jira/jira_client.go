@@ -9,8 +9,6 @@ import (
 )
 
 // Client is an interface that describes methods for working with Jira.
-//
-//go:generate mockery --name Client --filename jira_client_mock.go
 type Client interface {
 	Connected() (bool, error)
 

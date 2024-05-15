@@ -82,7 +82,7 @@ func TestPutBranchInGit_ShouldBeExecutedSuccessfullyWithDefaultVersioning(t *tes
 	scheme.AddKnownTypes(coreV1.SchemeGroupVersion, s)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, gs, cb, s).Build()
 
-	mGit := gitServerMocks.NewGit(t)
+	mGit := gitServerMocks.NewMockGit(t)
 	port := int32(22)
 	wd := util.GetWorkDir(fakeName, fmt.Sprintf("%v-%v", fakeNamespace, fakeName))
 
@@ -222,7 +222,7 @@ func TestPutBranchInGit_ShouldBeExecutedSuccessfullyWithEdpVersioning(t *testing
 	scheme.AddKnownTypes(coreV1.SchemeGroupVersion, s)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, gs, cb, s).Build()
 
-	mGit := gitServerMocks.NewGit(t)
+	mGit := gitServerMocks.NewMockGit(t)
 
 	port := int32(22)
 	wd := util.GetWorkDir(fakeName, fmt.Sprintf("%v-%v", fakeNamespace, fakeName))
@@ -367,7 +367,7 @@ func TestPutBranchInGit_SkipAlreadyCreated(t *testing.T) {
 
 	err := PutBranchInGit{
 		Client: fake.NewClientBuilder().Build(),
-		Git:    gitServerMocks.NewGit(t),
+		Git:    gitServerMocks.NewMockGit(t),
 	}.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), codeBaseBranch)
 
 	require.NoError(t, err)

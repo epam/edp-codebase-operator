@@ -65,13 +65,13 @@ func (_m *GitProjectProvider) SetDefaultBranch(ctx context.Context, githubURL st
 	return r0
 }
 
-type mockConstructorTestingTNewGitProjectProvider interface {
+type mockConstructorTestingTNewMockGitProjectProvider interface {
 	mock.TestingT
 	Cleanup(func())
 }
 
-// NewGitProjectProvider creates a new instance of GitProjectProvider. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewGitProjectProvider(t mockConstructorTestingTNewGitProjectProvider) *GitProjectProvider {
+// NewMockGitProjectProvider creates a new instance of GitProjectProvider. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+func NewMockGitProjectProvider(t mockConstructorTestingTNewMockGitProjectProvider) *GitProjectProvider {
 	mock := &GitProjectProvider{}
 	mock.Mock.Test(t)
 

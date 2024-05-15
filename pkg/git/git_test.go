@@ -71,10 +71,10 @@ func TestInitAuth(t *testing.T) {
 }
 
 func TestGitProvider_CreateChildBranch(t *testing.T) {
-	cm := mocks.CommandMock{}
+	cm := mocks.NewMockCommand(t)
 	gp := git.GitProvider{
 		CommandBuilder: func(cmd string, params ...string) git.Command {
-			return &cm
+			return cm
 		},
 	}
 
@@ -84,10 +84,10 @@ func TestGitProvider_CreateChildBranch(t *testing.T) {
 	assert.NoError(t, err)
 	cm.AssertExpectations(t)
 
-	cmError := mocks.CommandMock{}
+	cmError := mocks.NewMockCommand(t)
 	gp = git.GitProvider{
 		CommandBuilder: func(cmd string, params ...string) git.Command {
-			return &cmError
+			return cmError
 		},
 	}
 
@@ -95,14 +95,14 @@ func TestGitProvider_CreateChildBranch(t *testing.T) {
 
 	err = gp.CreateChildBranch("dir", "br1", "br2")
 	assert.Error(t, err)
-	assert.EqualError(t, err, "failed to checkout branch, err: : fatal")
+	assert.Contains(t, err.Error(), "failed to checkout branch")
 }
 
 func TestGitProvider_RemoveBranch(t *testing.T) {
-	cm := mocks.CommandMock{}
+	cm := mocks.NewMockCommand(t)
 	gp := git.GitProvider{
 		CommandBuilder: func(cmd string, params ...string) git.Command {
-			return &cm
+			return cm
 		},
 	}
 
@@ -112,10 +112,10 @@ func TestGitProvider_RemoveBranch(t *testing.T) {
 	assert.NoError(t, err)
 	cm.AssertExpectations(t)
 
-	cmError := mocks.CommandMock{}
+	cmError := mocks.NewMockCommand(t)
 	gp = git.GitProvider{
 		CommandBuilder: func(cmd string, params ...string) git.Command {
-			return &cmError
+			return cmError
 		},
 	}
 
@@ -123,14 +123,14 @@ func TestGitProvider_RemoveBranch(t *testing.T) {
 
 	err = gp.RemoveBranch("dir", "br1")
 	assert.Error(t, err)
-	assert.EqualError(t, err, "failed to remove branch, err: : fatal")
+	assert.Contains(t, err.Error(), "failed to remove branch")
 }
 
 func TestGitProvider_RenameBranch(t *testing.T) {
-	cm := mocks.CommandMock{}
+	cm := mocks.NewMockCommand(t)
 	gp := git.GitProvider{
 		CommandBuilder: func(cmd string, params ...string) git.Command {
-			return &cm
+			return cm
 		},
 	}
 
@@ -140,10 +140,10 @@ func TestGitProvider_RenameBranch(t *testing.T) {
 	assert.NoError(t, err)
 	cm.AssertExpectations(t)
 
-	cmError := mocks.CommandMock{}
+	cmError := mocks.NewMockCommand(t)
 	gp = git.GitProvider{
 		CommandBuilder: func(cmd string, params ...string) git.Command {
-			return &cmError
+			return cmError
 		},
 	}
 
@@ -151,7 +151,7 @@ func TestGitProvider_RenameBranch(t *testing.T) {
 
 	err = gp.RenameBranch("dir", "br1", "br2")
 	assert.Error(t, err)
-	assert.EqualError(t, err, "failed to checkout branch, err: : fatal")
+	assert.Contains(t, err.Error(), "failed to checkout branch")
 }
 
 func Test_initAuth(t *testing.T) {

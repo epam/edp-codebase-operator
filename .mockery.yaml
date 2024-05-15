@@ -1,0 +1,26 @@
+with-expecter: True
+inpackage: False
+dir: "{{.InterfaceDir}}/mocks"
+mockname: "Mock{{.InterfaceName}}"
+outpkg: "mocks"
+filename: "{{.InterfaceName | lower}}_mock.go"
+packages:
+  github.com/epam/edp-codebase-operator/v2/controllers/cdstagedeploy/chain:
+    interfaces:
+      CDStageDeployHandler:
+  github.com/epam/edp-codebase-operator/v2/controllers/codebase/service/chain/handler:
+    interfaces:
+      CodebaseHandler:
+  github.com/epam/edp-codebase-operator/v2/pkg/client/jira:
+    interfaces:
+      Client:
+  github.com/epam/edp-codebase-operator/v2/pkg/gerrit:
+    interfaces:
+      Client:
+  github.com/epam/edp-codebase-operator/v2/pkg/git:
+    interfaces:
+      Git:
+      Command:
+  github.com/epam/edp-codebase-operator/v2/pkg/gitprovider:
+    interfaces:
+      GitProjectProvider:

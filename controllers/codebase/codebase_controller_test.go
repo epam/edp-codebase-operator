@@ -60,7 +60,7 @@ func TestReconcileCodebase_Reconcile(t *testing.T) {
 			},
 			chainGetter: func(t *testing.T) func(cr *codebaseApi.Codebase) (cHand.CodebaseHandler, error) {
 				return func(cr *codebaseApi.Codebase) (cHand.CodebaseHandler, error) {
-					mock := handlermocks.NewCodebaseHandler(t)
+					mock := handlermocks.NewMockCodebaseHandler(t)
 
 					mock.On("ServeRequest", testify.Anything, cr).Return(nil)
 
@@ -92,7 +92,7 @@ func TestReconcileCodebase_Reconcile(t *testing.T) {
 			},
 			chainGetter: func(t *testing.T) func(cr *codebaseApi.Codebase) (cHand.CodebaseHandler, error) {
 				return func(cr *codebaseApi.Codebase) (cHand.CodebaseHandler, error) {
-					mock := handlermocks.NewCodebaseHandler(t)
+					mock := handlermocks.NewMockCodebaseHandler(t)
 
 					mock.On("ServeRequest", testify.Anything, cr).Return(errors.New("some error"))
 
