@@ -231,6 +231,32 @@ func TestReconcileIntegrationSecret_Reconcile(t *testing.T) {
 			wantConAnnotation: "false",
 		},
 		{
+			name:       "failed github registry",
+			secretName: "registry",
+			client: func(t *testing.T) client.Client {
+				return fake.NewClientBuilder().WithScheme(s).WithObjects(
+					&corev1.Secret{
+						ObjectMeta: metav1.ObjectMeta{
+							Namespace: ns,
+							Name:      "registry",
+							Labels: map[string]string{
+								integrationSecretTypeLabel: "registry",
+							},
+						},
+						Type: corev1.SecretTypeDockerConfigJson,
+						Data: map[string][]byte{
+							".dockerconfigjson": []byte(`{"auths":{"https://ghcr.io":{"username":"user1", "password":"password1"}}}`),
+						},
+					},
+				).Build()
+			},
+			wantRes: reconcile.Result{
+				RequeueAfter: failConnectionRequeueTime,
+			},
+			wantErr:           require.NoError,
+			wantConAnnotation: "false",
+		},
+		{
 			name:       "dockerhub with invalid credentials",
 			secretName: "registry",
 			client: func(t *testing.T) client.Client {

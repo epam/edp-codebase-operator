@@ -3,6 +3,7 @@ package integrationsecret
 import (
 	"context"
 	"crypto/tls"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -28,6 +29,8 @@ const (
 	integrationSecretErrorAnnotation      = "app.edp.epam.com/integration-secret-error"
 	successConnectionRequeueTime          = time.Minute * 30
 	failConnectionRequeueTime             = time.Minute * 1
+
+	logKeyUrl = "url"
 )
 
 type ReconcileIntegrationSecret struct {
@@ -161,7 +164,7 @@ func checkConnection(ctx context.Context, secret *corev1.Secret) error {
 		req = newRequest(ctx, string(secret.Data["url"]))
 	}
 
-	log := ctrl.LoggerFrom(ctx).WithValues("url", req.URL+path)
+	log := ctrl.LoggerFrom(ctx).WithValues(logKeyUrl, req.URL+path)
 	log.Info("Making request")
 
 	resp, err := req.Get(path)
@@ -227,7 +230,11 @@ func checkRegistry(ctx context.Context, secret *corev1.Secret) error {
 			url = "https://" + url
 		}
 
-		log := ctrl.LoggerFrom(ctx).WithValues("url", url+"/v2/")
+		if strings.HasPrefix(url, "https://ghcr.io") {
+			return checkGitHubRegistry(ctx, auth, url)
+		}
+
+		log := ctrl.LoggerFrom(ctx).WithValues(logKeyUrl, url+"/v2/")
 		log.Info("Making request")
 
 		// docker registry specification endpoint https://github.com/opencontainers/distribution-spec/blob/v1.0.1/spec.md#endpoints
@@ -247,7 +254,7 @@ func checkRegistry(ctx context.Context, secret *corev1.Secret) error {
 }
 
 func checkDockerHub(ctx context.Context, username, password string) error {
-	log := ctrl.LoggerFrom(ctx).WithValues("url", "https://hub.docker.com/v2")
+	log := ctrl.LoggerFrom(ctx).WithValues(logKeyUrl, "https://hub.docker.com/v2")
 	log.Info("Making request")
 
 	resp, err := newRequest(ctx, "https://hub.docker.com").
@@ -264,6 +271,26 @@ func checkDockerHub(ctx context.Context, username, password string) error {
 
 	if !resp.IsSuccess() {
 		return fmt.Errorf("http status code %s", resp.Status())
+	}
+
+	return nil
+}
+
+func checkGitHubRegistry(ctx context.Context, auth registryAuth, url string) error {
+	log := ctrl.LoggerFrom(ctx).WithValues(logKeyUrl, url)
+	log.Info("Making request to GitHub registry")
+
+	resp, err := newRequest(ctx, url).
+		SetHeader("Content-Type", "application/json").
+		SetAuthToken(base64.StdEncoding.EncodeToString([]byte(auth.Password))).
+		Get("/v2/_catalog")
+
+	if err != nil {
+		return fmt.Errorf("failed to connect to GitHub registry %w", err)
+	}
+
+	if !resp.IsSuccess() {
+		return fmt.Errorf("GitHub registry http status code %s", resp.Status())
 	}
 
 	return nil
