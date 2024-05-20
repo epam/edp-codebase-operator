@@ -446,3 +446,60 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldInitBuildForEDPVersioning(t *te
 	assert.NotNil(t, gotCodebaseBranch.Status.Build)
 	assert.Equal(t, &expectedBuildNumber, gotCodebaseBranch.Status.Build)
 }
+
+func TestReconcileCodebaseBranch_Reconcile_ShouldHaveFailStatus(t *testing.T) {
+	cb := &codebaseApi.CodebaseBranch{
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      "NewCodebaseBranch",
+			Namespace: "namespace",
+		},
+		Spec: codebaseApi.CodebaseBranchSpec{
+			CodebaseName: "NewCodebase",
+			BranchName:   "master",
+		},
+	}
+	c := &codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      "NewCodebase",
+			Namespace: "namespace",
+		},
+		Status: codebaseApi.CodebaseStatus{
+			Available: true,
+		},
+	}
+
+	scheme := runtime.NewScheme()
+	require.NoError(t, codebaseApi.AddToScheme(scheme))
+
+	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithObjects(c, cb).Build()
+
+	req := reconcile.Request{
+		NamespacedName: types.NamespacedName{
+			Name:      "NewCodebaseBranch",
+			Namespace: "namespace",
+		},
+	}
+
+	r := ReconcileCodebaseBranch{
+		client: fakeCl,
+		log:    logr.Discard(),
+		scheme: scheme,
+	}
+
+	res, err := r.Reconcile(context.Background(), req)
+
+	assert.Error(t, err)
+	assert.False(t, res.Requeue)
+
+	br := &codebaseApi.CodebaseBranch{}
+
+	err = fakeCl.Get(context.Background(),
+		types.NamespacedName{
+			Name:      "NewCodebaseBranch",
+			Namespace: "namespace",
+		},
+		br)
+	assert.NoError(t, err)
+	assert.Equal(t, codebaseApi.Error, br.Status.Result)
+	assert.Contains(t, br.Status.DetailedMessage, "not found")
+}

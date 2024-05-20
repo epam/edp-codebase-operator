@@ -163,7 +163,7 @@ func (r *ReconcileCodebaseBranch) Reconcile(ctx context.Context, request reconci
 
 		timeout := r.setFailureCount(cb)
 
-		if statErr := r.client.Status().Update(ctx, cb); statErr != nil {
+		if statErr := r.updateStatus(ctx, cb); statErr != nil {
 			ctrl.LoggerFrom(ctx).Error(statErr, "failed to update CodebaseBranch status with failure count")
 		}
 
@@ -198,7 +198,16 @@ func (r *ReconcileCodebaseBranch) setSuccessStatus(ctx context.Context, cb *code
 }
 
 func (r *ReconcileCodebaseBranch) updateStatus(ctx context.Context, cb *codebaseApi.CodebaseBranch) error {
-	if err := r.client.Status().Update(ctx, cb); err != nil {
+	// We need to get the latest version of the CodebaseBranch before updating it,
+	// because the object might have been updated since it was fetched.
+	cbbranch := &codebaseApi.CodebaseBranch{}
+	if err := r.client.Get(ctx, types.NamespacedName{Name: cb.Name, Namespace: cb.Namespace}, cbbranch); err != nil {
+		return fmt.Errorf("failed to get CodebaseBranch: %w", err)
+	}
+
+	cbbranch.Status = cb.Status
+
+	if err := r.client.Status().Update(ctx, cbbranch); err != nil {
 		return fmt.Errorf("failed to update CodebaseBranch status: %w", err)
 	}
 
