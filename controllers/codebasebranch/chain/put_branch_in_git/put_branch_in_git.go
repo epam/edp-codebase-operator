@@ -109,7 +109,13 @@ func (h PutBranchInGit) ServeRequest(ctx context.Context, branch *codebaseApi.Co
 	if err != nil {
 		setFailedFields(branch, codebaseApi.PutGitBranch, err.Error())
 
-		return fmt.Errorf("failed to create remove branch: %w", err)
+		// We need to remove work directory if branch creation failed(push error).
+		// Otherwise, the next time the branch creation will be skipped because local branch already exists.
+		if err = util.RemoveDirectory(wd); err != nil {
+			log.Error(err, "failed to remove directory", "path", wd)
+		}
+
+		return fmt.Errorf("failed to create remote branch: %w", err)
 	}
 
 	branch.Status.Git = codebaseApi.CodebaseBranchGitStatusBranchCreated

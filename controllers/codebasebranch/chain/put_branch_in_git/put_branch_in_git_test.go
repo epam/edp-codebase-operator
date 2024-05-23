@@ -2,6 +2,7 @@ package put_branch_in_git
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"testing"
 
@@ -97,6 +98,95 @@ func TestPutBranchInGit_ShouldBeExecutedSuccessfullyWithDefaultVersioning(t *tes
 	}.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), cb)
 
 	assert.NoError(t, err)
+}
+
+func TestPutBranchInGit_ShouldFailCreateRemoteBranch(t *testing.T) {
+	t.Setenv(util.WorkDirEnv, t.TempDir())
+
+	c := &codebaseApi.Codebase{
+		ObjectMeta: v1.ObjectMeta{
+			Name:      fakeName,
+			Namespace: fakeNamespace,
+		},
+		Spec: codebaseApi.CodebaseSpec{
+			GitServer:  fakeName,
+			GitUrlPath: fakeName,
+		},
+		Status: codebaseApi.CodebaseStatus{
+			Available: true,
+		},
+	}
+
+	gs := &codebaseApi.GitServer{
+		ObjectMeta: v1.ObjectMeta{
+			Name:      fakeName,
+			Namespace: fakeNamespace,
+		},
+		Spec: codebaseApi.GitServerSpec{
+			NameSshKeySecret: fakeName,
+			GitHost:          fakeName,
+			SshPort:          22,
+			GitUser:          fakeName,
+		},
+	}
+
+	s := &coreV1.Secret{
+		ObjectMeta: v1.ObjectMeta{
+			Name:      fakeName,
+			Namespace: fakeNamespace,
+		},
+		Data: map[string][]byte{
+			"keyName": []byte("fake"),
+		},
+	}
+
+	cb := &codebaseApi.CodebaseBranch{
+		ObjectMeta: v1.ObjectMeta{
+			Name:      fakeName,
+			Namespace: fakeNamespace,
+		},
+		Spec: codebaseApi.CodebaseBranchSpec{
+			CodebaseName: fakeName,
+			BranchName:   fakeName,
+			FromCommit:   "commitsha",
+		},
+	}
+
+	scheme := runtime.NewScheme()
+	require.NoError(t, codebaseApi.AddToScheme(scheme))
+	require.NoError(t, coreV1.AddToScheme(scheme))
+
+	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithObjects(c, gs, cb, s).Build()
+
+	mGit := gitServerMocks.NewMockGit(t)
+
+	mGit.On(
+		"CloneRepositoryBySsh",
+		testifymock.Anything,
+		testifymock.Anything,
+		testifymock.Anything,
+		testifymock.Anything,
+		testifymock.Anything,
+		testifymock.Anything,
+	).Return(nil)
+
+	mGit.On(
+		"CreateRemoteBranch",
+		testifymock.Anything,
+		testifymock.Anything,
+		testifymock.Anything,
+		fakeName,
+		testifymock.Anything,
+		testifymock.Anything,
+	).Return(errors.New("failed to create remote branch"))
+
+	err := PutBranchInGit{
+		Client: fakeCl,
+		Git:    mGit,
+	}.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), cb)
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to create remote branch")
 }
 
 func TestPutBranchInGit_CodebaseShouldNotBeFound(t *testing.T) {
