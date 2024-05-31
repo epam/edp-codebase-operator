@@ -16,19 +16,18 @@ imagePullSecrets:
 nameOverride: ""
 fullnameOverride: ""
 
-{{- if .Framework}}
-framework: {{.Framework}}
-{{- end}}
-
 serviceAccount:
   # -- Specifies whether a service account should be created
   create: true
+  # -- Automatically mount a ServiceAccount's API credentials?
+  automount: true
   # -- Annotations to add to the service account
   annotations: {}
   # -- The name of the service account to use. If not set and create is true, a name is generated using the fullname template
   name: ""
 
 podAnnotations: {}
+podLabels: {}
 
 podSecurityContext: {}
   # fsGroup: 2000
@@ -47,31 +46,21 @@ service:
 
 ingress:
   enabled: false
+  dnsWildcard: {{.DnsWildcard}}
+  className: ""
   annotations: {}
     # kubernetes.io/ingress.class: nginx
     # kubernetes.io/tls-acme: "true"
-  # -- pathType is only for k8s >= 1.1=
-  pathType: Prefix
-  # For Kubernetes >= 1.18 you should specify the ingress-controller via the field ingressClassName
-  # See https://kubernetes.io/blog/2020/04/02/improvements-to-the-ingress-api-in-kubernetes-1.18/#specifying-the-class-of-an-ingress
-  # ingressClassName: nginx
-  # If need to use specific host, define host value below. By default host formed according to the pattern: <CODEBASE_NAME>-<CODEBASE_NAMESPACE>.<CLUSTER_DNS_WILDCARD>
-  # host:
-  path: "/"
-  dnsWildcard: {{.DnsWildcard}}
+  hosts:
+    # If need to use specific host, define host value below. By default when set 'edpDefault' FQDN: <CODEBASE_NAME>-<CODEBASE_NAMESPACE>.<CLUSTER_DNS_WILDCARD>
+    - host: edpDefault
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
   tls: []
   #  - secretName: chart-example-tls
   #    hosts:
   #      - chart-example.local
-
-livenessProbe:
-  tcpSocket:
-    port: http
-
-readinessProbe:
-  tcpSocket:
-    port: http
-  initialDelaySeconds: 20
 
 resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious
@@ -85,12 +74,34 @@ resources: {}
   #   cpu: 100m
   #   memory: 128Mi
 
+livenessProbe:
+  httpGet:
+    path: /
+    port: http
+readinessProbe:
+  httpGet:
+    path: /
+    port: http
+
 autoscaling:
   enabled: false
   minReplicas: 1
   maxReplicas: 100
   targetCPUUtilizationPercentage: 80
   # targetMemoryUtilizationPercentage: 80
+
+# Additional volumes on the output Deployment definition.
+volumes: []
+# - name: foo
+#   secret:
+#     secretName: mysecret
+#     optional: false
+
+# Additional volumeMounts on the output Deployment definition.
+volumeMounts: []
+# - name: foo
+#   mountPath: "/etc/foo"
+#   readOnly: true
 
 # -- https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector
 nodeSelector: {}
