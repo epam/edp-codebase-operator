@@ -89,7 +89,13 @@ spec:
                 description: Descriptive message for current status
                 type: string
               status:
+                default: pending
                 description: Specifies a current status of CDStageDeploy.
+                enum:
+                - failed
+                - running
+                - pending
+                - completed
                 type: string
             required:
             - failureCount

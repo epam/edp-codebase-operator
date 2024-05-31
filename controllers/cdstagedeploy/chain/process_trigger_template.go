@@ -37,7 +37,13 @@ func NewProcessTriggerTemplate(k8sClient client.Client) *ProcessTriggerTemplate 
 }
 
 func (h *ProcessTriggerTemplate) ServeRequest(ctx context.Context, stageDeploy *codebaseApi.CDStageDeploy) error {
-	log := ctrl.LoggerFrom(ctx).WithValues("stage", stageDeploy.Spec.Stage, "pipeline", stageDeploy.Spec.Pipeline)
+	log := ctrl.LoggerFrom(ctx).WithValues("stage", stageDeploy.Spec.Stage, "pipeline", stageDeploy.Spec.Pipeline, "status", stageDeploy.Status.Status)
+
+	if skipPipelineCreation(stageDeploy) {
+		log.Info("Skip processing TriggerTemplate for auto-deploy.")
+
+		return nil
+	}
 
 	log.Info("Start processing TriggerTemplate for auto-deploy.")
 
@@ -52,6 +58,7 @@ func (h *ProcessTriggerTemplate) ServeRequest(ctx context.Context, stageDeploy *
 	appPayload, err := h.getAppPayload(ctx, pipeline)
 	if err != nil {
 		if errors.Is(err, errLasTagNotFound) {
+			stageDeploy.Status.Status = codebaseApi.CDStageDeployStatusCompleted
 			return nil
 		}
 
@@ -71,6 +78,8 @@ func (h *ProcessTriggerTemplate) ServeRequest(ctx context.Context, stageDeploy *
 		if errors.Is(err, errEmptyTriggerTemplateResources) {
 			log.Info("No resource templates found in the trigger template. Skip processing.", "triggertemplate", stage.Spec.TriggerType)
 
+			stageDeploy.Status.Status = codebaseApi.CDStageDeployStatusCompleted
+
 			return nil
 		}
 
@@ -89,9 +98,20 @@ func (h *ProcessTriggerTemplate) ServeRequest(ctx context.Context, stageDeploy *
 		return err
 	}
 
+	stageDeploy.Status.Status = codebaseApi.CDStageDeployStatusRunning
+
 	log.Info("TriggerTemplate for auto-deploy has been processed successfully.")
 
 	return nil
+}
+
+func skipPipelineCreation(stageDeploy *codebaseApi.CDStageDeploy) bool {
+	if stageDeploy.Status.Status != codebaseApi.CDStageDeployStatusFailed &&
+		stageDeploy.Status.Status != codebaseApi.CDStageDeployStatusPending {
+		return true
+	}
+
+	return false
 }
 
 func (h *ProcessTriggerTemplate) getAppPayload(ctx context.Context, pipeline *pipelineAPi.CDPipeline) (json.RawMessage, error) {

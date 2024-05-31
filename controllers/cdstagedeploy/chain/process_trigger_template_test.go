@@ -88,6 +88,9 @@ func TestProcessTriggerTemplate_ServeRequest(t *testing.T) {
 					Pipeline: "dev",
 					Stage:    "qa",
 				},
+				Status: codebaseApi.CDStageDeployStatus{
+					Status: codebaseApi.CDStageDeployStatusPending,
+				},
 			},
 			k8sClient: func(t *testing.T) client.Client {
 				return fake.NewClientBuilder().
@@ -178,6 +181,9 @@ func TestProcessTriggerTemplate_ServeRequest(t *testing.T) {
 					Pipeline: "dev",
 					Stage:    "qa",
 				},
+				Status: codebaseApi.CDStageDeployStatus{
+					Status: codebaseApi.CDStageDeployStatusPending,
+				},
 			},
 			k8sClient: func(t *testing.T) client.Client {
 				return fake.NewClientBuilder().
@@ -241,6 +247,9 @@ func TestProcessTriggerTemplate_ServeRequest(t *testing.T) {
 					Pipeline: "dev",
 					Stage:    "qa",
 				},
+				Status: codebaseApi.CDStageDeployStatus{
+					Status: codebaseApi.CDStageDeployStatusPending,
+				},
 			},
 			k8sClient: func(t *testing.T) client.Client {
 				return fake.NewClientBuilder().
@@ -300,6 +309,9 @@ func TestProcessTriggerTemplate_ServeRequest(t *testing.T) {
 					Pipeline: "dev",
 					Stage:    "qa",
 				},
+				Status: codebaseApi.CDStageDeployStatus{
+					Status: codebaseApi.CDStageDeployStatusPending,
+				},
 			},
 			k8sClient: func(t *testing.T) client.Client {
 				return fake.NewClientBuilder().
@@ -349,6 +361,9 @@ func TestProcessTriggerTemplate_ServeRequest(t *testing.T) {
 					Pipeline: "dev",
 					Stage:    "qa",
 				},
+				Status: codebaseApi.CDStageDeployStatus{
+					Status: codebaseApi.CDStageDeployStatusPending,
+				},
 			},
 			k8sClient: func(t *testing.T) client.Client {
 				return fake.NewClientBuilder().
@@ -388,6 +403,9 @@ func TestProcessTriggerTemplate_ServeRequest(t *testing.T) {
 					Pipeline: "dev",
 					Stage:    "qa",
 				},
+				Status: codebaseApi.CDStageDeployStatus{
+					Status: codebaseApi.CDStageDeployStatusPending,
+				},
 			},
 			k8sClient: func(t *testing.T) client.Client {
 				return fake.NewClientBuilder().
@@ -423,6 +441,9 @@ func TestProcessTriggerTemplate_ServeRequest(t *testing.T) {
 					Pipeline: "dev",
 					Stage:    "qa",
 				},
+				Status: codebaseApi.CDStageDeployStatus{
+					Status: codebaseApi.CDStageDeployStatusPending,
+				},
 			},
 			k8sClient: func(t *testing.T) client.Client {
 				return fake.NewClientBuilder().
@@ -434,6 +455,29 @@ func TestProcessTriggerTemplate_ServeRequest(t *testing.T) {
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), "failed to get CDPipeline")
 			},
+		},
+		{
+			name: "skip processing trigger template for auto-deploy if status is completed",
+			stageDeploy: &codebaseApi.CDStageDeploy{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "default",
+					Name:      "dev-qa",
+				},
+				Spec: codebaseApi.CDStageDeploySpec{
+					Pipeline: "dev",
+					Stage:    "qa",
+				},
+				Status: codebaseApi.CDStageDeployStatus{
+					Status: codebaseApi.CDStageDeployStatusCompleted,
+				},
+			},
+			k8sClient: func(t *testing.T) client.Client {
+				return fake.NewClientBuilder().
+					WithScheme(scheme).
+					WithObjects().
+					Build()
+			},
+			wantErr: require.NoError,
 		},
 	}
 

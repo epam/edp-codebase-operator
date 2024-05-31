@@ -95,6 +95,7 @@ rules:
     - pipelineruns
   verbs:
     - create
+    - list
 - apiGroups:
     - triggers.tekton.dev
   resources:

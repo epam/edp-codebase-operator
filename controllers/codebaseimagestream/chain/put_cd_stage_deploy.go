@@ -12,6 +12,9 @@ import (
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+
+	pipelineApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/codebaseimagestream"
@@ -182,6 +185,22 @@ func (h PutCDStageDeploy) create(command *cdStageDeployCommand) error {
 			Tag:      command.Tag,
 			Tags:     command.Tags,
 		},
+	}
+
+	stage := &pipelineApi.Stage{}
+	if err := h.client.Get(
+		ctx,
+		types.NamespacedName{
+			Name:      stageDeploy.GetStageCRName(),
+			Namespace: command.Namespace,
+		},
+		stage,
+	); err != nil {
+		return fmt.Errorf("failed to get CDStage %s: %w", command.Stage, err)
+	}
+
+	if err := controllerutil.SetControllerReference(stage, stageDeploy, h.client.Scheme()); err != nil {
+		return fmt.Errorf("failed to set controller reference: %w", err)
 	}
 
 	err := h.client.Create(ctx, stageDeploy)

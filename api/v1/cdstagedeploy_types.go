@@ -9,7 +9,10 @@ import (
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
 const (
-	failed = "failed"
+	CDStageDeployStatusFailed    = "failed"
+	CDStageDeployStatusRunning   = "running"
+	CDStageDeployStatusPending   = "pending"
+	CDStageDeployStatusCompleted = "completed"
 )
 
 // CDStageDeploySpec defines the desired state of CDStageDeploy.
@@ -35,6 +38,8 @@ type CodebaseTag struct {
 // CDStageDeployStatus defines the observed state of CDStageDeploy.
 type CDStageDeployStatus struct {
 	// Specifies a current status of CDStageDeploy.
+	// +kubebuilder:validation:Enum=failed;running;pending;completed
+	// +kubebuilder:default=pending
 	Status string `json:"status"`
 
 	// Descriptive message for current status
@@ -59,7 +64,7 @@ type CDStageDeploy struct {
 }
 
 func (in *CDStageDeploy) SetFailedStatus(err error) {
-	in.Status.Status = failed
+	in.Status.Status = CDStageDeployStatusFailed
 	in.Status.Message = err.Error()
 }
 
