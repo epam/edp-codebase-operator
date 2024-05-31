@@ -12,6 +12,7 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
 	routeApi "github.com/openshift/api/route/v1"
+	tektonpipelineApi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	tektonTriggersApi "github.com/tektoncd/triggers/pkg/apis/triggers/v1beta1"
 	networkingV1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -57,7 +58,6 @@ const (
 	telemetryDefaultDelay                    = time.Hour
 	telemetrySendEvery                       = time.Hour * 24
 	telemetryUrl                             = "https://telemetry.edp-epam.com"
-	cdStageDeployReconcileDelaySeconds       = 15
 )
 
 func main() {
@@ -106,6 +106,7 @@ func main() {
 	utilruntime.Must(networkingV1.AddToScheme(scheme))
 	utilruntime.Must(routeApi.AddToScheme(scheme))
 	utilruntime.Must(tektonTriggersApi.AddToScheme(scheme))
+	utilruntime.Must(tektonpipelineApi.AddToScheme(scheme))
 
 	ns, err := util.GetWatchNamespace()
 	if err != nil {
@@ -134,7 +135,7 @@ func main() {
 
 	ctrlLog := ctrl.Log.WithName("controllers")
 
-	cdStageDeployCtrl := cdstagedeploy.NewReconcileCDStageDeploy(mgr.GetClient(), mgr.GetScheme(), ctrlLog, chain.CreateDefChain, cdStageDeployReconcileDelaySeconds)
+	cdStageDeployCtrl := cdstagedeploy.NewReconcileCDStageDeploy(mgr.GetClient(), ctrlLog, chain.CreateDefChain)
 	if err = cdStageDeployCtrl.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "failed to create controller", "controller", "cd-stage-deploy")
 		os.Exit(1)

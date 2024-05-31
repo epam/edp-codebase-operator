@@ -41,12 +41,28 @@ func TestDeleteCDStageDeploy_ServeRequest(t *testing.T) {
 						Name:      "test",
 						Namespace: "default",
 					},
+					Status: codebaseApi.CDStageDeployStatus{
+						Status: codebaseApi.CDStageDeployStatusCompleted,
+					},
 				},
 			},
 			wantErr: assert.NoError,
 		},
 		{
 			name: "should ignore error if CDStageDeploy doesn't exist",
+			stageDeploy: &codebaseApi.CDStageDeploy{
+				ObjectMeta: ctrl.ObjectMeta{
+					Name:      "test",
+					Namespace: "default",
+				},
+				Status: codebaseApi.CDStageDeployStatus{
+					Status: codebaseApi.CDStageDeployStatusCompleted,
+				},
+			},
+			wantErr: assert.NoError,
+		},
+		{
+			name: "should ignore if CDStageDeploy has not been completed yet",
 			stageDeploy: &codebaseApi.CDStageDeploy{
 				ObjectMeta: ctrl.ObjectMeta{
 					Name:      "test",

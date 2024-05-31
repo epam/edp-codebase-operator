@@ -7,11 +7,14 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+
+	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 )
@@ -251,9 +254,18 @@ func TestPutCDStageDeploy_ShouldCreateCdstagedeploy(t *testing.T) {
 		Spec: codebaseApi.CDStageDeploySpec{},
 	}
 
+	stage := &cdPipeApi.Stage{
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      "pipeline-name-stage-name",
+			Namespace: "stub-namespace",
+		},
+	}
+
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(schema.GroupVersion{Group: "v2.edp.epam.com", Version: "v1"}, cis, cdsd)
-	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(cis, cdsd).Build()
+	require.NoError(t, codebaseApi.AddToScheme(scheme))
+	require.NoError(t, cdPipeApi.AddToScheme(scheme))
+
+	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cis, cdsd, stage).Build()
 
 	chain := PutCDStageDeploy{
 		client: fakeCl,

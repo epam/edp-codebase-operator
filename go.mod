@@ -18,6 +18,7 @@ require (
 	github.com/jarcoal/httpmock v1.0.8
 	github.com/openshift/api v3.9.0+incompatible
 	github.com/stretchr/testify v1.8.4
+	github.com/tektoncd/pipeline v0.47.0
 	github.com/tektoncd/triggers v0.24.2
 	go.uber.org/multierr v1.10.0
 	golang.org/x/crypto v0.21.0
@@ -93,7 +94,6 @@ require (
 	github.com/skeema/knownhosts v1.2.1 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/objx v0.5.0 // indirect
-	github.com/tektoncd/pipeline v0.47.0 // indirect
 	github.com/trivago/tgo v1.0.7 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	go.opencensus.io v0.24.0 // indirect

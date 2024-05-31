@@ -74,16 +74,6 @@ rules:
   - update
   - watch
 - apiGroups:
-  - argoproj.io
-  resources:
-  - applications
-  verbs:
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - route.openshift.io
   resources:
   - routes
@@ -97,6 +87,7 @@ rules:
   - pipelineruns
   verbs:
   - create
+  - list
 - apiGroups:
   - triggers.tekton.dev
   resources:
