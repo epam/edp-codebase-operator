@@ -78,15 +78,12 @@ spec:
             - tags
             type: object
           status:
+            default:
+              status: pending
             description: CDStageDeployStatus defines the observed state of CDStageDeploy.
             properties:
-              failureCount:
-                description: Amount of times, operator fail to serve with existing
-                  CR
-                format: int64
-                type: integer
               message:
-                description: Descriptive message for current status
+                description: Descriptive message for current status.
                 type: string
               status:
                 default: pending
@@ -97,10 +94,6 @@ spec:
                 - pending
                 - completed
                 type: string
-            required:
-            - failureCount
-            - message
-            - status
             type: object
         type: object
     served: true
