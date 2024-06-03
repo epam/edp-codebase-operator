@@ -38,15 +38,14 @@ type CodebaseTag struct {
 // CDStageDeployStatus defines the observed state of CDStageDeploy.
 type CDStageDeployStatus struct {
 	// Specifies a current status of CDStageDeploy.
+	// +optional
 	// +kubebuilder:validation:Enum=failed;running;pending;completed
 	// +kubebuilder:default=pending
 	Status string `json:"status"`
 
-	// Descriptive message for current status
+	// Descriptive message for current status.
+	// +optional
 	Message string `json:"message"`
-
-	// Amount of times, operator fail to serve with existing CR
-	FailureCount int64 `json:"failureCount"`
 }
 
 // +kubebuilder:object:root=true
@@ -59,8 +58,10 @@ type CDStageDeploy struct {
 	metaV1.TypeMeta   `json:",inline"`
 	metaV1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   CDStageDeploySpec   `json:"spec,omitempty"`
-	Status CDStageDeployStatus `json:"status,omitempty"`
+	Spec CDStageDeploySpec `json:"spec,omitempty"`
+	// +kubebuilder:default={status:pending}
+	// +optional
+	Status CDStageDeployStatus `json:"status"`
 }
 
 func (in *CDStageDeploy) SetFailedStatus(err error) {

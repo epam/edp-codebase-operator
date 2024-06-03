@@ -76,6 +76,8 @@ CDStageDeploy is the Schema for the CDStageDeployments API.
         <td>object</td>
         <td>
           CDStageDeployStatus defines the observed state of CDStageDeploy.<br/>
+          <br/>
+            <i>Default</i>: map[status:pending]<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -215,21 +217,12 @@ CDStageDeployStatus defines the observed state of CDStageDeploy.
         </tr>
     </thead>
     <tbody><tr>
-        <td><b>failureCount</b></td>
-        <td>integer</td>
-        <td>
-          Amount of times, operator fail to serve with existing CR<br/>
-          <br/>
-            <i>Format</i>: int64<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
         <td><b>message</b></td>
         <td>string</td>
         <td>
-          Descriptive message for current status<br/>
+          Descriptive message for current status.<br/>
         </td>
-        <td>true</td>
+        <td>false</td>
       </tr><tr>
         <td><b>status</b></td>
         <td>enum</td>
@@ -239,7 +232,7 @@ CDStageDeployStatus defines the observed state of CDStageDeploy.
             <i>Enum</i>: failed, running, pending, completed<br/>
             <i>Default</i>: pending<br/>
         </td>
-        <td>true</td>
+        <td>false</td>
       </tr></tbody>
 </table>
 
