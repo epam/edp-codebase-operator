@@ -9,6 +9,7 @@ metadata:
 rules:
 - apiGroups:
     - argoproj.io
+  attributeRestrictions: null
   resources:
     - applications
   verbs:
@@ -19,51 +20,54 @@ rules:
     - watch
 - apiGroups:
     - '*'
+  attributeRestrictions: null
   resources:
-    - gitservers
-    - gitservers/status
-    - gitservers/finalizers
-    - codebases
-    - codebases/status
-    - codebases/finalizers
+    - cdpipelines
+    - cdstagedeployments
+    - cdstagedeployments/finalizers
+    - cdstagedeployments/status
     - codebasebranches
-    - codebasebranches/status
     - codebasebranches/finalizers
+    - codebasebranches/status
     - codebaseimagestreams
-    - codebaseimagestreams/status
     - codebaseimagestreams/finalizers
+    - codebaseimagestreams/status
+    - codebases
+    - codebases/finalizers
+    - codebases/status
     - configmaps
-    - jiraservers
-    - jiraservers/finalizers
-    - jiraservers/status
+    - gitservers
+    - gitservers/finalizers
+    - gitservers/status
     - jirafixversions
     - jirafixversions/status
     - jiraissuemetadatas
     - jiraissuemetadatas/finalizers
     - jiraissuemetadatas/status
-    - cdstagedeployments
-    - cdstagedeployments/finalizers
-    - cdstagedeployments/status
+    - jiraservers
+    - jiraservers/finalizers
+    - jiraservers/status
     - stages
     - stages/finalizers
     - stages/status
-    - cdpipelines
   verbs:
     - '*'
 - apiGroups:
     - coordination.k8s.io
+  attributeRestrictions: null
   resources:
     - leases
   verbs:
+    - create
+    - delete
     - get
     - list
-    - watch
-    - create
-    - update
     - patch
-    - delete
+    - update
+    - watch
 - apiGroups:
     - route.openshift.io
+  attributeRestrictions: null
   resources:
     - routes
   verbs:
@@ -72,6 +76,7 @@ rules:
     - watch
 - apiGroups:
     - ""
+  attributeRestrictions: null
   resources:
     - events
   verbs:
@@ -79,6 +84,7 @@ rules:
     - patch
 - apiGroups:
     - tekton.dev
+  attributeRestrictions: null
   resources:
     - pipelineruns
   verbs:
@@ -86,6 +92,7 @@ rules:
     - list
 - apiGroups:
     - triggers.tekton.dev
+  attributeRestrictions: null
   resources:
     - triggertemplates
   verbs:

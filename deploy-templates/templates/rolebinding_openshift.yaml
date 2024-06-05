@@ -1,12 +1,12 @@
 {{- if eq .Values.global.platform "openshift" -}}
 apiVersion: authorization.openshift.io/v1
+groupNames: null
 kind: RoleBinding
 metadata:
   labels:
     {{- include "codebase-operator.labels" . | nindent 4 }}
   name: edp-{{ .Values.name }}
 roleRef:
-  kind: Role
   name: edp-{{ .Values.name }}
   namespace: {{ .Release.Namespace }}
 subjects:
@@ -15,5 +15,4 @@ subjects:
     namespace: {{ .Release.Namespace }}
 userNames:
   - system:serviceaccount:{{ .Release.Namespace }}:edp-{{ .Values.name }}
-groupNames: []
 {{- end -}}
