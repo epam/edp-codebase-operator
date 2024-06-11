@@ -91,7 +91,7 @@ func (r *ReconcileCodebaseImageStream) Reconcile(ctx context.Context, request re
 		return reconcile.Result{}, fmt.Errorf("failed to fetch CodebaseImageStream %q: %w", request.Name, err)
 	}
 
-	if err := chain.CreateDefChain(r.client).ServeRequest(i); err != nil {
+	if err := chain.CreateDefChain(r.client).ServeRequest(ctx, i); err != nil {
 		return reconcile.Result{}, fmt.Errorf("fail during CodebaseImageStream default chain: %w", err)
 	}
 

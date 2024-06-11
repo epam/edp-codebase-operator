@@ -229,7 +229,7 @@ CDStageDeployStatus defines the observed state of CDStageDeploy.
         <td>
           Specifies a current status of CDStageDeploy.<br/>
           <br/>
-            <i>Enum</i>: failed, running, pending, completed<br/>
+            <i>Enum</i>: failed, running, pending, completed, in-queue<br/>
             <i>Default</i>: pending<br/>
         </td>
         <td>false</td>

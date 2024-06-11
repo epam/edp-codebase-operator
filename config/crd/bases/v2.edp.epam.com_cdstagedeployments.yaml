@@ -93,6 +93,7 @@ spec:
                 - running
                 - pending
                 - completed
+                - in-queue
                 type: string
             type: object
         type: object
