@@ -32,26 +32,52 @@ func (r *ResolveStatus) ServeRequest(ctx context.Context, stageDeploy *codebaseA
 		return nil
 	}
 
-	if stageDeploy.Status.Status == codebaseApi.CDStageDeployStatusPending {
-		log.Info("CDStageDeploy has pending status. Start deploying.")
-
-		return nil
-	}
-
 	pipelineRun, err := r.getRunningPipelines(ctx, stageDeploy)
 	if err != nil {
 		return fmt.Errorf("failed to get running pipelines: %w", err)
 	}
 
-	if allPipelineRunsCompleted(pipelineRun.Items) {
-		log.Info("All PipelineRuns have been completed.")
+	if stageDeploy.Status.Status == codebaseApi.CDStageDeployStatusPending {
+		if allPipelineRunsCompleted(pipelineRun.Items) {
+			log.Info("CDStageDeploy has pending status. Start deploying.")
 
-		stageDeploy.Status.Status = codebaseApi.CDStageDeployStatusCompleted
+			return nil
+		}
+
+		log.Info("Put CDStageDeploy in queue. Some PipelineRuns are still running.")
+
+		stageDeploy.Status.Status = codebaseApi.CDStageDeployStatusInQueue
 
 		return nil
 	}
 
-	log.Info("Some PipelineRuns are still running.")
+	if stageDeploy.Status.Status == codebaseApi.CDStageDeployStatusInQueue {
+		if allPipelineRunsCompleted(pipelineRun.Items) {
+			log.Info("All PipelineRuns have been completed.")
+
+			stageDeploy.Status.Status = codebaseApi.CDStageDeployStatusPending
+
+			return nil
+		}
+
+		log.Info("Some PipelineRuns are still running.")
+
+		return nil
+	}
+
+	if stageDeploy.Status.Status == codebaseApi.CDStageDeployStatusRunning {
+		if allPipelineRunsCompleted(pipelineRun.Items) {
+			log.Info("All PipelineRuns have been completed.")
+
+			stageDeploy.Status.Status = codebaseApi.CDStageDeployStatusCompleted
+
+			return nil
+		}
+
+		log.Info("Some PipelineRuns are still running.")
+
+		return nil
+	}
 
 	return nil
 }

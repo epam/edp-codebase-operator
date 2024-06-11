@@ -6,12 +6,11 @@ import (
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
 const (
 	CDStageDeployStatusFailed    = "failed"
 	CDStageDeployStatusRunning   = "running"
 	CDStageDeployStatusPending   = "pending"
+	CDStageDeployStatusInQueue   = "in-queue"
 	CDStageDeployStatusCompleted = "completed"
 )
 
@@ -39,7 +38,7 @@ type CodebaseTag struct {
 type CDStageDeployStatus struct {
 	// Specifies a current status of CDStageDeploy.
 	// +optional
-	// +kubebuilder:validation:Enum=failed;running;pending;completed
+	// +kubebuilder:validation:Enum=failed;running;pending;completed;in-queue
 	// +kubebuilder:default=pending
 	Status string `json:"status"`
 
