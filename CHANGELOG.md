@@ -1,8 +1,37 @@
 <a name="unreleased"></a>
 ## [Unreleased]
 
+
+<a name="v2.23.0"></a>
+## [v2.23.0] - 2024-06-12
+### Features
+
+- Implement queue for auto-deploy in pipelines ([#71](https://github.com/epam/edp-codebase-operator/issues/71))
+- Update helm-template produced by operator ([#68](https://github.com/epam/edp-codebase-operator/issues/68))
+- Process integration secret status for ghrc ([#63](https://github.com/epam/edp-codebase-operator/issues/63))
+
+### Bug Fixes
+
+- Deploy pipeline is failed if deploy with ingress ([#80](https://github.com/epam/edp-codebase-operator/issues/80))
+- Incorrect handling of parallel CDStageDeploy ([#71](https://github.com/epam/edp-codebase-operator/issues/71))
+- Set default pending status for CDStageDeploy ([#71](https://github.com/epam/edp-codebase-operator/issues/71))
+- Align helm-docs to the latest changes ([#68](https://github.com/epam/edp-codebase-operator/issues/68))
+- Fix helm-docs for new helm-chart ([#68](https://github.com/epam/edp-codebase-operator/issues/68))
+- Align helm chart to more generalized configuration ([#68](https://github.com/epam/edp-codebase-operator/issues/68))
+- Set CodebaseBranch failed status ([#65](https://github.com/epam/edp-codebase-operator/issues/65))
+- Enable failed status for CodebaseBranch ([#65](https://github.com/epam/edp-codebase-operator/issues/65))
+- Failed auto-deploy for the release branch ([#52](https://github.com/epam/edp-codebase-operator/issues/52))
+- Fails to reprocess Codebase in case error ([#46](https://github.com/epam/edp-codebase-operator/issues/46))
+
 ### Routine
 
+- Update argocd diff ([#76](https://github.com/epam/edp-codebase-operator/issues/76))
+- Set Go 1.22 for CodeQL ([#58](https://github.com/epam/edp-codebase-operator/issues/58))
+- Bump to Go 1.22 ([#58](https://github.com/epam/edp-codebase-operator/issues/58))
+- Add codeowners file to the repo ([#56](https://github.com/epam/edp-codebase-operator/issues/56))
+- Migrate from gerrit to github pipelines ([#54](https://github.com/epam/edp-codebase-operator/issues/54))
+- Remove deprecated EDPComponents CRD ([#42](https://github.com/epam/edp-codebase-operator/issues/42))
+- Update current development version ([#50](https://github.com/epam/edp-codebase-operator/issues/50))
 - Bump alpine version ([#51](https://github.com/epam/edp-codebase-operator/issues/51))
 - Update current development version ([#50](https://github.com/epam/edp-codebase-operator/issues/50))
 
@@ -157,7 +186,8 @@ removed required fields from the GitServer status. CRD should be updated.
 <a name="v2.17.0"></a>
 ## [v2.17.0] - 2023-08-17
 
-[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.22.1...HEAD
+[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.23.0...HEAD
+[v2.23.0]: https://github.com/epam/edp-codebase-operator/compare/v2.22.1...v2.23.0
 [v2.22.1]: https://github.com/epam/edp-codebase-operator/compare/v2.22.0...v2.22.1
 [v2.22.0]: https://github.com/epam/edp-codebase-operator/compare/v2.21.0...v2.22.0
 [v2.21.0]: https://github.com/epam/edp-codebase-operator/compare/v2.20.0...v2.21.0
