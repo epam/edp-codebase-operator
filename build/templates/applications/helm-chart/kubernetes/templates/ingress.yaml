@@ -39,10 +39,10 @@ spec:
   rules:
     {{- range .Values.ingress.hosts }}
     # if .host = edpDefault then we need to use
-    # {{ $fullName }}-{{ .Release.Namespace}}.{{ .Values.ingress.dnsWildcard}}
+    # {{ $fullName }}-{{ $.Release.Namespace }}.{{ $.Values.ingress.dnsWildcard }}
     # otherwise we need to use {{ .host }}
     {{- if eq .host "edpDefault" }}
-    - host: {{ $fullName }}-{{ .Release.Namespace}}.{{ .Values.ingress.dnsWildcard}}
+    - host: {{ $fullName }}-{{ $.Release.Namespace }}.{{ $.Values.ingress.dnsWildcard }}
     {{- else }}
     - host: {{ .host | quote }}
     {{- end }}
