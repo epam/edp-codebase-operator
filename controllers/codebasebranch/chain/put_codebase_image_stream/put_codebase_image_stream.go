@@ -15,6 +15,7 @@ import (
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	"github.com/epam/edp-codebase-operator/v2/controllers/codebasebranch/chain/handler"
 	"github.com/epam/edp-codebase-operator/v2/pkg/model"
+	"github.com/epam/edp-codebase-operator/v2/pkg/platform"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
@@ -88,18 +89,18 @@ func ProcessNameToK8sConvention(name string) string {
 func (h PutCodebaseImageStream) getDockerRegistryUrl(ctx context.Context, namespace string) (string, error) {
 	config := &corev1.ConfigMap{}
 	if err := h.Client.Get(ctx, types.NamespacedName{
-		Name:      util.EdpConfigMap,
+		Name:      platform.EdpConfigMap,
 		Namespace: namespace,
 	}, config); err != nil {
-		return "", fmt.Errorf("failed to get %s config map: %w", util.EdpConfigMap, err)
+		return "", fmt.Errorf("failed to get %s config map: %w", platform.EdpConfigMap, err)
 	}
 
 	if _, ok := config.Data[EdpConfigContainerRegistryHost]; !ok {
-		return "", fmt.Errorf("%s is not set in %s config map", EdpConfigContainerRegistryHost, util.EdpConfigMap)
+		return "", fmt.Errorf("%s is not set in %s config map", EdpConfigContainerRegistryHost, platform.EdpConfigMap)
 	}
 
 	if _, ok := config.Data[EdpConfigContainerRegistrySpace]; !ok {
-		return "", fmt.Errorf("%s is not set in %s config map", EdpConfigContainerRegistrySpace, util.EdpConfigMap)
+		return "", fmt.Errorf("%s is not set in %s config map", EdpConfigContainerRegistrySpace, platform.EdpConfigMap)
 	}
 
 	return fmt.Sprintf("%s/%s", config.Data[EdpConfigContainerRegistryHost], config.Data[EdpConfigContainerRegistrySpace]), nil

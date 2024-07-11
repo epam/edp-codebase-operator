@@ -47,10 +47,10 @@ func (r *CodebaseValidationWebhook) SetupWebhookWithManager(mgr ctrl.Manager) er
 var _ webhook.CustomValidator = &CodebaseValidationWebhook{}
 
 // ValidateCreate is a webhook for validating the creation of the Codebase CR.
-func (r *CodebaseValidationWebhook) ValidateCreate(ctx context.Context, obj runtime.Object) error {
+func (r *CodebaseValidationWebhook) ValidateCreate(ctx context.Context, obj runtime.Object) (warnings admission.Warnings, err error) {
 	req, err := admission.RequestFromContext(ctx)
 	if err != nil {
-		return apierrors.NewBadRequest(fmt.Errorf("expected admission.Request in ctx: %w", err).Error())
+		return nil, apierrors.NewBadRequest(fmt.Errorf("expected admission.Request in ctx: %w", err).Error())
 	}
 
 	r.log.Info("validate create", "name", req.Name)
@@ -59,32 +59,32 @@ func (r *CodebaseValidationWebhook) ValidateCreate(ctx context.Context, obj runt
 	if !ok {
 		r.log.Info("the wrong object given, skipping validation")
 
-		return nil
+		return nil, nil
 	}
 
 	if err = validateCodBaseName(createdCodebase.Name); err != nil {
-		return err
+		return nil, err
 	}
 
 	if err = IsCodebaseValid(createdCodebase); err != nil {
-		return fmt.Errorf("codebase %s is invalid: %w", createdCodebase.Name, err)
+		return nil, fmt.Errorf("codebase %s is invalid: %w", createdCodebase.Name, err)
 	}
 
 	gitUrlPathToValidate := util.TrimGitFromURL(createdCodebase.Spec.GitUrlPath)
 	if gitUrlPathToValidate == "" {
-		return fmt.Errorf("gitUrlPath %s is invalid", createdCodebase.Spec.GitUrlPath)
+		return nil, fmt.Errorf("gitUrlPath %s is invalid", createdCodebase.Spec.GitUrlPath)
 	}
 
 	codeBases := &v1.CodebaseList{}
 	if err := r.client.List(ctx, codeBases, client.InNamespace(req.Namespace), client.Limit(listLimit)); err != nil {
-		return fmt.Errorf("failed to list codebases: %w", err)
+		return nil, fmt.Errorf("failed to list codebases: %w", err)
 	}
 
 	for i := range codeBases.Items {
 		gitUrlPath := codeBases.Items[i].Spec.GitUrlPath
 
 		if gitUrlPath == gitUrlPathToValidate {
-			return fmt.Errorf(
+			return nil, fmt.Errorf(
 				"codebase %s with GitUrlPath %s already exists",
 				codeBases.Items[i].Name,
 				gitUrlPath,
@@ -92,14 +92,14 @@ func (r *CodebaseValidationWebhook) ValidateCreate(ctx context.Context, obj runt
 		}
 	}
 
-	return nil
+	return nil, nil
 }
 
 // ValidateUpdate is a webhook for validating the updating of the Codebase CR.
-func (r *CodebaseValidationWebhook) ValidateUpdate(ctx context.Context, _, newObj runtime.Object) error {
+func (r *CodebaseValidationWebhook) ValidateUpdate(ctx context.Context, _, newObj runtime.Object) (warnings admission.Warnings, err error) {
 	req, err := admission.RequestFromContext(ctx)
 	if err != nil {
-		return fmt.Errorf("expected admission.Request in ctx: %w", err)
+		return nil, fmt.Errorf("expected admission.Request in ctx: %w", err)
 	}
 
 	r.log.Info("validate update", "name", req.Name)
@@ -108,25 +108,25 @@ func (r *CodebaseValidationWebhook) ValidateUpdate(ctx context.Context, _, newOb
 	if !ok {
 		r.log.Info("the wrong object given, skipping validation")
 
-		return nil
+		return nil, nil
 	}
 
 	if err = IsCodebaseValid(updatedCodebase); err != nil {
-		return fmt.Errorf("codebase %s is invalid: %w", updatedCodebase.Name, err)
+		return nil, fmt.Errorf("codebase %s is invalid: %w", updatedCodebase.Name, err)
 	}
 
-	return nil
+	return nil, nil
 }
 
 // ValidateDelete is a webhook for validating the deleting of the Codebase CR.
 // It is skipped for now. Add kubebuilder:webhook:verbs=delete to enable it.
-func (r *CodebaseValidationWebhook) ValidateDelete(ctx context.Context, _ runtime.Object) error {
+func (r *CodebaseValidationWebhook) ValidateDelete(ctx context.Context, _ runtime.Object) (warnings admission.Warnings, err error) {
 	req, err := admission.RequestFromContext(ctx)
 	if err != nil {
-		return fmt.Errorf("expected admission.Request in ctx: %w", err)
+		return nil, fmt.Errorf("expected admission.Request in ctx: %w", err)
 	}
 
 	r.log.Info("validate delete", "name", req.Name)
 
-	return nil
+	return nil, nil
 }

@@ -14,7 +14,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
-	"github.com/epam/edp-codebase-operator/v2/pkg/util"
+	"github.com/epam/edp-codebase-operator/v2/pkg/platform"
 )
 
 func TestPutCodebaseImageStream_ServeRequest(t *testing.T) {
@@ -47,7 +47,7 @@ func TestPutCodebaseImageStream_ServeRequest(t *testing.T) {
 				},
 				&corev1.ConfigMap{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      util.EdpConfigMap,
+						Name:      platform.EdpConfigMap,
 						Namespace: "default",
 					},
 					Data: map[string]string{
@@ -85,7 +85,7 @@ func TestPutCodebaseImageStream_ServeRequest(t *testing.T) {
 				},
 				&corev1.ConfigMap{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      util.EdpConfigMap,
+						Name:      platform.EdpConfigMap,
 						Namespace: "default",
 					},
 					Data: map[string]string{
@@ -151,7 +151,11 @@ func TestPutCodebaseImageStream_ServeRequest(t *testing.T) {
 			require.NoError(t, corev1.AddToScheme(scheme))
 
 			h := PutCodebaseImageStream{
-				Client: fake.NewClientBuilder().WithScheme(scheme).WithObjects(append(tt.objects, tt.codebaseBranch)...).Build(),
+				Client: fake.NewClientBuilder().
+					WithScheme(scheme).
+					WithObjects(append(tt.objects, tt.codebaseBranch)...).
+					WithStatusSubresource(append(tt.objects, tt.codebaseBranch)...).
+					Build(),
 			}
 
 			err := h.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), tt.codebaseBranch)

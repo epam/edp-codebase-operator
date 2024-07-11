@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -39,8 +39,8 @@ func TestProcessNewVersion_ServeRequest(t *testing.T) {
 					Version:      util.GetStringP("1.0.0"),
 				},
 				Status: codebaseApi.CodebaseBranchStatus{
-					LastSuccessfulBuild: pointer.String("20"),
-					Build:               pointer.String("22"),
+					LastSuccessfulBuild: ptr.To("20"),
+					Build:               ptr.To("22"),
 				},
 			},
 			client: func(t *testing.T, cb *codebaseApi.CodebaseBranch) client.Client {
@@ -63,6 +63,7 @@ func TestProcessNewVersion_ServeRequest(t *testing.T) {
 							},
 						},
 					).
+					WithStatusSubresource(cb).
 					Build()
 			},
 			wantErr: require.NoError,
@@ -84,8 +85,8 @@ func TestProcessNewVersion_ServeRequest(t *testing.T) {
 					Version:      util.GetStringP("1.0.0"),
 				},
 				Status: codebaseApi.CodebaseBranchStatus{
-					LastSuccessfulBuild: pointer.String("20"),
-					Build:               pointer.String("22"),
+					LastSuccessfulBuild: ptr.To("20"),
+					Build:               ptr.To("22"),
 					VersionHistory:      []string{"1.0.0"},
 				},
 			},
@@ -130,8 +131,8 @@ func TestProcessNewVersion_ServeRequest(t *testing.T) {
 					Version:      util.GetStringP("1.0.0"),
 				},
 				Status: codebaseApi.CodebaseBranchStatus{
-					LastSuccessfulBuild: pointer.String("20"),
-					Build:               pointer.String("22"),
+					LastSuccessfulBuild: ptr.To("20"),
+					Build:               ptr.To("22"),
 					VersionHistory:      []string{"1.0.0"},
 				},
 			},
@@ -176,8 +177,8 @@ func TestProcessNewVersion_ServeRequest(t *testing.T) {
 					Version:      util.GetStringP("1.0.0"),
 				},
 				Status: codebaseApi.CodebaseBranchStatus{
-					LastSuccessfulBuild: pointer.String("20"),
-					Build:               pointer.String("22"),
+					LastSuccessfulBuild: ptr.To("20"),
+					Build:               ptr.To("22"),
 				},
 			},
 			client: func(t *testing.T, cb *codebaseApi.CodebaseBranch) client.Client {
@@ -218,8 +219,8 @@ func TestProcessNewVersion_ServeRequest(t *testing.T) {
 					CodebaseName: "test-codebase",
 				},
 				Status: codebaseApi.CodebaseBranchStatus{
-					LastSuccessfulBuild: pointer.String("20"),
-					Build:               pointer.String("22"),
+					LastSuccessfulBuild: ptr.To("20"),
+					Build:               ptr.To("22"),
 				},
 			},
 			client: func(t *testing.T, cb *codebaseApi.CodebaseBranch) client.Client {
@@ -262,8 +263,8 @@ func TestProcessNewVersion_ServeRequest(t *testing.T) {
 					Version:      util.GetStringP("1.0.0"),
 				},
 				Status: codebaseApi.CodebaseBranchStatus{
-					LastSuccessfulBuild: pointer.String("20"),
-					Build:               pointer.String("22"),
+					LastSuccessfulBuild: ptr.To("20"),
+					Build:               ptr.To("22"),
 				},
 			},
 			client: func(t *testing.T, cb *codebaseApi.CodebaseBranch) client.Client {

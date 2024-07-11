@@ -13,7 +13,7 @@ import (
 	pipelineAPi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
-	"github.com/epam/edp-codebase-operator/v2/pkg/util"
+	"github.com/epam/edp-codebase-operator/v2/pkg/platform"
 )
 
 type Collector struct {
@@ -78,7 +78,7 @@ func (c *Collector) sendTelemetry(ctx context.Context) error {
 	edpConfig := &corev1.ConfigMap{}
 	if err := c.k8sClient.Get(ctx, client.ObjectKey{
 		Namespace: c.namespace,
-		Name:      util.EdpConfigMap,
+		Name:      platform.EdpConfigMap,
 	}, edpConfig); err != nil {
 		return fmt.Errorf("failed to get edp config: %w", err)
 	}

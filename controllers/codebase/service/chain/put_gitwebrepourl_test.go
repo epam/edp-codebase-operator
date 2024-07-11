@@ -103,7 +103,11 @@ func TestPutGitWebRepoUrl_ServeRequest(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			k8sClient := fake.NewClientBuilder().WithScheme(schema).WithObjects(tt.k8sObjects...).Build()
+			k8sClient := fake.NewClientBuilder().
+				WithScheme(schema).
+				WithObjects(tt.k8sObjects...).
+				WithStatusSubresource(tt.k8sObjects...).
+				Build()
 			s := NewPutGitWebRepoUrl(k8sClient)
 
 			gotErr := s.ServeRequest(context.Background(), tt.codebase)

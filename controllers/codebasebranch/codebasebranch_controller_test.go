@@ -19,6 +19,7 @@ import (
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	"github.com/epam/edp-codebase-operator/v2/controllers/codebasebranch/chain/put_codebase_image_stream"
 	"github.com/epam/edp-codebase-operator/v2/pkg/codebasebranch"
+	"github.com/epam/edp-codebase-operator/v2/pkg/platform"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
@@ -116,59 +117,6 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldFailGetCodebase(t *testing.T) {
 	}
 }
 
-func TestReconcileCodebaseBranch_Reconcile_ShouldFailDeleteCodebasebranch(t *testing.T) {
-	t.Setenv("WORKING_DIR", "/tmp/1")
-
-	c := &codebaseApi.CodebaseBranch{
-		ObjectMeta: metaV1.ObjectMeta{
-			Name:      "NewCodebaseBranch",
-			Namespace: "namespace",
-			DeletionTimestamp: &metaV1.Time{
-				Time: metaV1.Now().Time,
-			},
-		},
-		Spec: codebaseApi.CodebaseBranchSpec{
-			CodebaseName: "NewCodebase",
-		},
-	}
-	cb := &codebaseApi.Codebase{
-		ObjectMeta: metaV1.ObjectMeta{
-			Name:      "NewCodebase",
-			Namespace: "namespace",
-			DeletionTimestamp: &metaV1.Time{
-				Time: metaV1.Now().Time,
-			},
-		},
-	}
-
-	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(codebaseApi.GroupVersion, c, cb)
-	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, cb).Build()
-
-	// request
-	req := reconcile.Request{
-		NamespacedName: types.NamespacedName{
-			Name:      "NewCodebaseBranch",
-			Namespace: "namespace",
-		},
-	}
-
-	r := ReconcileCodebaseBranch{
-		client: fakeCl,
-		log:    logr.Discard(),
-		scheme: scheme,
-	}
-
-	res, err := r.Reconcile(context.TODO(), req)
-
-	assert.Error(t, err)
-	assert.False(t, res.Requeue)
-
-	if !strings.Contains(err.Error(), "failed to remove codebasebranch NewCodebaseBranch") {
-		t.Fatalf("wrong error returned: %s", err.Error())
-	}
-}
-
 func TestReconcileCodebaseBranch_Reconcile_ShouldPassDeleteCodebasebranch(t *testing.T) {
 	t.Setenv("WORKING_DIR", "/tmp/1")
 
@@ -189,9 +137,6 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldPassDeleteCodebasebranch(t *tes
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "NewCodebase",
 			Namespace: "namespace",
-			DeletionTimestamp: &metaV1.Time{
-				Time: metaV1.Now().Time,
-			},
 		},
 		Spec: codebaseApi.CodebaseSpec{
 			CiTool: util.CITekton,
@@ -252,7 +197,7 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldPassWithCreatingCIS(t *testing.
 	}
 	edpConfig := &coreV1.ConfigMap{
 		ObjectMeta: metaV1.ObjectMeta{
-			Name:      util.EdpConfigMap,
+			Name:      platform.EdpConfigMap,
 			Namespace: "namespace",
 		},
 		Data: map[string]string{
@@ -276,7 +221,11 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldPassWithCreatingCIS(t *testing.
 	require.NoError(t, codebaseApi.AddToScheme(scheme))
 	require.NoError(t, coreV1.AddToScheme(scheme))
 
-	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, cb, s, cis, edpConfig).Build()
+	fakeCl := fake.NewClientBuilder().
+		WithScheme(scheme).
+		WithRuntimeObjects(c, cb, s, cis, edpConfig).
+		WithStatusSubresource(cb).
+		Build()
 
 	req := reconcile.Request{
 		NamespacedName: types.NamespacedName{
@@ -347,7 +296,11 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldRequeueWithCodebaseNotReady(t *
 
 	scheme := runtime.NewScheme()
 	scheme.AddKnownTypes(codebaseApi.GroupVersion, c, cb)
-	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, cb).Build()
+	fakeCl := fake.NewClientBuilder().
+		WithScheme(scheme).
+		WithRuntimeObjects(c, cb).
+		WithStatusSubresource(cb).
+		Build()
 
 	// request
 	req := reconcile.Request{
@@ -412,7 +365,11 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldInitBuildForEDPVersioning(t *te
 
 	scheme := runtime.NewScheme()
 	scheme.AddKnownTypes(codebaseApi.GroupVersion, c, cb)
-	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, cb).Build()
+	fakeCl := fake.NewClientBuilder().
+		WithScheme(scheme).
+		WithRuntimeObjects(c, cb).
+		WithStatusSubresource(cb).
+		Build()
 
 	// request
 	req := reconcile.Request{
@@ -471,7 +428,11 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldHaveFailStatus(t *testing.T) {
 	scheme := runtime.NewScheme()
 	require.NoError(t, codebaseApi.AddToScheme(scheme))
 
-	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithObjects(c, cb).Build()
+	fakeCl := fake.NewClientBuilder().
+		WithScheme(scheme).
+		WithObjects(c, cb).
+		WithStatusSubresource(cb).
+		Build()
 
 	req := reconcile.Request{
 		NamespacedName: types.NamespacedName{

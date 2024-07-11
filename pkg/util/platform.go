@@ -19,7 +19,6 @@ import (
 const (
 	watchNamespaceEnvVar = "WATCH_NAMESPACE"
 	debugModeEnvVar      = "DEBUG_MODE"
-	EdpConfigMap         = "edp-config"
 )
 
 func GetUserSettings(c client.Client, namespace string) (*model.UserSettings, error) {

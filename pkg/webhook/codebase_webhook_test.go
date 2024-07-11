@@ -321,7 +321,7 @@ func TestCodebaseWebhook_ValidateCreate(t *testing.T) {
 
 			r := NewCodebaseValidationWebhook(tt.client, logr.Discard())
 
-			err := r.ValidateCreate(tt.ctx, tt.obj)
+			_, err := r.ValidateCreate(tt.ctx, tt.obj)
 			tt.wantErr(t, err)
 		})
 	}
@@ -437,7 +437,7 @@ func TestCodebaseValidationWebhook_ValidateUpdate(t *testing.T) {
 
 			r := NewCodebaseValidationWebhook(fake.NewClientBuilder().Build(), logr.Discard())
 
-			err := r.ValidateUpdate(tt.ctx, tt.oldObj, tt.newObj)
+			_, err := r.ValidateUpdate(tt.ctx, tt.oldObj, tt.newObj)
 			tt.wantErr(t, err)
 		})
 	}
@@ -491,7 +491,7 @@ func TestCodebaseValidationWebhook_ValidateDelete(t *testing.T) {
 
 			r := NewCodebaseValidationWebhook(fake.NewClientBuilder().Build(), logr.Discard())
 
-			err := r.ValidateDelete(tt.ctx, tt.obj)
+			_, err := r.ValidateDelete(tt.ctx, tt.obj)
 			tt.wantErr(t, err)
 		})
 	}

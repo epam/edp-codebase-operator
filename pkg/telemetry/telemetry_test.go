@@ -20,7 +20,7 @@ import (
 	pipelineApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
-	"github.com/epam/edp-codebase-operator/v2/pkg/util"
+	"github.com/epam/edp-codebase-operator/v2/pkg/platform"
 )
 
 func TestCollector_Start(t *testing.T) {
@@ -77,7 +77,7 @@ func TestCollector_Start(t *testing.T) {
 		WithObjects(
 			&corev1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      util.EdpConfigMap,
+					Name:      platform.EdpConfigMap,
 					Namespace: ns,
 				},
 				Data: map[string]string{

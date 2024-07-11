@@ -14,6 +14,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
@@ -90,7 +91,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 	tests := []struct {
 		name         string
 		codebase     *codebaseApi.Codebase
-		objects      []runtime.Object
+		objects      []client.Object
 		gitClient    func(t *testing.T) git.Git
 		gerritClient func(t *testing.T) gerrit.Client
 		gitProvider  func(t *testing.T) func(gitServer *codebaseApi.GitServer) (gitprovider.GitProjectProvider, error)
@@ -112,7 +113,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 					BranchToCopyInDefaultBranch: "main",
 				},
 			},
-			objects: []runtime.Object{gerritGitServer, gerritGitServerSecret},
+			objects: []client.Object{gerritGitServer, gerritGitServerSecret},
 			gitClient: func(t *testing.T) git.Git {
 				mock := gitmocks.NewMockGit(t)
 
@@ -198,7 +199,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 					EmptyProject:  true,
 				},
 			},
-			objects: []runtime.Object{gerritGitServer, gerritGitServerSecret},
+			objects: []client.Object{gerritGitServer, gerritGitServerSecret},
 			gitClient: func(t *testing.T) git.Git {
 				mock := gitmocks.NewMockGit(t)
 
@@ -278,7 +279,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 					DefaultBranch: "master",
 				},
 			},
-			objects: []runtime.Object{gerritGitServer, gerritGitServerSecret},
+			objects: []client.Object{gerritGitServer, gerritGitServerSecret},
 			gitClient: func(t *testing.T) git.Git {
 				mock := gitmocks.NewMockGit(t)
 
@@ -357,7 +358,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 					DefaultBranch: "master",
 				},
 			},
-			objects: []runtime.Object{gerritGitServer, gerritGitServerSecret},
+			objects: []client.Object{gerritGitServer, gerritGitServerSecret},
 			gitClient: func(t *testing.T) git.Git {
 				mock := gitmocks.NewMockGit(t)
 
@@ -441,7 +442,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 					DefaultBranch: "master",
 				},
 			},
-			objects: []runtime.Object{gerritGitServer, gerritGitServerSecret},
+			objects: []client.Object{gerritGitServer, gerritGitServerSecret},
 			gitClient: func(t *testing.T) git.Git {
 				mock := gitmocks.NewMockGit(t)
 
@@ -514,7 +515,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 					DefaultBranch: "master",
 				},
 			},
-			objects: []runtime.Object{gerritGitServer, gerritGitServerSecret},
+			objects: []client.Object{gerritGitServer, gerritGitServerSecret},
 			gitClient: func(t *testing.T) git.Git {
 				mock := gitmocks.NewMockGit(t)
 
@@ -583,7 +584,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 					DefaultBranch: "master",
 				},
 			},
-			objects: []runtime.Object{gerritGitServer, gerritGitServerSecret},
+			objects: []client.Object{gerritGitServer, gerritGitServerSecret},
 			gitClient: func(t *testing.T) git.Git {
 				mock := gitmocks.NewMockGit(t)
 
@@ -654,7 +655,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 					DefaultBranch: "master",
 				},
 			},
-			objects: []runtime.Object{gerritGitServer, gerritGitServerSecret},
+			objects: []client.Object{gerritGitServer, gerritGitServerSecret},
 			gitClient: func(t *testing.T) git.Git {
 				mock := gitmocks.NewMockGit(t)
 
@@ -723,7 +724,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 					DefaultBranch: "master",
 				},
 			},
-			objects: []runtime.Object{gerritGitServer, gerritGitServerSecret},
+			objects: []client.Object{gerritGitServer, gerritGitServerSecret},
 			gitClient: func(t *testing.T) git.Git {
 				mock := gitmocks.NewMockGit(t)
 
@@ -782,7 +783,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 					DefaultBranch: "master",
 				},
 			},
-			objects: []runtime.Object{gerritGitServer},
+			objects: []client.Object{gerritGitServer},
 			gitClient: func(t *testing.T) git.Git {
 				mock := gitmocks.NewMockGit(t)
 
@@ -827,7 +828,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 					DefaultBranch: "master",
 				},
 			},
-			objects: []runtime.Object{gerritGitServer, gerritGitServerSecret},
+			objects: []client.Object{gerritGitServer, gerritGitServerSecret},
 			gitClient: func(t *testing.T) git.Git {
 				mock := gitmocks.NewMockGit(t)
 
@@ -871,7 +872,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 					DefaultBranch: "master",
 				},
 			},
-			objects: []runtime.Object{githubGitServer, githubGitServerSecret},
+			objects: []client.Object{githubGitServer, githubGitServerSecret},
 			gitClient: func(t *testing.T) git.Git {
 				mock := gitmocks.NewMockGit(t)
 
@@ -931,7 +932,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 					DefaultBranch: "master",
 				},
 			},
-			objects: []runtime.Object{githubGitServer, githubGitServerSecret},
+			objects: []client.Object{githubGitServer, githubGitServerSecret},
 			gitClient: func(t *testing.T) git.Git {
 				mock := gitmocks.NewMockGit(t)
 
@@ -986,7 +987,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 					DefaultBranch: "master",
 				},
 			},
-			objects: []runtime.Object{gitlabGitServer, gitlabGitServerSecret},
+			objects: []client.Object{gitlabGitServer, gitlabGitServerSecret},
 			gitClient: func(t *testing.T) git.Git {
 				mock := gitmocks.NewMockGit(t)
 
@@ -1046,7 +1047,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 					DefaultBranch: "master",
 				},
 			},
-			objects: []runtime.Object{gitlabGitServer, gitlabGitServerSecret},
+			objects: []client.Object{gitlabGitServer, gitlabGitServerSecret},
 			gitClient: func(t *testing.T) git.Git {
 				mock := gitmocks.NewMockGit(t)
 
@@ -1102,7 +1103,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 					DefaultBranch: "master",
 				},
 			},
-			objects: []runtime.Object{gitlabGitServer, gitlabGitServerSecret},
+			objects: []client.Object{gitlabGitServer, gitlabGitServerSecret},
 			gitClient: func(t *testing.T) git.Git {
 				mock := gitmocks.NewMockGit(t)
 
@@ -1235,8 +1236,10 @@ func TestPutProject_ServeRequest(t *testing.T) {
 
 			k8sClient := fake.NewClientBuilder().
 				WithScheme(scheme).
-				WithRuntimeObjects(tt.codebase).
-				WithRuntimeObjects(tt.objects...).
+				WithObjects(tt.codebase).
+				WithObjects(tt.objects...).
+				WithStatusSubresource(tt.codebase).
+				WithStatusSubresource(tt.objects...).
 				Build()
 
 			h := NewPutProject(
