@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -64,7 +64,7 @@ func (h ProcessNewVersion) processNewVersion(ctx context.Context, codebaseBranch
 		return nil
 	}
 
-	codebaseBranch.Status.Build = pointer.String("0")
+	codebaseBranch.Status.Build = ptr.To("0")
 	codebaseBranch.Status.LastSuccessfulBuild = nil
 	codebaseBranch.Status.VersionHistory = append(codebaseBranch.Status.VersionHistory, *codebaseBranch.Spec.Version)
 

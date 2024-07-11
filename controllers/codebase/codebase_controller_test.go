@@ -13,6 +13,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
@@ -33,7 +34,7 @@ func TestReconcileCodebase_Reconcile(t *testing.T) {
 	tests := []struct {
 		name        string
 		request     reconcile.Request
-		objects     []runtime.Object
+		objects     []client.Object
 		chainGetter func(t *testing.T) func(cr *codebaseApi.Codebase) (cHand.CodebaseHandler, error)
 		want        reconcile.Result
 		wantErr     require.ErrorAssertionFunc
@@ -46,7 +47,7 @@ func TestReconcileCodebase_Reconcile(t *testing.T) {
 					Name:      "codebase",
 				},
 			},
-			objects: []runtime.Object{
+			objects: []client.Object{
 				&codebaseApi.Codebase{
 					ObjectMeta: metaV1.ObjectMeta{
 						Name:      "codebase",
@@ -78,7 +79,7 @@ func TestReconcileCodebase_Reconcile(t *testing.T) {
 					Name:      "codebase",
 				},
 			},
-			objects: []runtime.Object{
+			objects: []client.Object{
 				&codebaseApi.Codebase{
 					ObjectMeta: metaV1.ObjectMeta{
 						Name:      "codebase",
@@ -110,7 +111,11 @@ func TestReconcileCodebase_Reconcile(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			k8sClient := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(tt.objects...).Build()
+			k8sClient := fake.NewClientBuilder().
+				WithScheme(scheme).
+				WithObjects(tt.objects...).
+				WithStatusSubresource(tt.objects...).
+				Build()
 
 			r := &ReconcileCodebase{
 				client:      k8sClient,

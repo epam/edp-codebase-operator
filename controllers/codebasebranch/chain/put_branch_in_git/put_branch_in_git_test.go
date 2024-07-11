@@ -81,7 +81,11 @@ func TestPutBranchInGit_ShouldBeExecutedSuccessfullyWithDefaultVersioning(t *tes
 	scheme := runtime.NewScheme()
 	scheme.AddKnownTypes(v1.SchemeGroupVersion, c, gs, cb)
 	scheme.AddKnownTypes(coreV1.SchemeGroupVersion, s)
-	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, gs, cb, s).Build()
+	fakeCl := fake.NewClientBuilder().
+		WithScheme(scheme).
+		WithRuntimeObjects(c, gs, cb, s).
+		WithStatusSubresource(cb).
+		Build()
 
 	mGit := gitServerMocks.NewMockGit(t)
 	port := int32(22)
@@ -156,7 +160,11 @@ func TestPutBranchInGit_ShouldFailCreateRemoteBranch(t *testing.T) {
 	require.NoError(t, codebaseApi.AddToScheme(scheme))
 	require.NoError(t, coreV1.AddToScheme(scheme))
 
-	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithObjects(c, gs, cb, s).Build()
+	fakeCl := fake.NewClientBuilder().
+		WithScheme(scheme).
+		WithObjects(c, gs, cb, s).
+		WithStatusSubresource(cb).
+		Build()
 
 	mGit := gitServerMocks.NewMockGit(t)
 
@@ -202,7 +210,11 @@ func TestPutBranchInGit_CodebaseShouldNotBeFound(t *testing.T) {
 	scheme := runtime.NewScheme()
 	require.NoError(t, codebaseApi.AddToScheme(scheme))
 
-	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(cb).Build()
+	fakeCl := fake.NewClientBuilder().
+		WithScheme(scheme).
+		WithRuntimeObjects(cb).
+		WithStatusSubresource(cb).
+		Build()
 
 	err := PutBranchInGit{
 		Client: fakeCl,
@@ -239,7 +251,11 @@ func TestPutBranchInGit_ShouldThrowCodebaseBranchReconcileError(t *testing.T) {
 	}
 	scheme := runtime.NewScheme()
 	scheme.AddKnownTypes(v1.SchemeGroupVersion, c, cb)
-	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, cb).Build()
+	fakeCl := fake.NewClientBuilder().
+		WithScheme(scheme).
+		WithRuntimeObjects(c, cb).
+		WithStatusSubresource(cb).
+		Build()
 
 	err := PutBranchInGit{
 		Client: fakeCl,
@@ -310,7 +326,11 @@ func TestPutBranchInGit_ShouldBeExecutedSuccessfullyWithEdpVersioning(t *testing
 	scheme := runtime.NewScheme()
 	scheme.AddKnownTypes(v1.SchemeGroupVersion, c, gs, cb)
 	scheme.AddKnownTypes(coreV1.SchemeGroupVersion, s)
-	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, gs, cb, s).Build()
+	fakeCl := fake.NewClientBuilder().
+		WithScheme(scheme).
+		WithRuntimeObjects(c, gs, cb, s).
+		WithStatusSubresource(cb).
+		Build()
 
 	mGit := gitServerMocks.NewMockGit(t)
 
@@ -378,7 +398,11 @@ func TestPutBranchInGit_GitServerShouldNotBeFound(t *testing.T) {
 	scheme := runtime.NewScheme()
 	require.NoError(t, codebaseApi.AddToScheme(scheme))
 	require.NoError(t, coreV1.AddToScheme(scheme))
-	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, cb).Build()
+	fakeCl := fake.NewClientBuilder().
+		WithScheme(scheme).
+		WithRuntimeObjects(c, cb).
+		WithStatusSubresource(cb).
+		Build()
 
 	err := PutBranchInGit{
 		Client: fakeCl,
@@ -430,7 +454,11 @@ func TestPutBranchInGit_SecretShouldNotBeFound(t *testing.T) {
 	scheme := runtime.NewScheme()
 	scheme.AddKnownTypes(v1.SchemeGroupVersion, c, gs, cb)
 	scheme.AddKnownTypes(coreV1.SchemeGroupVersion, &coreV1.Secret{})
-	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, gs, cb).Build()
+	fakeCl := fake.NewClientBuilder().
+		WithScheme(scheme).
+		WithRuntimeObjects(c, gs, cb).
+		WithStatusSubresource(cb).
+		Build()
 
 	err := PutBranchInGit{
 		Client: fakeCl,

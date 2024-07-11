@@ -50,6 +50,8 @@ func (r *ReconcileGitServer) SetupWithManager(mgr ctrl.Manager) error {
 //+kubebuilder:rbac:groups=v2.edp.epam.com,namespace=placeholder,resources=gitservers/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=v2.edp.epam.com,namespace=placeholder,resources=gitservers/finalizers,verbs=update
 //+kubebuilder:rbac:groups="",namespace=placeholder,resources=secrets,verbs=get;list;watch
+//+kubebuilder:rbac:groups="networking.k8s.io",namespace=placeholder,resources=ingresses,verbs=get;list;watch;create
+//+kubebuilder:rbac:groups="route.openshift.io",namespace=placeholder,resources=routes,verbs=get;list;watch;create
 
 // Reconcile reads that state of the cluster for a GitServer object and makes changes based on the state.
 func (r *ReconcileGitServer) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
@@ -83,6 +85,18 @@ func (r *ReconcileGitServer) Reconcile(ctx context.Context, request reconcile.Re
 
 	instance.Status.Error = ""
 	instance.Status.Connected = true
+
+	if err := NewCreateEventListener(r.client).ServeRequest(ctx, instance); err != nil {
+		log.Error(err, "Failed to create EventListener")
+
+		instance.Status.Error = err.Error()
+
+		if statusErr := r.updateGitServerStatus(ctx, instance, oldStatus); statusErr != nil {
+			return reconcile.Result{}, statusErr
+		}
+
+		return reconcile.Result{RequeueAfter: defaultRequeueTime}, nil
+	}
 
 	if err := r.updateGitServerStatus(ctx, instance, oldStatus); err != nil {
 		return reconcile.Result{}, err

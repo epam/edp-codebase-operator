@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"flag"
 	"os"
 	"strconv"
@@ -15,16 +16,14 @@ import (
 	tektonpipelineApi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	tektonTriggersApi "github.com/tektoncd/triggers/pkg/apis/triggers/v1beta1"
 	networkingV1 "k8s.io/api/networking/v1"
-	"k8s.io/apimachinery/pkg/api/meta"
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
-	//+kubebuilder:scaffold:imports
-	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
 	buildInfo "github.com/epam/edp-common/pkg/config"
@@ -51,7 +50,6 @@ var (
 )
 
 const (
-	port                                     = 9443
 	codebaseOperatorLock                     = "edp-codebase-operator-lock"
 	codebaseBranchMaxConcurrentReconcilesEnv = "CODEBASE_BRANCH_MAX_CONCURRENT_RECONCILES"
 	logFailCtrlCreateMessage                 = "failed to create controller"
@@ -65,6 +63,8 @@ func main() {
 		metricsAddr          string
 		enableLeaderElection bool
 		probeAddr            string
+		secureMetrics        bool
+		enableHTTP2          bool
 	)
 
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
@@ -72,22 +72,39 @@ func main() {
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
-
-	mode, err := util.GetDebugMode()
-	if err != nil {
-		setupLog.Error(err, "failed to get debug mode value")
-		os.Exit(1)
-	}
+	flag.BoolVar(&secureMetrics, "metrics-secure", false,
+		"If set the metrics endpoint is served securely")
+	flag.BoolVar(&enableHTTP2, "enable-http2", false,
+		"If set, HTTP/2 will be enabled for the metrics and webhook servers")
 
 	opts := zap.Options{
-		Development: mode,
+		Development: true,
 	}
 	opts.BindFlags(flag.CommandLine)
 	flag.Parse()
 
+	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
+
 	v := buildInfo.Get()
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
+
+	// if the enable-http2 flag is false (the default), http/2 should be disabled
+	// due to its vulnerabilities. More specifically, disabling http/2 will
+	// prevent from being vulnerable to the HTTP/2 Stream Cancelation and
+	// Rapid Reset CVEs. For more information see:
+	// - https://github.com/advisories/GHSA-qppj-fm5r-hxr3
+	// - https://github.com/advisories/GHSA-4374-p667-p6c8
+	disableHTTP2 := func(c *tls.Config) {
+		setupLog.Info("disabling http/2")
+
+		c.NextProtos = []string{"http/1.1"}
+	}
+
+	var tlsOpts []func(*tls.Config)
+	if !enableHTTP2 {
+		tlsOpts = append(tlsOpts, disableHTTP2)
+	}
 
 	setupLog.Info("Starting the Codebase Operator",
 		"version", v.Version,
@@ -117,16 +134,18 @@ func main() {
 	cfg := ctrl.GetConfigOrDie()
 
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
-		Scheme:                 scheme,
-		MetricsBindAddress:     metricsAddr,
+		Scheme: scheme,
+		Metrics: metricsserver.Options{
+			BindAddress:   metricsAddr,
+			SecureServing: secureMetrics,
+			TLSOpts:       tlsOpts,
+		},
 		HealthProbeBindAddress: probeAddr,
-		Port:                   port,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       codebaseOperatorLock,
-		MapperProvider: func(c *rest.Config) (meta.RESTMapper, error) {
-			return apiutil.NewDynamicRESTMapper(cfg)
+		Cache: cache.Options{
+			DefaultNamespaces: map[string]cache.Config{ns: {}},
 		},
-		Namespace: ns,
 	})
 	if err != nil {
 		setupLog.Error(err, "failed to start manager")

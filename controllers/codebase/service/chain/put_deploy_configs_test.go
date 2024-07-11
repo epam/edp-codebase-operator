@@ -88,7 +88,11 @@ func TestPutDeployConfigs_ShouldPass(t *testing.T) {
 	scheme.AddKnownTypes(coreV1.SchemeGroupVersion, ssh, cm, s)
 	scheme.AddKnownTypes(codebaseApi.GroupVersion, c, gs)
 
-	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c, gs, ssh, cm, s).Build()
+	fakeCl := fake.NewClientBuilder().
+		WithScheme(scheme).
+		WithRuntimeObjects(c, gs, ssh, cm, s).
+		WithStatusSubresource(c, gs, ssh, cm, s).
+		Build()
 
 	t.Setenv(util.AssetsDirEnv, "../../../../build")
 

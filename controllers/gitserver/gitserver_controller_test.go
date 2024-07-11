@@ -87,7 +87,11 @@ func TestReconcileGitServer_Reconcile_ShouldFailToGetSecret(t *testing.T) {
 	require.NoError(t, corev1.AddToScheme(scheme))
 	require.NoError(t, codebaseApi.AddToScheme(scheme))
 
-	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(gs).Build()
+	fakeCl := fake.NewClientBuilder().
+		WithScheme(scheme).
+		WithRuntimeObjects(gs).
+		WithStatusSubresource(gs).
+		Build()
 
 	req := reconcile.Request{
 		NamespacedName: types.NamespacedName{
@@ -124,7 +128,11 @@ func TestReconcileGitServer_UpdateStatus_ShouldPassWithSuccess(t *testing.T) {
 	}
 	scheme := runtime.NewScheme()
 	scheme.AddKnownTypes(codebaseApi.GroupVersion, gs)
-	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(gs).Build()
+	fakeCl := fake.NewClientBuilder().
+		WithScheme(scheme).
+		WithRuntimeObjects(gs).
+		WithStatusSubresource(gs).
+		Build()
 
 	r := ReconcileGitServer{
 		client: fakeCl,
@@ -230,7 +238,11 @@ func TestReconcileGitServer_ServerUnavailable(t *testing.T) {
 		util.PrivateSShKeyName: []byte(testKey),
 	}}
 
-	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(gs, &secret).Build()
+	fakeCl := fake.NewClientBuilder().
+		WithScheme(scheme).
+		WithRuntimeObjects(gs, &secret).
+		WithStatusSubresource(gs).
+		Build()
 
 	logger := platform.NewLoggerMock()
 	loggerSink, ok := logger.GetSink().(*platform.LoggerMock)
@@ -283,7 +295,11 @@ func TestReconcileGitServer_InvalidSSHKey(t *testing.T) {
 		},
 	}
 
-	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(gs, secret).Build()
+	fakeCl := fake.NewClientBuilder().
+		WithScheme(scheme).
+		WithRuntimeObjects(gs, secret).
+		WithStatusSubresource(gs).
+		Build()
 
 	r := ReconcileGitServer{
 		client: fakeCl,

@@ -74,6 +74,7 @@ rules:
     - get
     - list
     - watch
+    - create
 - apiGroups:
     - ""
   attributeRestrictions: null

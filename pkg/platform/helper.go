@@ -22,6 +22,10 @@ func IsK8S() bool {
 	return lookup() == K8S
 }
 
+func IsOpenshift() bool {
+	return lookup() == Openshift
+}
+
 func GetPlatformType() string {
 	return lookup()
 }
