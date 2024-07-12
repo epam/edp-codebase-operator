@@ -159,6 +159,8 @@ func checkConnection(ctx context.Context, secret *corev1.Secret) error {
 	case "argocd":
 		path = "/api/v1/projects"
 		req = newRequest(ctx, string(secret.Data["url"])).SetHeader("Authorization", "Bearer "+string(secret.Data["token"]))
+	case "codemie":
+		return checkCodemie(ctx, secret)
 	default:
 		path = "/"
 		req = newRequest(ctx, string(secret.Data["url"]))
@@ -300,4 +302,35 @@ func hasIntegrationSecretLabelLabel(object client.Object) bool {
 	label := object.GetLabels()[integrationSecretLabel]
 
 	return label == "true"
+}
+
+func checkCodemie(ctx context.Context, secret *corev1.Secret) error {
+	log := ctrl.LoggerFrom(ctx).WithValues(logKeyUrl, string(secret.Data["apiUrl"])+"/v1/user")
+	log.Info("Making request to Codemie")
+
+	res := make(map[string]interface{})
+
+	resp, err := newRequest(ctx, string(secret.Data["apiUrl"])).
+		SetAuthToken(string(secret.Data["token"])).
+		ForceContentType("application/json").
+		SetResult(&res).
+		Get("/v1/user")
+
+	if err != nil {
+		log.Error(err, "Failed to connect to Codemie")
+
+		return fmt.Errorf("failed to connect to Codemie")
+	}
+
+	if !resp.IsSuccess() {
+		return fmt.Errorf("codemie http status code %s", resp.Status())
+	}
+
+	// If token is invalid, Codemie API returns 200 status code.
+	// For this reason, we need to check response body.
+	if _, ok := res["userId"]; !ok {
+		return errors.New("failed to connect to Codemie")
+	}
+
+	return nil
 }

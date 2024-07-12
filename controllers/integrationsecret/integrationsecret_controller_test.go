@@ -25,6 +25,11 @@ func TestReconcileIntegrationSecret_Reconcile(t *testing.T) {
 	ns := "default"
 	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if strings.Contains(r.URL.String(), "success") {
+			if strings.Contains(r.URL.String(), "codemie") {
+				_, err := w.Write([]byte(`{"userId":"123"}`))
+				assert.NoError(t, err)
+			}
+
 			w.WriteHeader(http.StatusOK)
 			return
 		}
@@ -393,6 +398,86 @@ func TestReconcileIntegrationSecret_Reconcile(t *testing.T) {
 			wantRes:           reconcile.Result{},
 			wantErr:           require.NoError,
 			wantConAnnotation: "",
+		},
+		{
+			name:       "success codemie",
+			secretName: "codemie",
+			client: func(t *testing.T) client.Client {
+				return fake.NewClientBuilder().WithScheme(s).WithObjects(
+					&corev1.Secret{
+						ObjectMeta: metav1.ObjectMeta{
+							Namespace: ns,
+							Name:      "codemie",
+							Labels: map[string]string{
+								integrationSecretTypeLabel: "codemie",
+							},
+						},
+						Data: map[string][]byte{
+							"apiUrl": []byte(server.URL + "/success/codemie"),
+							"token":  []byte("token"),
+						},
+					},
+				).Build()
+			},
+			wantRes: reconcile.Result{
+				RequeueAfter: successConnectionRequeueTime,
+			},
+			wantErr:           require.NoError,
+			wantConAnnotation: "true",
+		},
+		{
+			name:       "codemie empty response",
+			secretName: "codemie",
+			client: func(t *testing.T) client.Client {
+				return fake.NewClientBuilder().WithScheme(s).WithObjects(
+					&corev1.Secret{
+						ObjectMeta: metav1.ObjectMeta{
+							Namespace: ns,
+							Name:      "codemie",
+							Labels: map[string]string{
+								integrationSecretTypeLabel: "codemie",
+							},
+						},
+						Data: map[string][]byte{
+							"apiUrl": []byte(server.URL + "/success"),
+							"token":  []byte("token"),
+						},
+					},
+				).Build()
+			},
+			wantRes: reconcile.Result{
+				RequeueAfter: failConnectionRequeueTime,
+			},
+			wantErr:              require.NoError,
+			wantConAnnotation:    "false",
+			wantConErrAnnotation: "connection failed",
+		},
+		{
+			name:       "failed to connect to codemie",
+			secretName: "codemie",
+			client: func(t *testing.T) client.Client {
+				return fake.NewClientBuilder().WithScheme(s).WithObjects(
+					&corev1.Secret{
+						ObjectMeta: metav1.ObjectMeta{
+							Namespace: ns,
+							Name:      "codemie",
+							Labels: map[string]string{
+								integrationSecretTypeLabel: "codemie",
+							},
+						},
+						Data: map[string][]byte{
+							"apiUrl": []byte(server.URL),
+							"token":  []byte("token"),
+						},
+					},
+				).Build()
+			},
+			wantRes: reconcile.Result{
+				RequeueAfter: failConnectionRequeueTime,
+			},
+			wantErr:              require.NoError,
+			wantConAnnotation:    "false",
+			wantConErrAnnotation: "connection failed",
 		},
 	}
 
