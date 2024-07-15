@@ -49,7 +49,7 @@ func (h *CreateEventListener) createEventListener(ctx context.Context, gitServer
 	// https://github.com/tektoncd/triggers/blob/v0.27.0/pkg/apis/triggers/v1beta1/event_listener_types.go#L86
 	el := tektoncd.NewEventListenerUnstructured()
 
-	el.SetName(gitServer.Name)
+	el.SetName(fmt.Sprintf("edp-%s", gitServer.Name))
 	el.SetNamespace(gitServer.Namespace)
 	el.SetLabels(map[string]string{
 		"app.edp.epam.com/gitServer": gitServer.Name,
