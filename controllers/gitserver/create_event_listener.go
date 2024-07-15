@@ -51,6 +51,10 @@ func (h *CreateEventListener) createEventListener(ctx context.Context, gitServer
 
 	el.SetName(gitServer.Name)
 	el.SetNamespace(gitServer.Namespace)
+	el.SetLabels(map[string]string{
+		"app.edp.epam.com/gitServer": gitServer.Name,
+	})
+
 	el.Object["spec"] = map[string]interface{}{
 		"serviceAccountName": "default",
 		"triggers": []interface{}{
