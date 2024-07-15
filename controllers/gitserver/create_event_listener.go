@@ -48,8 +48,9 @@ func (h *CreateEventListener) createEventListener(ctx context.Context, gitServer
 	// This dependency can conflict with the operator's dependencies.
 	// https://github.com/tektoncd/triggers/blob/v0.27.0/pkg/apis/triggers/v1beta1/event_listener_types.go#L86
 	el := tektoncd.NewEventListenerUnstructured()
+	elName := fmt.Sprintf("edp-%s", gitServer.Name)
 
-	el.SetName(fmt.Sprintf("edp-%s", gitServer.Name))
+	el.SetName(elName)
 	el.SetNamespace(gitServer.Namespace)
 	el.SetLabels(map[string]string{
 		"app.edp.epam.com/gitServer": gitServer.Name,
@@ -100,7 +101,7 @@ func (h *CreateEventListener) createEventListener(ctx context.Context, gitServer
 	elCheck := tektoncd.NewEventListenerUnstructured()
 	err := h.k8sClient.Get(ctx, client.ObjectKey{
 		Namespace: gitServer.Namespace,
-		Name:      gitServer.Name,
+		Name:      elName,
 	}, elCheck)
 
 	if err == nil {
