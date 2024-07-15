@@ -153,6 +153,9 @@ func (h *CreateEventListener) createIngress(ctx context.Context, gitServer *code
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: gitServer.Namespace,
+			Labels: map[string]string{
+				"app.edp.epam.com/gitServer": gitServer.Name,
+			},
 		},
 		Spec: networkingv1.IngressSpec{
 			Rules: []networkingv1.IngressRule{
