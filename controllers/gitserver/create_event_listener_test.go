@@ -62,7 +62,7 @@ func TestCreateEventListener_ServeRequest(t *testing.T) {
 				el := tektoncd.NewEventListenerUnstructured()
 				require.NoError(t, k8sClient.Get(context.Background(), client.ObjectKey{
 					Namespace: "default",
-					Name:      "test-git-server",
+					Name:      generateEventListenerName("test-git-server"),
 				}, el))
 
 				i := &networkingv1.Ingress{}
@@ -107,7 +107,7 @@ func TestCreateEventListener_ServeRequest(t *testing.T) {
 				el := tektoncd.NewEventListenerUnstructured()
 				require.NoError(t, k8sClient.Get(context.Background(), client.ObjectKey{
 					Namespace: "default",
-					Name:      "test-git-server",
+					Name:      generateEventListenerName("test-git-server"),
 				}, el))
 
 				i := &networkingv1.Ingress{}
@@ -151,7 +151,7 @@ func TestCreateEventListener_ServeRequest(t *testing.T) {
 				el := tektoncd.NewEventListenerUnstructured()
 				require.NoError(t, k8sClient.Get(context.Background(), client.ObjectKey{
 					Namespace: "default",
-					Name:      "test-git-server",
+					Name:      generateEventListenerName("test-git-server"),
 				}, el))
 
 				i := &networkingv1.Ingress{}
@@ -188,7 +188,7 @@ func TestCreateEventListener_ServeRequest(t *testing.T) {
 				el := tektoncd.NewEventListenerUnstructured()
 				require.NoError(t, k8sClient.Get(context.Background(), client.ObjectKey{
 					Namespace: "default",
-					Name:      "test-git-server",
+					Name:      generateEventListenerName("test-git-server"),
 				}, el))
 
 				i := &routeApi.Route{}
@@ -233,7 +233,7 @@ func TestCreateEventListener_ServeRequest(t *testing.T) {
 				el := tektoncd.NewEventListenerUnstructured()
 				require.NoError(t, k8sClient.Get(context.Background(), client.ObjectKey{
 					Namespace: "default",
-					Name:      "test-git-server",
+					Name:      generateEventListenerName("test-git-server"),
 				}, el))
 
 				i := &routeApi.Route{}
@@ -267,7 +267,8 @@ func TestCreateEventListener_ServeRequest(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			h := NewCreateEventListener(tt.k8sClient(t))
+			k8sCl := tt.k8sClient(t)
+			h := NewCreateEventListener(k8sCl)
 
 			if tt.prepare != nil {
 				tt.prepare(t)
@@ -280,6 +281,8 @@ func TestCreateEventListener_ServeRequest(t *testing.T) {
 					tt.gitServer,
 				),
 			)
+
+			tt.want(t, k8sCl)
 		})
 	}
 }

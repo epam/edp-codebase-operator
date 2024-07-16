@@ -48,7 +48,7 @@ func (h *CreateEventListener) createEventListener(ctx context.Context, gitServer
 	// This dependency can conflict with the operator's dependencies.
 	// https://github.com/tektoncd/triggers/blob/v0.27.0/pkg/apis/triggers/v1beta1/event_listener_types.go#L86
 	el := tektoncd.NewEventListenerUnstructured()
-	elName := fmt.Sprintf("edp-%s", gitServer.Name)
+	elName := generateEventListenerName(gitServer.Name)
 
 	el.SetName(elName)
 	el.SetNamespace(gitServer.Namespace)
@@ -279,4 +279,8 @@ func (h *CreateEventListener) createRoute(ctx context.Context, gitServer *codeba
 
 func GenerateIngressName(gitServerName string) string {
 	return fmt.Sprintf("event-listener-%s", gitServerName)
+}
+
+func generateEventListenerName(gitServerName string) string {
+	return fmt.Sprintf("edp-%s", gitServerName)
 }
