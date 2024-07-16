@@ -179,7 +179,7 @@ func (h *CreateEventListener) createIngress(ctx context.Context, gitServer *code
 									PathType: &pathType,
 									Backend: networkingv1.IngressBackend{
 										Service: &networkingv1.IngressServiceBackend{
-											Name: fmt.Sprintf("%s-edp-%s", eventlistener.GeneratedResourcePrefix, gitServer.Name),
+											Name: generateServiceName(gitServer.Name),
 											Port: networkingv1.ServiceBackendPort{
 												Number: elServicePort,
 											},
@@ -254,7 +254,7 @@ func (h *CreateEventListener) createRoute(ctx context.Context, gitServer *codeba
 			},
 			To: routeApi.RouteTargetReference{
 				Kind:   "Service",
-				Name:   fmt.Sprintf("%s-edp-%s", eventlistener.GeneratedResourcePrefix, gitServer.Name),
+				Name:   generateServiceName(gitServer.Name),
 				Weight: ptr.To(routeWeight),
 			},
 			Port: &routeApi.RoutePort{
@@ -275,6 +275,14 @@ func (h *CreateEventListener) createRoute(ctx context.Context, gitServer *codeba
 	log.Info("Route has been created", "Route", route.Name)
 
 	return nil
+}
+
+func generateServiceName(gitServerName string) string {
+	return fmt.Sprintf(
+		"%s-%s",
+		eventlistener.GeneratedResourcePrefix,
+		generateEventListenerName(gitServerName),
+	)
 }
 
 func GenerateIngressName(gitServerName string) string {
