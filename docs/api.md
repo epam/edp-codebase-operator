@@ -1164,7 +1164,7 @@ GitServerSpec defines the desired state of GitServer.
         <td>string</td>
         <td>
           WebhookUrl is a URL for webhook that will be created in the git provider.
-If it is not set, a webhook will be created from Ingress with the name "event-listener".<br/>
+If not set, a new EventListener and Ingress will be created and used for webhooks.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
