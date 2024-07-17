@@ -1201,6 +1201,14 @@ GitServerStatus defines the observed state of GitServer.
           Error represents error message if something went wrong.<br/>
         </td>
         <td>false</td>
+      </tr><tr>
+        <td><b>status</b></td>
+        <td>string</td>
+        <td>
+          Status indicates the current status of the GitServer.
+Possible values are: ok, failed.<br/>
+        </td>
+        <td>false</td>
       </tr></tbody>
 </table>
 

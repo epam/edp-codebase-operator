@@ -102,6 +102,11 @@ spec:
               error:
                 description: Error represents error message if something went wrong.
                 type: string
+              status:
+                description: |-
+                  Status indicates the current status of the GitServer.
+                  Possible values are: ok, failed.
+                type: string
             type: object
         type: object
     served: true

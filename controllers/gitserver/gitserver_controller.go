@@ -71,7 +71,7 @@ func (r *ReconcileGitServer) Reconcile(ctx context.Context, request reconcile.Re
 	gitServer := model.ConvertToGitServer(instance)
 
 	if err := r.checkConnectionToGitServer(ctx, gitServer); err != nil {
-		instance.Status.Error = err.Error()
+		instance.Status.SetFailed(err.Error())
 		instance.Status.Connected = false
 
 		if statusErr := r.updateGitServerStatus(ctx, instance, oldStatus); statusErr != nil {
@@ -83,13 +83,12 @@ func (r *ReconcileGitServer) Reconcile(ctx context.Context, request reconcile.Re
 		return reconcile.Result{RequeueAfter: defaultRequeueTime}, nil
 	}
 
-	instance.Status.Error = ""
 	instance.Status.Connected = true
 
 	if err := NewCreateEventListener(r.client).ServeRequest(ctx, instance); err != nil {
 		log.Error(err, "Failed to create EventListener")
 
-		instance.Status.Error = err.Error()
+		instance.Status.SetFailed(err.Error())
 
 		if statusErr := r.updateGitServerStatus(ctx, instance, oldStatus); statusErr != nil {
 			return reconcile.Result{}, statusErr
@@ -97,6 +96,8 @@ func (r *ReconcileGitServer) Reconcile(ctx context.Context, request reconcile.Re
 
 		return reconcile.Result{RequeueAfter: defaultRequeueTime}, nil
 	}
+
+	instance.Status.SetSuccess()
 
 	if err := r.updateGitServerStatus(ctx, instance, oldStatus); err != nil {
 		return reconcile.Result{}, err

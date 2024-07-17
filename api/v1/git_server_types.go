@@ -51,6 +51,21 @@ type GitServerStatus struct {
 	// Connected shows if operator is connected to git server.
 	// +optional
 	Connected bool `json:"connected"`
+
+	// Status indicates the current status of the GitServer.
+	// Possible values are: ok, failed.
+	// +optional
+	Status string `json:"status,omitempty"`
+}
+
+func (in *GitServerStatus) SetFailed(err string) {
+	in.Error = err
+	in.Status = "failed"
+}
+
+func (in *GitServerStatus) SetSuccess() {
+	in.Error = ""
+	in.Status = "ok"
 }
 
 // +kubebuilder:object:root=true
