@@ -264,6 +264,10 @@ func TestReconcileGitServer_ServerUnavailable(t *testing.T) {
 	assert.Equal(t, res.RequeueAfter, defaultRequeueTime)
 	require.Error(t, loggerSink.LastError())
 	assert.Contains(t, loggerSink.LastError().Error(), "failed to establish connection to Git Server")
+
+	testedGitServer := &codebaseApi.GitServer{}
+	require.NoError(t, fakeCl.Get(context.Background(), req.NamespacedName, testedGitServer))
+	assert.Equal(t, "failed", testedGitServer.Status.Status)
 }
 
 func TestReconcileGitServer_InvalidSSHKey(t *testing.T) {
