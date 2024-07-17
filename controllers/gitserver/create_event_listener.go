@@ -28,6 +28,13 @@ func NewCreateEventListener(k8sClient client.Client) *CreateEventListener {
 }
 
 func (h *CreateEventListener) ServeRequest(ctx context.Context, gitServer *codebaseApi.GitServer) error {
+	log := ctrl.LoggerFrom(ctx)
+
+	if gitServer.Spec.WebhookUrl != "" {
+		log.Info("Skip creating EventListener because webhook URL is set")
+		return nil
+	}
+
 	if err := h.createEventListener(ctx, gitServer); err != nil {
 		return err
 	}

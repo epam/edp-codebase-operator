@@ -36,7 +36,7 @@ type GitServerSpec struct {
 	SkipWebhookSSLVerification bool `json:"skipWebhookSSLVerification"`
 
 	// WebhookUrl is a URL for webhook that will be created in the git provider.
-	// If it is not set, a webhook will be created from Ingress with the name "event-listener".
+	// If not set, a new EventListener and Ingress will be created and used for webhooks.
 	// +optional
 	// +kubebuilder:example:=`https://webhook-url.com`
 	WebhookUrl string `json:"webhookUrl,omitempty"`
