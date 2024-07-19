@@ -11,6 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	"github.com/epam/edp-codebase-operator/v2/controllers/codebasebranch/chain/handler"
@@ -65,6 +66,7 @@ func (h PutCodebaseImageStream) ServeRequest(ctx context.Context, cb *codebaseAp
 		imageName,
 		cb.Spec.CodebaseName,
 		cb.Namespace,
+		cb,
 	); err != nil {
 		setFailedFields(cb, codebaseApi.PutCodebaseImageStream, err.Error())
 
@@ -106,14 +108,14 @@ func (h PutCodebaseImageStream) getDockerRegistryUrl(ctx context.Context, namesp
 	return fmt.Sprintf("%s/%s", config.Data[EdpConfigContainerRegistryHost], config.Data[EdpConfigContainerRegistrySpace]), nil
 }
 
-func (h PutCodebaseImageStream) createCodebaseImageStreamIfNotExists(ctx context.Context, name, imageName, codebaseName, namespace string) error {
+func (h PutCodebaseImageStream) createCodebaseImageStreamIfNotExists(
+	ctx context.Context,
+	name, imageName, codebaseName, namespace string,
+	codebaseBranch *codebaseApi.CodebaseBranch,
+) error {
 	log := ctrl.LoggerFrom(ctx)
 
 	cis := &codebaseApi.CodebaseImageStream{
-		TypeMeta: metaV1.TypeMeta{
-			APIVersion: "v2.edp.epam.com/v1",
-			Kind:       "CodebaseImageStream",
-		},
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
@@ -124,14 +126,38 @@ func (h PutCodebaseImageStream) createCodebaseImageStreamIfNotExists(ctx context
 		},
 	}
 
+	if err := controllerutil.SetControllerReference(codebaseBranch, cis, h.Client.Scheme()); err != nil {
+		return fmt.Errorf("failed to set controller reference for CodebaseImageStream: %w", err)
+	}
+
 	if err := h.Client.Create(ctx, cis); err != nil {
 		if k8sErrors.IsAlreadyExists(err) {
 			log.Info("CodebaseImageStream already exists. Skip creating", "CodebaseImageStream", cis.Name)
 
+			// For backward compatibility, we need to update the controller reference for the existing CodebaseImageStream.
+			// We can remove this in the next releases.
+			existingCIS := &codebaseApi.CodebaseImageStream{}
+			if err = h.Client.Get(ctx, types.NamespacedName{
+				Namespace: namespace,
+				Name:      name,
+			}, existingCIS); err != nil {
+				return fmt.Errorf("failed to get CodebaseImageStream: %w", err)
+			}
+
+			if metaV1.GetControllerOf(existingCIS) == nil {
+				if err = controllerutil.SetControllerReference(codebaseBranch, existingCIS, h.Client.Scheme()); err != nil {
+					return fmt.Errorf("failed to set controller reference for CodebaseImageStream: %w", err)
+				}
+			}
+
+			if err = h.Client.Update(ctx, existingCIS); err != nil {
+				return fmt.Errorf("failed to update CodebaseImageStream controller reference: %w", err)
+			}
+
 			return nil
 		}
 
-		return fmt.Errorf("failed to create %q resource %q: %w", cis.TypeMeta.Kind, name, err)
+		return fmt.Errorf("failed to create CodebaseImageStream %s: %w", name, err)
 	}
 
 	log.Info("CodebaseImageStream has been created", "CodebaseImageStream", name)

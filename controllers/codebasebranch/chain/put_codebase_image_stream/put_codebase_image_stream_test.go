@@ -25,6 +25,7 @@ func TestPutCodebaseImageStream_ServeRequest(t *testing.T) {
 		codebaseBranch *codebaseApi.CodebaseBranch
 		objects        []client.Object
 		wantErr        require.ErrorAssertionFunc
+		want           func(t *testing.T, k8sCl client.Client)
 	}{
 		{
 			name: "successfully put codebase image stream - get docker registry url from config map",
@@ -57,6 +58,15 @@ func TestPutCodebaseImageStream_ServeRequest(t *testing.T) {
 				},
 			},
 			wantErr: require.NoError,
+			want: func(t *testing.T, k8sCl client.Client) {
+				cis := &codebaseApi.CodebaseImageStream{}
+				require.NoError(t, k8sCl.Get(context.Background(), client.ObjectKey{
+					Name:      "test-codebase-test-branch-master",
+					Namespace: "default",
+				}, cis))
+
+				require.NotNil(t, metav1.GetControllerOf(cis))
+			},
 		},
 		{
 			name: "codebase image stream already exists",
@@ -95,6 +105,15 @@ func TestPutCodebaseImageStream_ServeRequest(t *testing.T) {
 				},
 			},
 			wantErr: require.NoError,
+			want: func(t *testing.T, k8sCl client.Client) {
+				cis := &codebaseApi.CodebaseImageStream{}
+				require.NoError(t, k8sCl.Get(context.Background(), client.ObjectKey{
+					Name:      "test-codebase-test-branch-master",
+					Namespace: "default",
+				}, cis))
+
+				require.NotNil(t, metav1.GetControllerOf(cis))
+			},
 		},
 		{
 			name: "failed to get registry url",
@@ -160,6 +179,10 @@ func TestPutCodebaseImageStream_ServeRequest(t *testing.T) {
 
 			err := h.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), tt.codebaseBranch)
 			tt.wantErr(t, err)
+
+			if tt.want != nil {
+				tt.want(t, h.Client)
+			}
 		})
 	}
 }
