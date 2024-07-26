@@ -18,26 +18,8 @@ resources:
   domain: edp.epam.com
   group: v2
   kind: CDStageDeploy
-  path: github.com/epam/edp-codebase-operator/api/v1alpha1
-  version: v1alpha1
-- api:
-    crdVersion: v1
-    namespaced: true
-  controller: true
-  domain: edp.epam.com
-  group: v2
-  kind: CDStageDeploy
   path: github.com/epam/edp-codebase-operator/api/v1
   version: v1
-- api:
-    crdVersion: v1
-    namespaced: true
-  controller: true
-  domain: edp.epam.com
-  group: v2
-  kind: CodebaseBranch
-  path: github.com/epam/edp-codebase-operator/api/v1alpha1
-  version: v1alpha1
 - api:
     crdVersion: v1
     namespaced: true
@@ -54,26 +36,8 @@ resources:
   domain: edp.epam.com
   group: v2
   kind: CodebaseImageStream
-  path: github.com/epam/edp-codebase-operator/api/v1alpha1
-  version: v1alpha1
-- api:
-    crdVersion: v1
-    namespaced: true
-  controller: true
-  domain: edp.epam.com
-  group: v2
-  kind: CodebaseImageStream
   path: github.com/epam/edp-codebase-operator/api/v1
   version: v1
-- api:
-    crdVersion: v1
-    namespaced: true
-  controller: true
-  domain: edp.epam.com
-  group: v2
-  kind: Codebase
-  path: github.com/epam/edp-codebase-operator/api/v1alpha1
-  version: v1alpha1
 - api:
     crdVersion: v1
     namespaced: true
@@ -93,15 +57,6 @@ resources:
   domain: edp.epam.com
   group: v2
   kind: GitServer
-  path: github.com/epam/edp-codebase-operator/api/v1alpha1
-  version: v1alpha1
-- api:
-    crdVersion: v1
-    namespaced: true
-  controller: true
-  domain: edp.epam.com
-  group: v2
-  kind: GitServer
   path: github.com/epam/edp-codebase-operator/api/v1
   version: v1
 - api:
@@ -111,26 +66,8 @@ resources:
   domain: edp.epam.com
   group: v2
   kind: JiraIssueMetadata
-  path: github.com/epam/edp-codebase-operator/api/v1alpha1
-  version: v1alpha1
-- api:
-    crdVersion: v1
-    namespaced: true
-  controller: true
-  domain: edp.epam.com
-  group: v2
-  kind: JiraIssueMetadata
   path: github.com/epam/edp-codebase-operator/api/v1
   version: v1
-- api:
-    crdVersion: v1
-    namespaced: true
-  controller: true
-  domain: edp.epam.com
-  group: v2
-  kind: JiraServer
-  path: github.com/epam/edp-codebase-operator/api/v1alpha1
-  version: v1alpha1
 - api:
     crdVersion: v1
     namespaced: true
