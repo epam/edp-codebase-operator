@@ -1,12 +1,12 @@
-apiVersion: v2.edp.epam.com/v1alpha1
-kind: CodebaseImageStream
+apiVersion: v2.edp.epam.com/v1
+kind: CDStageDeploy
 metadata:
   labels:
-    app.kubernetes.io/name: codebaseimagestream
-    app.kubernetes.io/instance: codebaseimagestream-sample
+    app.kubernetes.io/name: cdstagedeploy
+    app.kubernetes.io/instance: cdstagedeploy-sample
     app.kubernetes.io/part-of: edp-codebase-operator
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/created-by: edp-codebase-operator
-  name: codebaseimagestream-sample
+  name: cdstagedeploy-sample
 spec:
   # TODO(user): Add fields here

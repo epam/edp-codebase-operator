@@ -29,7 +29,6 @@ import (
 	buildInfo "github.com/epam/edp-common/pkg/config"
 
 	codebaseApiV1 "github.com/epam/edp-codebase-operator/v2/api/v1"
-	codebaseApiV1Alpha1 "github.com/epam/edp-codebase-operator/v2/api/v1alpha1"
 	"github.com/epam/edp-codebase-operator/v2/controllers/cdstagedeploy"
 	"github.com/epam/edp-codebase-operator/v2/controllers/cdstagedeploy/chain"
 	"github.com/epam/edp-codebase-operator/v2/controllers/codebase"
@@ -117,7 +116,6 @@ func main() {
 	)
 
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
-	utilruntime.Must(codebaseApiV1Alpha1.AddToScheme(scheme))
 	utilruntime.Must(codebaseApiV1.AddToScheme(scheme))
 	utilruntime.Must(cdPipeApi.AddToScheme(scheme))
 	utilruntime.Must(networkingV1.AddToScheme(scheme))

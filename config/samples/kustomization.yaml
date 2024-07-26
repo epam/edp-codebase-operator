@@ -1,12 +1,12 @@
 ## Append samples you want in your CSV to this file as resources ##
 resources:
-- v2.edp.epam.com_v1alpha1_cdstagedeploy.yaml
-- v2.edp.epam.com_v1alpha1_codebasebranch.yaml
-- v2.edp.epam.com_v1alpha1_codebaseimagestream.yaml
-- v2.edp.epam.com_v1alpha1_codebase.yaml
-- v2.edp.epam.com_v1alpha1_gitserver.yaml
-- v2.edp.epam.com_v1alpha1_jiraissuemetadata.yaml
-- v2.edp.epam.com_v1alpha1_jiraserver.yaml
+- v2.edp.epam.com_v1_cdstagedeploy.yaml
+- v2.edp.epam.com_v1_codebasebranch.yaml
+- v2.edp.epam.com_v1_codebaseimagestream.yaml
+- v2.edp.epam.com_v1_codebase.yaml
+- v2.edp.epam.com_v1_gitserver.yaml
+- v2.edp.epam.com_v1_jiraissuemetadata.yaml
+- v2.edp.epam.com_v1_jiraserver.yaml
 - v2_v1alpha1_template.yaml
 - v2_v1_quicklink.yaml
 #+kubebuilder:scaffold:manifestskustomizesamples
