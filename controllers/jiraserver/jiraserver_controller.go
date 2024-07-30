@@ -110,6 +110,7 @@ func (r *ReconcileJiraServer) Reconcile(ctx context.Context, request reconcile.R
 	}
 
 	i.Status.Status = statusFinished
+	i.Status.DetailedMessage = ""
 
 	log.Info("Reconciling JiraServer has been finished")
 
