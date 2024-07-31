@@ -52,16 +52,16 @@ func TestReconcileIntegrationSecret_Reconcile(t *testing.T) {
 		wantConErrAnnotation string
 	}{
 		{
-			name:       "success sonarqube",
-			secretName: "sonarqube",
+			name:       "success sonar",
+			secretName: "sonar",
 			client: func(t *testing.T) client.Client {
 				return fake.NewClientBuilder().WithScheme(s).WithObjects(
 					&corev1.Secret{
 						ObjectMeta: metav1.ObjectMeta{
 							Namespace: ns,
-							Name:      "sonarqube",
+							Name:      "sonar",
 							Labels: map[string]string{
-								integrationSecretTypeLabel: "sonarqube",
+								integrationSecretTypeLabel: "sonar",
 							},
 						},
 						Data: map[string][]byte{
@@ -78,16 +78,16 @@ func TestReconcileIntegrationSecret_Reconcile(t *testing.T) {
 			wantConAnnotation: "true",
 		},
 		{
-			name:       "fail sonarqube",
-			secretName: "sonarqube",
+			name:       "fail sonar",
+			secretName: "sonar",
 			client: func(t *testing.T) client.Client {
 				return fake.NewClientBuilder().WithScheme(s).WithObjects(
 					&corev1.Secret{
 						ObjectMeta: metav1.ObjectMeta{
 							Namespace: ns,
-							Name:      "sonarqube",
+							Name:      "sonar",
 							Labels: map[string]string{
-								integrationSecretTypeLabel: "sonarqube",
+								integrationSecretTypeLabel: "sonar",
 							},
 						},
 						Data: map[string][]byte{

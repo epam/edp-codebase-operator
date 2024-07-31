@@ -142,9 +142,9 @@ func checkConnection(ctx context.Context, secret *corev1.Secret) error {
 	)
 
 	switch secret.GetLabels()[integrationSecretTypeLabel] {
-	case "sonarqube":
+	case "sonar":
 		path = "/api/system/ping"
-		req = newRequestWithAuth(ctx, secret)
+		req = newRequest(ctx, string(secret.Data["url"])).SetBasicAuth(string(secret.Data["token"]), "")
 	case "nexus":
 		path = "/service/rest/v1/status"
 		req = newRequestWithAuth(ctx, secret)
