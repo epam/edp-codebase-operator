@@ -149,7 +149,7 @@ func checkConnection(ctx context.Context, secret *corev1.Secret) error {
 		path = "/service/rest/v1/status"
 		req = newRequestWithAuth(ctx, secret)
 	case "dependency-track":
-		path = "/v1/team/self"
+		path = "/api/v1/team/self"
 		req = newRequest(ctx, string(secret.Data["url"])).SetHeader("X-Api-Key", string(secret.Data["token"]))
 	case "defectdojo":
 		path = "/api/v2/user_profile"
