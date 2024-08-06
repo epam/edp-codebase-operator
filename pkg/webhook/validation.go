@@ -8,9 +8,28 @@ import (
 )
 
 var allowedCodebaseSettings = map[string][]string{
-	"add_repo_strategy": {"create", "clone", "import"},
-	"language": {"java", "dotnet", "javascript",
-		"groovy-pipeline", "other", "go", "python", "terraform", "rego", "container", "helm", "csharp", "hcl"},
+	"add_repo_strategy": {
+		"clone",
+		"create",
+		"import",
+	},
+	"language": {
+		"c",
+		"container",
+		"cpp",
+		"csharp",
+		"dotnet",
+		"go",
+		"groovy-pipeline",
+		"hcl",
+		"helm",
+		"java",
+		"javascript",
+		"other",
+		"python",
+		"rego",
+		"terraform",
+	},
 }
 
 func IsCodebaseValid(codebase *codebaseApi.Codebase) error {
