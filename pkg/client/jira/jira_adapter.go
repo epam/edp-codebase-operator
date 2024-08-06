@@ -156,7 +156,7 @@ func (a *GoJiraAdapter) CreateIssueLink(issueId, title, link string) error {
 			Title: title,
 			URL:   link,
 			Icon: &jira.RemoteLinkIcon{
-				Url16x16: "https://raw.githubusercontent.com/epam/edp-install/master/docs/assets/favicon.png",
+				Url16x16: "https://raw.githubusercontent.com/KubeRocketCI/docs/main/static/img/kuberocketci.png",
 			},
 		},
 	}
