@@ -2,15 +2,15 @@
 
 ![Version: 2.24.0-SNAPSHOT](https://img.shields.io/badge/Version-2.24.0--SNAPSHOT-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 2.24.0-SNAPSHOT](https://img.shields.io/badge/AppVersion-2.24.0--SNAPSHOT-informational?style=flat-square)
 
-A Helm chart for EDP Codebase Operator
+A Helm chart for KubeRocketCI Codebase Operator
 
-**Homepage:** <https://epam.github.io/edp-install/>
+**Homepage:** <https://docs.kuberocketci.io/>
 
 ## Maintainers
 
 | Name | Email | Url |
 | ---- | ------ | --- |
-| epmd-edp | <SupportEPMD-EDP@epam.com> | <https://solutionshub.epam.com/solution/epam-delivery-platform> |
+| epmd-edp | <SupportEPMD-EDP@epam.com> | <https://solutionshub.epam.com/solution/kuberocketci> |
 | sergk |  | <https://github.com/SergK> |
 
 ## Source Code

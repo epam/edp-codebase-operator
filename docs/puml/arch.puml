@@ -2,8 +2,8 @@
 
 skinparam class {
     BackgroundColor #white
-	BackgroundColor<<wip>> LightGoldenRodYellow
-	BackgroundColor<<tbd>> Khaki
+    BackgroundColor<<wip>> LightGoldenRodYellow
+    BackgroundColor<<tbd>> Khaki
 }
 
 package com.epam.edp.codebase {
@@ -23,8 +23,6 @@ package com.epam.edp.codebase {
         String gitServer
         String jiraServer
         String gitUrlPath
-        String jenkinsSlave
-        String jobProvisioning
         String deploymentScript
         String ciTool
         Versioning versioning
@@ -43,6 +41,7 @@ package com.epam.edp.codebase {
   enum Strategy {
     CREATE
     CLONE
+    IMPORT
   }
 
   Codebase --> CodebaseType : type
@@ -50,6 +49,7 @@ package com.epam.edp.codebase {
     APPLICATION
     AUTOTESTS
     LIBRARY
+    INFRASTRUCTURE
   }
 
   Versioning -> VersioningType : versioningType
@@ -99,8 +99,8 @@ package com.epam.edp.codebase {
         String imageName
         []Tag tags
     -- status --
-        <color red>String version</color>
-        <color red>String url</color>
+        String version
+        String url
   }
 
   CodebaseImageStream "1" --* "0..*" Tag : internal structure
@@ -186,23 +186,11 @@ package com.epam.edp.codebase {
   }
 }
 
-class Service {
-    -- metadata --
-    String name
-    -- spec --
-    String version
-    String description
-    String url
-    String icon
+class QuickLinks <<tbd>> {
 }
 
-class EdpComponent <<tbd>> {
-}
-
-GitServer --> EdpComponent : creates, owner
-JiraServer --> EdpComponent : creates, owner
-Codebase -u-> ImageStream : creates (s2i, Openshift)
-Codebase "1" -u-> "1" JenkinsFolder : creates, owner
+GitServer --> QuickLinks : creates, owner
+JiraServer --> QuickLinks : creates, owner
 
 legend
 |Type | Field | Status |
@@ -210,6 +198,5 @@ legend
 |<back:white>    </back>| String name  |Implemented |
 |<back:Khaki>    </back>| <color red>String name</color>|TBD |
 endlegend
-
 
 @enduml
