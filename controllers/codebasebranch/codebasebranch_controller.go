@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strings"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -114,9 +115,22 @@ func (r *ReconcileCodebaseBranch) Reconcile(ctx context.Context, request reconci
 		return reconcile.Result{}, fmt.Errorf("failed to fetch CodebaseBranch resource %q: %w", request.NamespacedName, err)
 	}
 
-	c, err := util.GetCodebase(r.client, cb.Spec.CodebaseName, cb.Namespace)
+	c := &codebaseApi.Codebase{}
+	if err := r.client.Get(ctx, types.NamespacedName{Name: cb.Spec.CodebaseName, Namespace: cb.Namespace}, c); err != nil {
+		return reconcile.Result{}, fmt.Errorf("failed to get Codebase: %w", err)
+	}
+
+	updated, err := r.setDefaultValues(ctx, cb, c)
 	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("failed to fetch Codebase: %w", err)
+		return reconcile.Result{}, fmt.Errorf("failed to set default values: %w", err)
+	}
+
+	if updated {
+		if err = r.client.Update(ctx, cb); err != nil {
+			return reconcile.Result{}, fmt.Errorf("failed to update CodebaseBranch: %w", err)
+		}
+
+		return reconcile.Result{}, nil
 	}
 
 	if err = r.setOwnerRef(cb, c); err != nil {
@@ -298,6 +312,75 @@ func (r *ReconcileCodebaseBranch) setOwnerRef(cb *codebaseApi.CodebaseBranch, c 
 	}
 
 	return nil
+}
+
+const codebaseTypeShorLen = 3
+
+func (r *ReconcileCodebaseBranch) setDefaultValues(
+	ctx context.Context,
+	cb *codebaseApi.CodebaseBranch,
+	codebase *codebaseApi.Codebase,
+) (bool, error) {
+	if pipelinesIsSet(cb) {
+		return false, nil
+	}
+
+	gitServer := &codebaseApi.GitServer{}
+	if err := r.client.Get(ctx, types.NamespacedName{
+		Name:      codebase.Spec.GitServer,
+		Namespace: codebase.Namespace,
+	}, gitServer); err != nil {
+		return false, fmt.Errorf("failed to get GitServer: %w", err)
+	}
+
+	var codebaseType string
+
+	if len(codebase.Spec.Type) < codebaseTypeShorLen {
+		return false, fmt.Errorf("codebase type is invalid: %v", codebase.Spec.Type)
+	}
+
+	codebaseType = codebase.Spec.Type[:codebaseTypeShorLen]
+	changed := false
+
+	if cb.Spec.Pipelines == nil {
+		cb.Spec.Pipelines = make(map[string]string, 2)
+	}
+
+	if _, ok := cb.Spec.Pipelines["build"]; !ok {
+		cb.Spec.Pipelines["build"] = fmt.Sprintf(
+			"%s-%s-%s-%s-build-%s",
+			gitServer.Spec.GitProvider,
+			strings.ToLower(codebase.Spec.BuildTool),
+			strings.ToLower(codebase.Spec.Framework),
+			codebaseType,
+			codebase.Spec.Versioning.Type,
+		)
+		changed = true
+	}
+
+	if _, ok := cb.Spec.Pipelines["review"]; !ok {
+		cb.Spec.Pipelines["review"] = fmt.Sprintf(
+			"%s-%s-%s-%s-review",
+			gitServer.Spec.GitProvider,
+			strings.ToLower(codebase.Spec.BuildTool),
+			strings.ToLower(codebase.Spec.Framework),
+			codebaseType,
+		)
+		changed = true
+	}
+
+	return changed, nil
+}
+
+func pipelinesIsSet(cb *codebaseApi.CodebaseBranch) bool {
+	if cb.Spec.Pipelines == nil {
+		return false
+	}
+
+	_, hasReview := cb.Spec.Pipelines["review"]
+	_, hasBuild := cb.Spec.Pipelines["build"]
+
+	return hasReview && hasBuild
 }
 
 func setErrorStatus(metadata *codebaseApi.CodebaseBranch, msg string) {

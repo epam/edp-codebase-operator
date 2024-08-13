@@ -87,6 +87,12 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldFailGetCodebase(t *testing.T) {
 			Name:      "NewCodebaseBranch",
 			Namespace: "namespace",
 		},
+		Spec: codebaseApi.CodebaseBranchSpec{
+			Pipelines: map[string]string{
+				"review": "review-pipeline",
+				"build":  "build-pipeline",
+			},
+		},
 	}
 
 	scheme := runtime.NewScheme()
@@ -109,12 +115,9 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldFailGetCodebase(t *testing.T) {
 
 	res, err := r.Reconcile(context.TODO(), req)
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.False(t, res.Requeue)
-
-	if !strings.Contains(err.Error(), "failed to get Codebase ") {
-		t.Fatalf("wrong error returned: %s", err.Error())
-	}
+	assert.Contains(t, err.Error(), "failed to get Codebase")
 }
 
 func TestReconcileCodebaseBranch_Reconcile_ShouldPassDeleteCodebasebranch(t *testing.T) {
@@ -131,6 +134,10 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldPassDeleteCodebasebranch(t *tes
 		},
 		Spec: codebaseApi.CodebaseBranchSpec{
 			CodebaseName: "NewCodebase",
+			Pipelines: map[string]string{
+				"review": "review-pipeline",
+				"build":  "build-pipeline",
+			},
 		},
 	}
 	c := &codebaseApi.Codebase{
@@ -181,6 +188,10 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldPassWithCreatingCIS(t *testing.
 		Spec: codebaseApi.CodebaseBranchSpec{
 			CodebaseName: "NewCodebase",
 			BranchName:   "master",
+			Pipelines: map[string]string{
+				"review": "review-pipeline",
+				"build":  "build-pipeline",
+			},
 		},
 		Status: codebaseApi.CodebaseBranchStatus{
 			Git: codebaseApi.CodebaseBranchGitStatusBranchCreated,
@@ -282,6 +293,10 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldRequeueWithCodebaseNotReady(t *
 		},
 		Spec: codebaseApi.CodebaseBranchSpec{
 			CodebaseName: "NewCodebase",
+			Pipelines: map[string]string{
+				"review": "review-pipeline",
+				"build":  "build-pipeline",
+			},
 		},
 		Status: codebaseApi.CodebaseBranchStatus{
 			Status: "done",
@@ -349,6 +364,10 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldInitBuildForEDPVersioning(t *te
 		},
 		Spec: codebaseApi.CodebaseBranchSpec{
 			CodebaseName: "NewCodebase",
+			Pipelines: map[string]string{
+				"review": "review-pipeline",
+				"build":  "build-pipeline",
+			},
 		},
 	}
 	c := &codebaseApi.Codebase{
@@ -413,6 +432,10 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldHaveFailStatus(t *testing.T) {
 		Spec: codebaseApi.CodebaseBranchSpec{
 			CodebaseName: "NewCodebase",
 			BranchName:   "master",
+			Pipelines: map[string]string{
+				"review": "review-pipeline",
+				"build":  "build-pipeline",
+			},
 		},
 	}
 	c := &codebaseApi.Codebase{
@@ -463,4 +486,127 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldHaveFailStatus(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, codebaseApi.Error, br.Status.Result)
 	assert.Contains(t, br.Status.DetailedMessage, "not found")
+}
+
+func TestReconcileCodebaseBranch_Reconcile_ShouldSetPipelines(t *testing.T) {
+	cb := &codebaseApi.CodebaseBranch{
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      "test-branch",
+			Namespace: "default",
+		},
+		Spec: codebaseApi.CodebaseBranchSpec{
+			CodebaseName: "test-codebase",
+			BranchName:   "test-branch",
+		},
+	}
+	c := &codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      "test-codebase",
+			Namespace: "default",
+		},
+		Spec: codebaseApi.CodebaseSpec{
+			Lang:      "go",
+			Framework: "gin",
+			BuildTool: "go",
+			Type:      "application",
+			GitServer: "test-gs",
+			Versioning: codebaseApi.Versioning{
+				Type: codebaseApi.VersioningTypDefault,
+			},
+		},
+	}
+
+	gs := &codebaseApi.GitServer{
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      "test-gs",
+			Namespace: "default",
+		},
+		Spec: codebaseApi.GitServerSpec{
+			GitProvider: codebaseApi.GitProviderGithub,
+		},
+	}
+
+	scheme := runtime.NewScheme()
+	require.NoError(t, codebaseApi.AddToScheme(scheme))
+
+	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithObjects(c, cb, gs).Build()
+
+	req := reconcile.Request{
+		NamespacedName: types.NamespacedName{
+			Name:      "test-branch",
+			Namespace: "default",
+		},
+	}
+
+	controller := NewReconcileCodebaseBranch(fakeCl, scheme, logr.Discard())
+
+	res, err := controller.Reconcile(context.Background(), req)
+
+	require.NoError(t, err)
+	assert.False(t, res.Requeue)
+
+	updatedCb := &codebaseApi.CodebaseBranch{}
+	err = fakeCl.Get(
+		context.Background(),
+		types.NamespacedName{
+			Name:      "test-branch",
+			Namespace: "default",
+		},
+		updatedCb,
+	)
+
+	require.NoError(t, err)
+	require.Len(t, updatedCb.Spec.Pipelines, 2)
+	require.Contains(t, updatedCb.Spec.Pipelines, "review")
+	assert.Equal(t, "github-go-gin-app-review", updatedCb.Spec.Pipelines["review"])
+	require.Contains(t, updatedCb.Spec.Pipelines, "build")
+	assert.Equal(t, "github-go-gin-app-build-default", updatedCb.Spec.Pipelines["build"])
+}
+
+func TestReconcileCodebaseBranch_Reconcile_FailedToSetPipelines_GitServerNotFound(t *testing.T) {
+	cb := &codebaseApi.CodebaseBranch{
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      "test-branch",
+			Namespace: "default",
+		},
+		Spec: codebaseApi.CodebaseBranchSpec{
+			CodebaseName: "test-codebase",
+			BranchName:   "test-branch",
+		},
+	}
+	c := &codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      "test-codebase",
+			Namespace: "default",
+		},
+		Spec: codebaseApi.CodebaseSpec{
+			Lang:      "go",
+			Framework: "gin",
+			BuildTool: "go",
+			Type:      "application",
+			GitServer: "test-gs",
+			Versioning: codebaseApi.Versioning{
+				Type: codebaseApi.VersioningTypDefault,
+			},
+		},
+	}
+
+	scheme := runtime.NewScheme()
+	require.NoError(t, codebaseApi.AddToScheme(scheme))
+
+	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithObjects(c, cb).Build()
+
+	req := reconcile.Request{
+		NamespacedName: types.NamespacedName{
+			Name:      "test-branch",
+			Namespace: "default",
+		},
+	}
+
+	controller := NewReconcileCodebaseBranch(fakeCl, scheme, logr.Discard())
+
+	_, err := controller.Reconcile(context.Background(), req)
+
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "failed to get GitServer")
 }

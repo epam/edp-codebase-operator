@@ -335,6 +335,13 @@ CodebaseBranchSpec defines the desired state of CodebaseBranch.
         </td>
         <td>true</td>
       </tr><tr>
+        <td><b>pipelines</b></td>
+        <td>map[string]string</td>
+        <td>
+          Pipelines is a map of pipelines related to the branch.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>releaseJobParams</b></td>
         <td>map[string]string</td>
         <td>
