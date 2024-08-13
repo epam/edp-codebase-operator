@@ -124,20 +124,6 @@ func GetSecret(c client.Client, secretName, namespace string) (*coreV1.Secret, e
 	return secret, nil
 }
 
-func GetCodebase(c client.Client, name, namespace string) (*codebaseApi.Codebase, error) {
-	instance := &codebaseApi.Codebase{}
-
-	err := c.Get(context.TODO(), types.NamespacedName{
-		Namespace: namespace,
-		Name:      name,
-	}, instance)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get Codebase %v: %w", name, err)
-	}
-
-	return instance, nil
-}
-
 // GetWatchNamespace returns the namespace the operator should be watching for changes.
 func GetWatchNamespace() (string, error) {
 	ns, found := os.LookupEnv(watchNamespaceEnvVar)

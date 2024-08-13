@@ -68,6 +68,15 @@ spec:
                 description: The new branch will be created starting from the selected
                   commit hash.
                 type: string
+              pipelines:
+                additionalProperties:
+                  type: string
+                description: Pipelines is a map of pipelines related to the branch.
+                example:
+                  build: build-pipeline
+                  review: review-pipeline
+                nullable: true
+                type: object
               release:
                 description: Flag if branch is used as "release" branch.
                 type: boolean

@@ -8,8 +8,6 @@ const (
 	CodebaseBranchGitStatusBranchCreated = "branch-created"
 )
 
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
 // CodebaseBranchSpec defines the desired state of CodebaseBranch.
 type CodebaseBranchSpec struct {
 	// Name of Codebase associated with.
@@ -31,6 +29,12 @@ type CodebaseBranchSpec struct {
 	// +nullable
 	// +optional
 	ReleaseJobParams map[string]string `json:"releaseJobParams,omitempty"`
+
+	// Pipelines is a map of pipelines related to the branch.
+	// +nullable
+	// +optional
+	// +kubebuilder:example:={"review": "review-pipeline", "build": "build-pipeline"}
+	Pipelines map[string]string `json:"pipelines,omitempty"`
 }
 
 // CodebaseBranchStatus defines the observed state of CodebaseBranch.

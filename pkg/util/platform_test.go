@@ -77,24 +77,6 @@ func TestGetGerritPort_ShouldNotFound(t *testing.T) {
 	assert.Contains(t, err.Error(), "failed to get gerrit Git Server CR")
 }
 
-func TestGetCodebase_ShouldPass(t *testing.T) {
-	c := &codebaseApi.Codebase{
-		ObjectMeta: metaV1.ObjectMeta{
-			Name:      "stub-name",
-			Namespace: "stub-namespace",
-		},
-		Spec: codebaseApi.CodebaseSpec{},
-	}
-
-	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1.SchemeGroupVersion, c)
-	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c).Build()
-
-	cb, err := GetCodebase(fakeCl, "stub-name", "stub-namespace")
-	assert.Equal(t, cb.Name, "stub-name")
-	assert.NoError(t, err)
-}
-
 func TestGetSecret_ShouldPass(t *testing.T) {
 	secret := &coreV1.Secret{
 		ObjectMeta: metaV1.ObjectMeta{
