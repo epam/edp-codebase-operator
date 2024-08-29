@@ -26,10 +26,6 @@ type CodebaseBranchSpec struct {
 	// Flag if branch is used as "release" branch.
 	Release bool `json:"release"`
 
-	// +nullable
-	// +optional
-	ReleaseJobParams map[string]string `json:"releaseJobParams,omitempty"`
-
 	// Pipelines is a map of pipelines related to the branch.
 	// +nullable
 	// +optional

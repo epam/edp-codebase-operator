@@ -197,13 +197,6 @@ func (in *CodebaseBranchSpec) DeepCopyInto(out *CodebaseBranchSpec) {
 		*out = new(string)
 		**out = **in
 	}
-	if in.ReleaseJobParams != nil {
-		in, out := &in.ReleaseJobParams, &out.ReleaseJobParams
-		*out = make(map[string]string, len(*in))
-		for key, val := range *in {
-			(*out)[key] = val
-		}
-	}
 	if in.Pipelines != nil {
 		in, out := &in.Pipelines, &out.Pipelines
 		*out = make(map[string]string, len(*in))

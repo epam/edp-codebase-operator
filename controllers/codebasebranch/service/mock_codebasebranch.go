@@ -12,20 +12,6 @@ type MockCodebasebranch struct {
 	mock.Mock
 }
 
-func (m *MockCodebasebranch) TriggerDeletionJob(cb *codebaseApi.CodebaseBranch) error {
-	return m.Called(cb).Error(0)
-}
-
-func (m *MockCodebasebranch) TriggerReleaseJob(cb *codebaseApi.CodebaseBranch) error {
-	return m.Called(cb).Error(0)
-}
-
-func (m *MockCodebasebranch) convertCodebaseBranchSpecToParams(cb *codebaseApi.CodebaseBranch) (map[string]string, error) {
-	var a map[string]string
-
-	return a, m.Called(cb).Error(0)
-}
-
 func (m *MockCodebasebranch) AppendVersionToTheHistorySlice(cb *codebaseApi.CodebaseBranch) error {
 	return m.Called(cb).Error(0)
 }
