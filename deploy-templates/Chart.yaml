@@ -109,7 +109,6 @@ annotations:
         codebaseName: javascript-deploy-edp
         fromCommit: 'latest'
         release: false
-        releaseJobParams: null
         version: 1.2.3-SNAPSHOT
     - apiVersion: v2.edp.epam.com/v1
       kind: CodebaseImageStream

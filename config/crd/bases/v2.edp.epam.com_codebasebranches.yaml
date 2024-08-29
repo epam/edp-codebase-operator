@@ -80,11 +80,6 @@ spec:
               release:
                 description: Flag if branch is used as "release" branch.
                 type: boolean
-              releaseJobParams:
-                additionalProperties:
-                  type: string
-                nullable: true
-                type: object
               version:
                 nullable: true
                 type: string

@@ -342,13 +342,6 @@ CodebaseBranchSpec defines the desired state of CodebaseBranch.
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b>releaseJobParams</b></td>
-        <td>map[string]string</td>
-        <td>
-          <br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
         <td><b>version</b></td>
         <td>string</td>
         <td>
