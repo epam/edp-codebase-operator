@@ -1,7 +1,8 @@
 package util
 
 const (
-	HelmChartDeploymentScriptType = "helm-chart"
+	HelmChartDeploymentScriptType  = "helm-chart"
+	RpmPackageDeploymentScriptType = "rpm-package"
 
 	ChartTemplate       = "Chart.tmpl"
 	ReadmeTemplate      = "README.tmpl"

@@ -1,0 +1,6 @@
+Filters = [
+    # We are not building during the package build
+    "no-%build-section",
+    # We have our sources in the same directory
+    "invalid-url"
+]
