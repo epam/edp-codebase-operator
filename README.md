@@ -57,5 +57,4 @@ Development versions are also available, please refer to the [snapshot helm char
 
 ### Related Articles
 
-- [Architecture Scheme of Codebase Operator](docs/arch.md)
 - [Install KubeRocketCI](https://docs.kuberocketci.io/docs/next/operator-guide/installation-overview)

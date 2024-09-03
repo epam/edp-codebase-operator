@@ -1,0 +1,42 @@
+.PHONY: prepare rpm-build clean rpm-lint
+
+CURRENT_DIR=$(shell pwd)
+DIST_DIR=${CURRENT_DIR}/dist
+BIN_DIR=${CURRENT_DIR}/target
+
+NAME ?= {{.Name}}
+ARCH ?= x86_64
+VERSION ?= 0.1.0
+RELEASE ?= SNAPSHOT.1
+
+# Run lint
+rpm-lint:
+	rpmlint -c .rpmlintrc.toml $(NAME).spec
+
+# Prepare the build environment
+rpm-prepare:
+	mkdir -p rpmbuild/SOURCES
+	mkdir -p ${DIST_DIR}/$(NAME)-$(VERSION)
+	cp -r ${BIN_DIR}/* ${DIST_DIR}/$(NAME)-$(VERSION)
+	cp -r ${NAME}.service rpmbuild/SOURCES/$(NAME).service
+	tar -czvf rpmbuild/SOURCES/$(NAME)-$(VERSION).tar.gz -C ${DIST_DIR} $(NAME)-$(VERSION)
+
+# Build the application RPM package
+rpm-build: rpm-prepare
+	rpmbuild -bb $(NAME).spec \
+		--define "_topdir ${CURRENT_DIR}/rpmbuild" \
+		--define "SRC ${CURRENT_DIR}" \
+		--define "VERSION_NUMBER $(VERSION)" \
+		--define "RELEASE_NUMBER $(RELEASE)"
+	mv rpmbuild/RPMS/$(ARCH)/$(NAME)-$(VERSION)-$(RELEASE).$(ARCH).rpm $(DIST_DIR)
+
+rpm-publish:
+	curl -v --user "${CI_USERNAME}:${CI_PASSWORD}" \
+		--upload-file ${DIST_DIR}/${NAME}-${VERSION}-${RELEASE}.$(ARCH).rpm \
+		${NEXUS_HOST_URL}/repository/edp-yum-snapshots/$(ARCH)/os/Packages/
+
+clean:
+	rm -rf ${DIST_DIR}
+	rm -rf rpmbuild
+	rm -rf ${BIN_DIR}
+	rm -f $(NAME)-$(VERSION)-$(RELEASE).$(ARCH).rpm

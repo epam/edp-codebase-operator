@@ -159,17 +159,76 @@ func CopyHelmChartTemplates(deploymentScript, templatesDest, assetsDir string, c
 	return nil
 }
 
-func CopyTemplate(deploymentScript, workDir, assetsDir string, cf *model.ConfigGoTemplating) error {
-	templatesDest := path.Join(workDir, "deploy-templates")
+func CopyRpmPackageTemplates(templatesDest, assetsDir string, config *model.ConfigGoTemplating) error {
+	log.Info("start handling RPM Package templates", logCodebaseNameKey, config.Name)
 
-	if DoesDirectoryExist(templatesDest) {
-		log.Info("deploy-templates folder already exists")
-		return nil
+	// Define template paths
+	makefileTemplatePath := path.Join(assetsDir, "templates/applications/rpm-package/Makefile.tmpl")
+	rpmlintTemplatePath := path.Join(assetsDir, "templates/applications/rpm-package/.rpmlintrc.toml")
+	specTemplatePath := path.Join(assetsDir, fmt.Sprintf("templates/applications/rpm-package/%s/spec.tmpl", config.Lang))
+	serviceTemplatePath := path.Join(assetsDir, fmt.Sprintf("templates/applications/rpm-package/%s/service.tmpl", config.Lang))
+	// Define destination paths
+	makefileDestPath := path.Join(templatesDest, "Makefile")
+	specDestPath := path.Join(templatesDest, fmt.Sprintf("%s.spec", config.Name))
+	serviceDestPath := path.Join(templatesDest, fmt.Sprintf("%s.service", config.Name))
+	rpmlintDestPath := path.Join(templatesDest, ".rpmlintrc.toml")
+
+	// Create destination files
+	makefileDestFile, err := os.Create(makefileDestPath)
+	if err != nil {
+		return fmt.Errorf("failed to create destination file %q: %w", makefileDestPath, err)
 	}
 
+	specDestFile, err := os.Create(specDestPath)
+	if err != nil {
+		return fmt.Errorf("failed to create destination file %q: %w", specDestPath, err)
+	}
+
+	serviceDestFile, err := os.Create(serviceDestPath)
+	if err != nil {
+		return fmt.Errorf("failed to create destination file %q: %w", serviceDestPath, err)
+	}
+
+	// Render and copy templates
+	err = renderTemplate(makefileDestFile, makefileTemplatePath, "Makefile.tmpl", config)
+	if err != nil {
+		return err
+	}
+
+	err = renderTemplate(specDestFile, specTemplatePath, "spec.tmpl", config)
+	if err != nil {
+		return err
+	}
+
+	err = renderTemplate(serviceDestFile, serviceTemplatePath, "service.tmpl", config)
+	if err != nil {
+		return err
+	}
+
+	err = CopyFile(rpmlintTemplatePath, rpmlintDestPath)
+	if err != nil {
+		return err
+	}
+
+	log.Info("RPM Package templates have been copied and rendered", logCodebaseNameKey, config.Name)
+
+	return nil
+}
+
+func CopyTemplate(deploymentScript, workDir, assetsDir string, cf *model.ConfigGoTemplating) error {
 	switch deploymentScript {
 	case HelmChartDeploymentScriptType:
+		templatesDest := path.Join(workDir, "deploy-templates")
+
+		if DoesDirectoryExist(templatesDest) {
+			log.Info("deploy-templates folder already exists")
+			return nil
+		}
+
 		return CopyHelmChartTemplates(deploymentScript, templatesDest, assetsDir, cf)
+
+	case RpmPackageDeploymentScriptType:
+		return CopyRpmPackageTemplates(workDir, assetsDir, cf)
 	default:
 		return errors.New("Unsupported deployment type")
 	}
