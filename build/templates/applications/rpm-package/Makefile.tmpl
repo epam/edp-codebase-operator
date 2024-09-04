@@ -2,7 +2,7 @@
 
 CURRENT_DIR=$(shell pwd)
 DIST_DIR=${CURRENT_DIR}/dist
-BIN_DIR=${CURRENT_DIR}/target
+BINNARY=${CURRENT_DIR}/target/*.jar
 
 NAME ?= {{.Name}}
 ARCH ?= x86_64
@@ -17,7 +17,7 @@ rpm-lint:
 rpm-prepare:
 	mkdir -p rpmbuild/SOURCES
 	mkdir -p ${DIST_DIR}/$(NAME)-$(VERSION)
-	cp -r ${BIN_DIR}/* ${DIST_DIR}/$(NAME)-$(VERSION)
+	cp -r ${BINNARY} ${DIST_DIR}/$(NAME)-$(VERSION)
 	cp -r ${NAME}.service rpmbuild/SOURCES/$(NAME).service
 	tar -czvf rpmbuild/SOURCES/$(NAME)-$(VERSION).tar.gz -C ${DIST_DIR} $(NAME)-$(VERSION)
 
