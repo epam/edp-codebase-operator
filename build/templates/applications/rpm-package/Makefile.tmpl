@@ -1,7 +1,8 @@
-.PHONY: prepare rpm-build clean rpm-lint
+.PHONY: rpm-prepare rpm-build clean rpm-lint rpm-publish
 
 CURRENT_DIR=$(shell pwd)
 DIST_DIR=${CURRENT_DIR}/dist
+# Aligned with the maven build output, change if needed
 BINNARY=${CURRENT_DIR}/target/*.jar
 
 NAME ?= {{.Name}}
@@ -17,7 +18,7 @@ rpm-lint:
 rpm-prepare:
 	mkdir -p rpmbuild/SOURCES
 	mkdir -p ${DIST_DIR}/$(NAME)-$(VERSION)
-	cp -r ${BINNARY} ${DIST_DIR}/$(NAME)-$(VERSION)
+	cp -r ${BINNARY} ${DIST_DIR}/$(NAME)-$(VERSION)/$(NAME)
 	cp -r ${NAME}.service rpmbuild/SOURCES/$(NAME).service
 	tar -czvf rpmbuild/SOURCES/$(NAME)-$(VERSION).tar.gz -C ${DIST_DIR} $(NAME)-$(VERSION)
 
@@ -30,8 +31,9 @@ rpm-build: rpm-prepare
 		--define "RELEASE_NUMBER $(RELEASE)"
 	mv rpmbuild/RPMS/$(ARCH)/$(NAME)-$(VERSION)-$(RELEASE).$(ARCH).rpm $(DIST_DIR)
 
+# Ensure env variables are set
 rpm-publish:
-	curl -v --user "${CI_USERNAME}:${CI_PASSWORD}" \
+	@curl --user "${CI_USERNAME}:${CI_PASSWORD}" \
 		--upload-file ${DIST_DIR}/${NAME}-${VERSION}-${RELEASE}.$(ARCH).rpm \
 		${NEXUS_HOST_URL}/repository/edp-yum-snapshots/$(ARCH)/os/Packages/
 
