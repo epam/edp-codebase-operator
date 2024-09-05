@@ -1,3 +1,6 @@
+%global source_date_epoch_from_changelog 0
+%define debug_package %{nil}
+
 %if 0%{?RELEASE_NUMBER:1} != 0
 %define rel %{?RELEASE_NUMBER}
 %else
@@ -13,7 +16,7 @@
 Name:           {{.Name}}
 Version:        %{ver}
 Release:        %{rel}
-Summary:        {{.Name}} Application
+Summary:        {{.Name}} application
 ExclusiveArch:  %{_arch}
 
 License:        Apache-2.0
@@ -26,10 +29,8 @@ Requires(post): systemd
 Requires(preun): systemd
 Requires(postun): systemd
 
-%define debug_package %{nil}
-
 %description
-Hello World Application
+{{.Name}} application
 
 %prep
 %setup -q
