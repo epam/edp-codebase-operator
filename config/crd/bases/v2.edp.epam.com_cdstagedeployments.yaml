@@ -16,7 +16,20 @@ spec:
     singular: cdstagedeploy
   scope: Namespaced
   versions:
-  - name: v1
+  - additionalPrinterColumns:
+    - description: Pipeline name
+      jsonPath: .spec.pipeline
+      name: Pipeline
+      type: string
+    - description: Stage name
+      jsonPath: .spec.stage
+      name: Stage
+      type: string
+    - description: Pipeline status
+      jsonPath: .status.status
+      name: Status
+      type: string
+    name: v1
     schema:
       openAPIV3Schema:
         description: CDStageDeploy is the Schema for the CDStageDeployments API.

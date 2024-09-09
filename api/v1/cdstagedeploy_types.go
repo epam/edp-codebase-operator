@@ -51,6 +51,9 @@ type CDStageDeployStatus struct {
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:shortName=csd,path=cdstagedeployments
 // +kubebuilder:storageversion
+// +kubebuilder:printcolumn:name="Pipeline",type="string",JSONPath=".spec.pipeline",description="Pipeline name"
+// +kubebuilder:printcolumn:name="Stage",type="string",JSONPath=".spec.stage",description="Stage name"
+// +kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.status",description="Pipeline status"
 
 // CDStageDeploy is the Schema for the CDStageDeployments API.
 type CDStageDeploy struct {
