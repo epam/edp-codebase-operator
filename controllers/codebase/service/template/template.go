@@ -37,7 +37,7 @@ func PrepareTemplates(ctx context.Context, c client.Client, cb *codebaseApi.Code
 		return fmt.Errorf("failed to get assets dir: %w", err)
 	}
 
-	if err := util.CopyTemplate(cb.Spec.DeploymentScript, workDir, assetsDir, cf); err != nil {
+	if err := util.CopyTemplate(ctx, cb.Spec.DeploymentScript, workDir, assetsDir, cf); err != nil {
 		return fmt.Errorf("failed to copy template for %v codebase: %w", cb.Name, err)
 	}
 
