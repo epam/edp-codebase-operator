@@ -1,11 +1,14 @@
 package util
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
 	"path"
 	"text/template"
+
+	ctrl "sigs.k8s.io/controller-runtime"
 
 	"github.com/epam/edp-codebase-operator/v2/pkg/model"
 )
@@ -159,78 +162,87 @@ func CopyHelmChartTemplates(deploymentScript, templatesDest, assetsDir string, c
 	return nil
 }
 
-func CopyRpmPackageTemplates(templatesDest, assetsDir string, config *model.ConfigGoTemplating) error {
-	log.Info("start handling RPM Package templates", logCodebaseNameKey, config.Name)
+func CopyRpmPackageTemplates(ctx context.Context, templatesDest, assetsDir string, config *model.ConfigGoTemplating) error {
+	l := ctrl.LoggerFrom(ctx)
+	l.Info("Start handling RPM Package templates")
 
 	// Define template paths
 	makefileTemplatePath := path.Join(assetsDir, "templates/applications/rpm-package/Makefile.tmpl")
 	rpmlintTemplatePath := path.Join(assetsDir, "templates/applications/rpm-package/.rpmlintrc.toml")
+
 	specTemplatePath := path.Join(assetsDir, fmt.Sprintf("templates/applications/rpm-package/%s/spec.tmpl", config.Lang))
 	serviceTemplatePath := path.Join(assetsDir, fmt.Sprintf("templates/applications/rpm-package/%s/service.tmpl", config.Lang))
+
+	if _, err := os.Stat(specTemplatePath); os.IsNotExist(err) {
+		specTemplatePath = path.Join(assetsDir, "templates/applications/rpm-package/default/spec.tmpl")
+		serviceTemplatePath = path.Join(assetsDir, "templates/applications/rpm-package/default/service.tmpl")
+	} else if err != nil {
+		return fmt.Errorf("failed to check if %q exists: %w", specTemplatePath, err)
+	}
+
 	// Define destination paths
 	makefileDestPath := path.Join(templatesDest, "Makefile")
+	if _, err := os.Stat(makefileDestPath); err == nil {
+		makefileDestPath = path.Join(templatesDest, "Makefile.kuberocketci")
+	}
+
 	specDestPath := path.Join(templatesDest, fmt.Sprintf("%s.spec", config.Name))
 	serviceDestPath := path.Join(templatesDest, fmt.Sprintf("%s.service", config.Name))
 	rpmlintDestPath := path.Join(templatesDest, ".rpmlintrc.toml")
 
-	// Create destination files
-	makefileDestFile, err := os.Create(makefileDestPath)
-	if err != nil {
-		return fmt.Errorf("failed to create destination file %q: %w", makefileDestPath, err)
-	}
-
-	specDestFile, err := os.Create(specDestPath)
-	if err != nil {
-		return fmt.Errorf("failed to create destination file %q: %w", specDestPath, err)
-	}
-
-	serviceDestFile, err := os.Create(serviceDestPath)
-	if err != nil {
-		return fmt.Errorf("failed to create destination file %q: %w", serviceDestPath, err)
-	}
-
-	// Render and copy templates
-	err = renderTemplate(makefileDestFile, makefileTemplatePath, "Makefile.tmpl", config)
-	if err != nil {
+	// Create and render templates
+	if err := createAndRenderTemplate(makefileDestPath, makefileTemplatePath, "Makefile.tmpl", config); err != nil {
 		return err
 	}
 
-	err = renderTemplate(specDestFile, specTemplatePath, "spec.tmpl", config)
-	if err != nil {
+	if err := createAndRenderTemplate(specDestPath, specTemplatePath, "spec.tmpl", config); err != nil {
 		return err
 	}
 
-	err = renderTemplate(serviceDestFile, serviceTemplatePath, "service.tmpl", config)
-	if err != nil {
+	if err := createAndRenderTemplate(serviceDestPath, serviceTemplatePath, "service.tmpl", config); err != nil {
 		return err
 	}
 
-	err = CopyFile(rpmlintTemplatePath, rpmlintDestPath)
-	if err != nil {
+	if err := CopyFile(rpmlintTemplatePath, rpmlintDestPath); err != nil {
 		return err
 	}
 
-	log.Info("RPM Package templates have been copied and rendered", logCodebaseNameKey, config.Name)
+	l.Info("RPM Package templates have been copied and rendered")
 
 	return nil
 }
 
-func CopyTemplate(deploymentScript, workDir, assetsDir string, cf *model.ConfigGoTemplating) error {
+func createAndRenderTemplate(destPath, templatePath, templateName string, config *model.ConfigGoTemplating) error {
+	destFile, err := os.Create(destPath)
+	if err != nil {
+		return fmt.Errorf("failed to create destination file %q: %w", destPath, err)
+	}
+
+	defer func() {
+		if cerr := destFile.Close(); cerr != nil {
+			log.Error(cerr, "failed to close destination file", "file", destPath)
+		}
+	}()
+
+	return renderTemplate(destFile, templatePath, templateName, config)
+}
+
+func CopyTemplate(ctx context.Context, deploymentScript, workDir, assetsDir string, cf *model.ConfigGoTemplating) error {
 	switch deploymentScript {
 	case HelmChartDeploymentScriptType:
 		templatesDest := path.Join(workDir, "deploy-templates")
 
 		if DoesDirectoryExist(templatesDest) {
-			log.Info("deploy-templates folder already exists")
+			ctrl.LoggerFrom(ctx).Info("Deploy-templates folder already exists")
 			return nil
 		}
 
 		return CopyHelmChartTemplates(deploymentScript, templatesDest, assetsDir, cf)
 
 	case RpmPackageDeploymentScriptType:
-		return CopyRpmPackageTemplates(workDir, assetsDir, cf)
+		return CopyRpmPackageTemplates(ctx, workDir, assetsDir, cf)
 	default:
-		return errors.New("Unsupported deployment type")
+		return errors.New("unsupported deployment type")
 	}
 }
 
