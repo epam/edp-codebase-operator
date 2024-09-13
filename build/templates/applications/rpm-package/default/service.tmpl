@@ -1,0 +1,50 @@
+[Unit]
+Description=Your service description here
+# Ensures the network is up before starting this service
+After=network-online.target
+# Wants=AnotherService.service: If AnotherService is being started, this service will be started too
+# Requires=AnotherService.service: This service will only start if AnotherService starts successfully
+
+[Service]
+# Type of the service:
+# simple (default if ExecStart is set, service considered started immediately)
+# forking (useful for services that fork a child process)
+# oneshot (useful for scripts that perform a task and exit)
+# dbus (if the service acquires a name on the D-Bus)
+# notify (if the service sends a notification message via sd_notify(3))
+# idle (delayed execution until all jobs are dispatched)
+Type=simple
+
+# The command to run to start the service. This setting is required.
+ExecStart=/path/to/your/command
+
+# The command to run to reload the service configuration without interrupting pending operations.
+#ExecReload=/path/to/reload/script
+
+# The command to run to stop the service.
+#ExecStop=/path/to/stop/script
+
+# Restart policy:
+# no (default if no ExecStart= is set)
+# on-success (only if service exited successfully)
+# on-failure (only on unclean exit)
+# on-abnormal (on timeout, signal, core dump)
+# on-watchdog (if watchdog timeout for the service expires)
+# on-abort (if service is aborted by a signal)
+# always (in all cases)
+#Restart=no
+
+# Time to sleep before restarting a service (e.g., 10s)
+#RestartSec=10
+
+# The user and group to run the service as.
+# User=root
+# Group=root
+
+# The working directory for the service.
+#WorkingDirectory=/path/to/working/directory
+
+
+[Install]
+# Specifies whether the service should start when the system boots.
+WantedBy=multi-user.target
