@@ -159,7 +159,7 @@ func checkConnection(ctx context.Context, secret *corev1.Secret) error {
 	case "argocd":
 		path = "/api/v1/projects"
 		req = newRequest(ctx, string(secret.Data["url"])).SetHeader("Authorization", "Bearer "+string(secret.Data["token"]))
-	case "codemie":
+	case "chat-assistant":
 		return checkCodemie(ctx, secret)
 	default:
 		path = "/"

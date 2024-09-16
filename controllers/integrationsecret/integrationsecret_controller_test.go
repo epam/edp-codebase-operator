@@ -409,7 +409,7 @@ func TestReconcileIntegrationSecret_Reconcile(t *testing.T) {
 							Namespace: ns,
 							Name:      "codemie",
 							Labels: map[string]string{
-								integrationSecretTypeLabel: "codemie",
+								integrationSecretTypeLabel: "chat-assistant",
 							},
 						},
 						Data: map[string][]byte{
@@ -435,7 +435,7 @@ func TestReconcileIntegrationSecret_Reconcile(t *testing.T) {
 							Namespace: ns,
 							Name:      "codemie",
 							Labels: map[string]string{
-								integrationSecretTypeLabel: "codemie",
+								integrationSecretTypeLabel: "chat-assistant",
 							},
 						},
 						Data: map[string][]byte{
@@ -462,7 +462,7 @@ func TestReconcileIntegrationSecret_Reconcile(t *testing.T) {
 							Namespace: ns,
 							Name:      "codemie",
 							Labels: map[string]string{
-								integrationSecretTypeLabel: "codemie",
+								integrationSecretTypeLabel: "chat-assistant",
 							},
 						},
 						Data: map[string][]byte{
