@@ -9,7 +9,6 @@ metadata:
 rules:
 - apiGroups:
     - argoproj.io
-  attributeRestrictions: null
   resources:
     - applications
   verbs:
@@ -20,7 +19,6 @@ rules:
     - watch
 - apiGroups:
     - '*'
-  attributeRestrictions: null
   resources:
     - cdpipelines
     - cdstagedeployments
@@ -54,7 +52,6 @@ rules:
     - '*'
 - apiGroups:
     - coordination.k8s.io
-  attributeRestrictions: null
   resources:
     - leases
   verbs:
@@ -67,7 +64,6 @@ rules:
     - watch
 - apiGroups:
     - route.openshift.io
-  attributeRestrictions: null
   resources:
     - routes
   verbs:
@@ -77,7 +73,6 @@ rules:
     - create
 - apiGroups:
     - ""
-  attributeRestrictions: null
   resources:
     - events
   verbs:
@@ -85,7 +80,6 @@ rules:
     - patch
 - apiGroups:
     - tekton.dev
-  attributeRestrictions: null
   resources:
     - pipelineruns
   verbs:
@@ -93,7 +87,6 @@ rules:
     - list
 - apiGroups:
     - triggers.tekton.dev
-  attributeRestrictions: null
   resources:
     - triggertemplates
   verbs:
