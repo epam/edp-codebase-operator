@@ -1,6 +1,54 @@
 <a name="unreleased"></a>
 ## [Unreleased]
 
+### Features
+
+- Implement fallback strategy for RPM packaging ([#123](https://github.com/epam/edp-codebase-operator/issues/123))
+- Add support for RPM packages ([#116](https://github.com/epam/edp-codebase-operator/issues/116))
+- Add dynamic pipelines names for CodebaseBranch ([#112](https://github.com/epam/edp-codebase-operator/issues/112))
+- Add support for C/C++ languages ([#108](https://github.com/epam/edp-codebase-operator/issues/108))
+- Remove deprecated v1alpha1 versions from the operator ([#101](https://github.com/epam/edp-codebase-operator/issues/101))
+- Add cleanup of CodebaseImageStreams ([#97](https://github.com/epam/edp-codebase-operator/issues/97))
+- Add GitServer reconciliation status ([#97](https://github.com/epam/edp-codebase-operator/issues/97))
+- Skip Ingress creation if GitServer.spec.WebhookUrl is set ([#95](https://github.com/epam/edp-codebase-operator/issues/95))
+- Set EventListener with edp prefix ([#83](https://github.com/epam/edp-codebase-operator/issues/83))
+- Add label with GitServer name to EventListener ([#83](https://github.com/epam/edp-codebase-operator/issues/83))
+- Add status for Codemie secret ([#86](https://github.com/epam/edp-codebase-operator/issues/86))
+- Support GitServers with a custom name ([#83](https://github.com/epam/edp-codebase-operator/issues/83))
+
+### Bug Fixes
+
+- Align label for gen-ai chat secret ([#86](https://github.com/epam/edp-codebase-operator/issues/86))
+- Integration secret shows connected status for invalid credentials ([#105](https://github.com/epam/edp-codebase-operator/issues/105))
+- Integration secret shows connected status for invalid credentials ([#105](https://github.com/epam/edp-codebase-operator/issues/105))
+- 401 error for correct username and password in JiraServer ([#103](https://github.com/epam/edp-codebase-operator/issues/103))
+- Fix service name for the ingress ([#83](https://github.com/epam/edp-codebase-operator/issues/83))
+- Update EventListener name to include edp prefix ([#83](https://github.com/epam/edp-codebase-operator/issues/83))
+- Ensure ingress has proper labeling ([#83](https://github.com/epam/edp-codebase-operator/issues/83))
+
+### Code Refactoring
+
+- Fix hard-coded EventListener name ([#83](https://github.com/epam/edp-codebase-operator/issues/83))
+
+### Testing
+
+- Add check for EventListener creation ([#83](https://github.com/epam/edp-codebase-operator/issues/83))
+
+### Routine
+
+- Align argo-cd diff for OKD resources ([#76](https://github.com/epam/edp-codebase-operator/issues/76))
+- Change apiVersion for OKD RBAC resources ([#76](https://github.com/epam/edp-codebase-operator/issues/76))
+- Update default rpm spec and service templates ([#123](https://github.com/epam/edp-codebase-operator/issues/123))
+- Add printcolumn for CDStageDeploy object ([#116](https://github.com/epam/edp-codebase-operator/issues/116))
+- Do not rely on rpm changelog during build process ([#116](https://github.com/epam/edp-codebase-operator/issues/116))
+- Hide rpm publish env variables ([#116](https://github.com/epam/edp-codebase-operator/issues/116))
+- Allow to define binary path for RPM build ([#116](https://github.com/epam/edp-codebase-operator/issues/116))
+- Deprecate codebasebranch properties ([#114](https://github.com/epam/edp-codebase-operator/issues/114))
+- Set jira web-link icon to KubeRocketCI ([#108](https://github.com/epam/edp-codebase-operator/issues/108))
+- Update documentation ([#108](https://github.com/epam/edp-codebase-operator/issues/108))
+- Update codeql and codecov scan gh actions ([#83](https://github.com/epam/edp-codebase-operator/issues/83))
+- Update current development version ([#81](https://github.com/epam/edp-codebase-operator/issues/81))
+
 
 <a name="v2.23.0"></a>
 ## [v2.23.0] - 2024-06-12
