@@ -128,8 +128,8 @@ func (h PutCDStageDeploy) skipCDStageDeployCreation(ctx context.Context, envLabe
 		list,
 		client.InNamespace(namespace),
 		client.MatchingLabels{
-			"app.edp.epam.com/cdpipeline": env[0],
-			"app.edp.epam.com/cdstage":    fmt.Sprintf("%s-%s", env[0], env[1]),
+			codebaseApi.CdPipelineLabel: env[0],
+			codebaseApi.CdStageLabel:    fmt.Sprintf("%s-%s", env[0], env[1]),
 		},
 	); err != nil {
 		return false, fmt.Errorf("failed to get CDStageDeploys: %w", err)
@@ -196,8 +196,8 @@ func (h PutCDStageDeploy) create(ctx context.Context, command *cdStageDeployComm
 	}
 
 	stageDeploy.SetLabels(map[string]string{
-		"app.edp.epam.com/cdpipeline": command.Pipeline,
-		"app.edp.epam.com/cdstage":    stageDeploy.GetStageCRName(),
+		codebaseApi.CdPipelineLabel: command.Pipeline,
+		codebaseApi.CdStageLabel:    stageDeploy.GetStageCRName(),
 	})
 
 	stage := &pipelineApi.Stage{}
