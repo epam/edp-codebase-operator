@@ -63,8 +63,8 @@ func TestPutCDStageDeploy_ServeRequest(t *testing.T) {
 								Name:      "test-stage-deploy",
 								Namespace: "default",
 								Labels: map[string]string{
-									"app.edp.epam.com/cdpipeline": "ci",
-									"app.edp.epam.com/cdstage":    "ci-prod",
+									codebaseApi.CdPipelineLabel: "ci",
+									codebaseApi.CdStageLabel:    "ci-prod",
 								},
 							},
 						},
@@ -79,8 +79,8 @@ func TestPutCDStageDeploy_ServeRequest(t *testing.T) {
 						cdStageDeploys,
 						client.InNamespace("default"),
 						client.MatchingLabels{
-							"app.edp.epam.com/cdpipeline": "ci",
-							"app.edp.epam.com/cdstage":    "ci-dev",
+							codebaseApi.CdPipelineLabel: "ci",
+							codebaseApi.CdStageLabel:    "ci-dev",
 						}))
 				require.Len(t, cdStageDeploys.Items, 1)
 			},
@@ -116,8 +116,8 @@ func TestPutCDStageDeploy_ServeRequest(t *testing.T) {
 								Name:      "test-stage-deploy",
 								Namespace: "default",
 								Labels: map[string]string{
-									"app.edp.epam.com/cdpipeline": "ci",
-									"app.edp.epam.com/cdstage":    "ci-dev",
+									codebaseApi.CdPipelineLabel: "ci",
+									codebaseApi.CdStageLabel:    "ci-dev",
 								},
 							},
 						},
@@ -132,8 +132,8 @@ func TestPutCDStageDeploy_ServeRequest(t *testing.T) {
 						cdStageDeploys,
 						client.InNamespace("default"),
 						client.MatchingLabels{
-							"app.edp.epam.com/cdpipeline": "ci",
-							"app.edp.epam.com/cdstage":    "ci-dev",
+							codebaseApi.CdPipelineLabel: "ci",
+							codebaseApi.CdStageLabel:    "ci-dev",
 						}))
 				require.Len(t, cdStageDeploys.Items, 2)
 			},
@@ -169,8 +169,8 @@ func TestPutCDStageDeploy_ServeRequest(t *testing.T) {
 								Name:      "test-stage-deploy1",
 								Namespace: "default",
 								Labels: map[string]string{
-									"app.edp.epam.com/cdpipeline": "ci",
-									"app.edp.epam.com/cdstage":    "ci-dev",
+									codebaseApi.CdPipelineLabel: "ci",
+									codebaseApi.CdStageLabel:    "ci-dev",
 								},
 							},
 						},
@@ -179,8 +179,8 @@ func TestPutCDStageDeploy_ServeRequest(t *testing.T) {
 								Name:      "test-stage-deploy2",
 								Namespace: "default",
 								Labels: map[string]string{
-									"app.edp.epam.com/cdpipeline": "ci",
-									"app.edp.epam.com/cdstage":    "ci-dev",
+									codebaseApi.CdPipelineLabel: "ci",
+									codebaseApi.CdStageLabel:    "ci-dev",
 								},
 							},
 						},
@@ -195,8 +195,8 @@ func TestPutCDStageDeploy_ServeRequest(t *testing.T) {
 						cdStageDeploys,
 						client.InNamespace("default"),
 						client.MatchingLabels{
-							"app.edp.epam.com/cdpipeline": "ci",
-							"app.edp.epam.com/cdstage":    "ci-dev",
+							codebaseApi.CdPipelineLabel: "ci",
+							codebaseApi.CdStageLabel:    "ci-dev",
 						}))
 				require.Len(t, cdStageDeploys.Items, 2)
 			},
@@ -366,8 +366,8 @@ func TestPutCDStageDeploy_ServeRequest(t *testing.T) {
 								Name:      "test-stage-deploy",
 								Namespace: "default",
 								Labels: map[string]string{
-									"app.edp.epam.com/cdpipeline": "ci",
-									"app.edp.epam.com/cdstage":    "ci-prod",
+									codebaseApi.CdPipelineLabel: "ci",
+									codebaseApi.CdStageLabel:    "ci-prod",
 								},
 							},
 						},
@@ -382,8 +382,8 @@ func TestPutCDStageDeploy_ServeRequest(t *testing.T) {
 						cdStageDeploys,
 						client.InNamespace("default"),
 						client.MatchingLabels{
-							"app.edp.epam.com/cdpipeline": "ci",
-							"app.edp.epam.com/cdstage":    "ci-dev",
+							codebaseApi.CdPipelineLabel: "ci",
+							codebaseApi.CdStageLabel:    "ci-dev",
 						}))
 				require.Len(t, cdStageDeploys.Items, 0)
 			},

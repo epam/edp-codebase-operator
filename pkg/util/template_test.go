@@ -205,9 +205,11 @@ func TestCopyRpmPackageTemplates(t *testing.T) {
 
 				b, err := os.ReadFile(fmt.Sprintf("%s/test-application.spec", dest))
 				require.Contains(t, string(b), "test-application")
+				require.NoError(t, err)
 
 				b, err = os.ReadFile(fmt.Sprintf("%s/test-application.service", dest))
 				require.Contains(t, string(b), "test-application")
+				require.NoError(t, err)
 
 				_, err = os.Stat(fmt.Sprintf("%s/test-application.service", dest))
 				require.NoError(t, err)

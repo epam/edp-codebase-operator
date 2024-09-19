@@ -55,6 +55,23 @@ func (r *ResolveStatus) ServeRequest(ctx context.Context, stageDeploy *codebaseA
 		if allPipelineRunsCompleted(pipelineRun.Items) {
 			log.Info("All PipelineRuns have been completed.")
 
+			hasRunning, err := r.hasRunningCDStageDeploys(
+				ctx,
+				stageDeploy.Name,
+				stageDeploy.GetStageCRName(),
+				stageDeploy.Spec.Pipeline,
+				stageDeploy.Namespace,
+			)
+			if err != nil {
+				return fmt.Errorf("failed to check running CDStageDeploys: %w", err)
+			}
+
+			if hasRunning {
+				log.Info("Some CDStageDeploys are still running.")
+
+				return nil
+			}
+
 			stageDeploy.Status.Status = codebaseApi.CDStageDeployStatusPending
 
 			return nil
@@ -92,8 +109,8 @@ func (r *ResolveStatus) getRunningPipelines(ctx context.Context, stageDeploy *co
 		pipelineRun,
 		client.InNamespace(stageDeploy.Namespace),
 		client.MatchingLabels{
-			"app.edp.epam.com/cdpipeline": stageDeploy.Spec.Pipeline,
-			"app.edp.epam.com/cdstage":    stageDeploy.GetStageCRName(),
+			codebaseApi.CdPipelineLabel: stageDeploy.Spec.Pipeline,
+			codebaseApi.CdStageLabel:    stageDeploy.GetStageCRName(),
 		},
 		client.Limit(maxPipelineRuns),
 	); err != nil {
@@ -105,6 +122,34 @@ func (r *ResolveStatus) getRunningPipelines(ctx context.Context, stageDeploy *co
 	}
 
 	return pipelineRun, nil
+}
+
+func (r *ResolveStatus) hasRunningCDStageDeploys(
+	ctx context.Context,
+	currentCDStageDeployName, stage, pipeline, namespace string,
+) (bool, error) {
+	cdStageDeploy := &codebaseApi.CDStageDeployList{}
+
+	if err := r.client.List(
+		ctx,
+		cdStageDeploy,
+		client.InNamespace(namespace),
+		client.MatchingLabels{
+			codebaseApi.CdPipelineLabel: pipeline,
+			codebaseApi.CdStageLabel:    stage,
+		},
+	); err != nil {
+		return false, fmt.Errorf("failed to list CDStageDeploys: %w", err)
+	}
+
+	for i := range cdStageDeploy.Items {
+		if cdStageDeploy.Items[i].Name != currentCDStageDeployName &&
+			cdStageDeploy.Items[i].Status.Status == codebaseApi.CDStageDeployStatusRunning {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }
 
 func allPipelineRunsCompleted(pipelineRuns []tektonpipelineApi.PipelineRun) bool {
