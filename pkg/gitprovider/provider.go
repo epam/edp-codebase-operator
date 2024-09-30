@@ -84,16 +84,18 @@ type GitProvider interface {
 func NewProvider(gitServer *codebaseApi.GitServer, restyClient *resty.Client) (GitProvider, error) {
 	switch gitServer.Spec.GitProvider {
 	case codebaseApi.GitProviderGithub:
-		return NewMockGitHubClient(restyClient), nil
+		return NewGitHubClient(restyClient), nil
 	case codebaseApi.GitProviderGitlab:
-		return NewMockGitLabClient(restyClient), nil
+		return NewGitLabClient(restyClient), nil
+	case codebaseApi.GitProviderBitbucket:
+		return NewBitbucketClient(), nil
 	default:
 		return nil, fmt.Errorf("unsupported git provider %s", gitServer.Spec.GitProvider)
 	}
 }
 
-// NewMockGitProjectProvider creates a new Git project provider based on gitServer.
-func NewMockGitProjectProvider(gitServer *codebaseApi.GitServer) (GitProjectProvider, error) {
+// NewGitProjectProvider creates a new Git project provider based on gitServer.
+func NewGitProjectProvider(gitServer *codebaseApi.GitServer) (GitProjectProvider, error) {
 	return NewProvider(gitServer, resty.New())
 }
 
@@ -109,6 +111,14 @@ func GetGitProviderAPIURL(gitServer *codebaseApi.GitServer) string {
 		}
 
 		url = fmt.Sprintf("%s/api/v3", url)
+	}
+
+	if gitServer.Spec.GitProvider == codebaseApi.GitProviderBitbucket {
+		if url == "https://bitbucket.org" {
+			return "https://api.bitbucket.org/2.0"
+		}
+
+		url = fmt.Sprintf("%s/rest/api/1.0", url)
 	}
 
 	if gitServer.Spec.HttpsPort != 0 {

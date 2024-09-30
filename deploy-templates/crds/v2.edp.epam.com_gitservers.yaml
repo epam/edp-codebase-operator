@@ -57,13 +57,14 @@ spec:
               gitHost:
                 type: string
               gitProvider:
-                default: gerrit
+                default: github
                 description: GitProvider is a git provider type. It can be gerrit,
                   github or gitlab. Default value is gerrit.
                 enum:
                 - gerrit
                 - gitlab
                 - github
+                - bitbucket
                 type: string
               gitUser:
                 default: git

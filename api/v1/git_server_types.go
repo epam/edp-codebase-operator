@@ -5,9 +5,10 @@ import (
 )
 
 const (
-	GitProviderGerrit = "gerrit"
-	GitProviderGithub = "github"
-	GitProviderGitlab = "gitlab"
+	GitProviderGerrit    = "gerrit"
+	GitProviderGithub    = "github"
+	GitProviderGitlab    = "gitlab"
+	GitProviderBitbucket = "bitbucket"
 )
 
 // GitServerSpec defines the desired state of GitServer.
@@ -26,8 +27,8 @@ type GitServerSpec struct {
 	NameSshKeySecret string `json:"nameSshKeySecret"`
 
 	// GitProvider is a git provider type. It can be gerrit, github or gitlab. Default value is gerrit.
-	// +kubebuilder:validation:Enum=gerrit;gitlab;github
-	// +kubebuilder:default:=gerrit
+	// +kubebuilder:validation:Enum=gerrit;gitlab;github;bitbucket
+	// +kubebuilder:default:=github
 	// +optional
 	GitProvider string `json:"gitProvider,omitempty"`
 

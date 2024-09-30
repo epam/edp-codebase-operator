@@ -82,7 +82,7 @@ func TestPutGitWebRepoUrl_ServeRequest(t *testing.T) {
 			k8sObjects: []client.Object{
 				&codebaseApi.GitServer{
 					ObjectMeta: metaV1.ObjectMeta{Name: "git-server", Namespace: namespace},
-					Spec:       codebaseApi.GitServerSpec{GitProvider: "bitbucket"},
+					Spec:       codebaseApi.GitServerSpec{GitProvider: "test-provider"},
 				},
 				&codebaseApi.Codebase{
 					ObjectMeta: metaV1.ObjectMeta{Name: "test", Namespace: namespace},
@@ -92,7 +92,7 @@ func TestPutGitWebRepoUrl_ServeRequest(t *testing.T) {
 			wantErr: func(t require.TestingT, err error, _ ...any) {
 				require.Error(t, err)
 
-				require.Contains(t, err.Error(), "unsupported Git provider bitbucket")
+				require.Contains(t, err.Error(), "unsupported Git provider test-provider")
 			},
 		},
 	}
@@ -223,12 +223,12 @@ func TestPutGitWebRepoUrl_getGitWebURL(t *testing.T) {
 			},
 			gitServer: &codebaseApi.GitServer{
 				ObjectMeta: metaV1.ObjectMeta{Name: "git-server", Namespace: namespace},
-				Spec:       codebaseApi.GitServerSpec{GitProvider: "bitbucket", GitHost: "bitbucket"},
+				Spec:       codebaseApi.GitServerSpec{GitProvider: "test-provider", GitHost: "test-host"},
 			},
 			k8sObjects: []client.Object{
 				&codebaseApi.GitServer{
 					ObjectMeta: metaV1.ObjectMeta{Name: "git-server", Namespace: namespace},
-					Spec:       codebaseApi.GitServerSpec{GitProvider: "bitbucket", GitHost: "bitbucket"},
+					Spec:       codebaseApi.GitServerSpec{GitProvider: "test-provider", GitHost: "test-host"},
 				},
 				&codebaseApi.Codebase{
 					ObjectMeta: metaV1.ObjectMeta{Name: "test", Namespace: namespace},
