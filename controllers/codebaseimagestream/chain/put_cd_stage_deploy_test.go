@@ -57,6 +57,9 @@ func TestPutCDStageDeploy_ServeRequest(t *testing.T) {
 								Name:      "ci-dev",
 								Namespace: "default",
 							},
+							Spec: pipelineAPi.StageSpec{
+								TriggerType: pipelineAPi.TriggerTypeAutoDeploy,
+							},
 						},
 						&codebaseApi.CDStageDeploy{
 							ObjectMeta: metaV1.ObjectMeta{
@@ -109,6 +112,9 @@ func TestPutCDStageDeploy_ServeRequest(t *testing.T) {
 							ObjectMeta: metaV1.ObjectMeta{
 								Name:      "ci-dev",
 								Namespace: "default",
+							},
+							Spec: pipelineAPi.StageSpec{
+								TriggerType: pipelineAPi.TriggerTypeAutoDeploy,
 							},
 						},
 						&codebaseApi.CDStageDeploy{
@@ -163,6 +169,9 @@ func TestPutCDStageDeploy_ServeRequest(t *testing.T) {
 								Name:      "ci-dev",
 								Namespace: "default",
 							},
+							Spec: pipelineAPi.StageSpec{
+								TriggerType: pipelineAPi.TriggerTypeAutoDeploy,
+							},
 						},
 						&codebaseApi.CDStageDeploy{
 							ObjectMeta: metaV1.ObjectMeta{
@@ -199,6 +208,72 @@ func TestPutCDStageDeploy_ServeRequest(t *testing.T) {
 							codebaseApi.CdStageLabel:    "ci-dev",
 						}))
 				require.Len(t, cdStageDeploys.Items, 2)
+			},
+		},
+		{
+			name: "don't skip CDStageDeploy creation if more than one CDStageDeploy already exists for AutoStable trigger type",
+			imageStream: &codebaseApi.CodebaseImageStream{
+				ObjectMeta: metaV1.ObjectMeta{
+					Name:      "test-image-stream",
+					Namespace: "default",
+					Labels: map[string]string{
+						"ci/dev": "",
+					},
+				},
+				Spec: codebaseApi.CodebaseImageStreamSpec{
+					Codebase:  "app",
+					ImageName: "latest",
+					Tags:      []codebaseApi.Tag{{Name: "latest", Created: time.Now().Format(time.RFC3339)}},
+				},
+			},
+			client: func(t *testing.T) client.Client {
+				return fake.NewClientBuilder().
+					WithScheme(scheme).
+					WithObjects(
+						&pipelineAPi.Stage{
+							ObjectMeta: metaV1.ObjectMeta{
+								Name:      "ci-dev",
+								Namespace: "default",
+							},
+							Spec: pipelineAPi.StageSpec{
+								TriggerType: pipelineAPi.TriggerTypeAutoStable,
+							},
+						},
+						&codebaseApi.CDStageDeploy{
+							ObjectMeta: metaV1.ObjectMeta{
+								Name:      "test-stage-deploy1",
+								Namespace: "default",
+								Labels: map[string]string{
+									codebaseApi.CdPipelineLabel: "ci",
+									codebaseApi.CdStageLabel:    "ci-dev",
+								},
+							},
+						},
+						&codebaseApi.CDStageDeploy{
+							ObjectMeta: metaV1.ObjectMeta{
+								Name:      "test-stage-deploy2",
+								Namespace: "default",
+								Labels: map[string]string{
+									codebaseApi.CdPipelineLabel: "ci",
+									codebaseApi.CdStageLabel:    "ci-dev",
+								},
+							},
+						},
+					).Build()
+			},
+			wantErr: require.NoError,
+			want: func(t *testing.T, k8scl client.Client) {
+				cdStageDeploys := &codebaseApi.CDStageDeployList{}
+				require.NoError(t,
+					k8scl.List(
+						context.Background(),
+						cdStageDeploys,
+						client.InNamespace("default"),
+						client.MatchingLabels{
+							codebaseApi.CdPipelineLabel: "ci",
+							codebaseApi.CdStageLabel:    "ci-dev",
+						}))
+				require.Len(t, cdStageDeploys.Items, 3)
 			},
 		},
 		{
@@ -248,7 +323,17 @@ func TestPutCDStageDeploy_ServeRequest(t *testing.T) {
 			client: func(t *testing.T) client.Client {
 				return fake.NewClientBuilder().
 					WithScheme(scheme).
-					WithObjects().
+					WithObjects(
+						&pipelineAPi.Stage{
+							ObjectMeta: metaV1.ObjectMeta{
+								Name:      "ci-dev",
+								Namespace: "default",
+							},
+							Spec: pipelineAPi.StageSpec{
+								TriggerType: pipelineAPi.TriggerTypeAutoDeploy,
+							},
+						},
+					).
 					Build()
 			},
 			wantErr: func(t require.TestingT, err error, i ...interface{}) {

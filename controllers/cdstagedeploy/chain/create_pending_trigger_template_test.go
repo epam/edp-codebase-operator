@@ -26,7 +26,7 @@ import (
 	tektoncdmocks "github.com/epam/edp-codebase-operator/v2/pkg/tektoncd/mocks"
 )
 
-func TestProcessTriggerTemplate_ServeRequest(t *testing.T) {
+func TestCreatePendingTriggerTemplate_ServeRequest(t *testing.T) {
 	t.Parallel()
 
 	scheme := runtime.NewScheme()
@@ -95,7 +95,7 @@ func TestProcessTriggerTemplate_ServeRequest(t *testing.T) {
 					m.On("GetRawResourceFromTriggerTemplate", mock.Anything, "trigger1", "default").
 						Return([]byte("raw resource"), nil)
 					m.On(
-						"CreatePipelineRun",
+						"CreatePendingPipelineRun",
 						mock.Anything,
 						"default",
 						"test",
@@ -111,7 +111,7 @@ func TestProcessTriggerTemplate_ServeRequest(t *testing.T) {
 				autoDeployStrategyManager: func(t *testing.T) autodeploy.Manager {
 					m := autodeploymocks.NewMockManager(t)
 
-					m.On("GetAppPayloadForAllLatestStrategy", mock.Anything, mock.Anything).
+					m.On("GetAppPayloadForCurrentWithStableStrategy", mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 						Return(json.RawMessage("{app1: 1.0}"), nil)
 
 					return m
@@ -119,7 +119,7 @@ func TestProcessTriggerTemplate_ServeRequest(t *testing.T) {
 			},
 			wantErr: require.NoError,
 			want: func(t *testing.T, d *codebaseApi.CDStageDeploy) {
-				assert.Equal(t, codebaseApi.CDStageDeployStatusRunning, d.Status.Status)
+				assert.Equal(t, codebaseApi.CDStageDeployStatusInQueue, d.Status.Status)
 			},
 		},
 		{
@@ -171,7 +171,7 @@ func TestProcessTriggerTemplate_ServeRequest(t *testing.T) {
 					m.On("GetRawResourceFromTriggerTemplate", mock.Anything, "trigger1", "default").
 						Return([]byte("raw resource"), nil)
 					m.On(
-						"CreatePipelineRun",
+						"CreatePendingPipelineRun",
 						mock.Anything,
 						"default",
 						"test",
@@ -187,7 +187,7 @@ func TestProcessTriggerTemplate_ServeRequest(t *testing.T) {
 				autoDeployStrategyManager: func(t *testing.T) autodeploy.Manager {
 					m := autodeploymocks.NewMockManager(t)
 
-					m.On("GetAppPayloadForAllLatestStrategy", mock.Anything, mock.Anything).
+					m.On("GetAppPayloadForCurrentWithStableStrategy", mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 						Return(json.RawMessage("{app1: 1.0}"), nil)
 
 					return m
@@ -252,7 +252,7 @@ func TestProcessTriggerTemplate_ServeRequest(t *testing.T) {
 				autoDeployStrategyManager: func(t *testing.T) autodeploy.Manager {
 					m := autodeploymocks.NewMockManager(t)
 
-					m.On("GetAppPayloadForAllLatestStrategy", mock.Anything, mock.Anything).
+					m.On("GetAppPayloadForCurrentWithStableStrategy", mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 						Return(nil, errors.New("failed to get app payload"))
 
 					return m
@@ -317,7 +317,7 @@ func TestProcessTriggerTemplate_ServeRequest(t *testing.T) {
 				autoDeployStrategyManager: func(t *testing.T) autodeploy.Manager {
 					m := autodeploymocks.NewMockManager(t)
 
-					m.On("GetAppPayloadForAllLatestStrategy", mock.Anything, mock.Anything).
+					m.On("GetAppPayloadForCurrentWithStableStrategy", mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 						Return(nil, fmt.Errorf("failed to get app payload: %w", autodeploy.ErrLasTagNotFound))
 
 					return m
@@ -554,7 +554,7 @@ func TestProcessTriggerTemplate_ServeRequest(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			h := NewProcessTriggerTemplate(
+			h := NewCreatePendingTriggerTemplate(
 				tt.fields.k8sClient(t),
 				tt.fields.triggerTemplateManager(t),
 				tt.fields.autoDeployStrategyManager(t),

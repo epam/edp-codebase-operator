@@ -229,7 +229,7 @@ func TestCodebaseWebhook_ValidateCreate(t *testing.T) {
 			wantErr: require.NoError,
 		},
 		{
-			name:   "should return error if Strategy is not valid",
+			name:   "should return error if TriggerType is not valid",
 			client: fake.NewClientBuilder().WithScheme(scheme).Build(),
 			ctx: admission.NewContextWithRequest(context.Background(), admission.Request{
 				AdmissionRequest: v1.AdmissionRequest{
@@ -359,7 +359,7 @@ func TestCodebaseValidationWebhook_ValidateUpdate(t *testing.T) {
 			},
 		},
 		{
-			name: "should return error if Strategy is not valid",
+			name: "should return error if TriggerType is not valid",
 			ctx: admission.NewContextWithRequest(context.Background(), admission.Request{
 				AdmissionRequest: v1.AdmissionRequest{
 					Name:      "codebase",

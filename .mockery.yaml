@@ -24,3 +24,9 @@ packages:
   github.com/epam/edp-codebase-operator/v2/pkg/gitprovider:
     interfaces:
       GitProjectProvider:
+  github.com/epam/edp-codebase-operator/v2/pkg/tektoncd:
+    interfaces:
+      TriggerTemplateManager:
+  github.com/epam/edp-codebase-operator/v2/pkg/autodeploy:
+    interfaces:
+      Manager:

@@ -152,7 +152,7 @@ func main() {
 
 	ctrlLog := ctrl.Log.WithName("controllers")
 
-	cdStageDeployCtrl := cdstagedeploy.NewReconcileCDStageDeploy(mgr.GetClient(), ctrlLog, chain.CreateDefChain)
+	cdStageDeployCtrl := cdstagedeploy.NewReconcileCDStageDeploy(mgr.GetClient(), ctrlLog, chain.CreateChain)
 	if err = cdStageDeployCtrl.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "failed to create controller", "controller", "cd-stage-deploy")
 		os.Exit(1)

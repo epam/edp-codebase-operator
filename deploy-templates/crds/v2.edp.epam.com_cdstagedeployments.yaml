@@ -60,6 +60,10 @@ spec:
               stage:
                 description: Name of related stage
                 type: string
+              strategy:
+                default: Auto
+                description: TriggerType specifies a strategy for auto-deploy.
+                type: string
               tag:
                 description: Specifies a latest available tag
                 properties:
