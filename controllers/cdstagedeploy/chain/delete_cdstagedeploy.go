@@ -23,7 +23,7 @@ func NewDeleteCDStageDeploy(k8sClient client.Client) *DeleteCDStageDeploy {
 func (h *DeleteCDStageDeploy) ServeRequest(ctx context.Context, stageDeploy *codebaseApi.CDStageDeploy) error {
 	log := ctrl.LoggerFrom(ctx)
 
-	if stageDeploy.Status.Status != codebaseApi.CDStageDeployStatusCompleted {
+	if !stageDeploy.IsCompleted() {
 		log.Info("CDStageDeploy has not been completed yet. Skip deleting.")
 
 		return nil

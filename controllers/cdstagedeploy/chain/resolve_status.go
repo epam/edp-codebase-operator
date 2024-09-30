@@ -27,7 +27,7 @@ func NewResolveStatus(k8sClient client.Client) *ResolveStatus {
 func (r *ResolveStatus) ServeRequest(ctx context.Context, stageDeploy *codebaseApi.CDStageDeploy) error {
 	log := ctrl.LoggerFrom(ctx)
 
-	if stageDeploy.Status.Status == codebaseApi.CDStageDeployStatusFailed {
+	if stageDeploy.IsFailed() {
 		log.Info("CDStageDeploy has failed status. Retry to deploy.")
 		return nil
 	}
@@ -37,7 +37,7 @@ func (r *ResolveStatus) ServeRequest(ctx context.Context, stageDeploy *codebaseA
 		return fmt.Errorf("failed to get running pipelines: %w", err)
 	}
 
-	if stageDeploy.Status.Status == codebaseApi.CDStageDeployStatusPending {
+	if stageDeploy.IsPending() {
 		if allPipelineRunsCompleted(pipelineRun.Items) {
 			log.Info("CDStageDeploy has pending status. Start deploying.")
 
@@ -51,7 +51,7 @@ func (r *ResolveStatus) ServeRequest(ctx context.Context, stageDeploy *codebaseA
 		return nil
 	}
 
-	if stageDeploy.Status.Status == codebaseApi.CDStageDeployStatusInQueue {
+	if stageDeploy.IsInQueue() {
 		if allPipelineRunsCompleted(pipelineRun.Items) {
 			log.Info("All PipelineRuns have been completed.")
 
@@ -82,7 +82,7 @@ func (r *ResolveStatus) ServeRequest(ctx context.Context, stageDeploy *codebaseA
 		return nil
 	}
 
-	if stageDeploy.Status.Status == codebaseApi.CDStageDeployStatusRunning {
+	if stageDeploy.IsRunning() {
 		if allPipelineRunsCompleted(pipelineRun.Items) {
 			log.Info("All PipelineRuns have been completed.")
 

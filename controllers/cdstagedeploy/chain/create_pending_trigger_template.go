@@ -15,25 +15,20 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/pkg/tektoncd"
 )
 
-type ProcessTriggerTemplate struct {
+type CreatePendingTriggerTemplate struct {
 	k8sClient                 client.Client
 	triggerTemplateManager    tektoncd.TriggerTemplateManager
 	autoDeployStrategyManager autodeploy.Manager
 }
 
-func NewProcessTriggerTemplate(
-	k8sClient client.Client,
-	triggerTemplateManager tektoncd.TriggerTemplateManager,
-	autoDeployStrategyManager autodeploy.Manager,
-) *ProcessTriggerTemplate {
-	return &ProcessTriggerTemplate{
-		k8sClient:                 k8sClient,
-		triggerTemplateManager:    triggerTemplateManager,
-		autoDeployStrategyManager: autoDeployStrategyManager,
-	}
+func NewCreatePendingTriggerTemplate(k8sClient client.Client, triggerTemplateManager tektoncd.TriggerTemplateManager, autoDeployStrategyManager autodeploy.Manager) *CreatePendingTriggerTemplate {
+	return &CreatePendingTriggerTemplate{k8sClient: k8sClient, triggerTemplateManager: triggerTemplateManager, autoDeployStrategyManager: autoDeployStrategyManager}
 }
 
-func (h *ProcessTriggerTemplate) ServeRequest(ctx context.Context, stageDeploy *codebaseApi.CDStageDeploy) error {
+func (h *CreatePendingTriggerTemplate) ServeRequest(
+	ctx context.Context,
+	stageDeploy *codebaseApi.CDStageDeploy,
+) error {
 	log := ctrl.LoggerFrom(ctx).WithValues("stage", stageDeploy.Spec.Stage, "pipeline", stageDeploy.Spec.Pipeline, "status", stageDeploy.Status.Status)
 
 	if skipPipelineRunCreation(stageDeploy) {
@@ -63,7 +58,7 @@ func (h *ProcessTriggerTemplate) ServeRequest(ctx context.Context, stageDeploy *
 	rawResource, err := h.triggerTemplateManager.GetRawResourceFromTriggerTemplate(ctx, stage.Spec.TriggerTemplate, stageDeploy.Namespace)
 	if err != nil {
 		if errors.Is(err, tektoncd.ErrEmptyTriggerTemplateResources) {
-			log.Info("No resource templates found in the trigger template. Skip processing.", "triggertemplate", stage.Spec.TriggerTemplate)
+			log.Info("No resource templates found in the trigger template. Skip processing.", "triggertemplate", stage.Spec.TriggerType)
 
 			stageDeploy.Status.Status = codebaseApi.CDStageDeployStatusCompleted
 
@@ -73,20 +68,22 @@ func (h *ProcessTriggerTemplate) ServeRequest(ctx context.Context, stageDeploy *
 		return fmt.Errorf("failed to get raw resource from TriggerTemplate: %w", err)
 	}
 
-	appPayload, err := h.autoDeployStrategyManager.GetAppPayloadForAllLatestStrategy(ctx, pipeline)
+	appPayload, err := h.autoDeployStrategyManager.GetAppPayloadForCurrentWithStableStrategy(
+		ctx,
+		stageDeploy.Spec.Tag,
+		pipeline,
+		stage,
+	)
 	if err != nil {
 		if errors.Is(err, autodeploy.ErrLasTagNotFound) {
-			log.Info("Codebase doesn't have tags in the CodebaseImageStream. Skip auto-deploy.")
-
 			stageDeploy.Status.Status = codebaseApi.CDStageDeployStatusCompleted
-
 			return nil
 		}
 
-		return fmt.Errorf("failed to get application payload: %w", err)
+		return fmt.Errorf("failed to get app payload: %w", err)
 	}
 
-	if err = h.triggerTemplateManager.CreatePipelineRun(
+	if err = h.triggerTemplateManager.CreatePendingPipelineRun(
 		ctx,
 		stageDeploy.Namespace,
 		stageDeploy.Name,
@@ -96,20 +93,12 @@ func (h *ProcessTriggerTemplate) ServeRequest(ctx context.Context, stageDeploy *
 		[]byte(pipeline.Spec.Name),
 		[]byte(stage.Spec.ClusterName),
 	); err != nil {
-		return fmt.Errorf("failed to create PipelineRun: %w", err)
+		return fmt.Errorf("failed to create PendingPipelineRun: %w", err)
 	}
 
-	stageDeploy.Status.Status = codebaseApi.CDStageDeployStatusRunning
+	stageDeploy.Status.Status = codebaseApi.CDStageDeployStatusInQueue
 
 	log.Info("TriggerTemplate for auto-deploy has been processed successfully.")
 
 	return nil
-}
-
-func skipPipelineRunCreation(stageDeploy *codebaseApi.CDStageDeploy) bool {
-	if stageDeploy.IsPending() || stageDeploy.IsFailed() {
-		return false
-	}
-
-	return true
 }

@@ -42,7 +42,7 @@ func GetRepoUrl(c *codebaseApi.Codebase) (string, error) {
 		return tryGetRepoUrl(&c.Spec)
 	}
 
-	log.Info("Strategy is not clone. Start build url...", logCodebaseNameKey, c.Name)
+	log.Info("TriggerType is not clone. Start build url...", logCodebaseNameKey, c.Name)
 
 	u := BuildRepoUrl(&c.Spec)
 
