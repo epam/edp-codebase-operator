@@ -54,7 +54,8 @@ func (s *PutWebHook) ServeRequest(ctx context.Context, codebase *codebaseApi.Cod
 	}
 
 	if gitServer.Spec.GitProvider != codebaseApi.GitProviderGitlab &&
-		gitServer.Spec.GitProvider != codebaseApi.GitProviderGithub {
+		gitServer.Spec.GitProvider != codebaseApi.GitProviderGithub &&
+		gitServer.Spec.GitProvider != codebaseApi.GitProviderBitbucket {
 		log.Info(fmt.Sprintf("Unsupported Git provider %s. Skip putting webhook", gitServer.Spec.GitProvider))
 		return nil
 	}

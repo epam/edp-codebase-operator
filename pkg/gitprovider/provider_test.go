@@ -27,7 +27,7 @@ func TestNewProvider(t *testing.T) {
 					GitProvider: codebaseApi.GitProviderGithub,
 				},
 			},
-			want:    NewMockGitHubClient(restyClient),
+			want:    NewGitHubClient(restyClient),
 			wantErr: require.NoError,
 		},
 		{
@@ -37,7 +37,7 @@ func TestNewProvider(t *testing.T) {
 					GitProvider: codebaseApi.GitProviderGitlab,
 				},
 			},
-			want:    NewMockGitLabClient(restyClient),
+			want:    NewGitLabClient(restyClient),
 			wantErr: require.NoError,
 		},
 		{

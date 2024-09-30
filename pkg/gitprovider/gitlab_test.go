@@ -49,7 +49,7 @@ func TestGitLabClient_CreateWebHook(t *testing.T) {
 			require.NoError(t, err)
 			httpmock.RegisterRegexpResponder(http.MethodPost, fakeUrlRegexp, responder)
 
-			c := NewMockGitLabClient(restyClient)
+			c := NewGitLabClient(restyClient)
 
 			got, err := c.CreateWebHook(context.Background(), "url", "token", "project", "secret", "webHookURL", false)
 			if !tt.wantErr(t, err) {
@@ -106,7 +106,7 @@ func TestGitLabClient_GetWebHook(t *testing.T) {
 			require.NoError(t, err)
 			httpmock.RegisterRegexpResponder(http.MethodGet, fakeUrlRegexp, responder)
 
-			c := NewMockGitLabClient(restyClient)
+			c := NewGitLabClient(restyClient)
 
 			got, err := c.GetWebHook(context.Background(), "url", "token", "project", 999)
 			if !tt.wantErr(t, err) {
@@ -158,7 +158,7 @@ func TestGitLabClient_DeleteWebHook(t *testing.T) {
 			responder := httpmock.NewStringResponder(tt.respStatus, "")
 			httpmock.RegisterRegexpResponder(http.MethodDelete, fakeUrlRegexp, responder)
 
-			c := NewMockGitLabClient(restyClient)
+			c := NewGitLabClient(restyClient)
 
 			err := c.DeleteWebHook(context.Background(), "url", "token", "project", 999)
 			if !tt.wantErr(t, err) {
@@ -223,7 +223,7 @@ func TestGitLabClient_GetWebHooks(t *testing.T) {
 			require.NoError(t, err)
 			httpmock.RegisterRegexpResponder(http.MethodGet, fakeUrlRegexp, responder)
 
-			c := NewMockGitLabClient(restyClient)
+			c := NewGitLabClient(restyClient)
 
 			got, err := c.GetWebHooks(context.Background(), "url", "token", tt.projectID)
 
@@ -321,7 +321,7 @@ func TestGitLabClient_CreateWebHookIfNotExists(t *testing.T) {
 			require.NoError(t, err)
 			httpmock.RegisterRegexpResponder(http.MethodPost, fakeUrlRegexp, POSTResponder)
 
-			c := NewMockGitLabClient(restyClient)
+			c := NewGitLabClient(restyClient)
 
 			got, err := c.CreateWebHookIfNotExists(context.Background(), "url", "token", tt.projectID, "secret", tt.webHookURL, false)
 
@@ -404,7 +404,7 @@ func TestGitLabClient_CreateProject(t *testing.T) {
 			require.NoError(t, err)
 			httpmock.RegisterRegexpResponder(http.MethodPost, fakeUrlRegexp, POSTResponder)
 
-			c := NewMockGitLabClient(restyClient)
+			c := NewGitLabClient(restyClient)
 
 			err = c.CreateProject(context.Background(), "url", "token", tt.projectID)
 			tt.wantErr(t, err)
@@ -463,7 +463,7 @@ func TestGitLabClient_ProjectExists(t *testing.T) {
 			require.NoError(t, err)
 			httpmock.RegisterRegexpResponder(http.MethodGet, fakeUrlRegexp, GETResponder)
 
-			c := NewMockGitLabClient(restyClient)
+			c := NewGitLabClient(restyClient)
 
 			got, err := c.ProjectExists(context.Background(), "url", "token", tt.projectID)
 			tt.wantErr(t, err)
@@ -510,7 +510,7 @@ func TestGitLabClient_SetDefaultBranch(t *testing.T) {
 			require.NoError(t, err)
 			httpmock.RegisterRegexpResponder(http.MethodPut, fakeUrlRegexp, GETResponder)
 
-			c := NewMockGitLabClient(restyClient)
+			c := NewGitLabClient(restyClient)
 
 			err = c.SetDefaultBranch(context.Background(), "url", "token", tt.projectID, "main")
 			tt.wantErr(t, err)

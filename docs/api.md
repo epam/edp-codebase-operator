@@ -1139,8 +1139,8 @@ GitServerSpec defines the desired state of GitServer.
         <td>
           GitProvider is a git provider type. It can be gerrit, github or gitlab. Default value is gerrit.<br/>
           <br/>
-            <i>Enum</i>: gerrit, gitlab, github<br/>
-            <i>Default</i>: gerrit<br/>
+            <i>Enum</i>: gerrit, gitlab, github, bitbucket<br/>
+            <i>Default</i>: github<br/>
         </td>
         <td>false</td>
       </tr><tr>

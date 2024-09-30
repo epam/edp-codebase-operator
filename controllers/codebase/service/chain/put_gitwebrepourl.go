@@ -58,7 +58,7 @@ func (s *PutGitWebRepoUrl) ServeRequest(ctx context.Context, codebase *codebaseA
 // For Gerrit we return link to the repository in format: https://<gerrit_host>/gitweb?p=<codebase>.git
 func (s *PutGitWebRepoUrl) getGitWebURL(ctx context.Context, gitServer *codebaseApi.GitServer, codebase *codebaseApi.Codebase) (string, error) {
 	switch gitServer.Spec.GitProvider {
-	case codebaseApi.GitProviderGitlab, codebaseApi.GitProviderGithub:
+	case codebaseApi.GitProviderGitlab, codebaseApi.GitProviderGithub, codebaseApi.GitProviderBitbucket:
 		urlLink := util.GetHostWithProtocol(gitServer.Spec.GitHost)
 		urlLink = strings.TrimSuffix(urlLink, "/")
 		// For GitHub and GitLab we return link to the repository in format: https://<git_host>/<git_org>/<git_repo>
