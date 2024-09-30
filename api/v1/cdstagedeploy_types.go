@@ -27,6 +27,11 @@ type CDStageDeploySpec struct {
 
 	// A list of available tags
 	Tags []CodebaseTag `json:"tags"`
+
+	// TriggerType specifies a strategy for auto-deploy.
+	// +optional
+	// +kubebuilder:default="Auto"
+	TriggerType string `json:"strategy,omitempty"`
 }
 
 type CodebaseTag struct {
@@ -73,6 +78,26 @@ func (in *CDStageDeploy) SetFailedStatus(err error) {
 
 func (in *CDStageDeploy) GetStageCRName() string {
 	return fmt.Sprintf("%s-%s", in.Spec.Pipeline, in.Spec.Stage)
+}
+
+func (in *CDStageDeploy) IsPending() bool {
+	return in.Status.Status == CDStageDeployStatusPending
+}
+
+func (in *CDStageDeploy) IsInQueue() bool {
+	return in.Status.Status == CDStageDeployStatusInQueue
+}
+
+func (in *CDStageDeploy) IsFailed() bool {
+	return in.Status.Status == CDStageDeployStatusFailed
+}
+
+func (in *CDStageDeploy) IsCompleted() bool {
+	return in.Status.Status == CDStageDeployStatusCompleted
+}
+
+func (in *CDStageDeploy) IsRunning() bool {
+	return in.Status.Status == CDStageDeployStatusRunning
 }
 
 // +kubebuilder:object:root=true

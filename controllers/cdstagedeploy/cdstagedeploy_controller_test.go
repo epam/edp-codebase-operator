@@ -55,7 +55,7 @@ func TestReconcileCDStageDeploy_Reconcile(t *testing.T) {
 				return fake.NewClientBuilder().WithScheme(scheme).WithObjects(dp).Build()
 			},
 			chainFactory: func(t *testing.T) chain.CDStageDeployChain {
-				return func(cl client.Client) chain.CDStageDeployHandler {
+				return func(cl client.Client, stageDeploy *codebaseApi.CDStageDeploy) chain.CDStageDeployHandler {
 					m := mocks.NewMockCDStageDeployHandler(t)
 
 					m.On("ServeRequest", mock.Anything, mock.Anything).
@@ -88,7 +88,7 @@ func TestReconcileCDStageDeploy_Reconcile(t *testing.T) {
 				return fake.NewClientBuilder().WithScheme(scheme).WithObjects(dp).Build()
 			},
 			chainFactory: func(t *testing.T) chain.CDStageDeployChain {
-				return func(cl client.Client) chain.CDStageDeployHandler {
+				return func(cl client.Client, stageDeploy *codebaseApi.CDStageDeploy) chain.CDStageDeployHandler {
 					m := mocks.NewMockCDStageDeployHandler(t)
 
 					m.On("ServeRequest", mock.Anything, mock.Anything).
@@ -115,7 +115,7 @@ func TestReconcileCDStageDeploy_Reconcile(t *testing.T) {
 				return fake.NewClientBuilder().WithScheme(scheme).Build()
 			},
 			chainFactory: func(t *testing.T) chain.CDStageDeployChain {
-				return func(cl client.Client) chain.CDStageDeployHandler {
+				return func(cl client.Client, stageDeploy *codebaseApi.CDStageDeploy) chain.CDStageDeployHandler {
 					m := mocks.NewMockCDStageDeployHandler(t)
 
 					m.On("ServeRequest", mock.Anything, mock.Anything).

@@ -17,7 +17,6 @@ import (
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/codebaseimagestream"
-	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
 type PutCDStageDeploy struct {
@@ -25,12 +24,13 @@ type PutCDStageDeploy struct {
 }
 
 type cdStageDeployCommand struct {
-	Name      string
-	Namespace string
-	Pipeline  string
-	Stage     string
-	Tag       codebaseApi.CodebaseTag
-	Tags      []codebaseApi.CodebaseTag
+	Name        string
+	Namespace   string
+	Pipeline    string
+	Stage       string
+	TriggerType string
+	Tag         codebaseApi.CodebaseTag
+	Tags        []codebaseApi.CodebaseTag
 }
 
 func (h PutCDStageDeploy) ServeRequest(ctx context.Context, imageStream *codebaseApi.CodebaseImageStream) error {
@@ -92,8 +92,24 @@ func (h PutCDStageDeploy) putCDStageDeploy(ctx context.Context, envLabel, namesp
 	l := ctrl.LoggerFrom(ctx)
 	// use name for CDStageDeploy, it is converted from envLabel and cdpipeline/stage now is cdpipeline-stage
 	name := strings.ReplaceAll(envLabel, "/", "-")
+	env := strings.Split(envLabel, "/")
+	pipeline := env[0]
+	stage := env[1]
+	stageCrName := fmt.Sprintf("%s-%s", pipeline, stage)
 
-	skip, err := h.skipCDStageDeployCreation(ctx, envLabel, namespace)
+	stageCr := &pipelineApi.Stage{}
+	if err := h.client.Get(
+		ctx,
+		types.NamespacedName{
+			Name:      stageCrName,
+			Namespace: namespace,
+		},
+		stageCr,
+	); err != nil {
+		return fmt.Errorf("failed to get CDStage %s: %w", stageCrName, err)
+	}
+
+	skip, err := h.skipCDStageDeployCreation(ctx, pipeline, namespace, stageCr)
 	if err != nil {
 		return fmt.Errorf("failed to check if CDStageDeploy exists: %w", err)
 	}
@@ -104,23 +120,27 @@ func (h PutCDStageDeploy) putCDStageDeploy(ctx context.Context, envLabel, namesp
 		return nil
 	}
 
-	cdsd, err := getCreateCommand(ctx, envLabel, name, namespace, spec.Codebase, spec.Tags)
+	cdsd, err := getCreateCommand(ctx, pipeline, stage, name, namespace, spec.Codebase, stageCr.Spec.TriggerType, spec.Tags)
 	if err != nil {
 		return fmt.Errorf("failed to construct command to create %v cd stage deploy: %w", name, err)
 	}
 
-	if err = h.create(ctx, cdsd); err != nil {
+	if err = h.create(ctx, cdsd, stageCr); err != nil {
 		return fmt.Errorf("failed to create %v cd stage deploy: %w", name, err)
 	}
 
 	return nil
 }
 
-func (h PutCDStageDeploy) skipCDStageDeployCreation(ctx context.Context, envLabel, namespace string) (bool, error) {
+func (h PutCDStageDeploy) skipCDStageDeployCreation(ctx context.Context, pipeline, namespace string, stage *pipelineApi.Stage) (bool, error) {
 	l := ctrl.LoggerFrom(ctx)
-	l.Info("Getting CDStageDeploys.")
 
-	env := strings.Split(envLabel, "/")
+	if !stage.IsAutoDeployTriggerType() {
+		l.Info("CDStage trigger type is not Auto. Don't need to skip CDStageDeploy creation.")
+		return false, nil
+	}
+
+	l.Info("Getting CDStageDeploys.")
 
 	list := &codebaseApi.CDStageDeployList{}
 	if err := h.client.List(
@@ -128,8 +148,8 @@ func (h PutCDStageDeploy) skipCDStageDeployCreation(ctx context.Context, envLabe
 		list,
 		client.InNamespace(namespace),
 		client.MatchingLabels{
-			codebaseApi.CdPipelineLabel: env[0],
-			codebaseApi.CdStageLabel:    fmt.Sprintf("%s-%s", env[0], env[1]),
+			codebaseApi.CdPipelineLabel: pipeline,
+			codebaseApi.CdStageLabel:    stage.Name,
 		},
 	); err != nil {
 		return false, fmt.Errorf("failed to get CDStageDeploys: %w", err)
@@ -148,19 +168,22 @@ func (h PutCDStageDeploy) skipCDStageDeployCreation(ctx context.Context, envLabe
 	}
 }
 
-func getCreateCommand(ctx context.Context, envLabel, name, namespace, codebase string, tags []codebaseApi.Tag) (*cdStageDeployCommand, error) {
-	env := strings.Split(envLabel, "/")
-
+func getCreateCommand(
+	ctx context.Context,
+	pipeline, stage, name, namespace, codebase, triggerType string,
+	tags []codebaseApi.Tag,
+) (*cdStageDeployCommand, error) {
 	lastTag, err := codebaseimagestream.GetLastTag(tags, ctrl.LoggerFrom(ctx))
 	if err != nil {
 		return nil, fmt.Errorf("failed to get last tag: %w", err)
 	}
 
 	return &cdStageDeployCommand{
-		Name:      name,
-		Namespace: namespace,
-		Pipeline:  env[0],
-		Stage:     env[1],
+		Name:        name,
+		Namespace:   namespace,
+		Pipeline:    pipeline,
+		Stage:       stage,
+		TriggerType: triggerType,
 		Tag: codebaseApi.CodebaseTag{
 			Codebase: codebase,
 			Tag:      lastTag.Name,
@@ -174,24 +197,21 @@ func getCreateCommand(ctx context.Context, envLabel, name, namespace, codebase s
 	}, nil
 }
 
-func (h PutCDStageDeploy) create(ctx context.Context, command *cdStageDeployCommand) error {
+func (h PutCDStageDeploy) create(ctx context.Context, command *cdStageDeployCommand, stage *pipelineApi.Stage) error {
 	l := ctrl.LoggerFrom(ctx)
 	l.Info("CDStageDeploy is not present in cluster. Start creating.")
 
 	stageDeploy := &codebaseApi.CDStageDeploy{
-		TypeMeta: metaV1.TypeMeta{
-			APIVersion: util.V2APIVersion,
-			Kind:       util.CDStageDeployKind,
-		},
 		ObjectMeta: metaV1.ObjectMeta{
 			GenerateName: command.Name,
 			Namespace:    command.Namespace,
 		},
 		Spec: codebaseApi.CDStageDeploySpec{
-			Pipeline: command.Pipeline,
-			Stage:    command.Stage,
-			Tag:      command.Tag,
-			Tags:     command.Tags,
+			Pipeline:    command.Pipeline,
+			Stage:       command.Stage,
+			Tag:         command.Tag,
+			Tags:        command.Tags,
+			TriggerType: command.TriggerType,
 		},
 	}
 
@@ -199,18 +219,6 @@ func (h PutCDStageDeploy) create(ctx context.Context, command *cdStageDeployComm
 		codebaseApi.CdPipelineLabel: command.Pipeline,
 		codebaseApi.CdStageLabel:    stageDeploy.GetStageCRName(),
 	})
-
-	stage := &pipelineApi.Stage{}
-	if err := h.client.Get(
-		ctx,
-		types.NamespacedName{
-			Name:      stageDeploy.GetStageCRName(),
-			Namespace: command.Namespace,
-		},
-		stage,
-	); err != nil {
-		return fmt.Errorf("failed to get CDStage %s: %w", command.Stage, err)
-	}
 
 	if err := controllerutil.SetControllerReference(stage, stageDeploy, h.client.Scheme()); err != nil {
 		return fmt.Errorf("failed to set controller reference: %w", err)

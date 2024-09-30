@@ -6,4 +6,7 @@ const (
 
 	// CdStageLabel is a label that is used to store the name of the CD stage in the related resources.
 	CdStageLabel = "app.edp.epam.com/cdstage"
+
+	// CdStageDeployLabel is a label that is used to store the name of the CD stage deploy in the related resources.
+	CdStageDeployLabel = "app.edp.epam.com/cdstagedeploy"
 )

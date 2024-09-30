@@ -3,14 +3,14 @@ module github.com/epam/edp-codebase-operator/v2
 go 1.22
 
 replace (
-	github.com/epam/edp-cd-pipeline-operator/v2 v2.18.0 => github.com/epam/edp-cd-pipeline-operator/v2 v2.3.0-58.0.20240220142416-885084baa79c
 	github.com/kubernetes-incubator/reference-docs => github.com/kubernetes-sigs/reference-docs v0.0.0-20170929004150-fcf65347b256
 	github.com/markbates/inflect => github.com/markbates/inflect v1.0.4
+	github.com/openshift/api => github.com/openshift/api v0.0.0-20231118005202-0f638a8a4705
 )
 
 require (
 	github.com/andygrunwald/go-jira v1.16.0
-	github.com/epam/edp-cd-pipeline-operator/v2 v2.18.0
+	github.com/epam/edp-cd-pipeline-operator/v2 v2.3.0-58.0.20241002135711-e8056019eb01
 	github.com/epam/edp-common v0.0.0-20230710145648-344bbce4120e
 	github.com/go-git/go-git/v5 v5.12.0
 	github.com/go-logr/logr v1.4.1
@@ -101,6 +101,7 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stoewer/go-strcase v1.2.0 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
+	github.com/tidwall/gjson v1.14.4 // indirect
 	github.com/trivago/tgo v1.0.7 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	go.opencensus.io v0.24.0 // indirect
