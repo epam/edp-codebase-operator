@@ -3,6 +3,7 @@
 
 ### Features
 
+- Add baseline support for bitbucket cloud ([#134](https://github.com/epam/edp-codebase-operator/issues/134))
 - Implement fallback strategy for RPM packaging ([#123](https://github.com/epam/edp-codebase-operator/issues/123))
 - Add support for RPM packages ([#116](https://github.com/epam/edp-codebase-operator/issues/116))
 - Add dynamic pipelines names for CodebaseBranch ([#112](https://github.com/epam/edp-codebase-operator/issues/112))
@@ -18,6 +19,7 @@
 
 ### Bug Fixes
 
+- CDStageDeploy stuck in the running status ([#131](https://github.com/epam/edp-codebase-operator/issues/131))
 - Align label for gen-ai chat secret ([#86](https://github.com/epam/edp-codebase-operator/issues/86))
 - Integration secret shows connected status for invalid credentials ([#105](https://github.com/epam/edp-codebase-operator/issues/105))
 - Integration secret shows connected status for invalid credentials ([#105](https://github.com/epam/edp-codebase-operator/issues/105))
@@ -48,6 +50,10 @@
 - Update documentation ([#108](https://github.com/epam/edp-codebase-operator/issues/108))
 - Update codeql and codecov scan gh actions ([#83](https://github.com/epam/edp-codebase-operator/issues/83))
 - Update current development version ([#81](https://github.com/epam/edp-codebase-operator/issues/81))
+
+### Documentation
+
+- Update CHANGELOG md ([#129](https://github.com/epam/edp-codebase-operator/issues/129))
 
 
 <a name="v2.23.0"></a>
