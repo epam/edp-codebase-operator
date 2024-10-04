@@ -3,6 +3,7 @@ package gitprovider
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/go-resty/resty/v2"
 
@@ -35,7 +36,7 @@ type GitWebHookProvider interface {
 		gitProviderURL,
 		token,
 		projectID string,
-		webHookID int,
+		webHookRef string,
 	) (*WebHook, error)
 	GetWebHooks(
 		ctx context.Context,
@@ -48,7 +49,7 @@ type GitWebHookProvider interface {
 		gitProviderURL,
 		token,
 		projectID string,
-		webHookID int,
+		webHookRef string,
 	) error
 }
 
@@ -81,22 +82,22 @@ type GitProvider interface {
 }
 
 // NewProvider creates a new Git provider based on gitServer.
-func NewProvider(gitServer *codebaseApi.GitServer, restyClient *resty.Client) (GitProvider, error) {
+func NewProvider(gitServer *codebaseApi.GitServer, restyClient *resty.Client, token string) (GitProvider, error) {
 	switch gitServer.Spec.GitProvider {
 	case codebaseApi.GitProviderGithub:
 		return NewGitHubClient(restyClient), nil
 	case codebaseApi.GitProviderGitlab:
 		return NewGitLabClient(restyClient), nil
 	case codebaseApi.GitProviderBitbucket:
-		return NewBitbucketClient(), nil
+		return NewBitbucketClient(token)
 	default:
 		return nil, fmt.Errorf("unsupported git provider %s", gitServer.Spec.GitProvider)
 	}
 }
 
 // NewGitProjectProvider creates a new Git project provider based on gitServer.
-func NewGitProjectProvider(gitServer *codebaseApi.GitServer) (GitProjectProvider, error) {
-	return NewProvider(gitServer, resty.New())
+func NewGitProjectProvider(gitServer *codebaseApi.GitServer, token string) (GitProjectProvider, error) {
+	return NewProvider(gitServer, resty.New(), token)
 }
 
 // GetGitProviderAPIURL returns git server url with protocol.
@@ -114,11 +115,7 @@ func GetGitProviderAPIURL(gitServer *codebaseApi.GitServer) string {
 	}
 
 	if gitServer.Spec.GitProvider == codebaseApi.GitProviderBitbucket {
-		if url == "https://bitbucket.org" {
-			return "https://api.bitbucket.org/2.0"
-		}
-
-		url = fmt.Sprintf("%s/rest/api/1.0", url)
+		return "https://api.bitbucket.org/2.0"
 	}
 
 	if gitServer.Spec.HttpsPort != 0 {
@@ -126,4 +123,18 @@ func GetGitProviderAPIURL(gitServer *codebaseApi.GitServer) string {
 	}
 
 	return url
+}
+
+func parseProjectID(projectID string) (owner, repo string, err error) {
+	parts := strings.Split(projectID, "/")
+	if len(parts) != 2 {
+		return "", "", fmt.Errorf("invalid project ID: %s", projectID)
+	}
+
+	return parts[0], parts[1], nil
+}
+
+type WebHook struct {
+	ID  string `json:"id"`
+	URL string `json:"url"`
 }

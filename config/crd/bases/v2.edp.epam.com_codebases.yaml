@@ -214,8 +214,14 @@ spec:
                 description: Specifies a current state of Codebase.
                 type: string
               webHookID:
-                description: Stores ID of webhook which was created for a codebase.
+                description: |-
+                  Stores ID of webhook which was created for a codebase.
+                  Deprecated: Because the webhook id can be more than just an integer. Use WebHookRef instead.
                 type: integer
+              webHookRef:
+                description: WebHookRef stores unique reference to webhook which was
+                  created for a codebase.
+                type: string
             required:
             - action
             - available

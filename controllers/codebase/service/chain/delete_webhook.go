@@ -39,8 +39,8 @@ func (s *DeleteWebHook) ServeRequest(ctx context.Context, codebase *codebaseApi.
 
 	log.Info("Start deleting webhook...")
 
-	if codebase.Status.WebHookID == 0 {
-		log.Info("Webhook ID is empty. Skip deleting webhook.")
+	if codebase.Status.GetWebHookRef() == "" {
+		log.Info("Webhook ref is empty. Skip deleting webhook.")
 
 		return nil
 	}
@@ -59,7 +59,7 @@ func (s *DeleteWebHook) ServeRequest(ctx context.Context, codebase *codebaseApi.
 		return nil
 	}
 
-	gitProvider, err := gitprovider.NewProvider(gitServer, s.restyClient)
+	gitProvider, err := gitprovider.NewProvider(gitServer, s.restyClient, string(secret.Data[util.GitServerSecretTokenField]))
 	if err != nil {
 		log.Error(err, "Failed to delete webhook: unable to create git provider")
 
@@ -74,7 +74,7 @@ func (s *DeleteWebHook) ServeRequest(ctx context.Context, codebase *codebaseApi.
 		gitHost,
 		string(secret.Data[util.GitServerSecretTokenField]),
 		projectID,
-		codebase.Status.WebHookID,
+		codebase.Status.GetWebHookRef(),
 	)
 	if err != nil {
 		if errors.Is(err, gitprovider.ErrWebHookNotFound) {

@@ -65,7 +65,7 @@ func (s *PutWebHook) ServeRequest(ctx context.Context, codebase *codebaseApi.Cod
 		return s.processCodebaseError(codebase, err)
 	}
 
-	gitProvider, err := gitprovider.NewProvider(gitServer, s.restyClient)
+	gitProvider, err := gitprovider.NewProvider(gitServer, s.restyClient, string(secret.Data[util.GitServerSecretTokenField]))
 	if err != nil {
 		return s.processCodebaseError(codebase, fmt.Errorf("failed to create git provider: %w", err))
 	}
@@ -73,13 +73,13 @@ func (s *PutWebHook) ServeRequest(ctx context.Context, codebase *codebaseApi.Cod
 	projectID := codebase.Spec.GetProjectID()
 	gitHost := gitprovider.GetGitProviderAPIURL(gitServer)
 
-	if codebase.Status.WebHookID != 0 {
+	if codebase.Status.GetWebHookRef() != "" {
 		_, err = gitProvider.GetWebHook(
 			ctx,
 			gitHost,
 			string(secret.Data[util.GitServerSecretTokenField]),
 			projectID,
-			codebase.Status.WebHookID,
+			codebase.Status.GetWebHookRef(),
 		)
 
 		if err == nil {
@@ -111,7 +111,7 @@ func (s *PutWebHook) ServeRequest(ctx context.Context, codebase *codebaseApi.Cod
 		return s.processCodebaseError(codebase, fmt.Errorf("failed to create web hook: %w", err))
 	}
 
-	codebase.Status.WebHookID = webHook.ID
+	codebase.Status.WebHookRef = webHook.ID
 
 	if err = setIntermediateSuccessFields(ctx, s.client, codebase, codebaseApi.PutWebHook); err != nil {
 		return fmt.Errorf("failed to update codebase %s status: %w", codebase.Name, err)

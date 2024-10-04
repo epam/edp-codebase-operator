@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"strconv"
 	"strings"
 
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -193,12 +194,25 @@ type CodebaseStatus struct {
 	Git string `json:"git"`
 
 	// Stores ID of webhook which was created for a codebase.
+	// Deprecated: Because the webhook id can be more than just an integer. Use WebHookRef instead.
 	// +optional
 	WebHookID int `json:"webHookID,omitempty"`
+
+	// WebHookRef stores unique reference to webhook which was created for a codebase.
+	// +optional
+	WebHookRef string `json:"webHookRef,omitempty"`
 
 	// Stores GitWebUrl of codebase.
 	// +optional
 	GitWebUrl string `json:"gitWebUrl,omitempty"`
+}
+
+func (in *CodebaseStatus) GetWebHookRef() string {
+	if in.WebHookRef == "" && in.WebHookID != 0 {
+		return strconv.Itoa(in.WebHookID)
+	}
+
+	return in.WebHookRef
 }
 
 // +kubebuilder:object:root=true

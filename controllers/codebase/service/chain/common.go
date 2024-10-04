@@ -3,6 +3,7 @@ package chain
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -12,6 +13,12 @@ import (
 )
 
 func setIntermediateSuccessFields(ctx context.Context, c client.Client, cb *codebaseApi.Codebase, action codebaseApi.ActionType) error {
+	// Set WebHookRef from WebHookID for backward compatibility.
+	webHookRef := cb.Status.WebHookRef
+	if webHookRef == "" && cb.Status.WebHookID != 0 {
+		webHookRef = strconv.Itoa(cb.Status.WebHookID)
+	}
+
 	cb.Status = codebaseApi.CodebaseStatus{
 		Status:          util.StatusInProgress,
 		Available:       false,
@@ -23,6 +30,7 @@ func setIntermediateSuccessFields(ctx context.Context, c client.Client, cb *code
 		FailureCount:    cb.Status.FailureCount,
 		Git:             cb.Status.Git,
 		WebHookID:       cb.Status.WebHookID,
+		WebHookRef:      webHookRef,
 		GitWebUrl:       cb.Status.GitWebUrl,
 	}
 

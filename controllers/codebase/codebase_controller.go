@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"strconv"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -162,6 +163,12 @@ func (r *ReconcileCodebase) Reconcile(ctx context.Context, request reconcile.Req
 }
 
 func (r *ReconcileCodebase) updateFinishStatus(ctx context.Context, c *codebaseApi.Codebase) error {
+	// Set WebHookRef from WebHookID for backward compatibility.
+	webHookRef := c.Status.WebHookRef
+	if webHookRef == "" && c.Status.WebHookID != 0 {
+		webHookRef = strconv.Itoa(c.Status.WebHookID)
+	}
+
 	c.Status = codebaseApi.CodebaseStatus{
 		Status:          util.StatusFinished,
 		Available:       true,
@@ -173,6 +180,7 @@ func (r *ReconcileCodebase) updateFinishStatus(ctx context.Context, c *codebaseA
 		FailureCount:    0,
 		Git:             c.Status.Git,
 		WebHookID:       c.Status.WebHookID,
+		WebHookRef:      webHookRef,
 		GitWebUrl:       c.Status.GitWebUrl,
 	}
 

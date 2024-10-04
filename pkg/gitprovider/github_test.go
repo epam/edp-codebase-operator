@@ -33,7 +33,7 @@ func TestGitHubClient_CreateWebHook(t *testing.T) {
 			projectID:  "owner/repo",
 			respStatus: http.StatusCreated,
 			resBody:    map[string]interface{}{"id": 1, "config": map[string]string{"url": "https://example.com"}},
-			want:       &WebHook{ID: 1, URL: "https://example.com"},
+			want:       &WebHook{ID: "1", URL: "https://example.com"},
 			wantErr:    require.NoError,
 		},
 		{
@@ -99,7 +99,7 @@ func TestGitHubClient_GetWebHook(t *testing.T) {
 			projectID:  "owner/repo",
 			respStatus: http.StatusOK,
 			resBody:    map[string]interface{}{"id": 1, "config": map[string]string{"url": "https://example.com"}},
-			want:       &WebHook{ID: 1, URL: "https://example.com"},
+			want:       &WebHook{ID: "1", URL: "https://example.com"},
 			wantErr:    require.NoError,
 		},
 		{
@@ -139,7 +139,7 @@ func TestGitHubClient_GetWebHook(t *testing.T) {
 
 			c := NewGitHubClient(restyClient)
 
-			got, err := c.GetWebHook(context.Background(), "url", "token", tt.projectID, 999)
+			got, err := c.GetWebHook(context.Background(), "url", "token", tt.projectID, "999")
 
 			tt.wantErr(t, err)
 			if tt.errIs != nil {
@@ -207,7 +207,7 @@ func TestGitHubClient_DeleteWebHook(t *testing.T) {
 
 			c := NewGitHubClient(restyClient)
 
-			err := c.DeleteWebHook(context.Background(), "url", "token", tt.projectID, 999)
+			err := c.DeleteWebHook(context.Background(), "url", "token", tt.projectID, "999")
 
 			tt.wantErr(t, err)
 			if tt.errIs != nil {
@@ -243,7 +243,7 @@ func TestGitHubClient_GetWebHooks(t *testing.T) {
 			projectID:  "owner/repo",
 			respStatus: http.StatusOK,
 			resBody:    []map[string]interface{}{{"id": 1, "config": map[string]string{"url": "https://example.com"}}},
-			want:       []*WebHook{{ID: 1, URL: "https://example.com"}},
+			want:       []*WebHook{{ID: "1", URL: "https://example.com"}},
 			wantErr:    require.NoError,
 		},
 		{
@@ -322,7 +322,7 @@ func TestGitHubClient_CreateWebHookIfNotExists(t *testing.T) {
 			GETResBody:     []map[string]interface{}{},
 			POSTRespStatus: http.StatusCreated,
 			POSTResBody:    map[string]interface{}{"id": 1, "config": map[string]string{"url": "https://example.com"}},
-			want:           &WebHook{ID: 1, URL: "https://example.com"},
+			want:           &WebHook{ID: "1", URL: "https://example.com"},
 			wantErr:        require.NoError,
 		},
 		{
@@ -333,7 +333,7 @@ func TestGitHubClient_CreateWebHookIfNotExists(t *testing.T) {
 			GETResBody:     []map[string]interface{}{{"id": 1, "config": map[string]string{"url": "https://example.com"}}},
 			POSTRespStatus: http.StatusCreated,
 			POSTResBody:    map[string]interface{}{"id": 2, "config": map[string]string{"url": "https://example.com"}},
-			want:           &WebHook{ID: 1, URL: "https://example.com"},
+			want:           &WebHook{ID: "1", URL: "https://example.com"},
 			wantErr:        require.NoError,
 		},
 		{
@@ -344,7 +344,7 @@ func TestGitHubClient_CreateWebHookIfNotExists(t *testing.T) {
 			GETResBody:     []map[string]interface{}{{"id": 2, "config": map[string]string{"url": "https://provider.com"}}},
 			POSTRespStatus: http.StatusCreated,
 			POSTResBody:    map[string]interface{}{"id": 1, "config": map[string]string{"url": "https://example.com"}},
-			want:           &WebHook{ID: 1, URL: "https://example.com"},
+			want:           &WebHook{ID: "1", URL: "https://example.com"},
 			wantErr:        require.NoError,
 		},
 		{

@@ -55,7 +55,7 @@ func TestNewProvider(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := NewProvider(tt.gitServer, restyClient)
+			got, err := NewProvider(tt.gitServer, restyClient, "")
 			tt.wantErr(t, err)
 			if tt.errContains != "" {
 				assert.Contains(t, err.Error(), tt.errContains)
@@ -104,6 +104,15 @@ func Test_getGitProviderAPIURL(t *testing.T) {
 				},
 			},
 			want: "https://company.github.com/api/v3",
+		},
+		{
+			name: "bitbucket host",
+			gitServer: &codebaseApi.GitServer{
+				Spec: codebaseApi.GitServerSpec{
+					GitProvider: codebaseApi.GitProviderBitbucket,
+				},
+			},
+			want: "https://api.bitbucket.org/2.0",
 		},
 	}
 
