@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strconv"
 
 	"golang.org/x/exp/slices"
 	corev1 "k8s.io/api/core/v1"
@@ -23,7 +24,7 @@ type PutProject struct {
 	client             client.Client
 	git                git.Git
 	gerrit             gerrit.Client
-	gitProjectProvider func(gitServer *codebaseApi.GitServer) (gitprovider.GitProjectProvider, error)
+	gitProjectProvider func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error)
 }
 
 var (
@@ -35,7 +36,7 @@ func NewPutProject(
 	c client.Client,
 	g git.Git,
 	gerritProvider gerrit.Client,
-	gitProjectProvider func(gitServer *codebaseApi.GitServer) (gitprovider.GitProjectProvider, error),
+	gitProjectProvider func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error),
 ) *PutProject {
 	return &PutProject{client: c, git: g, gerrit: gerritProvider, gitProjectProvider: gitProjectProvider}
 }
@@ -280,7 +281,7 @@ func (h *PutProject) createGitThirdPartyProject(ctx context.Context, gitServer *
 
 	log.Info("Start creating project in git provider")
 
-	gitProvider, err := h.gitProjectProvider(gitServer)
+	gitProvider, err := h.gitProjectProvider(gitServer, gitProviderToken)
 	if err != nil {
 		return fmt.Errorf("failed to create git provider: %w", err)
 	}
@@ -355,7 +356,7 @@ func (h *PutProject) setDefaultBranch(
 
 	log.Info("Set default branch in git provider")
 
-	gitProvider, err := h.gitProjectProvider(gitServer)
+	gitProvider, err := h.gitProjectProvider(gitServer, gitProviderToken)
 	if err != nil {
 		return fmt.Errorf("failed to create git provider: %w", err)
 	}
@@ -480,6 +481,12 @@ func (h *PutProject) notEmptyProjectProvisioning(ctx context.Context, codebase *
 }
 
 func setFailedFields(c *codebaseApi.Codebase, a codebaseApi.ActionType, message string) {
+	// Set WebHookRef from WebHookID for backward compatibility.
+	webHookRef := c.Status.WebHookRef
+	if webHookRef == "" && c.Status.WebHookID != 0 {
+		webHookRef = strconv.Itoa(c.Status.WebHookID)
+	}
+
 	c.Status = codebaseApi.CodebaseStatus{
 		Status:          util.StatusFailed,
 		Available:       false,
@@ -492,6 +499,7 @@ func setFailedFields(c *codebaseApi.Codebase, a codebaseApi.ActionType, message 
 		FailureCount:    c.Status.FailureCount,
 		Git:             c.Status.Git,
 		WebHookID:       c.Status.WebHookID,
+		WebHookRef:      webHookRef,
 		GitWebUrl:       c.Status.GitWebUrl,
 	}
 }

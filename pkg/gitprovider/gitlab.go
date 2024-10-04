@@ -13,7 +13,7 @@ import (
 
 var ErrWebHookNotFound = errors.New("webhook not found")
 
-type WebHook struct {
+type gitlabWebHook struct {
 	ID  int    `json:"id"`
 	URL string `json:"url"`
 }
@@ -55,7 +55,7 @@ func (c *GitLabClient) CreateWebHook(
 	skipTLS bool,
 ) (*WebHook, error) {
 	c.restyClient.HostURL = gitlabURL
-	webHook := &WebHook{}
+	webHook := &gitlabWebHook{}
 
 	resp, err := c.restyClient.
 		R().
@@ -82,7 +82,7 @@ func (c *GitLabClient) CreateWebHook(
 		return nil, fmt.Errorf("failed to create GitLab web hook: %s", resp.String())
 	}
 
-	return webHook, nil
+	return convertGitlabWebhook(webHook), nil
 }
 
 // CreateWebHookIfNotExists checks if a webhook with a given URL exists in the project.
@@ -116,10 +116,10 @@ func (c *GitLabClient) GetWebHook(
 	gitlabURL,
 	token,
 	projectID string,
-	webHookID int,
+	webHookRef string,
 ) (*WebHook, error) {
 	c.restyClient.HostURL = gitlabURL
-	webHook := &WebHook{}
+	webHook := &gitlabWebHook{}
 
 	resp, err := c.restyClient.
 		R().
@@ -127,7 +127,7 @@ func (c *GitLabClient) GetWebHook(
 		SetHeader(gitLabTokenHeaderName, token).
 		SetPathParams(map[string]string{
 			projectIDPathParam: projectID,
-			"hook-id":          strconv.Itoa(webHookID),
+			"hook-id":          webHookRef,
 		}).
 		SetResult(webHook).
 		Get("/api/v4/projects/{project-id}/hooks/{hook-id}")
@@ -143,7 +143,7 @@ func (c *GitLabClient) GetWebHook(
 		return nil, fmt.Errorf("failed to get GitLab web hook: %s", resp.String())
 	}
 
-	return webHook, nil
+	return convertGitlabWebhook(webHook), nil
 }
 
 // GetWebHooks gets a webhook by the given project.
@@ -155,7 +155,7 @@ func (c *GitLabClient) GetWebHooks(
 ) ([]*WebHook, error) {
 	c.restyClient.HostURL = gitlabURL
 
-	var webHooks []*WebHook
+	var webHooks []*gitlabWebHook
 
 	resp, err := c.restyClient.
 		R().
@@ -174,7 +174,12 @@ func (c *GitLabClient) GetWebHooks(
 		return nil, fmt.Errorf("failed to get GitLab web hooks: %s", resp.String())
 	}
 
-	return webHooks, nil
+	hooks := make([]*WebHook, len(webHooks))
+	for i, hook := range webHooks {
+		hooks[i] = convertGitlabWebhook(hook)
+	}
+
+	return hooks, nil
 }
 
 // DeleteWebHook deletes webhook by ID for the given project.
@@ -183,7 +188,7 @@ func (c *GitLabClient) DeleteWebHook(
 	gitlabURL,
 	token,
 	projectID string,
-	webHookID int,
+	webHookRef string,
 ) error {
 	c.restyClient.HostURL = gitlabURL
 
@@ -193,7 +198,7 @@ func (c *GitLabClient) DeleteWebHook(
 		SetHeader(gitLabTokenHeaderName, token).
 		SetPathParams(map[string]string{
 			projectIDPathParam: projectID,
-			"hook-id":          strconv.Itoa(webHookID),
+			"hook-id":          webHookRef,
 		}).
 		Delete("/api/v4/projects/{project-id}/hooks/{hook-id}")
 	if err != nil {
@@ -350,4 +355,15 @@ func decodeProjectID(projectID string) (namespace, path string, err error) {
 	}
 
 	return projectID[:lastSlashIndex], projectID[lastSlashIndex+1:], nil
+}
+
+func convertGitlabWebhook(hook *gitlabWebHook) *WebHook {
+	if hook == nil {
+		return nil
+	}
+
+	return &WebHook{
+		ID:  strconv.Itoa(hook.ID),
+		URL: hook.URL,
+	}
 }

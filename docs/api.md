@@ -1025,7 +1025,15 @@ which were performed<br/>
         <td><b>webHookID</b></td>
         <td>integer</td>
         <td>
-          Stores ID of webhook which was created for a codebase.<br/>
+          Stores ID of webhook which was created for a codebase.
+Deprecated: Because the webhook id can be more than just an integer. Use WebHookRef instead.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>webHookRef</b></td>
+        <td>string</td>
+        <td>
+          WebHookRef stores unique reference to webhook which was created for a codebase.<br/>
         </td>
         <td>false</td>
       </tr></tbody>

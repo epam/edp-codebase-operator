@@ -30,7 +30,7 @@ func TestGitLabClient_CreateWebHook(t *testing.T) {
 			name:       "success",
 			respStatus: http.StatusCreated,
 			resBody:    map[string]interface{}{"id": 1, "url": "https://example.com"},
-			want:       &WebHook{ID: 1, URL: "https://example.com"},
+			want:       &WebHook{ID: "1", URL: "https://example.com"},
 			wantErr:    assert.NoError,
 		},
 		{
@@ -80,7 +80,7 @@ func TestGitLabClient_GetWebHook(t *testing.T) {
 			name:       "success",
 			respStatus: http.StatusOK,
 			resBody:    map[string]interface{}{"id": 1, "url": "https://example.com"},
-			want:       &WebHook{ID: 1, URL: "https://example.com"},
+			want:       &WebHook{ID: "1", URL: "https://example.com"},
 			wantErr:    assert.NoError,
 		},
 		{
@@ -108,7 +108,7 @@ func TestGitLabClient_GetWebHook(t *testing.T) {
 
 			c := NewGitLabClient(restyClient)
 
-			got, err := c.GetWebHook(context.Background(), "url", "token", "project", 999)
+			got, err := c.GetWebHook(context.Background(), "url", "token", "project", "999")
 			if !tt.wantErr(t, err) {
 				return
 			}
@@ -160,7 +160,7 @@ func TestGitLabClient_DeleteWebHook(t *testing.T) {
 
 			c := NewGitLabClient(restyClient)
 
-			err := c.DeleteWebHook(context.Background(), "url", "token", "project", 999)
+			err := c.DeleteWebHook(context.Background(), "url", "token", "project", "999")
 			if !tt.wantErr(t, err) {
 				return
 			}
@@ -194,7 +194,7 @@ func TestGitLabClient_GetWebHooks(t *testing.T) {
 			projectID:  "owner/repo",
 			respStatus: http.StatusOK,
 			resBody:    []map[string]interface{}{{"id": 1, "url": "https://example.com"}},
-			want:       []*WebHook{{ID: 1, URL: "https://example.com"}},
+			want:       []*WebHook{{ID: "1", URL: "https://example.com"}},
 			wantErr:    require.NoError,
 		},
 		{
@@ -265,7 +265,7 @@ func TestGitLabClient_CreateWebHookIfNotExists(t *testing.T) {
 			GETResBody:     []map[string]interface{}{},
 			POSTRespStatus: http.StatusCreated,
 			POSTResBody:    map[string]interface{}{"id": 1, "url": "https://example.com"},
-			want:           &WebHook{ID: 1, URL: "https://example.com"},
+			want:           &WebHook{ID: "1", URL: "https://example.com"},
 			wantErr:        require.NoError,
 		},
 		{
@@ -276,7 +276,7 @@ func TestGitLabClient_CreateWebHookIfNotExists(t *testing.T) {
 			GETResBody:     []map[string]interface{}{{"id": 1, "url": "https://example.com"}},
 			POSTRespStatus: http.StatusCreated,
 			POSTResBody:    map[string]interface{}{"id": 2, "url": "https://provider.com"},
-			want:           &WebHook{ID: 1, URL: "https://example.com"},
+			want:           &WebHook{ID: "1", URL: "https://example.com"},
 			wantErr:        require.NoError,
 		},
 		{
@@ -287,7 +287,7 @@ func TestGitLabClient_CreateWebHookIfNotExists(t *testing.T) {
 			GETResBody:     []map[string]interface{}{{"id": 2, "url": "https://provider.com"}},
 			POSTRespStatus: http.StatusCreated,
 			POSTResBody:    map[string]interface{}{"id": 1, "url": "https://example.com"},
-			want:           &WebHook{ID: 1, URL: "https://example.com"},
+			want:           &WebHook{ID: "1", URL: "https://example.com"},
 			wantErr:        require.NoError,
 		},
 		{

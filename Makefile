@@ -185,3 +185,19 @@ MOCKERY = $(LOCALBIN)/mockery
 .PHONY: mockery
 mockery: ## Download mockery locally if necessary.
 	$(call go-get-tool,$(MOCKERY),github.com/vektra/mockery/v2,v2.43.0)
+
+OAPICODEGEN ?= $(LOCALBIN)/oapi-codegen
+
+.PHONY: oapi-codegen
+oapi-codegen: $(OAPICODEGEN) ## Download oapi-codegen locally if necessary.
+$(OAPICODEGEN): $(LOCALBIN)
+	test -s $(LOCALBIN)/oapi-codegen || GOBIN=$(LOCALBIN) go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest
+
+.PHONY: update-bitbucket-swagger
+update-bitbucket-swagger: ## Update bitbucket swagger file
+	echo "Read hack/bitbucket_api_notes.md and make manual changes to hack/bitbucket_api.json after running this command"
+	curl -o hack/bitbucket_api.json https://dac-static.atlassian.com/cloud/bitbucket/swagger.v3.json?_v=2.300.64-0.1310.0
+
+.PHONY: generate-bitbucket-api-client
+generate-bitbucket-api-client: oapi-codegen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
+	$(OAPICODEGEN) -config oapicfg.yaml hack/bitbucket_api.json

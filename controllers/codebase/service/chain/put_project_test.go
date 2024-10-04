@@ -82,8 +82,8 @@ func TestPutProject_ServeRequest(t *testing.T) {
 			Namespace: defaultNs,
 		},
 	}
-	defaultGitProvider := func(t *testing.T) func(gitServer *codebaseApi.GitServer) (gitprovider.GitProjectProvider, error) {
-		return func(gitServer *codebaseApi.GitServer) (gitprovider.GitProjectProvider, error) {
+	defaultGitProvider := func(t *testing.T) func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
+		return func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
 			return gitprovidermock.NewMockGitProjectProvider(t), nil
 		}
 	}
@@ -94,7 +94,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 		objects      []client.Object
 		gitClient    func(t *testing.T) git.Git
 		gerritClient func(t *testing.T) gerrit.Client
-		gitProvider  func(t *testing.T) func(gitServer *codebaseApi.GitServer) (gitprovider.GitProjectProvider, error)
+		gitProvider  func(t *testing.T) func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error)
 		wantErr      require.ErrorAssertionFunc
 		wantStatus   func(t *testing.T, status *codebaseApi.CodebaseStatus)
 	}{
@@ -898,7 +898,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 			gerritClient: func(t *testing.T) gerrit.Client {
 				return gerritmocks.NewMockClient(t)
 			},
-			gitProvider: func(t *testing.T) func(gitServer *codebaseApi.GitServer) (gitprovider.GitProjectProvider, error) {
+			gitProvider: func(t *testing.T) func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
 				mock := gitprovidermock.NewMockGitProjectProvider(t)
 
 				mock.On("ProjectExists", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
@@ -908,7 +908,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 					On("SetDefaultBranch", testify.Anything, testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(nil)
 
-				return func(gitServer *codebaseApi.GitServer) (gitprovider.GitProjectProvider, error) {
+				return func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
 					return mock, nil
 				}
 			},
@@ -954,7 +954,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 			gerritClient: func(t *testing.T) gerrit.Client {
 				return gerritmocks.NewMockClient(t)
 			},
-			gitProvider: func(t *testing.T) func(gitServer *codebaseApi.GitServer) (gitprovider.GitProjectProvider, error) {
+			gitProvider: func(t *testing.T) func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
 				mock := gitprovidermock.NewMockGitProjectProvider(t)
 
 				mock.On("ProjectExists", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
@@ -964,7 +964,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 					On("SetDefaultBranch", testify.Anything, testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(nil)
 
-				return func(gitServer *codebaseApi.GitServer) (gitprovider.GitProjectProvider, error) {
+				return func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
 					return mock, nil
 				}
 			},
@@ -1013,7 +1013,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 			gerritClient: func(t *testing.T) gerrit.Client {
 				return gerritmocks.NewMockClient(t)
 			},
-			gitProvider: func(t *testing.T) func(gitServer *codebaseApi.GitServer) (gitprovider.GitProjectProvider, error) {
+			gitProvider: func(t *testing.T) func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
 				mock := gitprovidermock.NewMockGitProjectProvider(t)
 
 				mock.On("ProjectExists", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
@@ -1023,7 +1023,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 					On("SetDefaultBranch", testify.Anything, testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(nil)
 
-				return func(gitServer *codebaseApi.GitServer) (gitprovider.GitProjectProvider, error) {
+				return func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
 					return mock, nil
 				}
 			},
@@ -1069,7 +1069,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 			gerritClient: func(t *testing.T) gerrit.Client {
 				return gerritmocks.NewMockClient(t)
 			},
-			gitProvider: func(t *testing.T) func(gitServer *codebaseApi.GitServer) (gitprovider.GitProjectProvider, error) {
+			gitProvider: func(t *testing.T) func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
 				mock := gitprovidermock.NewMockGitProjectProvider(t)
 
 				mock.On("ProjectExists", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
@@ -1079,7 +1079,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 					On("SetDefaultBranch", testify.Anything, testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(nil)
 
-				return func(gitServer *codebaseApi.GitServer) (gitprovider.GitProjectProvider, error) {
+				return func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
 					return mock, nil
 				}
 			},
@@ -1125,7 +1125,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 			gerritClient: func(t *testing.T) gerrit.Client {
 				return gerritmocks.NewMockClient(t)
 			},
-			gitProvider: func(t *testing.T) func(gitServer *codebaseApi.GitServer) (gitprovider.GitProjectProvider, error) {
+			gitProvider: func(t *testing.T) func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
 				mock := gitprovidermock.NewMockGitProjectProvider(t)
 
 				mock.On("ProjectExists", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
@@ -1135,7 +1135,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 					On("SetDefaultBranch", testify.Anything, testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(errors.New("failed to set default branch"))
 
-				return func(gitServer *codebaseApi.GitServer) (gitprovider.GitProjectProvider, error) {
+				return func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
 					return mock, nil
 				}
 			},
@@ -1164,7 +1164,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 			gerritClient: func(t *testing.T) gerrit.Client {
 				return nil
 			},
-			gitProvider: func(t *testing.T) func(gitServer *codebaseApi.GitServer) (gitprovider.GitProjectProvider, error) {
+			gitProvider: func(t *testing.T) func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
 				return nil
 			},
 			wantErr: require.NoError,
@@ -1192,7 +1192,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 			gerritClient: func(t *testing.T) gerrit.Client {
 				return nil
 			},
-			gitProvider: func(t *testing.T) func(gitServer *codebaseApi.GitServer) (gitprovider.GitProjectProvider, error) {
+			gitProvider: func(t *testing.T) func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
 				return nil
 			},
 			wantErr: require.NoError,
@@ -1220,7 +1220,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 			gerritClient: func(t *testing.T) gerrit.Client {
 				return nil
 			},
-			gitProvider: func(t *testing.T) func(gitServer *codebaseApi.GitServer) (gitprovider.GitProjectProvider, error) {
+			gitProvider: func(t *testing.T) func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
 				return nil
 			},
 			wantErr: require.NoError,

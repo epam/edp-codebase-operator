@@ -128,7 +128,7 @@ func (c *GitHubClient) GetWebHook(
 	githubURL,
 	token,
 	projectID string,
-	webHookID int,
+	webHookRef string,
 ) (*WebHook, error) {
 	owner, repo, err := parseProjectID(projectID)
 	if err != nil {
@@ -145,7 +145,7 @@ func (c *GitHubClient) GetWebHook(
 		SetPathParams(map[string]string{
 			ownerPathParam: owner,
 			repoPathParam:  repo,
-			"hook-id":      strconv.Itoa(webHookID),
+			"hook-id":      webHookRef,
 		}).
 		SetResult(webHook).
 		Get("/repos/{owner}/{repo}/hooks/{hook-id}")
@@ -212,7 +212,7 @@ func (c *GitHubClient) DeleteWebHook(
 	githubURL,
 	token,
 	projectID string,
-	webHookID int,
+	webHookRef string,
 ) error {
 	owner, repo, err := parseProjectID(projectID)
 	if err != nil {
@@ -228,7 +228,7 @@ func (c *GitHubClient) DeleteWebHook(
 		SetPathParams(map[string]string{
 			ownerPathParam: owner,
 			repoPathParam:  repo,
-			"hook-id":      strconv.Itoa(webHookID),
+			"hook-id":      webHookRef,
 		}).
 		Delete("/repos/{owner}/{repo}/hooks/{hook-id}")
 	if err != nil {
@@ -405,16 +405,7 @@ func convertWebhook(githubHook *gitHubWebHook) *WebHook {
 	}
 
 	return &WebHook{
-		ID:  githubHook.ID,
+		ID:  strconv.Itoa(githubHook.ID),
 		URL: githubHook.Config.URL,
 	}
-}
-
-func parseProjectID(projectID string) (owner, repo string, err error) {
-	parts := strings.Split(projectID, "/")
-	if len(parts) != 2 {
-		return "", "", fmt.Errorf("invalid project ID: %s", projectID)
-	}
-
-	return parts[0], parts[1], nil
 }

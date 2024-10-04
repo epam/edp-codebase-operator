@@ -16,6 +16,7 @@ require (
 	github.com/go-logr/logr v1.4.1
 	github.com/go-resty/resty/v2 v2.6.0
 	github.com/jarcoal/httpmock v1.0.8
+	github.com/oapi-codegen/runtime v1.1.1
 	github.com/openshift/api v3.9.0+incompatible
 	github.com/stretchr/testify v1.9.0
 	github.com/tektoncd/pipeline v0.59.0
@@ -38,6 +39,7 @@ require (
 	github.com/Microsoft/go-winio v0.6.1 // indirect
 	github.com/ProtonMail/go-crypto v1.0.0 // indirect
 	github.com/antlr4-go/antlr/v4 v4.13.0 // indirect
+	github.com/apapsch/go-jsonmerge/v2 v2.0.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/blendle/zapdriver v1.3.1 // indirect
 	github.com/census-instrumentation/opencensus-proto v0.4.1 // indirect
