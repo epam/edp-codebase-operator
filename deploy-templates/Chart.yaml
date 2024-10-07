@@ -35,8 +35,8 @@ annotations:
   artifacthub.io/images: |
     - name: codebase-operator:2.23.0
       image: epamedp/codebase-operator:2.23.0
-    - name: alpine:3.18.8
-      image: alpine:3.18.8
+    - name: alpine:3.18.9
+      image: alpine:3.18.9
   artifacthub.io/operatorCapabilities: Full Lifecycle
   artifacthub.io/crds: |
     - kind: CDStageDeploy
