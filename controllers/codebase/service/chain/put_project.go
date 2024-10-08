@@ -2,6 +2,7 @@ package chain
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -368,6 +369,14 @@ func (h *PutProject) setDefaultBranch(
 		codebase.Spec.GetProjectID(),
 		codebase.Spec.DefaultBranch,
 	); err != nil {
+		if errors.Is(gitprovider.ErrApiNotSupported, err) {
+			// We can skip this error, because it is not supported by Git provider.
+			// And this is not critical for the whole process.
+			log.Error(err, "Setting default branch is not supported by Git provider. Set it manually if needed")
+
+			return nil
+		}
+
 		return fmt.Errorf("failed to set default branch: %w", err)
 	}
 
