@@ -2,7 +2,6 @@ package gitprovider
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -10,8 +9,6 @@ import (
 
 	"github.com/go-resty/resty/v2"
 )
-
-var ErrWebHookNotFound = errors.New("webhook not found")
 
 type gitlabWebHook struct {
 	ID  int    `json:"id"`

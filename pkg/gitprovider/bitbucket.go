@@ -4,12 +4,12 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
 
 	"k8s.io/apimachinery/pkg/util/uuid"
+	"k8s.io/utils/ptr"
 
 	"github.com/epam/edp-codebase-operator/v2/pkg/gitprovider/bitbucket/generated"
 )
@@ -54,7 +54,7 @@ func NewBitbucketClient(token string, opts ...BitbucketClientOptsSetter) (*Bitbu
 	}, nil
 }
 
-func (b BitbucketClient) CreateWebHook(ctx context.Context, _, _, projectID, webHookSecret, webHookURL string, skipTLS bool) (*WebHook, error) {
+func (b *BitbucketClient) CreateWebHook(ctx context.Context, _, _, projectID, webHookSecret, webHookURL string, skipTLS bool) (*WebHook, error) {
 	owner, repo, err := parseProjectID(projectID)
 	if err != nil {
 		return nil, err
@@ -96,7 +96,7 @@ func (b BitbucketClient) CreateWebHook(ctx context.Context, _, _, projectID, web
 		return nil, fmt.Errorf("failed to create Bitbucket web hook: %w", err)
 	}
 
-	if r.StatusCode() != http.StatusCreated {
+	if !createObjectStatusOk(r.StatusCode()) {
 		return nil, fmt.Errorf("failed to create Bitbucket web hook: %s %s", r.Status(), r.Body)
 	}
 
@@ -110,7 +110,7 @@ func (b BitbucketClient) CreateWebHook(ctx context.Context, _, _, projectID, web
 	}, nil
 }
 
-func (b BitbucketClient) CreateWebHookIfNotExists(ctx context.Context, _, _, projectID, webHookSecret, webHookURL string, skipTLS bool) (*WebHook, error) {
+func (b *BitbucketClient) CreateWebHookIfNotExists(ctx context.Context, _, _, projectID, webHookSecret, webHookURL string, skipTLS bool) (*WebHook, error) {
 	webHooks, err := b.GetWebHooks(ctx, "", "", projectID)
 	if err != nil {
 		return nil, err
@@ -125,7 +125,7 @@ func (b BitbucketClient) CreateWebHookIfNotExists(ctx context.Context, _, _, pro
 	return b.CreateWebHook(ctx, "", "", projectID, webHookSecret, webHookURL, skipTLS)
 }
 
-func (b BitbucketClient) GetWebHook(ctx context.Context, _, _, projectID, webHookRef string) (*WebHook, error) {
+func (b *BitbucketClient) GetWebHook(ctx context.Context, _, _, projectID, webHookRef string) (*WebHook, error) {
 	owner, repo, err := parseProjectID(projectID)
 	if err != nil {
 		return nil, err
@@ -150,7 +150,7 @@ func (b BitbucketClient) GetWebHook(ctx context.Context, _, _, projectID, webHoo
 	}, nil
 }
 
-func (b BitbucketClient) GetWebHooks(ctx context.Context, _, _, projectID string) ([]*WebHook, error) {
+func (b *BitbucketClient) GetWebHooks(ctx context.Context, _, _, projectID string) ([]*WebHook, error) {
 	owner, repo, err := parseProjectID(projectID)
 	if err != nil {
 		return nil, err
@@ -185,7 +185,7 @@ func (b BitbucketClient) GetWebHooks(ctx context.Context, _, _, projectID string
 	return webHooks, nil
 }
 
-func (b BitbucketClient) DeleteWebHook(ctx context.Context, _, _, projectID, webHookRef string) error {
+func (b *BitbucketClient) DeleteWebHook(ctx context.Context, _, _, projectID, webHookRef string) error {
 	owner, repo, err := parseProjectID(projectID)
 	if err != nil {
 		return err
@@ -207,14 +207,80 @@ func (b BitbucketClient) DeleteWebHook(ctx context.Context, _, _, projectID, web
 	return nil
 }
 
-func (BitbucketClient) CreateProject(_ context.Context, _, _, _ string) error {
-	return errors.New("not implemented")
+func (b *BitbucketClient) CreateProject(ctx context.Context, _, _, projectID string) error {
+	owner, repo, err := parseProjectID(projectID)
+	if err != nil {
+		return err
+	}
+
+	reqBody := generated.PostRepositoriesWorkspaceRepoSlugJSONRequestBody{
+		Type:      "repository",
+		IsPrivate: ptr.To(true),
+	}
+
+	r, err := b.client.PostRepositoriesWorkspaceRepoSlugWithResponse(ctx, owner, repo, reqBody)
+	if err != nil {
+		return fmt.Errorf("failed to create Bitbucket repository: %w", err)
+	}
+
+	if !createObjectStatusOk(r.StatusCode()) {
+		return fmt.Errorf("failed to create Bitbucket repository: %s %s", r.Status(), r.Body)
+	}
+
+	return nil
 }
 
-func (BitbucketClient) ProjectExists(_ context.Context, _, _, _ string) (bool, error) {
-	return false, errors.New("not implemented")
+func (b *BitbucketClient) ProjectExists(ctx context.Context, _, _, projectID string) (bool, error) {
+	owner, repo, err := parseProjectID(projectID)
+	if err != nil {
+		return false, err
+	}
+
+	r, err := b.client.GetRepositoriesWorkspaceWithResponse(
+		ctx,
+		owner,
+		nil,
+		func(ctx context.Context, req *http.Request) error {
+			// nolint: gocritic // Can't use %q instead of "%s" because need double quotes.
+			req.URL.RawQuery = fmt.Sprintf(`q=slug="%s"`, repo)
+
+			return nil
+		},
+	)
+	if err != nil {
+		return false, fmt.Errorf("failed to get Bitbucket repository: %w", err)
+	}
+
+	if r.StatusCode() != http.StatusOK {
+		return false, fmt.Errorf("failed to get Bitbucket repository: %s %s", r.Status(), r.Body)
+	}
+
+	if r.JSON200 == nil || r.JSON200.Values == nil {
+		return false, nil
+	}
+
+	// nolint: gocritic // Force to use copy value.
+	for _, v := range *r.JSON200.Values {
+		if v.FullName != nil && *v.FullName == projectID {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }
 
-func (BitbucketClient) SetDefaultBranch(_ context.Context, _, _, _, _ string) error {
-	return errors.New("not implemented")
+func (*BitbucketClient) SetDefaultBranch(_ context.Context, _, _, _, branch string) error {
+	if branch == "main" {
+		// Bitbucket uses `main` as a default branch, so we can skip this operation.
+		return nil
+	}
+
+	// Set default branch is not supported by Bitbucket API.
+	// Open ticket: https://jira.atlassian.com/browse/BCLOUD-20340
+	// https://community.atlassian.com/t5/Bitbucket-questions/Get-and-set-default-branch-in-v2-API/qaq-p/2416227
+	return fmt.Errorf("setting default branch in Bitbucket repository: %w", ErrApiNotSupported)
+}
+
+func createObjectStatusOk(statusCode int) bool {
+	return statusCode == http.StatusOK || statusCode == http.StatusCreated
 }
