@@ -37,6 +37,9 @@ rpm-publish:
 		--upload-file ${DIST_DIR}/${NAME}-${VERSION}-${RELEASE}.$(ARCH).rpm \
 		${NEXUS_HOST_URL}/repository/edp-yum-snapshots/$(ARCH)/os/Packages/
 
+version:
+	@echo $(VERSION)
+
 clean:
 	rm -rf ${DIST_DIR}
 	rm -rf rpmbuild
