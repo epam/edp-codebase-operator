@@ -30,7 +30,6 @@ type cdStageDeployCommand struct {
 	Stage       string
 	TriggerType string
 	Tag         codebaseApi.CodebaseTag
-	Tags        []codebaseApi.CodebaseTag
 }
 
 func (h PutCDStageDeploy) ServeRequest(ctx context.Context, imageStream *codebaseApi.CodebaseImageStream) error {
@@ -188,12 +187,6 @@ func getCreateCommand(
 			Codebase: codebase,
 			Tag:      lastTag.Name,
 		},
-		Tags: []codebaseApi.CodebaseTag{
-			{
-				Codebase: codebase,
-				Tag:      lastTag.Name,
-			},
-		},
 	}, nil
 }
 
@@ -210,7 +203,7 @@ func (h PutCDStageDeploy) create(ctx context.Context, command *cdStageDeployComm
 			Pipeline:    command.Pipeline,
 			Stage:       command.Stage,
 			Tag:         command.Tag,
-			Tags:        command.Tags,
+			Tags:        []codebaseApi.CodebaseTag{command.Tag},
 			TriggerType: command.TriggerType,
 		},
 	}

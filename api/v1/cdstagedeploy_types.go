@@ -25,7 +25,9 @@ type CDStageDeploySpec struct {
 	// Specifies a latest available tag
 	Tag CodebaseTag `json:"tag"`
 
-	// A list of available tags
+	// A list of available tags.
+	// Deprecated: Use tag instead.
+	// +optional
 	Tags []CodebaseTag `json:"tags"`
 
 	// TriggerType specifies a strategy for auto-deploy.

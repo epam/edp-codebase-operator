@@ -76,7 +76,9 @@ spec:
                 - tag
                 type: object
               tags:
-                description: A list of available tags
+                description: |-
+                  A list of available tags.
+                  Deprecated: Use tag instead.
                 items:
                   properties:
                     codebase:
@@ -92,7 +94,6 @@ spec:
             - pipeline
             - stage
             - tag
-            - tags
             type: object
           status:
             default:

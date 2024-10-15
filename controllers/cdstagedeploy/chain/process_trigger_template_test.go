@@ -123,6 +123,96 @@ func TestProcessTriggerTemplate_ServeRequest(t *testing.T) {
 			},
 		},
 		{
+			name: "should process TriggerTemplate for Auto-stable auto-deploy",
+			stageDeploy: &codebaseApi.CDStageDeploy{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: "default",
+				},
+				Spec: codebaseApi.CDStageDeploySpec{
+					Pipeline:    "pipe1",
+					Stage:       "dev",
+					TriggerType: pipelineApi.TriggerTypeAutoStable,
+					Tag: codebaseApi.CodebaseTag{
+						Codebase: "app1",
+						Tag:      "1.0",
+					},
+				},
+				Status: codebaseApi.CDStageDeployStatus{
+					Status: codebaseApi.CDStageDeployStatusPending,
+				},
+			},
+			fields: fields{
+				k8sClient: func(t *testing.T) client.Client {
+					return fake.NewClientBuilder().
+						WithScheme(scheme).
+						WithObjects(
+							&pipelineApi.CDPipeline{
+								ObjectMeta: metav1.ObjectMeta{
+									Name:      "pipe1",
+									Namespace: "default",
+								},
+								Spec: pipelineApi.CDPipelineSpec{
+									Name: "pipe1",
+								},
+							},
+							&pipelineApi.Stage{
+								ObjectMeta: metav1.ObjectMeta{
+									Name:      "pipe1-dev",
+									Namespace: "default",
+								},
+								Spec: pipelineApi.StageSpec{
+									TriggerTemplate: "trigger1",
+									Name:            "dev",
+									ClusterName:     "cluster-secret",
+								},
+							},
+						).
+						Build()
+				},
+				triggerTemplateManager: func(t *testing.T) tektoncd.TriggerTemplateManager {
+					m := tektoncdmocks.NewMockTriggerTemplateManager(t)
+
+					m.On("GetRawResourceFromTriggerTemplate", mock.Anything, "trigger1", "default").
+						Return([]byte("raw resource"), nil)
+					m.On(
+						"CreatePipelineRun",
+						mock.Anything,
+						"default",
+						"test",
+						[]byte("raw resource"),
+						[]byte("{app1: 1.0}"),
+						[]byte("dev"),
+						[]byte("pipe1"),
+						[]byte("cluster-secret"),
+					).Return(nil)
+
+					return m
+				},
+				autoDeployStrategyManager: func(t *testing.T) autodeploy.Manager {
+					m := autodeploymocks.NewMockManager(t)
+
+					m.On(
+						"GetAppPayloadForCurrentWithStableStrategy",
+						mock.Anything,
+						codebaseApi.CodebaseTag{
+							Codebase: "app1",
+							Tag:      "1.0",
+						},
+						mock.Anything,
+						mock.Anything,
+					).
+						Return(json.RawMessage("{app1: 1.0}"), nil)
+
+					return m
+				},
+			},
+			wantErr: require.NoError,
+			want: func(t *testing.T, d *codebaseApi.CDStageDeploy) {
+				assert.Equal(t, codebaseApi.CDStageDeployStatusRunning, d.Status.Status)
+			},
+		},
+		{
 			name: "failed to create PipelineRun",
 			stageDeploy: &codebaseApi.CDStageDeploy{
 				ObjectMeta: metav1.ObjectMeta{

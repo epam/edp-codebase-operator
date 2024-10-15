@@ -3,6 +3,7 @@ package chain
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/require"
@@ -132,6 +133,10 @@ func TestResolveStatus_ServeRequest(t *testing.T) {
 		{
 			name: "queued CDStageDeploy should be pending after all pipeline runs completed",
 			stageDeploy: &codebaseApi.CDStageDeploy{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: "default",
+				},
 				Spec: codebaseApi.CDStageDeploySpec{
 					Pipeline: "app1",
 					Stage:    "dev",
@@ -141,14 +146,95 @@ func TestResolveStatus_ServeRequest(t *testing.T) {
 				},
 			},
 			k8sClient: func(t *testing.T) client.Client {
-				return fake.NewClientBuilder().WithScheme(scheme).Build()
+				d := &codebaseApi.CDStageDeploy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test",
+						Namespace: "default",
+						Labels: map[string]string{
+							codebaseApi.CdPipelineLabel: "app1",
+							codebaseApi.CdStageLabel:    "app1-dev",
+						},
+					},
+					Spec: codebaseApi.CDStageDeploySpec{
+						Pipeline: "app1",
+						Stage:    "dev",
+					},
+					Status: codebaseApi.CDStageDeployStatus{
+						Status: codebaseApi.CDStageDeployStatusInQueue,
+					},
+				}
+
+				return fake.NewClientBuilder().WithScheme(scheme).WithObjects(d).WithStatusSubresource(d).Build()
 			},
 			wantErr:    require.NoError,
 			wantStatus: codebaseApi.CDStageDeployStatusPending,
 		},
 		{
+			name: "queued CDStageDeploy should be queued if it is not first in queue",
+			stageDeploy: &codebaseApi.CDStageDeploy{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: "default",
+				},
+				Spec: codebaseApi.CDStageDeploySpec{
+					Pipeline: "app1",
+					Stage:    "dev",
+				},
+				Status: codebaseApi.CDStageDeployStatus{
+					Status: codebaseApi.CDStageDeployStatusInQueue,
+				},
+			},
+			k8sClient: func(t *testing.T) client.Client {
+				d1 := &codebaseApi.CDStageDeploy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test",
+						Namespace: "default",
+						Labels: map[string]string{
+							codebaseApi.CdPipelineLabel: "app1",
+							codebaseApi.CdStageLabel:    "app1-dev",
+						},
+						CreationTimestamp: metav1.NewTime(time.Now()),
+					},
+					Spec: codebaseApi.CDStageDeploySpec{
+						Pipeline: "app1",
+						Stage:    "dev",
+					},
+					Status: codebaseApi.CDStageDeployStatus{
+						Status: codebaseApi.CDStageDeployStatusInQueue,
+					},
+				}
+
+				d2 := &codebaseApi.CDStageDeploy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test2",
+						Namespace: "default",
+						Labels: map[string]string{
+							codebaseApi.CdPipelineLabel: "app1",
+							codebaseApi.CdStageLabel:    "app1-dev",
+						},
+						CreationTimestamp: metav1.NewTime(time.Now().Add(-time.Hour)),
+					},
+					Spec: codebaseApi.CDStageDeploySpec{
+						Pipeline: "app1",
+						Stage:    "dev",
+					},
+					Status: codebaseApi.CDStageDeployStatus{
+						Status: codebaseApi.CDStageDeployStatusInQueue,
+					},
+				}
+
+				return fake.NewClientBuilder().WithScheme(scheme).WithObjects(d1, d2).WithStatusSubresource(d1, d2).Build()
+			},
+			wantErr:    require.NoError,
+			wantStatus: codebaseApi.CDStageDeployStatusInQueue,
+		},
+		{
 			name: "queued CDStageDeploy should be queued if not all pipeline runs completed",
 			stageDeploy: &codebaseApi.CDStageDeploy{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: "default",
+				},
 				Spec: codebaseApi.CDStageDeploySpec{
 					Pipeline: "app1",
 					Stage:    "dev",
