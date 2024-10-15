@@ -52,32 +52,23 @@ func (r *ResolveStatus) ServeRequest(ctx context.Context, stageDeploy *codebaseA
 	}
 
 	if stageDeploy.IsInQueue() {
-		if allPipelineRunsCompleted(pipelineRun.Items) {
-			log.Info("All PipelineRuns have been completed.")
-
-			hasRunning, err := r.hasRunningCDStageDeploys(
-				ctx,
-				stageDeploy.Name,
-				stageDeploy.GetStageCRName(),
-				stageDeploy.Spec.Pipeline,
-				stageDeploy.Namespace,
-			)
-			if err != nil {
-				return fmt.Errorf("failed to check running CDStageDeploys: %w", err)
-			}
-
-			if hasRunning {
-				log.Info("Some CDStageDeploys are still running.")
-
-				return nil
-			}
-
-			stageDeploy.Status.Status = codebaseApi.CDStageDeployStatusPending
-
-			return nil
+		shouldStart, err := r.shouldStartCDStageDeploy(
+			ctx,
+			stageDeploy.Name,
+			stageDeploy.GetStageCRName(),
+			stageDeploy.Spec.Pipeline,
+			stageDeploy.Namespace,
+			pipelineRun.Items,
+		)
+		if err != nil {
+			return fmt.Errorf("failed to check running CDStageDeploys: %w", err)
 		}
 
-		log.Info("Some PipelineRuns are still running.")
+		if shouldStart {
+			log.Info("Starting processing CDStageDeploy.")
+
+			stageDeploy.Status.Status = codebaseApi.CDStageDeployStatusPending
+		}
 
 		return nil
 	}
@@ -124,10 +115,19 @@ func (r *ResolveStatus) getRunningPipelines(ctx context.Context, stageDeploy *co
 	return pipelineRun, nil
 }
 
-func (r *ResolveStatus) hasRunningCDStageDeploys(
+func (r *ResolveStatus) shouldStartCDStageDeploy(
 	ctx context.Context,
 	currentCDStageDeployName, stage, pipeline, namespace string,
+	pipelines []tektonpipelineApi.PipelineRun,
 ) (bool, error) {
+	log := ctrl.LoggerFrom(ctx)
+
+	if !allPipelineRunsCompleted(pipelines) {
+		log.Info("Some PipelineRuns are still running.")
+
+		return false, nil
+	}
+
 	cdStageDeploy := &codebaseApi.CDStageDeployList{}
 
 	if err := r.client.List(
@@ -142,14 +142,29 @@ func (r *ResolveStatus) hasRunningCDStageDeploys(
 		return false, fmt.Errorf("failed to list CDStageDeploys: %w", err)
 	}
 
+	if !allCdStageDeploysInQue(cdStageDeploy) {
+		log.Info("Some CDStageDeploys are processing.")
+
+		return false, nil
+	}
+
+	if !isFirsCdStageDeployInQue(cdStageDeploy, currentCDStageDeployName) {
+		log.Info("Another CDStageDeploys is in queue before current.")
+
+		return false, nil
+	}
+
+	return true, nil
+}
+
+func allCdStageDeploysInQue(cdStageDeploy *codebaseApi.CDStageDeployList) bool {
 	for i := range cdStageDeploy.Items {
-		if cdStageDeploy.Items[i].Name != currentCDStageDeployName &&
-			cdStageDeploy.Items[i].Status.Status == codebaseApi.CDStageDeployStatusRunning {
-			return true, nil
+		if cdStageDeploy.Items[i].Status.Status != codebaseApi.CDStageDeployStatusInQueue {
+			return false
 		}
 	}
 
-	return false, nil
+	return true
 }
 
 func allPipelineRunsCompleted(pipelineRuns []tektonpipelineApi.PipelineRun) bool {
@@ -160,4 +175,20 @@ func allPipelineRunsCompleted(pipelineRuns []tektonpipelineApi.PipelineRun) bool
 	}
 
 	return true
+}
+
+func isFirsCdStageDeployInQue(deploys *codebaseApi.CDStageDeployList, currentCDStageDeployName string) bool {
+	if len(deploys.Items) == 0 {
+		return false
+	}
+
+	var firstDeploy *codebaseApi.CDStageDeploy
+
+	for i := range deploys.Items {
+		if firstDeploy == nil || deploys.Items[i].CreationTimestamp.Before(&firstDeploy.CreationTimestamp) {
+			firstDeploy = &deploys.Items[i]
+		}
+	}
+
+	return firstDeploy != nil && firstDeploy.Name == currentCDStageDeployName
 }

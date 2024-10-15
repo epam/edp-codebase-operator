@@ -122,19 +122,20 @@ CDStageDeploySpec defines the desired state of CDStageDeploy.
         </td>
         <td>true</td>
       </tr><tr>
-        <td><b><a href="#cdstagedeployspectagsindex">tags</a></b></td>
-        <td>[]object</td>
-        <td>
-          A list of available tags<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
         <td><b>strategy</b></td>
         <td>string</td>
         <td>
           TriggerType specifies a strategy for auto-deploy.<br/>
           <br/>
             <i>Default</i>: Auto<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#cdstagedeployspectagsindex">tags</a></b></td>
+        <td>[]object</td>
+        <td>
+          A list of available tags.
+Deprecated: Use tag instead.<br/>
         </td>
         <td>false</td>
       </tr></tbody>

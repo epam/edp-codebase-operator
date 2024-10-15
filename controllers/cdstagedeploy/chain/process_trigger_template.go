@@ -2,11 +2,14 @@ package chain
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	pipelineApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/autodeploy"
@@ -55,7 +58,7 @@ func (h *ProcessTriggerTemplate) ServeRequest(ctx context.Context, stageDeploy *
 		return err
 	}
 
-	appPayload, err := h.autoDeployStrategyManager.GetAppPayloadForAllLatestStrategy(ctx, pipeline)
+	appPayload, err := h.getAppPayload(ctx, stageDeploy, pipeline, stage)
 	if err != nil {
 		if errors.Is(err, autodeploy.ErrLasTagNotFound) {
 			log.Info("Codebase doesn't have tags in the CodebaseImageStream. Skip auto-deploy.")
@@ -88,10 +91,69 @@ func (h *ProcessTriggerTemplate) ServeRequest(ctx context.Context, stageDeploy *
 	return nil
 }
 
+func (h *ProcessTriggerTemplate) getAppPayload(
+	ctx context.Context,
+	stageDeploy *codebaseApi.CDStageDeploy,
+	pipeline *pipelineApi.CDPipeline,
+	stage *pipelineApi.Stage,
+) (json.RawMessage, error) {
+	var (
+		payload json.RawMessage
+		err     error
+	)
+
+	if stageDeploy.Spec.TriggerType == pipelineApi.TriggerTypeAutoStable {
+		payload, err = h.autoDeployStrategyManager.GetAppPayloadForCurrentWithStableStrategy(
+			ctx,
+			stageDeploy.Spec.Tag,
+			pipeline,
+			stage,
+		)
+	} else {
+		payload, err = h.autoDeployStrategyManager.GetAppPayloadForAllLatestStrategy(ctx, pipeline)
+	}
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to get application payload: %w", err)
+	}
+
+	return payload, nil
+}
+
 func skipPipelineRunCreation(stageDeploy *codebaseApi.CDStageDeploy) bool {
 	if stageDeploy.IsPending() || stageDeploy.IsFailed() {
 		return false
 	}
 
 	return true
+}
+
+func getResourcesForPipelineRun(
+	ctx context.Context,
+	stageDeploy *codebaseApi.CDStageDeploy,
+	k8sClient client.Client,
+	triggerTemplateManager tektoncd.TriggerTemplateManager,
+) (*pipelineApi.CDPipeline, *pipelineApi.Stage, []byte, error) {
+	pipeline := &pipelineApi.CDPipeline{}
+	if err := k8sClient.Get(ctx, client.ObjectKey{
+		Namespace: stageDeploy.Namespace,
+		Name:      stageDeploy.Spec.Pipeline,
+	}, pipeline); err != nil {
+		return nil, nil, nil, fmt.Errorf("failed to get CDPipeline: %w", err)
+	}
+
+	stage := &pipelineApi.Stage{}
+	if err := k8sClient.Get(ctx, client.ObjectKey{
+		Namespace: stageDeploy.Namespace,
+		Name:      stageDeploy.GetStageCRName(),
+	}, stage); err != nil {
+		return pipeline, nil, nil, fmt.Errorf("failed to get Stage: %w", err)
+	}
+
+	rawResource, err := triggerTemplateManager.GetRawResourceFromTriggerTemplate(ctx, stage.Spec.TriggerTemplate, stageDeploy.Namespace)
+	if err != nil {
+		return pipeline, stage, nil, fmt.Errorf("failed to get raw resource from TriggerTemplate: %w", err)
+	}
+
+	return pipeline, stage, rawResource, nil
 }
