@@ -1,8 +1,15 @@
 <a name="unreleased"></a>
 ## [Unreleased]
 
+
+<a name="v2.24.0"></a>
+## [v2.24.0] - 2024-10-18
 ### Features
 
+- Update Auto-stable deploy strategy logic ([#147](https://github.com/epam/edp-codebase-operator/issues/147))
+- Add support for clone/create strategy for Bitbucket ([#143](https://github.com/epam/edp-codebase-operator/issues/143))
+- Add auto-deploy type Auto-stable ([#139](https://github.com/epam/edp-codebase-operator/issues/139))
+- Add support for Bitbucket webhooks ([#134](https://github.com/epam/edp-codebase-operator/issues/134))
 - Add baseline support for bitbucket cloud ([#134](https://github.com/epam/edp-codebase-operator/issues/134))
 - Implement fallback strategy for RPM packaging ([#123](https://github.com/epam/edp-codebase-operator/issues/123))
 - Add support for RPM packages ([#116](https://github.com/epam/edp-codebase-operator/issues/116))
@@ -38,6 +45,8 @@
 
 ### Routine
 
+- Add set version block ([#145](https://github.com/epam/edp-codebase-operator/issues/145))
+- Update alpine base image to v3.18.9 ([#141](https://github.com/epam/edp-codebase-operator/issues/141))
 - Align argo-cd diff for OKD resources ([#76](https://github.com/epam/edp-codebase-operator/issues/76))
 - Change apiVersion for OKD RBAC resources ([#76](https://github.com/epam/edp-codebase-operator/issues/76))
 - Update default rpm spec and service templates ([#123](https://github.com/epam/edp-codebase-operator/issues/123))
@@ -53,6 +62,7 @@
 
 ### Documentation
 
+- Update changelog file for release notes ([#136](https://github.com/epam/edp-codebase-operator/issues/136))
 - Update CHANGELOG md ([#129](https://github.com/epam/edp-codebase-operator/issues/129))
 
 
@@ -240,7 +250,8 @@ removed required fields from the GitServer status. CRD should be updated.
 <a name="v2.17.0"></a>
 ## [v2.17.0] - 2023-08-17
 
-[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.23.0...HEAD
+[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.24.0...HEAD
+[v2.24.0]: https://github.com/epam/edp-codebase-operator/compare/v2.23.0...v2.24.0
 [v2.23.0]: https://github.com/epam/edp-codebase-operator/compare/v2.22.1...v2.23.0
 [v2.22.1]: https://github.com/epam/edp-codebase-operator/compare/v2.22.0...v2.22.1
 [v2.22.0]: https://github.com/epam/edp-codebase-operator/compare/v2.21.0...v2.22.0
