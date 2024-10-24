@@ -355,6 +355,7 @@ func TestPutCDStageDeploy_ServeRequest(t *testing.T) {
 				Spec: codebaseApi.CodebaseImageStreamSpec{
 					Codebase:  "app",
 					ImageName: "latest",
+					Tags:      []codebaseApi.Tag{{Name: "latest", Created: time.Now().Format(time.RFC3339)}},
 				},
 			},
 			client: func(t *testing.T) client.Client {
@@ -363,11 +364,8 @@ func TestPutCDStageDeploy_ServeRequest(t *testing.T) {
 					WithObjects().
 					Build()
 			},
-			wantErr: func(t require.TestingT, err error, i ...interface{}) {
-				require.Error(t, err)
-				require.Contains(t, err.Error(), "label must be in format cd-pipeline-name/stage-name")
-			},
-			want: func(t *testing.T, k8scl client.Client) {},
+			wantErr: require.NoError,
+			want:    func(t *testing.T, k8scl client.Client) {},
 		},
 		{
 			name: "failed to create CDStageDeploy - no tags",

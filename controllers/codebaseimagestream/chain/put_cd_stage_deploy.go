@@ -54,11 +54,17 @@ func (h PutCDStageDeploy) handleCodebaseImageStreamEnvLabels(ctx context.Context
 		return nil
 	}
 
+	if errs := validateCbis(imageStream); len(errs) != 0 {
+		return errors.New(strings.Join(errs, "; "))
+	}
+
 	labelValueRegexp := regexp.MustCompile("^[-A-Za-z0-9_.]+/[-A-Za-z0-9_.]+$")
 
 	for envLabel := range imageStream.ObjectMeta.Labels {
-		if errs := validateCbis(imageStream, envLabel, labelValueRegexp); len(errs) != 0 {
-			return errors.New(strings.Join(errs, "; "))
+		if !labelValueRegexp.MatchString(envLabel) {
+			l.Info("Label value does not match the pattern cd-pipeline-name/stage-name. Skip CDStageDeploy creating.")
+
+			continue
 		}
 
 		if err := h.putCDStageDeploy(ctx, envLabel, imageStream.Namespace, imageStream.Spec); err != nil {
@@ -69,7 +75,7 @@ func (h PutCDStageDeploy) handleCodebaseImageStreamEnvLabels(ctx context.Context
 	return nil
 }
 
-func validateCbis(imageStream *codebaseApi.CodebaseImageStream, envLabel string, labelValueRegexp *regexp.Regexp) []string {
+func validateCbis(imageStream *codebaseApi.CodebaseImageStream) []string {
 	var errs []string
 
 	if imageStream.Spec.Codebase == "" {
@@ -78,10 +84,6 @@ func validateCbis(imageStream *codebaseApi.CodebaseImageStream, envLabel string,
 
 	if len(imageStream.Spec.Tags) == 0 {
 		errs = append(errs, "tags are not defined in spec ")
-	}
-
-	if !labelValueRegexp.MatchString(envLabel) {
-		errs = append(errs, "label must be in format cd-pipeline-name/stage-name")
 	}
 
 	return errs
