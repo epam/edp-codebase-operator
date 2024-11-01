@@ -11,7 +11,7 @@ import (
 	testifymock "github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	coreV1 "k8s.io/api/core/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -30,71 +30,97 @@ const (
 
 func TestPutBranchInGit_ShouldBeExecutedSuccessfullyWithDefaultVersioning(t *testing.T) {
 	c := &codebaseApi.Codebase{
-		ObjectMeta: v1.ObjectMeta{
-			Name:      fakeName,
-			Namespace: fakeNamespace,
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-app",
+			Namespace: "default",
 		},
 		Spec: codebaseApi.CodebaseSpec{
-			GitServer:  fakeName,
-			GitUrlPath: fakeName,
+			GitServer:  "gitserver",
+			GitUrlPath: "/test-app",
 		},
 		Status: codebaseApi.CodebaseStatus{
 			Available: true,
 		},
 	}
 
+	gitUser := "git-user"
 	gs := &codebaseApi.GitServer{
-		ObjectMeta: v1.ObjectMeta{
-			Name:      fakeName,
-			Namespace: fakeNamespace,
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "gitserver",
+			Namespace: "default",
 		},
 		Spec: codebaseApi.GitServerSpec{
-			NameSshKeySecret: fakeName,
-			GitHost:          fakeName,
+			NameSshKeySecret: "secret",
+			GitHost:          "git-host",
 			SshPort:          22,
-			GitUser:          fakeName,
+			GitUser:          gitUser,
 		},
 	}
 
+	sshKey := "fake"
 	s := &coreV1.Secret{
-		ObjectMeta: v1.ObjectMeta{
-			Name:      fakeName,
-			Namespace: fakeNamespace,
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "secret",
+			Namespace: "default",
 		},
 		Data: map[string][]byte{
-			"keyName": []byte("fake"),
+			util.PrivateSShKeyName: []byte(sshKey),
 		},
 	}
 
 	cb := &codebaseApi.CodebaseBranch{
-		ObjectMeta: v1.ObjectMeta{
-			Name:      fakeName,
-			Namespace: fakeNamespace,
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "feature-branch",
+			Namespace: "default",
 		},
 		Spec: codebaseApi.CodebaseBranchSpec{
-			CodebaseName: fakeName,
-			BranchName:   fakeName,
+			CodebaseName: "test-app",
+			BranchName:   "feature-branch",
 			FromCommit:   "commitsha",
 		},
 	}
 
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1.SchemeGroupVersion, c, gs, cb)
-	scheme.AddKnownTypes(coreV1.SchemeGroupVersion, s)
+	require.NoError(t, codebaseApi.AddToScheme(scheme))
+	require.NoError(t, coreV1.AddToScheme(scheme))
+
 	fakeCl := fake.NewClientBuilder().
 		WithScheme(scheme).
-		WithRuntimeObjects(c, gs, cb, s).
+		WithObjects(c, gs, cb, s).
 		WithStatusSubresource(cb).
 		Build()
 
 	mGit := gitServerMocks.NewMockGit(t)
-	port := int32(22)
-	wd := util.GetWorkDir(fakeName, fmt.Sprintf("%v-%v", fakeNamespace, fakeName))
 
-	repoSshUrl := util.GetSSHUrl(gs, c.Spec.GetProjectID())
-
-	mGit.On("CloneRepositoryBySsh", testifymock.Anything, "", fakeName, repoSshUrl, wd, port).Return(nil)
-	mGit.On("CreateRemoteBranch", "", fakeName, wd, fakeName, "commitsha", port).Return(nil)
+	mGit.On(
+		"CloneRepositoryBySsh",
+		testifymock.Anything,
+		sshKey,
+		gs.Spec.GitUser,
+		testifymock.Anything,
+		testifymock.Anything,
+		gs.Spec.SshPort,
+	).Return(nil)
+	mGit.On(
+		"GetCurrentBranchName",
+		testifymock.Anything,
+	).Return("default-branch", nil)
+	mGit.On(
+		"CreateRemoteBranch",
+		sshKey,
+		gs.Spec.GitUser,
+		testifymock.Anything,
+		cb.Spec.BranchName,
+		cb.Spec.FromCommit,
+		gs.Spec.SshPort,
+	).Return(nil)
+	mGit.On(
+		"CheckoutRemoteBranchBySSH",
+		sshKey,
+		gs.Spec.GitUser,
+		testifymock.Anything,
+		c.Spec.DefaultBranch,
+	).Return(nil)
 
 	err := PutBranchInGit{
 		Client: fakeCl,
@@ -104,17 +130,105 @@ func TestPutBranchInGit_ShouldBeExecutedSuccessfullyWithDefaultVersioning(t *tes
 	assert.NoError(t, err)
 }
 
+func TestPutBranchInGit_ShouldFailgetCurrentbranch(t *testing.T) {
+	c := &codebaseApi.Codebase{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-app",
+			Namespace: "default",
+		},
+		Spec: codebaseApi.CodebaseSpec{
+			GitServer:  "gitserver",
+			GitUrlPath: "/test-app",
+		},
+		Status: codebaseApi.CodebaseStatus{
+			Available: true,
+		},
+	}
+
+	gitUser := "git-user"
+	gs := &codebaseApi.GitServer{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "gitserver",
+			Namespace: "default",
+		},
+		Spec: codebaseApi.GitServerSpec{
+			NameSshKeySecret: "secret",
+			GitHost:          "git-host",
+			SshPort:          22,
+			GitUser:          gitUser,
+		},
+	}
+
+	sshKey := "fake"
+	s := &coreV1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "secret",
+			Namespace: "default",
+		},
+		Data: map[string][]byte{
+			util.PrivateSShKeyName: []byte(sshKey),
+		},
+	}
+
+	cb := &codebaseApi.CodebaseBranch{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "feature-branch",
+			Namespace: "default",
+		},
+		Spec: codebaseApi.CodebaseBranchSpec{
+			CodebaseName: "test-app",
+			BranchName:   "feature-branch",
+			FromCommit:   "commitsha",
+		},
+	}
+
+	scheme := runtime.NewScheme()
+	require.NoError(t, codebaseApi.AddToScheme(scheme))
+	require.NoError(t, coreV1.AddToScheme(scheme))
+
+	fakeCl := fake.NewClientBuilder().
+		WithScheme(scheme).
+		WithObjects(c, gs, cb, s).
+		WithStatusSubresource(cb).
+		Build()
+
+	mGit := gitServerMocks.NewMockGit(t)
+
+	mGit.On(
+		"CloneRepositoryBySsh",
+		testifymock.Anything,
+		sshKey,
+		gs.Spec.GitUser,
+		testifymock.Anything,
+		testifymock.Anything,
+		gs.Spec.SshPort,
+	).Return(nil)
+	mGit.On(
+		"GetCurrentBranchName",
+		testifymock.Anything,
+	).Return("", errors.New("failed to get current branch"))
+
+	err := PutBranchInGit{
+		Client: fakeCl,
+		Git:    mGit,
+	}.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), cb)
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to get current branch")
+}
+
 func TestPutBranchInGit_ShouldFailCreateRemoteBranch(t *testing.T) {
 	t.Setenv(util.WorkDirEnv, t.TempDir())
 
 	c := &codebaseApi.Codebase{
-		ObjectMeta: v1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
 		Spec: codebaseApi.CodebaseSpec{
-			GitServer:  fakeName,
-			GitUrlPath: fakeName,
+			GitServer:     fakeName,
+			GitUrlPath:    fakeName,
+			DefaultBranch: "main",
 		},
 		Status: codebaseApi.CodebaseStatus{
 			Available: true,
@@ -122,7 +236,7 @@ func TestPutBranchInGit_ShouldFailCreateRemoteBranch(t *testing.T) {
 	}
 
 	gs := &codebaseApi.GitServer{
-		ObjectMeta: v1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
@@ -135,7 +249,7 @@ func TestPutBranchInGit_ShouldFailCreateRemoteBranch(t *testing.T) {
 	}
 
 	s := &coreV1.Secret{
-		ObjectMeta: v1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
@@ -145,7 +259,7 @@ func TestPutBranchInGit_ShouldFailCreateRemoteBranch(t *testing.T) {
 	}
 
 	cb := &codebaseApi.CodebaseBranch{
-		ObjectMeta: v1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
@@ -179,6 +293,11 @@ func TestPutBranchInGit_ShouldFailCreateRemoteBranch(t *testing.T) {
 	).Return(nil)
 
 	mGit.On(
+		"GetCurrentBranchName",
+		testifymock.Anything,
+	).Return("main", nil)
+
+	mGit.On(
 		"CreateRemoteBranch",
 		testifymock.Anything,
 		testifymock.Anything,
@@ -199,7 +318,7 @@ func TestPutBranchInGit_ShouldFailCreateRemoteBranch(t *testing.T) {
 
 func TestPutBranchInGit_CodebaseShouldNotBeFound(t *testing.T) {
 	cb := &codebaseApi.CodebaseBranch{
-		ObjectMeta: v1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
@@ -227,7 +346,7 @@ func TestPutBranchInGit_CodebaseShouldNotBeFound(t *testing.T) {
 
 func TestPutBranchInGit_ShouldThrowCodebaseBranchReconcileError(t *testing.T) {
 	c := &codebaseApi.Codebase{
-		ObjectMeta: v1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
@@ -241,7 +360,7 @@ func TestPutBranchInGit_ShouldThrowCodebaseBranchReconcileError(t *testing.T) {
 	}
 
 	cb := &codebaseApi.CodebaseBranch{
-		ObjectMeta: v1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
@@ -250,7 +369,7 @@ func TestPutBranchInGit_ShouldThrowCodebaseBranchReconcileError(t *testing.T) {
 		},
 	}
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1.SchemeGroupVersion, c, cb)
+	scheme.AddKnownTypes(metav1.SchemeGroupVersion, c, cb)
 	fakeCl := fake.NewClientBuilder().
 		WithScheme(scheme).
 		WithRuntimeObjects(c, cb).
@@ -267,7 +386,7 @@ func TestPutBranchInGit_ShouldThrowCodebaseBranchReconcileError(t *testing.T) {
 
 func TestPutBranchInGit_ShouldBeExecutedSuccessfullyWithEdpVersioning(t *testing.T) {
 	c := &codebaseApi.Codebase{
-		ObjectMeta: v1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
@@ -278,6 +397,7 @@ func TestPutBranchInGit_ShouldBeExecutedSuccessfullyWithEdpVersioning(t *testing
 				Type:      versioningType,
 				StartFrom: nil,
 			},
+			DefaultBranch: "main",
 		},
 		Status: codebaseApi.CodebaseStatus{
 			Available: true,
@@ -285,7 +405,7 @@ func TestPutBranchInGit_ShouldBeExecutedSuccessfullyWithEdpVersioning(t *testing
 	}
 
 	gs := &codebaseApi.GitServer{
-		ObjectMeta: v1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
@@ -298,7 +418,7 @@ func TestPutBranchInGit_ShouldBeExecutedSuccessfullyWithEdpVersioning(t *testing
 	}
 
 	s := &coreV1.Secret{
-		ObjectMeta: v1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
@@ -308,7 +428,7 @@ func TestPutBranchInGit_ShouldBeExecutedSuccessfullyWithEdpVersioning(t *testing
 	}
 
 	cb := &codebaseApi.CodebaseBranch{
-		ObjectMeta: v1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
@@ -324,7 +444,7 @@ func TestPutBranchInGit_ShouldBeExecutedSuccessfullyWithEdpVersioning(t *testing
 	}
 
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1.SchemeGroupVersion, c, gs, cb)
+	scheme.AddKnownTypes(metav1.SchemeGroupVersion, c, gs, cb)
 	scheme.AddKnownTypes(coreV1.SchemeGroupVersion, s)
 	fakeCl := fake.NewClientBuilder().
 		WithScheme(scheme).
@@ -341,6 +461,10 @@ func TestPutBranchInGit_ShouldBeExecutedSuccessfullyWithEdpVersioning(t *testing
 
 	mGit.On("CloneRepositoryBySsh", testifymock.Anything, "", fakeName, repoSshUrl, wd, port).
 		Return(nil)
+	mGit.On(
+		"GetCurrentBranchName",
+		testifymock.Anything,
+	).Return("main", nil)
 	mGit.On("CreateRemoteBranch", "", fakeName, wd, fakeName, "", port).Return(nil)
 
 	err := PutBranchInGit{
@@ -372,7 +496,7 @@ func TestPutBranchInGit_ShouldFailToSetIntermediateStatus(t *testing.T) {
 
 func TestPutBranchInGit_GitServerShouldNotBeFound(t *testing.T) {
 	c := &codebaseApi.Codebase{
-		ObjectMeta: v1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
@@ -386,7 +510,7 @@ func TestPutBranchInGit_GitServerShouldNotBeFound(t *testing.T) {
 	}
 
 	cb := &codebaseApi.CodebaseBranch{
-		ObjectMeta: v1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
@@ -415,7 +539,7 @@ func TestPutBranchInGit_GitServerShouldNotBeFound(t *testing.T) {
 
 func TestPutBranchInGit_SecretShouldNotBeFound(t *testing.T) {
 	c := &codebaseApi.Codebase{
-		ObjectMeta: v1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
@@ -429,7 +553,7 @@ func TestPutBranchInGit_SecretShouldNotBeFound(t *testing.T) {
 	}
 
 	gs := &codebaseApi.GitServer{
-		ObjectMeta: v1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
@@ -442,7 +566,7 @@ func TestPutBranchInGit_SecretShouldNotBeFound(t *testing.T) {
 	}
 
 	cb := &codebaseApi.CodebaseBranch{
-		ObjectMeta: v1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:      fakeName,
 			Namespace: fakeNamespace,
 		},
@@ -452,7 +576,7 @@ func TestPutBranchInGit_SecretShouldNotBeFound(t *testing.T) {
 	}
 
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1.SchemeGroupVersion, c, gs, cb)
+	scheme.AddKnownTypes(metav1.SchemeGroupVersion, c, gs, cb)
 	scheme.AddKnownTypes(coreV1.SchemeGroupVersion, &coreV1.Secret{})
 	fakeCl := fake.NewClientBuilder().
 		WithScheme(scheme).
@@ -470,7 +594,7 @@ func TestPutBranchInGit_SecretShouldNotBeFound(t *testing.T) {
 
 func TestPutBranchInGit_SkipAlreadyCreated(t *testing.T) {
 	codeBaseBranch := &codebaseApi.CodebaseBranch{
-		ObjectMeta: v1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:      "fake",
 			Namespace: "default",
 		},

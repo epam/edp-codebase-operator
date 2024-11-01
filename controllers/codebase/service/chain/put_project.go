@@ -369,10 +369,10 @@ func (h *PutProject) setDefaultBranch(
 		codebase.Spec.GetProjectID(),
 		codebase.Spec.DefaultBranch,
 	); err != nil {
-		if errors.Is(gitprovider.ErrApiNotSupported, err) {
+		if errors.Is(err, gitprovider.ErrApiNotSupported) {
 			// We can skip this error, because it is not supported by Git provider.
 			// And this is not critical for the whole process.
-			log.Error(err, "Setting default branch is not supported by Git provider. Set it manually if needed")
+			log.Info("Setting default branch is not supported by Git provider. Set it manually if needed")
 
 			return nil
 		}
