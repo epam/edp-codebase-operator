@@ -105,7 +105,18 @@ func (h PutBranchInGit) ServeRequest(ctx context.Context, branch *codebaseApi.Co
 		}
 	}
 
-	err := h.Git.CreateRemoteBranch(string(secret.Data[util.PrivateSShKeyName]), gitServer.Spec.GitUser, wd, branch.Spec.BranchName, branch.Spec.FromCommit, gitServer.Spec.SshPort)
+	currentBranchName, err := h.Git.GetCurrentBranchName(wd)
+	if err != nil {
+		return fmt.Errorf("failed to get current branch name: %w", err)
+	}
+
+	if currentBranchName != codebase.Spec.DefaultBranch {
+		if err = h.Git.CheckoutRemoteBranchBySSH(string(secret.Data[util.PrivateSShKeyName]), gitServer.Spec.GitUser, wd, codebase.Spec.DefaultBranch); err != nil {
+			return fmt.Errorf("failed to checkout to default branch %s: %w", codebase.Spec.DefaultBranch, err)
+		}
+	}
+
+	err = h.Git.CreateRemoteBranch(string(secret.Data[util.PrivateSShKeyName]), gitServer.Spec.GitUser, wd, branch.Spec.BranchName, branch.Spec.FromCommit, gitServer.Spec.SshPort)
 	if err != nil {
 		setFailedFields(branch, codebaseApi.PutGitBranch, err.Error())
 
