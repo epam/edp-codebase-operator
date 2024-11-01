@@ -408,11 +408,6 @@ func TestBitbucketClient_SetDefaultBranch(t *testing.T) {
 				require.ErrorIs(t, err, ErrApiNotSupported)
 			},
 		},
-		{
-			name:    "skip main",
-			branch:  "main",
-			wantErr: require.NoError,
-		},
 	}
 
 	for _, tt := range tests {

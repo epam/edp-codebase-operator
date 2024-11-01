@@ -269,12 +269,7 @@ func (b *BitbucketClient) ProjectExists(ctx context.Context, _, _, projectID str
 	return false, nil
 }
 
-func (*BitbucketClient) SetDefaultBranch(_ context.Context, _, _, _, branch string) error {
-	if branch == "main" {
-		// Bitbucket uses `main` as a default branch, so we can skip this operation.
-		return nil
-	}
-
+func (*BitbucketClient) SetDefaultBranch(_ context.Context, _, _, _, _ string) error {
 	// Set default branch is not supported by Bitbucket API.
 	// Open ticket: https://jira.atlassian.com/browse/BCLOUD-20340
 	// https://community.atlassian.com/t5/Bitbucket-questions/Get-and-set-default-branch-in-v2-API/qaq-p/2416227
