@@ -2,8 +2,8 @@
 ## [Unreleased]
 
 
-<a name="v2.24.0"></a>
-## v2.24.0 - 2024-10-14
+<a name="v2.24.1"></a>
+## v2.24.1 - 2024-11-01
 ### Features
 
 - Update Auto-stable deploy strategy logic ([#147](https://github.com/epam/edp-codebase-operator/issues/147))
@@ -49,6 +49,8 @@
 
 ### Bug Fixes
 
+- Processing default branch for bitbucket ([#155](https://github.com/epam/edp-codebase-operator/issues/155))
+- Ignore extra labels in CodebaseImageStream for auto-deploy ([#153](https://github.com/epam/edp-codebase-operator/issues/153))
 - CDStageDeploy stuck in the running status ([#131](https://github.com/epam/edp-codebase-operator/issues/131))
 - Align label for gen-ai chat secret ([#86](https://github.com/epam/edp-codebase-operator/issues/86))
 - Integration secret shows connected status for invalid credentials ([#105](https://github.com/epam/edp-codebase-operator/issues/105))
@@ -152,4 +154,4 @@
 removed required fields from the GitServer status. CRD should be updated.
 
 
-[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.24.0...HEAD
+[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.24.1...HEAD
