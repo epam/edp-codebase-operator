@@ -1,6 +1,24 @@
 <a name="unreleased"></a>
 ## [Unreleased]
 
+### Bug Fixes
+
+- Processing default branch for bitbucket ([#155](https://github.com/epam/edp-codebase-operator/issues/155))
+- Ignore extra labels in CodebaseImageStream for auto-deploy ([#153](https://github.com/epam/edp-codebase-operator/issues/153))
+
+### Routine
+
+- Update Pull Request Template ([#21](https://github.com/epam/edp-codebase-operator/issues/21))
+- Update current development version ([#150](https://github.com/epam/edp-codebase-operator/issues/150))
+
+
+<a name="v2.24.1"></a>
+## [v2.24.1] - 2024-11-05
+### Bug Fixes
+
+- Processing default branch for bitbucket ([#155](https://github.com/epam/edp-codebase-operator/issues/155))
+- Ignore extra labels in CodebaseImageStream for auto-deploy ([#153](https://github.com/epam/edp-codebase-operator/issues/153))
+
 
 <a name="v2.24.0"></a>
 ## [v2.24.0] - 2024-10-18
@@ -250,7 +268,8 @@ removed required fields from the GitServer status. CRD should be updated.
 <a name="v2.17.0"></a>
 ## [v2.17.0] - 2023-08-17
 
-[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.24.0...HEAD
+[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.24.1...HEAD
+[v2.24.1]: https://github.com/epam/edp-codebase-operator/compare/v2.24.0...v2.24.1
 [v2.24.0]: https://github.com/epam/edp-codebase-operator/compare/v2.23.0...v2.24.0
 [v2.23.0]: https://github.com/epam/edp-codebase-operator/compare/v2.22.1...v2.23.0
 [v2.22.1]: https://github.com/epam/edp-codebase-operator/compare/v2.22.0...v2.22.1
