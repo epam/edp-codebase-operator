@@ -27,8 +27,9 @@ A Helm chart for KubeRocketCI Codebase Operator
 | envs[0].value | string | `"360"` |  |
 | envs[1] | object | `{"name":"CODEBASE_BRANCH_MAX_CONCURRENT_RECONCILES","value":"3"}` | Maximum number of parallel reconciliation codebasebranches |
 | global.platform | string | `"kubernetes"` | platform type that can be "kubernetes" or "openshift" |
-| image.repository | string | `"epamedp/codebase-operator"` | EDP codebase-operator Docker image name. The released image can be found on [Dockerhub](https://hub.docker.com/r/epamedp/codebase-operator) |
-| image.tag | string | `nil` | EDP codebase-operator Docker image tag. The released image can be found on [Dockerhub](https://hub.docker.com/r/epamedp/codebase-operator/tags) |
+| image.registry | string | `"docker.io"` | Set the image registry, default to Docker Hub; can be customized to use an alternative provider |
+| image.repository | string | `"epamedp/codebase-operator"` | KubeRocketCI codebase-operator Docker image name. The released image can be found on [Dockerhub](https://hub.docker.com/r/epamedp/codebase-operator) |
+| image.tag | string | `nil` | KubeRocketCI codebase-operator Docker image tag. The released image can be found on [Dockerhub](https://hub.docker.com/r/epamedp/codebase-operator/tags) |
 | imagePullPolicy | string | `"IfNotPresent"` |  |
 | jira.apiUrl | string | `"https://jiraeu-api.example.com"` | API URL for development |
 | jira.credentialName | string | `"ci-jira"` | Name of secret with credentials to Jira server |
