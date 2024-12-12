@@ -8,6 +8,7 @@
 
 ### Routine
 
+- Update current development version ([#158](https://github.com/epam/edp-codebase-operator/issues/158))
 - Update Pull Request Template ([#21](https://github.com/epam/edp-codebase-operator/issues/21))
 - Update current development version ([#150](https://github.com/epam/edp-codebase-operator/issues/150))
 
