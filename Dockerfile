@@ -7,9 +7,9 @@ ENV ASSETS_DIR=/usr/local/bin \
     USER_NAME=codebase-operator \
     USER_UID=1001
 
-RUN apk add --no-cache ca-certificates=20240226-r0 \
+RUN apk add --no-cache ca-certificates=20241121-r1 \
                        openssh-client==9.3_p2-r2 \
-                       git==2.40.3-r0
+                       git==2.40.4-r0
 
 RUN adduser -h ${HOME} -s /bin/ash -D -u ${USER_UID} codebase-operator
 

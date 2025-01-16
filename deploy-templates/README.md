@@ -34,6 +34,7 @@ A Helm chart for KubeRocketCI Codebase Operator
 | jira.credentialName | string | `"ci-jira"` | Name of secret with credentials to Jira server |
 | jira.integration | bool | `false` | Flag to enable/disable Jira integration |
 | jira.name | string | `"jira"` | JiraServer CR name |
+| jira.quickLink | object | `{"enabled":true}` | Enable creation of QuickLink for Jira |
 | jira.rootUrl | string | `"https://jiraeu.example.com"` | URL to Jira server |
 | name | string | `"codebase-operator"` | component name |
 | nodeSelector | object | `{}` |  |

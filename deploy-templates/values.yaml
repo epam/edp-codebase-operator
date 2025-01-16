@@ -32,6 +32,9 @@ resources:
 jira:
   # -- Flag to enable/disable Jira integration
   integration: false
+  # -- Enable creation of QuickLink for Jira
+  quickLink:
+    enabled: true
   # -- JiraServer CR name
   name: "jira"
   # -- API URL for development
