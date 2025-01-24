@@ -1,6 +1,17 @@
 <a name="unreleased"></a>
 ## [Unreleased]
 
+
+<a name="v2.26.0"></a>
+## [v2.26.0] - 2025-01-24
+### Routine
+
+- Make QuickLink installation optional ([#168](https://github.com/epam/edp-codebase-operator/issues/168))
+- Update current development version ([#166](https://github.com/epam/edp-codebase-operator/issues/166))
+
+
+<a name="v2.25.0"></a>
+## [v2.25.0] - 2024-12-12
 ### Bug Fixes
 
 - Processing default branch for bitbucket ([#155](https://github.com/epam/edp-codebase-operator/issues/155))
@@ -269,7 +280,9 @@ removed required fields from the GitServer status. CRD should be updated.
 <a name="v2.17.0"></a>
 ## [v2.17.0] - 2023-08-17
 
-[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.24.1...HEAD
+[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.26.0...HEAD
+[v2.26.0]: https://github.com/epam/edp-codebase-operator/compare/v2.25.0...v2.26.0
+[v2.25.0]: https://github.com/epam/edp-codebase-operator/compare/v2.24.1...v2.25.0
 [v2.24.1]: https://github.com/epam/edp-codebase-operator/compare/v2.24.0...v2.24.1
 [v2.24.0]: https://github.com/epam/edp-codebase-operator/compare/v2.23.0...v2.24.0
 [v2.23.0]: https://github.com/epam/edp-codebase-operator/compare/v2.22.1...v2.23.0
