@@ -54,7 +54,7 @@ const (
 	logFailCtrlCreateMessage                 = "failed to create controller"
 	telemetryDefaultDelay                    = time.Hour
 	telemetrySendEvery                       = time.Hour * 24
-	telemetryUrl                             = "https://telemetry.edp-epam.com"
+	telemetryUrl                             = "https://telemetry.kuberocketci.io"
 )
 
 func main() {
