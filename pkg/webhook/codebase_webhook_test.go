@@ -407,6 +407,82 @@ func TestCodebaseValidationWebhook_ValidateUpdate(t *testing.T) {
 			},
 		},
 		{
+			name: "should restrict update with protected label",
+			ctx: admission.NewContextWithRequest(context.Background(), admission.Request{
+				AdmissionRequest: v1.AdmissionRequest{
+					Name:      "codebase",
+					Namespace: "default",
+				},
+			}),
+			newObj: &codebaseApi.Codebase{
+				ObjectMeta: metaV1.ObjectMeta{
+					Name:   "codebase",
+					Labels: map[string]string{protectedLabel: updateOperation},
+				},
+				Spec: codebaseApi.CodebaseSpec{
+					Strategy: codebaseApi.Import,
+					Lang:     "java",
+					Versioning: codebaseApi.Versioning{
+						Type: codebaseApi.VersioningTypDefault,
+					},
+				},
+			},
+			oldObj: &codebaseApi.Codebase{
+				ObjectMeta: metaV1.ObjectMeta{
+					Name:   "codebase",
+					Labels: map[string]string{protectedLabel: "update"},
+				},
+				Spec: codebaseApi.CodebaseSpec{
+					Strategy: codebaseApi.Import,
+					Lang:     "go",
+					Versioning: codebaseApi.Versioning{
+						Type: codebaseApi.VersioningTypDefault,
+					},
+				},
+			},
+			wantErr: func(t require.TestingT, err error, _ ...any) {
+				require.Error(t, err)
+
+				require.Contains(t, err.Error(), "resource contains label that protects it from modification")
+			},
+		},
+		{
+			name: "should skip with protected label if spec is not updated",
+			ctx: admission.NewContextWithRequest(context.Background(), admission.Request{
+				AdmissionRequest: v1.AdmissionRequest{
+					Name:      "codebase",
+					Namespace: "default",
+				},
+			}),
+			newObj: &codebaseApi.Codebase{
+				ObjectMeta: metaV1.ObjectMeta{
+					Name:   "codebase",
+					Labels: map[string]string{protectedLabel: updateOperation},
+				},
+				Spec: codebaseApi.CodebaseSpec{
+					Strategy: codebaseApi.Import,
+					Lang:     "java",
+					Versioning: codebaseApi.Versioning{
+						Type: codebaseApi.VersioningTypDefault,
+					},
+				},
+			},
+			oldObj: &codebaseApi.Codebase{
+				ObjectMeta: metaV1.ObjectMeta{
+					Name:   "codebase",
+					Labels: map[string]string{protectedLabel: updateOperation},
+				},
+				Spec: codebaseApi.CodebaseSpec{
+					Strategy: codebaseApi.Import,
+					Lang:     "java",
+					Versioning: codebaseApi.Versioning{
+						Type: codebaseApi.VersioningTypDefault,
+					},
+				},
+			},
+			wantErr: require.NoError,
+		},
+		{
 			name: "skip validation",
 			ctx: admission.NewContextWithRequest(context.Background(), admission.Request{
 				AdmissionRequest: v1.AdmissionRequest{
@@ -465,6 +541,25 @@ func TestCodebaseValidationWebhook_ValidateDelete(t *testing.T) {
 				require.Error(t, err)
 
 				require.Contains(t, err.Error(), "expected admission.Request in ctx")
+			},
+		},
+		{
+			name: "should restrict delete with protected label",
+			ctx: admission.NewContextWithRequest(context.Background(), admission.Request{
+				AdmissionRequest: v1.AdmissionRequest{
+					Name:      "codebase",
+					Namespace: "default",
+				},
+			}),
+			obj: &codebaseApi.Codebase{
+				ObjectMeta: metaV1.ObjectMeta{
+					Name:   "codebase",
+					Labels: map[string]string{protectedLabel: deleteOperation},
+				},
+			},
+			wantErr: func(t require.TestingT, err error, i ...interface{}) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "resource contains label that protects it from deletion")
 			},
 		},
 		{
