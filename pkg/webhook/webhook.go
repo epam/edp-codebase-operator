@@ -5,6 +5,8 @@ import (
 	"fmt"
 
 	ctrl "sigs.k8s.io/controller-runtime"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 )
 
 // RegisterValidationWebHook registers a new webhook for validating CRD.
@@ -15,10 +17,14 @@ func RegisterValidationWebHook(ctx context.Context, mgr ctrl.Manager, namespace 
 		return fmt.Errorf("failed to populate certificates: %w", err)
 	}
 
-	codebaseWebHook := NewCodebaseValidationWebhook(mgr.GetClient(), ctrl.Log.WithName("codebase-webhook"))
-	if err := codebaseWebHook.SetupWebhookWithManager(mgr); err != nil {
-		return fmt.Errorf("failed to create webhook: %w", err)
+	if err := NewCodebaseValidationWebhook(mgr.GetClient(), ctrl.Log.WithName("codebase-webhook")).SetupWebhookWithManager(mgr); err != nil {
+		return err
 	}
 
-	return nil
+	return (&ProtectedLabelValidationWebhook{}).SetupWebhookWithManager(
+		mgr,
+		&codebaseApi.CodebaseBranch{},
+		&codebaseApi.CodebaseImageStream{},
+		&codebaseApi.GitServer{},
+	)
 }

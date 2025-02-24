@@ -10,6 +10,66 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
+      path: /validate-v2-edp-epam-com-v1-codebasebranch
+  failurePolicy: Fail
+  name: codebasebranch.epam.com
+  rules:
+  - apiGroups:
+    - v2.edp.epam.com
+    apiVersions:
+    - v1
+    operations:
+    - UPDATE
+    - DELETE
+    resources:
+    - codebasebranchs
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-v2-edp-epam-com-v1-codebaseimagestream
+  failurePolicy: Fail
+  name: codebaseimagestream.epam.com
+  rules:
+  - apiGroups:
+    - v2.edp.epam.com
+    apiVersions:
+    - v1
+    operations:
+    - UPDATE
+    - DELETE
+    resources:
+    - codebaseimagestreams
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-v2-edp-epam-com-v1-gitserver
+  failurePolicy: Fail
+  name: gitserver.epam.com
+  rules:
+  - apiGroups:
+    - v2.edp.epam.com
+    apiVersions:
+    - v1
+    operations:
+    - UPDATE
+    - DELETE
+    resources:
+    - gitservers
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
       path: /validate-v2-edp-epam-com-v1-codebase
   failurePolicy: Fail
   name: vcodebase.kb.io
@@ -21,6 +81,7 @@ webhooks:
     operations:
     - CREATE
     - UPDATE
+    - DELETE
     resources:
     - codebases
   sideEffects: None

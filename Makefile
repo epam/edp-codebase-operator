@@ -70,7 +70,8 @@ validate-docs: api-docs helm-docs  ## Validate helm and api docs
 	@git diff -s --exit-code docs/api.md || (echo " Run 'make api-docs' to address the issue." && git diff && exit 1)
 
 # Run tests
-test: fmt vet
+test: fmt vet envtest
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" \
 	KUBECONFIG=${CURRENT_DIR}/hack/kubecfg-stub.yaml go test ./... -coverprofile=coverage.out `go list ./...`
 
 .PHONY: fmt
@@ -201,3 +202,9 @@ update-bitbucket-swagger: ## Update bitbucket swagger file
 .PHONY: generate-bitbucket-api-client
 generate-bitbucket-api-client: oapi-codegen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
 	$(OAPICODEGEN) -config oapicfg.yaml hack/bitbucket_api.json
+
+ENVTEST=$(LOCALBIN)/setup-envtest
+.PHONY: envtest
+envtest: $(ENVTEST) ## Download envtest-setup locally if necessary.
+$(ENVTEST): $(LOCALBIN)
+	$(call go-get-tool,$(ENVTEST),sigs.k8s.io/controller-runtime/tools/setup-envtest,release-0.16)

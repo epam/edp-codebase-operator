@@ -18,7 +18,7 @@ import (
 
 const listLimit = 1000
 
-//+kubebuilder:webhook:path=/validate-v2-edp-epam-com-v1-codebase,mutating=false,failurePolicy=fail,sideEffects=None,groups=v2.edp.epam.com,resources=codebases,verbs=create;update,versions=v1,name=vcodebase.kb.io,admissionReviewVersions=v1
+//+kubebuilder:webhook:path=/validate-v2-edp-epam-com-v1-codebase,mutating=false,failurePolicy=fail,sideEffects=None,groups=v2.edp.epam.com,resources=codebases,verbs=create;update;delete,versions=v1,name=vcodebase.kb.io,admissionReviewVersions=v1
 
 // CodebaseValidationWebhook is a webhook for validating Codebase CRD.
 type CodebaseValidationWebhook struct {
@@ -96,7 +96,7 @@ func (r *CodebaseValidationWebhook) ValidateCreate(ctx context.Context, obj runt
 }
 
 // ValidateUpdate is a webhook for validating the updating of the Codebase CR.
-func (r *CodebaseValidationWebhook) ValidateUpdate(ctx context.Context, _, newObj runtime.Object) (warnings admission.Warnings, err error) {
+func (r *CodebaseValidationWebhook) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (warnings admission.Warnings, err error) {
 	req, err := admission.RequestFromContext(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("expected admission.Request in ctx: %w", err)
@@ -115,18 +115,25 @@ func (r *CodebaseValidationWebhook) ValidateUpdate(ctx context.Context, _, newOb
 		return nil, fmt.Errorf("codebase %s is invalid: %w", updatedCodebase.Name, err)
 	}
 
+	if err = checkResourceProtectionFromModificationOnUpdate(oldObj, newObj); err != nil {
+		return nil, err
+	}
+
 	return nil, nil
 }
 
 // ValidateDelete is a webhook for validating the deleting of the Codebase CR.
-// It is skipped for now. Add kubebuilder:webhook:verbs=delete to enable it.
-func (r *CodebaseValidationWebhook) ValidateDelete(ctx context.Context, _ runtime.Object) (warnings admission.Warnings, err error) {
+func (r *CodebaseValidationWebhook) ValidateDelete(ctx context.Context, obj runtime.Object) (warnings admission.Warnings, err error) {
 	req, err := admission.RequestFromContext(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("expected admission.Request in ctx: %w", err)
 	}
 
 	r.log.Info("validate delete", "name", req.Name)
+
+	if err = checkResourceProtectionFromModificationOnDelete(obj); err != nil {
+		return nil, err
+	}
 
 	return nil, nil
 }
