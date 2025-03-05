@@ -30,6 +30,7 @@ webhooks:
           - DELETE
         resources:
           - codebasebranchs
+        scope: Namespaced
     sideEffects: None
   - admissionReviewVersions:
       - v1
@@ -40,6 +41,12 @@ webhooks:
         path: /validate-v2-edp-epam-com-v1-codebaseimagestream
     failurePolicy: Fail
     name: codebaseimagestream.epam.com
+    namespaceSelector:
+      matchExpressions:
+        - key: kubernetes.io/metadata.name
+          operator: In
+          values:
+            - {{ .Release.Namespace }}
     rules:
       - apiGroups:
           - v2.edp.epam.com
