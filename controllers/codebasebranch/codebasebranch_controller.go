@@ -159,7 +159,7 @@ func (r *ReconcileCodebaseBranch) Reconcile(ctx context.Context, request reconci
 	// this is a case where we want to init build number
 	// a default build number is a "0"
 	// later will be incremented during CI/CD stages
-	if c.Spec.Versioning.Type == codebaseApi.VersioningTypeEDP && cb.Status.Build == nil {
+	if c.Spec.IsVersionTypeSemver() && cb.Status.Build == nil {
 		buildNumber := "0"
 		cb.Status.Build = &buildNumber
 	}

@@ -58,7 +58,7 @@ func TestProcessNewVersion_ServeRequest(t *testing.T) {
 							},
 							Spec: codebaseApi.CodebaseSpec{
 								Versioning: codebaseApi.Versioning{
-									Type: codebaseApi.VersioningTypeEDP,
+									Type: codebaseApi.VersioningTypeSemver,
 								},
 							},
 						},
@@ -105,7 +105,7 @@ func TestProcessNewVersion_ServeRequest(t *testing.T) {
 							},
 							Spec: codebaseApi.CodebaseSpec{
 								Versioning: codebaseApi.Versioning{
-									Type: codebaseApi.VersioningTypeEDP,
+									Type: codebaseApi.VersioningTypeSemver,
 								},
 							},
 						},
@@ -195,7 +195,7 @@ func TestProcessNewVersion_ServeRequest(t *testing.T) {
 							},
 							Spec: codebaseApi.CodebaseSpec{
 								Versioning: codebaseApi.Versioning{
-									Type: codebaseApi.VersioningTypeEDP,
+									Type: codebaseApi.VersioningTypeSemver,
 								},
 							},
 						},
@@ -238,7 +238,7 @@ func TestProcessNewVersion_ServeRequest(t *testing.T) {
 							},
 							Spec: codebaseApi.CodebaseSpec{
 								Versioning: codebaseApi.Versioning{
-									Type: codebaseApi.VersioningTypeEDP,
+									Type: codebaseApi.VersioningTypeSemver,
 								},
 							},
 						},

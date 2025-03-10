@@ -47,8 +47,8 @@ func (h ProcessNewVersion) ServeRequest(ctx context.Context, codebaseBranch *cod
 func (h ProcessNewVersion) processNewVersion(ctx context.Context, codebaseBranch *codebaseApi.CodebaseBranch, codebase *codebaseApi.Codebase) error {
 	log := ctrl.LoggerFrom(ctx)
 
-	if codebase.Spec.Versioning.Type != codebaseApi.VersioningTypeEDP {
-		log.Info("Versioning type is not EDP. Skip processing new version.")
+	if !codebase.Spec.IsVersionTypeSemver() {
+		log.Info("Versioning type is not Semver. Skip processing new version.")
 
 		return nil
 	}

@@ -377,7 +377,7 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldInitBuildForEDPVersioning(t *te
 		},
 		Spec: codebaseApi.CodebaseSpec{
 			Versioning: codebaseApi.Versioning{
-				Type: codebaseApi.VersioningTypeEDP,
+				Type: codebaseApi.VersioningTypeSemver,
 			},
 		},
 	}

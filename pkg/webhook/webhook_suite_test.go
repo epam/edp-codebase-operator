@@ -2,7 +2,9 @@ package webhook
 
 import (
 	"context"
+	"fmt"
 	"path/filepath"
+	goruntime "runtime"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -42,6 +44,8 @@ var _ = BeforeSuite(func() {
 	testEnv = &envtest.Environment{
 		CRDDirectoryPaths:     []string{filepath.Join("..", "..", "config", "crd", "bases")},
 		ErrorIfCRDPathMissing: true,
+		BinaryAssetsDirectory: filepath.Join("..", "..", "bin", "k8s",
+			fmt.Sprintf("1.30.0-%s-%s", goruntime.GOOS, goruntime.GOARCH)),
 	}
 
 	var err error
