@@ -86,7 +86,7 @@ func TestIsCodebaseValid(t *testing.T) {
 						Lang:     "go",
 						Strategy: "create",
 						Versioning: codebaseApi.Versioning{
-							Type: codebaseApi.VersioningTypeEDP,
+							Type: codebaseApi.VersioningTypeSemver,
 						},
 					},
 					Status: codebaseApi.CodebaseStatus{},

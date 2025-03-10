@@ -28,7 +28,9 @@ type VersioningType string
 
 const (
 	VersioningTypDefault VersioningType = "default"
+	// Deprecated: Use VersioningTypeSemver instead.
 	VersioningTypeEDP    VersioningType = "edp"
+	VersioningTypeSemver VersioningType = "semver"
 )
 
 type Versioning struct {
@@ -127,6 +129,11 @@ type CodebaseSpec struct {
 // GetProjectID returns project id from GitUrlPath codebase spec. It removes the leading slash.
 func (in *CodebaseSpec) GetProjectID() string {
 	return strings.TrimPrefix(in.GitUrlPath, "/")
+}
+
+func (in *CodebaseSpec) IsVersionTypeSemver() bool {
+	// For backward compatibility, we should consider VersioningTypeEDP as VersioningTypeSemver.
+	return in.Versioning.Type == VersioningTypeSemver || in.Versioning.Type == VersioningTypeEDP
 }
 
 type ActionType string

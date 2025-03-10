@@ -23,9 +23,8 @@ import (
 )
 
 const (
-	fakeName       = "fake-name"
-	fakeNamespace  = "fake-namespace"
-	versioningType = "edp"
+	fakeName      = "fake-name"
+	fakeNamespace = "fake-namespace"
 )
 
 func TestPutBranchInGit_ShouldBeExecutedSuccessfullyWithDefaultVersioning(t *testing.T) {
@@ -394,7 +393,7 @@ func TestPutBranchInGit_ShouldBeExecutedSuccessfullyWithEdpVersioning(t *testing
 			GitServer:  fakeName,
 			GitUrlPath: fakeName,
 			Versioning: codebaseApi.Versioning{
-				Type:      versioningType,
+				Type:      codebaseApi.VersioningTypeSemver,
 				StartFrom: nil,
 			},
 			DefaultBranch: "main",
