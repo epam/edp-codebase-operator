@@ -219,6 +219,7 @@ func (c *GitLabClient) CreateProject(
 	gitlabURL,
 	token,
 	projectID string,
+	settings RepositorySettings,
 ) error {
 	namespace, path, err := decodeProjectID(projectID)
 	if err != nil {
@@ -238,6 +239,7 @@ func (c *GitLabClient) CreateProject(
 		SetBody(map[string]any{
 			"path":         path,
 			"namespace_id": gitLabNs.ID,
+			"visibility":   settings.Visibility(),
 		}).
 		Post("/api/v4/projects")
 

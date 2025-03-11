@@ -139,7 +139,7 @@ func (h *PutProject) createProject(
 			return fmt.Errorf("failed to create project in Gerrit for codebase %v: %w", codebase.Name, err)
 		}
 	} else {
-		if err := h.createGitThirdPartyProject(ctx, gitServer, gitProviderToken, codebase.Spec.GetProjectID()); err != nil {
+		if err := h.createGitThirdPartyProject(ctx, gitServer, gitProviderToken, codebase); err != nil {
 			return err
 		}
 	}
@@ -277,7 +277,13 @@ func (h *PutProject) checkoutBranch(ctx context.Context, codebase *codebaseApi.C
 	return nil
 }
 
-func (h *PutProject) createGitThirdPartyProject(ctx context.Context, gitServer *codebaseApi.GitServer, gitProviderToken, projectName string) error {
+func (h *PutProject) createGitThirdPartyProject(
+	ctx context.Context,
+	gitServer *codebaseApi.GitServer,
+	gitProviderToken string,
+	codebase *codebaseApi.Codebase,
+) error {
+	projectName := codebase.Spec.GetProjectID()
 	log := ctrl.LoggerFrom(ctx).WithValues("gitProvider", gitServer.Spec.GitProvider)
 
 	log.Info("Start creating project in git provider")
@@ -308,6 +314,9 @@ func (h *PutProject) createGitThirdPartyProject(ctx context.Context, gitServer *
 		gitprovider.GetGitProviderAPIURL(gitServer),
 		gitProviderToken,
 		projectName,
+		gitprovider.RepositorySettings{
+			IsPrivate: codebase.Spec.Private,
+		},
 	); err != nil {
 		return fmt.Errorf("failed to create project: %w", err)
 	}

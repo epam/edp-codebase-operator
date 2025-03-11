@@ -116,6 +116,10 @@ spec:
               lang:
                 description: Programming language used in codebase.
                 type: string
+              private:
+                default: true
+                description: Private indicates if we need to create private repository.
+                type: boolean
               repository:
                 nullable: true
                 properties:

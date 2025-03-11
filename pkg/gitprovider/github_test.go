@@ -483,7 +483,7 @@ func TestGitHubClient_CreateProject(t *testing.T) {
 			httpmock.RegisterRegexpResponder(http.MethodGet, fakeUrlRegexp, GetOrgResponder)
 
 			c := NewGitHubClient(restyClient)
-			err = c.CreateProject(context.Background(), "url", "token", tt.projectID)
+			err = c.CreateProject(context.Background(), "url", "token", tt.projectID, RepositorySettings{})
 			tt.wantErr(t, err)
 		})
 	}

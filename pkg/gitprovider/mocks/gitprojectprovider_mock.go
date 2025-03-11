@@ -5,6 +5,7 @@ package mocks
 import (
 	context "context"
 
+	gitprovider "github.com/epam/edp-codebase-operator/v2/pkg/gitprovider"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -21,17 +22,17 @@ func (_m *MockGitProjectProvider) EXPECT() *MockGitProjectProvider_Expecter {
 	return &MockGitProjectProvider_Expecter{mock: &_m.Mock}
 }
 
-// CreateProject provides a mock function with given fields: ctx, gitlabURL, token, fullPath
-func (_m *MockGitProjectProvider) CreateProject(ctx context.Context, gitlabURL string, token string, fullPath string) error {
-	ret := _m.Called(ctx, gitlabURL, token, fullPath)
+// CreateProject provides a mock function with given fields: ctx, gitlabURL, token, fullPath, settings
+func (_m *MockGitProjectProvider) CreateProject(ctx context.Context, gitlabURL string, token string, fullPath string, settings gitprovider.RepositorySettings) error {
+	ret := _m.Called(ctx, gitlabURL, token, fullPath, settings)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CreateProject")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) error); ok {
-		r0 = rf(ctx, gitlabURL, token, fullPath)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, gitprovider.RepositorySettings) error); ok {
+		r0 = rf(ctx, gitlabURL, token, fullPath, settings)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -49,13 +50,14 @@ type MockGitProjectProvider_CreateProject_Call struct {
 //   - gitlabURL string
 //   - token string
 //   - fullPath string
-func (_e *MockGitProjectProvider_Expecter) CreateProject(ctx interface{}, gitlabURL interface{}, token interface{}, fullPath interface{}) *MockGitProjectProvider_CreateProject_Call {
-	return &MockGitProjectProvider_CreateProject_Call{Call: _e.mock.On("CreateProject", ctx, gitlabURL, token, fullPath)}
+//   - settings gitprovider.RepositorySettings
+func (_e *MockGitProjectProvider_Expecter) CreateProject(ctx interface{}, gitlabURL interface{}, token interface{}, fullPath interface{}, settings interface{}) *MockGitProjectProvider_CreateProject_Call {
+	return &MockGitProjectProvider_CreateProject_Call{Call: _e.mock.On("CreateProject", ctx, gitlabURL, token, fullPath, settings)}
 }
 
-func (_c *MockGitProjectProvider_CreateProject_Call) Run(run func(ctx context.Context, gitlabURL string, token string, fullPath string)) *MockGitProjectProvider_CreateProject_Call {
+func (_c *MockGitProjectProvider_CreateProject_Call) Run(run func(ctx context.Context, gitlabURL string, token string, fullPath string, settings gitprovider.RepositorySettings)) *MockGitProjectProvider_CreateProject_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string), args[2].(string), args[3].(string))
+		run(args[0].(context.Context), args[1].(string), args[2].(string), args[3].(string), args[4].(gitprovider.RepositorySettings))
 	})
 	return _c
 }
@@ -65,7 +67,7 @@ func (_c *MockGitProjectProvider_CreateProject_Call) Return(_a0 error) *MockGitP
 	return _c
 }
 
-func (_c *MockGitProjectProvider_CreateProject_Call) RunAndReturn(run func(context.Context, string, string, string) error) *MockGitProjectProvider_CreateProject_Call {
+func (_c *MockGitProjectProvider_CreateProject_Call) RunAndReturn(run func(context.Context, string, string, string, gitprovider.RepositorySettings) error) *MockGitProjectProvider_CreateProject_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -124,6 +124,11 @@ type CodebaseSpec struct {
 	// Controller must skip step "put deploy templates" in action chain.
 	// +optional
 	DisablePutDeployTemplates bool `json:"disablePutDeployTemplates,omitempty"`
+
+	// Private indicates if we need to create private repository.
+	// +optional
+	// +kubebuilder:default:=true
+	Private bool `json:"private"`
 }
 
 // GetProjectID returns project id from GitUrlPath codebase spec. It removes the leading slash.

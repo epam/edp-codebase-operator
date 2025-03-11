@@ -207,7 +207,7 @@ func (b *BitbucketClient) DeleteWebHook(ctx context.Context, _, _, projectID, we
 	return nil
 }
 
-func (b *BitbucketClient) CreateProject(ctx context.Context, _, _, projectID string) error {
+func (b *BitbucketClient) CreateProject(ctx context.Context, _, _, projectID string, settings RepositorySettings) error {
 	owner, repo, err := parseProjectID(projectID)
 	if err != nil {
 		return err
@@ -215,7 +215,7 @@ func (b *BitbucketClient) CreateProject(ctx context.Context, _, _, projectID str
 
 	reqBody := generated.PostRepositoriesWorkspaceRepoSlugJSONRequestBody{
 		Type:      "repository",
-		IsPrivate: ptr.To(true),
+		IsPrivate: ptr.To(settings.IsPrivate),
 	}
 
 	r, err := b.client.PostRepositoriesWorkspaceRepoSlugWithResponse(ctx, owner, repo, reqBody)

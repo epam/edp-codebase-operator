@@ -60,6 +60,7 @@ type GitProjectProvider interface {
 		gitlabURL,
 		token,
 		fullPath string,
+		settings RepositorySettings,
 	) error
 	ProjectExists(
 		ctx context.Context,
@@ -74,6 +75,18 @@ type GitProjectProvider interface {
 		projectID,
 		branch string,
 	) error
+}
+
+type RepositorySettings struct {
+	IsPrivate bool
+}
+
+func (rs RepositorySettings) Visibility() string {
+	if rs.IsPrivate {
+		return "private"
+	}
+
+	return "public"
 }
 
 type GitProvider interface {
