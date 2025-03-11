@@ -844,6 +844,15 @@ Selected branch will become a default branch for a new codebase (e.g. master, ma
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>private</b></td>
+        <td>boolean</td>
+        <td>
+          Private indicates if we need to create private repository.<br/>
+          <br/>
+            <i>Default</i>: true<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#codebasespecrepository">repository</a></b></td>
         <td>object</td>
         <td>

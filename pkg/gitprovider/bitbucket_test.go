@@ -316,7 +316,7 @@ func TestBitbucketClient_CreateProject(t *testing.T) {
 			b, err := NewBitbucketClient("token", WithBitbucketClientUrl(server.URL))
 			require.NoError(t, err)
 
-			tt.wantErr(t, b.CreateProject(context.Background(), "", "", tt.projectID))
+			tt.wantErr(t, b.CreateProject(context.Background(), "", "", tt.projectID, RepositorySettings{}))
 		})
 	}
 }

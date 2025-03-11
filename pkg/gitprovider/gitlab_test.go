@@ -406,7 +406,7 @@ func TestGitLabClient_CreateProject(t *testing.T) {
 
 			c := NewGitLabClient(restyClient)
 
-			err = c.CreateProject(context.Background(), "url", "token", tt.projectID)
+			err = c.CreateProject(context.Background(), "url", "token", tt.projectID, RepositorySettings{})
 			tt.wantErr(t, err)
 		})
 	}

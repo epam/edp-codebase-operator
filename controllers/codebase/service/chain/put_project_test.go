@@ -903,7 +903,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 
 				mock.On("ProjectExists", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(false, nil).
-					On("CreateProject", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
+					On("CreateProject", testify.Anything, testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(nil).
 					On("SetDefaultBranch", testify.Anything, testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(nil)
@@ -959,7 +959,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 
 				mock.On("ProjectExists", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(false, nil).
-					On("CreateProject", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
+					On("CreateProject", testify.Anything, testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(nil).
 					On("SetDefaultBranch", testify.Anything, testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(nil)
@@ -1018,7 +1018,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 
 				mock.On("ProjectExists", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(false, nil).
-					On("CreateProject", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
+					On("CreateProject", testify.Anything, testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(nil).
 					On("SetDefaultBranch", testify.Anything, testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(nil)
@@ -1074,7 +1074,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 
 				mock.On("ProjectExists", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(false, nil).
-					On("CreateProject", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
+					On("CreateProject", testify.Anything, testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(nil).
 					On("SetDefaultBranch", testify.Anything, testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(nil)
@@ -1130,7 +1130,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 
 				mock.On("ProjectExists", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(false, nil).
-					On("CreateProject", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
+					On("CreateProject", testify.Anything, testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(nil).
 					On("SetDefaultBranch", testify.Anything, testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(errors.New("failed to set default branch"))

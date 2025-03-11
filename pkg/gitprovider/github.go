@@ -252,6 +252,7 @@ func (c *GitHubClient) CreateProject(
 	githubURL,
 	token,
 	projectID string,
+	settings RepositorySettings,
 ) error {
 	c.restyClient.HostURL = githubURL
 	path := "user/repos"
@@ -274,8 +275,9 @@ func (c *GitHubClient) CreateProject(
 		R().
 		SetContext(ctx).
 		SetAuthToken(token).
-		SetBody(map[string]string{
-			"name": repo,
+		SetBody(map[string]interface{}{
+			"name":    repo,
+			"private": settings.IsPrivate,
 		}).
 		Post(path)
 	if err != nil {
