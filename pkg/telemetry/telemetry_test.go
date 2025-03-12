@@ -77,7 +77,7 @@ func TestCollector_Start(t *testing.T) {
 		WithObjects(
 			&corev1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      platform.EdpConfigMap,
+					Name:      platform.KrciConfigMap,
 					Namespace: ns,
 				},
 				Data: map[string]string{

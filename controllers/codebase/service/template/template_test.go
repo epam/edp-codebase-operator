@@ -40,7 +40,7 @@ func TestPrepareTemplates_ShouldPass(t *testing.T) {
 	}
 	config := &coreV1.ConfigMap{
 		ObjectMeta: metaV1.ObjectMeta{
-			Name:      "edp-config",
+			Name:      "krci-config",
 			Namespace: fakeNamespace,
 		},
 	}
@@ -75,7 +75,7 @@ func TestPrepareTemplates_ShouldSkipSonarConfig(t *testing.T) {
 	}
 	config := &coreV1.ConfigMap{
 		ObjectMeta: metaV1.ObjectMeta{
-			Name:      "edp-config",
+			Name:      "krci-config",
 			Namespace: fakeNamespace,
 		},
 	}
@@ -111,7 +111,7 @@ func TestPrepareTemplates_ShouldFailOnGetProjectUrl(t *testing.T) {
 	}
 	config := &coreV1.ConfigMap{
 		ObjectMeta: metaV1.ObjectMeta{
-			Name:      "edp-config",
+			Name:      "krci-config",
 			Namespace: fakeNamespace,
 		},
 	}

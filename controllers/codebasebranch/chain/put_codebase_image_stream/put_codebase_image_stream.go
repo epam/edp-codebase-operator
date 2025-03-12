@@ -26,8 +26,8 @@ type PutCodebaseImageStream struct {
 }
 
 const (
-	EdpConfigContainerRegistryHost  = "container_registry_host"
-	EdpConfigContainerRegistrySpace = "container_registry_space"
+	KrciConfigContainerRegistryHost  = "container_registry_host"
+	KrciConfigContainerRegistrySpace = "container_registry_space"
 )
 
 func (h PutCodebaseImageStream) ServeRequest(ctx context.Context, cb *codebaseApi.CodebaseBranch) error {
@@ -91,21 +91,21 @@ func ProcessNameToK8sConvention(name string) string {
 func (h PutCodebaseImageStream) getDockerRegistryUrl(ctx context.Context, namespace string) (string, error) {
 	config := &corev1.ConfigMap{}
 	if err := h.Client.Get(ctx, types.NamespacedName{
-		Name:      platform.EdpConfigMap,
+		Name:      platform.KrciConfigMap,
 		Namespace: namespace,
 	}, config); err != nil {
-		return "", fmt.Errorf("failed to get %s config map: %w", platform.EdpConfigMap, err)
+		return "", fmt.Errorf("failed to get %s config map: %w", platform.KrciConfigMap, err)
 	}
 
-	if _, ok := config.Data[EdpConfigContainerRegistryHost]; !ok {
-		return "", fmt.Errorf("%s is not set in %s config map", EdpConfigContainerRegistryHost, platform.EdpConfigMap)
+	if _, ok := config.Data[KrciConfigContainerRegistryHost]; !ok {
+		return "", fmt.Errorf("%s is not set in %s config map", KrciConfigContainerRegistryHost, platform.KrciConfigMap)
 	}
 
-	if _, ok := config.Data[EdpConfigContainerRegistrySpace]; !ok {
-		return "", fmt.Errorf("%s is not set in %s config map", EdpConfigContainerRegistrySpace, platform.EdpConfigMap)
+	if _, ok := config.Data[KrciConfigContainerRegistrySpace]; !ok {
+		return "", fmt.Errorf("%s is not set in %s config map", KrciConfigContainerRegistrySpace, platform.KrciConfigMap)
 	}
 
-	return fmt.Sprintf("%s/%s", config.Data[EdpConfigContainerRegistryHost], config.Data[EdpConfigContainerRegistrySpace]), nil
+	return fmt.Sprintf("%s/%s", config.Data[KrciConfigContainerRegistryHost], config.Data[KrciConfigContainerRegistrySpace]), nil
 }
 
 func (h PutCodebaseImageStream) createCodebaseImageStreamIfNotExists(

@@ -67,7 +67,7 @@ func TestPutDeployConfigs_ShouldPass(t *testing.T) {
 	}
 	cm := &coreV1.ConfigMap{
 		ObjectMeta: metaV1.ObjectMeta{
-			Name:      "edp-config",
+			Name:      "krci-config",
 			Namespace: fakeNamespace,
 		},
 		Data: map[string]string{

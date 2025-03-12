@@ -27,10 +27,10 @@ func GetUserSettings(c client.Client, namespace string) (*model.UserSettings, er
 
 	err := c.Get(ctx, types.NamespacedName{
 		Namespace: namespace,
-		Name:      "edp-config",
+		Name:      "krci-config",
 	}, us)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch 'edp-config' resource: %w", err)
+		return nil, fmt.Errorf("failed to fetch 'krci-config' resource: %w", err)
 	}
 
 	return &model.UserSettings{

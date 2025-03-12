@@ -48,12 +48,12 @@ func TestPutCodebaseImageStream_ServeRequest(t *testing.T) {
 				},
 				&corev1.ConfigMap{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      platform.EdpConfigMap,
+						Name:      platform.KrciConfigMap,
 						Namespace: "default",
 					},
 					Data: map[string]string{
-						EdpConfigContainerRegistryHost:  "test-registry",
-						EdpConfigContainerRegistrySpace: "test-space",
+						KrciConfigContainerRegistryHost:  "test-registry",
+						KrciConfigContainerRegistrySpace: "test-space",
 					},
 				},
 			},
@@ -95,12 +95,12 @@ func TestPutCodebaseImageStream_ServeRequest(t *testing.T) {
 				},
 				&corev1.ConfigMap{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      platform.EdpConfigMap,
+						Name:      platform.KrciConfigMap,
 						Namespace: "default",
 					},
 					Data: map[string]string{
-						EdpConfigContainerRegistryHost:  "test-registry",
-						EdpConfigContainerRegistrySpace: "test-space",
+						KrciConfigContainerRegistryHost:  "test-registry",
+						KrciConfigContainerRegistrySpace: "test-space",
 					},
 				},
 			},
