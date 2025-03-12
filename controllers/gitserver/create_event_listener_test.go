@@ -79,7 +79,7 @@ func TestCreateEventListener_ServeRequest(t *testing.T) {
 					WithObjects(&corev1.ConfigMap{
 						ObjectMeta: controllerruntime.ObjectMeta{
 							Namespace: "default",
-							Name:      platform.EdpConfigMap,
+							Name:      platform.KrciConfigMap,
 						},
 					}).
 					Build()
@@ -117,7 +117,7 @@ func TestCreateEventListener_ServeRequest(t *testing.T) {
 						&corev1.ConfigMap{
 							ObjectMeta: controllerruntime.ObjectMeta{
 								Namespace: "default",
-								Name:      platform.EdpConfigMap,
+								Name:      platform.KrciConfigMap,
 							},
 						},
 						&networkingv1.Ingress{
@@ -166,7 +166,7 @@ func TestCreateEventListener_ServeRequest(t *testing.T) {
 						&corev1.ConfigMap{
 							ObjectMeta: controllerruntime.ObjectMeta{
 								Namespace: "default",
-								Name:      platform.EdpConfigMap,
+								Name:      platform.KrciConfigMap,
 							},
 						},
 						el,
@@ -205,7 +205,7 @@ func TestCreateEventListener_ServeRequest(t *testing.T) {
 					WithObjects(&corev1.ConfigMap{
 						ObjectMeta: controllerruntime.ObjectMeta{
 							Namespace: "default",
-							Name:      platform.EdpConfigMap,
+							Name:      platform.KrciConfigMap,
 						},
 					}).
 					Build()
@@ -243,7 +243,7 @@ func TestCreateEventListener_ServeRequest(t *testing.T) {
 						&corev1.ConfigMap{
 							ObjectMeta: controllerruntime.ObjectMeta{
 								Namespace: "default",
-								Name:      platform.EdpConfigMap,
+								Name:      platform.KrciConfigMap,
 							},
 						},
 						&routeApi.Route{
@@ -274,7 +274,7 @@ func TestCreateEventListener_ServeRequest(t *testing.T) {
 			},
 		},
 		{
-			name: "edpConfig not found",
+			name: "KrciConfig not found",
 			gitServer: &codebaseApi.GitServer{
 				ObjectMeta: controllerruntime.ObjectMeta{
 					Name:      "test-git-server",

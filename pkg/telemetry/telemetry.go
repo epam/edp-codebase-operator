@@ -75,17 +75,17 @@ func (c *Collector) Start(ctx context.Context, delay, sendEvery time.Duration) {
 }
 
 func (c *Collector) sendTelemetry(ctx context.Context) error {
-	edpConfig := &corev1.ConfigMap{}
+	KrciConfig := &corev1.ConfigMap{}
 	if err := c.k8sClient.Get(ctx, client.ObjectKey{
 		Namespace: c.namespace,
-		Name:      platform.EdpConfigMap,
-	}, edpConfig); err != nil {
-		return fmt.Errorf("failed to get edp config: %w", err)
+		Name:      platform.KrciConfigMap,
+	}, KrciConfig); err != nil {
+		return fmt.Errorf("failed to get krci config: %w", err)
 	}
 
 	telemetry := PlatformMetrics{}
-	telemetry.RegistryType = edpConfig.Data["container_registry_type"]
-	telemetry.Version = edpConfig.Data["edp_version"]
+	telemetry.RegistryType = KrciConfig.Data["container_registry_type"]
+	telemetry.Version = KrciConfig.Data["edp_version"]
 
 	codebases := &codebaseApi.CodebaseList{}
 	if err := c.k8sClient.List(ctx, codebases, client.InNamespace(c.namespace)); err != nil {

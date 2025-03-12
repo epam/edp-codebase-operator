@@ -152,7 +152,7 @@ func (h *CreateEventListener) createIngress(ctx context.Context, gitServer *code
 		return fmt.Errorf("failed to get Ingress: %w", err)
 	}
 
-	edpConf, err := platform.GetEdpConfig(ctx, h.k8sClient, gitServer.Namespace)
+	edpConf, err := platform.GetKrciConfig(ctx, h.k8sClient, gitServer.Namespace)
 	if err != nil {
 		return fmt.Errorf("failed to get dnsWildcard: %w", err)
 	}
@@ -236,7 +236,7 @@ func (h *CreateEventListener) createRoute(ctx context.Context, gitServer *codeba
 		return fmt.Errorf("failed to get Route: %w", err)
 	}
 
-	edpConf, err := platform.GetEdpConfig(ctx, h.k8sClient, gitServer.Namespace)
+	edpConf, err := platform.GetKrciConfig(ctx, h.k8sClient, gitServer.Namespace)
 	if err != nil {
 		return fmt.Errorf("failed to get dnsWildcard: %w", err)
 	}

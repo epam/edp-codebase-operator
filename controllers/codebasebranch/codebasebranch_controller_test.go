@@ -206,14 +206,14 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldPassWithCreatingCIS(t *testing.
 			Available: true,
 		},
 	}
-	edpConfig := &coreV1.ConfigMap{
+	KrciConfig := &coreV1.ConfigMap{
 		ObjectMeta: metaV1.ObjectMeta{
-			Name:      platform.EdpConfigMap,
+			Name:      platform.KrciConfigMap,
 			Namespace: "namespace",
 		},
 		Data: map[string]string{
-			put_codebase_image_stream.EdpConfigContainerRegistryHost:  "stub-url",
-			put_codebase_image_stream.EdpConfigContainerRegistrySpace: "stub-space",
+			put_codebase_image_stream.KrciConfigContainerRegistryHost:  "stub-url",
+			put_codebase_image_stream.KrciConfigContainerRegistrySpace: "stub-space",
 		},
 	}
 	s := &coreV1.Secret{
@@ -234,7 +234,7 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldPassWithCreatingCIS(t *testing.
 
 	fakeCl := fake.NewClientBuilder().
 		WithScheme(scheme).
-		WithRuntimeObjects(c, cb, s, cis, edpConfig).
+		WithRuntimeObjects(c, cb, s, cis, KrciConfig).
 		WithStatusSubresource(cb).
 		Build()
 

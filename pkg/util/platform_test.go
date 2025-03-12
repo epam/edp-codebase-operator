@@ -232,7 +232,7 @@ func TestGetGitServer_ShouldFailIfNotFound(t *testing.T) {
 func TestGetUserSettings_ShouldPass(t *testing.T) {
 	cm := &coreV1.ConfigMap{
 		ObjectMeta: metaV1.ObjectMeta{
-			Name:      "edp-config",
+			Name:      "krci-config",
 			Namespace: "stub-namespace",
 		},
 		Data: map[string]string{
@@ -251,7 +251,7 @@ func TestGetUserSettings_ShouldPass(t *testing.T) {
 func TestGetUserSettings_ShouldFailOnFindConfigmap(t *testing.T) {
 	cm := &coreV1.ConfigMap{
 		ObjectMeta: metaV1.ObjectMeta{
-			Name:      "edp-config",
+			Name:      "krci-config",
 			Namespace: "stub-namespace",
 		},
 	}
@@ -263,7 +263,7 @@ func TestGetUserSettings_ShouldFailOnFindConfigmap(t *testing.T) {
 	assert.Error(t, err)
 	assert.Nil(t, model)
 
-	if !strings.Contains(err.Error(), "configmaps \"edp-config\" not found") {
+	if !strings.Contains(err.Error(), "configmaps \"krci-config\" not found") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
 }
