@@ -2,6 +2,24 @@
 ## [Unreleased]
 
 
+<a name="v2.27.0"></a>
+## [v2.27.0] - 2025-03-22
+### Features
+
+- Add support for private repository creation ([#181](https://github.com/epam/edp-codebase-operator/issues/181))
+- Rename platform versioning from edp to semver ([#176](https://github.com/epam/edp-codebase-operator/issues/176))
+- Add validation webhook for protected resources ([#176](https://github.com/epam/edp-codebase-operator/issues/176))
+
+### Bug Fixes
+
+- Missing namespace selector for codebaseimagestream webhook ([#176](https://github.com/epam/edp-codebase-operator/issues/176))
+
+### Routine
+
+- Update Telemetry endpoint ([#174](https://github.com/epam/edp-codebase-operator/issues/174))
+- Update current development version ([#170](https://github.com/epam/edp-codebase-operator/issues/170))
+
+
 <a name="v2.26.0"></a>
 ## [v2.26.0] - 2025-01-24
 ### Routine
@@ -280,7 +298,8 @@ removed required fields from the GitServer status. CRD should be updated.
 <a name="v2.17.0"></a>
 ## [v2.17.0] - 2023-08-17
 
-[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.26.0...HEAD
+[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.27.0...HEAD
+[v2.27.0]: https://github.com/epam/edp-codebase-operator/compare/v2.26.0...v2.27.0
 [v2.26.0]: https://github.com/epam/edp-codebase-operator/compare/v2.25.0...v2.26.0
 [v2.25.0]: https://github.com/epam/edp-codebase-operator/compare/v2.24.1...v2.25.0
 [v2.24.1]: https://github.com/epam/edp-codebase-operator/compare/v2.24.0...v2.24.1
