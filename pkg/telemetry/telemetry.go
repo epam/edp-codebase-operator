@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/go-resty/resty/v2"
-	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -75,20 +74,17 @@ func (c *Collector) Start(ctx context.Context, delay, sendEvery time.Duration) {
 }
 
 func (c *Collector) sendTelemetry(ctx context.Context) error {
-	edpConfig := &corev1.ConfigMap{}
-	if err := c.k8sClient.Get(ctx, client.ObjectKey{
-		Namespace: c.namespace,
-		Name:      platform.EdpConfigMap,
-	}, edpConfig); err != nil {
-		return fmt.Errorf("failed to get edp config: %w", err)
+	config, err := platform.GetKrciConfig(ctx, c.k8sClient, c.namespace)
+	if err != nil {
+		return fmt.Errorf("failed to get config: %w", err)
 	}
 
 	telemetry := PlatformMetrics{}
-	telemetry.RegistryType = edpConfig.Data["container_registry_type"]
-	telemetry.Version = edpConfig.Data["edp_version"]
+	telemetry.RegistryType = config.ContainerRegistryType
+	telemetry.Version = config.EdpVersion
 
 	codebases := &codebaseApi.CodebaseList{}
-	if err := c.k8sClient.List(ctx, codebases, client.InNamespace(c.namespace)); err != nil {
+	if err = c.k8sClient.List(ctx, codebases, client.InNamespace(c.namespace)); err != nil {
 		return fmt.Errorf("failed to get codebases: %w", err)
 	}
 
@@ -104,7 +100,7 @@ func (c *Collector) sendTelemetry(ctx context.Context) error {
 	}
 
 	gitProviders := &codebaseApi.GitServerList{}
-	if err := c.k8sClient.List(ctx, gitProviders, client.InNamespace(c.namespace)); err != nil {
+	if err = c.k8sClient.List(ctx, gitProviders, client.InNamespace(c.namespace)); err != nil {
 		return fmt.Errorf("failed to get git providers: %w", err)
 	}
 
@@ -113,7 +109,7 @@ func (c *Collector) sendTelemetry(ctx context.Context) error {
 	}
 
 	stages := &pipelineAPi.StageList{}
-	if err := c.k8sClient.List(ctx, stages, client.InNamespace(c.namespace)); err != nil {
+	if err = c.k8sClient.List(ctx, stages, client.InNamespace(c.namespace)); err != nil {
 		return fmt.Errorf("failed to get stages: %w", err)
 	}
 
@@ -129,7 +125,7 @@ func (c *Collector) sendTelemetry(ctx context.Context) error {
 	}
 
 	cdPipelines := &pipelineAPi.CDPipelineList{}
-	if err := c.k8sClient.List(ctx, cdPipelines, client.InNamespace(c.namespace)); err != nil {
+	if err = c.k8sClient.List(ctx, cdPipelines, client.InNamespace(c.namespace)); err != nil {
 		return fmt.Errorf("failed to get cd pipelines: %w", err)
 	}
 
@@ -146,7 +142,7 @@ func (c *Collector) sendTelemetry(ctx context.Context) error {
 	}
 
 	jiraServers := &codebaseApi.JiraServerList{}
-	if err := c.k8sClient.List(ctx, jiraServers, client.InNamespace(c.namespace)); err != nil {
+	if err = c.k8sClient.List(ctx, jiraServers, client.InNamespace(c.namespace)); err != nil {
 		return fmt.Errorf("failed to get jira servers: %w", err)
 	}
 

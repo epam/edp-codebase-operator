@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	corev1 "k8s.io/api/core/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -24,11 +23,6 @@ type PutCodebaseImageStream struct {
 	Next   handler.CodebaseBranchHandler
 	Client client.Client
 }
-
-const (
-	EdpConfigContainerRegistryHost  = "container_registry_host"
-	EdpConfigContainerRegistrySpace = "container_registry_space"
-)
 
 func (h PutCodebaseImageStream) ServeRequest(ctx context.Context, cb *codebaseApi.CodebaseBranch) error {
 	log := ctrl.LoggerFrom(ctx).WithName("put-codebase-image-stream")
@@ -89,23 +83,20 @@ func ProcessNameToK8sConvention(name string) string {
 }
 
 func (h PutCodebaseImageStream) getDockerRegistryUrl(ctx context.Context, namespace string) (string, error) {
-	config := &corev1.ConfigMap{}
-	if err := h.Client.Get(ctx, types.NamespacedName{
-		Name:      platform.EdpConfigMap,
-		Namespace: namespace,
-	}, config); err != nil {
-		return "", fmt.Errorf("failed to get %s config map: %w", platform.EdpConfigMap, err)
+	config, err := platform.GetKrciConfig(ctx, h.Client, namespace)
+	if err != nil {
+		return "", fmt.Errorf("failed to get config: %w", err)
 	}
 
-	if _, ok := config.Data[EdpConfigContainerRegistryHost]; !ok {
-		return "", fmt.Errorf("%s is not set in %s config map", EdpConfigContainerRegistryHost, platform.EdpConfigMap)
+	if config.KrciConfigContainerRegistryHost == "" {
+		return "", fmt.Errorf("%s is not set in %s config map", platform.KrciConfigContainerRegistryHost, platform.KrciConfigMap)
 	}
 
-	if _, ok := config.Data[EdpConfigContainerRegistrySpace]; !ok {
-		return "", fmt.Errorf("%s is not set in %s config map", EdpConfigContainerRegistrySpace, platform.EdpConfigMap)
+	if config.KrciConfigContainerRegistrySpace == "" {
+		return "", fmt.Errorf("%s is not set in %s config map", platform.KrciConfigContainerRegistrySpace, platform.KrciConfigMap)
 	}
 
-	return fmt.Sprintf("%s/%s", config.Data[EdpConfigContainerRegistryHost], config.Data[EdpConfigContainerRegistrySpace]), nil
+	return fmt.Sprintf("%s/%s", config.KrciConfigContainerRegistryHost, config.KrciConfigContainerRegistrySpace), nil
 }
 
 func (h PutCodebaseImageStream) createCodebaseImageStreamIfNotExists(

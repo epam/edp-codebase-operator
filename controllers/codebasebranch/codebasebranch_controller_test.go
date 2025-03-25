@@ -17,7 +17,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
-	"github.com/epam/edp-codebase-operator/v2/controllers/codebasebranch/chain/put_codebase_image_stream"
 	"github.com/epam/edp-codebase-operator/v2/pkg/codebasebranch"
 	"github.com/epam/edp-codebase-operator/v2/pkg/platform"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
@@ -206,14 +205,14 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldPassWithCreatingCIS(t *testing.
 			Available: true,
 		},
 	}
-	edpConfig := &coreV1.ConfigMap{
+	config := &coreV1.ConfigMap{
 		ObjectMeta: metaV1.ObjectMeta{
-			Name:      platform.EdpConfigMap,
+			Name:      platform.KrciConfigMap,
 			Namespace: "namespace",
 		},
 		Data: map[string]string{
-			put_codebase_image_stream.EdpConfigContainerRegistryHost:  "stub-url",
-			put_codebase_image_stream.EdpConfigContainerRegistrySpace: "stub-space",
+			platform.KrciConfigContainerRegistryHost:  "stub-url",
+			platform.KrciConfigContainerRegistrySpace: "stub-space",
 		},
 	}
 	s := &coreV1.Secret{
@@ -234,7 +233,7 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldPassWithCreatingCIS(t *testing.
 
 	fakeCl := fake.NewClientBuilder().
 		WithScheme(scheme).
-		WithRuntimeObjects(c, cb, s, cis, edpConfig).
+		WithRuntimeObjects(c, cb, s, cis, config).
 		WithStatusSubresource(cb).
 		Build()
 
