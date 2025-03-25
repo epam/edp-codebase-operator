@@ -55,16 +55,16 @@ func buildTemplateConfig(ctx context.Context, c client.Client, cb *codebaseApi.C
 
 	log.Info("Start creating template config")
 
-	us, err := util.GetUserSettings(c, cb.Namespace)
+	conf, err := platform.GetKrciConfig(ctx, c, cb.Namespace)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get user settings settings: %w", err)
+		return nil, fmt.Errorf("failed to get user setting: %w", err)
 	}
 
 	cf := model.ConfigGoTemplating{
 		Name:         cb.Name,
 		PlatformType: platform.GetPlatformType(),
 		Lang:         cb.Spec.Lang,
-		DnsWildcard:  us.DnsWildcard,
+		DnsWildcard:  conf.DnsWildcard,
 		Framework:    cb.Spec.Framework,
 	}
 

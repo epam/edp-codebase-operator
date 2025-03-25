@@ -14,69 +14,6 @@ import (
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 )
 
-func TestGetGerritPort_ShouldFound(t *testing.T) {
-	gs := &codebaseApi.GitServer{
-		ObjectMeta: metaV1.ObjectMeta{
-			Name:      "gerrit",
-			Namespace: "stub-namespace",
-		},
-		Spec: codebaseApi.GitServerSpec{
-			SshPort: 22,
-		},
-	}
-
-	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1.SchemeGroupVersion, gs)
-	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(gs).Build()
-
-	port, err := GetGerritPort(fakeCl, "stub-namespace")
-	assert.Equal(t, *port, int32(22))
-	assert.NoError(t, err)
-}
-
-func TestGetGerritPort_ShouldFailPortNotDefined(t *testing.T) {
-	gs := &codebaseApi.GitServer{
-		ObjectMeta: metaV1.ObjectMeta{
-			Name:      "gerrit",
-			Namespace: "stub-namespace",
-		},
-	}
-
-	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1.SchemeGroupVersion, gs)
-	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(gs).Build()
-
-	port, err := GetGerritPort(fakeCl, "stub-namespace")
-	assert.Nil(t, port)
-	assert.Error(t, err)
-
-	if !strings.Contains(err.Error(), "ssh port is zero or not defined in gerrit GitServer CR") {
-		t.Fatalf("wrong error returned: %s", err.Error())
-	}
-}
-
-func TestGetGerritPort_ShouldNotFound(t *testing.T) {
-	gs := &codebaseApi.GitServer{
-		ObjectMeta: metaV1.ObjectMeta{
-			Name:      "stub-gerrit",
-			Namespace: "stub-namespace",
-		},
-		Spec: codebaseApi.GitServerSpec{
-			SshPort: 22,
-		},
-	}
-
-	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1.SchemeGroupVersion, gs)
-	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(gs).Build()
-
-	port, err := GetGerritPort(fakeCl, "stub-namespace")
-	assert.Nil(t, port)
-	assert.Error(t, err)
-
-	assert.Contains(t, err.Error(), "failed to get gerrit Git Server CR")
-}
-
 func TestGetSecret_ShouldPass(t *testing.T) {
 	secret := &coreV1.Secret{
 		ObjectMeta: metaV1.ObjectMeta{
@@ -227,45 +164,6 @@ func TestGetGitServer_ShouldFailIfNotFound(t *testing.T) {
 	assert.Error(t, err)
 
 	assert.Contains(t, err.Error(), "failed to find GitServer non-existing in k8s")
-}
-
-func TestGetUserSettings_ShouldPass(t *testing.T) {
-	cm := &coreV1.ConfigMap{
-		ObjectMeta: metaV1.ObjectMeta{
-			Name:      "edp-config",
-			Namespace: "stub-namespace",
-		},
-		Data: map[string]string{
-			"dns_wildcard": "dns",
-		},
-	}
-	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(coreV1.SchemeGroupVersion, cm)
-	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(cm).Build()
-
-	model, err := GetUserSettings(fakeCl, "stub-namespace")
-	assert.Equal(t, model.DnsWildcard, "dns")
-	assert.NoError(t, err)
-}
-
-func TestGetUserSettings_ShouldFailOnFindConfigmap(t *testing.T) {
-	cm := &coreV1.ConfigMap{
-		ObjectMeta: metaV1.ObjectMeta{
-			Name:      "edp-config",
-			Namespace: "stub-namespace",
-		},
-	}
-	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(coreV1.SchemeGroupVersion, cm)
-	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(cm).Build()
-
-	model, err := GetUserSettings(fakeCl, "another-namespace")
-	assert.Error(t, err)
-	assert.Nil(t, model)
-
-	if !strings.Contains(err.Error(), "configmaps \"edp-config\" not found") {
-		t.Fatalf("wrong error returned: %s", err.Error())
-	}
 }
 
 func TestGetWatchNamespace_IsDefined(t *testing.T) {
