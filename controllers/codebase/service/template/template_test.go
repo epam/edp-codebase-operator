@@ -14,6 +14,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
+	"github.com/epam/edp-codebase-operator/v2/pkg/platform"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
@@ -40,7 +41,7 @@ func TestPrepareTemplates_ShouldPass(t *testing.T) {
 	}
 	config := &coreV1.ConfigMap{
 		ObjectMeta: metaV1.ObjectMeta{
-			Name:      "edp-config",
+			Name:      platform.KrciConfigMap,
 			Namespace: fakeNamespace,
 		},
 	}
@@ -75,7 +76,7 @@ func TestPrepareTemplates_ShouldSkipSonarConfig(t *testing.T) {
 	}
 	config := &coreV1.ConfigMap{
 		ObjectMeta: metaV1.ObjectMeta{
-			Name:      "edp-config",
+			Name:      platform.KrciConfigMap,
 			Namespace: fakeNamespace,
 		},
 	}
@@ -111,7 +112,7 @@ func TestPrepareTemplates_ShouldFailOnGetProjectUrl(t *testing.T) {
 	}
 	config := &coreV1.ConfigMap{
 		ObjectMeta: metaV1.ObjectMeta{
-			Name:      "edp-config",
+			Name:      platform.KrciConfigMap,
 			Namespace: fakeNamespace,
 		},
 	}

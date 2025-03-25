@@ -2,7 +2,6 @@ package util
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -20,40 +19,6 @@ const (
 	watchNamespaceEnvVar = "WATCH_NAMESPACE"
 	debugModeEnvVar      = "DEBUG_MODE"
 )
-
-func GetUserSettings(c client.Client, namespace string) (*model.UserSettings, error) {
-	ctx := context.Background()
-	us := &coreV1.ConfigMap{}
-
-	err := c.Get(ctx, types.NamespacedName{
-		Namespace: namespace,
-		Name:      "edp-config",
-	}, us)
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch 'edp-config' resource: %w", err)
-	}
-
-	return &model.UserSettings{
-		DnsWildcard: us.Data["dns_wildcard"],
-	}, nil
-}
-
-func GetGerritPort(c client.Client, namespace string) (*int32, error) {
-	gs, err := getGitServerCR(c, "gerrit", namespace)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get %v Git Server CR: %w", "gerrit", err)
-	}
-
-	if gs.Spec.SshPort == 0 {
-		return nil, errors.New("ssh port is zero or not defined in gerrit GitServer CR")
-	}
-
-	return getInt32P(gs.Spec.SshPort), nil
-}
-
-func getInt32P(val int32) *int32 {
-	return &val
-}
 
 func GetVcsBasicAuthConfig(c client.Client, namespace, secretName string) (userName, password string, err error) {
 	log.Info("Start getting secret", "name", secretName)

@@ -14,6 +14,7 @@ import (
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	gitServerMocks "github.com/epam/edp-codebase-operator/v2/pkg/git/mocks"
+	"github.com/epam/edp-codebase-operator/v2/pkg/platform"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
@@ -67,7 +68,7 @@ func TestPutDeployConfigs_ShouldPass(t *testing.T) {
 	}
 	cm := &coreV1.ConfigMap{
 		ObjectMeta: metaV1.ObjectMeta{
-			Name:      "edp-config",
+			Name:      platform.KrciConfigMap,
 			Namespace: fakeNamespace,
 		},
 		Data: map[string]string{
