@@ -21,6 +21,10 @@ envs:
   - name: CODEBASE_BRANCH_MAX_CONCURRENT_RECONCILES
     value: "3"
 imagePullPolicy: "IfNotPresent"
+# -- Optional array of imagePullSecrets containing private registry credentials
+## Ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry
+imagePullSecrets: []
+# - name: regcred
 
 resources:
   limits:
