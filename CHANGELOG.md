@@ -2,8 +2,8 @@
 ## [Unreleased]
 
 
-<a name="v2.27.0"></a>
-## v2.27.0 - 2025-03-11
+<a name="v2.27.1"></a>
+## v2.27.1 - 2025-03-26
 ### Features
 
 - Add support for private repository creation ([#181](https://github.com/epam/edp-codebase-operator/issues/181))
@@ -99,6 +99,8 @@
 
 ### Routine
 
+- Add ImagePullSecrets field support ([#190](https://github.com/epam/edp-codebase-operator/issues/190))
+- Rename ConfigMap from 'edp-config' to 'krci-config' ([#183](https://github.com/epam/edp-codebase-operator/issues/183))
 - Update Telemetry endpoint ([#174](https://github.com/epam/edp-codebase-operator/issues/174))
 - Update current development version ([#170](https://github.com/epam/edp-codebase-operator/issues/170))
 - Make QuickLink installation optional ([#168](https://github.com/epam/edp-codebase-operator/issues/168))
@@ -165,4 +167,4 @@
 removed required fields from the GitServer status. CRD should be updated.
 
 
-[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.27.0...HEAD
+[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.27.1...HEAD
