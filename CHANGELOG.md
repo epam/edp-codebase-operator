@@ -3,7 +3,7 @@
 
 
 <a name="v2.27.1"></a>
-## v2.27.1 - 2025-03-26
+## v2.27.1 - 2025-03-31
 ### Features
 
 - Add support for private repository creation ([#181](https://github.com/epam/edp-codebase-operator/issues/181))
