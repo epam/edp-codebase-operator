@@ -17,6 +17,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
+	"github.com/epam/edp-codebase-operator/v2/controllers/codebasebranch/chain"
 	"github.com/epam/edp-codebase-operator/v2/controllers/codebasebranch/service"
 	gitServerMocks "github.com/epam/edp-codebase-operator/v2/pkg/git/mocks"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
@@ -454,10 +455,9 @@ func TestPutBranchInGit_ShouldBeExecutedSuccessfullyWithEdpVersioning(t *testing
 	mGit := gitServerMocks.NewMockGit(t)
 
 	port := int32(22)
-	wd := util.GetWorkDir(fakeName, fmt.Sprintf("%v-%v", fakeNamespace, fakeName))
+	wd := chain.GetCodebaseBranchWorkingDirectory(cb)
 
 	repoSshUrl := util.GetSSHUrl(gs, c.Spec.GetProjectID())
-
 	mGit.On("CloneRepositoryBySsh", testifymock.Anything, "", fakeName, repoSshUrl, wd, port).
 		Return(nil)
 	mGit.On(

@@ -40,7 +40,7 @@ func TestStrategyManager_GetAppPayloadForAllLatestStrategy(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: pipelineAPi.CDPipelineSpec{
-					InputDockerStreams: []string{"app1-main", "app2-feature/2"},
+					InputDockerStreams: []string{"app1-main", "app2-feature-2"},
 				},
 			},
 			k8sClient: func(t *testing.T) client.Client {
@@ -49,6 +49,9 @@ func TestStrategyManager_GetAppPayloadForAllLatestStrategy(t *testing.T) {
 						ObjectMeta: metav1.ObjectMeta{
 							Name:      "app1-main",
 							Namespace: "default",
+							Labels: map[string]string{
+								codebaseApi.CodebaseImageStreamCodebaseBranchLabel: "app1-main",
+							},
 						},
 						Spec: codebaseApi.CodebaseImageStreamSpec{
 							Codebase: "app1",
@@ -72,6 +75,9 @@ func TestStrategyManager_GetAppPayloadForAllLatestStrategy(t *testing.T) {
 						ObjectMeta: metav1.ObjectMeta{
 							Name:      "app2-feature-2",
 							Namespace: "default",
+							Labels: map[string]string{
+								codebaseApi.CodebaseImageStreamCodebaseBranchLabel: "app2-feature-2",
+							},
 						},
 						Spec: codebaseApi.CodebaseImageStreamSpec{
 							Codebase: "app2",
@@ -105,6 +111,9 @@ func TestStrategyManager_GetAppPayloadForAllLatestStrategy(t *testing.T) {
 						ObjectMeta: metav1.ObjectMeta{
 							Name:      "app1-main",
 							Namespace: "default",
+							Labels: map[string]string{
+								codebaseApi.CodebaseImageStreamCodebaseBranchLabel: "app1-main",
+							},
 						},
 						Spec: codebaseApi.CodebaseImageStreamSpec{
 							Codebase: "app1",
@@ -171,6 +180,9 @@ func TestStrategyManager_GetAppPayloadForCurrentWithStableStrategy(t *testing.T)
 						ObjectMeta: metav1.ObjectMeta{
 							Name:      "app1-main",
 							Namespace: "default",
+							Labels: map[string]string{
+								codebaseApi.CodebaseImageStreamCodebaseBranchLabel: "app1-main",
+							},
 						},
 						Spec: codebaseApi.CodebaseImageStreamSpec{
 							Codebase: "app1",
@@ -194,6 +206,9 @@ func TestStrategyManager_GetAppPayloadForCurrentWithStableStrategy(t *testing.T)
 						ObjectMeta: metav1.ObjectMeta{
 							Name:      "app2-main",
 							Namespace: "default",
+							Labels: map[string]string{
+								codebaseApi.CodebaseImageStreamCodebaseBranchLabel: "app2-main",
+							},
 						},
 						Spec: codebaseApi.CodebaseImageStreamSpec{
 							Codebase: "app2",
@@ -217,6 +232,9 @@ func TestStrategyManager_GetAppPayloadForCurrentWithStableStrategy(t *testing.T)
 						ObjectMeta: metav1.ObjectMeta{
 							Name:      "app3-main",
 							Namespace: "default",
+							Labels: map[string]string{
+								codebaseApi.CodebaseImageStreamCodebaseBranchLabel: "app3-main",
+							},
 						},
 						Spec: codebaseApi.CodebaseImageStreamSpec{
 							Codebase: "app3",
@@ -271,7 +289,7 @@ func TestStrategyManager_GetAppPayloadForCurrentWithStableStrategy(t *testing.T)
 			want: "",
 			wantErr: func(t require.TestingT, err error, i ...interface{}) {
 				require.Error(t, err)
-				require.Contains(t, err.Error(), "failed to get app1-main CodebaseImageStream")
+				require.Contains(t, err.Error(), "failed to get CodebaseImageStream")
 			},
 		},
 	}

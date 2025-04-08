@@ -2,6 +2,7 @@ package put_codebase_image_stream
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -14,6 +15,7 @@ import (
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	"github.com/epam/edp-codebase-operator/v2/controllers/codebasebranch/chain/handler"
+	"github.com/epam/edp-codebase-operator/v2/pkg/codebaseimagestream"
 	"github.com/epam/edp-codebase-operator/v2/pkg/model"
 	"github.com/epam/edp-codebase-operator/v2/pkg/platform"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
@@ -43,23 +45,8 @@ func (h PutCodebaseImageStream) ServeRequest(ctx context.Context, cb *codebaseAp
 		return fmt.Errorf("failed to fetch Codebase resource: %w", err)
 	}
 
-	registryUrl, err := h.getDockerRegistryUrl(ctx, cb.Namespace)
-	if err != nil {
-		err = fmt.Errorf("failed to get container registry url: %w", err)
-		setFailedFields(cb, codebaseApi.PutCodebaseImageStream, err.Error())
-
-		return err
-	}
-
-	cisName := fmt.Sprintf("%v-%v", c.Name, ProcessNameToK8sConvention(cb.Spec.BranchName))
-	imageName := fmt.Sprintf("%v/%v", registryUrl, cb.Spec.CodebaseName)
-
-	if err = h.createCodebaseImageStreamIfNotExists(
+	if err := h.createCodebaseImageStreamIfNotExists(
 		ctrl.LoggerInto(ctx, log),
-		cisName,
-		imageName,
-		cb.Spec.CodebaseName,
-		cb.Namespace,
 		cb,
 	); err != nil {
 		setFailedFields(cb, codebaseApi.PutCodebaseImageStream, err.Error())
@@ -69,14 +56,15 @@ func (h PutCodebaseImageStream) ServeRequest(ctx context.Context, cb *codebaseAp
 
 	log.Info("End creating CodebaseImageStream")
 
-	err = handler.NextServeOrNil(ctx, h.Next, cb)
-	if err != nil {
+	if err := handler.NextServeOrNil(ctx, h.Next, cb); err != nil {
 		return fmt.Errorf("failed to process next handler in chain: %w", err)
 	}
 
 	return nil
 }
 
+// Deprecated: We don't need to make this conversion anymore in the future.
+// TODO: Remove this function in the next releases.
 func ProcessNameToK8sConvention(name string) string {
 	r := strings.NewReplacer("/", "-", ".", "-")
 	return r.Replace(name)
@@ -101,59 +89,102 @@ func (h PutCodebaseImageStream) getDockerRegistryUrl(ctx context.Context, namesp
 
 func (h PutCodebaseImageStream) createCodebaseImageStreamIfNotExists(
 	ctx context.Context,
-	name, imageName, codebaseName, namespace string,
 	codebaseBranch *codebaseApi.CodebaseBranch,
 ) error {
 	log := ctrl.LoggerFrom(ctx)
 
-	cis := &codebaseApi.CodebaseImageStream{
+	cis, err := h.getCodebaseImageStream(ctx, codebaseBranch)
+	if err != nil {
+		if !k8sErrors.IsNotFound(err) {
+			return fmt.Errorf("failed to get CodebaseImageStream: %w", err)
+		}
+	}
+
+	if err == nil {
+		log.Info("CodebaseImageStream already exists. Skip creating", "CodebaseImageStream", cis.Name)
+
+		// For backward compatibility, we need to set branch label for the existing CodebaseImageStream.
+		// TODO: remove this in the next releases.
+		if v, ok := cis.GetLabels()[codebaseApi.CodebaseImageStreamCodebaseBranchLabel]; !ok || v != codebaseBranch.Name {
+			patch := client.MergeFrom(cis.DeepCopy())
+
+			if cis.Labels == nil {
+				cis.Labels = make(map[string]string, 2)
+			}
+
+			cis.Labels[codebaseApi.CodebaseImageStreamCodebaseBranchLabel] = codebaseBranch.Name
+			cis.Labels[codebaseApi.CodebaseImageStreamCodebaseLabel] = codebaseBranch.Spec.CodebaseName
+
+			if err = h.Client.Patch(ctx, cis, patch); err != nil {
+				return fmt.Errorf("failed to set branch label: %w", err)
+			}
+		}
+
+		return nil
+	}
+
+	registryUrl, err := h.getDockerRegistryUrl(ctx, codebaseBranch.Namespace)
+	if err != nil {
+		return fmt.Errorf("failed to get container registry url: %w", err)
+	}
+
+	cis = &codebaseApi.CodebaseImageStream{
 		ObjectMeta: metaV1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
+			Name:      codebaseBranch.Name,
+			Namespace: codebaseBranch.Namespace,
+			Labels: map[string]string{
+				codebaseApi.CodebaseImageStreamCodebaseBranchLabel: codebaseBranch.Name,
+				codebaseApi.CodebaseImageStreamCodebaseLabel:       codebaseBranch.Spec.CodebaseName,
+			},
 		},
 		Spec: codebaseApi.CodebaseImageStreamSpec{
-			Codebase:  codebaseName,
-			ImageName: imageName,
+			Codebase:  codebaseBranch.Spec.CodebaseName,
+			ImageName: fmt.Sprintf("%v/%v", registryUrl, codebaseBranch.Spec.CodebaseName),
 		},
 	}
 
-	if err := controllerutil.SetControllerReference(codebaseBranch, cis, h.Client.Scheme()); err != nil {
+	if err = controllerutil.SetControllerReference(codebaseBranch, cis, h.Client.Scheme()); err != nil {
 		return fmt.Errorf("failed to set controller reference for CodebaseImageStream: %w", err)
 	}
 
-	if err := h.Client.Create(ctx, cis); err != nil {
-		if k8sErrors.IsAlreadyExists(err) {
-			log.Info("CodebaseImageStream already exists. Skip creating", "CodebaseImageStream", cis.Name)
-
-			// For backward compatibility, we need to update the controller reference for the existing CodebaseImageStream.
-			// We can remove this in the next releases.
-			existingCIS := &codebaseApi.CodebaseImageStream{}
-			if err = h.Client.Get(ctx, types.NamespacedName{
-				Namespace: namespace,
-				Name:      name,
-			}, existingCIS); err != nil {
-				return fmt.Errorf("failed to get CodebaseImageStream: %w", err)
-			}
-
-			if metaV1.GetControllerOf(existingCIS) == nil {
-				if err = controllerutil.SetControllerReference(codebaseBranch, existingCIS, h.Client.Scheme()); err != nil {
-					return fmt.Errorf("failed to set controller reference for CodebaseImageStream: %w", err)
-				}
-			}
-
-			if err = h.Client.Update(ctx, existingCIS); err != nil {
-				return fmt.Errorf("failed to update CodebaseImageStream controller reference: %w", err)
-			}
-
-			return nil
-		}
-
-		return fmt.Errorf("failed to create CodebaseImageStream %s: %w", name, err)
+	if err = h.Client.Create(ctx, cis); err != nil {
+		return fmt.Errorf("failed to create CodebaseImageStream: %w", err)
 	}
 
-	log.Info("CodebaseImageStream has been created", "CodebaseImageStream", name)
-
 	return nil
+}
+
+func (h PutCodebaseImageStream) getCodebaseImageStream(
+	ctx context.Context,
+	codebaseBranch *codebaseApi.CodebaseBranch,
+) (*codebaseApi.CodebaseImageStream, error) {
+	cis, err := codebaseimagestream.GetCodebaseImageStreamByCodebaseBaseBranchName(
+		ctx,
+		h.Client,
+		codebaseBranch.Name,
+		codebaseBranch.Namespace,
+	)
+	if err == nil {
+		return cis, nil
+	}
+
+	if !errors.Is(err, codebaseimagestream.ErrCodebaseImageStreamNotFound) {
+		return nil, fmt.Errorf("failed to get CodebaseImageStream: %w", err)
+	}
+
+	// Get CodebaseImageStream by name old version for backward compatibility.
+	// TODO: remove this in the next releases.
+	cis = &codebaseApi.CodebaseImageStream{}
+	err = h.Client.Get(ctx, types.NamespacedName{
+		Namespace: codebaseBranch.Namespace,
+		Name:      fmt.Sprintf("%v-%v", codebaseBranch.Spec.CodebaseName, ProcessNameToK8sConvention(codebaseBranch.Spec.BranchName)),
+	}, cis)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to get CodebaseImageStream: %w", err)
+	}
+
+	return cis, nil
 }
 
 func setFailedFields(cb *codebaseApi.CodebaseBranch, a codebaseApi.ActionType, message string) {

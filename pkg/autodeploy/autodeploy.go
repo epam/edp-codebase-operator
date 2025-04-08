@@ -11,7 +11,6 @@ import (
 	pipelineAPi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
-	"github.com/epam/edp-codebase-operator/v2/controllers/codebasebranch/chain/put_codebase_image_stream"
 	"github.com/epam/edp-codebase-operator/v2/pkg/codebaseimagestream"
 )
 
@@ -40,9 +39,17 @@ func (h *StrategyManager) GetAppPayloadForAllLatestStrategy(ctx context.Context,
 	appPayload := make(map[string]ApplicationPayload, len(pipeline.Spec.InputDockerStreams))
 
 	for _, stream := range pipeline.Spec.InputDockerStreams {
-		imageStreamName := put_codebase_image_stream.ProcessNameToK8sConvention(stream)
+		imageStream, err := codebaseimagestream.GetCodebaseImageStreamByCodebaseBaseBranchName(
+			ctx,
+			h.k8sClient,
+			stream,
+			pipeline.Namespace,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get codebase image stream for stream %s: %w", stream, err)
+		}
 
-		codebase, tag, err := h.getLatestTag(ctx, imageStreamName, pipeline.Namespace)
+		codebase, tag, err := h.getLatestTag(ctx, imageStream)
 		if err != nil {
 			return nil, err
 		}
@@ -82,9 +89,17 @@ func (h *StrategyManager) GetAppPayloadForCurrentWithStableStrategy(
 	}
 
 	for _, stream := range pipeline.Spec.InputDockerStreams {
-		imageStreamName := put_codebase_image_stream.ProcessNameToK8sConvention(stream)
+		imageStream, err := codebaseimagestream.GetCodebaseImageStreamByCodebaseBaseBranchName(
+			ctx,
+			h.k8sClient,
+			stream,
+			pipeline.Namespace,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get codebase image stream for stream %s: %w", stream, err)
+		}
 
-		codebase, tag, err := h.getLatestTag(ctx, imageStreamName, pipeline.Namespace)
+		codebase, tag, err := h.getLatestTag(ctx, imageStream)
 		if err != nil {
 			return nil, err
 		}
@@ -104,15 +119,7 @@ func (h *StrategyManager) GetAppPayloadForCurrentWithStableStrategy(
 	return rawAppPayload, nil
 }
 
-func (h *StrategyManager) getLatestTag(ctx context.Context, imageStreamName, namespace string) (codebase, tag string, e error) {
-	imageStream := &codebaseApi.CodebaseImageStream{}
-	if err := h.k8sClient.Get(ctx, client.ObjectKey{
-		Namespace: namespace,
-		Name:      imageStreamName,
-	}, imageStream); err != nil {
-		return "", "", fmt.Errorf("failed to get %s CodebaseImageStream: %w", imageStreamName, err)
-	}
-
+func (*StrategyManager) getLatestTag(ctx context.Context, imageStream *codebaseApi.CodebaseImageStream) (codebase, tag string, e error) {
 	t, err := codebaseimagestream.GetLastTag(imageStream.Spec.Tags, ctrl.LoggerFrom(ctx))
 	if err != nil {
 		return "", "", ErrLasTagNotFound
