@@ -10,6 +10,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
+	"github.com/epam/edp-codebase-operator/v2/controllers/codebasebranch/chain"
 	"github.com/epam/edp-codebase-operator/v2/controllers/codebasebranch/chain/handler"
 	"github.com/epam/edp-codebase-operator/v2/controllers/codebasebranch/service"
 	"github.com/epam/edp-codebase-operator/v2/pkg/git"
@@ -87,7 +88,7 @@ func (h PutBranchInGit) ServeRequest(ctx context.Context, branch *codebaseApi.Co
 		return err
 	}
 
-	wd := util.GetWorkDir(branch.Spec.CodebaseName, fmt.Sprintf("%v-%v", branch.Namespace, branch.Spec.BranchName))
+	wd := chain.GetCodebaseBranchWorkingDirectory(branch)
 	if !checkDirectory(wd) {
 		repoSshUrl := util.GetSSHUrl(gitServer, codebase.Spec.GetProjectID())
 

@@ -8,6 +8,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
+	"github.com/epam/edp-codebase-operator/v2/controllers/codebasebranch/chain"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
@@ -18,7 +19,7 @@ func (*CleanTempDirectory) ServeRequest(ctx context.Context, cb *codebaseApi.Cod
 
 	log.Info("Start CleanTempDirectory method")
 
-	wd := util.GetWorkDir(cb.Spec.CodebaseName, fmt.Sprintf("%v-%v", cb.Namespace, cb.Spec.BranchName))
+	wd := chain.GetCodebaseBranchWorkingDirectory(cb)
 
 	if err := deleteWorkDirectory(wd); err != nil {
 		setFailedFields(cb, codebaseApi.CleanData, err.Error())
