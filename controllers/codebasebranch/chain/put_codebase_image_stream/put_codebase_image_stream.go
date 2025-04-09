@@ -166,6 +166,8 @@ func setFailedFields(cb *codebaseApi.CodebaseBranch, a codebaseApi.ActionType, m
 		DetailedMessage: message,
 		Value:           "failed",
 		Git:             cb.Status.Git,
+		VersionHistory:  cb.Status.VersionHistory,
+		Build:           cb.Status.Build,
 	}
 }
 
