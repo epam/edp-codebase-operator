@@ -14,6 +14,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
+	"github.com/epam/edp-codebase-operator/v2/pkg/codebaseimagestream"
 	"github.com/epam/edp-codebase-operator/v2/pkg/platform"
 )
 
@@ -59,13 +60,12 @@ func TestPutCodebaseImageStream_ServeRequest(t *testing.T) {
 			},
 			wantErr: require.NoError,
 			want: func(t *testing.T, k8sCl client.Client) {
-				cis := &codebaseApi.CodebaseImageStream{}
-				require.NoError(t, k8sCl.Get(context.Background(), client.ObjectKey{
-					Name:      "test-codebase-test-branch-master",
-					Namespace: "default",
-				}, cis))
+				cis, err := codebaseimagestream.GetCodebaseImageStreamByCodebaseBaseBranchName(context.Background(), k8sCl, "test-branch", "default")
+				require.NoError(t, err)
 
 				require.NotNil(t, metav1.GetControllerOf(cis))
+				require.Contains(t, cis.Labels, codebaseApi.CodebaseImageStreamCodebaseBranchLabel)
+				require.Equal(t, cis.Labels[codebaseApi.CodebaseImageStreamCodebaseBranchLabel], "test-branch")
 			},
 		},
 		{
@@ -78,6 +78,48 @@ func TestPutCodebaseImageStream_ServeRequest(t *testing.T) {
 				Spec: codebaseApi.CodebaseBranchSpec{
 					CodebaseName: "test-codebase",
 					BranchName:   "test-branch-master",
+				},
+			},
+			objects: []client.Object{
+				&codebaseApi.Codebase{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test-codebase",
+						Namespace: "default",
+					},
+				},
+				&codebaseApi.CodebaseImageStream{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test-cis",
+						Namespace: "default",
+						Labels: map[string]string{
+							codebaseApi.CodebaseImageStreamCodebaseBranchLabel: "test-branch",
+						},
+					},
+				},
+				&corev1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      platform.KrciConfigMap,
+						Namespace: "default",
+					},
+					Data: map[string]string{
+						platform.KrciConfigContainerRegistryHost:  "test-registry",
+						platform.KrciConfigContainerRegistrySpace: "test-space",
+					},
+				},
+			},
+			wantErr: require.NoError,
+			want:    func(t *testing.T, k8sCl client.Client) {},
+		},
+		{
+			name: "process with deprecated relation to CodebaseBranch",
+			codebaseBranch: &codebaseApi.CodebaseBranch{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-branch",
+					Namespace: "default",
+				},
+				Spec: codebaseApi.CodebaseBranchSpec{
+					CodebaseName: "test-codebase",
+					BranchName:   "test-branch/master",
 				},
 			},
 			objects: []client.Object{
@@ -106,13 +148,11 @@ func TestPutCodebaseImageStream_ServeRequest(t *testing.T) {
 			},
 			wantErr: require.NoError,
 			want: func(t *testing.T, k8sCl client.Client) {
-				cis := &codebaseApi.CodebaseImageStream{}
-				require.NoError(t, k8sCl.Get(context.Background(), client.ObjectKey{
-					Name:      "test-codebase-test-branch-master",
-					Namespace: "default",
-				}, cis))
+				cis, err := codebaseimagestream.GetCodebaseImageStreamByCodebaseBaseBranchName(context.Background(), k8sCl, "test-branch", "default")
+				require.NoError(t, err)
 
-				require.NotNil(t, metav1.GetControllerOf(cis))
+				require.Contains(t, cis.Labels, codebaseApi.CodebaseImageStreamCodebaseBranchLabel)
+				require.Equal(t, cis.Labels[codebaseApi.CodebaseImageStreamCodebaseBranchLabel], "test-branch")
 			},
 		},
 		{

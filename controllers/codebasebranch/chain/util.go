@@ -2,6 +2,7 @@ package chain
 
 import (
 	"fmt"
+	"path"
 
 	"golang.org/x/exp/slices"
 
@@ -19,6 +20,14 @@ func HasNewVersion(codebaseBranch *codebaseApi.CodebaseBranch) (bool, error) {
 }
 
 // DirectoryExistsNotEmpty checks if directory exists and not empty.
-func DirectoryExistsNotEmpty(path string) bool {
-	return util.DoesDirectoryExist(path) && !util.IsDirectoryEmpty(path)
+func DirectoryExistsNotEmpty(dirPath string) bool {
+	return util.DoesDirectoryExist(dirPath) && !util.IsDirectoryEmpty(dirPath)
+}
+
+func GetCodebaseBranchWorkingDirectory(codebaseBranch *codebaseApi.CodebaseBranch) string {
+	return path.Join(
+		util.GetWorkDir(codebaseBranch.Spec.CodebaseName, codebaseBranch.Namespace),
+		"codebase-branches",
+		codebaseBranch.Name,
+	)
 }

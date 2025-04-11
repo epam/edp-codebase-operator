@@ -18,6 +18,7 @@ import (
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/codebasebranch"
+	"github.com/epam/edp-codebase-operator/v2/pkg/codebaseimagestream"
 	"github.com/epam/edp-codebase-operator/v2/pkg/platform"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
@@ -255,16 +256,9 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldPassWithCreatingCIS(t *testing.
 	assert.NoError(t, err)
 	assert.False(t, res.Requeue)
 
-	cResp := &codebaseApi.CodebaseImageStream{}
-
-	err = fakeCl.Get(context.TODO(),
-		types.NamespacedName{
-			Name:      "NewCodebase-master",
-			Namespace: "namespace",
-		},
-		cResp)
-	assert.NoError(t, err)
-	assert.Equal(t, "stub-url/stub-space/NewCodebase", cResp.Spec.ImageName)
+	cisTocehck, err := codebaseimagestream.GetCodebaseImageStreamByCodebaseBaseBranchName(context.Background(), fakeCl, cb.Name, cb.Namespace)
+	require.NoError(t, err)
+	assert.Equal(t, "stub-url/stub-space/NewCodebase", cisTocehck.Spec.ImageName)
 
 	gotCodebaseBranch := &codebaseApi.CodebaseBranch{}
 

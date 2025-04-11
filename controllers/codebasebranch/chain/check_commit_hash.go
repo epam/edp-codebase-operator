@@ -72,7 +72,7 @@ func (c CheckCommitHashExists) ServeRequest(ctx context.Context, codebaseBranch 
 		return c.processErr(codebaseBranch, fmt.Errorf("failed to get secret %s: %w", gitServer.Spec.NameSshKeySecret, err))
 	}
 
-	workDir := util.GetWorkDir(codebaseBranch.Spec.CodebaseName, fmt.Sprintf("%v-%v", codebaseBranch.Namespace, codebaseBranch.Spec.BranchName))
+	workDir := GetCodebaseBranchWorkingDirectory(codebaseBranch)
 	if !DirectoryExistsNotEmpty(workDir) {
 		repoSshUrl := util.GetSSHUrl(gitServer, codebase.Spec.GetProjectID())
 
