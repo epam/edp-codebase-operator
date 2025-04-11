@@ -2,8 +2,8 @@
 ## [Unreleased]
 
 
-<a name="v2.27.1"></a>
-## v2.27.1 - 2025-03-31
+<a name="v2.27.2"></a>
+## v2.27.2 - 2025-04-09
 ### Features
 
 - Add support for private repository creation ([#181](https://github.com/epam/edp-codebase-operator/issues/181))
@@ -52,6 +52,7 @@
 
 ### Bug Fixes
 
+- Prevent cleaning build number for CodebaseBranch ([#194](https://github.com/epam/edp-codebase-operator/issues/194))
 - Missing namespace selector for codebaseimagestream webhook ([#176](https://github.com/epam/edp-codebase-operator/issues/176))
 - Processing default branch for bitbucket ([#155](https://github.com/epam/edp-codebase-operator/issues/155))
 - Ignore extra labels in CodebaseImageStream for auto-deploy ([#153](https://github.com/epam/edp-codebase-operator/issues/153))
@@ -167,4 +168,4 @@
 removed required fields from the GitServer status. CRD should be updated.
 
 
-[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.27.1...HEAD
+[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.27.2...HEAD
