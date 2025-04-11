@@ -1,11 +1,23 @@
 <a name="unreleased"></a>
 ## [Unreleased]
 
+### Bug Fixes
+
+- Prevent cleaning build number for CodebaseBranch ([#194](https://github.com/epam/edp-codebase-operator/issues/194))
+
 ### Routine
 
+- Update current development version ([#192](https://github.com/epam/edp-codebase-operator/issues/192))
 - Add ImagePullSecrets field support ([#190](https://github.com/epam/edp-codebase-operator/issues/190))
 - Rename ConfigMap from 'edp-config' to 'krci-config' ([#183](https://github.com/epam/edp-codebase-operator/issues/183))
 - Update current development version ([#187](https://github.com/epam/edp-codebase-operator/issues/187))
+
+
+<a name="v2.27.2"></a>
+## [v2.27.2] - 2025-04-11
+### Bug Fixes
+
+- Prevent cleaning build number for CodebaseBranch ([#194](https://github.com/epam/edp-codebase-operator/issues/194))
 
 
 <a name="v2.27.1"></a>
@@ -312,7 +324,8 @@ removed required fields from the GitServer status. CRD should be updated.
 <a name="v2.17.0"></a>
 ## [v2.17.0] - 2023-08-17
 
-[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.27.1...HEAD
+[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.27.2...HEAD
+[v2.27.2]: https://github.com/epam/edp-codebase-operator/compare/v2.27.1...v2.27.2
 [v2.27.1]: https://github.com/epam/edp-codebase-operator/compare/v2.27.0...v2.27.1
 [v2.27.0]: https://github.com/epam/edp-codebase-operator/compare/v2.26.0...v2.27.0
 [v2.26.0]: https://github.com/epam/edp-codebase-operator/compare/v2.25.0...v2.26.0
