@@ -64,8 +64,8 @@ func TestPutCodebaseImageStream_ServeRequest(t *testing.T) {
 				require.NoError(t, err)
 
 				require.NotNil(t, metav1.GetControllerOf(cis))
-				require.Contains(t, cis.Labels, codebaseApi.CodebaseImageStreamCodebaseBranchLabel)
-				require.Equal(t, cis.Labels[codebaseApi.CodebaseImageStreamCodebaseBranchLabel], "test-branch")
+				require.Contains(t, cis.Labels, codebaseApi.CodebaseBranchLabel)
+				require.Equal(t, cis.Labels[codebaseApi.CodebaseBranchLabel], "test-branch")
 			},
 		},
 		{
@@ -92,7 +92,7 @@ func TestPutCodebaseImageStream_ServeRequest(t *testing.T) {
 						Name:      "test-cis",
 						Namespace: "default",
 						Labels: map[string]string{
-							codebaseApi.CodebaseImageStreamCodebaseBranchLabel: "test-branch",
+							codebaseApi.CodebaseBranchLabel: "test-branch",
 						},
 					},
 				},
@@ -151,8 +151,8 @@ func TestPutCodebaseImageStream_ServeRequest(t *testing.T) {
 				cis, err := codebaseimagestream.GetCodebaseImageStreamByCodebaseBaseBranchName(context.Background(), k8sCl, "test-branch", "default")
 				require.NoError(t, err)
 
-				require.Contains(t, cis.Labels, codebaseApi.CodebaseImageStreamCodebaseBranchLabel)
-				require.Equal(t, cis.Labels[codebaseApi.CodebaseImageStreamCodebaseBranchLabel], "test-branch")
+				require.Contains(t, cis.Labels, codebaseApi.CodebaseBranchLabel)
+				require.Equal(t, cis.Labels[codebaseApi.CodebaseBranchLabel], "test-branch")
 			},
 		},
 		{

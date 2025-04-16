@@ -8,6 +8,7 @@ import (
 )
 
 const (
+	// Deprecated: Use codebaseApi.CodebaseLabel instead.
 	LabelCodebaseName = "app.edp.epam.com/codebaseName"
 )
 

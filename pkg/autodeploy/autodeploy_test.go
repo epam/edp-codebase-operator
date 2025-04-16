@@ -50,7 +50,7 @@ func TestStrategyManager_GetAppPayloadForAllLatestStrategy(t *testing.T) {
 							Name:      "app1-main",
 							Namespace: "default",
 							Labels: map[string]string{
-								codebaseApi.CodebaseImageStreamCodebaseBranchLabel: "app1-main",
+								codebaseApi.CodebaseBranchLabel: "app1-main",
 							},
 						},
 						Spec: codebaseApi.CodebaseImageStreamSpec{
@@ -76,7 +76,7 @@ func TestStrategyManager_GetAppPayloadForAllLatestStrategy(t *testing.T) {
 							Name:      "app2-feature-2",
 							Namespace: "default",
 							Labels: map[string]string{
-								codebaseApi.CodebaseImageStreamCodebaseBranchLabel: "app2-feature-2",
+								codebaseApi.CodebaseBranchLabel: "app2-feature-2",
 							},
 						},
 						Spec: codebaseApi.CodebaseImageStreamSpec{
@@ -112,7 +112,7 @@ func TestStrategyManager_GetAppPayloadForAllLatestStrategy(t *testing.T) {
 							Name:      "app1-main",
 							Namespace: "default",
 							Labels: map[string]string{
-								codebaseApi.CodebaseImageStreamCodebaseBranchLabel: "app1-main",
+								codebaseApi.CodebaseBranchLabel: "app1-main",
 							},
 						},
 						Spec: codebaseApi.CodebaseImageStreamSpec{
@@ -181,7 +181,7 @@ func TestStrategyManager_GetAppPayloadForCurrentWithStableStrategy(t *testing.T)
 							Name:      "app1-main",
 							Namespace: "default",
 							Labels: map[string]string{
-								codebaseApi.CodebaseImageStreamCodebaseBranchLabel: "app1-main",
+								codebaseApi.CodebaseBranchLabel: "app1-main",
 							},
 						},
 						Spec: codebaseApi.CodebaseImageStreamSpec{
@@ -207,7 +207,7 @@ func TestStrategyManager_GetAppPayloadForCurrentWithStableStrategy(t *testing.T)
 							Name:      "app2-main",
 							Namespace: "default",
 							Labels: map[string]string{
-								codebaseApi.CodebaseImageStreamCodebaseBranchLabel: "app2-main",
+								codebaseApi.CodebaseBranchLabel: "app2-main",
 							},
 						},
 						Spec: codebaseApi.CodebaseImageStreamSpec{
@@ -233,7 +233,7 @@ func TestStrategyManager_GetAppPayloadForCurrentWithStableStrategy(t *testing.T)
 							Name:      "app3-main",
 							Namespace: "default",
 							Labels: map[string]string{
-								codebaseApi.CodebaseImageStreamCodebaseBranchLabel: "app3-main",
+								codebaseApi.CodebaseBranchLabel: "app3-main",
 							},
 						},
 						Spec: codebaseApi.CodebaseImageStreamSpec{

@@ -86,6 +86,7 @@ func TestGetCodebaseImageStreamByCodebaseBaseBranchName(t *testing.T) {
 		k8sCl              func(t *testing.T) client.Client
 		codebaseBranchName string
 	}
+
 	tests := []struct {
 		name    string
 		args    args
@@ -101,7 +102,7 @@ func TestGetCodebaseImageStreamByCodebaseBaseBranchName(t *testing.T) {
 							Name:      "test-branch",
 							Namespace: "default",
 							Labels: map[string]string{
-								codebaseApi.CodebaseImageStreamCodebaseBranchLabel: "test-branch",
+								codebaseApi.CodebaseBranchLabel: "test-branch",
 							},
 						},
 					}
@@ -136,7 +137,7 @@ func TestGetCodebaseImageStreamByCodebaseBaseBranchName(t *testing.T) {
 							Name:      "test-branch-1",
 							Namespace: "default",
 							Labels: map[string]string{
-								codebaseApi.CodebaseImageStreamCodebaseBranchLabel: "test-branch",
+								codebaseApi.CodebaseBranchLabel: "test-branch",
 							},
 						},
 					}
@@ -145,7 +146,7 @@ func TestGetCodebaseImageStreamByCodebaseBaseBranchName(t *testing.T) {
 							Name:      "test-branch-2",
 							Namespace: "default",
 							Labels: map[string]string{
-								codebaseApi.CodebaseImageStreamCodebaseBranchLabel: "test-branch",
+								codebaseApi.CodebaseBranchLabel: "test-branch",
 							},
 						},
 					}

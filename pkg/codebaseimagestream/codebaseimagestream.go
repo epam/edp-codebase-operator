@@ -52,7 +52,7 @@ func GetCodebaseImageStreamByCodebaseBaseBranchName(
 		&codebaseImageStreamList,
 		client.InNamespace(namespace),
 		client.MatchingLabels{
-			codebaseApi.CodebaseImageStreamCodebaseBranchLabel: codebaseBranchName,
+			codebaseApi.CodebaseBranchLabel: codebaseBranchName,
 		},
 	); err != nil {
 		return nil, fmt.Errorf("failed to get CodebaseImageStream by label: %w", err)

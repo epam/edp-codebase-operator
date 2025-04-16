@@ -105,15 +105,15 @@ func (h PutCodebaseImageStream) createCodebaseImageStreamIfNotExists(
 
 		// For backward compatibility, we need to set branch label for the existing CodebaseImageStream.
 		// TODO: remove this in the next releases.
-		if v, ok := cis.GetLabels()[codebaseApi.CodebaseImageStreamCodebaseBranchLabel]; !ok || v != codebaseBranch.Name {
+		if v, ok := cis.GetLabels()[codebaseApi.CodebaseBranchLabel]; !ok || v != codebaseBranch.Name {
 			patch := client.MergeFrom(cis.DeepCopy())
 
 			if cis.Labels == nil {
 				cis.Labels = make(map[string]string, 2)
 			}
 
-			cis.Labels[codebaseApi.CodebaseImageStreamCodebaseBranchLabel] = codebaseBranch.Name
-			cis.Labels[codebaseApi.CodebaseImageStreamCodebaseLabel] = codebaseBranch.Spec.CodebaseName
+			cis.Labels[codebaseApi.CodebaseBranchLabel] = codebaseBranch.Name
+			cis.Labels[codebaseApi.CodebaseLabel] = codebaseBranch.Spec.CodebaseName
 
 			if err = h.Client.Patch(ctx, cis, patch); err != nil {
 				return fmt.Errorf("failed to set branch label: %w", err)
@@ -133,8 +133,8 @@ func (h PutCodebaseImageStream) createCodebaseImageStreamIfNotExists(
 			Name:      codebaseBranch.Name,
 			Namespace: codebaseBranch.Namespace,
 			Labels: map[string]string{
-				codebaseApi.CodebaseImageStreamCodebaseBranchLabel: codebaseBranch.Name,
-				codebaseApi.CodebaseImageStreamCodebaseLabel:       codebaseBranch.Spec.CodebaseName,
+				codebaseApi.CodebaseBranchLabel: codebaseBranch.Name,
+				codebaseApi.CodebaseLabel:       codebaseBranch.Spec.CodebaseName,
 			},
 		},
 		Spec: codebaseApi.CodebaseImageStreamSpec{
