@@ -273,6 +273,7 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldPassWithCreatingCIS(t *testing.
 	expectedLabels := map[string]string{
 		//nolint:staticcheck // Need refactoring
 		codebasebranch.LabelCodebaseName: "NewCodebase",
+		codebaseApi.CodebaseLabel:        "NewCodebase",
 	}
 	assert.Equal(t, expectedLabels, gotCodebaseBranch.GetLabels())
 }
@@ -344,6 +345,7 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldRequeueWithCodebaseNotReady(t *
 	expectedLabels := map[string]string{
 		//nolint:staticcheck // Need refactoring
 		codebasebranch.LabelCodebaseName: "NewCodebase",
+		codebaseApi.CodebaseLabel:        "NewCodebase",
 	}
 	assert.Equal(t, expectedLabels, gotCodebaseBranch.GetLabels())
 }
