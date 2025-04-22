@@ -29,7 +29,7 @@ import (
 )
 
 const (
-	reconcilePeriod        = "RECONCILATION_PERIOD"
+	reconcilePeriod        = "RECONCILIATION_PERIOD"
 	defaultReconcilePeriod = "360"
 	codebaseKind           = "Codebase"
 	errorStatus            = "error"
@@ -82,9 +82,9 @@ func (r *ReconcileJiraIssueMetadata) SetupWithManager(mgr ctrl.Manager) error {
 	return nil
 }
 
-//+kubebuilder:rbac:groups=v2.edp.epam.com,resources=jiraissuemetadatas,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=v2.edp.epam.com,resources=jiraissuemetadatas/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=v2.edp.epam.com,resources=jiraissuemetadatas/finalizers,verbs=update
+// +kubebuilder:rbac:groups=v2.edp.epam.com,resources=jiraissuemetadatas,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=v2.edp.epam.com,resources=jiraissuemetadatas/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=v2.edp.epam.com,resources=jiraissuemetadatas/finalizers,verbs=update
 
 // Reconcile reads that state of the cluster for a JiraIssueMetadata object and makes changes based on the state.
 func (r *ReconcileJiraIssueMetadata) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
@@ -233,7 +233,7 @@ func (r *ReconcileJiraIssueMetadata) getJiraServer(ctx context.Context, metadata
 	}
 
 	if c.Spec.JiraServer == nil {
-		return nil, fmt.Errorf("codebase %v has disabled jira integration. skip JiraIssueMetadata %v reconcilation",
+		return nil, fmt.Errorf("codebase %v has disabled jira integration. skip JiraIssueMetadata %v reconciliation",
 			c.Name, metadata.Name)
 	}
 

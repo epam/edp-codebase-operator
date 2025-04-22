@@ -55,6 +55,7 @@ func TestGitLabClient_CreateWebHook(t *testing.T) {
 			if !tt.wantErr(t, err) {
 				return
 			}
+
 			assert.Equal(t, tt.want, got)
 		})
 	}
@@ -112,9 +113,11 @@ func TestGitLabClient_GetWebHook(t *testing.T) {
 			if !tt.wantErr(t, err) {
 				return
 			}
+
 			if tt.errIs != nil {
 				assert.ErrorIs(t, err, tt.errIs)
 			}
+
 			assert.Equal(t, tt.want, got)
 		})
 	}
@@ -164,6 +167,7 @@ func TestGitLabClient_DeleteWebHook(t *testing.T) {
 			if !tt.wantErr(t, err) {
 				return
 			}
+
 			if tt.errIs != nil {
 				assert.ErrorIs(t, err, tt.errIs)
 			}
@@ -228,12 +232,15 @@ func TestGitLabClient_GetWebHooks(t *testing.T) {
 			got, err := c.GetWebHooks(context.Background(), "url", "token", tt.projectID)
 
 			tt.wantErr(t, err)
+
 			if tt.errIs != nil {
 				assert.ErrorIs(t, err, tt.errIs)
 			}
+
 			if tt.errContains != "" {
 				assert.Contains(t, err.Error(), tt.errContains)
 			}
+
 			assert.Equal(t, tt.want, got)
 		})
 	}
@@ -326,6 +333,7 @@ func TestGitLabClient_CreateWebHookIfNotExists(t *testing.T) {
 			got, err := c.CreateWebHookIfNotExists(context.Background(), "url", "token", tt.projectID, "secret", tt.webHookURL, false)
 
 			tt.wantErr(t, err)
+
 			if tt.errContains != "" {
 				assert.Contains(t, err.Error(), tt.errContains)
 			}
@@ -569,7 +577,6 @@ func Test_decodeProjectID(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			gotNamespace, gotPath, err := decodeProjectID(tt.projectID)
 			tt.wantErr(t, err)

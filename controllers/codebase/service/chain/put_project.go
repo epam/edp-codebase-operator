@@ -5,9 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"slices"
 	"strconv"
 
-	"golang.org/x/exp/slices"
 	corev1 "k8s.io/api/core/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"

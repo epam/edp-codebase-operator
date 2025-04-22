@@ -67,7 +67,7 @@ func (r *ReconcileIntegrationSecret) SetupWithManager(mgr ctrl.Manager) error {
 	return nil
 }
 
-//+kubebuilder:rbac:groups="",namespace=placeholder,resources=secrets,verbs=get;list;watch;update;patch
+// +kubebuilder:rbac:groups="",namespace=placeholder,resources=secrets,verbs=get;list;watch;update;patch
 
 // Reconcile reads secrets with integration-secret label and set connection status to the annotation.
 func (r *ReconcileIntegrationSecret) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
@@ -194,7 +194,7 @@ func newRequestWithAuth(ctx context.Context, secret *corev1.Secret) *resty.Reque
 func newRequest(ctx context.Context, url string) *resty.Request {
 	return resty.New().
 		SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true}).
-		SetHostURL(url).
+		SetBaseURL(url).
 		SetTimeout(time.Second * 5).
 		R().
 		SetContext(ctx)

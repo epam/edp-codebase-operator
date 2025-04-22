@@ -89,14 +89,14 @@ type GitProvider struct {
 	CommandBuilder func(cmd string, params ...string) Command
 }
 
-func (gp *GitProvider) buildCommand(cmd string, params ...string) Command {
+func (gp *GitProvider) buildGitCommand(params ...string) Command {
 	if gp.CommandBuilder == nil {
 		gp.CommandBuilder = func(cmd string, params ...string) Command {
 			return exec.Command(cmd, params...)
 		}
 	}
 
-	return gp.CommandBuilder(cmd, params...)
+	return gp.CommandBuilder(gitCMD, params...)
 }
 
 var log = ctrl.Log.WithName("git-provider")
@@ -142,7 +142,7 @@ func (gp *GitProvider) CreateRemoteBranch(key, user, p, name, fromcommit string,
 
 	err = r.Storer.SetReference(newRef)
 	if err != nil {
-		return fmt.Errorf("failed to set refference: %w", err)
+		return fmt.Errorf("failed to set reference: %w", err)
 	}
 
 	err = gp.PushChanges(key, user, p, port, "--all")
@@ -216,7 +216,7 @@ func (*GitProvider) CommitChanges(directory, commitMsg string, ops ...CommitOps)
 
 func (gp *GitProvider) RemoveBranch(directory, branchName string) error {
 	gitDir := path.Join(directory, gitDirName)
-	cmd := gp.buildCommand(gitCMD, gitDirArg, gitDir, gitBranchArg, "-D", branchName)
+	cmd := gp.buildGitCommand(gitDirArg, gitDir, gitBranchArg, "-D", branchName)
 
 	if bts, err := cmd.CombinedOutput(); err != nil {
 		return fmt.Errorf("failed to remove branch, err: %s: %w", string(bts), err)
@@ -227,13 +227,13 @@ func (gp *GitProvider) RemoveBranch(directory, branchName string) error {
 
 func (gp *GitProvider) RenameBranch(directory, currentName, newName string) error {
 	gitDir := path.Join(directory, gitDirName)
-	cmd := gp.buildCommand(gitCMD, gitDirArg, gitDir, gitCheckoutArg, currentName)
+	cmd := gp.buildGitCommand(gitDirArg, gitDir, gitCheckoutArg, currentName)
 
 	if bts, err := cmd.CombinedOutput(); err != nil {
 		return fmt.Errorf("failed to checkout branch, err: %s: %w", string(bts), err)
 	}
 
-	cmd = gp.buildCommand(gitCMD, gitDirArg, gitDir, gitBranchArg, "-m", newName)
+	cmd = gp.buildGitCommand(gitDirArg, gitDir, gitBranchArg, "-m", newName)
 	if bts, err := cmd.CombinedOutput(); err != nil {
 		return fmt.Errorf("failed to rename branch, err: %s: %w", string(bts), err)
 	}
@@ -243,13 +243,13 @@ func (gp *GitProvider) RenameBranch(directory, currentName, newName string) erro
 
 func (gp *GitProvider) CreateChildBranch(directory, currentBranch, newBranch string) error {
 	gitDir := path.Join(directory, gitDirName)
-	cmd := gp.buildCommand(gitCMD, gitDirArg, gitDir, gitCheckoutArg, currentBranch)
+	cmd := gp.buildGitCommand(gitDirArg, gitDir, gitCheckoutArg, currentBranch)
 
 	if bts, err := cmd.CombinedOutput(); err != nil {
 		return fmt.Errorf("failed to checkout branch, err: %s: %w", string(bts), err)
 	}
 
-	cmd = gp.buildCommand(gitCMD, gitDirArg, gitDir, gitCheckoutArg, "-b", newBranch)
+	cmd = gp.buildGitCommand(gitDirArg, gitDir, gitCheckoutArg, "-b", newBranch)
 	if bts, err := cmd.CombinedOutput(); err != nil {
 		return fmt.Errorf("failed to rename branch, err: %s: %w", string(bts), err)
 	}
@@ -447,6 +447,7 @@ func (gp *GitProvider) CloneRepository(repo string, user, pass *string, destinat
 		if err != nil {
 			return fmt.Errorf("failed to get repo: %w", err)
 		}
+
 		if rsp.StatusCode >= httpClientErrors {
 			return fmt.Errorf("repo access denied, response code: %d: %w", rsp.StatusCode, err)
 		}
@@ -509,7 +510,7 @@ func (gp *GitProvider) CreateRemoteTag(key, user, p, branchName, name string) er
 
 	err = r.Storer.SetReference(newRef)
 	if err != nil {
-		return fmt.Errorf("failed to set refference: %w", err)
+		return fmt.Errorf("failed to set reference: %w", err)
 	}
 
 	err = gp.PushChanges(key, user, p, defaultSshPort)
@@ -615,7 +616,7 @@ func (*GitProvider) GetCurrentBranchName(directory string) (string, error) {
 
 	ref, err := r.Head()
 	if err != nil {
-		return "", fmt.Errorf("failed to get HEAD refference: %w", err)
+		return "", fmt.Errorf("failed to get HEAD reference: %w", err)
 	}
 
 	branchName := strings.ReplaceAll(ref.Name().String(), "refs/heads/", "")

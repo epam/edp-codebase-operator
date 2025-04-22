@@ -8,31 +8,6 @@ rules:
   - v2.edp.epam.com
   resources:
   - jiraissuemetadatas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - v2.edp.epam.com
-  resources:
-  - jiraissuemetadatas/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - v2.edp.epam.com
-  resources:
-  - jiraissuemetadatas/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - v2.edp.epam.com
-  resources:
   - jiraservers
   verbs:
   - create
@@ -45,12 +20,14 @@ rules:
 - apiGroups:
   - v2.edp.epam.com
   resources:
+  - jiraissuemetadatas/finalizers
   - jiraservers/finalizers
   verbs:
   - update
 - apiGroups:
   - v2.edp.epam.com
   resources:
+  - jiraissuemetadatas/status
   - jiraservers/status
   verbs:
   - get
@@ -114,109 +91,9 @@ rules:
   - v2.edp.epam.com
   resources:
   - cdstagedeployments
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - v2.edp.epam.com
-  resources:
-  - cdstagedeployments/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - v2.edp.epam.com
-  resources:
-  - cdstagedeployments/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - v2.edp.epam.com
-  resources:
   - codebasebranches
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - v2.edp.epam.com
-  resources:
-  - codebasebranches/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - v2.edp.epam.com
-  resources:
-  - codebasebranches/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - v2.edp.epam.com
-  resources:
   - codebaseimagestreams
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - v2.edp.epam.com
-  resources:
-  - codebaseimagestreams/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - v2.edp.epam.com
-  resources:
-  - codebaseimagestreams/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - v2.edp.epam.com
-  resources:
   - codebases
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - v2.edp.epam.com
-  resources:
-  - codebases/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - v2.edp.epam.com
-  resources:
-  - codebases/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - v2.edp.epam.com
-  resources:
   - gitservers
   verbs:
   - create
@@ -229,12 +106,20 @@ rules:
 - apiGroups:
   - v2.edp.epam.com
   resources:
+  - cdstagedeployments/finalizers
+  - codebasebranches/finalizers
+  - codebaseimagestreams/finalizers
+  - codebases/finalizers
   - gitservers/finalizers
   verbs:
   - update
 - apiGroups:
   - v2.edp.epam.com
   resources:
+  - cdstagedeployments/status
+  - codebasebranches/status
+  - codebaseimagestreams/status
+  - codebases/status
   - gitservers/status
   verbs:
   - get

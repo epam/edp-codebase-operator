@@ -3,8 +3,7 @@ package chain
 import (
 	"fmt"
 	"path"
-
-	"golang.org/x/exp/slices"
+	"slices"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"

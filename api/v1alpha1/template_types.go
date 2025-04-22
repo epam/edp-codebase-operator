@@ -75,8 +75,8 @@ type TemplateStatus struct {
 	// Important: Run "make" to regenerate code after modifying this file
 }
 
-//+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Version",type="string",JSONPath=".spec.version",description="Template version"
 // +kubebuilder:printcolumn:name="Type",type="string",JSONPath=".spec.type",description="Codebase type"
 // +kubebuilder:printcolumn:name="Framework",type="string",JSONPath=".spec.framework",description="Framework"
@@ -92,7 +92,7 @@ type Template struct {
 	Status TemplateStatus `json:"status,omitempty"`
 }
 
-//+kubebuilder:object:root=true
+// +kubebuilder:object:root=true
 
 // TemplateList contains a list of Template.
 type TemplateList struct {

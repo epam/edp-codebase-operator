@@ -46,12 +46,12 @@ func (r *ReconcileGitServer) SetupWithManager(mgr ctrl.Manager) error {
 	return nil
 }
 
-//+kubebuilder:rbac:groups=v2.edp.epam.com,namespace=placeholder,resources=gitservers,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=v2.edp.epam.com,namespace=placeholder,resources=gitservers/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=v2.edp.epam.com,namespace=placeholder,resources=gitservers/finalizers,verbs=update
-//+kubebuilder:rbac:groups="",namespace=placeholder,resources=secrets,verbs=get;list;watch
-//+kubebuilder:rbac:groups="networking.k8s.io",namespace=placeholder,resources=ingresses,verbs=get;list;watch;create
-//+kubebuilder:rbac:groups="route.openshift.io",namespace=placeholder,resources=routes,verbs=get;list;watch;create
+// +kubebuilder:rbac:groups=v2.edp.epam.com,namespace=placeholder,resources=gitservers,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=v2.edp.epam.com,namespace=placeholder,resources=gitservers/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=v2.edp.epam.com,namespace=placeholder,resources=gitservers/finalizers,verbs=update
+// +kubebuilder:rbac:groups="",namespace=placeholder,resources=secrets,verbs=get;list;watch
+// +kubebuilder:rbac:groups="networking.k8s.io",namespace=placeholder,resources=ingresses,verbs=get;list;watch;create
+// +kubebuilder:rbac:groups="route.openshift.io",namespace=placeholder,resources=routes,verbs=get;list;watch;create
 
 // Reconcile reads that state of the cluster for a GitServer object and makes changes based on the state.
 func (r *ReconcileGitServer) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {

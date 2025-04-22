@@ -154,7 +154,7 @@ func TestReconcileJiraIssueMetadata_Reconcile_ShouldFailJiraISDisabled(t *testin
 
 	assert.Error(t, err)
 
-	if !strings.Contains(err.Error(), "codebase codebase has disabled jira integration. skip JiraIssueMetadata JIM reconcilation") {
+	if !strings.Contains(err.Error(), "codebase codebase has disabled jira integration. skip JiraIssueMetadata JIM reconciliation") {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
 

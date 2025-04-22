@@ -158,7 +158,7 @@ func (h *CreateEventListener) createIngress(ctx context.Context, gitServer *code
 	}
 
 	// This port is hardcoded in Tekton Triggers.
-	//https://github.com/tektoncd/triggers/blob/v0.27.0/pkg/reconciler/eventlistener/resources/service.go#L37
+	// https://github.com/tektoncd/triggers/blob/v0.31.0/pkg/reconciler/eventlistener/resources/service.go#L37
 	const elServicePort = 8080
 
 	ingress := &networkingv1.Ingress{

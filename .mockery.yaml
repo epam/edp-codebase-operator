@@ -4,6 +4,9 @@ dir: "{{.InterfaceDir}}/mocks"
 mockname: "Mock{{.InterfaceName}}"
 outpkg: "mocks"
 filename: "{{.InterfaceName | lower}}_mock.go"
+issue-845-fix: True
+disable-version-string: True
+resolve-type-alias: False
 packages:
   github.com/epam/edp-codebase-operator/v2/controllers/cdstagedeploy/chain:
     interfaces:

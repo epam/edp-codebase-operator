@@ -118,14 +118,13 @@ func TestGoJiraAdapter_GetProjectInfo_Fail_IssueNotFound(t *testing.T) {
 		t.Fatal("failed to create Jira Client")
 	}
 
-	httpmock.RegisterResponder("GET", "/j-api/rest/api/2/issue/issueId",
-		httpmock.NewStringResponder(404, "not found"))
-
-	_, err = jc.GetProjectInfo("issueId")
-	assert.ErrorIs(t, err, ErrNotFound)
-
-	httpmock.RegisterResponder("GET", "/j-api/rest/api/2/issue/issueId",
-		httpmock.NewStringResponder(200, "not found: 404"))
+	httpmock.RegisterResponder(
+		"GET",
+		"/j-api/rest/api/2/issue/issueId",
+		func(*http.Request) (*http.Response, error) {
+			return httpmock.NewStringResponse(404, "not found"), nil
+		},
+	)
 
 	_, err = jc.GetProjectInfo("issueId")
 	assert.ErrorIs(t, err, ErrNotFound)

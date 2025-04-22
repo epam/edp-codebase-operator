@@ -135,6 +135,7 @@ func TestStrategyManager_GetAppPayloadForAllLatestStrategy(t *testing.T) {
 			got, err := h.GetAppPayloadForAllLatestStrategy(ctrl.LoggerInto(context.Background(), logr.Discard()), tt.pipeline)
 
 			tt.wantErr(t, err)
+
 			if tt.want != "" {
 				assert.JSONEq(t, tt.want, string(got))
 			}
@@ -305,6 +306,7 @@ func TestStrategyManager_GetAppPayloadForCurrentWithStableStrategy(t *testing.T)
 			)
 
 			tt.wantErr(t, err)
+
 			if tt.want != "" {
 				assert.JSONEq(t, tt.want, string(got))
 			}

@@ -75,9 +75,9 @@ func (r *ReconcileJiraServer) SetupWithManager(mgr ctrl.Manager) error {
 	return nil
 }
 
-//+kubebuilder:rbac:groups=v2.edp.epam.com,resources=jiraservers,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=v2.edp.epam.com,resources=jiraservers/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=v2.edp.epam.com,resources=jiraservers/finalizers,verbs=update
+// +kubebuilder:rbac:groups=v2.edp.epam.com,resources=jiraservers,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=v2.edp.epam.com,resources=jiraservers/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=v2.edp.epam.com,resources=jiraservers/finalizers,verbs=update
 
 // Reconcile reads that state of the cluster for a JiraServer object and makes changes based on the state.
 func (r *ReconcileJiraServer) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {

@@ -96,9 +96,9 @@ func (r *ReconcileCodebaseBranch) SetupWithManager(mgr ctrl.Manager, maxConcurre
 	return nil
 }
 
-//+kubebuilder:rbac:groups=v2.edp.epam.com,namespace=placeholder,resources=codebasebranches,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=v2.edp.epam.com,namespace=placeholder,resources=codebasebranches/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=v2.edp.epam.com,namespace=placeholder,resources=codebasebranches/finalizers,verbs=update
+// +kubebuilder:rbac:groups=v2.edp.epam.com,namespace=placeholder,resources=codebasebranches,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=v2.edp.epam.com,namespace=placeholder,resources=codebasebranches/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=v2.edp.epam.com,namespace=placeholder,resources=codebasebranches/finalizers,verbs=update
 
 // Reconcile reads that state of the cluster for a CodebaseBranch object and makes changes based on the state.
 func (r *ReconcileCodebaseBranch) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
@@ -268,6 +268,7 @@ func (r *ReconcileCodebaseBranch) tryToDeleteCodebaseBranch(ctx context.Context,
 		if err := r.client.Get(ctx, types.NamespacedName{Namespace: cb.Namespace, Name: cb.Name}, cb); err != nil {
 			return err //nolint:wrapcheck // We have to return original error
 		}
+
 		r.log.Info("Trying to remove finalizer from", "codebasebranch_name", cb.Name)
 		controllerutil.RemoveFinalizer(cb, codebaseBranchOperatorFinalizerName)
 		err := r.client.Update(ctx, cb)

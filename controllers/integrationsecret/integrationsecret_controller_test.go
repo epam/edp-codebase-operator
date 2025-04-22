@@ -31,6 +31,7 @@ func TestReconcileIntegrationSecret_Reconcile(t *testing.T) {
 			}
 
 			w.WriteHeader(http.StatusOK)
+
 			return
 		}
 

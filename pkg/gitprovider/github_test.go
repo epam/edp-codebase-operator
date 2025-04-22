@@ -67,6 +67,7 @@ func TestGitHubClient_CreateWebHook(t *testing.T) {
 			got, err := c.CreateWebHook(context.Background(), "url", "token", tt.projectID, "secret", "webHookURL", false)
 
 			tt.wantErr(t, err)
+
 			if tt.errContains != "" {
 				assert.Contains(t, err.Error(), tt.errContains)
 			}
@@ -142,12 +143,15 @@ func TestGitHubClient_GetWebHook(t *testing.T) {
 			got, err := c.GetWebHook(context.Background(), "url", "token", tt.projectID, "999")
 
 			tt.wantErr(t, err)
+
 			if tt.errIs != nil {
 				assert.ErrorIs(t, err, tt.errIs)
 			}
+
 			if tt.errContains != "" {
 				assert.Contains(t, err.Error(), tt.errContains)
 			}
+
 			assert.Equal(t, tt.want, got)
 		})
 	}
@@ -210,9 +214,11 @@ func TestGitHubClient_DeleteWebHook(t *testing.T) {
 			err := c.DeleteWebHook(context.Background(), "url", "token", tt.projectID, "999")
 
 			tt.wantErr(t, err)
+
 			if tt.errIs != nil {
 				assert.ErrorIs(t, err, tt.errIs)
 			}
+
 			if tt.errContains != "" {
 				assert.Contains(t, err.Error(), tt.errContains)
 			}
@@ -285,12 +291,15 @@ func TestGitHubClient_GetWebHooks(t *testing.T) {
 			got, err := c.GetWebHooks(context.Background(), "url", "token", tt.projectID)
 
 			tt.wantErr(t, err)
+
 			if tt.errIs != nil {
 				assert.ErrorIs(t, err, tt.errIs)
 			}
+
 			if tt.errContains != "" {
 				assert.Contains(t, err.Error(), tt.errContains)
 			}
+
 			assert.Equal(t, tt.want, got)
 		})
 	}
@@ -389,6 +398,7 @@ func TestGitHubClient_CreateWebHookIfNotExists(t *testing.T) {
 			got, err := c.CreateWebHookIfNotExists(context.Background(), "url", "token", tt.projectID, "secret", tt.webHookURL, false)
 
 			tt.wantErr(t, err)
+
 			if tt.errContains != "" {
 				assert.Contains(t, err.Error(), tt.errContains)
 			}

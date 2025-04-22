@@ -49,7 +49,7 @@ func (h PutCDStageDeploy) ServeRequest(ctx context.Context, imageStream *codebas
 func (h PutCDStageDeploy) handleCodebaseImageStreamEnvLabels(ctx context.Context, imageStream *codebaseApi.CodebaseImageStream) error {
 	l := ctrl.LoggerFrom(ctx)
 
-	if imageStream.ObjectMeta.Labels == nil || len(imageStream.ObjectMeta.Labels) == 0 {
+	if len(imageStream.ObjectMeta.Labels) == 0 {
 		l.Info("CodebaseImageStream does not contain env labels. Skip CDStageDeploy creating.")
 		return nil
 	}

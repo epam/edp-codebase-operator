@@ -77,11 +77,11 @@ func (r *ReconcileCDStageDeploy) SetupWithManager(mgr ctrl.Manager) error {
 	return nil
 }
 
-//+kubebuilder:rbac:groups=v2.edp.epam.com,namespace=placeholder,resources=cdstagedeployments,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=v2.edp.epam.com,namespace=placeholder,resources=cdstagedeployments/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=v2.edp.epam.com,namespace=placeholder,resources=cdstagedeployments/finalizers,verbs=update
-//+kubebuilder:rbac:groups=triggers.tekton.dev,namespace=placeholder,resources=triggertemplates,verbs=get;list;watch;
-//+kubebuilder:rbac:groups=tekton.dev,namespace=placeholder,resources=pipelineruns,verbs=get;list;watch;create;update;patch
+// +kubebuilder:rbac:groups=v2.edp.epam.com,namespace=placeholder,resources=cdstagedeployments,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=v2.edp.epam.com,namespace=placeholder,resources=cdstagedeployments/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=v2.edp.epam.com,namespace=placeholder,resources=cdstagedeployments/finalizers,verbs=update
+// +kubebuilder:rbac:groups=triggers.tekton.dev,namespace=placeholder,resources=triggertemplates,verbs=get;list;watch;
+// +kubebuilder:rbac:groups=tekton.dev,namespace=placeholder,resources=pipelineruns,verbs=get;list;watch;create;update;patch
 
 // Reconcile reads that state of the cluster for a CDStageDeploy object and makes changes based on the state.
 func (r *ReconcileCDStageDeploy) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
