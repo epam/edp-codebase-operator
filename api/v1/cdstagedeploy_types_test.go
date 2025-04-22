@@ -46,8 +46,6 @@ func TestCDStageDeploy_SetFailedStatus(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
-
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 

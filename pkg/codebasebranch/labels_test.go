@@ -171,6 +171,7 @@ func TestAddCodebaseLabel(t *testing.T) {
 				tt.args.codebaseName,
 			)
 			tt.wantErr(t, err)
+
 			if tt.want != nil {
 				tt.want(t, tt.args.k8sClient)
 			}

@@ -38,6 +38,7 @@ func TestCollector_Start(t *testing.T) {
 		}
 
 		res := map[string]PlatformMetrics{}
+
 		err = json.Unmarshal(body, &res)
 		if !assert.NoError(t, err) {
 			return
@@ -45,6 +46,7 @@ func TestCollector_Start(t *testing.T) {
 
 		assert.Equal(t, 1, len(res))
 		assert.Contains(t, res, "platformMetrics")
+
 		if assert.Equal(t, 1, len(res["platformMetrics"].CodebaseMetrics)) {
 			assert.Equal(t, "go", res["platformMetrics"].CodebaseMetrics[0].Lang)
 			assert.Equal(t, "gin", res["platformMetrics"].CodebaseMetrics[0].Framework)
@@ -53,17 +55,19 @@ func TestCollector_Start(t *testing.T) {
 			assert.Equal(t, "application", res["platformMetrics"].CodebaseMetrics[0].Type)
 			assert.Equal(t, "default", res["platformMetrics"].CodebaseMetrics[0].Versioning)
 		}
+
 		if assert.Equal(t, 1, len(res["platformMetrics"].CdPipelineMetrics)) {
 			assert.Equal(t, "Auto", res["platformMetrics"].CdPipelineMetrics[0].DeploymentType)
 			assert.Equal(t, 1, res["platformMetrics"].CdPipelineMetrics[0].NumberOfStages)
 		}
+
 		if assert.Equal(t, 1, len(res["platformMetrics"].GitProviders)) {
 			assert.Equal(t, "github", res["platformMetrics"].GitProviders[0])
 		}
+
 		assert.True(t, res["platformMetrics"].JiraEnabled)
 		assert.Equal(t, "2.0.0", res["platformMetrics"].Version)
 		assert.Equal(t, "harbor", res["platformMetrics"].RegistryType)
-
 	}))
 	defer server.Close()
 

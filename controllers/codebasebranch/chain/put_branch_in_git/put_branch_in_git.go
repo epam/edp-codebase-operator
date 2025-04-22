@@ -49,7 +49,7 @@ func (h PutBranchInGit) ServeRequest(ctx context.Context, branch *codebaseApi.Co
 		Namespace: branch.Namespace,
 		Name:      branch.Spec.CodebaseName,
 	}, codebase); err != nil {
-		setFailedFields(branch, codebaseApi.PutGitBranch, err.Error())
+		putGitBranchSetFailedFields(branch, err.Error())
 
 		return fmt.Errorf("failed to fetch Codebase: %w", err)
 	}
@@ -68,7 +68,7 @@ func (h PutBranchInGit) ServeRequest(ctx context.Context, branch *codebaseApi.Co
 		},
 		gitServer,
 	); err != nil {
-		setFailedFields(branch, codebaseApi.PutGitBranch, err.Error())
+		putGitBranchSetFailedFields(branch, err.Error())
 
 		return fmt.Errorf("failed to fetch GitServer: %w", err)
 	}
@@ -83,7 +83,7 @@ func (h PutBranchInGit) ServeRequest(ctx context.Context, branch *codebaseApi.Co
 		secret,
 	); err != nil {
 		err = fmt.Errorf("failed to get %v secret: %w", gitServer.Spec.NameSshKeySecret, err)
-		setFailedFields(branch, codebaseApi.PutGitBranch, err.Error())
+		putGitBranchSetFailedFields(branch, err.Error())
 
 		return err
 	}
@@ -100,7 +100,7 @@ func (h PutBranchInGit) ServeRequest(ctx context.Context, branch *codebaseApi.Co
 			wd,
 			gitServer.Spec.SshPort,
 		); err != nil {
-			setFailedFields(branch, codebaseApi.PutGitBranch, err.Error())
+			putGitBranchSetFailedFields(branch, err.Error())
 
 			return fmt.Errorf("failed to clone repository: %w", err)
 		}
@@ -119,7 +119,7 @@ func (h PutBranchInGit) ServeRequest(ctx context.Context, branch *codebaseApi.Co
 
 	err = h.Git.CreateRemoteBranch(string(secret.Data[util.PrivateSShKeyName]), gitServer.Spec.GitUser, wd, branch.Spec.BranchName, branch.Spec.FromCommit, gitServer.Spec.SshPort)
 	if err != nil {
-		setFailedFields(branch, codebaseApi.PutGitBranch, err.Error())
+		putGitBranchSetFailedFields(branch, err.Error())
 
 		// We need to remove work directory if branch creation failed(push error).
 		// Otherwise, the next time the branch creation will be skipped because local branch already exists.
@@ -133,7 +133,7 @@ func (h PutBranchInGit) ServeRequest(ctx context.Context, branch *codebaseApi.Co
 	branch.Status.Git = codebaseApi.CodebaseBranchGitStatusBranchCreated
 	if err = h.Client.Status().Update(ctx, branch); err != nil {
 		branch.Status.Git = ""
-		setFailedFields(branch, codebaseApi.PutGitBranch, err.Error())
+		putGitBranchSetFailedFields(branch, err.Error())
 
 		return fmt.Errorf("failed to update CodebaseBranch status: %w", err)
 	}
@@ -172,12 +172,12 @@ func (h PutBranchInGit) setIntermediateSuccessFields(cb *codebaseApi.CodebaseBra
 	return nil
 }
 
-func setFailedFields(cb *codebaseApi.CodebaseBranch, a codebaseApi.ActionType, message string) {
+func putGitBranchSetFailedFields(cb *codebaseApi.CodebaseBranch, message string) {
 	cb.Status = codebaseApi.CodebaseBranchStatus{
 		Status:              util.StatusFailed,
 		LastTimeUpdated:     metaV1.Now(),
 		Username:            "system",
-		Action:              a,
+		Action:              codebaseApi.PutGitBranch,
 		Result:              codebaseApi.Error,
 		DetailedMessage:     message,
 		Value:               "failed",

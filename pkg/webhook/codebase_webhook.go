@@ -18,7 +18,7 @@ import (
 
 const listLimit = 1000
 
-//+kubebuilder:webhook:path=/validate-v2-edp-epam-com-v1-codebase,mutating=false,failurePolicy=fail,sideEffects=None,groups=v2.edp.epam.com,resources=codebases,verbs=create;update;delete,versions=v1,name=vcodebase.kb.io,admissionReviewVersions=v1
+// +kubebuilder:webhook:path=/validate-v2-edp-epam-com-v1-codebase,mutating=false,failurePolicy=fail,sideEffects=None,groups=v2.edp.epam.com,resources=codebases,verbs=create;update;delete,versions=v1,name=vcodebase.kb.io,admissionReviewVersions=v1
 
 // CodebaseValidationWebhook is a webhook for validating Codebase CRD.
 type CodebaseValidationWebhook struct {

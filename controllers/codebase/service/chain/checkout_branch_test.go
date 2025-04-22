@@ -187,8 +187,8 @@ func TestCheckoutBranch_ShouldFailOnGetCurrentBranchName(t *testing.T) {
 
 func TestCheckoutBranch_ShouldFailOnCheckout(t *testing.T) {
 	repo := "repo"
-	u := "user"
-	p := "pass"
+	u := "user1"
+	p := "pass1"
 	c := &codebaseApi.Codebase{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "fake-name",
@@ -207,8 +207,8 @@ func TestCheckoutBranch_ShouldFailOnCheckout(t *testing.T) {
 			Namespace: fakeNamespace,
 		},
 		Data: map[string][]byte{
-			"username": []byte("user"),
-			"password": []byte("pass"),
+			"username": []byte("user1"),
+			"password": []byte("pass1"),
 		},
 	}
 	scheme := runtime.NewScheme()

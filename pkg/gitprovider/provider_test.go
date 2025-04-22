@@ -57,6 +57,7 @@ func TestNewProvider(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := NewProvider(tt.gitServer, restyClient, "")
 			tt.wantErr(t, err)
+
 			if tt.errContains != "" {
 				assert.Contains(t, err.Error(), tt.errContains)
 			}
@@ -117,7 +118,6 @@ func Test_getGitProviderAPIURL(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 

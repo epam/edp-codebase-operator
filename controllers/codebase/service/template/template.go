@@ -5,10 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"slices"
 	"strings"
 	"text/template"
 
-	"golang.org/x/exp/slices"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -108,7 +108,7 @@ func copySonarConfigs(ctx context.Context, workDir, td string, config *model.Con
 	log := ctrl.LoggerFrom(ctx)
 
 	if !slices.Contains(languagesForSonarTemplates, strings.ToLower(config.Lang)) {
-		return
+		return err
 	}
 
 	sonarConfigPath := fmt.Sprintf("%v/sonar-project.properties", workDir)
@@ -126,7 +126,7 @@ func copySonarConfigs(ctx context.Context, workDir, td string, config *model.Con
 		return fmt.Errorf("failed to create sonar config file: %w", err)
 	}
 
-	defer util.CloseWithErrorCapture(&err, f, "failed to close sonar config file")
+	defer util.CloseWithLogOnErr(log, f, "failed to close sonar config file")
 
 	sonarTemplateName := fmt.Sprintf("%v-sonar-project.properties.tmpl", strings.ToLower(config.Lang))
 	sonarTemplateFile := fmt.Sprintf("%v/templates/sonar/%v", td, sonarTemplateName)
@@ -143,5 +143,5 @@ func copySonarConfigs(ctx context.Context, workDir, td string, config *model.Con
 
 	log.Info("Sonar configs has been copied")
 
-	return
+	return err
 }

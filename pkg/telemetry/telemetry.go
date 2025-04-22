@@ -149,7 +149,7 @@ func (c *Collector) sendTelemetry(ctx context.Context) error {
 	telemetry.JiraEnabled = len(jiraServers.Items) > 0
 
 	resp, err := resty.New().
-		SetHostURL(c.telemetryUrl).
+		SetBaseURL(c.telemetryUrl).
 		R().
 		SetContext(ctx).
 		SetBody(map[string]PlatformMetrics{"platformMetrics": telemetry}).

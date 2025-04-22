@@ -71,9 +71,9 @@ func (r *ReconcileCodebaseImageStream) SetupWithManager(mgr ctrl.Manager) error 
 	return nil
 }
 
-//+kubebuilder:rbac:groups=v2.edp.epam.com,namespace=placeholder,resources=codebaseimagestreams,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=v2.edp.epam.com,namespace=placeholder,resources=codebaseimagestreams/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=v2.edp.epam.com,namespace=placeholder,resources=codebaseimagestreams/finalizers,verbs=update
+// +kubebuilder:rbac:groups=v2.edp.epam.com,namespace=placeholder,resources=codebaseimagestreams,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=v2.edp.epam.com,namespace=placeholder,resources=codebaseimagestreams/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=v2.edp.epam.com,namespace=placeholder,resources=codebaseimagestreams/finalizers,verbs=update
 
 // Reconcile reads that state of the cluster for a CodebaseImageStream object and makes changes based on the state.
 func (r *ReconcileCodebaseImageStream) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {

@@ -15,9 +15,9 @@ import (
 func setupSuite(tb testing.TB) (func(tb testing.TB), string) {
 	log.Println("setup suite")
 
-	pk, err := rsa.GenerateKey(rand.Reader, 128)
+	pk, err := rsa.GenerateKey(rand.Reader, 1024)
 	if err != nil {
-		tb.Error("failed to generate test private key")
+		tb.Fatal("failed to generate test private key")
 	}
 
 	privateKeyBytes := x509.MarshalPKCS1PrivateKey(pk)

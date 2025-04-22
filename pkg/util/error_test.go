@@ -30,8 +30,6 @@ func TestNewCodebaseBranchReconcileError(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
-
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -64,8 +62,6 @@ func TestCodebaseBranchReconcileError_Error(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
-
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -102,8 +98,6 @@ func TestCDStageDeployHasNotBeenProcessedError_Error(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
-
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 

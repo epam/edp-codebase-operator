@@ -27,8 +27,8 @@ type QuickLinkSpec struct {
 type QuickLinkStatus struct {
 }
 
-//+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 
 // QuickLink is the Schema for the quicklinks API.
 type QuickLink struct {
@@ -39,7 +39,7 @@ type QuickLink struct {
 	Status QuickLinkStatus `json:"status,omitempty"`
 }
 
-//+kubebuilder:object:root=true
+// +kubebuilder:object:root=true
 
 // QuickLinkList contains a list of QuickLink.
 type QuickLinkList struct {

@@ -286,7 +286,6 @@ func TestCopyRpmPackageTemplates(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -300,6 +299,7 @@ func TestCopyRpmPackageTemplates(t *testing.T) {
 			)
 
 			tt.wantErr(t, err)
+
 			if tt.want != nil {
 				tt.want(t, dest)
 			}

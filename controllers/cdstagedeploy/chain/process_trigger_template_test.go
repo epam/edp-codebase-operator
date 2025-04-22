@@ -651,6 +651,7 @@ func TestProcessTriggerTemplate_ServeRequest(t *testing.T) {
 			)
 
 			tt.wantErr(t, h.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), tt.stageDeploy))
+
 			if tt.want != nil {
 				tt.want(t, tt.stageDeploy)
 			}

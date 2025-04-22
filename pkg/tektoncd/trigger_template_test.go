@@ -135,6 +135,7 @@ func TestTektonTriggerTemplateManager_GetRawResourceFromTriggerTemplate(t *testi
 			got, err := h.GetRawResourceFromTriggerTemplate(context.Background(), "app-template", "default")
 
 			tt.wantErr(t, err)
+
 			if tt.want != "" {
 				require.JSONEq(t, tt.want, string(got))
 			}
