@@ -39,7 +39,8 @@ func TestPutCDStageDeploy_ServeRequest(t *testing.T) {
 					Name:      "test-image-stream",
 					Namespace: "default",
 					Labels: map[string]string{
-						"ci/dev": "",
+						"ci/dev":                        "",
+						codebaseApi.CodebaseBranchLabel: "test",
 					},
 				},
 				Spec: codebaseApi.CodebaseImageStreamSpec{
