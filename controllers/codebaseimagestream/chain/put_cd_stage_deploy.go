@@ -60,16 +60,17 @@ func (h PutCDStageDeploy) handleCodebaseImageStreamEnvLabels(ctx context.Context
 
 	labelValueRegexp := regexp.MustCompile("^[-A-Za-z0-9_.]+/[-A-Za-z0-9_.]+$")
 
-	for envLabel := range imageStream.ObjectMeta.Labels {
-		if !labelValueRegexp.MatchString(envLabel) {
-			l.Info("Label value does not match the pattern cd-pipeline-name/stage-name. Skip CDStageDeploy creating.")
+	for envLabel, val := range imageStream.ObjectMeta.Labels {
+		// pipeline lable should be in format cdpipeline/stage-name: ""
+		if labelValueRegexp.MatchString(envLabel) && val == "" {
+			if err := h.putCDStageDeploy(ctx, envLabel, imageStream.Namespace, imageStream.Spec); err != nil {
+				return err
+			}
 
 			continue
 		}
 
-		if err := h.putCDStageDeploy(ctx, envLabel, imageStream.Namespace, imageStream.Spec); err != nil {
-			return err
-		}
+		l.Info("Label value does not match the pattern cd-pipeline-name/stage-name. Skip CDStageDeploy creating.")
 	}
 
 	return nil
