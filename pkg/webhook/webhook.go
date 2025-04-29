@@ -21,9 +21,12 @@ func RegisterValidationWebHook(ctx context.Context, mgr ctrl.Manager, namespace 
 		return err
 	}
 
+	if err := NewCodebaseBranchValidationWebhook(mgr.GetClient(), ctrl.Log).SetupWebhookWithManager(mgr); err != nil {
+		return err
+	}
+
 	return (&ProtectedLabelValidationWebhook{}).SetupWebhookWithManager(
 		mgr,
-		&codebaseApi.CodebaseBranch{},
 		&codebaseApi.CodebaseImageStream{},
 		&codebaseApi.GitServer{},
 	)

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/cespare/xxhash/v2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
@@ -16,8 +17,9 @@ const (
 
 func AddCodebaseLabel(ctx context.Context, k8sClient client.Client, codebaseBranch *codebaseApi.CodebaseBranch, codebaseName string) error {
 	labelsToSet := map[string]string{
-		LabelCodebaseName:         codebaseName, // Set it for backward compatibility. TODO: remove and use only codebaseApi.CodebaseLabel.
-		codebaseApi.CodebaseLabel: codebaseName,
+		LabelCodebaseName:           codebaseName, // Set it for backward compatibility. TODO: remove and use only codebaseApi.CodebaseLabel.
+		codebaseApi.CodebaseLabel:   codebaseName,
+		codebaseApi.BranchHashLabel: MakeGitBranchHash(codebaseBranch.Spec.BranchName),
 	}
 
 	currentLabels := codebaseBranch.GetLabels()
@@ -46,4 +48,8 @@ func AddCodebaseLabel(ctx context.Context, k8sClient client.Client, codebaseBran
 	}
 
 	return nil
+}
+
+func MakeGitBranchHash(gitBranchName string) string {
+	return fmt.Sprintf("%x", xxhash.Sum64([]byte(gitBranchName)))
 }

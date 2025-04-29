@@ -274,6 +274,7 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldPassWithCreatingCIS(t *testing.
 		//nolint:staticcheck // Need refactoring
 		codebasebranch.LabelCodebaseName: "NewCodebase",
 		codebaseApi.CodebaseLabel:        "NewCodebase",
+		codebaseApi.BranchHashLabel:      codebasebranch.MakeGitBranchHash("master"),
 	}
 	assert.Equal(t, expectedLabels, gotCodebaseBranch.GetLabels())
 }
@@ -288,6 +289,7 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldRequeueWithCodebaseNotReady(t *
 		},
 		Spec: codebaseApi.CodebaseBranchSpec{
 			CodebaseName: "NewCodebase",
+			BranchName:   "master",
 			Pipelines: map[string]string{
 				"review": "review-pipeline",
 				"build":  "build-pipeline",
@@ -346,6 +348,7 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldRequeueWithCodebaseNotReady(t *
 		//nolint:staticcheck // Need refactoring
 		codebasebranch.LabelCodebaseName: "NewCodebase",
 		codebaseApi.CodebaseLabel:        "NewCodebase",
+		codebaseApi.BranchHashLabel:      codebasebranch.MakeGitBranchHash("master"),
 	}
 	assert.Equal(t, expectedLabels, gotCodebaseBranch.GetLabels())
 }

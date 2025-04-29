@@ -101,6 +101,10 @@ vet:  ## Run go vet
 lint: golangci-lint ## Run go lint
 	${GOLANGCI_LINT} run -v -c .golangci.yaml ./...
 
+.PHONY: lint
+lint-fix: golangci-lint ## Run go lint fix
+	${GOLANGCI_LINT} run -v -c .golangci.yaml ./... --fix
+
 .PHONY: build
 build: clean ## build operator's binary
 	CGO_ENABLED=0 GOOS=${HOST_OS} GOARCH=${HOST_ARCH} go build -v -ldflags '${LDFLAGS}' -o ${DIST_DIR}/${BIN_NAME} -gcflags '${GCFLAGS}' ./cmd

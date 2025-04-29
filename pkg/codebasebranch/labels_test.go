@@ -61,6 +61,7 @@ func TestAddCodebaseLabel(t *testing.T) {
 				assert.NoError(t, err)
 				assert.Equal(t, "test-codebase", cb.Labels[LabelCodebaseName])
 				assert.Equal(t, "test-codebase", cb.Labels[codebaseApi.CodebaseLabel])
+				assert.Equal(t, MakeGitBranchHash("main"), cb.Labels[codebaseApi.BranchHashLabel])
 			},
 		},
 		{
@@ -97,6 +98,7 @@ func TestAddCodebaseLabel(t *testing.T) {
 				assert.NoError(t, err)
 				assert.Equal(t, "test-codebase", cb.Labels[LabelCodebaseName])
 				assert.Equal(t, "test-codebase", cb.Labels[codebaseApi.CodebaseLabel])
+				assert.Equal(t, MakeGitBranchHash("main"), cb.Labels[codebaseApi.BranchHashLabel])
 			},
 		},
 		{
@@ -140,6 +142,7 @@ func TestAddCodebaseLabel(t *testing.T) {
 				assert.NoError(t, err)
 				assert.Equal(t, "test-codebase", cb.Labels[LabelCodebaseName])
 				assert.Equal(t, "test-codebase", cb.Labels[codebaseApi.CodebaseLabel])
+				assert.Equal(t, MakeGitBranchHash("main"), cb.Labels[codebaseApi.BranchHashLabel])
 			},
 		},
 		{

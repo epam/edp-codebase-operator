@@ -33,6 +33,10 @@ spec:
       jsonPath: .spec.release
       name: Release
       type: boolean
+    - description: Name of branch
+      jsonPath: .spec.branchName
+      name: Branch
+      type: string
     name: v1
     schema:
       openAPIV3Schema:
@@ -61,6 +65,9 @@ spec:
               branchName:
                 description: Name of a branch.
                 type: string
+                x-kubernetes-validations:
+                - message: Value is immutable
+                  rule: self == oldSelf
               codebaseName:
                 description: Name of Codebase associated with.
                 type: string
@@ -81,6 +88,8 @@ spec:
                 description: Flag if branch is used as "release" branch.
                 type: boolean
               version:
+                description: Version of the branch. It's required for versioning type
+                  "semver".
                 nullable: true
                 type: string
             required:

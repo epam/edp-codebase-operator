@@ -24,7 +24,6 @@ const (
 
 // +kubebuilder:webhook:path=/validate-v2-edp-epam-com-v1-gitserver,mutating=false,failurePolicy=fail,sideEffects=None,groups=v2.edp.epam.com,resources=gitservers,verbs=update;delete,versions=v1,name=gitserver.epam.com,admissionReviewVersions=v1
 // +kubebuilder:webhook:path=/validate-v2-edp-epam-com-v1-codebaseimagestream,mutating=false,failurePolicy=fail,sideEffects=None,groups=v2.edp.epam.com,resources=codebaseimagestreams,verbs=update;delete,versions=v1,name=codebaseimagestream.epam.com,admissionReviewVersions=v1
-// +kubebuilder:webhook:path=/validate-v2-edp-epam-com-v1-codebasebranch,mutating=false,failurePolicy=fail,sideEffects=None,groups=v2.edp.epam.com,resources=codebasebranchs,verbs=update;delete,versions=v1,name=codebasebranch.epam.com,admissionReviewVersions=v1
 
 // ProtectedLabelValidationWebhook is a webhook for validating ProtectedLabel CRD.
 type ProtectedLabelValidationWebhook struct {

@@ -10,6 +10,7 @@ replace (
 
 require (
 	github.com/andygrunwald/go-jira v1.16.0
+	github.com/cespare/xxhash/v2 v2.3.0
 	github.com/epam/edp-cd-pipeline-operator/v2 v2.25.1
 	github.com/epam/edp-common v0.0.0-20230710145648-344bbce4120e
 	github.com/go-git/go-git/v5 v5.16.0
@@ -44,7 +45,6 @@ require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/blendle/zapdriver v1.3.1 // indirect
 	github.com/census-instrumentation/opencensus-proto v0.4.1 // indirect
-	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/cloudflare/circl v1.6.1 // indirect
 	github.com/cyphar/filepath-securejoin v0.4.1 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
