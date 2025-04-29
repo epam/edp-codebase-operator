@@ -14,11 +14,14 @@ type CodebaseBranchSpec struct {
 	CodebaseName string `json:"codebaseName"`
 
 	// Name of a branch.
+	// +required
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable"
 	BranchName string `json:"branchName"`
 
 	// The new branch will be created starting from the selected commit hash.
 	FromCommit string `json:"fromCommit"`
 
+	// Version of the branch. It's required for versioning type "semver".
 	// +nullable
 	// +optional
 	Version *string `json:"version,omitempty"`
@@ -87,6 +90,7 @@ type CodebaseBranchStatus struct {
 // +kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.status",description="The status of codebasebranch"
 // +kubebuilder:printcolumn:name="Codebase Name",type="string",JSONPath=".spec.codebaseName",description="Owner of object"
 // +kubebuilder:printcolumn:name="Release",type="boolean",JSONPath=".spec.release",description="Is a release branch"
+// +kubebuilder:printcolumn:name="Branch",type="string",JSONPath=".spec.branchName",description="Name of branch"
 
 // CodebaseBranch is the Schema for the CodebaseBranches API.
 type CodebaseBranch struct {

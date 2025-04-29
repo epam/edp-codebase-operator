@@ -321,6 +321,8 @@ CodebaseBranchSpec defines the desired state of CodebaseBranch.
         <td>string</td>
         <td>
           Name of a branch.<br/>
+          <br/>
+            <i>Validations</i>:<li>self == oldSelf: Value is immutable</li>
         </td>
         <td>true</td>
       </tr><tr>
@@ -355,7 +357,7 @@ CodebaseBranchSpec defines the desired state of CodebaseBranch.
         <td><b>version</b></td>
         <td>string</td>
         <td>
-          <br/>
+          Version of the branch. It's required for versioning type "semver".<br/>
         </td>
         <td>false</td>
       </tr></tbody>

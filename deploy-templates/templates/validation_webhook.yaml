@@ -26,10 +26,11 @@ webhooks:
         apiVersions:
           - v1
         operations:
+          - CREATE
           - UPDATE
           - DELETE
         resources:
-          - codebasebranchs
+          - codebasebranches
         scope: Namespaced
     sideEffects: None
   - admissionReviewVersions:
