@@ -1,5 +1,7 @@
 FROM alpine:3.18.12
 
+ARG TARGETARCH
+
 ENV ASSETS_DIR=/usr/local/bin \
     HOME=/home/codebase-operator \
     OPERATOR=/usr/local/bin/codebase-operator \
@@ -22,7 +24,7 @@ RUN  chmod u+x ${ASSETS_DIR}/user_setup && \
      ${ASSETS_DIR}/user_setup
 
 # install operator binary
-COPY ./dist/manager ${OPERATOR}
+COPY ./dist/manager-${TARGETARCH} ${OPERATOR}
 
 ENTRYPOINT ["/usr/local/bin/entrypoint"]
 
