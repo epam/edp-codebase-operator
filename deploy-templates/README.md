@@ -23,6 +23,7 @@ A Helm chart for KubeRocketCI Codebase Operator
 |-----|------|---------|-------------|
 | affinity | object | `{}` |  |
 | annotations | object | `{}` |  |
+| containerSecurityContext | object | `{"allowPrivilegeEscalation":false}` | Container Security Context Ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/ |
 | envs[0].name | string | `"RECONCILATION_PERIOD"` |  |
 | envs[0].value | string | `"360"` |  |
 | envs[1] | object | `{"name":"CODEBASE_BRANCH_MAX_CONCURRENT_RECONCILES","value":"3"}` | Maximum number of parallel reconciliation codebasebranches |
@@ -42,6 +43,7 @@ A Helm chart for KubeRocketCI Codebase Operator
 | resources.limits.memory | string | `"192Mi"` |  |
 | resources.requests.cpu | string | `"50m"` |  |
 | resources.requests.memory | string | `"64Mi"` |  |
+| securityContext | object | `{"runAsNonRoot":true}` | Deployment Security Context Ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/ |
 | telemetryEnabled | bool | `true` | Flag to enable/disable telemetry |
 | tolerations | list | `[]` |  |
 
