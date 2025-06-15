@@ -19,8 +19,9 @@ spec:
         name: {{ .Values.name }}
     spec:
       serviceAccountName: edp-{{ .Values.name }}
-      securityContext:
-        runAsNonRoot: true
+      {{- if .Values.podSecurityContext }}
+      securityContext: {{ toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- end }}
       {{- if .Values.imagePullSecrets }}
       imagePullSecrets: {{ toYaml .Values.imagePullSecrets | nindent 8 }}
       {{- end }}
@@ -36,8 +37,9 @@ spec:
               name: cert
               readOnly: true
           imagePullPolicy: "{{ .Values.imagePullPolicy }}"
-          securityContext:
-            allowPrivilegeEscalation: false
+          {{- if .Values.securityContext }}
+          securityContext: {{ toYaml .Values.securityContext | nindent 12 }}
+          {{- end }}
           env:
             - name: WATCH_NAMESPACE
               valueFrom:
