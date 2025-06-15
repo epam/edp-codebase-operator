@@ -39,9 +39,11 @@ A Helm chart for KubeRocketCI Codebase Operator
 | jira.rootUrl | string | `"https://jiraeu.example.com"` | URL to Jira server |
 | name | string | `"codebase-operator"` | component name |
 | nodeSelector | object | `{}` |  |
+| podSecurityContext | object | `{"runAsNonRoot":true}` | Pod Security Context Ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/ |
 | resources.limits.memory | string | `"192Mi"` |  |
 | resources.requests.cpu | string | `"50m"` |  |
 | resources.requests.memory | string | `"64Mi"` |  |
+| securityContext | object | `{"allowPrivilegeEscalation":false}` | Container Security Context Ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/ |
 | telemetryEnabled | bool | `true` | Flag to enable/disable telemetry |
 | tolerations | list | `[]` |  |
 
