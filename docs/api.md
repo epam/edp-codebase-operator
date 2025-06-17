@@ -333,19 +333,21 @@ CodebaseBranchSpec defines the desired state of CodebaseBranch.
         </td>
         <td>true</td>
       </tr><tr>
-        <td><b>fromCommit</b></td>
-        <td>string</td>
-        <td>
-          The new branch will be created starting from the selected commit hash.<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
         <td><b>release</b></td>
         <td>boolean</td>
         <td>
           Flag if branch is used as "release" branch.<br/>
         </td>
         <td>true</td>
+      </tr><tr>
+        <td><b>fromCommit</b></td>
+        <td>string</td>
+        <td>
+          FromCommit is a commit hash or branch name.
+The new branch will be created starting from the selected commit hash or branch name.
+If a branch name is provided, the new branch will be created from the latest commit of that branch.<br/>
+        </td>
+        <td>false</td>
       </tr><tr>
         <td><b>pipelines</b></td>
         <td>map[string]string</td>

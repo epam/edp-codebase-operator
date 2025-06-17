@@ -9,8 +9,10 @@ import (
 	"os"
 	"path"
 	"testing"
+	"time"
 
 	gogit "github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -372,6 +374,142 @@ func TestGitProvider_AddRemoteLink(t *testing.T) {
 			err := gp.AddRemoteLink(dir, tt.remoteUrl)
 			tt.wantErr(t, err)
 			tt.checkRepo(t, dir)
+		})
+	}
+}
+
+func TestGitProvider_CheckReference(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		initRepo func(t *testing.T) string
+		from     string
+		wantErr  require.ErrorAssertionFunc
+	}{
+		{
+			name: "should return nil for empty reference",
+			initRepo: func(t *testing.T) string {
+				dir := t.TempDir()
+				_, err := gogit.PlainInit(dir, false)
+				require.NoError(t, err)
+				return dir
+			},
+			from:    "",
+			wantErr: require.NoError,
+		},
+		{
+			name: "should find existing branch reference",
+			initRepo: func(t *testing.T) string {
+				dir := t.TempDir()
+				r, err := gogit.PlainInit(dir, false)
+				require.NoError(t, err)
+
+				// Create initial commit
+				w, err := r.Worktree()
+				require.NoError(t, err)
+
+				f, err := os.Create(path.Join(dir, "test.txt"))
+				require.NoError(t, err)
+				_, err = f.WriteString("test content")
+				require.NoError(t, err)
+				require.NoError(t, f.Close())
+
+				_, err = w.Add("test.txt")
+				require.NoError(t, err)
+
+				_, err = w.Commit("initial commit", &gogit.CommitOptions{
+					Author: &object.Signature{
+						Name:  "test",
+						Email: "test@example.com",
+						When:  time.Now(),
+					},
+				})
+				require.NoError(t, err)
+
+				// Create and checkout a new branch
+				err = w.Checkout(&gogit.CheckoutOptions{
+					Branch: plumbing.NewBranchReferenceName("test-branch"),
+					Create: true,
+				})
+				require.NoError(t, err)
+
+				return dir
+			},
+			from:    "test-branch",
+			wantErr: require.NoError,
+		},
+		{
+			name: "should find existing commit reference",
+			initRepo: func(t *testing.T) string {
+				dir := t.TempDir()
+				r, err := gogit.PlainInit(dir, false)
+				require.NoError(t, err)
+
+				// Create initial commit
+				w, err := r.Worktree()
+				require.NoError(t, err)
+
+				f, err := os.Create(path.Join(dir, "test.txt"))
+				require.NoError(t, err)
+				_, err = f.WriteString("test content")
+				require.NoError(t, err)
+				require.NoError(t, f.Close())
+
+				_, err = w.Add("test.txt")
+				require.NoError(t, err)
+
+				commit, err := w.Commit("initial commit", &gogit.CommitOptions{
+					Author: &object.Signature{
+						Name:  "test",
+						Email: "test@example.com",
+						When:  time.Now(),
+					},
+				})
+				require.NoError(t, err)
+
+				// Store the commit hash for the test
+				t.Logf("Created commit with hash: %s", commit.String())
+
+				return dir
+			},
+			from:    "", // Will be set dynamically
+			wantErr: require.NoError,
+		},
+		{
+			name: "should return error for non-existent reference",
+			initRepo: func(t *testing.T) string {
+				dir := t.TempDir()
+				_, err := gogit.PlainInit(dir, false)
+				require.NoError(t, err)
+				return dir
+			},
+			from:    "non-existent",
+			wantErr: require.Error,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			gp := &git.GitProvider{}
+			dir := tt.initRepo(t)
+
+			// For the commit reference test, we need to get the actual commit hash
+			if tt.name == "should find existing commit reference" {
+				r, err := gogit.PlainOpen(dir)
+				require.NoError(t, err)
+
+				ref, err := r.Head()
+				require.NoError(t, err)
+
+				tt.from = ref.Hash().String()
+				t.Logf("Using commit hash: %s", tt.from)
+			}
+
+			err := gp.CheckReference(dir, tt.from)
+			tt.wantErr(t, err)
 		})
 	}
 }
