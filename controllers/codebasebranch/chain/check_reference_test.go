@@ -2,6 +2,7 @@ package chain
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/go-logr/logr"
@@ -18,7 +19,7 @@ import (
 	gitServerMocks "github.com/epam/edp-codebase-operator/v2/pkg/git/mocks"
 )
 
-func TestCheckCommitHashExists_ServeRequest(t *testing.T) {
+func TestCheckReferenceExists_ServeRequest(t *testing.T) {
 	scheme := runtime.NewScheme()
 	err := codebaseApi.AddToScheme(scheme)
 	require.NoError(t, err)
@@ -84,17 +85,17 @@ func TestCheckCommitHashExists_ServeRequest(t *testing.T) {
 					testifymock.Anything,
 				).Return(nil)
 				mGit.On(
-					"CommitExists",
+					"CheckReference",
 					testifymock.Anything,
 					testifymock.Anything,
-				).Return(true, nil)
+				).Return(nil)
 
 				return mGit
 			},
 			wantErr: require.NoError,
 		},
 		{
-			name: "failed, commit doesn't exist",
+			name: "success, branch reference exists",
 			codebaseBranch: &codebaseApi.CodebaseBranch{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test",
@@ -102,8 +103,8 @@ func TestCheckCommitHashExists_ServeRequest(t *testing.T) {
 				},
 				Spec: codebaseApi.CodebaseBranchSpec{
 					CodebaseName: "test-codebase",
-					BranchName:   "main",
-					FromCommit:   "bfba920bd3bdebc9ae1c4475d70391152645b2a4",
+					BranchName:   "feature",
+					FromCommit:   "main",
 				},
 			},
 			objects: []runtime.Object{
@@ -144,21 +145,80 @@ func TestCheckCommitHashExists_ServeRequest(t *testing.T) {
 					testifymock.Anything,
 				).Return(nil)
 				mGit.On(
-					"CommitExists",
+					"CheckReference",
 					testifymock.Anything,
 					testifymock.Anything,
-				).Return(false, nil)
+				).Return(nil)
+
+				return mGit
+			},
+			wantErr: require.NoError,
+		},
+		{
+			name: "failed, reference doesn't exist",
+			codebaseBranch: &codebaseApi.CodebaseBranch{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: "default",
+				},
+				Spec: codebaseApi.CodebaseBranchSpec{
+					CodebaseName: "test-codebase",
+					BranchName:   "main",
+					FromCommit:   "non-existent",
+				},
+			},
+			objects: []runtime.Object{
+				&codebaseApi.Codebase{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test-codebase",
+						Namespace: "default",
+					},
+					Spec: codebaseApi.CodebaseSpec{
+						GitServer: "test-git-server",
+					},
+				},
+				&codebaseApi.GitServer{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test-git-server",
+						Namespace: "default",
+					},
+					Spec: codebaseApi.GitServerSpec{
+						NameSshKeySecret: "test-ssh-key",
+					},
+				},
+				&coreV1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test-ssh-key",
+						Namespace: "default",
+					},
+				},
+			},
+			gitClient: func() git.Git {
+				mGit := gitServerMocks.NewMockGit(t)
+				mGit.On(
+					"CloneRepositoryBySsh",
+					testifymock.Anything,
+					testifymock.Anything,
+					testifymock.Anything,
+					testifymock.Anything,
+					testifymock.Anything,
+					testifymock.Anything,
+				).Return(nil)
+				mGit.On(
+					"CheckReference",
+					testifymock.Anything,
+					testifymock.Anything,
+				).Return(errors.New("reference not found"))
 
 				return mGit
 			},
 			wantErr: func(t require.TestingT, err error, _ ...any) {
 				require.Error(t, err)
-
-				require.Contains(t, err.Error(), "commit bfba920bd3bdebc9ae1c4475d70391152645b2a4 doesn't exist")
+				require.Contains(t, err.Error(), "reference non-existent doesn't exist")
 			},
 		},
 		{
-			name: "skip, commit hash is empty",
+			name: "skip, reference is empty",
 			codebaseBranch: &codebaseApi.CodebaseBranch{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test",
@@ -194,7 +254,7 @@ func TestCheckCommitHashExists_ServeRequest(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c := CheckCommitHashExists{
+			c := CheckReferenceExists{
 				Client: fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(tt.objects...).Build(),
 				Git:    tt.gitClient(),
 			}

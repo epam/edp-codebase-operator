@@ -118,6 +118,53 @@ func (_c *MockGit_CheckPermissions_Call) RunAndReturn(run func(context.Context, 
 	return _c
 }
 
+// CheckReference provides a mock function with given fields: workDir, from
+func (_m *MockGit) CheckReference(workDir string, from string) error {
+	ret := _m.Called(workDir, from)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CheckReference")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(string, string) error); ok {
+		r0 = rf(workDir, from)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// MockGit_CheckReference_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CheckReference'
+type MockGit_CheckReference_Call struct {
+	*mock.Call
+}
+
+// CheckReference is a helper method to define mock.On call
+//   - workDir string
+//   - from string
+func (_e *MockGit_Expecter) CheckReference(workDir interface{}, from interface{}) *MockGit_CheckReference_Call {
+	return &MockGit_CheckReference_Call{Call: _e.mock.On("CheckReference", workDir, from)}
+}
+
+func (_c *MockGit_CheckReference_Call) Run(run func(workDir string, from string)) *MockGit_CheckReference_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *MockGit_CheckReference_Call) Return(_a0 error) *MockGit_CheckReference_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *MockGit_CheckReference_Call) RunAndReturn(run func(string, string) error) *MockGit_CheckReference_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Checkout provides a mock function with given fields: user, pass, directory, branchName, remote
 func (_m *MockGit) Checkout(user *string, pass *string, directory string, branchName string, remote bool) error {
 	ret := _m.Called(user, pass, directory, branchName, remote)

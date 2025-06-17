@@ -15,19 +15,19 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
-// CheckCommitHashExists is chain element for checking commit hash existence.
-type CheckCommitHashExists struct {
+// CheckReferenceExists is chain element for checking if a reference (branch or commit) exists.
+type CheckReferenceExists struct {
 	Next   handler.CodebaseBranchHandler
 	Client client.Client
 	Git    git.Git
 }
 
-// ServeRequest is a method for checking CodebaseBranch FromCommit hash existence.
-func (c CheckCommitHashExists) ServeRequest(ctx context.Context, codebaseBranch *codebaseApi.CodebaseBranch) error {
-	log := ctrl.LoggerFrom(ctx).WithName("check-commit-hash-exists")
+// ServeRequest is a method for checking if the reference (branch or commit) exists.
+func (c CheckReferenceExists) ServeRequest(ctx context.Context, codebaseBranch *codebaseApi.CodebaseBranch) error {
+	log := ctrl.LoggerFrom(ctx).WithName("check-reference-exists")
 
 	if codebaseBranch.Status.Git == codebaseApi.CodebaseBranchGitStatusBranchCreated {
-		log.Info("Branch is already created in git. Skip checking commit hash existence")
+		log.Info("Branch is already created in git. Skip checking reference existence")
 
 		return c.next(ctx, codebaseBranch)
 	}
@@ -88,20 +88,16 @@ func (c CheckCommitHashExists) ServeRequest(ctx context.Context, codebaseBranch 
 		}
 	}
 
-	exists, err := c.Git.CommitExists(workDir, codebaseBranch.Spec.FromCommit)
+	err := c.Git.CheckReference(workDir, codebaseBranch.Spec.FromCommit)
 	if err != nil {
-		return c.processErr(codebaseBranch, fmt.Errorf("failed to check commit hash %s: %w", codebaseBranch.Spec.FromCommit, err))
-	}
-
-	if !exists {
-		return c.processErr(codebaseBranch, fmt.Errorf("commit %s doesn't exist", codebaseBranch.Spec.FromCommit))
+		return c.processErr(codebaseBranch, fmt.Errorf("reference %s doesn't exist: %w", codebaseBranch.Spec.FromCommit, err))
 	}
 
 	return c.next(ctx, codebaseBranch)
 }
 
 // next is a method for serving next chain element.
-func (c CheckCommitHashExists) next(ctx context.Context, codebaseBranch *codebaseApi.CodebaseBranch) error {
+func (c CheckReferenceExists) next(ctx context.Context, codebaseBranch *codebaseApi.CodebaseBranch) error {
 	err := handler.NextServeOrNil(ctx, c.Next, codebaseBranch)
 	if err != nil {
 		return fmt.Errorf("failed to serve next chain element: %w", err)
@@ -111,7 +107,7 @@ func (c CheckCommitHashExists) next(ctx context.Context, codebaseBranch *codebas
 }
 
 // processErr is a method for processing error in chain.
-func (c CheckCommitHashExists) processErr(codebaseBranch *codebaseApi.CodebaseBranch, err error) error {
+func (c CheckReferenceExists) processErr(codebaseBranch *codebaseApi.CodebaseBranch, err error) error {
 	if err == nil {
 		return nil
 	}
@@ -121,7 +117,7 @@ func (c CheckCommitHashExists) processErr(codebaseBranch *codebaseApi.CodebaseBr
 	return err
 }
 
-func (CheckCommitHashExists) setFailedFields(
+func (CheckReferenceExists) setFailedFields(
 	codebaseBranch *codebaseApi.CodebaseBranch,
 	actionType codebaseApi.ActionType,
 	message string,

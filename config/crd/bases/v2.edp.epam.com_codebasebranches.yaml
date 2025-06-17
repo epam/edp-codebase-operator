@@ -72,8 +72,10 @@ spec:
                 description: Name of Codebase associated with.
                 type: string
               fromCommit:
-                description: The new branch will be created starting from the selected
-                  commit hash.
+                description: |-
+                  FromCommit is a commit hash or branch name.
+                  The new branch will be created starting from the selected commit hash or branch name.
+                  If a branch name is provided, the new branch will be created from the latest commit of that branch.
                 type: string
               pipelines:
                 additionalProperties:
@@ -95,7 +97,6 @@ spec:
             required:
             - branchName
             - codebaseName
-            - fromCommit
             - release
             type: object
           status:

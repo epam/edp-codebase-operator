@@ -18,7 +18,10 @@ type CodebaseBranchSpec struct {
 	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable"
 	BranchName string `json:"branchName"`
 
-	// The new branch will be created starting from the selected commit hash.
+	// FromCommit is a commit hash or branch name.
+	// The new branch will be created starting from the selected commit hash or branch name.
+	// If a branch name is provided, the new branch will be created from the latest commit of that branch.
+	// +optional
 	FromCommit string `json:"fromCommit"`
 
 	// Version of the branch. It's required for versioning type "semver".

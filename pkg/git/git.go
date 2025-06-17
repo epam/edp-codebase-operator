@@ -79,6 +79,7 @@ type Git interface {
 	CreateChildBranch(directory, currentBranch, newBranch string) error
 	CommitExists(directory, hash string) (bool, error)
 	AddRemoteLink(repoPath, remoteUrl string) error
+	CheckReference(workDir, from string) error
 }
 
 type Command interface {
@@ -101,7 +102,7 @@ func (gp *GitProvider) buildGitCommand(params ...string) Command {
 
 var log = ctrl.Log.WithName("git-provider")
 
-func (gp *GitProvider) CreateRemoteBranch(key, user, p, name, fromcommit string, port int32) error {
+func (gp *GitProvider) CreateRemoteBranch(key, user, p, name, from string, port int32) error {
 	log.Info("start creating remote branch", logBranchNameKey, name)
 
 	r, err := git.PlainOpen(p)
@@ -109,18 +110,9 @@ func (gp *GitProvider) CreateRemoteBranch(key, user, p, name, fromcommit string,
 		return fmt.Errorf(errPlainOpenTmpl, p, err)
 	}
 
-	ref, err := r.Head()
+	targetHash, err := resolveReference(r, from)
 	if err != nil {
-		return fmt.Errorf("failed to get git HEAD reference: %w", err)
-	}
-
-	if fromcommit != "" {
-		_, err = r.CommitObject(plumbing.NewHash(fromcommit))
-		if err != nil {
-			return fmt.Errorf("failed to get commit %s: %w", fromcommit, err)
-		}
-
-		ref = plumbing.NewReferenceFromStrings(name, fromcommit)
+		return err
 	}
 
 	branches, err := r.Branches()
@@ -138,7 +130,10 @@ func (gp *GitProvider) CreateRemoteBranch(key, user, p, name, fromcommit string,
 		return nil
 	}
 
-	newRef := plumbing.NewReferenceFromStrings(fmt.Sprintf("refs/heads/%v", name), ref.Hash().String())
+	newRef := plumbing.NewHashReference(
+		plumbing.NewBranchReferenceName(name),
+		targetHash,
+	)
 
 	err = r.Storer.SetReference(newRef)
 	if err != nil {
@@ -721,6 +716,22 @@ func (*GitProvider) AddRemoteLink(repoPath, remoteUrl string) error {
 	return nil
 }
 
+// CheckReference checks if a reference (branch or commit) exists in the repository.
+func (gp *GitProvider) CheckReference(workDir, from string) error {
+	if from == "" {
+		return nil
+	}
+
+	r, err := git.PlainOpen(workDir)
+	if err != nil {
+		return fmt.Errorf("failed to open git repository: %w", err)
+	}
+
+	_, err = resolveReference(r, from)
+
+	return err
+}
+
 func isBranchExists(name string, branches storer.ReferenceIter) (bool, error) {
 	for {
 		b, err := branches.Next()
@@ -828,4 +839,36 @@ func checkBranchExistence(user, pass *string, branchName string, r git.Repositor
 	log.Info("branch existence status", logBranchNameKey, branchName, "existBranchOrNot", existBranchOrNot)
 
 	return existBranchOrNot, nil
+}
+
+// resolveReference resolves a reference (branch or commit) to a hash.
+func resolveReference(r *git.Repository, from string) (plumbing.Hash, error) {
+	if from == "" {
+		// If no reference specified, use HEAD
+		ref, err := r.Head()
+		if err != nil {
+			return plumbing.ZeroHash, fmt.Errorf("failed to get git HEAD reference: %w", err)
+		}
+
+		return ref.Hash(), nil
+	}
+
+	// Try to resolve as a branch first
+	branchRef, err := r.Reference(plumbing.NewBranchReferenceName(from), false)
+	if err == nil {
+		return branchRef.Hash(), nil
+	}
+
+	// If not a branch, try to resolve as a commit
+	commitHash := plumbing.NewHash(from)
+	if commitHash.IsZero() {
+		return plumbing.ZeroHash, fmt.Errorf("invalid reference or commit hash: %s", from)
+	}
+
+	_, err = r.CommitObject(commitHash)
+	if err != nil {
+		return plumbing.ZeroHash, fmt.Errorf("failed to get commit %s: %w", from, err)
+	}
+
+	return commitHash, nil
 }
