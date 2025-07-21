@@ -3,7 +3,7 @@
 
 
 <a name="v2.28.0"></a>
-## v2.28.0 - 2025-06-15
+## v2.28.0 - 2025-07-21
 ### Features
 
 - Support creation git branch from another branch ([#214](https://github.com/epam/edp-codebase-operator/issues/214))
