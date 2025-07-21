@@ -1,12 +1,34 @@
 <a name="unreleased"></a>
 ## [Unreleased]
 
+### Routine
+
+- Update current development version ([#217](https://github.com/epam/edp-codebase-operator/issues/217))
+
+
+<a name="v2.28.0"></a>
+## [v2.28.0] - 2025-07-21
+### Features
+
+- Support creation git branch from another branch ([#214](https://github.com/epam/edp-codebase-operator/issues/214))
+- CodebaseBranch spec improvements ([#208](https://github.com/epam/edp-codebase-operator/issues/208))
+- Allow usage of any branch name for CodebaseBranch ([#198](https://github.com/epam/edp-codebase-operator/issues/198))
+
 ### Bug Fixes
 
+- CodebaseImageStream labels break auto-deploy ([#198](https://github.com/epam/edp-codebase-operator/issues/198))
 - Prevent cleaning build number for CodebaseBranch ([#194](https://github.com/epam/edp-codebase-operator/issues/194))
+
+### Code Refactoring
+
+- Codebase label for CodebaseBranch ([#198](https://github.com/epam/edp-codebase-operator/issues/198))
+- Update codebase and codebasebranch label to improve consistency ([#198](https://github.com/epam/edp-codebase-operator/issues/198))
 
 ### Routine
 
+- Allow overriding securityContext fields ([#212](https://github.com/epam/edp-codebase-operator/issues/212))
+- Add multi-architecture build support ([#210](https://github.com/epam/edp-codebase-operator/issues/210))
+- Update current development version ([#196](https://github.com/epam/edp-codebase-operator/issues/196))
 - Update current development version ([#192](https://github.com/epam/edp-codebase-operator/issues/192))
 - Add ImagePullSecrets field support ([#190](https://github.com/epam/edp-codebase-operator/issues/190))
 - Rename ConfigMap from 'edp-config' to 'krci-config' ([#183](https://github.com/epam/edp-codebase-operator/issues/183))
@@ -324,7 +346,215 @@ removed required fields from the GitServer status. CRD should be updated.
 <a name="v2.17.0"></a>
 ## [v2.17.0] - 2023-08-17
 
-[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.27.2...HEAD
+<a name="v2.16.0"></a>
+## [v2.16.0] - 2023-05-25
+
+<a name="v2.15.0"></a>
+## [v2.15.0] - 2023-03-24
+
+<a name="v2.14.1"></a>
+## [v2.14.1] - 2023-01-23
+
+<a name="v2.14.0"></a>
+## [v2.14.0] - 2022-12-06
+
+<a name="v2.13.2"></a>
+## [v2.13.2] - 2023-02-03
+
+<a name="v2.13.1"></a>
+## [v2.13.1] - 2022-10-28
+
+<a name="v2.13.0"></a>
+## [v2.13.0] - 2022-08-26
+
+<a name="v2.12.0"></a>
+## [v2.12.0] - 2022-05-25
+
+<a name="v2.11.0"></a>
+## [v2.11.0] - 2022-02-28
+
+<a name="v2.10.1"></a>
+## [v2.10.1] - 2022-02-21
+
+<a name="v2.10.0"></a>
+## [v2.10.0] - 2021-12-06
+
+<a name="v2.9.0"></a>
+## [v2.9.0] - 2021-12-03
+
+<a name="v2.8.1"></a>
+## [v2.8.1] - 2021-12-03
+
+<a name="v2.8.0"></a>
+## [v2.8.0] - 2021-12-03
+
+<a name="v2.7.2"></a>
+## [v2.7.2] - 2021-12-03
+
+<a name="v2.7.1"></a>
+## [v2.7.1] - 2021-12-03
+
+<a name="v2.7.0"></a>
+## [v2.7.0] - 2021-12-03
+### Reverts
+
+- [MDTUDDM-673] Save git status in the intermediate operations
+
+
+<a name="v2.3.0-95"></a>
+## [v2.3.0-95] - 2020-01-29
+
+<a name="v2.3.0-94"></a>
+## [v2.3.0-94] - 2020-01-24
+
+<a name="v2.3.0-93"></a>
+## [v2.3.0-93] - 2020-01-23
+
+<a name="v2.3.0-92"></a>
+## [v2.3.0-92] - 2020-01-22
+
+<a name="v2.3.0-91"></a>
+## [v2.3.0-91] - 2020-01-21
+
+<a name="v2.3.0-89"></a>
+## [v2.3.0-89] - 2020-01-20
+
+<a name="v2.3.0-88"></a>
+## [v2.3.0-88] - 2020-01-16
+
+<a name="v2.3.0-87"></a>
+## [v2.3.0-87] - 2020-01-16
+
+<a name="v2.3.0-86"></a>
+## [v2.3.0-86] - 2020-01-13
+
+<a name="v2.3.0-85"></a>
+## [v2.3.0-85] - 2020-01-13
+
+<a name="v2.3.0-84"></a>
+## [v2.3.0-84] - 2019-12-25
+
+<a name="v2.2.0-90"></a>
+## [v2.2.0-90] - 2020-01-21
+
+<a name="v2.2.0-83"></a>
+## [v2.2.0-83] - 2019-12-05
+
+<a name="v2.2.0-82"></a>
+## [v2.2.0-82] - 2019-12-04
+
+<a name="v2.2.0-81"></a>
+## [v2.2.0-81] - 2019-12-03
+
+<a name="v2.2.0-80"></a>
+## [v2.2.0-80] - 2019-11-27
+
+<a name="v2.2.0-79"></a>
+## [v2.2.0-79] - 2019-11-21
+
+<a name="v2.2.0-78"></a>
+## [v2.2.0-78] - 2019-11-15
+
+<a name="v2.2.0-77"></a>
+## [v2.2.0-77] - 2019-11-14
+
+<a name="v2.2.0-76"></a>
+## [v2.2.0-76] - 2019-11-13
+
+<a name="v2.2.0-75"></a>
+## [v2.2.0-75] - 2019-11-12
+
+<a name="v2.2.0-74"></a>
+## [v2.2.0-74] - 2019-11-05
+
+<a name="v2.2.0-73"></a>
+## [v2.2.0-73] - 2019-10-31
+
+<a name="v2.2.0-72"></a>
+## [v2.2.0-72] - 2019-10-28
+
+<a name="v2.2.0-71"></a>
+## [v2.2.0-71] - 2019-10-28
+
+<a name="v2.2.0-70"></a>
+## [v2.2.0-70] - 2019-10-25
+
+<a name="v2.2.0-69"></a>
+## [v2.2.0-69] - 2019-10-23
+
+<a name="v2.2.0-68"></a>
+## [v2.2.0-68] - 2019-10-15
+
+<a name="v2.2.0-67"></a>
+## [v2.2.0-67] - 2019-10-15
+
+<a name="v2.2.0-66"></a>
+## [v2.2.0-66] - 2019-10-15
+
+<a name="v2.2.0-65"></a>
+## [v2.2.0-65] - 2019-10-11
+
+<a name="v2.2.0-64"></a>
+## [v2.2.0-64] - 2019-10-04
+
+<a name="v2.2.0-63"></a>
+## [v2.2.0-63] - 2019-10-03
+
+<a name="v2.2.0-62"></a>
+## [v2.2.0-62] - 2019-10-02
+
+<a name="v2.2.0-61"></a>
+## [v2.2.0-61] - 2019-10-01
+
+<a name="v2.2.0-60"></a>
+## [v2.2.0-60] - 2019-10-01
+
+<a name="v2.2.0-59"></a>
+## [v2.2.0-59] - 2019-10-01
+
+<a name="v2.2.0-58"></a>
+## [v2.2.0-58] - 2019-09-30
+
+<a name="v2.1.0-57"></a>
+## [v2.1.0-57] - 2019-09-27
+
+<a name="v2.1.0-56"></a>
+## [v2.1.0-56] - 2019-09-27
+
+<a name="v2.1.0-55"></a>
+## [v2.1.0-55] - 2019-09-26
+
+<a name="v2.1.0-54"></a>
+## [v2.1.0-54] - 2019-09-26
+
+<a name="v2.1.0-53"></a>
+## [v2.1.0-53] - 2019-09-25
+
+<a name="v2.1.0-52"></a>
+## [v2.1.0-52] - 2019-09-19
+
+<a name="v2.1.0-51"></a>
+## [v2.1.0-51] - 2019-09-19
+
+<a name="v2.1.0-50"></a>
+## [v2.1.0-50] - 2019-09-17
+
+<a name="v2.1.0-49"></a>
+## [v2.1.0-49] - 2019-09-12
+
+<a name="v2.1.0-48"></a>
+## [v2.1.0-48] - 2019-09-10
+
+<a name="v2.1.0-47"></a>
+## v2.1.0-47 - 2019-09-10
+### Reverts
+
+- [EPMDEDP-3421] - Fix job+provisioning bug
+- [EPMDEDP-868] Add functionality generates correct ssh URL for replication config for Gerrit
+
+
+[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.28.0...HEAD
+[v2.28.0]: https://github.com/epam/edp-codebase-operator/compare/v2.27.2...v2.28.0
 [v2.27.2]: https://github.com/epam/edp-codebase-operator/compare/v2.27.1...v2.27.2
 [v2.27.1]: https://github.com/epam/edp-codebase-operator/compare/v2.27.0...v2.27.1
 [v2.27.0]: https://github.com/epam/edp-codebase-operator/compare/v2.26.0...v2.27.0
@@ -342,3 +572,68 @@ removed required fields from the GitServer status. CRD should be updated.
 [v2.18.0]: https://github.com/epam/edp-codebase-operator/compare/v2.17.1...v2.18.0
 [v2.17.1]: https://github.com/epam/edp-codebase-operator/compare/v2.17.0...v2.17.1
 [v2.17.0]: https://github.com/epam/edp-codebase-operator/compare/v2.16.0...v2.17.0
+[v2.16.0]: https://github.com/epam/edp-codebase-operator/compare/v2.15.0...v2.16.0
+[v2.15.0]: https://github.com/epam/edp-codebase-operator/compare/v2.14.1...v2.15.0
+[v2.14.1]: https://github.com/epam/edp-codebase-operator/compare/v2.14.0...v2.14.1
+[v2.14.0]: https://github.com/epam/edp-codebase-operator/compare/v2.13.2...v2.14.0
+[v2.13.2]: https://github.com/epam/edp-codebase-operator/compare/v2.13.1...v2.13.2
+[v2.13.1]: https://github.com/epam/edp-codebase-operator/compare/v2.13.0...v2.13.1
+[v2.13.0]: https://github.com/epam/edp-codebase-operator/compare/v2.12.0...v2.13.0
+[v2.12.0]: https://github.com/epam/edp-codebase-operator/compare/v2.11.0...v2.12.0
+[v2.11.0]: https://github.com/epam/edp-codebase-operator/compare/v2.10.1...v2.11.0
+[v2.10.1]: https://github.com/epam/edp-codebase-operator/compare/v2.10.0...v2.10.1
+[v2.10.0]: https://github.com/epam/edp-codebase-operator/compare/v2.9.0...v2.10.0
+[v2.9.0]: https://github.com/epam/edp-codebase-operator/compare/v2.8.1...v2.9.0
+[v2.8.1]: https://github.com/epam/edp-codebase-operator/compare/v2.8.0...v2.8.1
+[v2.8.0]: https://github.com/epam/edp-codebase-operator/compare/v2.7.2...v2.8.0
+[v2.7.2]: https://github.com/epam/edp-codebase-operator/compare/v2.7.1...v2.7.2
+[v2.7.1]: https://github.com/epam/edp-codebase-operator/compare/v2.7.0...v2.7.1
+[v2.7.0]: https://github.com/epam/edp-codebase-operator/compare/v2.3.0-95...v2.7.0
+[v2.3.0-95]: https://github.com/epam/edp-codebase-operator/compare/v2.3.0-94...v2.3.0-95
+[v2.3.0-94]: https://github.com/epam/edp-codebase-operator/compare/v2.3.0-93...v2.3.0-94
+[v2.3.0-93]: https://github.com/epam/edp-codebase-operator/compare/v2.3.0-92...v2.3.0-93
+[v2.3.0-92]: https://github.com/epam/edp-codebase-operator/compare/v2.3.0-91...v2.3.0-92
+[v2.3.0-91]: https://github.com/epam/edp-codebase-operator/compare/v2.3.0-89...v2.3.0-91
+[v2.3.0-89]: https://github.com/epam/edp-codebase-operator/compare/v2.3.0-88...v2.3.0-89
+[v2.3.0-88]: https://github.com/epam/edp-codebase-operator/compare/v2.3.0-87...v2.3.0-88
+[v2.3.0-87]: https://github.com/epam/edp-codebase-operator/compare/v2.3.0-86...v2.3.0-87
+[v2.3.0-86]: https://github.com/epam/edp-codebase-operator/compare/v2.3.0-85...v2.3.0-86
+[v2.3.0-85]: https://github.com/epam/edp-codebase-operator/compare/v2.3.0-84...v2.3.0-85
+[v2.3.0-84]: https://github.com/epam/edp-codebase-operator/compare/v2.2.0-90...v2.3.0-84
+[v2.2.0-90]: https://github.com/epam/edp-codebase-operator/compare/v2.2.0-83...v2.2.0-90
+[v2.2.0-83]: https://github.com/epam/edp-codebase-operator/compare/v2.2.0-82...v2.2.0-83
+[v2.2.0-82]: https://github.com/epam/edp-codebase-operator/compare/v2.2.0-81...v2.2.0-82
+[v2.2.0-81]: https://github.com/epam/edp-codebase-operator/compare/v2.2.0-80...v2.2.0-81
+[v2.2.0-80]: https://github.com/epam/edp-codebase-operator/compare/v2.2.0-79...v2.2.0-80
+[v2.2.0-79]: https://github.com/epam/edp-codebase-operator/compare/v2.2.0-78...v2.2.0-79
+[v2.2.0-78]: https://github.com/epam/edp-codebase-operator/compare/v2.2.0-77...v2.2.0-78
+[v2.2.0-77]: https://github.com/epam/edp-codebase-operator/compare/v2.2.0-76...v2.2.0-77
+[v2.2.0-76]: https://github.com/epam/edp-codebase-operator/compare/v2.2.0-75...v2.2.0-76
+[v2.2.0-75]: https://github.com/epam/edp-codebase-operator/compare/v2.2.0-74...v2.2.0-75
+[v2.2.0-74]: https://github.com/epam/edp-codebase-operator/compare/v2.2.0-73...v2.2.0-74
+[v2.2.0-73]: https://github.com/epam/edp-codebase-operator/compare/v2.2.0-72...v2.2.0-73
+[v2.2.0-72]: https://github.com/epam/edp-codebase-operator/compare/v2.2.0-71...v2.2.0-72
+[v2.2.0-71]: https://github.com/epam/edp-codebase-operator/compare/v2.2.0-70...v2.2.0-71
+[v2.2.0-70]: https://github.com/epam/edp-codebase-operator/compare/v2.2.0-69...v2.2.0-70
+[v2.2.0-69]: https://github.com/epam/edp-codebase-operator/compare/v2.2.0-68...v2.2.0-69
+[v2.2.0-68]: https://github.com/epam/edp-codebase-operator/compare/v2.2.0-67...v2.2.0-68
+[v2.2.0-67]: https://github.com/epam/edp-codebase-operator/compare/v2.2.0-66...v2.2.0-67
+[v2.2.0-66]: https://github.com/epam/edp-codebase-operator/compare/v2.2.0-65...v2.2.0-66
+[v2.2.0-65]: https://github.com/epam/edp-codebase-operator/compare/v2.2.0-64...v2.2.0-65
+[v2.2.0-64]: https://github.com/epam/edp-codebase-operator/compare/v2.2.0-63...v2.2.0-64
+[v2.2.0-63]: https://github.com/epam/edp-codebase-operator/compare/v2.2.0-62...v2.2.0-63
+[v2.2.0-62]: https://github.com/epam/edp-codebase-operator/compare/v2.2.0-61...v2.2.0-62
+[v2.2.0-61]: https://github.com/epam/edp-codebase-operator/compare/v2.2.0-60...v2.2.0-61
+[v2.2.0-60]: https://github.com/epam/edp-codebase-operator/compare/v2.2.0-59...v2.2.0-60
+[v2.2.0-59]: https://github.com/epam/edp-codebase-operator/compare/v2.2.0-58...v2.2.0-59
+[v2.2.0-58]: https://github.com/epam/edp-codebase-operator/compare/v2.1.0-57...v2.2.0-58
+[v2.1.0-57]: https://github.com/epam/edp-codebase-operator/compare/v2.1.0-56...v2.1.0-57
+[v2.1.0-56]: https://github.com/epam/edp-codebase-operator/compare/v2.1.0-55...v2.1.0-56
+[v2.1.0-55]: https://github.com/epam/edp-codebase-operator/compare/v2.1.0-54...v2.1.0-55
+[v2.1.0-54]: https://github.com/epam/edp-codebase-operator/compare/v2.1.0-53...v2.1.0-54
+[v2.1.0-53]: https://github.com/epam/edp-codebase-operator/compare/v2.1.0-52...v2.1.0-53
+[v2.1.0-52]: https://github.com/epam/edp-codebase-operator/compare/v2.1.0-51...v2.1.0-52
+[v2.1.0-51]: https://github.com/epam/edp-codebase-operator/compare/v2.1.0-50...v2.1.0-51
+[v2.1.0-50]: https://github.com/epam/edp-codebase-operator/compare/v2.1.0-49...v2.1.0-50
+[v2.1.0-49]: https://github.com/epam/edp-codebase-operator/compare/v2.1.0-48...v2.1.0-49
+[v2.1.0-48]: https://github.com/epam/edp-codebase-operator/compare/v2.1.0-47...v2.1.0-48
