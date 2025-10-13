@@ -22,6 +22,7 @@ import (
 	gerritmocks "github.com/epam/edp-codebase-operator/v2/pkg/gerrit/mocks"
 	"github.com/epam/edp-codebase-operator/v2/pkg/git"
 	gitmocks "github.com/epam/edp-codebase-operator/v2/pkg/git/mocks"
+	gitlabci "github.com/epam/edp-codebase-operator/v2/pkg/gitlab"
 	"github.com/epam/edp-codebase-operator/v2/pkg/gitprovider"
 	gitprovidermock "github.com/epam/edp-codebase-operator/v2/pkg/gitprovider/mocks"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
@@ -1228,6 +1229,80 @@ func TestPutProject_ServeRequest(t *testing.T) {
 				assert.Equal(t, util.ProjectTemplatesPushedStatus, status.Git)
 			},
 		},
+		{
+			name: "gitlab with gitlab ci - should inject gitlab ci config successfully",
+			codebase: &codebaseApi.Codebase{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "java-app",
+					Namespace: defaultNs,
+				},
+				Spec: codebaseApi.CodebaseSpec{
+					Strategy:      codebaseApi.Create,
+					GitServer:     gitlabGitServer.Name,
+					GitUrlPath:    "/owner/java-repo",
+					DefaultBranch: "master",
+					Lang:          "java",
+					BuildTool:     "maven",
+					CiTool:        util.CIGitLab,
+				},
+			},
+			objects: []client.Object{
+				gitlabGitServer,
+				gitlabGitServerSecret,
+				&corev1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "gitlab-ci-java-maven",
+						Namespace: defaultNs,
+					},
+					Data: map[string]string{
+						".gitlab-ci.yml": "variables:\n  CODEBASE_NAME: \"{{.CodebaseName}}\"\ninclude:\n  - component: $CI_SERVER_FQDN/kuberocketci/ci-java17-mvn/build@0.1.1",
+					},
+				},
+			},
+			gitClient: func(t *testing.T) git.Git {
+				mock := gitmocks.NewMockGit(t)
+
+				mock.On("CheckPermissions", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
+					Return(true).
+					On("CloneRepository", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
+					Return(nil).
+					On("Init", testify.Anything).
+					Return(nil).
+					On("CommitChanges", testify.Anything, testify.Anything).
+					Return(nil).
+					On("GetCurrentBranchName", testify.Anything).
+					Return("feature", nil).
+					On("Checkout", testify.Anything, testify.Anything, testify.Anything, testify.Anything, false).
+					Return(nil).
+					On("AddRemoteLink", testify.Anything, testify.Anything).
+					Return(nil).
+					On("PushChanges", testify.Anything, testify.Anything, testify.Anything, testify.Anything, testify.Anything).
+					Return(nil)
+
+				return mock
+			},
+			gerritClient: func(t *testing.T) gerrit.Client {
+				return gerritmocks.NewMockClient(t)
+			},
+			gitProvider: func(t *testing.T) func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
+				mock := gitprovidermock.NewMockGitProjectProvider(t)
+
+				mock.On("ProjectExists", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
+					Return(false, nil).
+					On("CreateProject", testify.Anything, testify.Anything, testify.Anything, testify.Anything, testify.Anything).
+					Return(nil).
+					On("SetDefaultBranch", testify.Anything, testify.Anything, testify.Anything, testify.Anything, testify.Anything).
+					Return(nil)
+
+				return func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
+					return mock, nil
+				}
+			},
+			wantErr: require.NoError,
+			wantStatus: func(t *testing.T, status *codebaseApi.CodebaseStatus) {
+				assert.Equal(t, util.ProjectPushedStatus, status.Git)
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -1247,6 +1322,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 				tt.gitClient(t),
 				tt.gerritClient(t),
 				tt.gitProvider(t),
+				gitlabci.NewManager(k8sClient),
 			)
 
 			err := h.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), tt.codebase)

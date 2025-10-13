@@ -10,6 +10,7 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/controllers/codebase/service/chain/handler"
 	"github.com/epam/edp-codebase-operator/v2/pkg/gerrit"
 	"github.com/epam/edp-codebase-operator/v2/pkg/git"
+	gitlabci "github.com/epam/edp-codebase-operator/v2/pkg/gitlab"
 	"github.com/epam/edp-codebase-operator/v2/pkg/gitprovider"
 )
 
@@ -20,10 +21,11 @@ func MakeChain(ctx context.Context, c client.Client) handler.CodebaseHandler {
 
 	ch := &chain{}
 	gp := &git.GitProvider{}
+	gitlabCIManager := gitlabci.NewManager(c)
 
 	ch.Use(
 		NewPutGitWebRepoUrl(c),
-		NewPutProject(c, gp, &gerrit.SSHGerritClient{}, gitprovider.NewGitProjectProvider),
+		NewPutProject(c, gp, &gerrit.SSHGerritClient{}, gitprovider.NewGitProjectProvider, gitlabCIManager),
 		NewPutWebHook(c, resty.New()),
 		NewPutDeployConfigs(c, gp),
 		NewPutDefaultCodeBaseBranch(c),
