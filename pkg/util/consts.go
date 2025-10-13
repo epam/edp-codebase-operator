@@ -41,6 +41,7 @@ const (
 	GithubDomain = "https://github.com/epmd-edp"
 
 	CITekton = "tekton"
+	CIGitLab = "gitlab"
 
 	// finalizers.
 	ForegroundDeletionFinalizerName = "foregroundDeletion"

@@ -1,0 +1,105 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gitlab-ci-go
+  namespace: krci
+  labels:
+    app: gitlab-ci-templates
+    language: go
+    buildtool: go
+data:
+  .gitlab-ci.yml: |
+    workflow:
+      rules:
+        # Run pipeline for merge request events
+        - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+        # Run pipeline for pushes to protected branches (main, master, etc.)
+        - if: $CI_COMMIT_REF_PROTECTED == "true"
+
+        # Run pipeline for semantic version tags (e.g., 1.0.0, 2.1.3)
+        - if: $CI_COMMIT_TAG =~ /^\d+\.\d+\.\d+$/
+
+    # ============================================================================
+    # GLOBAL VARIABLES - CUSTOMIZE FOR YOUR PROJECT
+    # ============================================================================
+    variables:
+      # Project identification
+      CODEBASE_NAME: "{{.CodebaseName}}"
+
+      # Container image for build/test jobs - Go 1.21
+      CONTAINER_IMAGE: "golang:1.21-alpine"
+
+      # Container registry for Docker images
+      IMAGE_REGISTRY: "docker.io/myorg"
+
+      # SonarQube organization
+      # Project key: ${SONAR_ORG}_${CODEBASE_NAME}
+      SONAR_ORG: "myorg"
+
+      # Helm chart directory
+      CHART_DIR: "deploy-templates"
+
+    # ============================================================================
+    # COMPONENT INCLUSION - CONDITIONAL PIPELINE EXECUTION
+    # ============================================================================
+    include:
+      # REVIEW COMPONENT - Merge Request Validation Pipeline
+      # Runs: test → build → verify (NO publishing)
+      # Stages: prepare, test, build, verify
+      - component: $CI_SERVER_FQDN/kuberocketci/ci-golang/review@0.1.1
+        inputs:
+          stage_prepare: prepare
+          stage_test: test
+          stage_build: build
+          stage_verify: verify
+          codebase_name: ${CODEBASE_NAME}
+          container_image: ${CONTAINER_IMAGE}
+          chart_dir: ${CHART_DIR}
+        rules:
+          # Only run for merge request events
+          - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+      # BUILD COMPONENT - Main Branch Build and Publish Pipeline
+      # Runs: test → build → package → publish
+      # Stages: prepare, test, build, package, publish
+      - component: $CI_SERVER_FQDN/kuberocketci/ci-golang/build@0.1.1
+        inputs:
+          stage_prepare: prepare
+          stage_test: test
+          stage_build: build
+          stage_package: package
+          stage_publish: publish
+          codebase_name: ${CODEBASE_NAME}
+          container_image: ${CONTAINER_IMAGE}
+          image_registry: ${IMAGE_REGISTRY}
+          chart_dir: ${CHART_DIR}
+        rules:
+          # Run for main/master branch OR any protected branch
+          - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH || $CI_COMMIT_REF_PROTECTED == "true"
+
+    stages: [prepare, test, build, verify, package, publish, release]
+
+    # ============================================================================
+    # VISIBLE JOB (NEVER RUN) - FOR GITLAB UI VISIBILITY
+    # ============================================================================
+    # This job makes the pipeline visible in GitLab UI but never actually runs
+    visible-job-lint-fix:
+      stage: .pre
+      rules: [when: never]
+      script: [echo "This is a visible job (but never run)"]
+
+    # ============================================================================
+    # RELEASE JOB - SEMANTIC VERSION TAG RELEASE
+    # ============================================================================
+    # Creates a GitLab release when a semantic version tag is pushed
+    # Requires: Git tag matching pattern ^\d+\.\d+\.\d+$ (e.g., 1.0.0, 2.1.3)
+    create-release:
+      stage: release
+      image: registry.gitlab.com/gitlab-org/release-cli:latest
+      rules:
+        - if: $CI_COMMIT_TAG =~ /^\d+\.\d+\.\d+$/
+      script: echo "Creating release $CI_COMMIT_TAG"
+      release:
+        tag_name: $CI_COMMIT_TAG
+        description: "Release $CI_COMMIT_TAG of components repository $CI_PROJECT_PATH"

@@ -17,6 +17,7 @@ import (
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/gerrit"
 	"github.com/epam/edp-codebase-operator/v2/pkg/git"
+	gitlabci "github.com/epam/edp-codebase-operator/v2/pkg/gitlab"
 	"github.com/epam/edp-codebase-operator/v2/pkg/gitprovider"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
@@ -26,6 +27,7 @@ type PutProject struct {
 	git                git.Git
 	gerrit             gerrit.Client
 	gitProjectProvider func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error)
+	gitlabCIManager    gitlabci.Manager
 }
 
 var (
@@ -38,8 +40,9 @@ func NewPutProject(
 	g git.Git,
 	gerritProvider gerrit.Client,
 	gitProjectProvider func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error),
+	gitlabCIManager gitlabci.Manager,
 ) *PutProject {
-	return &PutProject{client: c, git: g, gerrit: gerritProvider, gitProjectProvider: gitProjectProvider}
+	return &PutProject{client: c, git: g, gerrit: gerritProvider, gitProjectProvider: gitProjectProvider, gitlabCIManager: gitlabCIManager}
 }
 
 func (h *PutProject) ServeRequest(ctx context.Context, codebase *codebaseApi.Codebase) error {
@@ -147,6 +150,13 @@ func (h *PutProject) createProject(
 	err := h.pushProject(ctx, gitServer, privateSSHKey, codebase.Spec.GetProjectID(), workDir)
 	if err != nil {
 		return err
+	}
+
+	// Inject GitLab CI configuration if needed
+	if codebase.Spec.CiTool == util.CIGitLab {
+		if err := h.injectGitLabCIConfig(ctx, codebase, workDir); err != nil {
+			return fmt.Errorf("failed to inject GitLab CI config: %w", err)
+		}
 	}
 
 	err = h.setDefaultBranch(ctx, gitServer, codebase, gitProviderToken, privateSSHKey)
@@ -494,6 +504,26 @@ func (h *PutProject) notEmptyProjectProvisioning(ctx context.Context, codebase *
 	if err = h.squashCommits(ctx, wd, codebase.Spec.Strategy); err != nil {
 		return fmt.Errorf("failed to squash commits in a template repo: %w", err)
 	}
+
+	return nil
+}
+
+// injectGitLabCIConfig injects GitLab CI configuration.
+func (h *PutProject) injectGitLabCIConfig(
+	ctx context.Context,
+	codebase *codebaseApi.Codebase,
+	workDir string,
+) error {
+	log := ctrl.LoggerFrom(ctx)
+
+	log.Info("Injecting GitLab CI configuration")
+
+	// Use the GitLab CI manager to create the config file
+	if err := h.gitlabCIManager.InjectGitLabCIConfig(ctx, codebase, workDir); err != nil {
+		return fmt.Errorf("failed to create GitLab CI config: %w", err)
+	}
+
+	log.Info("GitLab CI configuration injected successfully")
 
 	return nil
 }
