@@ -144,7 +144,7 @@ func (in *CodebaseSpec) IsVersionTypeSemver() bool {
 type ActionType string
 
 const (
-	GerritRepositoryProvisioning     ActionType = "gerrit_repository_provisioning"
+	RepositoryProvisioning           ActionType = "repository_provisioning"
 	CIConfiguration                  ActionType = "ci_configuration"
 	SetupDeploymentTemplates         ActionType = "setup_deployment_templates"
 	AcceptCodebaseBranchRegistration ActionType = "accept_codebase_branch_registration"
