@@ -36,6 +36,7 @@ const (
 	V2APIVersion      = "v2.edp.epam.com/v1"
 
 	ProjectPushedStatus          = "pushed"
+	ProjectGitLabCIPushedStatus  = "gitlab_ci_pushed"
 	ProjectTemplatesPushedStatus = "templates_pushed"
 
 	GithubDomain = "https://github.com/epmd-edp"

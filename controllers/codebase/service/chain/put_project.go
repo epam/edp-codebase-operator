@@ -17,7 +17,6 @@ import (
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/gerrit"
 	"github.com/epam/edp-codebase-operator/v2/pkg/git"
-	gitlabci "github.com/epam/edp-codebase-operator/v2/pkg/gitlab"
 	"github.com/epam/edp-codebase-operator/v2/pkg/gitprovider"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
@@ -27,11 +26,10 @@ type PutProject struct {
 	git                git.Git
 	gerrit             gerrit.Client
 	gitProjectProvider func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error)
-	gitlabCIManager    gitlabci.Manager
 }
 
 var (
-	skipPutProjectStatuses = []string{util.ProjectPushedStatus, util.ProjectTemplatesPushedStatus}
+	skipPutProjectStatuses = []string{util.ProjectPushedStatus, util.ProjectGitLabCIPushedStatus, util.ProjectTemplatesPushedStatus}
 	putProjectStrategies   = []codebaseApi.Strategy{codebaseApi.Clone, codebaseApi.Create}
 )
 
@@ -40,9 +38,8 @@ func NewPutProject(
 	g git.Git,
 	gerritProvider gerrit.Client,
 	gitProjectProvider func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error),
-	gitlabCIManager gitlabci.Manager,
 ) *PutProject {
-	return &PutProject{client: c, git: g, gerrit: gerritProvider, gitProjectProvider: gitProjectProvider, gitlabCIManager: gitlabCIManager}
+	return &PutProject{client: c, git: g, gerrit: gerritProvider, gitProjectProvider: gitProjectProvider}
 }
 
 func (h *PutProject) ServeRequest(ctx context.Context, codebase *codebaseApi.Codebase) error {
@@ -54,7 +51,7 @@ func (h *PutProject) ServeRequest(ctx context.Context, codebase *codebaseApi.Cod
 
 	log.Info("Start putting project", "spec", codebase.Spec)
 
-	err := setIntermediateSuccessFields(ctx, h.client, codebase, codebaseApi.GerritRepositoryProvisioning)
+	err := setIntermediateSuccessFields(ctx, h.client, codebase, codebaseApi.RepositoryProvisioning)
 	if err != nil {
 		return fmt.Errorf("failed to update Codebase %v status: %w", codebase.Name, err)
 	}
@@ -62,7 +59,7 @@ func (h *PutProject) ServeRequest(ctx context.Context, codebase *codebaseApi.Cod
 	wd := util.GetWorkDir(codebase.Name, codebase.Namespace)
 
 	if err = util.CreateDirectory(wd); err != nil {
-		setFailedFields(codebase, codebaseApi.GerritRepositoryProvisioning, err.Error())
+		setFailedFields(codebase, codebaseApi.RepositoryProvisioning, err.Error())
 
 		return fmt.Errorf("failed to create dir %q: %w", wd, err)
 	}
@@ -73,31 +70,31 @@ func (h *PutProject) ServeRequest(ctx context.Context, codebase *codebaseApi.Cod
 		client.ObjectKey{Name: codebase.Spec.GitServer, Namespace: codebase.Namespace},
 		gitServer,
 	); err != nil {
-		setFailedFields(codebase, codebaseApi.GerritRepositoryProvisioning, err.Error())
+		setFailedFields(codebase, codebaseApi.RepositoryProvisioning, err.Error())
 
 		return fmt.Errorf("failed to get GitServer %s: %w", codebase.Spec.GitServer, err)
 	}
 
 	err = h.initialProjectProvisioning(ctx, codebase, wd)
 	if err != nil {
-		setFailedFields(codebase, codebaseApi.GerritRepositoryProvisioning, err.Error())
+		setFailedFields(codebase, codebaseApi.RepositoryProvisioning, err.Error())
 		return fmt.Errorf("failed to perform initial provisioning of codebase %v: %w", codebase.Name, err)
 	}
 
 	if err = h.checkoutBranch(ctrl.LoggerInto(ctx, log), codebase, wd); err != nil {
-		setFailedFields(codebase, codebaseApi.GerritRepositoryProvisioning, err.Error())
+		setFailedFields(codebase, codebaseApi.RepositoryProvisioning, err.Error())
 		return err
 	}
 
 	err = h.createProject(ctrl.LoggerInto(ctx, log), codebase, gitServer, wd)
 	if err != nil {
-		setFailedFields(codebase, codebaseApi.GerritRepositoryProvisioning, err.Error())
+		setFailedFields(codebase, codebaseApi.RepositoryProvisioning, err.Error())
 		return fmt.Errorf("failed to create project: %w", err)
 	}
 
 	codebase.Status.Git = util.ProjectPushedStatus
 	if err = h.client.Status().Update(ctx, codebase); err != nil {
-		setFailedFields(codebase, codebaseApi.GerritRepositoryProvisioning, err.Error())
+		setFailedFields(codebase, codebaseApi.RepositoryProvisioning, err.Error())
 		return fmt.Errorf("failed to set git status %s for codebase %s: %w", util.ProjectPushedStatus, codebase.Name, err)
 	}
 
@@ -152,13 +149,6 @@ func (h *PutProject) createProject(
 		return err
 	}
 
-	// Inject GitLab CI configuration if needed
-	if codebase.Spec.CiTool == util.CIGitLab {
-		if err := h.injectGitLabCIConfig(ctx, codebase, workDir); err != nil {
-			return fmt.Errorf("failed to inject GitLab CI config: %w", err)
-		}
-	}
-
 	err = h.setDefaultBranch(ctx, gitServer, codebase, gitProviderToken, privateSSHKey)
 	if err != nil {
 		return err
@@ -184,7 +174,7 @@ func (h *PutProject) replaceDefaultBranch(ctx context.Context, directory, defaul
 		return fmt.Errorf("failed to create child branch: %w", err)
 	}
 
-	log.Info("Project has been successfully created")
+	log.Info("Branch has been successfully created")
 
 	return nil
 }
@@ -193,13 +183,13 @@ func (h *PutProject) pushProject(ctx context.Context, gitServer *codebaseApi.Git
 	log := ctrl.LoggerFrom(ctx).WithValues("gitProvider", gitServer.Spec.GitProvider)
 
 	log.Info("Start pushing project")
-	log.Info("Start adding remote link to Gerrit")
+	log.Info("Start adding remote link")
 
 	if err := h.git.AddRemoteLink(
 		directory,
 		util.GetSSHUrl(gitServer, projectName),
 	); err != nil {
-		return fmt.Errorf("failed to add remote link to Gerrit: %w", err)
+		return fmt.Errorf("failed to add remote link: %w", err)
 	}
 
 	log.Info("Start pushing changes into git")
@@ -504,26 +494,6 @@ func (h *PutProject) notEmptyProjectProvisioning(ctx context.Context, codebase *
 	if err = h.squashCommits(ctx, wd, codebase.Spec.Strategy); err != nil {
 		return fmt.Errorf("failed to squash commits in a template repo: %w", err)
 	}
-
-	return nil
-}
-
-// injectGitLabCIConfig injects GitLab CI configuration.
-func (h *PutProject) injectGitLabCIConfig(
-	ctx context.Context,
-	codebase *codebaseApi.Codebase,
-	workDir string,
-) error {
-	log := ctrl.LoggerFrom(ctx)
-
-	log.Info("Injecting GitLab CI configuration")
-
-	// Use the GitLab CI manager to create the config file
-	if err := h.gitlabCIManager.InjectGitLabCIConfig(ctx, codebase, workDir); err != nil {
-		return fmt.Errorf("failed to create GitLab CI config: %w", err)
-	}
-
-	log.Info("GitLab CI configuration injected successfully")
 
 	return nil
 }
