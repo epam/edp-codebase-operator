@@ -58,11 +58,8 @@ func (h *PutGitLabCIConfig) ServeRequest(ctx context.Context, codebase *codebase
 	log.Info("End pushing GitLab CI config")
 
 	// Set status to mark this stage complete
-	codebase.Status.Git = util.ProjectGitLabCIPushedStatus
-	if err := h.client.Status().Update(ctx, codebase); err != nil {
-		setFailedFields(codebase, codebaseApi.RepositoryProvisioning, err.Error())
-		return fmt.Errorf("failed to set git status %s for codebase %s: %w",
-			util.ProjectGitLabCIPushedStatus, codebase.Name, err)
+	if err := updateGitStatusWithPatch(ctx, h.client, codebase, codebaseApi.RepositoryProvisioning, util.ProjectGitLabCIPushedStatus); err != nil {
+		return err
 	}
 
 	log.Info("GitLab CI status has been set successfully")

@@ -40,3 +40,34 @@ func setIntermediateSuccessFields(ctx context.Context, c client.Client, cb *code
 
 	return nil
 }
+
+// updateGitStatusWithPatch updates the codebase Git status using Patch instead of Update.
+// If a conflict occurs, the function returns an error, causing the reconciliation
+// to requeue automatically via the controller-runtime framework.
+func updateGitStatusWithPatch(
+	ctx context.Context,
+	c client.Client,
+	codebase *codebaseApi.Codebase,
+	action codebaseApi.ActionType,
+	gitStatus string,
+) error {
+	// Skip update if status already matches (idempotency check)
+	if codebase.Status.Git == gitStatus {
+		return nil
+	}
+
+	// Create patch based on current object state
+	patch := client.MergeFrom(codebase.DeepCopy())
+
+	// Modify the status field
+	codebase.Status.Git = gitStatus
+
+	// Apply patch to status subresource
+	if err := c.Status().Patch(ctx, codebase, patch); err != nil {
+		setFailedFields(codebase, action, err.Error())
+		return fmt.Errorf("failed to patch git status to %s for codebase %s: %w",
+			gitStatus, codebase.Name, err)
+	}
+
+	return nil
+}

@@ -145,9 +145,8 @@ func (h *PutDeployConfigs) tryToPushConfigs(ctx context.Context, codebase *codeb
 
 	log.Info("Changes have been pushed")
 
-	codebase.Status.Git = util.ProjectTemplatesPushedStatus
-	if err = h.client.Status().Update(ctx, codebase); err != nil {
-		return fmt.Errorf("failed to set git status %s for codebase %s: %w", util.ProjectTemplatesPushedStatus, codebase.Name, err)
+	if err = updateGitStatusWithPatch(ctx, h.client, codebase, codebaseApi.SetupDeploymentTemplates, util.ProjectTemplatesPushedStatus); err != nil {
+		return err
 	}
 
 	log.Info("Config has been pushed")
