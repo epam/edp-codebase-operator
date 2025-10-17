@@ -92,10 +92,8 @@ func (h *PutProject) ServeRequest(ctx context.Context, codebase *codebaseApi.Cod
 		return fmt.Errorf("failed to create project: %w", err)
 	}
 
-	codebase.Status.Git = util.ProjectPushedStatus
-	if err = h.client.Status().Update(ctx, codebase); err != nil {
-		setFailedFields(codebase, codebaseApi.RepositoryProvisioning, err.Error())
-		return fmt.Errorf("failed to set git status %s for codebase %s: %w", util.ProjectPushedStatus, codebase.Name, err)
+	if err = updateGitStatusWithPatch(ctx, h.client, codebase, codebaseApi.RepositoryProvisioning, util.ProjectPushedStatus); err != nil {
+		return err
 	}
 
 	log.Info("Finish putting project")
