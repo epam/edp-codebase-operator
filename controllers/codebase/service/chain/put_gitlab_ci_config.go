@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 
-	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -82,48 +81,17 @@ func (h *PutGitLabCIConfig) gitlabCIAlreadyExists(codebase *codebaseApi.Codebase
 func (h *PutGitLabCIConfig) tryToPushGitLabCIConfig(ctx context.Context, codebase *codebaseApi.Codebase) error {
 	log := ctrl.LoggerFrom(ctx)
 
-	gitServer := &codebaseApi.GitServer{}
-	if err := h.client.Get(ctx, client.ObjectKey{Name: codebase.Spec.GitServer, Namespace: codebase.Namespace}, gitServer); err != nil {
-		return fmt.Errorf("failed to get GitServer: %w", err)
-	}
-
-	gitServerSecret := &corev1.Secret{}
-	if err := h.client.Get(ctx, client.ObjectKey{Name: gitServer.Spec.NameSshKeySecret, Namespace: codebase.Namespace}, gitServerSecret); err != nil {
-		return fmt.Errorf("failed to get GitServer secret: %w", err)
-	}
-
-	privateSSHKey := string(gitServerSecret.Data[util.PrivateSShKeyName])
-	repoSshUrl := util.GetSSHUrl(gitServer, codebase.Spec.GetProjectID())
-	wd := util.GetWorkDir(codebase.Name, codebase.Namespace)
-
-	// Ensure we have the repository locally
-	if !util.DoesDirectoryExist(wd) || util.IsDirectoryEmpty(wd) {
-		log.Info("Start cloning repository", "url", repoSshUrl)
-
-		if err := h.git.CloneRepositoryBySsh(ctx, privateSSHKey, gitServer.Spec.GitUser, repoSshUrl, wd, gitServer.Spec.SshPort); err != nil {
-			return fmt.Errorf("failed to clone git repository: %w", err)
-		}
-
-		log.Info("Repository has been cloned", "url", repoSshUrl)
-	}
-
-	ru, err := util.GetRepoUrl(codebase)
+	// Prepare git repository (get server, clone, checkout)
+	gitCtx, err := PrepareGitRepository(ctx, h.client, h.git, codebase)
 	if err != nil {
-		return fmt.Errorf("failed to build repo url: %w", err)
+		setFailedFields(codebase, codebaseApi.RepositoryProvisioning, err.Error())
+		return fmt.Errorf("failed to prepare git repository: %w", err)
 	}
 
-	log.Info("Start checkout default branch", "branch", codebase.Spec.DefaultBranch, "repo", ru)
-
-	err = CheckoutBranch(ru, wd, codebase.Spec.DefaultBranch, h.git, codebase, h.client)
-	if err != nil {
-		return fmt.Errorf("failed to checkout default branch %v: %w", codebase.Spec.DefaultBranch, err)
-	}
-
-	log.Info("Default branch has been checked out")
+	// Inject GitLab CI configuration
 	log.Info("Start injecting GitLab CI config")
 
-	// Inject the GitLab CI configuration
-	err = h.gitlabCIManager.InjectGitLabCIConfig(ctx, codebase, wd)
+	err = h.gitlabCIManager.InjectGitLabCIConfig(ctx, codebase, gitCtx.WorkDir)
 	if err != nil {
 		return fmt.Errorf("failed to inject GitLab CI config: %w", err)
 	}
@@ -131,7 +99,8 @@ func (h *PutGitLabCIConfig) tryToPushGitLabCIConfig(ctx context.Context, codebas
 	log.Info("GitLab CI config has been injected")
 	log.Info("Start committing changes")
 
-	err = h.git.CommitChanges(wd, "Add GitLab CI configuration")
+	// Commit changes
+	err = h.git.CommitChanges(gitCtx.WorkDir, "Add GitLab CI configuration")
 	if err != nil {
 		return fmt.Errorf("failed to commit changes: %w", err)
 	}
@@ -139,7 +108,14 @@ func (h *PutGitLabCIConfig) tryToPushGitLabCIConfig(ctx context.Context, codebas
 	log.Info("Changes have been committed")
 	log.Info("Start pushing changes")
 
-	err = h.git.PushChanges(privateSSHKey, gitServer.Spec.GitUser, wd, gitServer.Spec.SshPort, "--all")
+	// Push changes
+	err = h.git.PushChanges(
+		gitCtx.PrivateSSHKey,
+		gitCtx.GitServer.Spec.GitUser,
+		gitCtx.WorkDir,
+		gitCtx.GitServer.Spec.SshPort,
+		"--all",
+	)
 	if err != nil {
 		return fmt.Errorf("failed to push changes: %w", err)
 	}

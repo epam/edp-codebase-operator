@@ -5,12 +5,26 @@ import (
 	"fmt"
 	"strconv"
 
+	corev1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
+	"github.com/epam/edp-codebase-operator/v2/pkg/git"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
+
+// GitRepositoryContext holds all context needed for git operations.
+// It contains the GitServer configuration, credentials, and paths
+// required for SSH-based git operations.
+type GitRepositoryContext struct {
+	GitServer     *codebaseApi.GitServer
+	Secret        *corev1.Secret
+	PrivateSSHKey string
+	RepoSSHUrl    string
+	WorkDir       string
+}
 
 func setIntermediateSuccessFields(ctx context.Context, c client.Client, cb *codebaseApi.Codebase, action codebaseApi.ActionType) error {
 	// Set WebHookRef from WebHookID for backward compatibility.
@@ -70,4 +84,93 @@ func updateGitStatusWithPatch(
 	}
 
 	return nil
+}
+
+// PrepareGitRepository performs complete git repository preparation workflow:
+// 1. Retrieves GitServer resource and its Secret
+// 2. Extracts SSH credentials and builds repository paths
+// 3. Clones repository via SSH if not already present locally
+// 4. Checks out the codebase's default branch
+//
+// This function handles the common git setup operations shared across
+// multiple chain handlers. Provider-specific operations (e.g., Gerrit hooks)
+// should be handled by the caller after this function returns.
+//
+// Returns GitRepositoryContext containing all necessary context for
+// subsequent git operations (commit, push, etc.).
+func PrepareGitRepository(
+	ctx context.Context,
+	c client.Client,
+	g git.Git,
+	codebase *codebaseApi.Codebase,
+) (*GitRepositoryContext, error) {
+	log := ctrl.LoggerFrom(ctx)
+
+	// Step 1: Retrieve GitServer resource
+	gitServer := &codebaseApi.GitServer{}
+	if err := c.Get(
+		ctx,
+		client.ObjectKey{Name: codebase.Spec.GitServer, Namespace: codebase.Namespace},
+		gitServer,
+	); err != nil {
+		return nil, fmt.Errorf("failed to get GitServer: %w", err)
+	}
+
+	// Step 2: Retrieve GitServer Secret
+	gitServerSecret := &corev1.Secret{}
+	if err := c.Get(
+		ctx,
+		client.ObjectKey{Name: gitServer.Spec.NameSshKeySecret, Namespace: codebase.Namespace},
+		gitServerSecret,
+	); err != nil {
+		return nil, fmt.Errorf("failed to get GitServer secret: %w", err)
+	}
+
+	// Step 3: Extract SSH key and build paths
+	privateSSHKey := string(gitServerSecret.Data[util.PrivateSShKeyName])
+	repoSshUrl := util.GetSSHUrl(gitServer, codebase.Spec.GetProjectID())
+	wd := util.GetWorkDir(codebase.Name, codebase.Namespace)
+
+	// Step 4: Clone repository if needed
+	if !util.DoesDirectoryExist(wd) || util.IsDirectoryEmpty(wd) {
+		log.Info("Start cloning repository", "url", repoSshUrl)
+
+		if err := g.CloneRepositoryBySsh(
+			ctx,
+			privateSSHKey,
+			gitServer.Spec.GitUser,
+			repoSshUrl,
+			wd,
+			gitServer.Spec.SshPort,
+		); err != nil {
+			return nil, fmt.Errorf("failed to clone git repository: %w", err)
+		}
+
+		log.Info("Repository has been cloned", "url", repoSshUrl)
+	}
+
+	// Step 5: Get repo URL for checkout
+	repoUrl, err := util.GetRepoUrl(codebase)
+	if err != nil {
+		return nil, fmt.Errorf("failed to build repo url: %w", err)
+	}
+
+	// Step 6: Checkout default branch
+	log.Info("Start checkout default branch", "branch", codebase.Spec.DefaultBranch, "repo", repoUrl)
+
+	err = CheckoutBranch(repoUrl, wd, codebase.Spec.DefaultBranch, g, codebase, c)
+	if err != nil {
+		return nil, fmt.Errorf("failed to checkout default branch %v: %w", codebase.Spec.DefaultBranch, err)
+	}
+
+	log.Info("Default branch has been checked out", "branch", codebase.Spec.DefaultBranch, "repo", repoUrl)
+
+	// Return context for subsequent operations
+	return &GitRepositoryContext{
+		GitServer:     gitServer,
+		Secret:        gitServerSecret,
+		PrivateSSHKey: privateSSHKey,
+		RepoSSHUrl:    repoSshUrl,
+		WorkDir:       wd,
+	}, nil
 }
