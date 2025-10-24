@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -57,72 +56,28 @@ func (h *PutDeployConfigs) tryToPushConfigs(ctx context.Context, codebase *codeb
 		return nil
 	}
 
-	gitServer := &codebaseApi.GitServer{}
-	if err := h.client.Get(
-		ctx,
-		client.ObjectKey{Name: codebase.Spec.GitServer, Namespace: codebase.Namespace},
-		gitServer,
-	); err != nil {
+	// Prepare git repository (get server, clone, checkout)
+	gitCtx, err := PrepareGitRepository(ctx, h.client, h.git, codebase)
+	if err != nil {
 		setFailedFields(codebase, codebaseApi.SetupDeploymentTemplates, err.Error())
-		return fmt.Errorf("failed get GitServer: %w", err)
+		return fmt.Errorf("failed to prepare git repository: %w", err)
 	}
 
-	gitServerSecret := &corev1.Secret{}
-	if err := h.client.Get(
-		ctx,
-		client.ObjectKey{Name: gitServer.Spec.NameSshKeySecret, Namespace: codebase.Namespace},
-		gitServerSecret,
-	); err != nil {
-		return fmt.Errorf("failed to get GitServer secret: %w", err)
-	}
-
-	privateSSHKey := string(gitServerSecret.Data[util.PrivateSShKeyName])
-	repoSshUrl := util.GetSSHUrl(gitServer, codebase.Spec.GetProjectID())
-	wd := util.GetWorkDir(codebase.Name, codebase.Namespace)
-
-	if !util.DoesDirectoryExist(wd) || util.IsDirectoryEmpty(wd) {
-		log.Info("Start cloning repository", "url", repoSshUrl)
-
-		if err := h.git.CloneRepositoryBySsh(
-			ctx,
-			privateSSHKey,
-			gitServer.Spec.GitUser,
-			repoSshUrl,
-			wd,
-			gitServer.Spec.SshPort,
-		); err != nil {
-			return fmt.Errorf("failed to clone git repository: %w", err)
-		}
-
-		log.Info("Repository has been cloned", "url", repoSshUrl)
-	}
-
-	if gitServer.Spec.GitProvider == codebaseApi.GitProviderGerrit {
+	// Add Gerrit-specific commit hooks if needed
+	if gitCtx.GitServer.Spec.GitProvider == codebaseApi.GitProviderGerrit {
 		log.Info("Start adding commit hooks")
 
-		if err := h.addCommitHooks(wd); err != nil {
+		if err := h.addCommitHooks(gitCtx.WorkDir); err != nil {
 			return fmt.Errorf("failed to add commit hooks: %w", err)
 		}
 
 		log.Info("Commit hooks have been added")
 	}
 
-	ru, err := util.GetRepoUrl(codebase)
-	if err != nil {
-		return fmt.Errorf("failed to build repo url: %w", err)
-	}
-
-	log.Info("Start checkout default branch", "branch", codebase.Spec.DefaultBranch, "repo", ru)
-
-	err = CheckoutBranch(ru, wd, codebase.Spec.DefaultBranch, h.git, codebase, h.client)
-	if err != nil {
-		return fmt.Errorf("failed to checkout default branch %v in put_deploy_config has been failed: %w", codebase.Spec.DefaultBranch, err)
-	}
-
-	log.Info("Default branch has been checked out", "branch", codebase.Spec.DefaultBranch, "repo", ru)
+	// Prepare deployment templates
 	log.Info("Start preparing templates")
 
-	err = template.PrepareTemplates(ctx, h.client, codebase, wd)
+	err = template.PrepareTemplates(ctx, h.client, codebase, gitCtx.WorkDir)
 	if err != nil {
 		return fmt.Errorf("failed to prepare template: %w", err)
 	}
@@ -130,7 +85,8 @@ func (h *PutDeployConfigs) tryToPushConfigs(ctx context.Context, codebase *codeb
 	log.Info("Templates have been prepared")
 	log.Info("Start committing changes")
 
-	err = h.git.CommitChanges(wd, fmt.Sprintf("Add deployment templates for %s", codebase.Name))
+	// Commit changes
+	err = h.git.CommitChanges(gitCtx.WorkDir, fmt.Sprintf("Add deployment templates for %s", codebase.Name))
 	if err != nil {
 		return fmt.Errorf("failed to commit changes: %w", err)
 	}
@@ -138,13 +94,21 @@ func (h *PutDeployConfigs) tryToPushConfigs(ctx context.Context, codebase *codeb
 	log.Info("Changes have been committed")
 	log.Info("Start pushing changes")
 
-	err = h.git.PushChanges(privateSSHKey, gitServer.Spec.GitUser, wd, gitServer.Spec.SshPort, "--all")
+	// Push changes
+	err = h.git.PushChanges(
+		gitCtx.PrivateSSHKey,
+		gitCtx.GitServer.Spec.GitUser,
+		gitCtx.WorkDir,
+		gitCtx.GitServer.Spec.SshPort,
+		"--all",
+	)
 	if err != nil {
 		return fmt.Errorf("failed to push changes: %w", err)
 	}
 
 	log.Info("Changes have been pushed")
 
+	// Update status
 	if err = updateGitStatusWithPatch(ctx, h.client, codebase, codebaseApi.SetupDeploymentTemplates, util.ProjectTemplatesPushedStatus); err != nil {
 		return err
 	}
