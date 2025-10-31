@@ -128,6 +128,12 @@ func (r *ReconcileGitServer) checkConnectionToGitServer(ctx context.Context, git
 
 	log.Info("Data from request is extracted", "host", sshData.Host, "port", sshData.Port)
 
+	if sshData.Key == "" {
+		log.Info("SSH key is empty. Skipping connection check to git server")
+
+		return nil
+	}
+
 	if err = checkGitServerConnection(sshData, log); err != nil {
 		return fmt.Errorf("failed to establish connection to Git Server %s: %w", sshData.Host, err)
 	}

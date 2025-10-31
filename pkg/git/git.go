@@ -61,6 +61,7 @@ func CommitAllowEmpty() func(*commitOps) {
 }
 
 // Git interface provides methods for working with git.
+// Deprecated: use pkg/git/v2/provider.go GitProvider instead.
 type Git interface {
 	CommitChanges(directory, commitMsg string, opts ...CommitOps) error
 	PushChanges(key, user, directory string, port int32, pushParams ...string) error

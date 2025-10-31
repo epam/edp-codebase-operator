@@ -9,17 +9,18 @@ import (
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	"github.com/epam/edp-codebase-operator/v2/controllers/codebase/service/template"
-	"github.com/epam/edp-codebase-operator/v2/pkg/git"
+	gitproviderv2 "github.com/epam/edp-codebase-operator/v2/pkg/git/v2"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
 type PutDeployConfigs struct {
-	client client.Client
-	git    git.Git
+	client                      client.Client
+	gitProviderFactory          gitproviderv2.GitProviderFactory
+	createGitProviderWithConfig func(config gitproviderv2.Config) gitproviderv2.Git
 }
 
-func NewPutDeployConfigs(c client.Client, g git.Git) *PutDeployConfigs {
-	return &PutDeployConfigs{client: c, git: g}
+func NewPutDeployConfigs(c client.Client, gitProviderFactory gitproviderv2.GitProviderFactory, createGitProviderWithConfig func(config gitproviderv2.Config) gitproviderv2.Git) *PutDeployConfigs {
+	return &PutDeployConfigs{client: c, gitProviderFactory: gitProviderFactory, createGitProviderWithConfig: createGitProviderWithConfig}
 }
 
 func (h *PutDeployConfigs) ServeRequest(ctx context.Context, c *codebaseApi.Codebase) error {
@@ -57,11 +58,14 @@ func (h *PutDeployConfigs) tryToPushConfigs(ctx context.Context, codebase *codeb
 	}
 
 	// Prepare git repository (get server, clone, checkout)
-	gitCtx, err := PrepareGitRepository(ctx, h.client, h.git, codebase)
+	gitCtx, err := PrepareGitRepository(ctx, h.client, codebase, h.gitProviderFactory, h.createGitProviderWithConfig)
 	if err != nil {
 		setFailedFields(codebase, codebaseApi.SetupDeploymentTemplates, err.Error())
 		return fmt.Errorf("failed to prepare git repository: %w", err)
 	}
+
+	// Create git provider using factory
+	g := h.gitProviderFactory(gitCtx.GitServer, gitCtx.GitServerSecret)
 
 	// Add Gerrit-specific commit hooks if needed
 	if gitCtx.GitServer.Spec.GitProvider == codebaseApi.GitProviderGerrit {
@@ -86,7 +90,7 @@ func (h *PutDeployConfigs) tryToPushConfigs(ctx context.Context, codebase *codeb
 	log.Info("Start committing changes")
 
 	// Commit changes
-	err = h.git.CommitChanges(gitCtx.WorkDir, fmt.Sprintf("Add deployment templates for %s", codebase.Name))
+	err = g.Commit(ctx, gitCtx.WorkDir, fmt.Sprintf("Add deployment templates for %s", codebase.Name))
 	if err != nil {
 		return fmt.Errorf("failed to commit changes: %w", err)
 	}
@@ -95,13 +99,7 @@ func (h *PutDeployConfigs) tryToPushConfigs(ctx context.Context, codebase *codeb
 	log.Info("Start pushing changes")
 
 	// Push changes
-	err = h.git.PushChanges(
-		gitCtx.PrivateSSHKey,
-		gitCtx.GitServer.Spec.GitUser,
-		gitCtx.WorkDir,
-		gitCtx.GitServer.Spec.SshPort,
-		"--all",
-	)
+	err = g.Push(ctx, gitCtx.WorkDir, gitproviderv2.RefSpecPushAllBranches)
 	if err != nil {
 		return fmt.Errorf("failed to push changes: %w", err)
 	}

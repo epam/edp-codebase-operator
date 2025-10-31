@@ -5,6 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 )
@@ -283,6 +284,107 @@ func TestGetSSHUrl(t *testing.T) {
 			t.Parallel()
 
 			assert.Equal(t, tt.want, GetSSHUrl(tt.gitServer, tt.repoName))
+		})
+	}
+}
+
+func TestGetProjectGitUrl(t *testing.T) {
+	tests := []struct {
+		name            string
+		gitServer       *codebaseApi.GitServer
+		gitServerSecret *corev1.Secret
+		repoName        string
+		want            string
+	}{
+		{
+			name: "should return HTTPS url when SSH key is not present in secret",
+			gitServer: &codebaseApi.GitServer{
+				Spec: codebaseApi.GitServerSpec{
+					GitHost:     "github.com",
+					GitProvider: codebaseApi.GitProviderGithub,
+					SshPort:     22,
+				},
+			},
+			gitServerSecret: &corev1.Secret{
+				Data: map[string][]byte{},
+			},
+			repoName: "owner/repo",
+			want:     "https://github.com/owner/repo.git",
+		},
+		{
+			name: "should return SSH url when SSH key is present in secret for GitHub",
+			gitServer: &codebaseApi.GitServer{
+				Spec: codebaseApi.GitServerSpec{
+					GitHost:     "github.com",
+					GitProvider: codebaseApi.GitProviderGithub,
+					SshPort:     22,
+				},
+			},
+			gitServerSecret: &corev1.Secret{
+				Data: map[string][]byte{
+					"id_rsa": []byte("ssh-key-content"),
+				},
+			},
+			repoName: "owner/repo",
+			want:     "git@github.com:owner/repo.git",
+		},
+		{
+			name: "should return SSH url when SSH key is present in secret for Gerrit",
+			gitServer: &codebaseApi.GitServer{
+				Spec: codebaseApi.GitServerSpec{
+					GitHost:     "gerrit.example.com",
+					GitProvider: codebaseApi.GitProviderGerrit,
+					SshPort:     29418,
+				},
+			},
+			gitServerSecret: &corev1.Secret{
+				Data: map[string][]byte{
+					"id_rsa": []byte("ssh-key-content"),
+				},
+			},
+			repoName: "test-repo",
+			want:     "ssh://gerrit.example.com:29418/test-repo",
+		},
+		{
+			name: "should return HTTPS url when SSH key is empty in secret",
+			gitServer: &codebaseApi.GitServer{
+				Spec: codebaseApi.GitServerSpec{
+					GitHost:     "gitlab.com",
+					GitProvider: codebaseApi.GitProviderGitlab,
+					SshPort:     22,
+				},
+			},
+			gitServerSecret: &corev1.Secret{
+				Data: map[string][]byte{
+					"id_rsa": []byte(""),
+				},
+			},
+			repoName: "group/project",
+			want:     "https://gitlab.com/group/project.git",
+		},
+		{
+			name: "should return SSH url for GitLab when SSH key is present",
+			gitServer: &codebaseApi.GitServer{
+				Spec: codebaseApi.GitServerSpec{
+					GitHost:     "gitlab.com",
+					GitProvider: codebaseApi.GitProviderGitlab,
+					SshPort:     22,
+				},
+			},
+			gitServerSecret: &corev1.Secret{
+				Data: map[string][]byte{
+					"id_rsa": []byte("ssh-key-content"),
+				},
+			},
+			repoName: "group/project",
+			want:     "git@gitlab.com:group/project.git",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := GetProjectGitUrl(tt.gitServer, tt.gitServerSecret, tt.repoName)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }

@@ -24,6 +24,9 @@ packages:
     interfaces:
       Git:
       Command:
+  github.com/epam/edp-codebase-operator/v2/pkg/git/v2:
+    interfaces:
+      Git:
   github.com/epam/edp-codebase-operator/v2/pkg/gitprovider:
     interfaces:
       GitProjectProvider:

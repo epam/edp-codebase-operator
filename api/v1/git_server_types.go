@@ -69,6 +69,10 @@ func (in *GitServerStatus) SetSuccess() {
 	in.Status = "ok"
 }
 
+func (in *GitServerStatus) IsSuccess() bool {
+	return in.Status == "ok"
+}
+
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:shortName=gs

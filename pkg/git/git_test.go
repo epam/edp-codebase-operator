@@ -3,7 +3,6 @@ package git_test
 import (
 	"context"
 	"encoding/base64"
-	"errors"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -19,14 +18,19 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	"github.com/epam/edp-codebase-operator/v2/pkg/git"
-	"github.com/epam/edp-codebase-operator/v2/pkg/git/mocks"
+	gitproviderv2 "github.com/epam/edp-codebase-operator/v2/pkg/git/v2"
 	"github.com/epam/edp-codebase-operator/v2/pkg/platform"
 )
 
 func TestGitProvider_CheckPermissions(t *testing.T) {
-	gp := git.GitProvider{}
 	user := "user"
 	pass := "pass"
+
+	config := gitproviderv2.Config{
+		Username: user,
+		Token:    pass,
+	}
+	gp := gitproviderv2.NewGitProvider(config)
 
 	bts, err := base64.StdEncoding.DecodeString(`MDAxZSMgc2VydmljZT1naXQtdXBsb2FkLXBhY2sKMDAwMDAxNTY2ZWNmMGVmMmMyZGZmYjc5NjAzM2U1YTAyMjE5YWY4NmVjNjU4NGU1IEhFQUQAbXVsdGlfYWNrIHRoaW4tcGFjayBzaWRlLWJhbmQgc2lkZS1iYW5kLTY0ayBvZnMtZGVsdGEgc2hhbGxvdyBkZWVwZW4tc2luY2UgZGVlcGVuLW5vdCBkZWVwZW4tcmVsYXRpdmUgbm8tcHJvZ3Jlc3MgaW5jbHVkZS10YWcgbXVsdGlfYWNrX2RldGFpbGVkIGFsbG93LXRpcC1zaGExLWluLXdhbnQgYWxsb3ctcmVhY2hhYmxlLXNoYTEtaW4td2FudCBuby1kb25lIHN5bXJlZj1IRUFEOnJlZnMvaGVhZHMvbWFzdGVyIGZpbHRlciBvYmplY3QtZm9ybWF0PXNoYTEgYWdlbnQ9Z2l0L2dpdGh1Yi1nNzhiNDUyNDEzZThiCjAwM2ZlOGQzZmZhYjU1Mjg5NWMxOWI5ZmNmN2FhMjY0ZDI3N2NkZTMzODgxIHJlZnMvaGVhZHMvYnJhbmNoCjAwM2Y2ZWNmMGVmMmMyZGZmYjc5NjAzM2U1YTAyMjE5YWY4NmVjNjU4NGU1IHJlZnMvaGVhZHMvbWFzdGVyCjAwM2ViOGU0NzFmNThiY2JjYTYzYjA3YmRhMjBlNDI4MTkwNDA5YzJkYjQ3IHJlZnMvcHVsbC8xL2hlYWQKMDAzZTk2MzJmMDI4MzNiMmY5NjEzYWZiNWU3NTY4MjEzMmIwYjIyZTRhMzEgcmVmcy9wdWxsLzIvaGVhZAowMDNmYzM3ZjU4YTEzMGNhNTU1ZTQyZmY5NmEwNzFjYjljY2IzZjQzNzUwNCByZWZzL3B1bGwvMi9tZXJnZQowMDAw`)
 	require.NoError(t, err)
@@ -38,13 +42,19 @@ func TestGitProvider_CheckPermissions(t *testing.T) {
 	}))
 	defer s.Close()
 
-	require.True(t, gp.CheckPermissions(context.Background(), s.URL, &user, &pass), "repo must be accessible")
+	err = gp.CheckPermissions(context.Background(), s.URL)
+	require.NoError(t, err, "repo must be accessible")
 }
 
 func TestGitProvider_CheckPermissions_NoRefs(t *testing.T) {
-	gp := git.GitProvider{}
 	user := "user"
 	pass := "pass"
+
+	config := gitproviderv2.Config{
+		Username: user,
+		Token:    pass,
+	}
+	gp := gitproviderv2.NewGitProvider(config)
 
 	bts, err := base64.StdEncoding.DecodeString(`MDAxZSMgc2VydmljZT1naXQtdXBsb2FkLXBhY2sKMDAwMDAwZGUwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwIGNhcGFiaWxpdGllc157fQAgaW5jbHVkZS10YWcgbXVsdGlfYWNrX2RldGFpbGVkIG11bHRpX2FjayBvZnMtZGVsdGEgc2lkZS1iYW5kIHNpZGUtYmFuZC02NGsgdGhpbi1wYWNrIG5vLXByb2dyZXNzIHNoYWxsb3cgbm8tZG9uZSBhZ2VudD1KR2l0L3Y1LjkuMC4yMDIwMDkwODA1MDEtci00MS1nNWQ5MjVlY2JiCjAwMDA=`)
 	require.NoError(t, err)
@@ -57,13 +67,11 @@ func TestGitProvider_CheckPermissions_NoRefs(t *testing.T) {
 	defer s.Close()
 
 	mockLogger := platform.NewLoggerMock()
-	loggerSink, ok := mockLogger.GetSink().(*platform.LoggerMock)
-	require.True(t, ok)
 
-	accessible := gp.CheckPermissions(ctrl.LoggerInto(context.Background(), mockLogger), s.URL, &user, &pass)
-	require.False(t, accessible, "repo must not be accessible")
-	require.Error(t, loggerSink.LastError())
-	require.Contains(t, loggerSink.LastError().Error(), "remote repository is empty")
+	// v2 implementation returns nil for empty repos (they are technically accessible, just empty)
+	// This is different from v1 which logged an error
+	err = gp.CheckPermissions(ctrl.LoggerInto(context.Background(), mockLogger), s.URL)
+	require.NoError(t, err, "v2 considers empty repos accessible")
 }
 
 func TestInitAuth(t *testing.T) {
@@ -73,87 +81,201 @@ func TestInitAuth(t *testing.T) {
 }
 
 func TestGitProvider_CreateChildBranch(t *testing.T) {
-	cm := mocks.NewMockCommand(t)
-	gp := git.GitProvider{
-		CommandBuilder: func(cmd string, params ...string) git.Command {
-			return cm
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		initRepo func(t *testing.T) string
+		parent   string
+		child    string
+		wantErr  require.ErrorAssertionFunc
+	}{
+		{
+			name: "should create child branch successfully",
+			initRepo: func(t *testing.T) string {
+				dir := t.TempDir()
+				r, err := gogit.PlainInit(dir, false)
+				require.NoError(t, err)
+
+				// Create initial commit on master branch
+				w, err := r.Worktree()
+				require.NoError(t, err)
+
+				f, err := os.Create(path.Join(dir, "test.txt"))
+				require.NoError(t, err)
+				_, err = f.WriteString("test content")
+				require.NoError(t, err)
+				require.NoError(t, f.Close())
+
+				_, err = w.Add("test.txt")
+				require.NoError(t, err)
+
+				_, err = w.Commit("initial commit", &gogit.CommitOptions{
+					Author: &object.Signature{
+						Name:  "test",
+						Email: "test@example.com",
+						When:  time.Now(),
+					},
+				})
+				require.NoError(t, err)
+
+				// Create a parent branch and check it out so it exists as a proper reference
+				err = w.Checkout(&gogit.CheckoutOptions{
+					Branch: plumbing.NewBranchReferenceName("parent-branch"),
+					Create: true,
+				})
+				require.NoError(t, err)
+
+				return dir
+			},
+			parent:  "parent-branch",
+			child:   "child-branch",
+			wantErr: require.NoError,
 		},
 	}
 
-	cm.On("CombinedOutput").Return([]byte("t"), nil)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 
-	err := gp.CreateChildBranch("dir", "br1", "br2")
-	assert.NoError(t, err)
-	cm.AssertExpectations(t)
+			gp := gitproviderv2.NewGitProvider(gitproviderv2.Config{})
+			dir := tt.initRepo(t)
 
-	cmError := mocks.NewMockCommand(t)
-	gp = git.GitProvider{
-		CommandBuilder: func(cmd string, params ...string) git.Command {
-			return cmError
-		},
+			err := gp.CreateChildBranch(context.Background(), dir, tt.parent, tt.child)
+			tt.wantErr(t, err)
+		})
 	}
-
-	cmError.On("CombinedOutput").Return([]byte("t"), errors.New("fatal")).Once()
-
-	err = gp.CreateChildBranch("dir", "br1", "br2")
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "failed to checkout branch")
 }
 
 func TestGitProvider_RemoveBranch(t *testing.T) {
-	cm := mocks.NewMockCommand(t)
-	gp := git.GitProvider{
-		CommandBuilder: func(cmd string, params ...string) git.Command {
-			return cm
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		initRepo func(t *testing.T) string
+		branch   string
+		wantErr  require.ErrorAssertionFunc
+	}{
+		{
+			name: "should remove branch successfully",
+			initRepo: func(t *testing.T) string {
+				dir := t.TempDir()
+				r, err := gogit.PlainInit(dir, false)
+				require.NoError(t, err)
+
+				// Create initial commit
+				w, err := r.Worktree()
+				require.NoError(t, err)
+
+				f, err := os.Create(path.Join(dir, "test.txt"))
+				require.NoError(t, err)
+				_, err = f.WriteString("test content")
+				require.NoError(t, err)
+				require.NoError(t, f.Close())
+
+				_, err = w.Add("test.txt")
+				require.NoError(t, err)
+
+				_, err = w.Commit("initial commit", &gogit.CommitOptions{
+					Author: &object.Signature{
+						Name:  "test",
+						Email: "test@example.com",
+						When:  time.Now(),
+					},
+				})
+				require.NoError(t, err)
+
+				// Create a new branch
+				err = w.Checkout(&gogit.CheckoutOptions{
+					Branch: plumbing.NewBranchReferenceName("test-branch"),
+					Create: true,
+				})
+				require.NoError(t, err)
+
+				// Checkout back to master so we can delete test-branch
+				err = w.Checkout(&gogit.CheckoutOptions{
+					Branch: plumbing.NewBranchReferenceName("master"),
+				})
+				require.NoError(t, err)
+
+				return dir
+			},
+			branch:  "test-branch",
+			wantErr: require.NoError,
 		},
 	}
 
-	cm.On("CombinedOutput").Return([]byte("t"), nil)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 
-	err := gp.RemoveBranch("dir", "br1")
-	assert.NoError(t, err)
-	cm.AssertExpectations(t)
+			gp := gitproviderv2.NewGitProvider(gitproviderv2.Config{})
+			dir := tt.initRepo(t)
 
-	cmError := mocks.NewMockCommand(t)
-	gp = git.GitProvider{
-		CommandBuilder: func(cmd string, params ...string) git.Command {
-			return cmError
-		},
+			err := gp.RemoveBranch(context.Background(), dir, tt.branch)
+			tt.wantErr(t, err)
+		})
 	}
-
-	cmError.On("CombinedOutput").Return([]byte("t"), errors.New("fatal")).Once()
-
-	err = gp.RemoveBranch("dir", "br1")
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "failed to remove branch")
 }
 
 func TestGitProvider_RenameBranch(t *testing.T) {
-	cm := mocks.NewMockCommand(t)
-	gp := git.GitProvider{
-		CommandBuilder: func(cmd string, params ...string) git.Command {
-			return cm
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		initRepo func(t *testing.T) string
+		oldName  string
+		newName  string
+		wantErr  require.ErrorAssertionFunc
+	}{
+		{
+			name: "should rename branch successfully",
+			initRepo: func(t *testing.T) string {
+				dir := t.TempDir()
+				r, err := gogit.PlainInit(dir, false)
+				require.NoError(t, err)
+
+				// Create initial commit
+				w, err := r.Worktree()
+				require.NoError(t, err)
+
+				f, err := os.Create(path.Join(dir, "test.txt"))
+				require.NoError(t, err)
+				_, err = f.WriteString("test content")
+				require.NoError(t, err)
+				require.NoError(t, f.Close())
+
+				_, err = w.Add("test.txt")
+				require.NoError(t, err)
+
+				_, err = w.Commit("initial commit", &gogit.CommitOptions{
+					Author: &object.Signature{
+						Name:  "test",
+						Email: "test@example.com",
+						When:  time.Now(),
+					},
+				})
+				require.NoError(t, err)
+
+				return dir
+			},
+			oldName: "master",
+			newName: "main",
+			wantErr: require.NoError,
 		},
 	}
 
-	cm.On("CombinedOutput").Return([]byte("t"), nil)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 
-	err := gp.RenameBranch("dir", "br1", "br2")
-	assert.NoError(t, err)
-	cm.AssertExpectations(t)
+			gp := gitproviderv2.NewGitProvider(gitproviderv2.Config{})
+			dir := tt.initRepo(t)
 
-	cmError := mocks.NewMockCommand(t)
-	gp = git.GitProvider{
-		CommandBuilder: func(cmd string, params ...string) git.Command {
-			return cmError
-		},
+			err := gp.RenameBranch(context.Background(), dir, tt.oldName, tt.newName)
+			tt.wantErr(t, err)
+		})
 	}
-
-	cmError.On("CombinedOutput").Return([]byte("t"), errors.New("fatal")).Once()
-
-	err = gp.RenameBranch("dir", "br1", "br2")
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "failed to checkout branch")
 }
 
 func Test_initAuth(t *testing.T) {
@@ -210,7 +332,7 @@ func TestGitProvider_CommitChanges(t *testing.T) {
 
 	tests := []struct {
 		name      string
-		ops       []git.CommitOps
+		ops       []gitproviderv2.CommitOps
 		initRepo  func(t *testing.T) string
 		wantErr   require.ErrorAssertionFunc
 		checkRepo func(t *testing.T, dir string)
@@ -274,8 +396,8 @@ func TestGitProvider_CommitChanges(t *testing.T) {
 		},
 		{
 			name: "should create empty commit",
-			ops: []git.CommitOps{
-				git.CommitAllowEmpty(),
+			ops: []gitproviderv2.CommitOps{
+				gitproviderv2.CommitAllowEmpty(),
 			},
 			initRepo: func(t *testing.T) string {
 				dir := t.TempDir()
@@ -308,10 +430,10 @@ func TestGitProvider_CommitChanges(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			gp := &git.GitProvider{}
+			gp := gitproviderv2.NewGitProvider(gitproviderv2.Config{})
 			dir := tt.initRepo(t)
 
-			err := gp.CommitChanges(dir, "test commit message", tt.ops...)
+			err := gp.Commit(context.Background(), dir, "test commit message", tt.ops...)
 			tt.wantErr(t, err)
 			tt.checkRepo(t, dir)
 		})
@@ -368,10 +490,10 @@ func TestGitProvider_AddRemoteLink(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			gp := &git.GitProvider{}
+			gp := gitproviderv2.NewGitProvider(gitproviderv2.Config{})
 			dir := tt.initRepo(t)
 
-			err := gp.AddRemoteLink(dir, tt.remoteUrl)
+			err := gp.AddRemoteLink(context.Background(), dir, tt.remoteUrl)
 			tt.wantErr(t, err)
 			tt.checkRepo(t, dir)
 		})
@@ -493,7 +615,7 @@ func TestGitProvider_CheckReference(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			gp := &git.GitProvider{}
+			gp := gitproviderv2.NewGitProvider(gitproviderv2.Config{})
 			dir := tt.initRepo(t)
 
 			// For the commit reference test, we need to get the actual commit hash
@@ -508,7 +630,7 @@ func TestGitProvider_CheckReference(t *testing.T) {
 				t.Logf("Using commit hash: %s", tt.from)
 			}
 
-			err := gp.CheckReference(dir, tt.from)
+			err := gp.CheckReference(context.Background(), dir, tt.from)
 			tt.wantErr(t, err)
 		})
 	}

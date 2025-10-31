@@ -6,6 +6,8 @@ import (
 	"regexp"
 	"strings"
 
+	corev1 "k8s.io/api/core/v1"
+
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 )
 
@@ -88,4 +90,22 @@ func GetSSHUrl(gitServer *codebaseApi.GitServer, repoName string) string {
 	}
 
 	return fmt.Sprintf("git@%s:%s.git", gitServer.Spec.GitHost, repoName)
+}
+
+// GetHTTPSUrl returns https url for git server and codebase.
+func GetHTTPSUrl(gitServer *codebaseApi.GitServer, repoName string) string {
+	return fmt.Sprintf("https://%s/%s.git", gitServer.Spec.GitHost, repoName)
+}
+
+// GetProjectGitUrl returns git url for project based on available authentication method.
+func GetProjectGitUrl(
+	gitServer *codebaseApi.GitServer,
+	gitServerSecret *corev1.Secret,
+	repoName string,
+) string {
+	if len(gitServerSecret.Data[PrivateSShKeyName]) == 0 {
+		return GetHTTPSUrl(gitServer, repoName)
+	}
+
+	return GetSSHUrl(gitServer, repoName)
 }

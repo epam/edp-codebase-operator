@@ -2,6 +2,7 @@ package chain
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -15,7 +16,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
-	gitMocks "github.com/epam/edp-codebase-operator/v2/pkg/git/mocks"
+	gitproviderv2 "github.com/epam/edp-codebase-operator/v2/pkg/git/v2"
+	gitMocks "github.com/epam/edp-codebase-operator/v2/pkg/git/v2/mocks"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
@@ -308,12 +310,10 @@ func TestPrepareGitRepository(t *testing.T) {
 			objects: []client.Object{gitServer, secret},
 			gitClient: func(t *testing.T) *gitMocks.MockGit {
 				m := gitMocks.NewMockGit(t)
-				m.On("CloneRepositoryBySsh",
-					testify.Anything, "test-ssh-key", "git",
-					testify.Anything, testify.Anything, int32(22),
+				m.On("Clone",
+					testify.Anything, testify.Anything, testify.Anything, testify.Anything,
 				).Return(nil)
-				m.On("GetCurrentBranchName", testify.Anything).Return("main", nil)
-				m.On("CheckPermissions", testify.Anything, testify.Anything, testify.Anything, testify.Anything).Return(true)
+				m.On("GetCurrentBranchName", testify.Anything, testify.Anything).Return("main", nil)
 				return m
 			},
 			wantErr: require.NoError,
@@ -321,8 +321,7 @@ func TestPrepareGitRepository(t *testing.T) {
 				require.NotNil(t, gitCtx)
 				assert.Equal(t, "test-ssh-key", gitCtx.PrivateSSHKey)
 				assert.Equal(t, gitServer.Name, gitCtx.GitServer.Name)
-				assert.Equal(t, secret.Name, gitCtx.Secret.Name)
-				assert.NotEmpty(t, gitCtx.RepoSSHUrl)
+				assert.Equal(t, secret.Name, gitCtx.GitServerSecret.Name)
 				assert.NotEmpty(t, gitCtx.WorkDir)
 			},
 		},
@@ -389,7 +388,7 @@ func TestPrepareGitRepository(t *testing.T) {
 			objects: []client.Object{gitServer, secret},
 			gitClient: func(t *testing.T) *gitMocks.MockGit {
 				m := gitMocks.NewMockGit(t)
-				m.On("CloneRepositoryBySsh", testify.Anything, testify.Anything, testify.Anything, testify.Anything, testify.Anything, testify.Anything).
+				m.On("Clone", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(assert.AnError)
 				return m
 			},
@@ -432,15 +431,15 @@ func TestPrepareGitRepository(t *testing.T) {
 			},
 			gitClient: func(t *testing.T) *gitMocks.MockGit {
 				m := gitMocks.NewMockGit(t)
-				m.On("CloneRepositoryBySsh", testify.Anything, testify.Anything, testify.Anything, testify.Anything, testify.Anything, testify.Anything).
+				m.On("Clone", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(nil)
-				m.On("CheckPermissions", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
-					Return(false)
+				m.On("GetCurrentBranchName", testify.Anything, testify.Anything).
+					Return("", errors.New("failed to get current branch"))
 				return m
 			},
 			wantErr: func(t require.TestingT, err error, i ...interface{}) {
 				require.Error(t, err)
-				require.Contains(t, err.Error(), "cannot get access to the repository")
+				require.Contains(t, err.Error(), "failed to get current branch")
 			},
 			want: func(t *testing.T, gitCtx *GitRepositoryContext) {
 				assert.Nil(t, gitCtx)
@@ -467,8 +466,13 @@ func TestPrepareGitRepository(t *testing.T) {
 			gitCtx, err := PrepareGitRepository(
 				context.Background(),
 				k8sClient,
-				tt.gitClient(t),
 				tt.codebase,
+				func(gitServer *codebaseApi.GitServer, secret *corev1.Secret) gitproviderv2.Git {
+					return tt.gitClient(t)
+				},
+				func(config gitproviderv2.Config) gitproviderv2.Git {
+					return tt.gitClient(t)
+				},
 			)
 
 			tt.wantErr(t, err)

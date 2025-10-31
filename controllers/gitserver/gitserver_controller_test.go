@@ -331,6 +331,65 @@ func TestReconcileGitServer_InvalidSSHKey(t *testing.T) {
 	assert.False(t, gotGitServer.Status.Connected)
 }
 
+func TestReconcileGitServer_EmptySSHKey(t *testing.T) {
+	scheme := runtime.NewScheme()
+	err := corev1.AddToScheme(scheme)
+	require.NoError(t, err)
+
+	err = codebaseApi.AddToScheme(scheme)
+	require.NoError(t, err)
+
+	gs := &codebaseApi.GitServer{
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      "NewMockGitServer",
+			Namespace: "namespace",
+		},
+		Spec: codebaseApi.GitServerSpec{
+			GitHost:          "g-host",
+			NameSshKeySecret: "ssh-secret",
+			WebhookUrl:       "https://test-webhook-url",
+		},
+	}
+
+	secret := &corev1.Secret{
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      "ssh-secret",
+			Namespace: gs.Namespace,
+		},
+		Data: map[string][]byte{
+			util.PrivateSShKeyName: []byte(""),
+		},
+	}
+
+	fakeCl := fake.NewClientBuilder().
+		WithScheme(scheme).
+		WithRuntimeObjects(gs, secret).
+		WithStatusSubresource(gs).
+		Build()
+
+	r := ReconcileGitServer{
+		client: fakeCl,
+	}
+
+	req := reconcile.Request{
+		NamespacedName: types.NamespacedName{
+			Name:      gs.Name,
+			Namespace: gs.Namespace,
+		},
+	}
+
+	logger := platform.NewLoggerMock()
+
+	_, err = r.Reconcile(ctrl.LoggerInto(context.Background(), logger), req)
+	require.NoError(t, err)
+
+	gotGitServer := &codebaseApi.GitServer{}
+	err = fakeCl.Get(context.Background(), req.NamespacedName, gotGitServer)
+	require.NoError(t, err)
+	assert.True(t, gotGitServer.Status.Connected)
+	assert.True(t, gotGitServer.Status.IsSuccess())
+}
+
 func TestNewReconcileGitServer(t *testing.T) {
 	t.Parallel()
 

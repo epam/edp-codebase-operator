@@ -15,8 +15,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
-	"github.com/epam/edp-codebase-operator/v2/pkg/git"
-	gitServerMocks "github.com/epam/edp-codebase-operator/v2/pkg/git/mocks"
+	gitproviderv2 "github.com/epam/edp-codebase-operator/v2/pkg/git/v2"
+	gitServerMocks "github.com/epam/edp-codebase-operator/v2/pkg/git/v2/mocks"
 )
 
 func TestCheckReferenceExists_ServeRequest(t *testing.T) {
@@ -31,7 +31,7 @@ func TestCheckReferenceExists_ServeRequest(t *testing.T) {
 		name           string
 		codebaseBranch *codebaseApi.CodebaseBranch
 		objects        []runtime.Object
-		gitClient      func() git.Git
+		gitClient      func() gitproviderv2.Git
 		wantErr        require.ErrorAssertionFunc
 	}{
 		{
@@ -73,12 +73,10 @@ func TestCheckReferenceExists_ServeRequest(t *testing.T) {
 					},
 				},
 			},
-			gitClient: func() git.Git {
+			gitClient: func() gitproviderv2.Git {
 				mGit := gitServerMocks.NewMockGit(t)
 				mGit.On(
-					"CloneRepositoryBySsh",
-					testifymock.Anything,
-					testifymock.Anything,
+					"Clone",
 					testifymock.Anything,
 					testifymock.Anything,
 					testifymock.Anything,
@@ -86,6 +84,7 @@ func TestCheckReferenceExists_ServeRequest(t *testing.T) {
 				).Return(nil)
 				mGit.On(
 					"CheckReference",
+					testifymock.Anything,
 					testifymock.Anything,
 					testifymock.Anything,
 				).Return(nil)
@@ -133,12 +132,10 @@ func TestCheckReferenceExists_ServeRequest(t *testing.T) {
 					},
 				},
 			},
-			gitClient: func() git.Git {
+			gitClient: func() gitproviderv2.Git {
 				mGit := gitServerMocks.NewMockGit(t)
 				mGit.On(
-					"CloneRepositoryBySsh",
-					testifymock.Anything,
-					testifymock.Anything,
+					"Clone",
 					testifymock.Anything,
 					testifymock.Anything,
 					testifymock.Anything,
@@ -146,6 +143,7 @@ func TestCheckReferenceExists_ServeRequest(t *testing.T) {
 				).Return(nil)
 				mGit.On(
 					"CheckReference",
+					testifymock.Anything,
 					testifymock.Anything,
 					testifymock.Anything,
 				).Return(nil)
@@ -193,12 +191,10 @@ func TestCheckReferenceExists_ServeRequest(t *testing.T) {
 					},
 				},
 			},
-			gitClient: func() git.Git {
+			gitClient: func() gitproviderv2.Git {
 				mGit := gitServerMocks.NewMockGit(t)
 				mGit.On(
-					"CloneRepositoryBySsh",
-					testifymock.Anything,
-					testifymock.Anything,
+					"Clone",
 					testifymock.Anything,
 					testifymock.Anything,
 					testifymock.Anything,
@@ -206,6 +202,7 @@ func TestCheckReferenceExists_ServeRequest(t *testing.T) {
 				).Return(nil)
 				mGit.On(
 					"CheckReference",
+					testifymock.Anything,
 					testifymock.Anything,
 					testifymock.Anything,
 				).Return(errors.New("reference not found"))
@@ -225,7 +222,7 @@ func TestCheckReferenceExists_ServeRequest(t *testing.T) {
 					Namespace: "default",
 				},
 			},
-			gitClient: func() git.Git {
+			gitClient: func() gitproviderv2.Git {
 				return gitServerMocks.NewMockGit(t)
 			},
 			wantErr: require.NoError,
@@ -246,7 +243,7 @@ func TestCheckReferenceExists_ServeRequest(t *testing.T) {
 					Git: codebaseApi.CodebaseBranchGitStatusBranchCreated,
 				},
 			},
-			gitClient: func() git.Git {
+			gitClient: func() gitproviderv2.Git {
 				return gitServerMocks.NewMockGit(t)
 			},
 			wantErr: require.NoError,
@@ -256,7 +253,9 @@ func TestCheckReferenceExists_ServeRequest(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			c := CheckReferenceExists{
 				Client: fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(tt.objects...).Build(),
-				Git:    tt.gitClient(),
+				GitProviderFactory: func(gitServer *codebaseApi.GitServer, secret *coreV1.Secret) gitproviderv2.Git {
+					return tt.gitClient()
+				},
 			}
 
 			err := c.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), tt.codebaseBranch)
