@@ -251,10 +251,12 @@ func TestCheckReferenceExists_ServeRequest(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			gitProvider := tt.gitClient()
+
 			c := CheckReferenceExists{
 				Client: fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(tt.objects...).Build(),
-				GitProviderFactory: func(gitServer *codebaseApi.GitServer, secret *coreV1.Secret) gitproviderv2.Git {
-					return tt.gitClient()
+				GitProviderFactory: func(cfg gitproviderv2.Config) gitproviderv2.Git {
+					return gitProvider
 				},
 			}
 

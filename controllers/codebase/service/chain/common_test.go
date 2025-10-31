@@ -310,9 +310,7 @@ func TestPrepareGitRepository(t *testing.T) {
 			objects: []client.Object{gitServer, secret},
 			gitClient: func(t *testing.T) *gitMocks.MockGit {
 				m := gitMocks.NewMockGit(t)
-				m.On("Clone",
-					testify.Anything, testify.Anything, testify.Anything, testify.Anything,
-				).Return(nil)
+				m.On("Clone", testify.Anything, testify.Anything, testify.Anything).Return(nil)
 				m.On("GetCurrentBranchName", testify.Anything, testify.Anything).Return("main", nil)
 				return m
 			},
@@ -388,7 +386,7 @@ func TestPrepareGitRepository(t *testing.T) {
 			objects: []client.Object{gitServer, secret},
 			gitClient: func(t *testing.T) *gitMocks.MockGit {
 				m := gitMocks.NewMockGit(t)
-				m.On("Clone", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
+				m.On("Clone", testify.Anything, testify.Anything, testify.Anything).
 					Return(assert.AnError)
 				return m
 			},
@@ -431,8 +429,7 @@ func TestPrepareGitRepository(t *testing.T) {
 			},
 			gitClient: func(t *testing.T) *gitMocks.MockGit {
 				m := gitMocks.NewMockGit(t)
-				m.On("Clone", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
-					Return(nil)
+				m.On("Clone", testify.Anything, testify.Anything, testify.Anything).Return(nil)
 				m.On("GetCurrentBranchName", testify.Anything, testify.Anything).
 					Return("", errors.New("failed to get current branch"))
 				return m
@@ -463,15 +460,14 @@ func TestPrepareGitRepository(t *testing.T) {
 				WithObjects(allObjects...).
 				Build()
 
+			gitProvider := tt.gitClient(t)
+
 			gitCtx, err := PrepareGitRepository(
 				context.Background(),
 				k8sClient,
 				tt.codebase,
-				func(gitServer *codebaseApi.GitServer, secret *corev1.Secret) gitproviderv2.Git {
-					return tt.gitClient(t)
-				},
-				func(config gitproviderv2.Config) gitproviderv2.Git {
-					return tt.gitClient(t)
+				func(cfg gitproviderv2.Config) gitproviderv2.Git {
+					return gitProvider
 				},
 			)
 

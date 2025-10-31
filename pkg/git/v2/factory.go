@@ -9,17 +9,24 @@ import (
 
 // GitProviderFactory creates a Git provider from GitServer and Secret.
 // This is a factory pattern to enable dependency injection and mocking in tests.
-type GitProviderFactory func(gitServer *codebaseApi.GitServer, secret *corev1.Secret) Git
+type GitProviderFactory func(cfg Config) Git
 
 // DefaultGitProviderFactory is the default factory implementation for creating GitProvider instances.
 func DefaultGitProviderFactory(gitServer *codebaseApi.GitServer, secret *corev1.Secret) Git {
-	config := Config{
+	return NewGitProvider(NewConfigFromGitServerAndSecret(gitServer, secret))
+}
+
+func NewGitProviderFactory(cfg Config) Git {
+	return NewGitProvider(cfg)
+}
+
+func NewConfigFromGitServerAndSecret(gitServer *codebaseApi.GitServer, secret *corev1.Secret) Config {
+	return Config{
 		SSHKey:      string(secret.Data[util.PrivateSShKeyName]),
 		SSHUser:     gitServer.Spec.GitUser,
 		SSHPort:     gitServer.Spec.SshPort,
 		GitProvider: gitServer.Spec.GitProvider,
 		Token:       string(secret.Data[util.GitServerSecretTokenField]),
+		Username:    string(secret.Data[util.GitServerSecretUserNameField]),
 	}
-
-	return NewGitProvider(config)
 }

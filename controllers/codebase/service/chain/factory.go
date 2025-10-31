@@ -22,22 +22,17 @@ func MakeChain(ctx context.Context, c client.Client) handler.CodebaseHandler {
 	ch := &chain{}
 	gitlabCIManager := gitlabci.NewManager(c)
 
-	createGitProviderWithConfig := func(config gitproviderv2.Config) gitproviderv2.Git {
-		return gitproviderv2.NewGitProvider(config)
-	}
-
 	ch.Use(
 		NewPutGitWebRepoUrl(c),
 		NewPutProject(
 			c,
 			&gerrit.SSHGerritClient{},
 			gitprovider.NewGitProjectProvider,
-			gitproviderv2.DefaultGitProviderFactory,
-			createGitProviderWithConfig,
+			gitproviderv2.NewGitProviderFactory,
 		),
 		NewPutWebHook(c, resty.New()),
-		NewPutGitLabCIConfig(c, gitlabCIManager, gitproviderv2.DefaultGitProviderFactory, createGitProviderWithConfig),
-		NewPutDeployConfigs(c, gitproviderv2.DefaultGitProviderFactory, createGitProviderWithConfig),
+		NewPutGitLabCIConfig(c, gitlabCIManager, gitproviderv2.NewGitProviderFactory),
+		NewPutDeployConfigs(c, gitproviderv2.NewGitProviderFactory),
 		NewPutDefaultCodeBaseBranch(c),
 		NewCleaner(c),
 	)

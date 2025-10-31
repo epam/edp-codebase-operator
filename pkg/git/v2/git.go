@@ -5,9 +5,8 @@ import "context"
 // Git interface provides methods for working with git using v2 GitProvider.
 // This interface uses context-aware methods and handles authentication via Config.
 type Git interface {
-	// Clone clones a repository to the specified destination.
-	// depth: 0 means full clone, >0 means shallow clone with specified depth.
-	Clone(ctx context.Context, repoURL, destination string, depth int) error
+	// Clone clones a repository to the specified destination with full history.
+	Clone(ctx context.Context, repoURL, destination string) error
 
 	// Commit commits changes in the working directory.
 	Commit(ctx context.Context, directory, message string, ops ...CommitOps) error
@@ -35,9 +34,6 @@ type Git interface {
 
 	// RemoveBranch removes a local branch.
 	RemoveBranch(ctx context.Context, directory, branchName string) error
-
-	// RenameBranch renames a branch.
-	RenameBranch(ctx context.Context, directory, oldName, newName string) error
 
 	// CreateChildBranch creates a new branch from an existing branch.
 	CreateChildBranch(ctx context.Context, directory, parentBranch, newBranch string) error

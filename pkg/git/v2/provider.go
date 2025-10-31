@@ -11,6 +11,7 @@ import (
 	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
+	"github.com/go-git/go-git/v5/plumbing/storer"
 	"github.com/go-git/go-git/v5/plumbing/transport"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/go-git/go-git/v5/plumbing/transport/ssh"
@@ -150,7 +151,7 @@ func (p *GitProvider) getTokenAuth() transport.AuthMethod {
 }
 
 // Clone clones a repository to the specified destination.
-func (p *GitProvider) Clone(ctx context.Context, repoURL, destination string, depth int) error {
+func (p *GitProvider) Clone(ctx context.Context, repoURL, destination string) error {
 	log := ctrl.LoggerFrom(ctx).WithValues("repository", repoURL, "destination", destination)
 	log.Info("Cloning repository")
 
@@ -159,22 +160,37 @@ func (p *GitProvider) Clone(ctx context.Context, repoURL, destination string, de
 		return fmt.Errorf("failed to get authentication: %w", err)
 	}
 
+	// Clone the repository (gets default branch)
 	cloneOptions := &git.CloneOptions{
 		URL:      repoURL,
 		Progress: os.Stdout,
 		Auth:     auth,
 	}
 
-	if depth > 0 {
-		cloneOptions.Depth = depth
-	}
-
-	_, err = git.PlainCloneContext(ctx, destination, false, cloneOptions)
+	repo, err := git.PlainCloneContext(ctx, destination, false, cloneOptions)
 	if err != nil {
 		return fmt.Errorf("failed to clone repository: %w", err)
 	}
 
-	log.Info("Repository cloned successfully")
+	log.Info("Repository cloned successfully, now fetching all branches and tags")
+
+	// Fetch all refs (branches, tags, etc.) to get everything similar to --mirror
+	fetchOptions := &git.FetchOptions{
+		RemoteName: "origin",
+		Auth:       auth,
+		Progress:   os.Stdout,
+		RefSpecs: []config.RefSpec{
+			config.RefSpec("+refs/heads/*:refs/heads/*"),
+			config.RefSpec("+refs/tags/*:refs/tags/*"),
+		},
+	}
+
+	err = repo.FetchContext(ctx, fetchOptions)
+	if err != nil && !errors.Is(err, git.NoErrAlreadyUpToDate) {
+		return fmt.Errorf("failed to fetch all branches and tags: %w", err)
+	}
+
+	log.Info("All branches and tags fetched successfully")
 
 	return nil
 }
@@ -271,7 +287,7 @@ func (p *GitProvider) Push(ctx context.Context, directory string, refspecs ...st
 	}
 
 	err = repo.PushContext(ctx, pushOptions)
-	if err != nil && err != git.NoErrAlreadyUpToDate {
+	if err != nil && !errors.Is(err, git.NoErrAlreadyUpToDate) {
 		return fmt.Errorf("failed to push: %w", err)
 	}
 
@@ -313,7 +329,7 @@ func (p *GitProvider) Checkout(ctx context.Context, directory, branchName string
 		}
 
 		err = repo.FetchContext(ctx, fetchOptions)
-		if err != nil && err != git.NoErrAlreadyUpToDate {
+		if err != nil && !errors.Is(err, git.NoErrAlreadyUpToDate) {
 			return fmt.Errorf("failed to fetch: %w", err)
 		}
 
@@ -353,72 +369,40 @@ func (p *GitProvider) CreateRemoteBranch(ctx context.Context, directory, branchN
 		return fmt.Errorf("failed to open repository at %q: %w", directory, err)
 	}
 
-	// Check if branch already exists
 	branches, err := repo.Branches()
 	if err != nil {
-		return fmt.Errorf("failed to get branches: %w", err)
+		return fmt.Errorf("failed to get branches iterator: %w", err)
 	}
 
-	exists := false
-
-	err = branches.ForEach(func(ref *plumbing.Reference) error {
-		if ref.Name().Short() == branchName {
-			exists = true
-		}
-
-		return nil
-	})
+	exists, err := branchExists(branchName, branches)
 	if err != nil {
-		return fmt.Errorf("failed to iterate branches: %w", err)
+		return err
 	}
 
 	if exists {
-		log.Info("Branch already exists, skipping creation")
+		log.Info("Branch already exists. Skip creating")
 		return nil
 	}
 
-	// Resolve the target commit hash
-	var targetHash plumbing.Hash
-
-	if fromRef == "" {
-		// Use HEAD if no reference specified
-		head, err := repo.Head()
-		if err != nil {
-			return fmt.Errorf("failed to get HEAD: %w", err)
-		}
-
-		targetHash = head.Hash()
-	} else {
-		// Try to resolve as branch first
-		branchRef, err := repo.Reference(plumbing.NewBranchReferenceName(fromRef), false)
-		if err == nil {
-			targetHash = branchRef.Hash()
-		} else {
-			// Try as commit hash
-			targetHash = plumbing.NewHash(fromRef)
-			if targetHash.IsZero() {
-				return fmt.Errorf("invalid reference or commit hash: %s", fromRef)
-			}
-			// Verify commit exists
-			_, err = repo.CommitObject(targetHash)
-			if err != nil {
-				return fmt.Errorf("failed to resolve reference %q: %w", fromRef, err)
-			}
-		}
+	targetHash, err := resolveReference(repo, fromRef)
+	if err != nil {
+		return err
 	}
 
-	// Create the branch reference
-	newRef := plumbing.NewHashReference(plumbing.NewBranchReferenceName(branchName), targetHash)
+	newRef := plumbing.NewHashReference(
+		plumbing.NewBranchReferenceName(branchName),
+		targetHash,
+	)
 
 	err = repo.Storer.SetReference(newRef)
 	if err != nil {
-		return fmt.Errorf("failed to create branch reference: %w", err)
+		return fmt.Errorf("failed to set reference: %w", err)
 	}
 
 	// Push all branches
 	err = p.Push(ctx, directory, RefSpecPushAllBranches)
 	if err != nil {
-		return fmt.Errorf("failed to push branch: %w", err)
+		return err
 	}
 
 	log.Info("Remote branch created successfully")
@@ -501,29 +485,14 @@ func (p *GitProvider) CheckReference(ctx context.Context, directory, refName str
 		return nil
 	}
 
-	repo, err := git.PlainOpen(directory)
+	r, err := git.PlainOpen(directory)
 	if err != nil {
-		return fmt.Errorf("failed to open repository at %q: %w", directory, err)
+		return fmt.Errorf("failed to open git repository: %w", err)
 	}
 
-	// Try to resolve as branch first
-	_, err = repo.Reference(plumbing.NewBranchReferenceName(refName), false)
-	if err == nil {
-		log.Info("Reference exists as branch")
-		return nil
-	}
+	_, err = resolveReference(r, refName)
 
-	// Try to resolve as commit
-	hash := plumbing.NewHash(refName)
-	if !hash.IsZero() {
-		_, err = repo.CommitObject(hash)
-		if err == nil {
-			log.Info("Reference exists as commit")
-			return nil
-		}
-	}
-
-	return fmt.Errorf("reference %q not found", refName)
+	return err
 }
 
 // RemoveBranch removes a local branch.
@@ -542,55 +511,6 @@ func (p *GitProvider) RemoveBranch(ctx context.Context, directory, branchName st
 	}
 
 	log.Info("Branch removed successfully")
-
-	return nil
-}
-
-// RenameBranch renames a branch.
-func (p *GitProvider) RenameBranch(ctx context.Context, directory, oldName, newName string) error {
-	log := ctrl.LoggerFrom(ctx).WithValues("directory", directory, "oldName", oldName, "newName", newName)
-	log.Info("Renaming branch")
-
-	repo, err := git.PlainOpen(directory)
-	if err != nil {
-		return fmt.Errorf("failed to open repository at %q: %w", directory, err)
-	}
-
-	// Get the old branch reference
-	oldRef, err := repo.Reference(plumbing.NewBranchReferenceName(oldName), false)
-	if err != nil {
-		return fmt.Errorf("failed to get branch reference: %w", err)
-	}
-
-	// Create new reference with the same hash
-	newRef := plumbing.NewHashReference(plumbing.NewBranchReferenceName(newName), oldRef.Hash())
-
-	err = repo.Storer.SetReference(newRef)
-	if err != nil {
-		return fmt.Errorf("failed to create new branch reference: %w", err)
-	}
-
-	// Checkout the new branch
-	worktree, err := repo.Worktree()
-	if err != nil {
-		return fmt.Errorf("failed to get worktree: %w", err)
-	}
-
-	err = worktree.Checkout(&git.CheckoutOptions{
-		Branch: plumbing.NewBranchReferenceName(newName),
-		Force:  true,
-	})
-	if err != nil {
-		return fmt.Errorf("failed to checkout new branch: %w", err)
-	}
-
-	// Remove the old reference
-	err = repo.Storer.RemoveReference(plumbing.NewBranchReferenceName(oldName))
-	if err != nil {
-		return fmt.Errorf("failed to remove old branch reference: %w", err)
-	}
-
-	log.Info("Branch renamed successfully")
 
 	return nil
 }
@@ -675,7 +595,7 @@ func (p *GitProvider) Fetch(ctx context.Context, directory, branchName string) e
 	}
 
 	err = repo.FetchContext(ctx, fetchOptions)
-	if err != nil && err != git.NoErrAlreadyUpToDate {
+	if err != nil && !errors.Is(err, git.NoErrAlreadyUpToDate) {
 		return fmt.Errorf("failed to fetch: %w", err)
 	}
 
@@ -766,7 +686,7 @@ func (p *GitProvider) CheckoutRemoteBranch(ctx context.Context, directory, branc
 	}
 
 	err = repo.FetchContext(ctx, fetchOptions)
-	if err != nil && err != git.NoErrAlreadyUpToDate {
+	if err != nil && !errors.Is(err, git.NoErrAlreadyUpToDate) {
 		return fmt.Errorf("failed to fetch: %w", err)
 	}
 
@@ -848,4 +768,53 @@ func (p *GitProvider) CreateRemoteTag(ctx context.Context, directory, branchName
 	log.Info("Remote tag created successfully")
 
 	return nil
+}
+
+func branchExists(branchName string, branches storer.ReferenceIter) (bool, error) {
+	exist := false
+
+	if err := branches.ForEach(func(ref *plumbing.Reference) error {
+		if ref.Name().Short() == branchName {
+			exist = true
+			return storer.ErrStop
+		}
+
+		return nil
+	}); err != nil {
+		return false, fmt.Errorf("failed to iterate branches: %w", err)
+	}
+
+	return exist, nil
+}
+
+// resolveReference resolves a reference (branch or commit) to a hash.
+func resolveReference(r *git.Repository, ref string) (plumbing.Hash, error) {
+	if ref == "" {
+		// If no reference specified, use HEAD
+		ref, err := r.Head()
+		if err != nil {
+			return plumbing.ZeroHash, fmt.Errorf("failed to get git HEAD reference: %w", err)
+		}
+
+		return ref.Hash(), nil
+	}
+
+	// Try to resolve as a branch first
+	branchRef, err := r.Reference(plumbing.NewBranchReferenceName(ref), false)
+	if err == nil {
+		return branchRef.Hash(), nil
+	}
+
+	// If not a branch, try to resolve as a commit
+	commitHash := plumbing.NewHash(ref)
+	if commitHash.IsZero() {
+		return plumbing.ZeroHash, fmt.Errorf("invalid reference or commit hash: %s", ref)
+	}
+
+	_, err = r.CommitObject(commitHash)
+	if err != nil {
+		return plumbing.ZeroHash, fmt.Errorf("failed to get commit %s: %w", ref, err)
+	}
+
+	return commitHash, nil
 }

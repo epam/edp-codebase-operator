@@ -106,13 +106,14 @@ func TestPutDeployConfigs_ShouldPass(t *testing.T) {
 	mGit.On("Checkout", testify.Anything, wd, "fake-defaultBranch", false).Return(nil)
 	mGit.On("Commit", testify.Anything, wd, fmt.Sprintf("Add deployment templates for %v", c.Name)).Return(nil)
 	mGit.On("Push", testify.Anything, wd, gitproviderv2.RefSpecPushAllBranches).Return(nil)
-	mGit.On("Clone", testify.Anything, testify.Anything, wd, testify.Anything).Return(nil)
+	mGit.On("Clone", testify.Anything, testify.Anything, wd).Return(nil)
 
-	pdc := NewPutDeployConfigs(fakeCl, func(gitServer *codebaseApi.GitServer, secret *coreV1.Secret) gitproviderv2.Git {
-		return mGit
-	}, func(config gitproviderv2.Config) gitproviderv2.Git {
-		return mGit
-	})
+	pdc := NewPutDeployConfigs(
+		fakeCl,
+		func(cfg gitproviderv2.Config) gitproviderv2.Git {
+			return mGit
+		},
+	)
 
 	err := pdc.ServeRequest(context.Background(), c)
 	assert.NoError(t, err)
@@ -140,11 +141,12 @@ func TestPutDeployConfigs_ShouldPassWithNonApplication(t *testing.T) {
 
 	mGit := gitServerMocks.NewMockGit(t)
 
-	pdc := NewPutDeployConfigs(fakeCl, func(gitServer *codebaseApi.GitServer, secret *coreV1.Secret) gitproviderv2.Git {
-		return mGit
-	}, func(config gitproviderv2.Config) gitproviderv2.Git {
-		return mGit
-	})
+	pdc := NewPutDeployConfigs(
+		fakeCl,
+		func(config gitproviderv2.Config) gitproviderv2.Git {
+			return mGit
+		},
+	)
 
 	err := pdc.ServeRequest(context.Background(), c)
 	assert.NoError(t, err)
