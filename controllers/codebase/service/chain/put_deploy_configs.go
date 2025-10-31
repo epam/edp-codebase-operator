@@ -14,13 +14,15 @@ import (
 )
 
 type PutDeployConfigs struct {
-	client                      client.Client
-	gitProviderFactory          gitproviderv2.GitProviderFactory
-	createGitProviderWithConfig func(config gitproviderv2.Config) gitproviderv2.Git
+	client             client.Client
+	gitProviderFactory gitproviderv2.GitProviderFactory
 }
 
-func NewPutDeployConfigs(c client.Client, gitProviderFactory gitproviderv2.GitProviderFactory, createGitProviderWithConfig func(config gitproviderv2.Config) gitproviderv2.Git) *PutDeployConfigs {
-	return &PutDeployConfigs{client: c, gitProviderFactory: gitProviderFactory, createGitProviderWithConfig: createGitProviderWithConfig}
+func NewPutDeployConfigs(
+	c client.Client,
+	gitProviderFactory gitproviderv2.GitProviderFactory,
+) *PutDeployConfigs {
+	return &PutDeployConfigs{client: c, gitProviderFactory: gitProviderFactory}
 }
 
 func (h *PutDeployConfigs) ServeRequest(ctx context.Context, c *codebaseApi.Codebase) error {
@@ -58,14 +60,14 @@ func (h *PutDeployConfigs) tryToPushConfigs(ctx context.Context, codebase *codeb
 	}
 
 	// Prepare git repository (get server, clone, checkout)
-	gitCtx, err := PrepareGitRepository(ctx, h.client, codebase, h.gitProviderFactory, h.createGitProviderWithConfig)
+	gitCtx, err := PrepareGitRepository(ctx, h.client, codebase, h.gitProviderFactory)
 	if err != nil {
 		setFailedFields(codebase, codebaseApi.SetupDeploymentTemplates, err.Error())
 		return fmt.Errorf("failed to prepare git repository: %w", err)
 	}
 
 	// Create git provider using factory
-	g := h.gitProviderFactory(gitCtx.GitServer, gitCtx.GitServerSecret)
+	g := h.gitProviderFactory(gitproviderv2.NewConfigFromGitServerAndSecret(gitCtx.GitServer, gitCtx.GitServerSecret))
 
 	// Add Gerrit-specific commit hooks if needed
 	if gitCtx.GitServer.Spec.GitProvider == codebaseApi.GitProviderGerrit {

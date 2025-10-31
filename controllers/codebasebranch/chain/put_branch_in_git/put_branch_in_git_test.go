@@ -121,7 +121,7 @@ func TestPutBranchInGit_ShouldBeExecutedSuccessfullyWithDefaultVersioning(t *tes
 
 	err := PutBranchInGit{
 		Client: fakeCl,
-		GitProviderFactory: func(gitServer *codebaseApi.GitServer, secret *coreV1.Secret) gitproviderv2.Git {
+		GitProviderFactory: func(cfg gitproviderv2.Config) gitproviderv2.Git {
 			return mGit
 		},
 	}.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), cb)
@@ -208,7 +208,7 @@ func TestPutBranchInGit_ShouldFailgetCurrentbranch(t *testing.T) {
 
 	err := PutBranchInGit{
 		Client: fakeCl,
-		GitProviderFactory: func(gitServer *codebaseApi.GitServer, secret *coreV1.Secret) gitproviderv2.Git {
+		GitProviderFactory: func(cfg gitproviderv2.Config) gitproviderv2.Git {
 			return mGit
 		},
 	}.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), cb)
@@ -306,7 +306,7 @@ func TestPutBranchInGit_ShouldFailCreateRemoteBranch(t *testing.T) {
 
 	err := PutBranchInGit{
 		Client: fakeCl,
-		GitProviderFactory: func(gitServer *codebaseApi.GitServer, secret *coreV1.Secret) gitproviderv2.Git {
+		GitProviderFactory: func(cfg gitproviderv2.Config) gitproviderv2.Git {
 			return mGit
 		},
 	}.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), cb)
@@ -455,7 +455,7 @@ func TestPutBranchInGit_ShouldBeExecutedSuccessfullyWithEdpVersioning(t *testing
 
 	wd := chain.GetCodebaseBranchWorkingDirectory(cb)
 
-	mGit.On("Clone", testifymock.Anything, testifymock.Anything, wd, testifymock.Anything).
+	mGit.On("Clone", testifymock.Anything, testifymock.Anything, wd).
 		Return(nil)
 	mGit.On(
 		"GetCurrentBranchName",
@@ -466,7 +466,7 @@ func TestPutBranchInGit_ShouldBeExecutedSuccessfullyWithEdpVersioning(t *testing
 
 	err := PutBranchInGit{
 		Client: fakeCl,
-		GitProviderFactory: func(gitServer *codebaseApi.GitServer, secret *coreV1.Secret) gitproviderv2.Git {
+		GitProviderFactory: func(cfg gitproviderv2.Config) gitproviderv2.Git {
 			return mGit
 		},
 		Service: &service.CodebaseBranchServiceProvider{
@@ -609,7 +609,7 @@ func TestPutBranchInGit_SkipAlreadyCreated(t *testing.T) {
 	mGit := gitServerMocks.NewMockGit(t)
 	err := PutBranchInGit{
 		Client: fake.NewClientBuilder().Build(),
-		GitProviderFactory: func(gitServer *codebaseApi.GitServer, secret *coreV1.Secret) gitproviderv2.Git {
+		GitProviderFactory: func(cfg gitproviderv2.Config) gitproviderv2.Git {
 			return mGit
 		},
 	}.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), codeBaseBranch)

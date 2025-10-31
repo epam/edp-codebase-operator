@@ -81,7 +81,7 @@ func buildTemplateConfig(ctx context.Context, c client.Client, cb *codebaseApi.C
 func getProjectUrl(c client.Client, s *codebaseApi.CodebaseSpec, n string) (string, error) {
 	switch s.Strategy {
 	case "create":
-		p := util.BuildRepoUrl(s)
+		p := util.BuildTemplateRepoUrl(s)
 		return p, nil
 
 	case "clone":
