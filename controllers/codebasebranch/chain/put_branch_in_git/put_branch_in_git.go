@@ -13,16 +13,16 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/controllers/codebasebranch/chain"
 	"github.com/epam/edp-codebase-operator/v2/controllers/codebasebranch/chain/handler"
 	"github.com/epam/edp-codebase-operator/v2/controllers/codebasebranch/service"
-	"github.com/epam/edp-codebase-operator/v2/pkg/git"
+	gitproviderv2 "github.com/epam/edp-codebase-operator/v2/pkg/git/v2"
 	"github.com/epam/edp-codebase-operator/v2/pkg/model"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
 type PutBranchInGit struct {
-	Next    handler.CodebaseBranchHandler
-	Client  client.Client
-	Git     git.Git
-	Service service.CodebaseBranchService
+	Next               handler.CodebaseBranchHandler
+	Client             client.Client
+	Service            service.CodebaseBranchService
+	GitProviderFactory gitproviderv2.GitProviderFactory
 }
 
 func (h PutBranchInGit) ServeRequest(ctx context.Context, branch *codebaseApi.CodebaseBranch) error {
@@ -88,36 +88,32 @@ func (h PutBranchInGit) ServeRequest(ctx context.Context, branch *codebaseApi.Co
 		return err
 	}
 
+	// Create git provider using factory
+	g := h.GitProviderFactory(gitServer, secret)
+
 	wd := chain.GetCodebaseBranchWorkingDirectory(branch)
 	if !checkDirectory(wd) {
-		repoSshUrl := util.GetSSHUrl(gitServer, codebase.Spec.GetProjectID())
+		repoGitUrl := util.GetProjectGitUrl(gitServer, secret, codebase.Spec.GetProjectID())
 
-		if err := h.Git.CloneRepositoryBySsh(
-			ctx,
-			string(secret.Data[util.PrivateSShKeyName]),
-			gitServer.Spec.GitUser,
-			repoSshUrl,
-			wd,
-			gitServer.Spec.SshPort,
-		); err != nil {
+		if err := g.Clone(ctx, repoGitUrl, wd, 0); err != nil {
 			putGitBranchSetFailedFields(branch, err.Error())
 
 			return fmt.Errorf("failed to clone repository: %w", err)
 		}
 	}
 
-	currentBranchName, err := h.Git.GetCurrentBranchName(wd)
+	currentBranchName, err := g.GetCurrentBranchName(ctx, wd)
 	if err != nil {
 		return fmt.Errorf("failed to get current branch name: %w", err)
 	}
 
 	if currentBranchName != codebase.Spec.DefaultBranch {
-		if err = h.Git.CheckoutRemoteBranchBySSH(string(secret.Data[util.PrivateSShKeyName]), gitServer.Spec.GitUser, wd, codebase.Spec.DefaultBranch); err != nil {
+		if err = g.CheckoutRemoteBranch(ctx, wd, codebase.Spec.DefaultBranch); err != nil {
 			return fmt.Errorf("failed to checkout to default branch %s: %w", codebase.Spec.DefaultBranch, err)
 		}
 	}
 
-	err = h.Git.CreateRemoteBranch(string(secret.Data[util.PrivateSShKeyName]), gitServer.Spec.GitUser, wd, branch.Spec.BranchName, branch.Spec.FromCommit, gitServer.Spec.SshPort)
+	err = g.CreateRemoteBranch(ctx, wd, branch.Spec.BranchName, branch.Spec.FromCommit)
 	if err != nil {
 		putGitBranchSetFailedFields(branch, err.Error())
 

@@ -13,7 +13,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
-	gitServerMocks "github.com/epam/edp-codebase-operator/v2/pkg/git/mocks"
+	gitproviderv2 "github.com/epam/edp-codebase-operator/v2/pkg/git/v2"
+	gitServerMocks "github.com/epam/edp-codebase-operator/v2/pkg/git/v2/mocks"
 	"github.com/epam/edp-codebase-operator/v2/pkg/platform"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
@@ -97,21 +98,21 @@ func TestPutDeployConfigs_ShouldPass(t *testing.T) {
 
 	t.Setenv(util.AssetsDirEnv, "../../../../build")
 
-	port := int32(22)
-	u := "user"
-	p := "pass"
 	wd := util.GetWorkDir(fakeName, fakeNamespace)
 
 	mGit := gitServerMocks.NewMockGit(t)
 
-	mGit.On("CheckPermissions", testify.Anything, "https://github.com/epmd-edp/go--.git", &u, &p).Return(true)
-	mGit.On("GetCurrentBranchName", wd).Return("master", nil)
-	mGit.On("Checkout", &u, &p, wd, "fake-defaultBranch", false).Return(nil)
-	mGit.On("CommitChanges", wd, fmt.Sprintf("Add deployment templates for %v", c.Name)).Return(nil)
-	mGit.On("PushChanges", "fake", "fake-name", wd, port, "--all").Return(nil)
-	mGit.On("CloneRepositoryBySsh", testify.Anything, "fake", "fake-name", "ssh://fake-name:22/fake-name", wd, port).Return(nil)
+	mGit.On("GetCurrentBranchName", testify.Anything, wd).Return("master", nil)
+	mGit.On("Checkout", testify.Anything, wd, "fake-defaultBranch", false).Return(nil)
+	mGit.On("Commit", testify.Anything, wd, fmt.Sprintf("Add deployment templates for %v", c.Name)).Return(nil)
+	mGit.On("Push", testify.Anything, wd, gitproviderv2.RefSpecPushAllBranches).Return(nil)
+	mGit.On("Clone", testify.Anything, testify.Anything, wd, testify.Anything).Return(nil)
 
-	pdc := NewPutDeployConfigs(fakeCl, mGit)
+	pdc := NewPutDeployConfigs(fakeCl, func(gitServer *codebaseApi.GitServer, secret *coreV1.Secret) gitproviderv2.Git {
+		return mGit
+	}, func(config gitproviderv2.Config) gitproviderv2.Git {
+		return mGit
+	})
 
 	err := pdc.ServeRequest(context.Background(), c)
 	assert.NoError(t, err)
@@ -139,7 +140,11 @@ func TestPutDeployConfigs_ShouldPassWithNonApplication(t *testing.T) {
 
 	mGit := gitServerMocks.NewMockGit(t)
 
-	pdc := NewPutDeployConfigs(fakeCl, mGit)
+	pdc := NewPutDeployConfigs(fakeCl, func(gitServer *codebaseApi.GitServer, secret *coreV1.Secret) gitproviderv2.Git {
+		return mGit
+	}, func(config gitproviderv2.Config) gitproviderv2.Git {
+		return mGit
+	})
 
 	err := pdc.ServeRequest(context.Background(), c)
 	assert.NoError(t, err)

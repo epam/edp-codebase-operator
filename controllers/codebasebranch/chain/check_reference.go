@@ -11,15 +11,15 @@ import (
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	"github.com/epam/edp-codebase-operator/v2/controllers/codebasebranch/chain/handler"
-	"github.com/epam/edp-codebase-operator/v2/pkg/git"
+	gitproviderv2 "github.com/epam/edp-codebase-operator/v2/pkg/git/v2"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
 // CheckReferenceExists is chain element for checking if a reference (branch or commit) exists.
 type CheckReferenceExists struct {
-	Next   handler.CodebaseBranchHandler
-	Client client.Client
-	Git    git.Git
+	Next               handler.CodebaseBranchHandler
+	Client             client.Client
+	GitProviderFactory gitproviderv2.GitProviderFactory
 }
 
 // ServeRequest is a method for checking if the reference (branch or commit) exists.
@@ -72,23 +72,19 @@ func (c CheckReferenceExists) ServeRequest(ctx context.Context, codebaseBranch *
 		return c.processErr(codebaseBranch, fmt.Errorf("failed to get secret %s: %w", gitServer.Spec.NameSshKeySecret, err))
 	}
 
+	// Create git provider using factory
+	g := c.GitProviderFactory(gitServer, secret)
+
 	workDir := GetCodebaseBranchWorkingDirectory(codebaseBranch)
 	if !DirectoryExistsNotEmpty(workDir) {
-		repoSshUrl := util.GetSSHUrl(gitServer, codebase.Spec.GetProjectID())
+		repoGitUrl := util.GetProjectGitUrl(gitServer, secret, codebase.Spec.GetProjectID())
 
-		if err := c.Git.CloneRepositoryBySsh(
-			ctx,
-			string(secret.Data[util.PrivateSShKeyName]),
-			gitServer.Spec.GitUser,
-			repoSshUrl,
-			workDir,
-			gitServer.Spec.SshPort,
-		); err != nil {
+		if err := g.Clone(ctx, repoGitUrl, workDir, 0); err != nil {
 			return c.processErr(codebaseBranch, fmt.Errorf("failed to clone repository: %w", err))
 		}
 	}
 
-	err := c.Git.CheckReference(workDir, codebaseBranch.Spec.FromCommit)
+	err := g.CheckReference(ctx, workDir, codebaseBranch.Spec.FromCommit)
 	if err != nil {
 		return c.processErr(codebaseBranch, fmt.Errorf("reference %s doesn't exist: %w", codebaseBranch.Spec.FromCommit, err))
 	}

@@ -19,7 +19,8 @@ import (
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	"github.com/epam/edp-codebase-operator/v2/controllers/codebasebranch/chain"
 	"github.com/epam/edp-codebase-operator/v2/controllers/codebasebranch/service"
-	gitServerMocks "github.com/epam/edp-codebase-operator/v2/pkg/git/mocks"
+	gitproviderv2 "github.com/epam/edp-codebase-operator/v2/pkg/git/v2"
+	gitServerMocks "github.com/epam/edp-codebase-operator/v2/pkg/git/v2/mocks"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
@@ -93,38 +94,36 @@ func TestPutBranchInGit_ShouldBeExecutedSuccessfullyWithDefaultVersioning(t *tes
 	mGit := gitServerMocks.NewMockGit(t)
 
 	mGit.On(
-		"CloneRepositoryBySsh",
-		testifymock.Anything,
-		sshKey,
-		gs.Spec.GitUser,
+		"Clone",
 		testifymock.Anything,
 		testifymock.Anything,
-		gs.Spec.SshPort,
+		testifymock.Anything,
+		testifymock.Anything,
 	).Return(nil)
 	mGit.On(
 		"GetCurrentBranchName",
 		testifymock.Anything,
+		testifymock.Anything,
 	).Return("default-branch", nil)
 	mGit.On(
+		"CheckoutRemoteBranch",
+		testifymock.Anything,
+		testifymock.Anything,
+		c.Spec.DefaultBranch,
+	).Return(nil)
+	mGit.On(
 		"CreateRemoteBranch",
-		sshKey,
-		gs.Spec.GitUser,
+		testifymock.Anything,
 		testifymock.Anything,
 		cb.Spec.BranchName,
 		cb.Spec.FromCommit,
-		gs.Spec.SshPort,
-	).Return(nil)
-	mGit.On(
-		"CheckoutRemoteBranchBySSH",
-		sshKey,
-		gs.Spec.GitUser,
-		testifymock.Anything,
-		c.Spec.DefaultBranch,
 	).Return(nil)
 
 	err := PutBranchInGit{
 		Client: fakeCl,
-		Git:    mGit,
+		GitProviderFactory: func(gitServer *codebaseApi.GitServer, secret *coreV1.Secret) gitproviderv2.Git {
+			return mGit
+		},
 	}.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), cb)
 
 	assert.NoError(t, err)
@@ -195,22 +194,23 @@ func TestPutBranchInGit_ShouldFailgetCurrentbranch(t *testing.T) {
 	mGit := gitServerMocks.NewMockGit(t)
 
 	mGit.On(
-		"CloneRepositoryBySsh",
-		testifymock.Anything,
-		sshKey,
-		gs.Spec.GitUser,
+		"Clone",
 		testifymock.Anything,
 		testifymock.Anything,
-		gs.Spec.SshPort,
+		testifymock.Anything,
+		testifymock.Anything,
 	).Return(nil)
 	mGit.On(
 		"GetCurrentBranchName",
+		testifymock.Anything,
 		testifymock.Anything,
 	).Return("", errors.New("failed to get current branch"))
 
 	err := PutBranchInGit{
 		Client: fakeCl,
-		Git:    mGit,
+		GitProviderFactory: func(gitServer *codebaseApi.GitServer, secret *coreV1.Secret) gitproviderv2.Git {
+			return mGit
+		},
 	}.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), cb)
 
 	require.Error(t, err)
@@ -283,9 +283,7 @@ func TestPutBranchInGit_ShouldFailCreateRemoteBranch(t *testing.T) {
 	mGit := gitServerMocks.NewMockGit(t)
 
 	mGit.On(
-		"CloneRepositoryBySsh",
-		testifymock.Anything,
-		testifymock.Anything,
+		"Clone",
 		testifymock.Anything,
 		testifymock.Anything,
 		testifymock.Anything,
@@ -295,21 +293,22 @@ func TestPutBranchInGit_ShouldFailCreateRemoteBranch(t *testing.T) {
 	mGit.On(
 		"GetCurrentBranchName",
 		testifymock.Anything,
+		testifymock.Anything,
 	).Return("main", nil)
 
 	mGit.On(
 		"CreateRemoteBranch",
 		testifymock.Anything,
 		testifymock.Anything,
-		testifymock.Anything,
 		fakeName,
-		testifymock.Anything,
 		testifymock.Anything,
 	).Return(errors.New("failed to create remote branch"))
 
 	err := PutBranchInGit{
 		Client: fakeCl,
-		Git:    mGit,
+		GitProviderFactory: func(gitServer *codebaseApi.GitServer, secret *coreV1.Secret) gitproviderv2.Git {
+			return mGit
+		},
 	}.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), cb)
 
 	assert.Error(t, err)
@@ -454,21 +453,22 @@ func TestPutBranchInGit_ShouldBeExecutedSuccessfullyWithEdpVersioning(t *testing
 
 	mGit := gitServerMocks.NewMockGit(t)
 
-	port := int32(22)
 	wd := chain.GetCodebaseBranchWorkingDirectory(cb)
 
-	repoSshUrl := util.GetSSHUrl(gs, c.Spec.GetProjectID())
-	mGit.On("CloneRepositoryBySsh", testifymock.Anything, "", fakeName, repoSshUrl, wd, port).
+	mGit.On("Clone", testifymock.Anything, testifymock.Anything, wd, testifymock.Anything).
 		Return(nil)
 	mGit.On(
 		"GetCurrentBranchName",
 		testifymock.Anything,
+		wd,
 	).Return("main", nil)
-	mGit.On("CreateRemoteBranch", "", fakeName, wd, fakeName, "", port).Return(nil)
+	mGit.On("CreateRemoteBranch", testifymock.Anything, wd, fakeName, "").Return(nil)
 
 	err := PutBranchInGit{
 		Client: fakeCl,
-		Git:    mGit,
+		GitProviderFactory: func(gitServer *codebaseApi.GitServer, secret *coreV1.Secret) gitproviderv2.Git {
+			return mGit
+		},
 		Service: &service.CodebaseBranchServiceProvider{
 			Client: fakeCl,
 		},
@@ -606,9 +606,12 @@ func TestPutBranchInGit_SkipAlreadyCreated(t *testing.T) {
 		},
 	}
 
+	mGit := gitServerMocks.NewMockGit(t)
 	err := PutBranchInGit{
 		Client: fake.NewClientBuilder().Build(),
-		Git:    gitServerMocks.NewMockGit(t),
+		GitProviderFactory: func(gitServer *codebaseApi.GitServer, secret *coreV1.Secret) gitproviderv2.Git {
+			return mGit
+		},
 	}.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), codeBaseBranch)
 
 	require.NoError(t, err)

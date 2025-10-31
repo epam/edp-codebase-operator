@@ -10,19 +10,20 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
-	"github.com/epam/edp-codebase-operator/v2/pkg/git"
+	gitproviderv2 "github.com/epam/edp-codebase-operator/v2/pkg/git/v2"
 	gitlabci "github.com/epam/edp-codebase-operator/v2/pkg/gitlab"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
 type PutGitLabCIConfig struct {
-	client          client.Client
-	git             git.Git
-	gitlabCIManager gitlabci.Manager
+	client                      client.Client
+	gitlabCIManager             gitlabci.Manager
+	gitProviderFactory          gitproviderv2.GitProviderFactory
+	createGitProviderWithConfig func(config gitproviderv2.Config) gitproviderv2.Git
 }
 
-func NewPutGitLabCIConfig(c client.Client, g git.Git, m gitlabci.Manager) *PutGitLabCIConfig {
-	return &PutGitLabCIConfig{client: c, git: g, gitlabCIManager: m}
+func NewPutGitLabCIConfig(c client.Client, m gitlabci.Manager, gitProviderFactory gitproviderv2.GitProviderFactory, createGitProviderWithConfig func(config gitproviderv2.Config) gitproviderv2.Git) *PutGitLabCIConfig {
+	return &PutGitLabCIConfig{client: c, gitlabCIManager: m, gitProviderFactory: gitProviderFactory, createGitProviderWithConfig: createGitProviderWithConfig}
 }
 
 func (h *PutGitLabCIConfig) ServeRequest(ctx context.Context, codebase *codebaseApi.Codebase) error {
@@ -82,11 +83,14 @@ func (h *PutGitLabCIConfig) tryToPushGitLabCIConfig(ctx context.Context, codebas
 	log := ctrl.LoggerFrom(ctx)
 
 	// Prepare git repository (get server, clone, checkout)
-	gitCtx, err := PrepareGitRepository(ctx, h.client, h.git, codebase)
+	gitCtx, err := PrepareGitRepository(ctx, h.client, codebase, h.gitProviderFactory, h.createGitProviderWithConfig)
 	if err != nil {
 		setFailedFields(codebase, codebaseApi.RepositoryProvisioning, err.Error())
 		return fmt.Errorf("failed to prepare git repository: %w", err)
 	}
+
+	// Create git provider using factory
+	g := h.gitProviderFactory(gitCtx.GitServer, gitCtx.GitServerSecret)
 
 	// Inject GitLab CI configuration
 	log.Info("Start injecting GitLab CI config")
@@ -100,7 +104,7 @@ func (h *PutGitLabCIConfig) tryToPushGitLabCIConfig(ctx context.Context, codebas
 	log.Info("Start committing changes")
 
 	// Commit changes
-	err = h.git.CommitChanges(gitCtx.WorkDir, "Add GitLab CI configuration")
+	err = g.Commit(ctx, gitCtx.WorkDir, "Add GitLab CI configuration")
 	if err != nil {
 		return fmt.Errorf("failed to commit changes: %w", err)
 	}
@@ -109,13 +113,7 @@ func (h *PutGitLabCIConfig) tryToPushGitLabCIConfig(ctx context.Context, codebas
 	log.Info("Start pushing changes")
 
 	// Push changes
-	err = h.git.PushChanges(
-		gitCtx.PrivateSSHKey,
-		gitCtx.GitServer.Spec.GitUser,
-		gitCtx.WorkDir,
-		gitCtx.GitServer.Spec.SshPort,
-		"--all",
-	)
+	err = g.Push(ctx, gitCtx.WorkDir, gitproviderv2.RefSpecPushAllBranches)
 	if err != nil {
 		return fmt.Errorf("failed to push changes: %w", err)
 	}

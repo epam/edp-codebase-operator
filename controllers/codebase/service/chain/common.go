@@ -11,7 +11,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
-	"github.com/epam/edp-codebase-operator/v2/pkg/git"
+	gitproviderv2 "github.com/epam/edp-codebase-operator/v2/pkg/git/v2"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
@@ -19,11 +19,13 @@ import (
 // It contains the GitServer configuration, credentials, and paths
 // required for SSH-based git operations.
 type GitRepositoryContext struct {
-	GitServer     *codebaseApi.GitServer
-	Secret        *corev1.Secret
-	PrivateSSHKey string
-	RepoSSHUrl    string
-	WorkDir       string
+	GitServer       *codebaseApi.GitServer
+	GitServerSecret *corev1.Secret
+	PrivateSSHKey   string
+	UserName        string
+	Token           string
+	RepoGitUrl      string
+	WorkDir         string
 }
 
 func setIntermediateSuccessFields(ctx context.Context, c client.Client, cb *codebaseApi.Codebase, action codebaseApi.ActionType) error {
@@ -101,52 +103,30 @@ func updateGitStatusWithPatch(
 func PrepareGitRepository(
 	ctx context.Context,
 	c client.Client,
-	g git.Git,
 	codebase *codebaseApi.Codebase,
+	gitProviderFactory gitproviderv2.GitProviderFactory,
+	createGitProviderWithConfig func(config gitproviderv2.Config) gitproviderv2.Git,
 ) (*GitRepositoryContext, error) {
 	log := ctrl.LoggerFrom(ctx)
 
-	// Step 1: Retrieve GitServer resource
-	gitServer := &codebaseApi.GitServer{}
-	if err := c.Get(
-		ctx,
-		client.ObjectKey{Name: codebase.Spec.GitServer, Namespace: codebase.Namespace},
-		gitServer,
-	); err != nil {
-		return nil, fmt.Errorf("failed to get GitServer: %w", err)
+	// Step 1-2: Get git repository context (GitServer, Secret, and paths)
+	gitRepoCtx, err := GetGitRepositoryContext(ctx, c, codebase)
+	if err != nil {
+		return nil, err
 	}
 
-	// Step 2: Retrieve GitServer Secret
-	gitServerSecret := &corev1.Secret{}
-	if err := c.Get(
-		ctx,
-		client.ObjectKey{Name: gitServer.Spec.NameSshKeySecret, Namespace: codebase.Namespace},
-		gitServerSecret,
-	); err != nil {
-		return nil, fmt.Errorf("failed to get GitServer secret: %w", err)
-	}
-
-	// Step 3: Extract SSH key and build paths
-	privateSSHKey := string(gitServerSecret.Data[util.PrivateSShKeyName])
-	repoSshUrl := util.GetSSHUrl(gitServer, codebase.Spec.GetProjectID())
-	wd := util.GetWorkDir(codebase.Name, codebase.Namespace)
+	// Step 3: Create git provider using factory
+	g := gitProviderFactory(gitRepoCtx.GitServer, gitRepoCtx.GitServerSecret)
 
 	// Step 4: Clone repository if needed
-	if !util.DoesDirectoryExist(wd) || util.IsDirectoryEmpty(wd) {
-		log.Info("Start cloning repository", "url", repoSshUrl)
+	if !util.DoesDirectoryExist(gitRepoCtx.WorkDir) || util.IsDirectoryEmpty(gitRepoCtx.WorkDir) {
+		log.Info("Start cloning repository", "url", gitRepoCtx.RepoGitUrl)
 
-		if err := g.CloneRepositoryBySsh(
-			ctx,
-			privateSSHKey,
-			gitServer.Spec.GitUser,
-			repoSshUrl,
-			wd,
-			gitServer.Spec.SshPort,
-		); err != nil {
+		if err := g.Clone(ctx, gitRepoCtx.RepoGitUrl, gitRepoCtx.WorkDir, 0); err != nil {
 			return nil, fmt.Errorf("failed to clone git repository: %w", err)
 		}
 
-		log.Info("Repository has been cloned", "url", repoSshUrl)
+		log.Info("Repository has been cloned", "url", gitRepoCtx.RepoGitUrl)
 	}
 
 	// Step 5: Get repo URL for checkout
@@ -158,7 +138,7 @@ func PrepareGitRepository(
 	// Step 6: Checkout default branch
 	log.Info("Start checkout default branch", "branch", codebase.Spec.DefaultBranch, "repo", repoUrl)
 
-	err = CheckoutBranch(repoUrl, wd, codebase.Spec.DefaultBranch, g, codebase, c)
+	err = CheckoutBranch(ctx, repoUrl, gitRepoCtx.WorkDir, codebase.Spec.DefaultBranch, g, codebase, c, createGitProviderWithConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to checkout default branch %v: %w", codebase.Spec.DefaultBranch, err)
 	}
@@ -166,11 +146,39 @@ func PrepareGitRepository(
 	log.Info("Default branch has been checked out", "branch", codebase.Spec.DefaultBranch, "repo", repoUrl)
 
 	// Return context for subsequent operations
+	return gitRepoCtx, nil
+}
+
+func GetGitRepositoryContext(
+	ctx context.Context,
+	c client.Client,
+	codebase *codebaseApi.Codebase,
+) (*GitRepositoryContext, error) {
+	gitServer := &codebaseApi.GitServer{}
+	if err := c.Get(
+		ctx,
+		client.ObjectKey{Name: codebase.Spec.GitServer, Namespace: codebase.Namespace},
+		gitServer,
+	); err != nil {
+		return nil, fmt.Errorf("failed to get GitServer: %w", err)
+	}
+
+	gitServerSecret := &corev1.Secret{}
+	if err := c.Get(
+		ctx,
+		client.ObjectKey{Name: gitServer.Spec.NameSshKeySecret, Namespace: codebase.Namespace},
+		gitServerSecret,
+	); err != nil {
+		return nil, fmt.Errorf("failed to get GitServer secret: %w", err)
+	}
+
 	return &GitRepositoryContext{
-		GitServer:     gitServer,
-		Secret:        gitServerSecret,
-		PrivateSSHKey: privateSSHKey,
-		RepoSSHUrl:    repoSshUrl,
-		WorkDir:       wd,
+		GitServer:       gitServer,
+		GitServerSecret: gitServerSecret,
+		PrivateSSHKey:   string(gitServerSecret.Data[util.PrivateSShKeyName]),
+		UserName:        string(gitServerSecret.Data[util.GitServerSecretUserNameField]),
+		Token:           string(gitServerSecret.Data[util.GitServerSecretTokenField]),
+		RepoGitUrl:      util.GetProjectGitUrl(gitServer, gitServerSecret, codebase.Spec.GetProjectID()),
+		WorkDir:         util.GetWorkDir(codebase.Name, codebase.Namespace),
 	}, nil
 }

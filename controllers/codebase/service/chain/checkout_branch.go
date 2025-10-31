@@ -9,7 +9,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
-	"github.com/epam/edp-codebase-operator/v2/pkg/git"
+	gitproviderv2 "github.com/epam/edp-codebase-operator/v2/pkg/git/v2"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
@@ -31,18 +31,15 @@ func GetRepositoryCredentialsIfExists(cb *codebaseApi.Codebase, c client.Client)
 	return
 }
 
-func CheckoutBranch(repository, projectPath, branchName string, g git.Git, cb *codebaseApi.Codebase, c client.Client) error {
-	user, password, err := GetRepositoryCredentialsIfExists(cb, c)
-	if err != nil && !k8sErrors.IsNotFound(err) {
-		return err
-	}
-
-	if !g.CheckPermissions(ctrl.LoggerInto(context.TODO(), ctrl.Log.WithName("git-provider")), repository, user, password) {
-		msg := fmt.Errorf("user %s cannot get access to the repository %s", *user, repository)
-		return msg
-	}
-
-	currentBranchName, err := g.GetCurrentBranchName(projectPath)
+func CheckoutBranch(
+	ctx context.Context,
+	repository, projectPath, branchName string,
+	g gitproviderv2.Git,
+	cb *codebaseApi.Codebase,
+	c client.Client,
+	createGitProviderWithConfig func(config gitproviderv2.Config) gitproviderv2.Git,
+) error {
+	currentBranchName, err := g.GetCurrentBranchName(ctx, projectPath)
 	if err != nil {
 		return fmt.Errorf("failed to get current branch name: %w", err)
 	}
@@ -54,32 +51,32 @@ func CheckoutBranch(repository, projectPath, branchName string, g git.Git, cb *c
 
 	switch cb.Spec.Strategy {
 	case "create":
-		if err := g.Checkout(user, password, projectPath, branchName, false); err != nil {
+		if err := g.Checkout(ctx, projectPath, branchName, false); err != nil {
 			return fmt.Errorf("failed to checkout to default branch %s (create strategy): %w", branchName, err)
 		}
 
 	case "clone":
-		if err := g.Checkout(user, password, projectPath, branchName, true); err != nil {
+		user, password, err := GetRepositoryCredentialsIfExists(cb, c)
+		if err != nil && !k8sErrors.IsNotFound(err) {
+			return err
+		}
+
+		cloneRepoGitProvider := g
+
+		if user != nil && password != nil {
+			cloneRepoGitProvider = createGitProviderWithConfig(gitproviderv2.Config{
+				Username: *user,
+				Token:    *password,
+			})
+		}
+
+		if err := cloneRepoGitProvider.Checkout(ctx, projectPath, branchName, true); err != nil {
 			return fmt.Errorf("failed to checkout to default branch %s (clone strategy): %w", branchName, err)
 		}
 	case "import":
-		gs, err := util.GetGitServer(c, cb.Spec.GitServer, cb.Namespace)
-		if err != nil {
-			return fmt.Errorf("failed to get GitServer: %w", err)
-		}
-
-		secret, err := util.GetSecret(c, gs.NameSshKeySecret, cb.Namespace)
-		if err != nil {
-			return fmt.Errorf("failed to get %v secret: %w", gs.NameSshKeySecret, err)
-		}
-
-		k := string(secret.Data[util.PrivateSShKeyName])
-		u := gs.GitUser
-		// CheckoutRemoteBranchBySSH(key, user, gitPath, remoteBranchName string)
-		if err := g.CheckoutRemoteBranchBySSH(k, u, projectPath, branchName); err != nil {
+		if err := g.CheckoutRemoteBranch(ctx, projectPath, branchName); err != nil {
 			return fmt.Errorf("failed to checkout to default branch %s (import strategy): %w", branchName, err)
 		}
-
 	default:
 		return fmt.Errorf("failed to checkout, unsupported strategy: '%s'", cb.Spec.Strategy)
 	}
