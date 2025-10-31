@@ -36,7 +36,7 @@ func AddGitToURL(url string) string {
 	return url
 }
 
-func GetRepoUrl(c *codebaseApi.Codebase) (string, error) {
+func GetRepoUrlForClone(c *codebaseApi.Codebase) (string, error) {
 	log.Info("Setup repo url", "codebase_name", c.Name)
 
 	if c.Spec.Strategy == codebaseApi.Clone {
@@ -46,7 +46,7 @@ func GetRepoUrl(c *codebaseApi.Codebase) (string, error) {
 
 	log.Info("TriggerType is not clone. Start build url...", logCodebaseNameKey, c.Name)
 
-	u := BuildRepoUrl(&c.Spec)
+	u := BuildTemplateRepoUrl(&c.Spec)
 
 	log.Info("Repository url has been generated", "url", u, logCodebaseNameKey, c.Name)
 
@@ -61,7 +61,7 @@ func tryGetRepoUrl(spec *codebaseApi.CodebaseSpec) (string, error) {
 	return spec.Repository.Url, nil
 }
 
-func BuildRepoUrl(spec *codebaseApi.CodebaseSpec) string {
+func BuildTemplateRepoUrl(spec *codebaseApi.CodebaseSpec) string {
 	log.Info("Start building repo url", "base url", GithubDomain, "spec", spec)
 
 	return strings.ToLower(

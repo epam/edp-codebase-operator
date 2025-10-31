@@ -105,47 +105,35 @@ func PrepareGitRepository(
 	c client.Client,
 	codebase *codebaseApi.Codebase,
 	gitProviderFactory gitproviderv2.GitProviderFactory,
-	createGitProviderWithConfig func(config gitproviderv2.Config) gitproviderv2.Git,
 ) (*GitRepositoryContext, error) {
 	log := ctrl.LoggerFrom(ctx)
 
-	// Step 1-2: Get git repository context (GitServer, Secret, and paths)
 	gitRepoCtx, err := GetGitRepositoryContext(ctx, c, codebase)
 	if err != nil {
 		return nil, err
 	}
 
-	// Step 3: Create git provider using factory
-	g := gitProviderFactory(gitRepoCtx.GitServer, gitRepoCtx.GitServerSecret)
+	gitProvider := gitProviderFactory(gitproviderv2.NewConfigFromGitServerAndSecret(gitRepoCtx.GitServer, gitRepoCtx.GitServerSecret))
 
-	// Step 4: Clone repository if needed
 	if !util.DoesDirectoryExist(gitRepoCtx.WorkDir) || util.IsDirectoryEmpty(gitRepoCtx.WorkDir) {
 		log.Info("Start cloning repository", "url", gitRepoCtx.RepoGitUrl)
 
-		if err := g.Clone(ctx, gitRepoCtx.RepoGitUrl, gitRepoCtx.WorkDir, 0); err != nil {
+		if err := gitProvider.Clone(ctx, gitRepoCtx.RepoGitUrl, gitRepoCtx.WorkDir); err != nil {
 			return nil, fmt.Errorf("failed to clone git repository: %w", err)
 		}
 
 		log.Info("Repository has been cloned", "url", gitRepoCtx.RepoGitUrl)
 	}
 
-	// Step 5: Get repo URL for checkout
-	repoUrl, err := util.GetRepoUrl(codebase)
-	if err != nil {
-		return nil, fmt.Errorf("failed to build repo url: %w", err)
-	}
+	log.Info("Start checkout default branch", "branch", codebase.Spec.DefaultBranch)
 
-	// Step 6: Checkout default branch
-	log.Info("Start checkout default branch", "branch", codebase.Spec.DefaultBranch, "repo", repoUrl)
-
-	err = CheckoutBranch(ctx, repoUrl, gitRepoCtx.WorkDir, codebase.Spec.DefaultBranch, g, codebase, c, createGitProviderWithConfig)
+	err = CheckoutBranch(ctx, codebase.Spec.DefaultBranch, gitRepoCtx, codebase, c, gitProviderFactory)
 	if err != nil {
 		return nil, fmt.Errorf("failed to checkout default branch %v: %w", codebase.Spec.DefaultBranch, err)
 	}
 
-	log.Info("Default branch has been checked out", "branch", codebase.Spec.DefaultBranch, "repo", repoUrl)
+	log.Info("Default branch has been checked out", "branch", codebase.Spec.DefaultBranch)
 
-	// Return context for subsequent operations
 	return gitRepoCtx, nil
 }
 

@@ -73,13 +73,13 @@ func (c CheckReferenceExists) ServeRequest(ctx context.Context, codebaseBranch *
 	}
 
 	// Create git provider using factory
-	g := c.GitProviderFactory(gitServer, secret)
+	g := c.GitProviderFactory(gitproviderv2.NewConfigFromGitServerAndSecret(gitServer, secret))
 
 	workDir := GetCodebaseBranchWorkingDirectory(codebaseBranch)
 	if !DirectoryExistsNotEmpty(workDir) {
 		repoGitUrl := util.GetProjectGitUrl(gitServer, secret, codebase.Spec.GetProjectID())
 
-		if err := g.Clone(ctx, repoGitUrl, workDir, 0); err != nil {
+		if err := g.Clone(ctx, repoGitUrl, workDir); err != nil {
 			return c.processErr(codebaseBranch, fmt.Errorf("failed to clone repository: %w", err))
 		}
 	}

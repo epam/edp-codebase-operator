@@ -89,31 +89,31 @@ func (h PutBranchInGit) ServeRequest(ctx context.Context, branch *codebaseApi.Co
 	}
 
 	// Create git provider using factory
-	g := h.GitProviderFactory(gitServer, secret)
+	gitProvider := h.GitProviderFactory(gitproviderv2.NewConfigFromGitServerAndSecret(gitServer, secret))
 
 	wd := chain.GetCodebaseBranchWorkingDirectory(branch)
 	if !checkDirectory(wd) {
 		repoGitUrl := util.GetProjectGitUrl(gitServer, secret, codebase.Spec.GetProjectID())
 
-		if err := g.Clone(ctx, repoGitUrl, wd, 0); err != nil {
+		if err := gitProvider.Clone(ctx, repoGitUrl, wd); err != nil {
 			putGitBranchSetFailedFields(branch, err.Error())
 
 			return fmt.Errorf("failed to clone repository: %w", err)
 		}
 	}
 
-	currentBranchName, err := g.GetCurrentBranchName(ctx, wd)
+	currentBranchName, err := gitProvider.GetCurrentBranchName(ctx, wd)
 	if err != nil {
 		return fmt.Errorf("failed to get current branch name: %w", err)
 	}
 
 	if currentBranchName != codebase.Spec.DefaultBranch {
-		if err = g.CheckoutRemoteBranch(ctx, wd, codebase.Spec.DefaultBranch); err != nil {
+		if err = gitProvider.CheckoutRemoteBranch(ctx, wd, codebase.Spec.DefaultBranch); err != nil {
 			return fmt.Errorf("failed to checkout to default branch %s: %w", codebase.Spec.DefaultBranch, err)
 		}
 	}
 
-	err = g.CreateRemoteBranch(ctx, wd, branch.Spec.BranchName, branch.Spec.FromCommit)
+	err = gitProvider.CreateRemoteBranch(ctx, wd, branch.Spec.BranchName, branch.Spec.FromCommit)
 	if err != nil {
 		putGitBranchSetFailedFields(branch, err.Error())
 

@@ -145,7 +145,7 @@ func TestPutGitLabCIConfig_ServeRequest(t *testing.T) {
 			gitClient: func(t *testing.T) gitproviderv2.Git {
 				mock := gitmocks.NewMockGit(t)
 
-				mock.On("Clone", testify.Anything, testify.Anything, testify.Anything, 0).
+				mock.On("Clone", testify.Anything, testify.Anything, testify.Anything).
 					Return(nil)
 				mock.On("GetCurrentBranchName", testify.Anything, testify.Anything).
 					Return("master", nil)
@@ -285,7 +285,7 @@ func TestPutGitLabCIConfig_ServeRequest(t *testing.T) {
 			objects: []client.Object{gitlabGitServer, gitlabGitServerSecret},
 			gitClient: func(t *testing.T) gitproviderv2.Git {
 				mock := gitmocks.NewMockGit(t)
-				mock.On("Clone", testify.Anything, testify.Anything, testify.Anything, 0).
+				mock.On("Clone", testify.Anything, testify.Anything, testify.Anything).
 					Return(errors.New("failed to clone git repository"))
 				return mock
 			},
@@ -316,7 +316,7 @@ func TestPutGitLabCIConfig_ServeRequest(t *testing.T) {
 			objects: []client.Object{gitlabGitServer, gitlabGitServerSecret},
 			gitClient: func(t *testing.T) gitproviderv2.Git {
 				mock := gitmocks.NewMockGit(t)
-				mock.On("Clone", testify.Anything, testify.Anything, testify.Anything, 0).
+				mock.On("Clone", testify.Anything, testify.Anything, testify.Anything).
 					Return(nil)
 				mock.On("GetCurrentBranchName", testify.Anything, testify.Anything).
 					Return("", errors.New("failed to get current branch"))
@@ -354,7 +354,7 @@ func TestPutGitLabCIConfig_ServeRequest(t *testing.T) {
 			objects: []client.Object{gitlabGitServer, gitlabGitServerSecret},
 			gitClient: func(t *testing.T) gitproviderv2.Git {
 				mock := gitmocks.NewMockGit(t)
-				mock.On("Clone", testify.Anything, testify.Anything, testify.Anything, 0).
+				mock.On("Clone", testify.Anything, testify.Anything, testify.Anything).
 					Return(nil)
 				mock.On("GetCurrentBranchName", testify.Anything, testify.Anything).
 					Return("master", nil)
@@ -404,7 +404,7 @@ func TestPutGitLabCIConfig_ServeRequest(t *testing.T) {
 			},
 			gitClient: func(t *testing.T) gitproviderv2.Git {
 				mock := gitmocks.NewMockGit(t)
-				mock.On("Clone", testify.Anything, testify.Anything, testify.Anything, 0).
+				mock.On("Clone", testify.Anything, testify.Anything, testify.Anything).
 					Return(nil)
 				mock.On("GetCurrentBranchName", testify.Anything, testify.Anything).
 					Return("master", nil)
@@ -456,7 +456,7 @@ func TestPutGitLabCIConfig_ServeRequest(t *testing.T) {
 			},
 			gitClient: func(t *testing.T) gitproviderv2.Git {
 				mock := gitmocks.NewMockGit(t)
-				mock.On("Clone", testify.Anything, testify.Anything, testify.Anything, 0).
+				mock.On("Clone", testify.Anything, testify.Anything, testify.Anything).
 					Return(nil)
 				mock.On("GetCurrentBranchName", testify.Anything, testify.Anything).
 					Return("master", nil)
@@ -505,10 +505,7 @@ func TestPutGitLabCIConfig_ServeRequest(t *testing.T) {
 			h := NewPutGitLabCIConfig(
 				k8sClient,
 				gitlabci.NewManager(k8sClient),
-				func(gitServer *codebaseApi.GitServer, secret *corev1.Secret) gitproviderv2.Git {
-					return gitClient
-				},
-				func(config gitproviderv2.Config) gitproviderv2.Git {
+				func(gitproviderv2.Config) gitproviderv2.Git {
 					return gitClient
 				},
 			)

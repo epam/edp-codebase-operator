@@ -48,7 +48,7 @@ func TestBuildRepoUrl(t *testing.T) {
 				Framework: tt.fields.framework,
 			}
 
-			got := BuildRepoUrl(spec)
+			got := BuildTemplateRepoUrl(spec)
 
 			assert.Equal(t, tt.want, got)
 		})
@@ -158,7 +158,7 @@ func TestGetRepoUrl(t *testing.T) {
 				},
 			}
 
-			got, err := GetRepoUrl(codebase)
+			got, err := GetRepoUrlForClone(codebase)
 
 			tt.wantErr(t, err)
 			assert.Equal(t, tt.want, got)

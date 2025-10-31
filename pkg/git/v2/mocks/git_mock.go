@@ -262,17 +262,17 @@ func (_c *MockGit_CheckoutRemoteBranch_Call) RunAndReturn(run func(context.Conte
 	return _c
 }
 
-// Clone provides a mock function with given fields: ctx, repoURL, destination, depth
-func (_m *MockGit) Clone(ctx context.Context, repoURL string, destination string, depth int) error {
-	ret := _m.Called(ctx, repoURL, destination, depth)
+// Clone provides a mock function with given fields: ctx, repoURL, destination
+func (_m *MockGit) Clone(ctx context.Context, repoURL string, destination string) error {
+	ret := _m.Called(ctx, repoURL, destination)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Clone")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, int) error); ok {
-		r0 = rf(ctx, repoURL, destination, depth)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
+		r0 = rf(ctx, repoURL, destination)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -289,14 +289,13 @@ type MockGit_Clone_Call struct {
 //   - ctx context.Context
 //   - repoURL string
 //   - destination string
-//   - depth int
-func (_e *MockGit_Expecter) Clone(ctx interface{}, repoURL interface{}, destination interface{}, depth interface{}) *MockGit_Clone_Call {
-	return &MockGit_Clone_Call{Call: _e.mock.On("Clone", ctx, repoURL, destination, depth)}
+func (_e *MockGit_Expecter) Clone(ctx interface{}, repoURL interface{}, destination interface{}) *MockGit_Clone_Call {
+	return &MockGit_Clone_Call{Call: _e.mock.On("Clone", ctx, repoURL, destination)}
 }
 
-func (_c *MockGit_Clone_Call) Run(run func(ctx context.Context, repoURL string, destination string, depth int)) *MockGit_Clone_Call {
+func (_c *MockGit_Clone_Call) Run(run func(ctx context.Context, repoURL string, destination string)) *MockGit_Clone_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string), args[2].(string), args[3].(int))
+		run(args[0].(context.Context), args[1].(string), args[2].(string))
 	})
 	return _c
 }
@@ -306,7 +305,7 @@ func (_c *MockGit_Clone_Call) Return(_a0 error) *MockGit_Clone_Call {
 	return _c
 }
 
-func (_c *MockGit_Clone_Call) RunAndReturn(run func(context.Context, string, string, int) error) *MockGit_Clone_Call {
+func (_c *MockGit_Clone_Call) RunAndReturn(run func(context.Context, string, string) error) *MockGit_Clone_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -837,55 +836,6 @@ func (_c *MockGit_RemoveBranch_Call) Return(_a0 error) *MockGit_RemoveBranch_Cal
 }
 
 func (_c *MockGit_RemoveBranch_Call) RunAndReturn(run func(context.Context, string, string) error) *MockGit_RemoveBranch_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// RenameBranch provides a mock function with given fields: ctx, directory, oldName, newName
-func (_m *MockGit) RenameBranch(ctx context.Context, directory string, oldName string, newName string) error {
-	ret := _m.Called(ctx, directory, oldName, newName)
-
-	if len(ret) == 0 {
-		panic("no return value specified for RenameBranch")
-	}
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) error); ok {
-		r0 = rf(ctx, directory, oldName, newName)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// MockGit_RenameBranch_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'RenameBranch'
-type MockGit_RenameBranch_Call struct {
-	*mock.Call
-}
-
-// RenameBranch is a helper method to define mock.On call
-//   - ctx context.Context
-//   - directory string
-//   - oldName string
-//   - newName string
-func (_e *MockGit_Expecter) RenameBranch(ctx interface{}, directory interface{}, oldName interface{}, newName interface{}) *MockGit_RenameBranch_Call {
-	return &MockGit_RenameBranch_Call{Call: _e.mock.On("RenameBranch", ctx, directory, oldName, newName)}
-}
-
-func (_c *MockGit_RenameBranch_Call) Run(run func(ctx context.Context, directory string, oldName string, newName string)) *MockGit_RenameBranch_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string), args[2].(string), args[3].(string))
-	})
-	return _c
-}
-
-func (_c *MockGit_RenameBranch_Call) Return(_a0 error) *MockGit_RenameBranch_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *MockGit_RenameBranch_Call) RunAndReturn(run func(context.Context, string, string, string) error) *MockGit_RenameBranch_Call {
 	_c.Call.Return(run)
 	return _c
 }

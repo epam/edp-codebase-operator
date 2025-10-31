@@ -1,4 +1,4 @@
-package git_test
+package v2
 
 import (
 	"context"
@@ -17,8 +17,6 @@ import (
 	"github.com/stretchr/testify/require"
 	ctrl "sigs.k8s.io/controller-runtime"
 
-	"github.com/epam/edp-codebase-operator/v2/pkg/git"
-	gitproviderv2 "github.com/epam/edp-codebase-operator/v2/pkg/git/v2"
 	"github.com/epam/edp-codebase-operator/v2/pkg/platform"
 )
 
@@ -26,11 +24,11 @@ func TestGitProvider_CheckPermissions(t *testing.T) {
 	user := "user"
 	pass := "pass"
 
-	config := gitproviderv2.Config{
+	config := Config{
 		Username: user,
 		Token:    pass,
 	}
-	gp := gitproviderv2.NewGitProvider(config)
+	gp := NewGitProvider(config)
 
 	bts, err := base64.StdEncoding.DecodeString(`MDAxZSMgc2VydmljZT1naXQtdXBsb2FkLXBhY2sKMDAwMDAxNTY2ZWNmMGVmMmMyZGZmYjc5NjAzM2U1YTAyMjE5YWY4NmVjNjU4NGU1IEhFQUQAbXVsdGlfYWNrIHRoaW4tcGFjayBzaWRlLWJhbmQgc2lkZS1iYW5kLTY0ayBvZnMtZGVsdGEgc2hhbGxvdyBkZWVwZW4tc2luY2UgZGVlcGVuLW5vdCBkZWVwZW4tcmVsYXRpdmUgbm8tcHJvZ3Jlc3MgaW5jbHVkZS10YWcgbXVsdGlfYWNrX2RldGFpbGVkIGFsbG93LXRpcC1zaGExLWluLXdhbnQgYWxsb3ctcmVhY2hhYmxlLXNoYTEtaW4td2FudCBuby1kb25lIHN5bXJlZj1IRUFEOnJlZnMvaGVhZHMvbWFzdGVyIGZpbHRlciBvYmplY3QtZm9ybWF0PXNoYTEgYWdlbnQ9Z2l0L2dpdGh1Yi1nNzhiNDUyNDEzZThiCjAwM2ZlOGQzZmZhYjU1Mjg5NWMxOWI5ZmNmN2FhMjY0ZDI3N2NkZTMzODgxIHJlZnMvaGVhZHMvYnJhbmNoCjAwM2Y2ZWNmMGVmMmMyZGZmYjc5NjAzM2U1YTAyMjE5YWY4NmVjNjU4NGU1IHJlZnMvaGVhZHMvbWFzdGVyCjAwM2ViOGU0NzFmNThiY2JjYTYzYjA3YmRhMjBlNDI4MTkwNDA5YzJkYjQ3IHJlZnMvcHVsbC8xL2hlYWQKMDAzZTk2MzJmMDI4MzNiMmY5NjEzYWZiNWU3NTY4MjEzMmIwYjIyZTRhMzEgcmVmcy9wdWxsLzIvaGVhZAowMDNmYzM3ZjU4YTEzMGNhNTU1ZTQyZmY5NmEwNzFjYjljY2IzZjQzNzUwNCByZWZzL3B1bGwvMi9tZXJnZQowMDAw`)
 	require.NoError(t, err)
@@ -50,11 +48,11 @@ func TestGitProvider_CheckPermissions_NoRefs(t *testing.T) {
 	user := "user"
 	pass := "pass"
 
-	config := gitproviderv2.Config{
+	config := Config{
 		Username: user,
 		Token:    pass,
 	}
-	gp := gitproviderv2.NewGitProvider(config)
+	gp := NewGitProvider(config)
 
 	bts, err := base64.StdEncoding.DecodeString(`MDAxZSMgc2VydmljZT1naXQtdXBsb2FkLXBhY2sKMDAwMDAwZGUwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwIGNhcGFiaWxpdGllc157fQAgaW5jbHVkZS10YWcgbXVsdGlfYWNrX2RldGFpbGVkIG11bHRpX2FjayBvZnMtZGVsdGEgc2lkZS1iYW5kIHNpZGUtYmFuZC02NGsgdGhpbi1wYWNrIG5vLXByb2dyZXNzIHNoYWxsb3cgbm8tZG9uZSBhZ2VudD1KR2l0L3Y1LjkuMC4yMDIwMDkwODA1MDEtci00MS1nNWQ5MjVlY2JiCjAwMDA=`)
 	require.NoError(t, err)
@@ -72,12 +70,6 @@ func TestGitProvider_CheckPermissions_NoRefs(t *testing.T) {
 	// This is different from v1 which logged an error
 	err = gp.CheckPermissions(ctrl.LoggerInto(context.Background(), mockLogger), s.URL)
 	require.NoError(t, err, "v2 considers empty repos accessible")
-}
-
-func TestInitAuth(t *testing.T) {
-	dir, err := git.InitAuth("foo", "bar")
-	assert.NoError(t, err)
-	assert.Contains(t, dir, "sshkey")
 }
 
 func TestGitProvider_CreateChildBranch(t *testing.T) {
@@ -138,7 +130,7 @@ func TestGitProvider_CreateChildBranch(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			gp := gitproviderv2.NewGitProvider(gitproviderv2.Config{})
+			gp := NewGitProvider(Config{})
 			dir := tt.initRepo(t)
 
 			err := gp.CreateChildBranch(context.Background(), dir, tt.parent, tt.child)
@@ -209,60 +201,11 @@ func TestGitProvider_RemoveBranch(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			gp := gitproviderv2.NewGitProvider(gitproviderv2.Config{})
+			gp := NewGitProvider(Config{})
 			dir := tt.initRepo(t)
 
 			err := gp.RemoveBranch(context.Background(), dir, tt.branch)
 			tt.wantErr(t, err)
-		})
-	}
-}
-
-func Test_initAuth(t *testing.T) {
-	t.Parallel()
-
-	tests := []struct {
-		name    string
-		key     string
-		want    string
-		wantErr require.ErrorAssertionFunc
-	}{
-		{
-			name: "success without empty line in the end",
-			key: `-----KEY-----
-some-key
------END-----`,
-			want: `-----KEY-----
-some-key
------END-----
-`,
-			wantErr: require.NoError,
-		},
-		{
-			name: "success with empty line in the end",
-			key: `-----KEY-----
-some-key
------END-----
-`,
-			want: `-----KEY-----
-some-key
------END-----
-
-`,
-			wantErr: require.NoError,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
-			got, err := git.InitAuth(tt.key, "user")
-			tt.wantErr(t, err)
-
-			gotKey, err := os.ReadFile(got)
-			require.NoError(t, err)
-			assert.Equal(t, tt.want, string(gotKey))
 		})
 	}
 }
@@ -272,7 +215,7 @@ func TestGitProvider_CommitChanges(t *testing.T) {
 
 	tests := []struct {
 		name      string
-		ops       []gitproviderv2.CommitOps
+		ops       []CommitOps
 		initRepo  func(t *testing.T) string
 		wantErr   require.ErrorAssertionFunc
 		checkRepo func(t *testing.T, dir string)
@@ -336,8 +279,8 @@ func TestGitProvider_CommitChanges(t *testing.T) {
 		},
 		{
 			name: "should create empty commit",
-			ops: []gitproviderv2.CommitOps{
-				gitproviderv2.CommitAllowEmpty(),
+			ops: []CommitOps{
+				CommitAllowEmpty(),
 			},
 			initRepo: func(t *testing.T) string {
 				dir := t.TempDir()
@@ -370,7 +313,7 @@ func TestGitProvider_CommitChanges(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			gp := gitproviderv2.NewGitProvider(gitproviderv2.Config{})
+			gp := NewGitProvider(Config{})
 			dir := tt.initRepo(t)
 
 			err := gp.Commit(context.Background(), dir, "test commit message", tt.ops...)
@@ -430,7 +373,7 @@ func TestGitProvider_AddRemoteLink(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			gp := gitproviderv2.NewGitProvider(gitproviderv2.Config{})
+			gp := NewGitProvider(Config{})
 			dir := tt.initRepo(t)
 
 			err := gp.AddRemoteLink(context.Background(), dir, tt.remoteUrl)
@@ -555,7 +498,7 @@ func TestGitProvider_CheckReference(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			gp := gitproviderv2.NewGitProvider(gitproviderv2.Config{})
+			gp := NewGitProvider(Config{})
 			dir := tt.initRepo(t)
 
 			// For the commit reference test, we need to get the actual commit hash

@@ -152,7 +152,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 					Maybe().
 					Return(nil)
 
-				return func(gitServer *codebaseApi.GitServer, secret *corev1.Secret) gitproviderv2.Git {
+				return func(cfg gitproviderv2.Config) gitproviderv2.Git {
 					return mock
 				}
 			},
@@ -260,7 +260,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 					Maybe().
 					Return(nil)
 
-				return func(gitServer *codebaseApi.GitServer, secret *corev1.Secret) gitproviderv2.Git {
+				return func(cfg gitproviderv2.Config) gitproviderv2.Git {
 					return mock
 				}
 			},
@@ -360,7 +360,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 					Maybe().
 					Return(nil)
 
-				return func(gitServer *codebaseApi.GitServer, secret *corev1.Secret) gitproviderv2.Git {
+				return func(cfg gitproviderv2.Config) gitproviderv2.Git {
 					return mock
 				}
 			},
@@ -462,7 +462,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 					Maybe().
 					Return(nil)
 
-				return func(gitServer *codebaseApi.GitServer, secret *corev1.Secret) gitproviderv2.Git {
+				return func(cfg gitproviderv2.Config) gitproviderv2.Git {
 					return mock
 				}
 			},
@@ -567,7 +567,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 					Maybe().
 					Return(errors.New("failed to push changes"))
 
-				return func(gitServer *codebaseApi.GitServer, secret *corev1.Secret) gitproviderv2.Git {
+				return func(cfg gitproviderv2.Config) gitproviderv2.Git {
 					return mock
 				}
 			},
@@ -642,7 +642,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 			},
 			objects: []client.Object{gerritGitServer, gerritGitServerSecret},
 			gitProviderFactory: func(t *testing.T) gitproviderv2.GitProviderFactory {
-				return func(gitServer *codebaseApi.GitServer, secret *corev1.Secret) gitproviderv2.Git {
+				return func(cfg gitproviderv2.Config) gitproviderv2.Git {
 					mock := v2mocks.NewMockGit(t)
 
 					mock.On("CheckPermissions", testify.Anything, testify.Anything).
@@ -725,7 +725,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 			},
 			objects: []client.Object{gerritGitServer, gerritGitServerSecret},
 			gitProviderFactory: func(t *testing.T) gitproviderv2.GitProviderFactory {
-				return func(gitServer *codebaseApi.GitServer, secret *corev1.Secret) gitproviderv2.Git {
+				return func(cfg gitproviderv2.Config) gitproviderv2.Git {
 					mock := v2mocks.NewMockGit(t)
 
 					mock.On("CheckPermissions", testify.Anything, testify.Anything).
@@ -810,7 +810,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 			},
 			objects: []client.Object{gerritGitServer, gerritGitServerSecret},
 			gitProviderFactory: func(t *testing.T) gitproviderv2.GitProviderFactory {
-				return func(gitServer *codebaseApi.GitServer, secret *corev1.Secret) gitproviderv2.Git {
+				return func(cfg gitproviderv2.Config) gitproviderv2.Git {
 					mock := v2mocks.NewMockGit(t)
 
 					mock.On("CheckPermissions", testify.Anything, testify.Anything).
@@ -893,7 +893,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 			},
 			objects: []client.Object{gerritGitServer, gerritGitServerSecret},
 			gitProviderFactory: func(t *testing.T) gitproviderv2.GitProviderFactory {
-				return func(gitServer *codebaseApi.GitServer, secret *corev1.Secret) gitproviderv2.Git {
+				return func(cfg gitproviderv2.Config) gitproviderv2.Git {
 					mock := v2mocks.NewMockGit(t)
 
 					mock.On("CheckPermissions", testify.Anything, testify.Anything).
@@ -966,7 +966,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 			},
 			objects: []client.Object{gerritGitServer},
 			gitProviderFactory: func(t *testing.T) gitproviderv2.GitProviderFactory {
-				return func(gitServer *codebaseApi.GitServer, secret *corev1.Secret) gitproviderv2.Git {
+				return func(cfg gitproviderv2.Config) gitproviderv2.Git {
 					return v2mocks.NewMockGit(t)
 				}
 			},
@@ -1014,7 +1014,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 			},
 			objects: []client.Object{gerritGitServer, gerritGitServerSecret},
 			gitProviderFactory: func(t *testing.T) gitproviderv2.GitProviderFactory {
-				return func(gitServer *codebaseApi.GitServer, secret *corev1.Secret) gitproviderv2.Git {
+				return func(cfg gitproviderv2.Config) gitproviderv2.Git {
 					mock := v2mocks.NewMockGit(t)
 
 					mock.On("CheckPermissions", testify.Anything, testify.Anything).
@@ -1072,7 +1072,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 			},
 			objects: []client.Object{githubGitServer, githubGitServerSecret},
 			gitProviderFactory: func(t *testing.T) gitproviderv2.GitProviderFactory {
-				return func(gitServer *codebaseApi.GitServer, secret *corev1.Secret) gitproviderv2.Git {
+				return func(cfg gitproviderv2.Config) gitproviderv2.Git {
 					mock := v2mocks.NewMockGit(t)
 
 					mock.On("CheckPermissions", testify.Anything, testify.Anything).
@@ -1150,7 +1150,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 			},
 			objects: []client.Object{githubGitServer, githubGitServerSecret},
 			gitProviderFactory: func(t *testing.T) gitproviderv2.GitProviderFactory {
-				return func(gitServer *codebaseApi.GitServer, secret *corev1.Secret) gitproviderv2.Git {
+				return func(cfg gitproviderv2.Config) gitproviderv2.Git {
 					mock := v2mocks.NewMockGit(t)
 
 					mock.On("CheckPermissions", testify.Anything, testify.Anything).
@@ -1219,7 +1219,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 			},
 			objects: []client.Object{gitlabGitServer, gitlabGitServerSecret},
 			gitProviderFactory: func(t *testing.T) gitproviderv2.GitProviderFactory {
-				return func(gitServer *codebaseApi.GitServer, secret *corev1.Secret) gitproviderv2.Git {
+				return func(cfg gitproviderv2.Config) gitproviderv2.Git {
 					mock := v2mocks.NewMockGit(t)
 
 					mock.On("CheckPermissions", testify.Anything, testify.Anything).
@@ -1297,7 +1297,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 			},
 			objects: []client.Object{gitlabGitServer, gitlabGitServerSecret},
 			gitProviderFactory: func(t *testing.T) gitproviderv2.GitProviderFactory {
-				return func(gitServer *codebaseApi.GitServer, secret *corev1.Secret) gitproviderv2.Git {
+				return func(cfg gitproviderv2.Config) gitproviderv2.Git {
 					mock := v2mocks.NewMockGit(t)
 
 					mock.On("CheckPermissions", testify.Anything, testify.Anything).
@@ -1367,7 +1367,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 			},
 			objects: []client.Object{gitlabGitServer, gitlabGitServerSecret},
 			gitProviderFactory: func(t *testing.T) gitproviderv2.GitProviderFactory {
-				return func(gitServer *codebaseApi.GitServer, secret *corev1.Secret) gitproviderv2.Git {
+				return func(cfg gitproviderv2.Config) gitproviderv2.Git {
 					mock := v2mocks.NewMockGit(t)
 
 					mock.On("CheckPermissions", testify.Anything, testify.Anything).
@@ -1532,7 +1532,6 @@ func TestPutProject_ServeRequest(t *testing.T) {
 				tt.gerritClient(t),
 				tt.gitProvider(t),
 				tt.gitProviderFactory(t),
-				tt.createGitProviderWithConfig(t),
 			)
 
 			err := h.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), tt.codebase)

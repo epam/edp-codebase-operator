@@ -33,25 +33,28 @@ func GetRepositoryCredentialsIfExists(cb *codebaseApi.Codebase, c client.Client)
 
 func CheckoutBranch(
 	ctx context.Context,
-	repository, projectPath, branchName string,
-	g gitproviderv2.Git,
+	branchName string,
+	repoContext *GitRepositoryContext,
 	cb *codebaseApi.Codebase,
 	c client.Client,
-	createGitProviderWithConfig func(config gitproviderv2.Config) gitproviderv2.Git,
+	gitProviderFactory func(config gitproviderv2.Config) gitproviderv2.Git,
 ) error {
-	currentBranchName, err := g.GetCurrentBranchName(ctx, projectPath)
+	log := ctrl.LoggerFrom(ctx)
+	gitProvider := gitProviderFactory(gitproviderv2.NewConfigFromGitServerAndSecret(repoContext.GitServer, repoContext.GitServerSecret))
+
+	currentBranchName, err := gitProvider.GetCurrentBranchName(ctx, repoContext.WorkDir)
 	if err != nil {
 		return fmt.Errorf("failed to get current branch name: %w", err)
 	}
 
 	if currentBranchName == branchName {
-		ctrl.Log.Info("default branch is already active", "name", branchName)
+		log.Info("Default branch is already active", "name", branchName)
 		return nil
 	}
 
 	switch cb.Spec.Strategy {
 	case "create":
-		if err := g.Checkout(ctx, projectPath, branchName, false); err != nil {
+		if err := gitProvider.Checkout(ctx, repoContext.WorkDir, branchName, false); err != nil {
 			return fmt.Errorf("failed to checkout to default branch %s (create strategy): %w", branchName, err)
 		}
 
@@ -61,20 +64,17 @@ func CheckoutBranch(
 			return err
 		}
 
-		cloneRepoGitProvider := g
-
+		cfg := gitproviderv2.Config{}
 		if user != nil && password != nil {
-			cloneRepoGitProvider = createGitProviderWithConfig(gitproviderv2.Config{
-				Username: *user,
-				Token:    *password,
-			})
+			cfg.Username = *user
+			cfg.Token = *password
 		}
 
-		if err := cloneRepoGitProvider.Checkout(ctx, projectPath, branchName, true); err != nil {
+		if err := gitProviderFactory(cfg).Checkout(ctx, repoContext.WorkDir, branchName, true); err != nil {
 			return fmt.Errorf("failed to checkout to default branch %s (clone strategy): %w", branchName, err)
 		}
 	case "import":
-		if err := g.CheckoutRemoteBranch(ctx, projectPath, branchName); err != nil {
+		if err := gitProvider.CheckoutRemoteBranch(ctx, repoContext.WorkDir, branchName); err != nil {
 			return fmt.Errorf("failed to checkout to default branch %s (import strategy): %w", branchName, err)
 		}
 	default:

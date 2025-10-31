@@ -16,14 +16,17 @@ import (
 )
 
 type PutGitLabCIConfig struct {
-	client                      client.Client
-	gitlabCIManager             gitlabci.Manager
-	gitProviderFactory          gitproviderv2.GitProviderFactory
-	createGitProviderWithConfig func(config gitproviderv2.Config) gitproviderv2.Git
+	client             client.Client
+	gitlabCIManager    gitlabci.Manager
+	gitProviderFactory gitproviderv2.GitProviderFactory
 }
 
-func NewPutGitLabCIConfig(c client.Client, m gitlabci.Manager, gitProviderFactory gitproviderv2.GitProviderFactory, createGitProviderWithConfig func(config gitproviderv2.Config) gitproviderv2.Git) *PutGitLabCIConfig {
-	return &PutGitLabCIConfig{client: c, gitlabCIManager: m, gitProviderFactory: gitProviderFactory, createGitProviderWithConfig: createGitProviderWithConfig}
+func NewPutGitLabCIConfig(
+	c client.Client,
+	m gitlabci.Manager,
+	gitProviderFactory gitproviderv2.GitProviderFactory,
+) *PutGitLabCIConfig {
+	return &PutGitLabCIConfig{client: c, gitlabCIManager: m, gitProviderFactory: gitProviderFactory}
 }
 
 func (h *PutGitLabCIConfig) ServeRequest(ctx context.Context, codebase *codebaseApi.Codebase) error {
@@ -83,14 +86,14 @@ func (h *PutGitLabCIConfig) tryToPushGitLabCIConfig(ctx context.Context, codebas
 	log := ctrl.LoggerFrom(ctx)
 
 	// Prepare git repository (get server, clone, checkout)
-	gitCtx, err := PrepareGitRepository(ctx, h.client, codebase, h.gitProviderFactory, h.createGitProviderWithConfig)
+	gitCtx, err := PrepareGitRepository(ctx, h.client, codebase, h.gitProviderFactory)
 	if err != nil {
 		setFailedFields(codebase, codebaseApi.RepositoryProvisioning, err.Error())
 		return fmt.Errorf("failed to prepare git repository: %w", err)
 	}
 
 	// Create git provider using factory
-	g := h.gitProviderFactory(gitCtx.GitServer, gitCtx.GitServerSecret)
+	g := h.gitProviderFactory(gitproviderv2.NewConfigFromGitServerAndSecret(gitCtx.GitServer, gitCtx.GitServerSecret))
 
 	// Inject GitLab CI configuration
 	log.Info("Start injecting GitLab CI config")
