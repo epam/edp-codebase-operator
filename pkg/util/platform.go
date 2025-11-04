@@ -20,29 +20,6 @@ const (
 	debugModeEnvVar      = "DEBUG_MODE"
 )
 
-func GetVcsBasicAuthConfig(c client.Client, namespace, secretName string) (userName, password string, err error) {
-	log.Info("Start getting secret", "name", secretName)
-
-	secret := &coreV1.Secret{}
-
-	err = c.Get(context.TODO(), types.NamespacedName{
-		Namespace: namespace,
-		Name:      secretName,
-	}, secret)
-	if err != nil {
-		return "", "", fmt.Errorf("failed to get secret %v: %w", secretName, err)
-	}
-
-	if len(secret.Data["username"]) == 0 || len(secret.Data["password"]) == 0 {
-		return "", "", fmt.Errorf("username/password keys are not defined in Secret %v ", secretName)
-	}
-
-	userName = string(secret.Data["username"])
-	password = string(secret.Data["password"])
-
-	return
-}
-
 func GetGitServer(c client.Client, name, namespace string) (*model.GitServer, error) {
 	gitReq, err := getGitServerCR(c, name, namespace)
 	if err != nil {

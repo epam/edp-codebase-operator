@@ -804,6 +804,13 @@ Selected branch will become a default branch for a new codebase (e.g. master, ma
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#codebasespecclonerepositorycredentials">cloneRepositoryCredentials</a></b></td>
+        <td>object</td>
+        <td>
+          CloneRepositoryCredentials contains reference to secret with credentials used to clone repository.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>commitMessagePattern</b></td>
         <td>string</td>
         <td>
@@ -909,6 +916,78 @@ Selected branch will become a default branch for a new codebase (e.g. master, ma
         <td>string</td>
         <td>
           StartFrom is required when versioning type is not default.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Codebase.spec.cloneRepositoryCredentials
+<sup><sup>[↩ Parent](#codebasespec)</sup></sup>
+
+
+
+CloneRepositoryCredentials contains reference to secret with credentials used to clone repository.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#codebasespecclonerepositorycredentialssecretref">secretRef</a></b></td>
+        <td>object</td>
+        <td>
+          SecretRef is a reference to secret that contains credentials for cloning repository.
+The secret must contain "username" and "password" keys.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>clearSecretAfterUse</b></td>
+        <td>boolean</td>
+        <td>
+          ClearSecretAfterUse indicates whether the secret should be deleted after use.
+For backward compatibility, the default value is true.<br/>
+          <br/>
+            <i>Default</i>: true<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Codebase.spec.cloneRepositoryCredentials.secretRef
+<sup><sup>[↩ Parent](#codebasespecclonerepositorycredentials)</sup></sup>
+
+
+
+SecretRef is a reference to secret that contains credentials for cloning repository.
+The secret must contain "username" and "password" keys.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr></tbody>

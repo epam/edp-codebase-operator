@@ -8,12 +8,12 @@ import (
 	"slices"
 	"strconv"
 
-	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
+	codebaseutil "github.com/epam/edp-codebase-operator/v2/pkg/codebase"
 	"github.com/epam/edp-codebase-operator/v2/pkg/gerrit"
 	gitproviderv2 "github.com/epam/edp-codebase-operator/v2/pkg/git/v2"
 	"github.com/epam/edp-codebase-operator/v2/pkg/gitprovider"
@@ -384,7 +384,7 @@ func (h *PutProject) setDefaultBranch(
 func (h *PutProject) tryToCloneRepo(
 	ctx context.Context,
 	repoUrl string,
-	repositoryUsername, repositoryPassword *string,
+	repositoryUsername, repositoryPassword string,
 	repoContext *GitRepositoryContext,
 ) error {
 	log := ctrl.LoggerFrom(ctx).WithValues("dest", repoContext.WorkDir, "repoUrl", repoUrl)
@@ -397,15 +397,10 @@ func (h *PutProject) tryToCloneRepo(
 		return nil
 	}
 
-	config := gitproviderv2.Config{}
-
-	if repositoryUsername != nil && repositoryPassword != nil {
-		config = gitproviderv2.Config{}
-		config.Username = *repositoryUsername
-		config.Token = *repositoryPassword
-	}
-
-	gitProvider := h.gitProviderFactory(config)
+	gitProvider := h.gitProviderFactory(gitproviderv2.Config{
+		Username: repositoryUsername,
+		Token:    repositoryPassword,
+	})
 	if err := gitProvider.Clone(ctx, repoUrl, repoContext.WorkDir); err != nil {
 		return fmt.Errorf("failed to clone repository: %w", err)
 	}
@@ -482,22 +477,19 @@ func (h *PutProject) notEmptyProjectProvisioning(ctx context.Context, codebase *
 		return fmt.Errorf("failed to build repo url: %w", err)
 	}
 
-	repu, repp, err := GetRepositoryCredentialsIfExists(codebase, h.k8sClient)
-	// we are ok if no credentials is found, assuming this is a public repo
-	if err != nil && !k8sErrors.IsNotFound(err) {
-		return fmt.Errorf("failed to get repository credentials: %w", err)
+	repu, repp, exists, err := codebaseutil.GetRepositoryCredentialsIfExists(ctx, codebase, h.k8sClient)
+	if err != nil {
+		return fmt.Errorf("failed to get repository credentials for project provisioning: %w", err)
 	}
 
-	// Check permissions if credentials exist
-	if repu != nil && repp != nil {
-		tempConfig := gitproviderv2.Config{
-			Username: *repu,
-			Token:    *repp,
-		}
-		tempProvider := h.gitProviderFactory(tempConfig)
+	if exists {
+		cloneGitProvider := h.gitProviderFactory(gitproviderv2.Config{
+			Username: repu,
+			Token:    repp,
+		})
 
-		if err := tempProvider.CheckPermissions(ctx, repoUrl); err != nil {
-			return fmt.Errorf("failed to get access to the repository %v for user %v: %w", repoUrl, *repu, err)
+		if err := cloneGitProvider.CheckPermissions(ctx, repoUrl); err != nil {
+			return fmt.Errorf("failed to get access to the repository %s for user %s: %w", repoUrl, repu, err)
 		}
 	}
 
