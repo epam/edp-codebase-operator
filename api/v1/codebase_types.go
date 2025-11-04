@@ -1,9 +1,11 @@
 package v1
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 
+	corev1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -129,6 +131,24 @@ type CodebaseSpec struct {
 	// +optional
 	// +kubebuilder:default:=true
 	Private bool `json:"private"`
+
+	// CloneRepositoryCredentials contains reference to secret with credentials used to clone repository.
+	// +nullable
+	// +optional
+	CloneRepositoryCredentials *CloneRepositoryCredentials `json:"cloneRepositoryCredentials,omitempty"`
+}
+
+type CloneRepositoryCredentials struct {
+	// SecretRef is a reference to secret that contains credentials for cloning repository.
+	// The secret must contain "username" and "password" keys.
+	// +required
+	SecretRef corev1.LocalObjectReference `json:"secretRef"`
+
+	// ClearSecretAfterUse indicates whether the secret should be deleted after use.
+	// For backward compatibility, the default value is true.
+	// +optional
+	// +kubebuilder:default:=true
+	ClearSecretAfterUse bool `json:"clearSecretAfterUse"`
 }
 
 // GetProjectID returns project id from GitUrlPath codebase spec. It removes the leading slash.
@@ -139,6 +159,16 @@ func (in *CodebaseSpec) GetProjectID() string {
 func (in *CodebaseSpec) IsVersionTypeSemver() bool {
 	// For backward compatibility, we should consider VersioningTypeEDP as VersioningTypeSemver.
 	return in.Versioning.Type == VersioningTypeSemver || in.Versioning.Type == VersioningTypeEDP
+}
+
+func (in *Codebase) GetCloneRepositoryCredentialSecret() string {
+	if in.Spec.CloneRepositoryCredentials != nil && in.Spec.CloneRepositoryCredentials.SecretRef.Name != "" {
+		return in.Spec.CloneRepositoryCredentials.SecretRef.Name
+	}
+
+	// Fallback to generate secret name for backward compatibility.
+	// Deprecated: Fallback for backward compatibility. Will be removed after new field is fully adopted.
+	return fmt.Sprintf("repository-codebase-%s-temp", in.Name)
 }
 
 type ActionType string

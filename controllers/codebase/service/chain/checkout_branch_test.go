@@ -24,63 +24,6 @@ const (
 	fakeName      = "fake-name"
 )
 
-func TestGetRepositoryCredentialsIfExists_ShouldPass(t *testing.T) {
-	c := &codebaseApi.Codebase{
-		ObjectMeta: metaV1.ObjectMeta{
-			Name:      "fake-name",
-			Namespace: fakeNamespace,
-		},
-		Spec: codebaseApi.CodebaseSpec{
-			Repository: &codebaseApi.Repository{
-				Url: "repo",
-			},
-		},
-	}
-	s := &coreV1.Secret{
-		ObjectMeta: metaV1.ObjectMeta{
-			Name:      "repository-codebase-fake-name-temp",
-			Namespace: fakeNamespace,
-		},
-		Data: map[string][]byte{
-			"username": []byte("user"),
-			"password": []byte("pass"),
-		},
-	}
-	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(coreV1.SchemeGroupVersion, s)
-	scheme.AddKnownTypes(codebaseApi.GroupVersion, c)
-	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(s, c).Build()
-	u, p, err := GetRepositoryCredentialsIfExists(c, fakeCl)
-	assert.Equal(t, u, util.GetStringP("user"))
-	assert.Equal(t, p, util.GetStringP("pass"))
-	assert.NoError(t, err)
-}
-
-func TestGetRepositoryCredentialsIfExists_ShouldFail(t *testing.T) {
-	c := &codebaseApi.Codebase{
-		ObjectMeta: metaV1.ObjectMeta{
-			Name:      "fake-name",
-			Namespace: fakeNamespace,
-		},
-		Spec: codebaseApi.CodebaseSpec{
-			Repository: &codebaseApi.Repository{
-				Url: "repo",
-			},
-		},
-	}
-
-	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(codebaseApi.GroupVersion, c)
-	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(c).Build()
-
-	_, _, err := GetRepositoryCredentialsIfExists(c, fakeCl)
-	assert.Error(t, err)
-
-	if !strings.Contains(err.Error(), "failed to get secret repository-codebase-fake-name-temp") {
-		t.Fatalf("wrong error returned: %s", err.Error())
-	}
-}
-
 func TestCheckoutBranch_ShouldFailOnGetCurrentBranchName(t *testing.T) {
 	c := &codebaseApi.Codebase{
 		ObjectMeta: metaV1.ObjectMeta{
@@ -236,6 +179,11 @@ func TestCheckoutBranch_ShouldPassForCloneStrategy(t *testing.T) {
 				Url: "repo",
 			},
 			Strategy: codebaseApi.Import,
+			CloneRepositoryCredentials: &codebaseApi.CloneRepositoryCredentials{
+				SecretRef: coreV1.LocalObjectReference{
+					Name: "repository-creds",
+				},
+			},
 		},
 	}
 	gs := &codebaseApi.GitServer{
@@ -252,7 +200,7 @@ func TestCheckoutBranch_ShouldPassForCloneStrategy(t *testing.T) {
 	}
 	s := &coreV1.Secret{
 		ObjectMeta: metaV1.ObjectMeta{
-			Name:      "repository-codebase-fake-name-temp",
+			Name:      "repository-creds",
 			Namespace: fakeNamespace,
 		},
 		Data: map[string][]byte{

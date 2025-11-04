@@ -4,32 +4,13 @@ import (
 	"context"
 	"fmt"
 
-	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
+	codebaseutil "github.com/epam/edp-codebase-operator/v2/pkg/codebase"
 	gitproviderv2 "github.com/epam/edp-codebase-operator/v2/pkg/git/v2"
-	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
-
-func GetRepositoryCredentialsIfExists(cb *codebaseApi.Codebase, c client.Client) (userName, password *string, err error) {
-	if cb.Spec.Repository == nil {
-		return nil, nil, nil
-	}
-
-	secret := fmt.Sprintf("repository-codebase-%v-temp", cb.Name)
-
-	repositoryUsername, repositoryPassword, err := util.GetVcsBasicAuthConfig(c, cb.Namespace, secret)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to fetch VCS auth config: %w", err)
-	}
-
-	userName = &repositoryUsername
-	password = &repositoryPassword
-
-	return
-}
 
 func CheckoutBranch(
 	ctx context.Context,
@@ -59,15 +40,14 @@ func CheckoutBranch(
 		}
 
 	case "clone":
-		user, password, err := GetRepositoryCredentialsIfExists(cb, c)
-		if err != nil && !k8sErrors.IsNotFound(err) {
-			return err
+		user, password, _, err := codebaseutil.GetRepositoryCredentialsIfExists(ctx, cb, c)
+		if err != nil {
+			return fmt.Errorf("failed to get repository credentials for checkout (clone strategy): %w", err)
 		}
 
-		cfg := gitproviderv2.Config{}
-		if user != nil && password != nil {
-			cfg.Username = *user
-			cfg.Token = *password
+		cfg := gitproviderv2.Config{
+			Username: user,
+			Token:    password,
 		}
 
 		if err := gitProviderFactory(cfg).Checkout(ctx, repoContext.WorkDir, branchName, true); err != nil {

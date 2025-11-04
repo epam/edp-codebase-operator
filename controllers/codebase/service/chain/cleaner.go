@@ -2,6 +2,7 @@ package chain
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	v1 "k8s.io/api/core/v1"
@@ -39,39 +40,46 @@ func (h *Cleaner) ServeRequest(ctx context.Context, codebase *codebaseApi.Codeba
 }
 
 func (h *Cleaner) clean(ctx context.Context, codebase *codebaseApi.Codebase) error {
-	log := ctrl.LoggerFrom(ctx)
+	var errs []error
 
-	s := fmt.Sprintf("repository-codebase-%v-temp", codebase.Name)
-
-	if err := h.deleteSecret(ctx, s, codebase.Namespace); err != nil {
-		return fmt.Errorf("failed to delete secret %v: %w", s, err)
+	if err := h.deleteSecret(ctx, codebase); err != nil {
+		errs = append(errs, err)
 	}
 
 	wd := util.GetWorkDir(codebase.Name, codebase.Namespace)
 
-	log.Info("Deleting work directory", "directory", wd)
+	ctrl.LoggerFrom(ctx).Info("Deleting work directory", "directory", wd)
 
-	return deleteWorkDirectory(wd)
+	if err := deleteWorkDirectory(wd); err != nil {
+		errs = append(errs, err)
+	}
+
+	return errors.Join(errs...)
 }
 
-func (h *Cleaner) deleteSecret(ctx context.Context, secretName, namespace string) error {
+func (h *Cleaner) deleteSecret(ctx context.Context, codebase *codebaseApi.Codebase) error {
+	if codebase.Spec.CloneRepositoryCredentials != nil && !codebase.Spec.CloneRepositoryCredentials.ClearSecretAfterUse {
+		return nil
+	}
+
+	secretName := codebase.GetCloneRepositoryCredentialSecret()
 	log := ctrl.LoggerFrom(ctx).WithValues("secret", secretName)
 
-	log.Info("Deleting secret")
+	log.Info("Deleting secret with repository credentials for clone")
 
 	if err := h.client.Delete(ctx, &v1.Secret{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      secretName,
-			Namespace: namespace,
+			Namespace: codebase.Namespace,
 		},
 	}); err != nil {
 		if k8sErrors.IsNotFound(err) {
-			log.Info("Secret is not found. Skip deleting")
+			log.Info("Secret not found. Skipping deletion")
 
 			return nil
 		}
 
-		return fmt.Errorf("failed to Delete 'Secret' resource %q: %w", secretName, err)
+		return fmt.Errorf("failed to delete secret with repository credentials for clone: %w", err)
 	}
 
 	log.Info("Secret was deleted")

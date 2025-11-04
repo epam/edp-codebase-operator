@@ -15,7 +15,7 @@ func GetStringP(val string) *string {
 }
 
 func GetWorkDir(codebaseName, namespace string) string {
-	value, ok := os.LookupEnv("WORKING_DIR")
+	value, ok := os.LookupEnv(WorkDirEnv)
 	if !ok {
 		return fmt.Sprintf("/home/codebase-operator/edp/%v/%v/%v/%v", namespace, codebaseName, "templates", codebaseName)
 	}
