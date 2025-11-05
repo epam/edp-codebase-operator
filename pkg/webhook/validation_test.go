@@ -11,8 +11,6 @@ import (
 )
 
 func TestIsCodebaseValid(t *testing.T) {
-	t.Parallel()
-
 	type args struct {
 		cr *codebaseApi.Codebase
 	}
@@ -53,9 +51,8 @@ func TestIsCodebaseValid(t *testing.T) {
 					Status: codebaseApi.CodebaseStatus{},
 				},
 			},
-			want: func(t require.TestingT, err error, i ...interface{}) {
-				require.Error(t, err)
-				require.Contains(t, err.Error(), "provided unsupported repository strategy: test-strategy")
+			want: func(t require.TestingT, err error, i ...any) {
+				require.ErrorContains(t, err, "provided unsupported repository strategy: test-strategy")
 			},
 		},
 		{
@@ -71,9 +68,8 @@ func TestIsCodebaseValid(t *testing.T) {
 					Status: codebaseApi.CodebaseStatus{},
 				},
 			},
-			want: func(t require.TestingT, err error, i ...interface{}) {
-				require.Error(t, err)
-				require.Contains(t, err.Error(), "provided unsupported language: test-lang")
+			want: func(t require.TestingT, err error, i ...any) {
+				require.ErrorContains(t, err, "provided unsupported language: test-lang")
 			},
 		},
 		{
@@ -92,17 +88,35 @@ func TestIsCodebaseValid(t *testing.T) {
 					Status: codebaseApi.CodebaseStatus{},
 				},
 			},
-			want: func(t require.TestingT, err error, i ...interface{}) {
-				require.Error(t, err)
-				require.Contains(t, err.Error(), "versioning start from is required when versioning type is not default")
+			want: func(t require.TestingT, err error, i ...any) {
+				require.ErrorContains(t, err, "versioning start from is required when versioning type is not default")
+			},
+		},
+		{
+			name: "should fail on gitUrlPath ending with space",
+			args: args{
+				cr: &codebaseApi.Codebase{
+					TypeMeta:   metaV1.TypeMeta{},
+					ObjectMeta: metaV1.ObjectMeta{},
+					Spec: codebaseApi.CodebaseSpec{
+						Lang:       "go",
+						Strategy:   "create",
+						GitUrlPath: "/path/to/repo ",
+						Versioning: codebaseApi.Versioning{
+							Type: codebaseApi.VersioningTypDefault,
+						},
+					},
+					Status: codebaseApi.CodebaseStatus{},
+				},
+			},
+			want: func(t require.TestingT, err error, i ...any) {
+				require.ErrorContains(t, err, "gitUrlPath should not end with space")
 			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
 			err := IsCodebaseValid(tt.args.cr)
 
 			tt.want(t, err)
@@ -111,8 +125,6 @@ func TestIsCodebaseValid(t *testing.T) {
 }
 
 func Test_validateCodBaseName(t *testing.T) {
-	t.Parallel()
-
 	tests := []struct {
 		name        string
 		codBaseName string
@@ -132,8 +144,6 @@ func Test_validateCodBaseName(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
 			tt.wantErr(t, validateCodBaseName(tt.codBaseName))
 		})
 	}

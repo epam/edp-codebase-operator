@@ -46,6 +46,10 @@ func IsCodebaseValid(codebase *codebaseApi.Codebase) error {
 		return fmt.Errorf("versioning start from is required when versioning type is not default")
 	}
 
+	if strings.HasSuffix(codebase.Spec.GitUrlPath, " ") {
+		return fmt.Errorf("gitUrlPath should not end with space")
+	}
+
 	return nil
 }
 
