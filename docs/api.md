@@ -1231,7 +1231,14 @@ GitServerSpec defines the desired state of GitServer.
         <td><b>nameSshKeySecret</b></td>
         <td>string</td>
         <td>
-          <br/>
+          NameSshKeySecret is the name of the Kubernetes secret containing Git repository credentials.
+Required keys:
+  - token: Git provider access token (required)
+Optional keys:
+  - id_rsa: SSH private key for Git operations over SSH
+  - secretString: Webhook secret for validating webhook requests
+  - username: Git username to override the default GitUser
+For Gerrit provider, only id_rsa key is required and used.<br/>
         </td>
         <td>true</td>
       </tr><tr>

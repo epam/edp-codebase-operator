@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"slices"
 	"strconv"
 
@@ -15,7 +16,7 @@ import (
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	codebaseutil "github.com/epam/edp-codebase-operator/v2/pkg/codebase"
 	"github.com/epam/edp-codebase-operator/v2/pkg/gerrit"
-	gitproviderv2 "github.com/epam/edp-codebase-operator/v2/pkg/git/v2"
+	gitproviderv2 "github.com/epam/edp-codebase-operator/v2/pkg/git"
 	"github.com/epam/edp-codebase-operator/v2/pkg/gitprovider"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
@@ -25,6 +26,7 @@ type PutProject struct {
 	gerritClient          gerrit.Client
 	gitApiProjectProvider func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error)
 	gitProviderFactory    gitproviderv2.GitProviderFactory
+	gitProviderNoAuth     gitproviderv2.Git
 }
 
 var (
@@ -35,14 +37,15 @@ var (
 func NewPutProject(
 	c client.Client,
 	gerritProvider gerrit.Client,
-	gitProjectProvider func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error),
+	gitApiProjectProvider func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error),
 	gitProviderFactory gitproviderv2.GitProviderFactory,
 ) *PutProject {
 	return &PutProject{
 		k8sClient:             c,
 		gerritClient:          gerritProvider,
-		gitApiProjectProvider: gitProjectProvider,
+		gitApiProjectProvider: gitApiProjectProvider,
 		gitProviderFactory:    gitProviderFactory,
+		gitProviderNoAuth:     gitProviderFactory(gitproviderv2.Config{}),
 	}
 }
 
@@ -59,37 +62,26 @@ func (h *PutProject) ServeRequest(ctx context.Context, codebase *codebaseApi.Cod
 
 	err := setIntermediateSuccessFields(ctx, h.k8sClient, codebase, codebaseApi.RepositoryProvisioning)
 	if err != nil {
-		return fmt.Errorf("failed to update Codebase %v status: %w", codebase.Name, err)
+		return fmt.Errorf("failed to update codebase %s status: %w", codebase.Name, err)
 	}
 
 	repoContext, err := GetGitRepositoryContext(ctx, h.k8sClient, codebase)
 	if err != nil {
-		setFailedFields(codebase, codebaseApi.RepositoryProvisioning, err.Error())
-
-		return fmt.Errorf("failed to get git repository context: %w", err)
-	}
-
-	if err = util.CreateDirectory(repoContext.WorkDir); err != nil {
-		setFailedFields(codebase, codebaseApi.RepositoryProvisioning, err.Error())
-
-		return fmt.Errorf("failed to create dir %q: %w", repoContext.WorkDir, err)
+		return h.handleError(codebase, err, "failed to get git repository context")
 	}
 
 	err = h.initialProjectProvisioning(ctx, codebase, repoContext)
 	if err != nil {
-		setFailedFields(codebase, codebaseApi.RepositoryProvisioning, err.Error())
-		return fmt.Errorf("failed to perform initial provisioning of codebase %v: %w", codebase.Name, err)
+		return h.handleError(codebase, err, fmt.Sprintf("failed to perform initial provisioning of codebase %s", codebase.Name))
 	}
 
 	if err = h.checkoutBranch(ctrl.LoggerInto(ctx, log), codebase, repoContext); err != nil {
-		setFailedFields(codebase, codebaseApi.RepositoryProvisioning, err.Error())
-		return err
+		return h.handleError(codebase, err, "failed to checkout branch")
 	}
 
 	err = h.createProject(ctrl.LoggerInto(ctx, log), codebase, repoContext)
 	if err != nil {
-		setFailedFields(codebase, codebaseApi.RepositoryProvisioning, err.Error())
-		return fmt.Errorf("failed to create project: %w", err)
+		return h.handleError(codebase, err, "failed to create project")
 	}
 
 	if err = updateGitStatusWithPatch(ctx, h.k8sClient, codebase, codebaseApi.RepositoryProvisioning, util.ProjectPushedStatus); err != nil {
@@ -117,17 +109,21 @@ func (*PutProject) skip(ctx context.Context, codebase *codebaseApi.Codebase) boo
 	return false
 }
 
+// handleError sets failed fields on codebase and returns formatted error.
+func (*PutProject) handleError(codebase *codebaseApi.Codebase, err error, message string) error {
+	setFailedFields(codebase, codebaseApi.RepositoryProvisioning, err.Error())
+	return fmt.Errorf("%s: %w", message, err)
+}
+
 func (h *PutProject) createProject(
 	ctx context.Context,
 	codebase *codebaseApi.Codebase,
 	repoContext *GitRepositoryContext,
 ) error {
-	gitProvider := h.gitProviderFactory(gitproviderv2.NewConfigFromGitServerAndSecret(repoContext.GitServer, repoContext.GitServerSecret))
-
 	if repoContext.GitServer.Spec.GitProvider == codebaseApi.GitProviderGerrit {
 		err := h.createGerritProject(ctx, repoContext.GitServer, repoContext.PrivateSSHKey, codebase.Spec.GetProjectID())
 		if err != nil {
-			return fmt.Errorf("failed to create project in Gerrit for codebase %v: %w", codebase.Name, err)
+			return fmt.Errorf("failed to create project in Gerrit for codebase %s: %w", codebase.Name, err)
 		}
 	} else {
 		if err := h.createGitThirdPartyProject(ctx, repoContext.GitServer, repoContext.Token, codebase); err != nil {
@@ -135,7 +131,7 @@ func (h *PutProject) createProject(
 		}
 	}
 
-	err := h.pushProject(ctx, gitProvider, codebase.Spec.GetProjectID(), repoContext)
+	err := h.pushProject(ctx, codebase.Spec.GetProjectID(), repoContext)
 	if err != nil {
 		return err
 	}
@@ -156,7 +152,7 @@ func (h *PutProject) replaceDefaultBranch(ctx context.Context, g gitproviderv2.G
 	log.Info("Removing default branch")
 
 	if err := g.RemoveBranch(ctx, directory, defaultBranchName); err != nil {
-		return fmt.Errorf("failed to remove master branch: %w", err)
+		return fmt.Errorf("failed to remove default branch %s: %w", defaultBranchName, err)
 	}
 
 	log.Info("Creating new branch")
@@ -170,13 +166,15 @@ func (h *PutProject) replaceDefaultBranch(ctx context.Context, g gitproviderv2.G
 	return nil
 }
 
-func (h *PutProject) pushProject(ctx context.Context, g gitproviderv2.Git, projectName string, repoContext *GitRepositoryContext) error {
+func (h *PutProject) pushProject(ctx context.Context, projectName string, repoContext *GitRepositoryContext) error {
 	log := ctrl.LoggerFrom(ctx).WithValues("gitProvider", repoContext.GitServer.Spec.GitProvider)
 
 	log.Info("Start pushing project")
 	log.Info("Start adding remote link")
 
-	if err := g.AddRemoteLink(
+	gitProvider := h.gitProviderFactory(gitproviderv2.NewConfigFromGitServerAndSecret(repoContext.GitServer, repoContext.GitServerSecret))
+
+	if err := gitProvider.AddRemoteLink(
 		ctx,
 		repoContext.WorkDir,
 		util.GetProjectGitUrl(repoContext.GitServer, repoContext.GitServerSecret, projectName),
@@ -184,16 +182,10 @@ func (h *PutProject) pushProject(ctx context.Context, g gitproviderv2.Git, proje
 		return fmt.Errorf("failed to add remote link: %w", err)
 	}
 
-	log.Info("Start pushing changes into git")
+	log.Info("Start pushing changes and tags into git")
 
-	if err := g.Push(ctx, repoContext.WorkDir, gitproviderv2.RefSpecPushAllBranches); err != nil {
-		return fmt.Errorf("failed to push changes: %w", err)
-	}
-
-	log.Info("Start pushing tags into git")
-
-	if err := g.Push(ctx, repoContext.WorkDir, gitproviderv2.RefSpecPushAllTags); err != nil {
-		return fmt.Errorf("failed to push changes into git: %w", err)
+	if err := gitProvider.Push(ctx, repoContext.WorkDir, gitproviderv2.RefSpecPushAllBranches, gitproviderv2.RefSpecPushAllTags); err != nil {
+		return fmt.Errorf("failed to push changes and tags into git: %w", err)
 	}
 
 	log.Info("Project has been pushed successfully")
@@ -212,7 +204,7 @@ func (h *PutProject) createGerritProject(ctx context.Context, gitServer *codebas
 	}
 
 	if projectExist {
-		log.Info("Skip creating project in Gerrit, project already exist")
+		log.Info("Skip creating project in Gerrit, project already exists")
 		return nil
 	}
 
@@ -236,18 +228,17 @@ func (h *PutProject) checkoutBranch(ctx context.Context, codebase *codebaseApi.C
 
 	gitprovider := h.gitProviderFactory(gitproviderv2.NewConfigFromGitServerAndSecret(repoContext.GitServer, repoContext.GitServerSecret))
 
-	// TODO: branchToCopyInDefaultBranch is never used. Check if we can remove it.
 	if codebase.Spec.BranchToCopyInDefaultBranch != "" && codebase.Spec.DefaultBranch != codebase.Spec.BranchToCopyInDefaultBranch {
 		log.Info("Start checkout branch to copy")
 
 		if err := CheckoutBranch(ctx, codebase.Spec.BranchToCopyInDefaultBranch, repoContext, codebase, h.k8sClient, h.gitProviderFactory); err != nil {
-			return fmt.Errorf("failed to checkout default branch %s: %w", codebase.Spec.DefaultBranch, err)
+			return fmt.Errorf("failed to checkout branch to copy %s: %w", codebase.Spec.BranchToCopyInDefaultBranch, err)
 		}
 
 		log.Info("Start replace default branch")
 
 		if err := h.replaceDefaultBranch(ctx, gitprovider, repoContext.WorkDir, codebase.Spec.DefaultBranch, codebase.Spec.BranchToCopyInDefaultBranch); err != nil {
-			return fmt.Errorf("failed to replace master: %w", err)
+			return fmt.Errorf("failed to replace default branch %s with %s: %w", codebase.Spec.DefaultBranch, codebase.Spec.BranchToCopyInDefaultBranch, err)
 		}
 
 		return nil
@@ -270,7 +261,6 @@ func (h *PutProject) createGitThirdPartyProject(
 	gitProviderToken string,
 	codebase *codebaseApi.Codebase,
 ) error {
-	projectName := codebase.Spec.GetProjectID()
 	log := ctrl.LoggerFrom(ctx).WithValues("gitProvider", gitServer.Spec.GitProvider)
 
 	log.Info("Start creating project in git provider")
@@ -279,6 +269,8 @@ func (h *PutProject) createGitThirdPartyProject(
 	if err != nil {
 		return fmt.Errorf("failed to create git provider: %w", err)
 	}
+
+	projectName := codebase.Spec.GetProjectID()
 
 	projectExists, err := gitProvider.ProjectExists(
 		ctx,
@@ -291,7 +283,7 @@ func (h *PutProject) createGitThirdPartyProject(
 	}
 
 	if projectExists {
-		log.Info("Skip creating project in git provider, project already exist")
+		log.Info("Skip creating project in git provider, project already exists")
 
 		return nil
 	}
@@ -320,8 +312,7 @@ func (h *PutProject) setDefaultBranch(
 	gitProviderToken,
 	privateSSHKey string,
 ) error {
-	log := ctrl.LoggerFrom(ctx).
-		WithValues("gitProvider", gitServer.Spec.GitProvider)
+	log := ctrl.LoggerFrom(ctx).WithValues("gitProvider", gitServer.Spec.GitProvider)
 
 	log.Info("Start setting default branch", "defaultBranch", codebase.Spec.DefaultBranch)
 
@@ -391,7 +382,7 @@ func (h *PutProject) tryToCloneRepo(
 
 	log.Info("Start cloning repository")
 
-	if util.DoesDirectoryExist(repoContext.WorkDir + "/.git") {
+	if util.DoesDirectoryExist(filepath.Join(repoContext.WorkDir, ".git")) {
 		log.Info("Repository already exists")
 
 		return nil
@@ -419,18 +410,16 @@ func (h *PutProject) squashCommits(ctx context.Context, workDir string, strategy
 
 	log.Info("Start squashing commits")
 
-	err := os.RemoveAll(workDir + "/.git")
+	err := os.RemoveAll(filepath.Join(workDir, ".git"))
 	if err != nil {
 		return fmt.Errorf("failed to remove .git folder: %w", err)
 	}
 
-	gitProvider := h.gitProviderFactory(gitproviderv2.Config{})
-
-	if err := gitProvider.Init(ctx, workDir); err != nil {
+	if err := h.gitProviderNoAuth.Init(ctx, workDir); err != nil {
 		return fmt.Errorf("failed to create git repository: %w", err)
 	}
 
-	if err := gitProvider.Commit(ctx, workDir, "Initial commit"); err != nil {
+	if err := h.gitProviderNoAuth.Commit(ctx, workDir, "Initial commit"); err != nil {
 		return fmt.Errorf("failed to commit all default content: %w", err)
 	}
 
@@ -440,6 +429,10 @@ func (h *PutProject) squashCommits(ctx context.Context, workDir string, strategy
 }
 
 func (h *PutProject) initialProjectProvisioning(ctx context.Context, codebase *codebaseApi.Codebase, repoContext *GitRepositoryContext) error {
+	if err := util.CreateDirectory(repoContext.WorkDir); err != nil {
+		return h.handleError(codebase, err, fmt.Sprintf("failed to create dir %q", repoContext.WorkDir))
+	}
+
 	if codebase.Spec.EmptyProject {
 		return h.emptyProjectProvisioning(ctx, repoContext)
 	}
@@ -452,15 +445,13 @@ func (h *PutProject) emptyProjectProvisioning(ctx context.Context, repoContext *
 
 	log.Info("Initialing empty git repository")
 
-	gitProvider := h.gitProviderFactory(gitproviderv2.Config{})
-
-	if err := gitProvider.Init(ctx, repoContext.WorkDir); err != nil {
+	if err := h.gitProviderNoAuth.Init(ctx, repoContext.WorkDir); err != nil {
 		return fmt.Errorf("failed to create empty git repository: %w", err)
 	}
 
 	log.Info("Making initial commit")
 
-	if err := gitProvider.Commit(ctx, repoContext.WorkDir, "Initial commit", gitproviderv2.CommitAllowEmpty()); err != nil {
+	if err := h.gitProviderNoAuth.Commit(ctx, repoContext.WorkDir, "Initial commit", gitproviderv2.CommitAllowEmpty()); err != nil {
 		return fmt.Errorf("failed to create Initial commit: %w", err)
 	}
 
@@ -477,23 +468,12 @@ func (h *PutProject) notEmptyProjectProvisioning(ctx context.Context, codebase *
 		return fmt.Errorf("failed to build repo url: %w", err)
 	}
 
-	repu, repp, exists, err := codebaseutil.GetRepositoryCredentialsIfExists(ctx, codebase, h.k8sClient)
+	repoUsername, repoPassword, _, err := codebaseutil.GetRepositoryCredentialsIfExists(ctx, codebase, h.k8sClient)
 	if err != nil {
 		return fmt.Errorf("failed to get repository credentials for project provisioning: %w", err)
 	}
 
-	if exists {
-		cloneGitProvider := h.gitProviderFactory(gitproviderv2.Config{
-			Username: repu,
-			Token:    repp,
-		})
-
-		if err := cloneGitProvider.CheckPermissions(ctx, repoUrl); err != nil {
-			return fmt.Errorf("failed to get access to the repository %s for user %s: %w", repoUrl, repu, err)
-		}
-	}
-
-	if err = h.tryToCloneRepo(ctx, repoUrl, repu, repp, repoContext); err != nil {
+	if err = h.tryToCloneRepo(ctx, repoUrl, repoUsername, repoPassword, repoContext); err != nil {
 		return fmt.Errorf("failed to clone template project: %w", err)
 	}
 

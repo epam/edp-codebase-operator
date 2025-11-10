@@ -10,7 +10,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
-	gitproviderv2 "github.com/epam/edp-codebase-operator/v2/pkg/git/v2"
+	gitproviderv2 "github.com/epam/edp-codebase-operator/v2/pkg/git"
 	gitlabci "github.com/epam/edp-codebase-operator/v2/pkg/gitlab"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )

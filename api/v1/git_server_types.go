@@ -24,6 +24,16 @@ type GitServerSpec struct {
 
 	SshPort int32 `json:"sshPort"`
 
+	// NameSshKeySecret is the name of the Kubernetes secret containing Git repository credentials.
+	// Required keys:
+	//   - token: Git provider access token (required)
+	// Optional keys:
+	//   - id_rsa: SSH private key for Git operations over SSH
+	//   - secretString: Webhook secret for validating webhook requests
+	//   - username: Git username to override the default GitUser
+	// For Gerrit provider, only id_rsa key is required and used.
+	// +kubebuilder:example:=my-git-credentials
+	// +required
 	NameSshKeySecret string `json:"nameSshKeySecret"`
 
 	// GitProvider is a git provider type. It can be gerrit, github or gitlab. Default value is gerrit.

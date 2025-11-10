@@ -9,7 +9,7 @@ import (
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	codebaseutil "github.com/epam/edp-codebase-operator/v2/pkg/codebase"
-	gitproviderv2 "github.com/epam/edp-codebase-operator/v2/pkg/git/v2"
+	gitproviderv2 "github.com/epam/edp-codebase-operator/v2/pkg/git"
 )
 
 func CheckoutBranch(

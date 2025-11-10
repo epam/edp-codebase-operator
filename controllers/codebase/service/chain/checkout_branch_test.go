@@ -14,8 +14,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
-	gitproviderv2 "github.com/epam/edp-codebase-operator/v2/pkg/git/v2"
-	gitServerMocks "github.com/epam/edp-codebase-operator/v2/pkg/git/v2/mocks"
+	gitproviderv2 "github.com/epam/edp-codebase-operator/v2/pkg/git"
+	gitServerMocks "github.com/epam/edp-codebase-operator/v2/pkg/git/mocks"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 

@@ -5,7 +5,7 @@ package mocks
 import (
 	context "context"
 
-	git "github.com/epam/edp-codebase-operator/v2/pkg/git"
+	v2 "github.com/epam/edp-codebase-operator/v2/pkg/git"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -22,17 +22,17 @@ func (_m *MockGit) EXPECT() *MockGit_Expecter {
 	return &MockGit_Expecter{mock: &_m.Mock}
 }
 
-// AddRemoteLink provides a mock function with given fields: repoPath, remoteUrl
-func (_m *MockGit) AddRemoteLink(repoPath string, remoteUrl string) error {
-	ret := _m.Called(repoPath, remoteUrl)
+// AddRemoteLink provides a mock function with given fields: ctx, directory, remoteURL
+func (_m *MockGit) AddRemoteLink(ctx context.Context, directory string, remoteURL string) error {
+	ret := _m.Called(ctx, directory, remoteURL)
 
 	if len(ret) == 0 {
 		panic("no return value specified for AddRemoteLink")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(string, string) error); ok {
-		r0 = rf(repoPath, remoteUrl)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
+		r0 = rf(ctx, directory, remoteURL)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -46,15 +46,16 @@ type MockGit_AddRemoteLink_Call struct {
 }
 
 // AddRemoteLink is a helper method to define mock.On call
-//   - repoPath string
-//   - remoteUrl string
-func (_e *MockGit_Expecter) AddRemoteLink(repoPath interface{}, remoteUrl interface{}) *MockGit_AddRemoteLink_Call {
-	return &MockGit_AddRemoteLink_Call{Call: _e.mock.On("AddRemoteLink", repoPath, remoteUrl)}
+//   - ctx context.Context
+//   - directory string
+//   - remoteURL string
+func (_e *MockGit_Expecter) AddRemoteLink(ctx interface{}, directory interface{}, remoteURL interface{}) *MockGit_AddRemoteLink_Call {
+	return &MockGit_AddRemoteLink_Call{Call: _e.mock.On("AddRemoteLink", ctx, directory, remoteURL)}
 }
 
-func (_c *MockGit_AddRemoteLink_Call) Run(run func(repoPath string, remoteUrl string)) *MockGit_AddRemoteLink_Call {
+func (_c *MockGit_AddRemoteLink_Call) Run(run func(ctx context.Context, directory string, remoteURL string)) *MockGit_AddRemoteLink_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(string))
+		run(args[0].(context.Context), args[1].(string), args[2].(string))
 	})
 	return _c
 }
@@ -64,24 +65,24 @@ func (_c *MockGit_AddRemoteLink_Call) Return(_a0 error) *MockGit_AddRemoteLink_C
 	return _c
 }
 
-func (_c *MockGit_AddRemoteLink_Call) RunAndReturn(run func(string, string) error) *MockGit_AddRemoteLink_Call {
+func (_c *MockGit_AddRemoteLink_Call) RunAndReturn(run func(context.Context, string, string) error) *MockGit_AddRemoteLink_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// CheckPermissions provides a mock function with given fields: ctx, repo, user, pass
-func (_m *MockGit) CheckPermissions(ctx context.Context, repo string, user *string, pass *string) bool {
-	ret := _m.Called(ctx, repo, user, pass)
+// CheckPermissions provides a mock function with given fields: ctx, repoURL
+func (_m *MockGit) CheckPermissions(ctx context.Context, repoURL string) error {
+	ret := _m.Called(ctx, repoURL)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CheckPermissions")
 	}
 
-	var r0 bool
-	if rf, ok := ret.Get(0).(func(context.Context, string, *string, *string) bool); ok {
-		r0 = rf(ctx, repo, user, pass)
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = rf(ctx, repoURL)
 	} else {
-		r0 = ret.Get(0).(bool)
+		r0 = ret.Error(0)
 	}
 
 	return r0
@@ -94,41 +95,39 @@ type MockGit_CheckPermissions_Call struct {
 
 // CheckPermissions is a helper method to define mock.On call
 //   - ctx context.Context
-//   - repo string
-//   - user *string
-//   - pass *string
-func (_e *MockGit_Expecter) CheckPermissions(ctx interface{}, repo interface{}, user interface{}, pass interface{}) *MockGit_CheckPermissions_Call {
-	return &MockGit_CheckPermissions_Call{Call: _e.mock.On("CheckPermissions", ctx, repo, user, pass)}
+//   - repoURL string
+func (_e *MockGit_Expecter) CheckPermissions(ctx interface{}, repoURL interface{}) *MockGit_CheckPermissions_Call {
+	return &MockGit_CheckPermissions_Call{Call: _e.mock.On("CheckPermissions", ctx, repoURL)}
 }
 
-func (_c *MockGit_CheckPermissions_Call) Run(run func(ctx context.Context, repo string, user *string, pass *string)) *MockGit_CheckPermissions_Call {
+func (_c *MockGit_CheckPermissions_Call) Run(run func(ctx context.Context, repoURL string)) *MockGit_CheckPermissions_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string), args[2].(*string), args[3].(*string))
+		run(args[0].(context.Context), args[1].(string))
 	})
 	return _c
 }
 
-func (_c *MockGit_CheckPermissions_Call) Return(accessible bool) *MockGit_CheckPermissions_Call {
-	_c.Call.Return(accessible)
+func (_c *MockGit_CheckPermissions_Call) Return(_a0 error) *MockGit_CheckPermissions_Call {
+	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *MockGit_CheckPermissions_Call) RunAndReturn(run func(context.Context, string, *string, *string) bool) *MockGit_CheckPermissions_Call {
+func (_c *MockGit_CheckPermissions_Call) RunAndReturn(run func(context.Context, string) error) *MockGit_CheckPermissions_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// CheckReference provides a mock function with given fields: workDir, from
-func (_m *MockGit) CheckReference(workDir string, from string) error {
-	ret := _m.Called(workDir, from)
+// CheckReference provides a mock function with given fields: ctx, directory, refName
+func (_m *MockGit) CheckReference(ctx context.Context, directory string, refName string) error {
+	ret := _m.Called(ctx, directory, refName)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CheckReference")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(string, string) error); ok {
-		r0 = rf(workDir, from)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
+		r0 = rf(ctx, directory, refName)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -142,15 +141,16 @@ type MockGit_CheckReference_Call struct {
 }
 
 // CheckReference is a helper method to define mock.On call
-//   - workDir string
-//   - from string
-func (_e *MockGit_Expecter) CheckReference(workDir interface{}, from interface{}) *MockGit_CheckReference_Call {
-	return &MockGit_CheckReference_Call{Call: _e.mock.On("CheckReference", workDir, from)}
+//   - ctx context.Context
+//   - directory string
+//   - refName string
+func (_e *MockGit_Expecter) CheckReference(ctx interface{}, directory interface{}, refName interface{}) *MockGit_CheckReference_Call {
+	return &MockGit_CheckReference_Call{Call: _e.mock.On("CheckReference", ctx, directory, refName)}
 }
 
-func (_c *MockGit_CheckReference_Call) Run(run func(workDir string, from string)) *MockGit_CheckReference_Call {
+func (_c *MockGit_CheckReference_Call) Run(run func(ctx context.Context, directory string, refName string)) *MockGit_CheckReference_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(string))
+		run(args[0].(context.Context), args[1].(string), args[2].(string))
 	})
 	return _c
 }
@@ -160,22 +160,22 @@ func (_c *MockGit_CheckReference_Call) Return(_a0 error) *MockGit_CheckReference
 	return _c
 }
 
-func (_c *MockGit_CheckReference_Call) RunAndReturn(run func(string, string) error) *MockGit_CheckReference_Call {
+func (_c *MockGit_CheckReference_Call) RunAndReturn(run func(context.Context, string, string) error) *MockGit_CheckReference_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// Checkout provides a mock function with given fields: user, pass, directory, branchName, remote
-func (_m *MockGit) Checkout(user *string, pass *string, directory string, branchName string, remote bool) error {
-	ret := _m.Called(user, pass, directory, branchName, remote)
+// Checkout provides a mock function with given fields: ctx, directory, branchName, remote
+func (_m *MockGit) Checkout(ctx context.Context, directory string, branchName string, remote bool) error {
+	ret := _m.Called(ctx, directory, branchName, remote)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Checkout")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*string, *string, string, string, bool) error); ok {
-		r0 = rf(user, pass, directory, branchName, remote)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, bool) error); ok {
+		r0 = rf(ctx, directory, branchName, remote)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -189,18 +189,17 @@ type MockGit_Checkout_Call struct {
 }
 
 // Checkout is a helper method to define mock.On call
-//   - user *string
-//   - pass *string
+//   - ctx context.Context
 //   - directory string
 //   - branchName string
 //   - remote bool
-func (_e *MockGit_Expecter) Checkout(user interface{}, pass interface{}, directory interface{}, branchName interface{}, remote interface{}) *MockGit_Checkout_Call {
-	return &MockGit_Checkout_Call{Call: _e.mock.On("Checkout", user, pass, directory, branchName, remote)}
+func (_e *MockGit_Expecter) Checkout(ctx interface{}, directory interface{}, branchName interface{}, remote interface{}) *MockGit_Checkout_Call {
+	return &MockGit_Checkout_Call{Call: _e.mock.On("Checkout", ctx, directory, branchName, remote)}
 }
 
-func (_c *MockGit_Checkout_Call) Run(run func(user *string, pass *string, directory string, branchName string, remote bool)) *MockGit_Checkout_Call {
+func (_c *MockGit_Checkout_Call) Run(run func(ctx context.Context, directory string, branchName string, remote bool)) *MockGit_Checkout_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(*string), args[1].(*string), args[2].(string), args[3].(string), args[4].(bool))
+		run(args[0].(context.Context), args[1].(string), args[2].(string), args[3].(bool))
 	})
 	return _c
 }
@@ -210,22 +209,22 @@ func (_c *MockGit_Checkout_Call) Return(_a0 error) *MockGit_Checkout_Call {
 	return _c
 }
 
-func (_c *MockGit_Checkout_Call) RunAndReturn(run func(*string, *string, string, string, bool) error) *MockGit_Checkout_Call {
+func (_c *MockGit_Checkout_Call) RunAndReturn(run func(context.Context, string, string, bool) error) *MockGit_Checkout_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// CheckoutRemoteBranchBySSH provides a mock function with given fields: key, user, gitPath, remoteBranchName
-func (_m *MockGit) CheckoutRemoteBranchBySSH(key string, user string, gitPath string, remoteBranchName string) error {
-	ret := _m.Called(key, user, gitPath, remoteBranchName)
+// CheckoutRemoteBranch provides a mock function with given fields: ctx, directory, branchName
+func (_m *MockGit) CheckoutRemoteBranch(ctx context.Context, directory string, branchName string) error {
+	ret := _m.Called(ctx, directory, branchName)
 
 	if len(ret) == 0 {
-		panic("no return value specified for CheckoutRemoteBranchBySSH")
+		panic("no return value specified for CheckoutRemoteBranch")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(string, string, string, string) error); ok {
-		r0 = rf(key, user, gitPath, remoteBranchName)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
+		r0 = rf(ctx, directory, branchName)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -233,155 +232,102 @@ func (_m *MockGit) CheckoutRemoteBranchBySSH(key string, user string, gitPath st
 	return r0
 }
 
-// MockGit_CheckoutRemoteBranchBySSH_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CheckoutRemoteBranchBySSH'
-type MockGit_CheckoutRemoteBranchBySSH_Call struct {
+// MockGit_CheckoutRemoteBranch_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CheckoutRemoteBranch'
+type MockGit_CheckoutRemoteBranch_Call struct {
 	*mock.Call
 }
 
-// CheckoutRemoteBranchBySSH is a helper method to define mock.On call
-//   - key string
-//   - user string
-//   - gitPath string
-//   - remoteBranchName string
-func (_e *MockGit_Expecter) CheckoutRemoteBranchBySSH(key interface{}, user interface{}, gitPath interface{}, remoteBranchName interface{}) *MockGit_CheckoutRemoteBranchBySSH_Call {
-	return &MockGit_CheckoutRemoteBranchBySSH_Call{Call: _e.mock.On("CheckoutRemoteBranchBySSH", key, user, gitPath, remoteBranchName)}
-}
-
-func (_c *MockGit_CheckoutRemoteBranchBySSH_Call) Run(run func(key string, user string, gitPath string, remoteBranchName string)) *MockGit_CheckoutRemoteBranchBySSH_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(string), args[2].(string), args[3].(string))
-	})
-	return _c
-}
-
-func (_c *MockGit_CheckoutRemoteBranchBySSH_Call) Return(_a0 error) *MockGit_CheckoutRemoteBranchBySSH_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *MockGit_CheckoutRemoteBranchBySSH_Call) RunAndReturn(run func(string, string, string, string) error) *MockGit_CheckoutRemoteBranchBySSH_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// CloneRepository provides a mock function with given fields: repo, user, pass, destination
-func (_m *MockGit) CloneRepository(repo string, user *string, pass *string, destination string) error {
-	ret := _m.Called(repo, user, pass, destination)
-
-	if len(ret) == 0 {
-		panic("no return value specified for CloneRepository")
-	}
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(string, *string, *string, string) error); ok {
-		r0 = rf(repo, user, pass, destination)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// MockGit_CloneRepository_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CloneRepository'
-type MockGit_CloneRepository_Call struct {
-	*mock.Call
-}
-
-// CloneRepository is a helper method to define mock.On call
-//   - repo string
-//   - user *string
-//   - pass *string
-//   - destination string
-func (_e *MockGit_Expecter) CloneRepository(repo interface{}, user interface{}, pass interface{}, destination interface{}) *MockGit_CloneRepository_Call {
-	return &MockGit_CloneRepository_Call{Call: _e.mock.On("CloneRepository", repo, user, pass, destination)}
-}
-
-func (_c *MockGit_CloneRepository_Call) Run(run func(repo string, user *string, pass *string, destination string)) *MockGit_CloneRepository_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(*string), args[2].(*string), args[3].(string))
-	})
-	return _c
-}
-
-func (_c *MockGit_CloneRepository_Call) Return(_a0 error) *MockGit_CloneRepository_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *MockGit_CloneRepository_Call) RunAndReturn(run func(string, *string, *string, string) error) *MockGit_CloneRepository_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// CloneRepositoryBySsh provides a mock function with given fields: ctx, key, user, repoUrl, destination, port
-func (_m *MockGit) CloneRepositoryBySsh(ctx context.Context, key string, user string, repoUrl string, destination string, port int32) error {
-	ret := _m.Called(ctx, key, user, repoUrl, destination, port)
-
-	if len(ret) == 0 {
-		panic("no return value specified for CloneRepositoryBySsh")
-	}
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string, int32) error); ok {
-		r0 = rf(ctx, key, user, repoUrl, destination, port)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// MockGit_CloneRepositoryBySsh_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CloneRepositoryBySsh'
-type MockGit_CloneRepositoryBySsh_Call struct {
-	*mock.Call
-}
-
-// CloneRepositoryBySsh is a helper method to define mock.On call
+// CheckoutRemoteBranch is a helper method to define mock.On call
 //   - ctx context.Context
-//   - key string
-//   - user string
-//   - repoUrl string
-//   - destination string
-//   - port int32
-func (_e *MockGit_Expecter) CloneRepositoryBySsh(ctx interface{}, key interface{}, user interface{}, repoUrl interface{}, destination interface{}, port interface{}) *MockGit_CloneRepositoryBySsh_Call {
-	return &MockGit_CloneRepositoryBySsh_Call{Call: _e.mock.On("CloneRepositoryBySsh", ctx, key, user, repoUrl, destination, port)}
+//   - directory string
+//   - branchName string
+func (_e *MockGit_Expecter) CheckoutRemoteBranch(ctx interface{}, directory interface{}, branchName interface{}) *MockGit_CheckoutRemoteBranch_Call {
+	return &MockGit_CheckoutRemoteBranch_Call{Call: _e.mock.On("CheckoutRemoteBranch", ctx, directory, branchName)}
 }
 
-func (_c *MockGit_CloneRepositoryBySsh_Call) Run(run func(ctx context.Context, key string, user string, repoUrl string, destination string, port int32)) *MockGit_CloneRepositoryBySsh_Call {
+func (_c *MockGit_CheckoutRemoteBranch_Call) Run(run func(ctx context.Context, directory string, branchName string)) *MockGit_CheckoutRemoteBranch_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string), args[2].(string), args[3].(string), args[4].(string), args[5].(int32))
+		run(args[0].(context.Context), args[1].(string), args[2].(string))
 	})
 	return _c
 }
 
-func (_c *MockGit_CloneRepositoryBySsh_Call) Return(_a0 error) *MockGit_CloneRepositoryBySsh_Call {
+func (_c *MockGit_CheckoutRemoteBranch_Call) Return(_a0 error) *MockGit_CheckoutRemoteBranch_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *MockGit_CloneRepositoryBySsh_Call) RunAndReturn(run func(context.Context, string, string, string, string, int32) error) *MockGit_CloneRepositoryBySsh_Call {
+func (_c *MockGit_CheckoutRemoteBranch_Call) RunAndReturn(run func(context.Context, string, string) error) *MockGit_CheckoutRemoteBranch_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// CommitChanges provides a mock function with given fields: directory, commitMsg, opts
-func (_m *MockGit) CommitChanges(directory string, commitMsg string, opts ...git.CommitOps) error {
-	_va := make([]interface{}, len(opts))
-	for _i := range opts {
-		_va[_i] = opts[_i]
+// Clone provides a mock function with given fields: ctx, repoURL, destination
+func (_m *MockGit) Clone(ctx context.Context, repoURL string, destination string) error {
+	ret := _m.Called(ctx, repoURL, destination)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Clone")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
+		r0 = rf(ctx, repoURL, destination)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// MockGit_Clone_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Clone'
+type MockGit_Clone_Call struct {
+	*mock.Call
+}
+
+// Clone is a helper method to define mock.On call
+//   - ctx context.Context
+//   - repoURL string
+//   - destination string
+func (_e *MockGit_Expecter) Clone(ctx interface{}, repoURL interface{}, destination interface{}) *MockGit_Clone_Call {
+	return &MockGit_Clone_Call{Call: _e.mock.On("Clone", ctx, repoURL, destination)}
+}
+
+func (_c *MockGit_Clone_Call) Run(run func(ctx context.Context, repoURL string, destination string)) *MockGit_Clone_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string), args[2].(string))
+	})
+	return _c
+}
+
+func (_c *MockGit_Clone_Call) Return(_a0 error) *MockGit_Clone_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *MockGit_Clone_Call) RunAndReturn(run func(context.Context, string, string) error) *MockGit_Clone_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Commit provides a mock function with given fields: ctx, directory, message, ops
+func (_m *MockGit) Commit(ctx context.Context, directory string, message string, ops ...v2.CommitOps) error {
+	_va := make([]interface{}, len(ops))
+	for _i := range ops {
+		_va[_i] = ops[_i]
 	}
 	var _ca []interface{}
-	_ca = append(_ca, directory, commitMsg)
+	_ca = append(_ca, ctx, directory, message)
 	_ca = append(_ca, _va...)
 	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
-		panic("no return value specified for CommitChanges")
+		panic("no return value specified for Commit")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(string, string, ...git.CommitOps) error); ok {
-		r0 = rf(directory, commitMsg, opts...)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, ...v2.CommitOps) error); ok {
+		r0 = rf(ctx, directory, message, ops...)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -389,46 +335,47 @@ func (_m *MockGit) CommitChanges(directory string, commitMsg string, opts ...git
 	return r0
 }
 
-// MockGit_CommitChanges_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CommitChanges'
-type MockGit_CommitChanges_Call struct {
+// MockGit_Commit_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Commit'
+type MockGit_Commit_Call struct {
 	*mock.Call
 }
 
-// CommitChanges is a helper method to define mock.On call
+// Commit is a helper method to define mock.On call
+//   - ctx context.Context
 //   - directory string
-//   - commitMsg string
-//   - opts ...git.CommitOps
-func (_e *MockGit_Expecter) CommitChanges(directory interface{}, commitMsg interface{}, opts ...interface{}) *MockGit_CommitChanges_Call {
-	return &MockGit_CommitChanges_Call{Call: _e.mock.On("CommitChanges",
-		append([]interface{}{directory, commitMsg}, opts...)...)}
+//   - message string
+//   - ops ...v2.CommitOps
+func (_e *MockGit_Expecter) Commit(ctx interface{}, directory interface{}, message interface{}, ops ...interface{}) *MockGit_Commit_Call {
+	return &MockGit_Commit_Call{Call: _e.mock.On("Commit",
+		append([]interface{}{ctx, directory, message}, ops...)...)}
 }
 
-func (_c *MockGit_CommitChanges_Call) Run(run func(directory string, commitMsg string, opts ...git.CommitOps)) *MockGit_CommitChanges_Call {
+func (_c *MockGit_Commit_Call) Run(run func(ctx context.Context, directory string, message string, ops ...v2.CommitOps)) *MockGit_Commit_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]git.CommitOps, len(args)-2)
-		for i, a := range args[2:] {
+		variadicArgs := make([]v2.CommitOps, len(args)-3)
+		for i, a := range args[3:] {
 			if a != nil {
-				variadicArgs[i] = a.(git.CommitOps)
+				variadicArgs[i] = a.(v2.CommitOps)
 			}
 		}
-		run(args[0].(string), args[1].(string), variadicArgs...)
+		run(args[0].(context.Context), args[1].(string), args[2].(string), variadicArgs...)
 	})
 	return _c
 }
 
-func (_c *MockGit_CommitChanges_Call) Return(_a0 error) *MockGit_CommitChanges_Call {
+func (_c *MockGit_Commit_Call) Return(_a0 error) *MockGit_Commit_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *MockGit_CommitChanges_Call) RunAndReturn(run func(string, string, ...git.CommitOps) error) *MockGit_CommitChanges_Call {
+func (_c *MockGit_Commit_Call) RunAndReturn(run func(context.Context, string, string, ...v2.CommitOps) error) *MockGit_Commit_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// CommitExists provides a mock function with given fields: directory, hash
-func (_m *MockGit) CommitExists(directory string, hash string) (bool, error) {
-	ret := _m.Called(directory, hash)
+// CommitExists provides a mock function with given fields: ctx, directory, hash
+func (_m *MockGit) CommitExists(ctx context.Context, directory string, hash string) (bool, error) {
+	ret := _m.Called(ctx, directory, hash)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CommitExists")
@@ -436,17 +383,17 @@ func (_m *MockGit) CommitExists(directory string, hash string) (bool, error) {
 
 	var r0 bool
 	var r1 error
-	if rf, ok := ret.Get(0).(func(string, string) (bool, error)); ok {
-		return rf(directory, hash)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (bool, error)); ok {
+		return rf(ctx, directory, hash)
 	}
-	if rf, ok := ret.Get(0).(func(string, string) bool); ok {
-		r0 = rf(directory, hash)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) bool); ok {
+		r0 = rf(ctx, directory, hash)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
-	if rf, ok := ret.Get(1).(func(string, string) error); ok {
-		r1 = rf(directory, hash)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, directory, hash)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -460,15 +407,16 @@ type MockGit_CommitExists_Call struct {
 }
 
 // CommitExists is a helper method to define mock.On call
+//   - ctx context.Context
 //   - directory string
 //   - hash string
-func (_e *MockGit_Expecter) CommitExists(directory interface{}, hash interface{}) *MockGit_CommitExists_Call {
-	return &MockGit_CommitExists_Call{Call: _e.mock.On("CommitExists", directory, hash)}
+func (_e *MockGit_Expecter) CommitExists(ctx interface{}, directory interface{}, hash interface{}) *MockGit_CommitExists_Call {
+	return &MockGit_CommitExists_Call{Call: _e.mock.On("CommitExists", ctx, directory, hash)}
 }
 
-func (_c *MockGit_CommitExists_Call) Run(run func(directory string, hash string)) *MockGit_CommitExists_Call {
+func (_c *MockGit_CommitExists_Call) Run(run func(ctx context.Context, directory string, hash string)) *MockGit_CommitExists_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(string))
+		run(args[0].(context.Context), args[1].(string), args[2].(string))
 	})
 	return _c
 }
@@ -478,22 +426,22 @@ func (_c *MockGit_CommitExists_Call) Return(_a0 bool, _a1 error) *MockGit_Commit
 	return _c
 }
 
-func (_c *MockGit_CommitExists_Call) RunAndReturn(run func(string, string) (bool, error)) *MockGit_CommitExists_Call {
+func (_c *MockGit_CommitExists_Call) RunAndReturn(run func(context.Context, string, string) (bool, error)) *MockGit_CommitExists_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// CreateChildBranch provides a mock function with given fields: directory, currentBranch, newBranch
-func (_m *MockGit) CreateChildBranch(directory string, currentBranch string, newBranch string) error {
-	ret := _m.Called(directory, currentBranch, newBranch)
+// CreateChildBranch provides a mock function with given fields: ctx, directory, parentBranch, newBranch
+func (_m *MockGit) CreateChildBranch(ctx context.Context, directory string, parentBranch string, newBranch string) error {
+	ret := _m.Called(ctx, directory, parentBranch, newBranch)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CreateChildBranch")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(string, string, string) error); ok {
-		r0 = rf(directory, currentBranch, newBranch)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) error); ok {
+		r0 = rf(ctx, directory, parentBranch, newBranch)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -507,16 +455,17 @@ type MockGit_CreateChildBranch_Call struct {
 }
 
 // CreateChildBranch is a helper method to define mock.On call
+//   - ctx context.Context
 //   - directory string
-//   - currentBranch string
+//   - parentBranch string
 //   - newBranch string
-func (_e *MockGit_Expecter) CreateChildBranch(directory interface{}, currentBranch interface{}, newBranch interface{}) *MockGit_CreateChildBranch_Call {
-	return &MockGit_CreateChildBranch_Call{Call: _e.mock.On("CreateChildBranch", directory, currentBranch, newBranch)}
+func (_e *MockGit_Expecter) CreateChildBranch(ctx interface{}, directory interface{}, parentBranch interface{}, newBranch interface{}) *MockGit_CreateChildBranch_Call {
+	return &MockGit_CreateChildBranch_Call{Call: _e.mock.On("CreateChildBranch", ctx, directory, parentBranch, newBranch)}
 }
 
-func (_c *MockGit_CreateChildBranch_Call) Run(run func(directory string, currentBranch string, newBranch string)) *MockGit_CreateChildBranch_Call {
+func (_c *MockGit_CreateChildBranch_Call) Run(run func(ctx context.Context, directory string, parentBranch string, newBranch string)) *MockGit_CreateChildBranch_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(string), args[2].(string))
+		run(args[0].(context.Context), args[1].(string), args[2].(string), args[3].(string))
 	})
 	return _c
 }
@@ -526,22 +475,22 @@ func (_c *MockGit_CreateChildBranch_Call) Return(_a0 error) *MockGit_CreateChild
 	return _c
 }
 
-func (_c *MockGit_CreateChildBranch_Call) RunAndReturn(run func(string, string, string) error) *MockGit_CreateChildBranch_Call {
+func (_c *MockGit_CreateChildBranch_Call) RunAndReturn(run func(context.Context, string, string, string) error) *MockGit_CreateChildBranch_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// CreateRemoteBranch provides a mock function with given fields: key, user, path, name, fromcommit, port
-func (_m *MockGit) CreateRemoteBranch(key string, user string, path string, name string, fromcommit string, port int32) error {
-	ret := _m.Called(key, user, path, name, fromcommit, port)
+// CreateRemoteBranch provides a mock function with given fields: ctx, directory, branchName, fromRef
+func (_m *MockGit) CreateRemoteBranch(ctx context.Context, directory string, branchName string, fromRef string) error {
+	ret := _m.Called(ctx, directory, branchName, fromRef)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CreateRemoteBranch")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(string, string, string, string, string, int32) error); ok {
-		r0 = rf(key, user, path, name, fromcommit, port)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) error); ok {
+		r0 = rf(ctx, directory, branchName, fromRef)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -555,19 +504,17 @@ type MockGit_CreateRemoteBranch_Call struct {
 }
 
 // CreateRemoteBranch is a helper method to define mock.On call
-//   - key string
-//   - user string
-//   - path string
-//   - name string
-//   - fromcommit string
-//   - port int32
-func (_e *MockGit_Expecter) CreateRemoteBranch(key interface{}, user interface{}, path interface{}, name interface{}, fromcommit interface{}, port interface{}) *MockGit_CreateRemoteBranch_Call {
-	return &MockGit_CreateRemoteBranch_Call{Call: _e.mock.On("CreateRemoteBranch", key, user, path, name, fromcommit, port)}
+//   - ctx context.Context
+//   - directory string
+//   - branchName string
+//   - fromRef string
+func (_e *MockGit_Expecter) CreateRemoteBranch(ctx interface{}, directory interface{}, branchName interface{}, fromRef interface{}) *MockGit_CreateRemoteBranch_Call {
+	return &MockGit_CreateRemoteBranch_Call{Call: _e.mock.On("CreateRemoteBranch", ctx, directory, branchName, fromRef)}
 }
 
-func (_c *MockGit_CreateRemoteBranch_Call) Run(run func(key string, user string, path string, name string, fromcommit string, port int32)) *MockGit_CreateRemoteBranch_Call {
+func (_c *MockGit_CreateRemoteBranch_Call) Run(run func(ctx context.Context, directory string, branchName string, fromRef string)) *MockGit_CreateRemoteBranch_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(string), args[2].(string), args[3].(string), args[4].(string), args[5].(int32))
+		run(args[0].(context.Context), args[1].(string), args[2].(string), args[3].(string))
 	})
 	return _c
 }
@@ -577,22 +524,22 @@ func (_c *MockGit_CreateRemoteBranch_Call) Return(_a0 error) *MockGit_CreateRemo
 	return _c
 }
 
-func (_c *MockGit_CreateRemoteBranch_Call) RunAndReturn(run func(string, string, string, string, string, int32) error) *MockGit_CreateRemoteBranch_Call {
+func (_c *MockGit_CreateRemoteBranch_Call) RunAndReturn(run func(context.Context, string, string, string) error) *MockGit_CreateRemoteBranch_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// CreateRemoteTag provides a mock function with given fields: key, user, path, branchName, name
-func (_m *MockGit) CreateRemoteTag(key string, user string, path string, branchName string, name string) error {
-	ret := _m.Called(key, user, path, branchName, name)
+// CreateRemoteTag provides a mock function with given fields: ctx, directory, branchName, tagName
+func (_m *MockGit) CreateRemoteTag(ctx context.Context, directory string, branchName string, tagName string) error {
+	ret := _m.Called(ctx, directory, branchName, tagName)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CreateRemoteTag")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(string, string, string, string, string) error); ok {
-		r0 = rf(key, user, path, branchName, name)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) error); ok {
+		r0 = rf(ctx, directory, branchName, tagName)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -606,18 +553,17 @@ type MockGit_CreateRemoteTag_Call struct {
 }
 
 // CreateRemoteTag is a helper method to define mock.On call
-//   - key string
-//   - user string
-//   - path string
+//   - ctx context.Context
+//   - directory string
 //   - branchName string
-//   - name string
-func (_e *MockGit_Expecter) CreateRemoteTag(key interface{}, user interface{}, path interface{}, branchName interface{}, name interface{}) *MockGit_CreateRemoteTag_Call {
-	return &MockGit_CreateRemoteTag_Call{Call: _e.mock.On("CreateRemoteTag", key, user, path, branchName, name)}
+//   - tagName string
+func (_e *MockGit_Expecter) CreateRemoteTag(ctx interface{}, directory interface{}, branchName interface{}, tagName interface{}) *MockGit_CreateRemoteTag_Call {
+	return &MockGit_CreateRemoteTag_Call{Call: _e.mock.On("CreateRemoteTag", ctx, directory, branchName, tagName)}
 }
 
-func (_c *MockGit_CreateRemoteTag_Call) Run(run func(key string, user string, path string, branchName string, name string)) *MockGit_CreateRemoteTag_Call {
+func (_c *MockGit_CreateRemoteTag_Call) Run(run func(ctx context.Context, directory string, branchName string, tagName string)) *MockGit_CreateRemoteTag_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(string), args[2].(string), args[3].(string), args[4].(string))
+		run(args[0].(context.Context), args[1].(string), args[2].(string), args[3].(string))
 	})
 	return _c
 }
@@ -627,22 +573,22 @@ func (_c *MockGit_CreateRemoteTag_Call) Return(_a0 error) *MockGit_CreateRemoteT
 	return _c
 }
 
-func (_c *MockGit_CreateRemoteTag_Call) RunAndReturn(run func(string, string, string, string, string) error) *MockGit_CreateRemoteTag_Call {
+func (_c *MockGit_CreateRemoteTag_Call) RunAndReturn(run func(context.Context, string, string, string) error) *MockGit_CreateRemoteTag_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// Fetch provides a mock function with given fields: key, user, path, branchName
-func (_m *MockGit) Fetch(key string, user string, path string, branchName string) error {
-	ret := _m.Called(key, user, path, branchName)
+// Fetch provides a mock function with given fields: ctx, directory, branchName
+func (_m *MockGit) Fetch(ctx context.Context, directory string, branchName string) error {
+	ret := _m.Called(ctx, directory, branchName)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Fetch")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(string, string, string, string) error); ok {
-		r0 = rf(key, user, path, branchName)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
+		r0 = rf(ctx, directory, branchName)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -656,17 +602,16 @@ type MockGit_Fetch_Call struct {
 }
 
 // Fetch is a helper method to define mock.On call
-//   - key string
-//   - user string
-//   - path string
+//   - ctx context.Context
+//   - directory string
 //   - branchName string
-func (_e *MockGit_Expecter) Fetch(key interface{}, user interface{}, path interface{}, branchName interface{}) *MockGit_Fetch_Call {
-	return &MockGit_Fetch_Call{Call: _e.mock.On("Fetch", key, user, path, branchName)}
+func (_e *MockGit_Expecter) Fetch(ctx interface{}, directory interface{}, branchName interface{}) *MockGit_Fetch_Call {
+	return &MockGit_Fetch_Call{Call: _e.mock.On("Fetch", ctx, directory, branchName)}
 }
 
-func (_c *MockGit_Fetch_Call) Run(run func(key string, user string, path string, branchName string)) *MockGit_Fetch_Call {
+func (_c *MockGit_Fetch_Call) Run(run func(ctx context.Context, directory string, branchName string)) *MockGit_Fetch_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(string), args[2].(string), args[3].(string))
+		run(args[0].(context.Context), args[1].(string), args[2].(string))
 	})
 	return _c
 }
@@ -676,14 +621,14 @@ func (_c *MockGit_Fetch_Call) Return(_a0 error) *MockGit_Fetch_Call {
 	return _c
 }
 
-func (_c *MockGit_Fetch_Call) RunAndReturn(run func(string, string, string, string) error) *MockGit_Fetch_Call {
+func (_c *MockGit_Fetch_Call) RunAndReturn(run func(context.Context, string, string) error) *MockGit_Fetch_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// GetCurrentBranchName provides a mock function with given fields: directory
-func (_m *MockGit) GetCurrentBranchName(directory string) (string, error) {
-	ret := _m.Called(directory)
+// GetCurrentBranchName provides a mock function with given fields: ctx, directory
+func (_m *MockGit) GetCurrentBranchName(ctx context.Context, directory string) (string, error) {
+	ret := _m.Called(ctx, directory)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetCurrentBranchName")
@@ -691,17 +636,17 @@ func (_m *MockGit) GetCurrentBranchName(directory string) (string, error) {
 
 	var r0 string
 	var r1 error
-	if rf, ok := ret.Get(0).(func(string) (string, error)); ok {
-		return rf(directory)
+	if rf, ok := ret.Get(0).(func(context.Context, string) (string, error)); ok {
+		return rf(ctx, directory)
 	}
-	if rf, ok := ret.Get(0).(func(string) string); ok {
-		r0 = rf(directory)
+	if rf, ok := ret.Get(0).(func(context.Context, string) string); ok {
+		r0 = rf(ctx, directory)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	if rf, ok := ret.Get(1).(func(string) error); ok {
-		r1 = rf(directory)
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, directory)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -715,14 +660,15 @@ type MockGit_GetCurrentBranchName_Call struct {
 }
 
 // GetCurrentBranchName is a helper method to define mock.On call
+//   - ctx context.Context
 //   - directory string
-func (_e *MockGit_Expecter) GetCurrentBranchName(directory interface{}) *MockGit_GetCurrentBranchName_Call {
-	return &MockGit_GetCurrentBranchName_Call{Call: _e.mock.On("GetCurrentBranchName", directory)}
+func (_e *MockGit_Expecter) GetCurrentBranchName(ctx interface{}, directory interface{}) *MockGit_GetCurrentBranchName_Call {
+	return &MockGit_GetCurrentBranchName_Call{Call: _e.mock.On("GetCurrentBranchName", ctx, directory)}
 }
 
-func (_c *MockGit_GetCurrentBranchName_Call) Run(run func(directory string)) *MockGit_GetCurrentBranchName_Call {
+func (_c *MockGit_GetCurrentBranchName_Call) Run(run func(ctx context.Context, directory string)) *MockGit_GetCurrentBranchName_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string))
+		run(args[0].(context.Context), args[1].(string))
 	})
 	return _c
 }
@@ -732,22 +678,22 @@ func (_c *MockGit_GetCurrentBranchName_Call) Return(_a0 string, _a1 error) *Mock
 	return _c
 }
 
-func (_c *MockGit_GetCurrentBranchName_Call) RunAndReturn(run func(string) (string, error)) *MockGit_GetCurrentBranchName_Call {
+func (_c *MockGit_GetCurrentBranchName_Call) RunAndReturn(run func(context.Context, string) (string, error)) *MockGit_GetCurrentBranchName_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// Init provides a mock function with given fields: directory
-func (_m *MockGit) Init(directory string) error {
-	ret := _m.Called(directory)
+// Init provides a mock function with given fields: ctx, directory
+func (_m *MockGit) Init(ctx context.Context, directory string) error {
+	ret := _m.Called(ctx, directory)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Init")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(string) error); ok {
-		r0 = rf(directory)
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = rf(ctx, directory)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -761,14 +707,15 @@ type MockGit_Init_Call struct {
 }
 
 // Init is a helper method to define mock.On call
+//   - ctx context.Context
 //   - directory string
-func (_e *MockGit_Expecter) Init(directory interface{}) *MockGit_Init_Call {
-	return &MockGit_Init_Call{Call: _e.mock.On("Init", directory)}
+func (_e *MockGit_Expecter) Init(ctx interface{}, directory interface{}) *MockGit_Init_Call {
+	return &MockGit_Init_Call{Call: _e.mock.On("Init", ctx, directory)}
 }
 
-func (_c *MockGit_Init_Call) Run(run func(directory string)) *MockGit_Init_Call {
+func (_c *MockGit_Init_Call) Run(run func(ctx context.Context, directory string)) *MockGit_Init_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string))
+		run(args[0].(context.Context), args[1].(string))
 	})
 	return _c
 }
@@ -778,29 +725,29 @@ func (_c *MockGit_Init_Call) Return(_a0 error) *MockGit_Init_Call {
 	return _c
 }
 
-func (_c *MockGit_Init_Call) RunAndReturn(run func(string) error) *MockGit_Init_Call {
+func (_c *MockGit_Init_Call) RunAndReturn(run func(context.Context, string) error) *MockGit_Init_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// PushChanges provides a mock function with given fields: key, user, directory, port, pushParams
-func (_m *MockGit) PushChanges(key string, user string, directory string, port int32, pushParams ...string) error {
-	_va := make([]interface{}, len(pushParams))
-	for _i := range pushParams {
-		_va[_i] = pushParams[_i]
+// Push provides a mock function with given fields: ctx, directory, refspecs
+func (_m *MockGit) Push(ctx context.Context, directory string, refspecs ...string) error {
+	_va := make([]interface{}, len(refspecs))
+	for _i := range refspecs {
+		_va[_i] = refspecs[_i]
 	}
 	var _ca []interface{}
-	_ca = append(_ca, key, user, directory, port)
+	_ca = append(_ca, ctx, directory)
 	_ca = append(_ca, _va...)
 	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
-		panic("no return value specified for PushChanges")
+		panic("no return value specified for Push")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(string, string, string, int32, ...string) error); ok {
-		r0 = rf(key, user, directory, port, pushParams...)
+	if rf, ok := ret.Get(0).(func(context.Context, string, ...string) error); ok {
+		r0 = rf(ctx, directory, refspecs...)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -808,56 +755,54 @@ func (_m *MockGit) PushChanges(key string, user string, directory string, port i
 	return r0
 }
 
-// MockGit_PushChanges_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'PushChanges'
-type MockGit_PushChanges_Call struct {
+// MockGit_Push_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Push'
+type MockGit_Push_Call struct {
 	*mock.Call
 }
 
-// PushChanges is a helper method to define mock.On call
-//   - key string
-//   - user string
+// Push is a helper method to define mock.On call
+//   - ctx context.Context
 //   - directory string
-//   - port int32
-//   - pushParams ...string
-func (_e *MockGit_Expecter) PushChanges(key interface{}, user interface{}, directory interface{}, port interface{}, pushParams ...interface{}) *MockGit_PushChanges_Call {
-	return &MockGit_PushChanges_Call{Call: _e.mock.On("PushChanges",
-		append([]interface{}{key, user, directory, port}, pushParams...)...)}
+//   - refspecs ...string
+func (_e *MockGit_Expecter) Push(ctx interface{}, directory interface{}, refspecs ...interface{}) *MockGit_Push_Call {
+	return &MockGit_Push_Call{Call: _e.mock.On("Push",
+		append([]interface{}{ctx, directory}, refspecs...)...)}
 }
 
-func (_c *MockGit_PushChanges_Call) Run(run func(key string, user string, directory string, port int32, pushParams ...string)) *MockGit_PushChanges_Call {
+func (_c *MockGit_Push_Call) Run(run func(ctx context.Context, directory string, refspecs ...string)) *MockGit_Push_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]string, len(args)-4)
-		for i, a := range args[4:] {
+		variadicArgs := make([]string, len(args)-2)
+		for i, a := range args[2:] {
 			if a != nil {
 				variadicArgs[i] = a.(string)
 			}
 		}
-		run(args[0].(string), args[1].(string), args[2].(string), args[3].(int32), variadicArgs...)
+		run(args[0].(context.Context), args[1].(string), variadicArgs...)
 	})
 	return _c
 }
 
-func (_c *MockGit_PushChanges_Call) Return(_a0 error) *MockGit_PushChanges_Call {
+func (_c *MockGit_Push_Call) Return(_a0 error) *MockGit_Push_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *MockGit_PushChanges_Call) RunAndReturn(run func(string, string, string, int32, ...string) error) *MockGit_PushChanges_Call {
+func (_c *MockGit_Push_Call) RunAndReturn(run func(context.Context, string, ...string) error) *MockGit_Push_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// RemoveBranch provides a mock function with given fields: directory, branchName
-func (_m *MockGit) RemoveBranch(directory string, branchName string) error {
-	ret := _m.Called(directory, branchName)
+// RemoveBranch provides a mock function with given fields: ctx, directory, branchName
+func (_m *MockGit) RemoveBranch(ctx context.Context, directory string, branchName string) error {
+	ret := _m.Called(ctx, directory, branchName)
 
 	if len(ret) == 0 {
 		panic("no return value specified for RemoveBranch")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(string, string) error); ok {
-		r0 = rf(directory, branchName)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
+		r0 = rf(ctx, directory, branchName)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -871,15 +816,16 @@ type MockGit_RemoveBranch_Call struct {
 }
 
 // RemoveBranch is a helper method to define mock.On call
+//   - ctx context.Context
 //   - directory string
 //   - branchName string
-func (_e *MockGit_Expecter) RemoveBranch(directory interface{}, branchName interface{}) *MockGit_RemoveBranch_Call {
-	return &MockGit_RemoveBranch_Call{Call: _e.mock.On("RemoveBranch", directory, branchName)}
+func (_e *MockGit_Expecter) RemoveBranch(ctx interface{}, directory interface{}, branchName interface{}) *MockGit_RemoveBranch_Call {
+	return &MockGit_RemoveBranch_Call{Call: _e.mock.On("RemoveBranch", ctx, directory, branchName)}
 }
 
-func (_c *MockGit_RemoveBranch_Call) Run(run func(directory string, branchName string)) *MockGit_RemoveBranch_Call {
+func (_c *MockGit_RemoveBranch_Call) Run(run func(ctx context.Context, directory string, branchName string)) *MockGit_RemoveBranch_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(string))
+		run(args[0].(context.Context), args[1].(string), args[2].(string))
 	})
 	return _c
 }
@@ -889,55 +835,7 @@ func (_c *MockGit_RemoveBranch_Call) Return(_a0 error) *MockGit_RemoveBranch_Cal
 	return _c
 }
 
-func (_c *MockGit_RemoveBranch_Call) RunAndReturn(run func(string, string) error) *MockGit_RemoveBranch_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// RenameBranch provides a mock function with given fields: directory, currentName, newName
-func (_m *MockGit) RenameBranch(directory string, currentName string, newName string) error {
-	ret := _m.Called(directory, currentName, newName)
-
-	if len(ret) == 0 {
-		panic("no return value specified for RenameBranch")
-	}
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(string, string, string) error); ok {
-		r0 = rf(directory, currentName, newName)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// MockGit_RenameBranch_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'RenameBranch'
-type MockGit_RenameBranch_Call struct {
-	*mock.Call
-}
-
-// RenameBranch is a helper method to define mock.On call
-//   - directory string
-//   - currentName string
-//   - newName string
-func (_e *MockGit_Expecter) RenameBranch(directory interface{}, currentName interface{}, newName interface{}) *MockGit_RenameBranch_Call {
-	return &MockGit_RenameBranch_Call{Call: _e.mock.On("RenameBranch", directory, currentName, newName)}
-}
-
-func (_c *MockGit_RenameBranch_Call) Run(run func(directory string, currentName string, newName string)) *MockGit_RenameBranch_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(string), args[2].(string))
-	})
-	return _c
-}
-
-func (_c *MockGit_RenameBranch_Call) Return(_a0 error) *MockGit_RenameBranch_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *MockGit_RenameBranch_Call) RunAndReturn(run func(string, string, string) error) *MockGit_RenameBranch_Call {
+func (_c *MockGit_RemoveBranch_Call) RunAndReturn(run func(context.Context, string, string) error) *MockGit_RemoveBranch_Call {
 	_c.Call.Return(run)
 	return _c
 }

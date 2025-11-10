@@ -11,7 +11,7 @@ import (
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	"github.com/epam/edp-codebase-operator/v2/controllers/codebasebranch/chain/handler"
-	gitproviderv2 "github.com/epam/edp-codebase-operator/v2/pkg/git/v2"
+	gitproviderv2 "github.com/epam/edp-codebase-operator/v2/pkg/git"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
