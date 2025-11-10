@@ -9,7 +9,7 @@ import (
 
 	"github.com/epam/edp-codebase-operator/v2/controllers/codebase/service/chain/handler"
 	"github.com/epam/edp-codebase-operator/v2/pkg/gerrit"
-	gitproviderv2 "github.com/epam/edp-codebase-operator/v2/pkg/git/v2"
+	gitproviderv2 "github.com/epam/edp-codebase-operator/v2/pkg/git"
 	gitlabci "github.com/epam/edp-codebase-operator/v2/pkg/gitlab"
 	"github.com/epam/edp-codebase-operator/v2/pkg/gitprovider"
 )

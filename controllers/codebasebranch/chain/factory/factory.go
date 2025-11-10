@@ -10,7 +10,7 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/controllers/codebasebranch/chain/put_branch_in_git"
 	"github.com/epam/edp-codebase-operator/v2/controllers/codebasebranch/chain/put_codebase_image_stream"
 	"github.com/epam/edp-codebase-operator/v2/controllers/codebasebranch/service"
-	gitproviderv2 "github.com/epam/edp-codebase-operator/v2/pkg/git/v2"
+	gitproviderv2 "github.com/epam/edp-codebase-operator/v2/pkg/git"
 )
 
 func GetDeletionChain() handler.CodebaseBranchHandler {

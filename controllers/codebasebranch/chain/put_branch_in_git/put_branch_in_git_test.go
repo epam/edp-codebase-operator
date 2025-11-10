@@ -19,8 +19,8 @@ import (
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	"github.com/epam/edp-codebase-operator/v2/controllers/codebasebranch/chain"
 	"github.com/epam/edp-codebase-operator/v2/controllers/codebasebranch/service"
-	gitproviderv2 "github.com/epam/edp-codebase-operator/v2/pkg/git/v2"
-	gitServerMocks "github.com/epam/edp-codebase-operator/v2/pkg/git/v2/mocks"
+	gitproviderv2 "github.com/epam/edp-codebase-operator/v2/pkg/git"
+	gitServerMocks "github.com/epam/edp-codebase-operator/v2/pkg/git/mocks"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 

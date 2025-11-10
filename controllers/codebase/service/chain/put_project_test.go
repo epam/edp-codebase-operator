@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/go-logr/logr"
-	"github.com/stretchr/testify/assert"
 	testify "github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -19,17 +18,825 @@ import (
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/gerrit"
-	gerritmocks "github.com/epam/edp-codebase-operator/v2/pkg/gerrit/mocks"
-	gitproviderv2 "github.com/epam/edp-codebase-operator/v2/pkg/git/v2"
-	v2mocks "github.com/epam/edp-codebase-operator/v2/pkg/git/v2/mocks"
+	gerritMocks "github.com/epam/edp-codebase-operator/v2/pkg/gerrit/mocks"
+	gitproviderv2 "github.com/epam/edp-codebase-operator/v2/pkg/git"
+	gitmocks "github.com/epam/edp-codebase-operator/v2/pkg/git/mocks"
 	"github.com/epam/edp-codebase-operator/v2/pkg/gitprovider"
-	gitprovidermock "github.com/epam/edp-codebase-operator/v2/pkg/gitprovider/mocks"
+	"github.com/epam/edp-codebase-operator/v2/pkg/gitprovider/mocks"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
 func TestPutProject_ServeRequest(t *testing.T) {
-	t.Skip("We need to refactor ServeRequest method and rewrite this test accordingly")
+	scheme := runtime.NewScheme()
+	require.NoError(t, codebaseApi.AddToScheme(scheme))
+	require.NoError(t, corev1.AddToScheme(scheme))
 
+	const defaultNs = "default"
+
+	tests := []struct {
+		name                    string
+		codebase                *codebaseApi.Codebase
+		objects                 []client.Object
+		gitProviderFactory      func(t *testing.T) gitproviderv2.GitProviderFactory
+		gitProvider             func(t *testing.T) func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error)
+		wantErr                 require.ErrorAssertionFunc
+		wantStatus              func(t *testing.T, status codebaseApi.CodebaseStatus)
+		wantCodebaseErrorStatus func(t *testing.T, codebase *codebaseApi.Codebase)
+	}{
+		{
+			name: "skip for Import strategy",
+			codebase: &codebaseApi.Codebase{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-app",
+					Namespace: defaultNs,
+				},
+				Spec: codebaseApi.CodebaseSpec{
+					Strategy: codebaseApi.Import,
+				},
+			},
+			gitProviderFactory: func(t *testing.T) gitproviderv2.GitProviderFactory {
+				return func(config gitproviderv2.Config) gitproviderv2.Git {
+					return nil
+				}
+			},
+			gitProvider: func(t *testing.T) func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
+				return nil
+			},
+			wantErr: require.NoError,
+			wantStatus: func(t *testing.T, status codebaseApi.CodebaseStatus) {
+				require.Empty(t, status.Git)
+			},
+		},
+		{
+			name: "skip when already pushed with ProjectPushedStatus",
+			codebase: &codebaseApi.Codebase{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-app",
+					Namespace: defaultNs,
+				},
+				Spec: codebaseApi.CodebaseSpec{
+					Strategy: codebaseApi.Clone,
+				},
+				Status: codebaseApi.CodebaseStatus{
+					Git: util.ProjectPushedStatus,
+				},
+			},
+			gitProviderFactory: func(t *testing.T) gitproviderv2.GitProviderFactory {
+				return func(config gitproviderv2.Config) gitproviderv2.Git {
+					return nil
+				}
+			},
+			gitProvider: func(t *testing.T) func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
+				return nil
+			},
+			wantErr: require.NoError,
+			wantStatus: func(t *testing.T, status codebaseApi.CodebaseStatus) {
+				require.Equal(t, util.ProjectPushedStatus, status.Git)
+			},
+		},
+		{
+			name: "skip when already pushed with ProjectGitLabCIPushedStatus",
+			codebase: &codebaseApi.Codebase{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-app",
+					Namespace: defaultNs,
+				},
+				Spec: codebaseApi.CodebaseSpec{
+					Strategy: codebaseApi.Create,
+				},
+				Status: codebaseApi.CodebaseStatus{
+					Git: util.ProjectGitLabCIPushedStatus,
+				},
+			},
+			gitProviderFactory: func(t *testing.T) gitproviderv2.GitProviderFactory {
+				return func(config gitproviderv2.Config) gitproviderv2.Git {
+					return nil
+				}
+			},
+			gitProvider: func(t *testing.T) func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
+				return nil
+			},
+			wantErr: require.NoError,
+			wantStatus: func(t *testing.T, status codebaseApi.CodebaseStatus) {
+				require.Equal(t, util.ProjectGitLabCIPushedStatus, status.Git)
+			},
+		},
+		{
+			name: "skip when already pushed with ProjectTemplatesPushedStatus",
+			codebase: &codebaseApi.Codebase{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-app",
+					Namespace: defaultNs,
+				},
+				Spec: codebaseApi.CodebaseSpec{
+					Strategy: codebaseApi.Clone,
+				},
+				Status: codebaseApi.CodebaseStatus{
+					Git: util.ProjectTemplatesPushedStatus,
+				},
+			},
+			gitProviderFactory: func(t *testing.T) gitproviderv2.GitProviderFactory {
+				return func(config gitproviderv2.Config) gitproviderv2.Git {
+					return nil
+				}
+			},
+			gitProvider: func(t *testing.T) func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
+				return nil
+			},
+			wantErr: require.NoError,
+			wantStatus: func(t *testing.T, status codebaseApi.CodebaseStatus) {
+				require.Equal(t, util.ProjectTemplatesPushedStatus, status.Git)
+			},
+		},
+		{
+			name: "successfully create empty project with third-party git provider",
+			codebase: &codebaseApi.Codebase{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-app",
+					Namespace: defaultNs,
+				},
+				Spec: codebaseApi.CodebaseSpec{
+					Strategy:      codebaseApi.Create,
+					GitServer:     "gitlab",
+					GitUrlPath:    "/test-app",
+					DefaultBranch: "main",
+					EmptyProject:  true,
+				},
+			},
+			objects: []client.Object{
+				&codebaseApi.GitServer{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "gitlab",
+						Namespace: defaultNs,
+					},
+					Spec: codebaseApi.GitServerSpec{
+						GitProvider:      codebaseApi.GitProviderGitlab,
+						GitHost:          "gitlab.example.com",
+						GitUser:          "edp-ci",
+						NameSshKeySecret: "gitlab-access-token",
+					},
+				},
+				&corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "gitlab-access-token",
+						Namespace: defaultNs,
+					},
+					Data: map[string][]byte{
+						"token": []byte("fake-token"),
+					},
+				},
+			},
+			gitProviderFactory: func(t *testing.T) gitproviderv2.GitProviderFactory {
+				mock := gitmocks.NewMockGit(t)
+				mock.EXPECT().Init(testify.Anything, testify.Anything).Return(nil)
+				mock.EXPECT().Commit(testify.Anything, testify.Anything, "Initial commit", testify.Anything).Return(nil)
+				mock.EXPECT().GetCurrentBranchName(testify.Anything, testify.Anything).Return("main", nil)
+				mock.EXPECT().AddRemoteLink(testify.Anything, testify.Anything, testify.Anything).Return(nil)
+				mock.EXPECT().Push(testify.Anything, testify.Anything, testify.Anything, testify.Anything).Return(nil)
+				return func(config gitproviderv2.Config) gitproviderv2.Git {
+					return mock
+				}
+			},
+			gitProvider: func(t *testing.T) func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
+				mock := mocks.NewMockGitProjectProvider(t)
+				mock.EXPECT().ProjectExists(testify.Anything, testify.Anything, testify.Anything, "test-app").
+					Return(false, nil)
+				mock.EXPECT().CreateProject(testify.Anything, testify.Anything, testify.Anything, "test-app", testify.Anything).
+					Return(nil)
+				mock.EXPECT().SetDefaultBranch(testify.Anything, testify.Anything, testify.Anything, "test-app", "main").
+					Return(nil)
+				return func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
+					return mock, nil
+				}
+			},
+			wantErr: require.NoError,
+			wantStatus: func(t *testing.T, status codebaseApi.CodebaseStatus) {
+				require.Equal(t, util.ProjectPushedStatus, status.Git)
+			},
+		},
+		{
+			name: "successfully create empty project if project already exists in third-party git provider",
+			codebase: &codebaseApi.Codebase{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-app",
+					Namespace: defaultNs,
+				},
+				Spec: codebaseApi.CodebaseSpec{
+					Strategy:      codebaseApi.Create,
+					GitServer:     "github",
+					GitUrlPath:    "/test-app",
+					DefaultBranch: "main",
+					EmptyProject:  true,
+				},
+			},
+			objects: []client.Object{
+				&codebaseApi.GitServer{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "github",
+						Namespace: defaultNs,
+					},
+					Spec: codebaseApi.GitServerSpec{
+						GitProvider:      codebaseApi.GitProviderGithub,
+						GitHost:          "github.com",
+						GitUser:          "edp-ci",
+						NameSshKeySecret: "github-access-token",
+					},
+				},
+				&corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "github-access-token",
+						Namespace: defaultNs,
+					},
+					Data: map[string][]byte{
+						"token": []byte("fake-token"),
+					},
+				},
+			},
+			gitProviderFactory: func(t *testing.T) gitproviderv2.GitProviderFactory {
+				mock := gitmocks.NewMockGit(t)
+				mock.EXPECT().Init(testify.Anything, testify.Anything).Return(nil)
+				mock.EXPECT().Commit(testify.Anything, testify.Anything, "Initial commit", testify.Anything).Return(nil)
+				mock.EXPECT().GetCurrentBranchName(testify.Anything, testify.Anything).Return("main", nil)
+				mock.EXPECT().AddRemoteLink(testify.Anything, testify.Anything, testify.Anything).Return(nil)
+				mock.EXPECT().Push(testify.Anything, testify.Anything, testify.Anything, testify.Anything).Return(nil)
+				return func(config gitproviderv2.Config) gitproviderv2.Git {
+					return mock
+				}
+			},
+			gitProvider: func(t *testing.T) func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
+				mock := mocks.NewMockGitProjectProvider(t)
+				mock.EXPECT().ProjectExists(testify.Anything, testify.Anything, testify.Anything, "test-app").
+					Return(true, nil)
+				mock.EXPECT().SetDefaultBranch(testify.Anything, testify.Anything, testify.Anything, "test-app", "main").
+					Return(nil)
+				return func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
+					return mock, nil
+				}
+			},
+			wantErr: require.NoError,
+			wantStatus: func(t *testing.T, status codebaseApi.CodebaseStatus) {
+				require.Equal(t, util.ProjectPushedStatus, status.Git)
+			},
+		},
+		{
+			name: "successfully create non-empty project with third-party git provider",
+			codebase: &codebaseApi.Codebase{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-app",
+					Namespace: defaultNs,
+				},
+				Spec: codebaseApi.CodebaseSpec{
+					Strategy:      codebaseApi.Create,
+					GitServer:     "gitlab",
+					GitUrlPath:    "/test-app",
+					DefaultBranch: "main",
+					EmptyProject:  false,
+					Lang:          "go",
+					BuildTool:     "go",
+					Framework:     "beego",
+				},
+			},
+			objects: []client.Object{
+				&codebaseApi.GitServer{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "gitlab",
+						Namespace: defaultNs,
+					},
+					Spec: codebaseApi.GitServerSpec{
+						GitProvider:      codebaseApi.GitProviderGitlab,
+						GitHost:          "gitlab.example.com",
+						GitUser:          "edp-ci",
+						NameSshKeySecret: "gitlab-access-token",
+					},
+				},
+				&corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "gitlab-access-token",
+						Namespace: defaultNs,
+					},
+					Data: map[string][]byte{
+						"token": []byte("fake-token"),
+					},
+				},
+			},
+			gitProviderFactory: func(t *testing.T) gitproviderv2.GitProviderFactory {
+				mock := gitmocks.NewMockGit(t)
+				mock.EXPECT().Clone(testify.Anything, "https://github.com/epmd-edp/go-go-beego.git", testify.Anything).Return(nil)
+				mock.EXPECT().Init(testify.Anything, testify.Anything).Return(nil)
+				mock.EXPECT().Commit(testify.Anything, testify.Anything, "Initial commit", testify.Anything).Return(nil)
+				mock.EXPECT().GetCurrentBranchName(testify.Anything, testify.Anything).Return("main", nil)
+				mock.EXPECT().AddRemoteLink(testify.Anything, testify.Anything, testify.Anything).Return(nil)
+				mock.EXPECT().Push(testify.Anything, testify.Anything, testify.Anything, testify.Anything).Return(nil)
+				return func(config gitproviderv2.Config) gitproviderv2.Git {
+					return mock
+				}
+			},
+			gitProvider: func(t *testing.T) func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
+				mock := mocks.NewMockGitProjectProvider(t)
+				mock.EXPECT().ProjectExists(testify.Anything, testify.Anything, testify.Anything, "test-app").
+					Return(false, nil)
+				mock.EXPECT().CreateProject(testify.Anything, testify.Anything, testify.Anything, "test-app", testify.Anything).
+					Return(nil)
+				mock.EXPECT().SetDefaultBranch(testify.Anything, testify.Anything, testify.Anything, "test-app", "main").
+					Return(nil)
+				return func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
+					return mock, nil
+				}
+			},
+			wantErr: require.NoError,
+			wantStatus: func(t *testing.T, status codebaseApi.CodebaseStatus) {
+				require.Equal(t, util.ProjectPushedStatus, status.Git)
+			},
+		},
+		{
+			name: "failed to check if project exists in third-party git provider",
+			codebase: &codebaseApi.Codebase{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-app",
+					Namespace: defaultNs,
+				},
+				Spec: codebaseApi.CodebaseSpec{
+					Strategy:      codebaseApi.Create,
+					GitServer:     "gitlab",
+					GitUrlPath:    "/test-app",
+					DefaultBranch: "main",
+					EmptyProject:  true,
+				},
+			},
+			objects: []client.Object{
+				&codebaseApi.GitServer{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "gitlab",
+						Namespace: defaultNs,
+					},
+					Spec: codebaseApi.GitServerSpec{
+						GitProvider:      codebaseApi.GitProviderGitlab,
+						GitHost:          "gitlab.example.com",
+						GitUser:          "edp-ci",
+						NameSshKeySecret: "gitlab-access-token",
+					},
+				},
+				&corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "gitlab-access-token",
+						Namespace: defaultNs,
+					},
+					Data: map[string][]byte{
+						"token": []byte("fake-token"),
+					},
+				},
+			},
+			gitProviderFactory: func(t *testing.T) gitproviderv2.GitProviderFactory {
+				mock := gitmocks.NewMockGit(t)
+				mock.EXPECT().Init(testify.Anything, testify.Anything).Return(nil)
+				mock.EXPECT().Commit(testify.Anything, testify.Anything, "Initial commit", testify.Anything).Return(nil)
+				mock.EXPECT().GetCurrentBranchName(testify.Anything, testify.Anything).Return("main", nil)
+				return func(config gitproviderv2.Config) gitproviderv2.Git {
+					return mock
+				}
+			},
+			gitProvider: func(t *testing.T) func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
+				mock := mocks.NewMockGitProjectProvider(t)
+				mock.EXPECT().ProjectExists(testify.Anything, testify.Anything, testify.Anything, "test-app").
+					Return(false, errors.New("API connection failed"))
+				return func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
+					return mock, nil
+				}
+			},
+			wantErr: require.Error,
+			wantCodebaseErrorStatus: func(t *testing.T, codebase *codebaseApi.Codebase) {
+				require.Equal(t, util.StatusFailed, codebase.Status.Status)
+				require.Contains(t, codebase.Status.DetailedMessage, "failed to check if project exists")
+			},
+		},
+		{
+			name: "failed to create project in third-party git provider",
+			codebase: &codebaseApi.Codebase{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-app",
+					Namespace: defaultNs,
+				},
+				Spec: codebaseApi.CodebaseSpec{
+					Strategy:      codebaseApi.Create,
+					GitServer:     "github",
+					GitUrlPath:    "/test-app",
+					DefaultBranch: "main",
+					EmptyProject:  true,
+				},
+			},
+			objects: []client.Object{
+				&codebaseApi.GitServer{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "github",
+						Namespace: defaultNs,
+					},
+					Spec: codebaseApi.GitServerSpec{
+						GitProvider:      codebaseApi.GitProviderGithub,
+						GitHost:          "github.com",
+						GitUser:          "edp-ci",
+						NameSshKeySecret: "github-access-token",
+					},
+				},
+				&corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "github-access-token",
+						Namespace: defaultNs,
+					},
+					Data: map[string][]byte{
+						"token": []byte("fake-token"),
+					},
+				},
+			},
+			gitProviderFactory: func(t *testing.T) gitproviderv2.GitProviderFactory {
+				mock := gitmocks.NewMockGit(t)
+				mock.EXPECT().Init(testify.Anything, testify.Anything).Return(nil)
+				mock.EXPECT().Commit(testify.Anything, testify.Anything, "Initial commit", testify.Anything).Return(nil)
+				mock.EXPECT().GetCurrentBranchName(testify.Anything, testify.Anything).Return("main", nil)
+				return func(config gitproviderv2.Config) gitproviderv2.Git {
+					return mock
+				}
+			},
+			gitProvider: func(t *testing.T) func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
+				mock := mocks.NewMockGitProjectProvider(t)
+				mock.EXPECT().ProjectExists(testify.Anything, testify.Anything, testify.Anything, "test-app").
+					Return(false, nil)
+				mock.EXPECT().CreateProject(testify.Anything, testify.Anything, testify.Anything, "test-app", testify.Anything).
+					Return(errors.New("permission denied"))
+				return func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
+					return mock, nil
+				}
+			},
+			wantErr: require.Error,
+			wantCodebaseErrorStatus: func(t *testing.T, codebase *codebaseApi.Codebase) {
+				require.Equal(t, util.StatusFailed, codebase.Status.Status)
+				require.Contains(t, codebase.Status.DetailedMessage, "failed to create project")
+			},
+		},
+		{
+			name: "failed to push to third-party git provider",
+			codebase: &codebaseApi.Codebase{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-app",
+					Namespace: defaultNs,
+				},
+				Spec: codebaseApi.CodebaseSpec{
+					Strategy:      codebaseApi.Create,
+					GitServer:     "gitlab",
+					GitUrlPath:    "/test-app",
+					DefaultBranch: "main",
+					EmptyProject:  true,
+				},
+			},
+			objects: []client.Object{
+				&codebaseApi.GitServer{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "gitlab",
+						Namespace: defaultNs,
+					},
+					Spec: codebaseApi.GitServerSpec{
+						GitProvider:      codebaseApi.GitProviderGitlab,
+						GitHost:          "gitlab.example.com",
+						GitUser:          "edp-ci",
+						NameSshKeySecret: "gitlab-access-token",
+					},
+				},
+				&corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "gitlab-access-token",
+						Namespace: defaultNs,
+					},
+					Data: map[string][]byte{
+						"token": []byte("fake-token"),
+					},
+				},
+			},
+			gitProviderFactory: func(t *testing.T) gitproviderv2.GitProviderFactory {
+				mock := gitmocks.NewMockGit(t)
+				mock.EXPECT().Init(testify.Anything, testify.Anything).Return(nil)
+				mock.EXPECT().Commit(testify.Anything, testify.Anything, "Initial commit", testify.Anything).Return(nil)
+				mock.EXPECT().GetCurrentBranchName(testify.Anything, testify.Anything).Return("main", nil)
+				mock.EXPECT().AddRemoteLink(testify.Anything, testify.Anything, testify.Anything).Return(nil)
+				mock.EXPECT().Push(testify.Anything, testify.Anything, testify.Anything, testify.Anything).
+					Return(errors.New("push rejected"))
+				return func(config gitproviderv2.Config) gitproviderv2.Git {
+					return mock
+				}
+			},
+			gitProvider: func(t *testing.T) func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
+				mock := mocks.NewMockGitProjectProvider(t)
+				mock.EXPECT().ProjectExists(testify.Anything, testify.Anything, testify.Anything, "test-app").
+					Return(false, nil)
+				mock.EXPECT().CreateProject(testify.Anything, testify.Anything, testify.Anything, "test-app", testify.Anything).
+					Return(nil)
+				return func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
+					return mock, nil
+				}
+			},
+			wantErr: require.Error,
+			wantCodebaseErrorStatus: func(t *testing.T, codebase *codebaseApi.Codebase) {
+				require.Equal(t, util.StatusFailed, codebase.Status.Status)
+				require.Contains(t, codebase.Status.DetailedMessage, "failed to push changes and tags into git")
+			},
+		},
+		{
+			name: "failed to set default branch in third-party git provider",
+			codebase: &codebaseApi.Codebase{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-app",
+					Namespace: defaultNs,
+				},
+				Spec: codebaseApi.CodebaseSpec{
+					Strategy:      codebaseApi.Create,
+					GitServer:     "github",
+					GitUrlPath:    "/test-app",
+					DefaultBranch: "main",
+					EmptyProject:  true,
+				},
+			},
+			objects: []client.Object{
+				&codebaseApi.GitServer{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "github",
+						Namespace: defaultNs,
+					},
+					Spec: codebaseApi.GitServerSpec{
+						GitProvider:      codebaseApi.GitProviderGithub,
+						GitHost:          "github.com",
+						GitUser:          "edp-ci",
+						NameSshKeySecret: "github-access-token",
+					},
+				},
+				&corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "github-access-token",
+						Namespace: defaultNs,
+					},
+					Data: map[string][]byte{
+						"token": []byte("fake-token"),
+					},
+				},
+			},
+			gitProviderFactory: func(t *testing.T) gitproviderv2.GitProviderFactory {
+				mock := gitmocks.NewMockGit(t)
+				mock.EXPECT().Init(testify.Anything, testify.Anything).Return(nil)
+				mock.EXPECT().Commit(testify.Anything, testify.Anything, "Initial commit", testify.Anything).Return(nil)
+				mock.EXPECT().GetCurrentBranchName(testify.Anything, testify.Anything).Return("main", nil)
+				mock.EXPECT().AddRemoteLink(testify.Anything, testify.Anything, testify.Anything).Return(nil)
+				mock.EXPECT().Push(testify.Anything, testify.Anything, testify.Anything, testify.Anything).Return(nil)
+				return func(config gitproviderv2.Config) gitproviderv2.Git {
+					return mock
+				}
+			},
+			gitProvider: func(t *testing.T) func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
+				mock := mocks.NewMockGitProjectProvider(t)
+				mock.EXPECT().ProjectExists(testify.Anything, testify.Anything, testify.Anything, "test-app").
+					Return(false, nil)
+				mock.EXPECT().CreateProject(testify.Anything, testify.Anything, testify.Anything, "test-app", testify.Anything).
+					Return(nil)
+				mock.EXPECT().SetDefaultBranch(testify.Anything, testify.Anything, testify.Anything, "test-app", "main").
+					Return(errors.New("branch does not exist"))
+				return func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
+					return mock, nil
+				}
+			},
+			wantErr: require.Error,
+			wantCodebaseErrorStatus: func(t *testing.T, codebase *codebaseApi.Codebase) {
+				require.Equal(t, util.StatusFailed, codebase.Status.Status)
+				require.Contains(t, codebase.Status.DetailedMessage, "failed to set default branch")
+			},
+		},
+		{
+			name: "successfully create project when SetDefaultBranch is not supported by git provider",
+			codebase: &codebaseApi.Codebase{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-app",
+					Namespace: defaultNs,
+				},
+				Spec: codebaseApi.CodebaseSpec{
+					Strategy:      codebaseApi.Create,
+					GitServer:     "gitlab",
+					GitUrlPath:    "/test-app",
+					DefaultBranch: "main",
+					EmptyProject:  true,
+				},
+			},
+			objects: []client.Object{
+				&codebaseApi.GitServer{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "gitlab",
+						Namespace: defaultNs,
+					},
+					Spec: codebaseApi.GitServerSpec{
+						GitProvider:      codebaseApi.GitProviderGitlab,
+						GitHost:          "gitlab.example.com",
+						GitUser:          "edp-ci",
+						NameSshKeySecret: "gitlab-access-token",
+					},
+				},
+				&corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "gitlab-access-token",
+						Namespace: defaultNs,
+					},
+					Data: map[string][]byte{
+						"token": []byte("fake-token"),
+					},
+				},
+			},
+			gitProviderFactory: func(t *testing.T) gitproviderv2.GitProviderFactory {
+				mock := gitmocks.NewMockGit(t)
+				mock.EXPECT().Init(testify.Anything, testify.Anything).Return(nil)
+				mock.EXPECT().Commit(testify.Anything, testify.Anything, "Initial commit", testify.Anything).Return(nil)
+				mock.EXPECT().GetCurrentBranchName(testify.Anything, testify.Anything).Return("main", nil)
+				mock.EXPECT().AddRemoteLink(testify.Anything, testify.Anything, testify.Anything).Return(nil)
+				mock.EXPECT().Push(testify.Anything, testify.Anything, testify.Anything, testify.Anything).Return(nil)
+				return func(config gitproviderv2.Config) gitproviderv2.Git {
+					return mock
+				}
+			},
+			gitProvider: func(t *testing.T) func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
+				mock := mocks.NewMockGitProjectProvider(t)
+				mock.EXPECT().ProjectExists(testify.Anything, testify.Anything, testify.Anything, "test-app").
+					Return(false, nil)
+				mock.EXPECT().CreateProject(testify.Anything, testify.Anything, testify.Anything, "test-app", testify.Anything).
+					Return(nil)
+				mock.EXPECT().SetDefaultBranch(testify.Anything, testify.Anything, testify.Anything, "test-app", "main").
+					Return(gitprovider.ErrApiNotSupported)
+				return func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
+					return mock, nil
+				}
+			},
+			wantErr: require.NoError,
+			wantStatus: func(t *testing.T, status codebaseApi.CodebaseStatus) {
+				require.Equal(t, util.ProjectPushedStatus, status.Git)
+			},
+		},
+		{
+			name: "failed to clone template repository for non-empty project",
+			codebase: &codebaseApi.Codebase{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-app",
+					Namespace: defaultNs,
+				},
+				Spec: codebaseApi.CodebaseSpec{
+					Strategy:      codebaseApi.Create,
+					GitServer:     "github",
+					GitUrlPath:    "/test-app",
+					DefaultBranch: "main",
+					EmptyProject:  false,
+					Lang:          "go",
+					BuildTool:     "go",
+					Framework:     "beego",
+				},
+			},
+			objects: []client.Object{
+				&codebaseApi.GitServer{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "github",
+						Namespace: defaultNs,
+					},
+					Spec: codebaseApi.GitServerSpec{
+						GitProvider:      codebaseApi.GitProviderGithub,
+						GitHost:          "github.com",
+						GitUser:          "edp-ci",
+						NameSshKeySecret: "github-access-token",
+					},
+				},
+				&corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "github-access-token",
+						Namespace: defaultNs,
+					},
+					Data: map[string][]byte{
+						"token": []byte("fake-token"),
+					},
+				},
+			},
+			gitProviderFactory: func(t *testing.T) gitproviderv2.GitProviderFactory {
+				mock := gitmocks.NewMockGit(t)
+				mock.EXPECT().Clone(testify.Anything, "https://github.com/epmd-edp/go-go-beego.git", testify.Anything).
+					Return(errors.New("repository not found"))
+				return func(config gitproviderv2.Config) gitproviderv2.Git {
+					return mock
+				}
+			},
+			gitProvider: func(t *testing.T) func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
+				return func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
+					return mocks.NewMockGitProjectProvider(t), nil
+				}
+			},
+			wantErr: require.Error,
+			wantCodebaseErrorStatus: func(t *testing.T, codebase *codebaseApi.Codebase) {
+				require.Equal(t, util.StatusFailed, codebase.Status.Status)
+				require.Contains(t, codebase.Status.DetailedMessage, "failed to clone template project")
+			},
+		},
+		{
+			name: "failed to init empty repository",
+			codebase: &codebaseApi.Codebase{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-app",
+					Namespace: defaultNs,
+				},
+				Spec: codebaseApi.CodebaseSpec{
+					Strategy:      codebaseApi.Create,
+					GitServer:     "gitlab",
+					GitUrlPath:    "/test-app",
+					DefaultBranch: "main",
+					EmptyProject:  true,
+				},
+			},
+			objects: []client.Object{
+				&codebaseApi.GitServer{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "gitlab",
+						Namespace: defaultNs,
+					},
+					Spec: codebaseApi.GitServerSpec{
+						GitProvider:      codebaseApi.GitProviderGitlab,
+						GitHost:          "gitlab.example.com",
+						GitUser:          "edp-ci",
+						NameSshKeySecret: "gitlab-access-token",
+					},
+				},
+				&corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "gitlab-access-token",
+						Namespace: defaultNs,
+					},
+					Data: map[string][]byte{
+						"token": []byte("fake-token"),
+					},
+				},
+			},
+			gitProviderFactory: func(t *testing.T) gitproviderv2.GitProviderFactory {
+				mock := gitmocks.NewMockGit(t)
+				mock.EXPECT().Init(testify.Anything, testify.Anything).Return(errors.New("failed to initialize git repository"))
+				return func(config gitproviderv2.Config) gitproviderv2.Git {
+					return mock
+				}
+			},
+			gitProvider: func(t *testing.T) func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
+				return func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
+					return mocks.NewMockGitProjectProvider(t), nil
+				}
+			},
+			wantErr: require.Error,
+			wantCodebaseErrorStatus: func(t *testing.T, codebase *codebaseApi.Codebase) {
+				require.Equal(t, util.StatusFailed, codebase.Status.Status)
+				require.Contains(t, codebase.Status.DetailedMessage, "failed to create empty git repository")
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Setenv(util.WorkDirEnv, t.TempDir())
+
+			k8sClient := fake.NewClientBuilder().
+				WithScheme(scheme).
+				WithObjects(tt.codebase).
+				WithObjects(tt.objects...).
+				WithStatusSubresource(tt.codebase).
+				WithStatusSubresource(tt.objects...).
+				Build()
+
+			h := NewPutProject(
+				k8sClient,
+				gerritMocks.NewMockClient(t),
+				tt.gitProvider(t),
+				tt.gitProviderFactory(t),
+			)
+
+			err := h.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), tt.codebase)
+
+			tt.wantErr(t, err)
+
+			processedCodebase := &codebaseApi.Codebase{}
+
+			require.NoError(t,
+				k8sClient.Get(
+					context.Background(),
+					types.NamespacedName{
+						Name:      tt.codebase.Name,
+						Namespace: tt.codebase.Namespace,
+					},
+					processedCodebase,
+				),
+			)
+
+			if tt.wantCodebaseErrorStatus != nil {
+				tt.wantCodebaseErrorStatus(t, tt.codebase)
+			}
+
+			if tt.wantStatus != nil {
+				tt.wantStatus(t, processedCodebase.Status)
+			}
+		})
+	}
+}
+
+func TestPutProject_ServeRequest_Gerrit(t *testing.T) {
 	scheme := runtime.NewScheme()
 	require.NoError(t, codebaseApi.AddToScheme(scheme))
 	require.NoError(t, corev1.AddToScheme(scheme))
@@ -42,8 +849,10 @@ func TestPutProject_ServeRequest(t *testing.T) {
 		},
 		Spec: codebaseApi.GitServerSpec{
 			GitProvider:      codebaseApi.GitProviderGerrit,
-			NameSshKeySecret: "gerrit-ssh-key",
+			GitHost:          "gerrit.example.com",
 			GitUser:          "ci",
+			SshPort:          29418,
+			NameSshKeySecret: "gerrit-ssh-key",
 		},
 	}
 	gerritGitServerSecret := &corev1.Secret{
@@ -51,1466 +860,376 @@ func TestPutProject_ServeRequest(t *testing.T) {
 			Name:      gerritGitServer.Spec.NameSshKeySecret,
 			Namespace: defaultNs,
 		},
-	}
-	githubGitServer := &codebaseApi.GitServer{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "github",
-			Namespace: defaultNs,
+		Data: map[string][]byte{
+			util.PrivateSShKeyName: []byte("fake-ssh-key"),
 		},
-		Spec: codebaseApi.GitServerSpec{
-			GitProvider:      codebaseApi.GitProviderGithub,
-			NameSshKeySecret: "github-ssh-key",
-		},
-	}
-	githubGitServerSecret := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      githubGitServer.Spec.NameSshKeySecret,
-			Namespace: defaultNs,
-		},
-	}
-	gitlabGitServer := &codebaseApi.GitServer{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "gitlab",
-			Namespace: defaultNs,
-		},
-		Spec: codebaseApi.GitServerSpec{
-			GitProvider:      codebaseApi.GitProviderGitlab,
-			NameSshKeySecret: "gitlab-ssh-key",
-		},
-	}
-	gitlabGitServerSecret := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      gitlabGitServer.Spec.NameSshKeySecret,
-			Namespace: defaultNs,
-		},
-	}
-	defaultGitProvider := func(t *testing.T) func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
-		return func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
-			return gitprovidermock.NewMockGitProjectProvider(t), nil
-		}
 	}
 
 	tests := []struct {
-		name                        string
-		codebase                    *codebaseApi.Codebase
-		objects                     []client.Object
-		gitProviderFactory          func(t *testing.T) gitproviderv2.GitProviderFactory
-		gerritClient                func(t *testing.T) gerrit.Client
-		gitProvider                 func(t *testing.T) func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error)
-		createGitProviderWithConfig func(t *testing.T) func(config gitproviderv2.Config) gitproviderv2.Git
-		wantErr                     require.ErrorAssertionFunc
-		wantStatus                  func(t *testing.T, status *codebaseApi.CodebaseStatus)
+		name                    string
+		codebase                *codebaseApi.Codebase
+		objects                 []client.Object
+		gitProviderFactory      func(t *testing.T) gitproviderv2.GitProviderFactory
+		gerritClient            func(t *testing.T) gerrit.Client
+		wantErr                 require.ErrorAssertionFunc
+		wantStatus              func(t *testing.T, status codebaseApi.CodebaseStatus)
+		wantCodebaseErrorStatus func(t *testing.T, codebase *codebaseApi.Codebase)
 	}{
 		{
-			name: "gerrit, create strategy - should put project successfully with branch to copy in default branch",
+			name: "successfully create empty Gerrit project",
 			codebase: &codebaseApi.Codebase{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "go app",
-					Namespace: defaultNs,
-				},
-				Spec: codebaseApi.CodebaseSpec{
-					Strategy:                    codebaseApi.Create,
-					GitServer:                   gerritGitServer.Name,
-					GitUrlPath:                  "/owner/go-repo",
-					DefaultBranch:               "master",
-					BranchToCopyInDefaultBranch: "main",
-				},
-			},
-			objects: []client.Object{gerritGitServer, gerritGitServerSecret},
-			gitProviderFactory: func(t *testing.T) gitproviderv2.GitProviderFactory {
-				// Create a single mock that will be returned each time the factory is called
-				mock := v2mocks.NewMockGit(t)
-
-				mock.On("CheckPermissions", testify.Anything, testify.Anything).
-					Maybe().
-					Return(nil).
-					On("Clone", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
-					Maybe().
-					Return(nil).
-					On("Init", testify.Anything, testify.Anything).
-					Maybe().
-					Return(nil).
-					On("Commit", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
-					Maybe().
-					Return(nil).
-					On("GetCurrentBranchName", testify.Anything, testify.Anything).
-					Maybe().
-					Return("feature", nil).
-					On("RemoveBranch", testify.Anything, testify.Anything, testify.Anything).
-					Maybe().
-					Return(nil).
-					On("CreateChildBranch", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
-					Maybe().
-					Return(nil).
-					On("Checkout", testify.Anything, testify.Anything, testify.Anything, false).
-					Maybe().
-					Return(nil).
-					On("AddRemoteLink", testify.Anything, testify.Anything, testify.Anything).
-					Maybe().
-					Return(nil).
-					On("Push", testify.Anything, testify.Anything, testify.Anything).
-					Maybe().
-					Return(nil)
-
-				return func(cfg gitproviderv2.Config) gitproviderv2.Git {
-					return mock
-				}
-			},
-			gerritClient: func(t *testing.T) gerrit.Client {
-				mock := gerritmocks.NewMockClient(t)
-
-				mock.
-					On(
-						"CheckProjectExist",
-						testify.Anything,
-						testify.Anything,
-						testify.Anything,
-						gerritGitServer.Spec.GitUser,
-						testify.Anything,
-						testify.Anything,
-					).
-					Return(false, nil).
-					On(
-						"CreateProject",
-						testify.Anything,
-						testify.Anything,
-						testify.Anything,
-						gerritGitServer.Spec.GitUser,
-						testify.Anything,
-						testify.Anything,
-					).
-					Return(nil).
-					On(
-						"SetHeadToBranch",
-						testify.Anything,
-						testify.Anything,
-						testify.Anything,
-						gerritGitServer.Spec.GitUser,
-						testify.Anything,
-						testify.Anything,
-						testify.Anything,
-					).
-					Return(nil)
-
-				return mock
-			},
-			gitProvider: defaultGitProvider,
-			createGitProviderWithConfig: func(t *testing.T) func(config gitproviderv2.Config) gitproviderv2.Git {
-				// Create a single mock that will be returned each time
-				mock := v2mocks.NewMockGit(t)
-
-				mock.On("CheckPermissions", testify.Anything, testify.Anything).
-					Maybe().
-					Return(nil).
-					On("Clone", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
-					Maybe().
-					Return(nil).
-					On("Checkout", testify.Anything, testify.Anything, testify.Anything, false).
-					Maybe().
-					Return(nil).
-					On("Init", testify.Anything, testify.Anything).
-					Maybe().
-					Return(nil).
-					On("Commit", testify.Anything, testify.Anything, testify.Anything).
-					Maybe().
-					Return(nil)
-
-				return func(config gitproviderv2.Config) gitproviderv2.Git {
-					return mock
-				}
-			},
-			wantErr: require.NoError,
-			wantStatus: func(t *testing.T, status *codebaseApi.CodebaseStatus) {
-				assert.Equal(t, util.ProjectPushedStatus, status.Git)
-			},
-		},
-		{
-			name: "gerrit, create strategy - should put empty project successfully",
-			codebase: &codebaseApi.Codebase{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "go app",
+					Name:      "test-app",
 					Namespace: defaultNs,
 				},
 				Spec: codebaseApi.CodebaseSpec{
 					Strategy:      codebaseApi.Create,
 					GitServer:     gerritGitServer.Name,
-					GitUrlPath:    "/owner/go-repo",
-					DefaultBranch: "master",
+					GitUrlPath:    "/test-app",
+					DefaultBranch: "main",
 					EmptyProject:  true,
 				},
 			},
 			objects: []client.Object{gerritGitServer, gerritGitServerSecret},
 			gitProviderFactory: func(t *testing.T) gitproviderv2.GitProviderFactory {
-				// Create a single mock that will be returned each time the factory is called
-				mock := v2mocks.NewMockGit(t)
-
-				mock.On("CheckPermissions", testify.Anything, testify.Anything).
-					Maybe().
-					Return(nil).
-					On("GetCurrentBranchName", testify.Anything, testify.Anything).
-					Maybe().
-					Return("master", nil).
-					On("Checkout", testify.Anything, testify.Anything, testify.Anything, false).
-					Maybe().
-					Return(nil).
-					On("AddRemoteLink", testify.Anything, testify.Anything, testify.Anything).
-					Maybe().
-					Return(nil).
-					On("Push", testify.Anything, testify.Anything, testify.Anything).
-					Maybe().
-					Return(nil)
-
-				return func(cfg gitproviderv2.Config) gitproviderv2.Git {
+				mock := gitmocks.NewMockGit(t)
+				mock.EXPECT().Init(testify.Anything, testify.Anything).Return(nil)
+				mock.EXPECT().Commit(testify.Anything, testify.Anything, "Initial commit", testify.Anything).Return(nil)
+				mock.EXPECT().AddRemoteLink(testify.Anything, testify.Anything, testify.Anything).Return(nil)
+				mock.EXPECT().Push(testify.Anything, testify.Anything, testify.Anything, testify.Anything).Return(nil)
+				mock.EXPECT().GetCurrentBranchName(testify.Anything, testify.Anything).Return("main", nil)
+				return func(config gitproviderv2.Config) gitproviderv2.Git {
 					return mock
 				}
 			},
 			gerritClient: func(t *testing.T) gerrit.Client {
-				mock := gerritmocks.NewMockClient(t)
-
-				mock.
-					On(
-						"CheckProjectExist",
-						testify.Anything,
-						testify.Anything,
-						testify.Anything,
-						gerritGitServer.Spec.GitUser,
-						testify.Anything,
-						testify.Anything,
-					).
-					Return(false, nil).
-					On(
-						"CreateProject",
-						testify.Anything,
-						testify.Anything,
-						testify.Anything,
-						gerritGitServer.Spec.GitUser,
-						testify.Anything,
-						testify.Anything,
-					).
-					Return(nil).
-					On(
-						"SetHeadToBranch",
-						testify.Anything,
-						testify.Anything,
-						testify.Anything,
-						gerritGitServer.Spec.GitUser,
-						testify.Anything,
-						testify.Anything,
-						testify.Anything,
-					).
+				mock := gerritMocks.NewMockClient(t)
+				mock.EXPECT().CheckProjectExist(int32(29418), "fake-ssh-key", "gerrit.example.com", "ci", "test-app", testify.Anything).
+					Return(false, nil)
+				mock.EXPECT().CreateProject(int32(29418), "fake-ssh-key", "gerrit.example.com", "ci", "test-app", testify.Anything).
 					Return(nil)
-
+				mock.EXPECT().SetHeadToBranch(int32(29418), "fake-ssh-key", "gerrit.example.com", "ci", "test-app", "main", testify.Anything).
+					Return(nil)
 				return mock
-			},
-			gitProvider: defaultGitProvider,
-			createGitProviderWithConfig: func(t *testing.T) func(config gitproviderv2.Config) gitproviderv2.Git {
-				return func(config gitproviderv2.Config) gitproviderv2.Git {
-					mock := v2mocks.NewMockGit(t)
-
-					mock.On("Init", testify.Anything, testify.Anything).
-						Return(nil).
-						On("Commit", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
-						Return(nil)
-
-					return mock
-				}
 			},
 			wantErr: require.NoError,
-			wantStatus: func(t *testing.T, status *codebaseApi.CodebaseStatus) {
-				assert.Equal(t, util.ProjectPushedStatus, status.Git)
+			wantStatus: func(t *testing.T, status codebaseApi.CodebaseStatus) {
+				require.Equal(t, util.ProjectPushedStatus, status.Git)
 			},
 		},
 		{
-			name: "gerrit, clone strategy - should put project successfully",
+			name: "successfully create empty Gerrit project if project already exists",
 			codebase: &codebaseApi.Codebase{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "go app",
-					Namespace: defaultNs,
-				},
-				Spec: codebaseApi.CodebaseSpec{
-					Strategy:      codebaseApi.Clone,
-					GitServer:     gerritGitServer.Name,
-					GitUrlPath:    "/owner/go-repo",
-					Repository:    &codebaseApi.Repository{Url: "https://github.com/owner/repo.git"},
-					DefaultBranch: "master",
-				},
-			},
-			objects: []client.Object{gerritGitServer, gerritGitServerSecret},
-			gitProviderFactory: func(t *testing.T) gitproviderv2.GitProviderFactory {
-				// Create a single mock that will be returned each time the factory is called
-				mock := v2mocks.NewMockGit(t)
-
-				mock.
-					On("CheckPermissions", testify.Anything, testify.Anything).
-					Maybe().
-					Return(nil).
-					On("Clone", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
-					Maybe().
-					Return(nil).
-					On("GetCurrentBranchName", testify.Anything, testify.Anything).
-					Maybe().
-					Return("feature", nil).
-					On("Checkout", testify.Anything, testify.Anything, testify.Anything, true).
-					Maybe().
-					Return(nil).
-					On("AddRemoteLink", testify.Anything, testify.Anything, testify.Anything).
-					Maybe().
-					Return(nil).
-					On("Push", testify.Anything, testify.Anything, testify.Anything).
-					Maybe().
-					Return(nil)
-
-				return func(cfg gitproviderv2.Config) gitproviderv2.Git {
-					return mock
-				}
-			},
-			gerritClient: func(t *testing.T) gerrit.Client {
-				mock := gerritmocks.NewMockClient(t)
-
-				mock.
-					On(
-						"CheckProjectExist",
-						testify.Anything,
-						testify.Anything,
-						testify.Anything,
-						gerritGitServer.Spec.GitUser,
-						testify.Anything,
-						testify.Anything,
-					).
-					Return(false, nil).
-					On(
-						"CreateProject",
-						testify.Anything,
-						testify.Anything,
-						testify.Anything,
-						gerritGitServer.Spec.GitUser,
-						testify.Anything,
-						testify.Anything,
-					).
-					Return(nil).
-					On(
-						"SetHeadToBranch",
-						testify.Anything,
-						testify.Anything,
-						testify.Anything,
-						gerritGitServer.Spec.GitUser,
-						testify.Anything,
-						testify.Anything,
-						testify.Anything,
-					).
-					Return(nil)
-
-				return mock
-			},
-			gitProvider: defaultGitProvider,
-			createGitProviderWithConfig: func(t *testing.T) func(config gitproviderv2.Config) gitproviderv2.Git {
-				// Create a single mock that will be returned each time
-				mock := v2mocks.NewMockGit(t)
-
-				mock.On("CheckPermissions", testify.Anything, testify.Anything).
-					Maybe().
-					Return(nil).
-					On("Clone", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
-					Maybe().
-					Return(nil)
-
-				return func(config gitproviderv2.Config) gitproviderv2.Git {
-					return mock
-				}
-			},
-			wantErr: require.NoError,
-			wantStatus: func(t *testing.T, status *codebaseApi.CodebaseStatus) {
-				assert.Equal(t, util.ProjectPushedStatus, status.Git)
-			},
-		},
-		{
-			name: "gerrit, clone strategy - failed to set head to branch",
-			codebase: &codebaseApi.Codebase{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "go app",
-					Namespace: defaultNs,
-				},
-				Spec: codebaseApi.CodebaseSpec{
-					Strategy:      codebaseApi.Clone,
-					GitServer:     gerritGitServer.Name,
-					GitUrlPath:    "/owner/go-repo",
-					Repository:    &codebaseApi.Repository{Url: "https://github.com/owner/repo.git"},
-					DefaultBranch: "master",
-				},
-			},
-			objects: []client.Object{gerritGitServer, gerritGitServerSecret},
-			gitProviderFactory: func(t *testing.T) gitproviderv2.GitProviderFactory {
-				// Create a single mock that will be returned each time the factory is called
-				mock := v2mocks.NewMockGit(t)
-
-				mock.On("CheckPermissions", testify.Anything, testify.Anything).
-					Maybe().
-					Return(nil).
-					On("Clone", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
-					Maybe().
-					Return(nil).
-					On("GetCurrentBranchName", testify.Anything, testify.Anything).
-					Maybe().
-					Return("feature", nil).
-					On("Checkout", testify.Anything, testify.Anything, testify.Anything, true).
-					Maybe().
-					Return(nil).
-					On("AddRemoteLink", testify.Anything, testify.Anything, testify.Anything).
-					Maybe().
-					Return(nil).
-					On("Push", testify.Anything, testify.Anything, testify.Anything).
-					Maybe().
-					Return(nil)
-
-				return func(cfg gitproviderv2.Config) gitproviderv2.Git {
-					return mock
-				}
-			},
-			gerritClient: func(t *testing.T) gerrit.Client {
-				mock := gerritmocks.NewMockClient(t)
-
-				mock.
-					On(
-						"CheckProjectExist",
-						testify.Anything,
-						testify.Anything,
-						testify.Anything,
-						gerritGitServer.Spec.GitUser,
-						testify.Anything,
-						testify.Anything,
-					).
-					Return(false, nil).
-					On(
-						"CreateProject",
-						testify.Anything,
-						testify.Anything,
-						testify.Anything,
-						gerritGitServer.Spec.GitUser,
-						testify.Anything,
-						testify.Anything,
-					).
-					Return(nil).
-					On(
-						"SetHeadToBranch",
-						testify.Anything,
-						testify.Anything,
-						testify.Anything,
-						gerritGitServer.Spec.GitUser,
-						testify.Anything,
-						testify.Anything,
-						testify.Anything,
-					).
-					Return(errors.New("failed to set head to branch"))
-
-				return mock
-			},
-			gitProvider: defaultGitProvider,
-			createGitProviderWithConfig: func(t *testing.T) func(config gitproviderv2.Config) gitproviderv2.Git {
-				return func(config gitproviderv2.Config) gitproviderv2.Git {
-					mock := v2mocks.NewMockGit(t)
-
-					mock.On("CheckPermissions", testify.Anything, testify.Anything).
-						Return(nil).
-						On("Clone", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
-						Return(nil)
-
-					return mock
-				}
-			},
-			wantErr: func(t require.TestingT, err error, i ...interface{}) {
-				require.Error(t, err)
-
-				assert.Contains(t, err.Error(), "failed to set head to branch")
-			},
-			wantStatus: func(t *testing.T, status *codebaseApi.CodebaseStatus) {
-				assert.Equal(t, "", status.Git)
-				assert.Equal(t, util.StatusFailed, status.Status)
-				assert.Contains(t, status.DetailedMessage, "failed to set head to branch")
-			},
-		},
-		{
-			name: "gerrit, clone strategy - failed to push project",
-			codebase: &codebaseApi.Codebase{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "go app",
-					Namespace: defaultNs,
-				},
-				Spec: codebaseApi.CodebaseSpec{
-					Strategy:      codebaseApi.Clone,
-					GitServer:     gerritGitServer.Name,
-					GitUrlPath:    "/owner/go-repo",
-					Repository:    &codebaseApi.Repository{Url: "https://github.com/owner/repo.git"},
-					DefaultBranch: "master",
-				},
-			},
-			objects: []client.Object{gerritGitServer, gerritGitServerSecret},
-			gitProviderFactory: func(t *testing.T) gitproviderv2.GitProviderFactory {
-				// Create a single mock that will be returned each time the factory is called
-				mock := v2mocks.NewMockGit(t)
-
-				mock.On("CheckPermissions", testify.Anything, testify.Anything).
-					Maybe().
-					Return(nil).
-					On("Clone", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
-					Maybe().
-					Return(nil).
-					On("GetCurrentBranchName", testify.Anything, testify.Anything).
-					Maybe().
-					Return("feature", nil).
-					On("Checkout", testify.Anything, testify.Anything, testify.Anything, true).
-					Maybe().
-					Return(nil).
-					On("AddRemoteLink", testify.Anything, testify.Anything, testify.Anything).
-					Maybe().
-					Return(nil).
-					On("Push", testify.Anything, testify.Anything, testify.Anything).
-					Maybe().
-					Return(errors.New("failed to push changes"))
-
-				return func(cfg gitproviderv2.Config) gitproviderv2.Git {
-					return mock
-				}
-			},
-			gerritClient: func(t *testing.T) gerrit.Client {
-				mock := gerritmocks.NewMockClient(t)
-
-				mock.
-					On(
-						"CheckProjectExist",
-						testify.Anything,
-						testify.Anything,
-						testify.Anything,
-						gerritGitServer.Spec.GitUser,
-						testify.Anything,
-						testify.Anything,
-					).
-					Return(false, nil).
-					On(
-						"CreateProject",
-						testify.Anything,
-						testify.Anything,
-						testify.Anything,
-						gerritGitServer.Spec.GitUser,
-						testify.Anything,
-						testify.Anything,
-					).
-					Return(nil)
-
-				return mock
-			},
-			gitProvider: defaultGitProvider,
-			createGitProviderWithConfig: func(t *testing.T) func(config gitproviderv2.Config) gitproviderv2.Git {
-				// Create a single mock that will be returned each time
-				mock := v2mocks.NewMockGit(t)
-
-				mock.On("CheckPermissions", testify.Anything, testify.Anything).
-					Maybe().
-					Return(nil).
-					On("Clone", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
-					Maybe().
-					Return(nil)
-
-				return func(config gitproviderv2.Config) gitproviderv2.Git {
-					return mock
-				}
-			},
-			wantErr: func(t require.TestingT, err error, i ...interface{}) {
-				require.Error(t, err)
-
-				assert.Contains(t, err.Error(), "failed to push changes")
-			},
-			wantStatus: func(t *testing.T, status *codebaseApi.CodebaseStatus) {
-				assert.Equal(t, "", status.Git)
-				assert.Equal(t, util.StatusFailed, status.Status)
-				assert.Contains(t, status.DetailedMessage, "failed to push changes")
-			},
-		},
-		{
-			name: "gerrit, clone strategy - failed create project",
-			codebase: &codebaseApi.Codebase{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "go app",
-					Namespace: defaultNs,
-				},
-				Spec: codebaseApi.CodebaseSpec{
-					Strategy:      codebaseApi.Clone,
-					GitServer:     gerritGitServer.Name,
-					GitUrlPath:    "/owner/go-repo",
-					Repository:    &codebaseApi.Repository{Url: "https://github.com/owner/repo.git"},
-					DefaultBranch: "master",
-				},
-			},
-			objects: []client.Object{gerritGitServer, gerritGitServerSecret},
-			gitProviderFactory: func(t *testing.T) gitproviderv2.GitProviderFactory {
-				return func(cfg gitproviderv2.Config) gitproviderv2.Git {
-					mock := v2mocks.NewMockGit(t)
-
-					mock.On("CheckPermissions", testify.Anything, testify.Anything).
-						Return(nil).
-						On("Clone", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
-						Return(nil).
-						On("GetCurrentBranchName", testify.Anything, testify.Anything).
-						Return("feature", nil).
-						On("Checkout", testify.Anything, testify.Anything, testify.Anything, true).
-						Return(nil)
-
-					return mock
-				}
-			},
-			gerritClient: func(t *testing.T) gerrit.Client {
-				mock := gerritmocks.NewMockClient(t)
-
-				mock.
-					On(
-						"CheckProjectExist",
-						testify.Anything,
-						testify.Anything,
-						testify.Anything,
-						gerritGitServer.Spec.GitUser,
-						testify.Anything,
-						testify.Anything,
-					).
-					Return(false, nil).
-					On(
-						"CreateProject",
-						testify.Anything,
-						testify.Anything,
-						testify.Anything,
-						gerritGitServer.Spec.GitUser,
-						testify.Anything,
-						testify.Anything,
-					).
-					Return(errors.New("failed to create project"))
-
-				return mock
-			},
-			gitProvider: defaultGitProvider,
-			createGitProviderWithConfig: func(t *testing.T) func(config gitproviderv2.Config) gitproviderv2.Git {
-				return func(config gitproviderv2.Config) gitproviderv2.Git {
-					mock := v2mocks.NewMockGit(t)
-
-					mock.On("CheckPermissions", testify.Anything, testify.Anything).
-						Return(nil).
-						On("Clone", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
-						Return(nil)
-
-					return mock
-				}
-			},
-			wantErr: func(t require.TestingT, err error, i ...interface{}) {
-				require.Error(t, err)
-
-				assert.Contains(t, err.Error(), "failed to create project")
-			},
-			wantStatus: func(t *testing.T, status *codebaseApi.CodebaseStatus) {
-				assert.Equal(t, "", status.Git)
-				assert.Equal(t, util.StatusFailed, status.Status)
-				assert.Contains(t, status.DetailedMessage, "failed to create project")
-			},
-		},
-		{
-			name: "gerrit, clone strategy - failed to add remote link",
-			codebase: &codebaseApi.Codebase{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "go app",
-					Namespace: defaultNs,
-				},
-				Spec: codebaseApi.CodebaseSpec{
-					Strategy:      codebaseApi.Clone,
-					GitServer:     gerritGitServer.Name,
-					GitUrlPath:    "/owner/go-repo",
-					Repository:    &codebaseApi.Repository{Url: "https://github.com/owner/repo.git"},
-					DefaultBranch: "master",
-				},
-			},
-			objects: []client.Object{gerritGitServer, gerritGitServerSecret},
-			gitProviderFactory: func(t *testing.T) gitproviderv2.GitProviderFactory {
-				return func(cfg gitproviderv2.Config) gitproviderv2.Git {
-					mock := v2mocks.NewMockGit(t)
-
-					mock.On("CheckPermissions", testify.Anything, testify.Anything).
-						Return(nil).
-						On("Clone", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
-						Return(nil).
-						On("GetCurrentBranchName", testify.Anything, testify.Anything).
-						Return("feature", nil).
-						On("Checkout", testify.Anything, testify.Anything, testify.Anything, true).
-						Return(nil).
-						On("AddRemoteLink", testify.Anything, testify.Anything, testify.Anything).
-						Return(errors.New("failed to add remote link"))
-
-					return mock
-				}
-			},
-			gerritClient: func(t *testing.T) gerrit.Client {
-				mock := gerritmocks.NewMockClient(t)
-
-				mock.
-					On(
-						"CheckProjectExist",
-						testify.Anything,
-						testify.Anything,
-						testify.Anything,
-						gerritGitServer.Spec.GitUser,
-						testify.Anything,
-						testify.Anything,
-					).
-					Return(false, nil).
-					On(
-						"CreateProject",
-						testify.Anything,
-						testify.Anything,
-						testify.Anything,
-						gerritGitServer.Spec.GitUser,
-						testify.Anything,
-						testify.Anything,
-					).
-					Return(nil)
-
-				return mock
-			},
-			gitProvider: defaultGitProvider,
-			createGitProviderWithConfig: func(t *testing.T) func(config gitproviderv2.Config) gitproviderv2.Git {
-				return func(config gitproviderv2.Config) gitproviderv2.Git {
-					mock := v2mocks.NewMockGit(t)
-
-					mock.On("CheckPermissions", testify.Anything, testify.Anything).
-						Return(nil).
-						On("Clone", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
-						Return(nil)
-
-					return mock
-				}
-			},
-			wantErr: func(t require.TestingT, err error, i ...interface{}) {
-				require.Error(t, err)
-
-				assert.Contains(t, err.Error(), "failed to add remote link")
-			},
-			wantStatus: func(t *testing.T, status *codebaseApi.CodebaseStatus) {
-				assert.Equal(t, "", status.Git)
-				assert.Equal(t, util.StatusFailed, status.Status)
-				assert.Contains(t, status.DetailedMessage, "failed to add remote link")
-			},
-		},
-		{
-			name: "gerrit, clone strategy - failed to create project",
-			codebase: &codebaseApi.Codebase{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "go app",
-					Namespace: defaultNs,
-				},
-				Spec: codebaseApi.CodebaseSpec{
-					Strategy:      codebaseApi.Clone,
-					GitServer:     gerritGitServer.Name,
-					GitUrlPath:    "/owner/go-repo",
-					Repository:    &codebaseApi.Repository{Url: "https://github.com/owner/repo.git"},
-					DefaultBranch: "master",
-				},
-			},
-			objects: []client.Object{gerritGitServer, gerritGitServerSecret},
-			gitProviderFactory: func(t *testing.T) gitproviderv2.GitProviderFactory {
-				return func(cfg gitproviderv2.Config) gitproviderv2.Git {
-					mock := v2mocks.NewMockGit(t)
-
-					mock.On("CheckPermissions", testify.Anything, testify.Anything).
-						Return(nil).
-						On("Clone", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
-						Return(nil).
-						On("GetCurrentBranchName", testify.Anything, testify.Anything).
-						Return("feature", nil).
-						On("Checkout", testify.Anything, testify.Anything, testify.Anything, true).
-						Return(nil)
-
-					return mock
-				}
-			},
-			gerritClient: func(t *testing.T) gerrit.Client {
-				mock := gerritmocks.NewMockClient(t)
-
-				mock.
-					On(
-						"CheckProjectExist",
-						testify.Anything,
-						testify.Anything,
-						testify.Anything,
-						gerritGitServer.Spec.GitUser,
-						testify.Anything,
-						testify.Anything,
-					).
-					Return(false, nil).
-					On(
-						"CreateProject",
-						testify.Anything,
-						testify.Anything,
-						testify.Anything,
-						gerritGitServer.Spec.GitUser,
-						testify.Anything,
-						testify.Anything,
-					).
-					Return(errors.New("failed to create project"))
-
-				return mock
-			},
-			gitProvider: defaultGitProvider,
-			createGitProviderWithConfig: func(t *testing.T) func(config gitproviderv2.Config) gitproviderv2.Git {
-				return func(config gitproviderv2.Config) gitproviderv2.Git {
-					mock := v2mocks.NewMockGit(t)
-
-					mock.On("CheckPermissions", testify.Anything, testify.Anything).
-						Return(nil).
-						On("Clone", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
-						Return(nil)
-
-					return mock
-				}
-			},
-			wantErr: func(t require.TestingT, err error, i ...interface{}) {
-				require.Error(t, err)
-
-				assert.Contains(t, err.Error(), "failed to create project")
-			},
-			wantStatus: func(t *testing.T, status *codebaseApi.CodebaseStatus) {
-				assert.Equal(t, "", status.Git)
-				assert.Equal(t, util.StatusFailed, status.Status)
-				assert.Contains(t, status.DetailedMessage, "failed to create project")
-			},
-		},
-		{
-			name: "gerrit, clone strategy - failed to check project exist",
-			codebase: &codebaseApi.Codebase{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "go app",
-					Namespace: defaultNs,
-				},
-				Spec: codebaseApi.CodebaseSpec{
-					Strategy:      codebaseApi.Clone,
-					GitServer:     gerritGitServer.Name,
-					GitUrlPath:    "/owner/go-repo",
-					Repository:    &codebaseApi.Repository{Url: "https://github.com/owner/repo.git"},
-					DefaultBranch: "master",
-				},
-			},
-			objects: []client.Object{gerritGitServer, gerritGitServerSecret},
-			gitProviderFactory: func(t *testing.T) gitproviderv2.GitProviderFactory {
-				return func(cfg gitproviderv2.Config) gitproviderv2.Git {
-					mock := v2mocks.NewMockGit(t)
-
-					mock.On("CheckPermissions", testify.Anything, testify.Anything).
-						Return(nil).
-						On("Clone", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
-						Return(nil).
-						On("GetCurrentBranchName", testify.Anything, testify.Anything).
-						Return("feature", nil).
-						On("Checkout", testify.Anything, testify.Anything, testify.Anything, true).
-						Return(nil)
-
-					return mock
-				}
-			},
-			gerritClient: func(t *testing.T) gerrit.Client {
-				mock := gerritmocks.NewMockClient(t)
-
-				mock.
-					On(
-						"CheckProjectExist",
-						testify.Anything,
-						testify.Anything,
-						testify.Anything,
-						gerritGitServer.Spec.GitUser,
-						testify.Anything,
-						testify.Anything,
-					).
-					Return(false, errors.New("failed to check project exist"))
-
-				return mock
-			},
-			gitProvider: defaultGitProvider,
-			createGitProviderWithConfig: func(t *testing.T) func(config gitproviderv2.Config) gitproviderv2.Git {
-				return func(config gitproviderv2.Config) gitproviderv2.Git {
-					mock := v2mocks.NewMockGit(t)
-
-					mock.On("CheckPermissions", testify.Anything, testify.Anything).
-						Return(nil).
-						On("Clone", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
-						Return(nil)
-
-					return mock
-				}
-			},
-			wantErr: func(t require.TestingT, err error, i ...interface{}) {
-				require.Error(t, err)
-
-				assert.Contains(t, err.Error(), "failed to check project exist")
-			},
-			wantStatus: func(t *testing.T, status *codebaseApi.CodebaseStatus) {
-				assert.Equal(t, "", status.Git)
-				assert.Equal(t, util.StatusFailed, status.Status)
-				assert.Contains(t, status.DetailedMessage, "failed to check project exist")
-			},
-		},
-		{
-			name: "gerrit, clone strategy - failed to get GitServer secret",
-			codebase: &codebaseApi.Codebase{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "go app",
-					Namespace: defaultNs,
-				},
-				Spec: codebaseApi.CodebaseSpec{
-					Strategy:      codebaseApi.Clone,
-					GitServer:     gerritGitServer.Name,
-					GitUrlPath:    "/owner/go-repo",
-					Repository:    &codebaseApi.Repository{Url: "https://github.com/owner/repo.git"},
-					DefaultBranch: "master",
-				},
-			},
-			objects: []client.Object{gerritGitServer},
-			gitProviderFactory: func(t *testing.T) gitproviderv2.GitProviderFactory {
-				return func(cfg gitproviderv2.Config) gitproviderv2.Git {
-					return v2mocks.NewMockGit(t)
-				}
-			},
-			gerritClient: func(t *testing.T) gerrit.Client {
-				return gerritmocks.NewMockClient(t)
-			},
-			gitProvider: defaultGitProvider,
-			createGitProviderWithConfig: func(t *testing.T) func(config gitproviderv2.Config) gitproviderv2.Git {
-				return func(config gitproviderv2.Config) gitproviderv2.Git {
-					mock := v2mocks.NewMockGit(t)
-
-					mock.On("CheckPermissions", testify.Anything, testify.Anything).
-						Return(nil).
-						On("Clone", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
-						Return(nil)
-
-					return mock
-				}
-			},
-			wantErr: func(t require.TestingT, err error, i ...interface{}) {
-				require.Error(t, err)
-
-				assert.Contains(t, err.Error(), "failed to get GitServer secret")
-			},
-			wantStatus: func(t *testing.T, status *codebaseApi.CodebaseStatus) {
-				assert.Equal(t, "", status.Git)
-				assert.Equal(t, util.StatusFailed, status.Status)
-				assert.Contains(t, status.DetailedMessage, "failed to get GitServer secret")
-			},
-		},
-		{
-			name: "gerrit, clone strategy - failed to checkout branch",
-			codebase: &codebaseApi.Codebase{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "go app",
-					Namespace: defaultNs,
-				},
-				Spec: codebaseApi.CodebaseSpec{
-					Strategy:      codebaseApi.Clone,
-					GitServer:     gerritGitServer.Name,
-					GitUrlPath:    "/owner/go-repo",
-					Repository:    &codebaseApi.Repository{Url: "https://github.com/owner/repo.git"},
-					DefaultBranch: "master",
-				},
-			},
-			objects: []client.Object{gerritGitServer, gerritGitServerSecret},
-			gitProviderFactory: func(t *testing.T) gitproviderv2.GitProviderFactory {
-				return func(cfg gitproviderv2.Config) gitproviderv2.Git {
-					mock := v2mocks.NewMockGit(t)
-
-					mock.On("CheckPermissions", testify.Anything, testify.Anything).
-						Return(nil).
-						On("Clone", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
-						Return(nil).
-						On("GetCurrentBranchName", testify.Anything, testify.Anything).
-						Return("feature", nil).
-						On("Checkout", testify.Anything, testify.Anything, testify.Anything, true).
-						Return(errors.New("failed to checkout branch"))
-
-					return mock
-				}
-			},
-			gerritClient: func(t *testing.T) gerrit.Client {
-				return gerritmocks.NewMockClient(t)
-			},
-			gitProvider: defaultGitProvider,
-			createGitProviderWithConfig: func(t *testing.T) func(config gitproviderv2.Config) gitproviderv2.Git {
-				return func(config gitproviderv2.Config) gitproviderv2.Git {
-					mock := v2mocks.NewMockGit(t)
-
-					mock.On("CheckPermissions", testify.Anything, testify.Anything).
-						Return(nil).
-						On("Clone", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
-						Return(nil)
-
-					return mock
-				}
-			},
-			wantErr: func(t require.TestingT, err error, i ...interface{}) {
-				require.Error(t, err)
-
-				assert.Contains(t, err.Error(), "failed to checkout branch")
-			},
-			wantStatus: func(t *testing.T, status *codebaseApi.CodebaseStatus) {
-				assert.Equal(t, "", status.Git)
-				assert.Equal(t, util.StatusFailed, status.Status)
-				assert.Contains(t, status.DetailedMessage, "failed to checkout branch")
-			},
-		},
-		{
-			name: "github, create strategy - should put project successfully",
-			codebase: &codebaseApi.Codebase{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "go app",
+					Name:      "test-app",
 					Namespace: defaultNs,
 				},
 				Spec: codebaseApi.CodebaseSpec{
 					Strategy:      codebaseApi.Create,
-					GitServer:     githubGitServer.Name,
-					GitUrlPath:    "/owner/go-repo",
-					DefaultBranch: "master",
+					GitServer:     gerritGitServer.Name,
+					GitUrlPath:    "/test-app",
+					DefaultBranch: "main",
+					EmptyProject:  true,
 				},
 			},
-			objects: []client.Object{githubGitServer, githubGitServerSecret},
+			objects: []client.Object{gerritGitServer, gerritGitServerSecret},
 			gitProviderFactory: func(t *testing.T) gitproviderv2.GitProviderFactory {
-				return func(cfg gitproviderv2.Config) gitproviderv2.Git {
-					mock := v2mocks.NewMockGit(t)
-
-					mock.On("CheckPermissions", testify.Anything, testify.Anything).
-						Return(nil).
-						On("Clone", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
-						Return(nil).
-						On("Init", testify.Anything, testify.Anything).
-						Return(nil).
-						On("Commit", testify.Anything, testify.Anything, testify.Anything).
-						Return(nil).
-						On("GetCurrentBranchName", testify.Anything, testify.Anything).
-						Return("feature", nil).
-						On("Checkout", testify.Anything, testify.Anything, testify.Anything, false).
-						Return(nil).
-						On("AddRemoteLink", testify.Anything, testify.Anything, testify.Anything).
-						Return(nil).
-						On("Push", testify.Anything, testify.Anything, testify.Anything).
-						Return(nil)
-
+				mock := gitmocks.NewMockGit(t)
+				mock.EXPECT().Init(testify.Anything, testify.Anything).Return(nil)
+				mock.EXPECT().Commit(testify.Anything, testify.Anything, "Initial commit", testify.Anything).Return(nil)
+				mock.EXPECT().AddRemoteLink(testify.Anything, testify.Anything, testify.Anything).Return(nil)
+				mock.EXPECT().Push(testify.Anything, testify.Anything, testify.Anything, testify.Anything).Return(nil)
+				mock.EXPECT().GetCurrentBranchName(testify.Anything, testify.Anything).Return("main", nil)
+				return func(config gitproviderv2.Config) gitproviderv2.Git {
 					return mock
 				}
 			},
 			gerritClient: func(t *testing.T) gerrit.Client {
-				return gerritmocks.NewMockClient(t)
-			},
-			gitProvider: func(t *testing.T) func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
-				mock := gitprovidermock.NewMockGitProjectProvider(t)
-
-				mock.On("ProjectExists", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
-					Return(false, nil).
-					On("CreateProject", testify.Anything, testify.Anything, testify.Anything, testify.Anything, testify.Anything).
-					Return(nil).
-					On("SetDefaultBranch", testify.Anything, testify.Anything, testify.Anything, testify.Anything, testify.Anything).
+				mock := gerritMocks.NewMockClient(t)
+				mock.EXPECT().CheckProjectExist(int32(29418), "fake-ssh-key", "gerrit.example.com", "ci", "test-app", testify.Anything).
+					Return(true, nil)
+				mock.EXPECT().SetHeadToBranch(int32(29418), "fake-ssh-key", "gerrit.example.com", "ci", "test-app", "main", testify.Anything).
 					Return(nil)
-
-				return func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
-					return mock, nil
-				}
-			},
-			createGitProviderWithConfig: func(t *testing.T) func(config gitproviderv2.Config) gitproviderv2.Git {
-				return func(config gitproviderv2.Config) gitproviderv2.Git {
-					mock := v2mocks.NewMockGit(t)
-
-					mock.On("CheckPermissions", testify.Anything, testify.Anything).
-						Return(nil).
-						On("Clone", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
-						Return(nil).
-						On("Init", testify.Anything, testify.Anything).
-						Return(nil).
-						On("Commit", testify.Anything, testify.Anything, testify.Anything).
-						Return(nil)
-
-					return mock
-				}
+				return mock
 			},
 			wantErr: require.NoError,
-			wantStatus: func(t *testing.T, status *codebaseApi.CodebaseStatus) {
-				assert.Equal(t, util.ProjectPushedStatus, status.Git)
+			wantStatus: func(t *testing.T, status codebaseApi.CodebaseStatus) {
+				require.Equal(t, util.ProjectPushedStatus, status.Git)
 			},
 		},
 		{
-			name: "github, clone strategy - should put project successfully",
+			name: "successfully create non-empty Gerrit project",
 			codebase: &codebaseApi.Codebase{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "go app",
-					Namespace: defaultNs,
-				},
-				Spec: codebaseApi.CodebaseSpec{
-					Strategy:      codebaseApi.Clone,
-					GitServer:     githubGitServer.Name,
-					GitUrlPath:    "/owner/go-repo",
-					Repository:    &codebaseApi.Repository{Url: "https://github.com/owner/repo.git"},
-					DefaultBranch: "master",
-				},
-			},
-			objects: []client.Object{githubGitServer, githubGitServerSecret},
-			gitProviderFactory: func(t *testing.T) gitproviderv2.GitProviderFactory {
-				return func(cfg gitproviderv2.Config) gitproviderv2.Git {
-					mock := v2mocks.NewMockGit(t)
-
-					mock.On("CheckPermissions", testify.Anything, testify.Anything).
-						Return(nil).
-						On("Clone", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
-						Return(nil).
-						On("GetCurrentBranchName", testify.Anything, testify.Anything).
-						Return("feature", nil).
-						On("Checkout", testify.Anything, testify.Anything, testify.Anything, true).
-						Return(nil).
-						On("AddRemoteLink", testify.Anything, testify.Anything, testify.Anything).
-						Return(nil).
-						On("Push", testify.Anything, testify.Anything, testify.Anything).
-						Return(nil)
-
-					return mock
-				}
-			},
-			gerritClient: func(t *testing.T) gerrit.Client {
-				return gerritmocks.NewMockClient(t)
-			},
-			gitProvider: func(t *testing.T) func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
-				mock := gitprovidermock.NewMockGitProjectProvider(t)
-
-				mock.On("ProjectExists", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
-					Return(false, nil).
-					On("CreateProject", testify.Anything, testify.Anything, testify.Anything, testify.Anything, testify.Anything).
-					Return(nil).
-					On("SetDefaultBranch", testify.Anything, testify.Anything, testify.Anything, testify.Anything, testify.Anything).
-					Return(nil)
-
-				return func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
-					return mock, nil
-				}
-			},
-			createGitProviderWithConfig: func(t *testing.T) func(config gitproviderv2.Config) gitproviderv2.Git {
-				return func(config gitproviderv2.Config) gitproviderv2.Git {
-					mock := v2mocks.NewMockGit(t)
-
-					mock.On("CheckPermissions", testify.Anything, testify.Anything).
-						Return(nil).
-						On("Clone", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
-						Return(nil)
-
-					return mock
-				}
-			},
-			wantErr: require.NoError,
-			wantStatus: func(t *testing.T, status *codebaseApi.CodebaseStatus) {
-				assert.Equal(t, util.ProjectPushedStatus, status.Git)
-			},
-		},
-		{
-			name: "gitlab, create strategy - should put project successfully",
-			codebase: &codebaseApi.Codebase{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "go app",
+					Name:      "test-app",
 					Namespace: defaultNs,
 				},
 				Spec: codebaseApi.CodebaseSpec{
 					Strategy:      codebaseApi.Create,
-					GitServer:     gitlabGitServer.Name,
-					GitUrlPath:    "/owner/go-repo",
-					DefaultBranch: "master",
+					GitServer:     gerritGitServer.Name,
+					GitUrlPath:    "/test-app",
+					DefaultBranch: "main",
+					EmptyProject:  false,
+					Lang:          "go",
+					BuildTool:     "go",
+					Framework:     "beego",
 				},
 			},
-			objects: []client.Object{gitlabGitServer, gitlabGitServerSecret},
+			objects: []client.Object{gerritGitServer, gerritGitServerSecret},
 			gitProviderFactory: func(t *testing.T) gitproviderv2.GitProviderFactory {
-				return func(cfg gitproviderv2.Config) gitproviderv2.Git {
-					mock := v2mocks.NewMockGit(t)
-
-					mock.On("CheckPermissions", testify.Anything, testify.Anything).
-						Return(nil).
-						On("Clone", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
-						Return(nil).
-						On("Init", testify.Anything, testify.Anything).
-						Return(nil).
-						On("Commit", testify.Anything, testify.Anything, testify.Anything).
-						Return(nil).
-						On("GetCurrentBranchName", testify.Anything, testify.Anything).
-						Return("feature", nil).
-						On("Checkout", testify.Anything, testify.Anything, testify.Anything, false).
-						Return(nil).
-						On("AddRemoteLink", testify.Anything, testify.Anything, testify.Anything).
-						Return(nil).
-						On("Push", testify.Anything, testify.Anything, testify.Anything).
-						Return(nil)
-
+				mock := gitmocks.NewMockGit(t)
+				mock.EXPECT().Clone(testify.Anything, "https://github.com/epmd-edp/go-go-beego.git", testify.Anything).Return(nil)
+				mock.EXPECT().Init(testify.Anything, testify.Anything).Return(nil)
+				mock.EXPECT().Commit(testify.Anything, testify.Anything, "Initial commit", testify.Anything).Return(nil)
+				mock.EXPECT().GetCurrentBranchName(testify.Anything, testify.Anything).Return("main", nil)
+				mock.EXPECT().AddRemoteLink(testify.Anything, testify.Anything, testify.Anything).Return(nil)
+				mock.EXPECT().Push(testify.Anything, testify.Anything, testify.Anything, testify.Anything).Return(nil)
+				return func(config gitproviderv2.Config) gitproviderv2.Git {
 					return mock
 				}
 			},
 			gerritClient: func(t *testing.T) gerrit.Client {
-				return gerritmocks.NewMockClient(t)
-			},
-			gitProvider: func(t *testing.T) func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
-				mock := gitprovidermock.NewMockGitProjectProvider(t)
-
-				mock.On("ProjectExists", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
-					Return(false, nil).
-					On("CreateProject", testify.Anything, testify.Anything, testify.Anything, testify.Anything, testify.Anything).
-					Return(nil).
-					On("SetDefaultBranch", testify.Anything, testify.Anything, testify.Anything, testify.Anything, testify.Anything).
+				mock := gerritMocks.NewMockClient(t)
+				mock.EXPECT().CheckProjectExist(int32(29418), "fake-ssh-key", "gerrit.example.com", "ci", "test-app", testify.Anything).
+					Return(false, nil)
+				mock.EXPECT().CreateProject(int32(29418), "fake-ssh-key", "gerrit.example.com", "ci", "test-app", testify.Anything).
 					Return(nil)
-
-				return func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
-					return mock, nil
-				}
-			},
-			createGitProviderWithConfig: func(t *testing.T) func(config gitproviderv2.Config) gitproviderv2.Git {
-				return func(config gitproviderv2.Config) gitproviderv2.Git {
-					mock := v2mocks.NewMockGit(t)
-
-					mock.On("CheckPermissions", testify.Anything, testify.Anything).
-						Return(nil).
-						On("Clone", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
-						Return(nil).
-						On("Init", testify.Anything, testify.Anything).
-						Return(nil).
-						On("Commit", testify.Anything, testify.Anything, testify.Anything).
-						Return(nil)
-
-					return mock
-				}
-			},
-			wantErr: require.NoError,
-			wantStatus: func(t *testing.T, status *codebaseApi.CodebaseStatus) {
-				assert.Equal(t, util.ProjectPushedStatus, status.Git)
-			},
-		},
-		{
-			name: "gitlab, clone strategy - should put project successfully",
-			codebase: &codebaseApi.Codebase{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "go app",
-					Namespace: defaultNs,
-				},
-				Spec: codebaseApi.CodebaseSpec{
-					Strategy:      codebaseApi.Clone,
-					GitServer:     gitlabGitServer.Name,
-					GitUrlPath:    "/owner/go-repo",
-					Repository:    &codebaseApi.Repository{Url: "https://github.com/owner/repo.git"},
-					DefaultBranch: "master",
-				},
-			},
-			objects: []client.Object{gitlabGitServer, gitlabGitServerSecret},
-			gitProviderFactory: func(t *testing.T) gitproviderv2.GitProviderFactory {
-				return func(cfg gitproviderv2.Config) gitproviderv2.Git {
-					mock := v2mocks.NewMockGit(t)
-
-					mock.On("CheckPermissions", testify.Anything, testify.Anything).
-						Return(nil).
-						On("Clone", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
-						Return(nil).
-						On("GetCurrentBranchName", testify.Anything, testify.Anything).
-						Return("feature", nil).
-						On("Checkout", testify.Anything, testify.Anything, testify.Anything, true).
-						Return(nil).
-						On("AddRemoteLink", testify.Anything, testify.Anything, testify.Anything).
-						Return(nil).
-						On("Push", testify.Anything, testify.Anything, testify.Anything).
-						Return(nil)
-
-					return mock
-				}
-			},
-			gerritClient: func(t *testing.T) gerrit.Client {
-				return gerritmocks.NewMockClient(t)
-			},
-			gitProvider: func(t *testing.T) func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
-				mock := gitprovidermock.NewMockGitProjectProvider(t)
-
-				mock.On("ProjectExists", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
-					Return(false, nil).
-					On("CreateProject", testify.Anything, testify.Anything, testify.Anything, testify.Anything, testify.Anything).
-					Return(nil).
-					On("SetDefaultBranch", testify.Anything, testify.Anything, testify.Anything, testify.Anything, testify.Anything).
+				mock.EXPECT().SetHeadToBranch(int32(29418), "fake-ssh-key", "gerrit.example.com", "ci", "test-app", "main", testify.Anything).
 					Return(nil)
-
-				return func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
-					return mock, nil
-				}
+				return mock
 			},
-			createGitProviderWithConfig: func(t *testing.T) func(config gitproviderv2.Config) gitproviderv2.Git {
+			wantErr: require.NoError,
+			wantStatus: func(t *testing.T, status codebaseApi.CodebaseStatus) {
+				require.Equal(t, util.ProjectPushedStatus, status.Git)
+			},
+		},
+		{
+			name: "failed to check if Gerrit project exists",
+			codebase: &codebaseApi.Codebase{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-app",
+					Namespace: defaultNs,
+				},
+				Spec: codebaseApi.CodebaseSpec{
+					Strategy:      codebaseApi.Create,
+					GitServer:     gerritGitServer.Name,
+					GitUrlPath:    "/test-app",
+					DefaultBranch: "main",
+					EmptyProject:  true,
+				},
+			},
+			objects: []client.Object{gerritGitServer, gerritGitServerSecret},
+			gitProviderFactory: func(t *testing.T) gitproviderv2.GitProviderFactory {
+				mock := gitmocks.NewMockGit(t)
+				mock.EXPECT().Init(testify.Anything, testify.Anything).Return(nil)
+				mock.EXPECT().Commit(testify.Anything, testify.Anything, "Initial commit", testify.Anything).Return(nil)
+				mock.EXPECT().GetCurrentBranchName(testify.Anything, testify.Anything).Return("main", nil)
 				return func(config gitproviderv2.Config) gitproviderv2.Git {
-					mock := v2mocks.NewMockGit(t)
-
-					mock.On("CheckPermissions", testify.Anything, testify.Anything).
-						Return(nil).
-						On("Clone", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
-						Return(nil)
-
-					return mock
-				}
-			},
-			wantErr: require.NoError,
-			wantStatus: func(t *testing.T, status *codebaseApi.CodebaseStatus) {
-				assert.Equal(t, util.ProjectPushedStatus, status.Git)
-			},
-		},
-		{
-			name: "gitlab, clone strategy - failed to set default branch",
-			codebase: &codebaseApi.Codebase{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "go app",
-					Namespace: defaultNs,
-				},
-				Spec: codebaseApi.CodebaseSpec{
-					Strategy:      codebaseApi.Clone,
-					GitServer:     gitlabGitServer.Name,
-					GitUrlPath:    "/owner/go-repo",
-					Repository:    &codebaseApi.Repository{Url: "https://github.com/owner/repo.git"},
-					DefaultBranch: "master",
-				},
-			},
-			objects: []client.Object{gitlabGitServer, gitlabGitServerSecret},
-			gitProviderFactory: func(t *testing.T) gitproviderv2.GitProviderFactory {
-				return func(cfg gitproviderv2.Config) gitproviderv2.Git {
-					mock := v2mocks.NewMockGit(t)
-
-					mock.On("CheckPermissions", testify.Anything, testify.Anything).
-						Return(nil).
-						On("Clone", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
-						Return(nil).
-						On("GetCurrentBranchName", testify.Anything, testify.Anything).
-						Return("feature", nil).
-						On("Checkout", testify.Anything, testify.Anything, testify.Anything, true).
-						Return(nil).
-						On("AddRemoteLink", testify.Anything, testify.Anything, testify.Anything).
-						Return(nil).
-						On("Push", testify.Anything, testify.Anything, testify.Anything).
-						Return(nil)
-
 					return mock
 				}
 			},
 			gerritClient: func(t *testing.T) gerrit.Client {
-				return gerritmocks.NewMockClient(t)
+				mock := gerritMocks.NewMockClient(t)
+				mock.EXPECT().CheckProjectExist(int32(29418), "fake-ssh-key", "gerrit.example.com", "ci", "test-app", testify.Anything).
+					Return(false, errors.New("SSH connection failed"))
+				return mock
 			},
-			gitProvider: func(t *testing.T) func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
-				mock := gitprovidermock.NewMockGitProjectProvider(t)
-
-				mock.On("ProjectExists", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
-					Return(false, nil).
-					On("CreateProject", testify.Anything, testify.Anything, testify.Anything, testify.Anything, testify.Anything).
-					Return(nil).
-					On("SetDefaultBranch", testify.Anything, testify.Anything, testify.Anything, testify.Anything, testify.Anything).
-					Return(errors.New("failed to set default branch"))
-
-				return func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
-					return mock, nil
-				}
+			wantErr: require.Error,
+			wantCodebaseErrorStatus: func(t *testing.T, codebase *codebaseApi.Codebase) {
+				require.Equal(t, util.StatusFailed, codebase.Status.Status)
+				require.Contains(t, codebase.Status.DetailedMessage, "failed to check if project exist in Gerrit")
 			},
-			createGitProviderWithConfig: func(t *testing.T) func(config gitproviderv2.Config) gitproviderv2.Git {
+		},
+		{
+			name: "failed to create Gerrit project",
+			codebase: &codebaseApi.Codebase{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-app",
+					Namespace: defaultNs,
+				},
+				Spec: codebaseApi.CodebaseSpec{
+					Strategy:      codebaseApi.Create,
+					GitServer:     gerritGitServer.Name,
+					GitUrlPath:    "/test-app",
+					DefaultBranch: "main",
+					EmptyProject:  true,
+				},
+			},
+			objects: []client.Object{gerritGitServer, gerritGitServerSecret},
+			gitProviderFactory: func(t *testing.T) gitproviderv2.GitProviderFactory {
+				mock := gitmocks.NewMockGit(t)
+				mock.EXPECT().Init(testify.Anything, testify.Anything).Return(nil)
+				mock.EXPECT().Commit(testify.Anything, testify.Anything, "Initial commit", testify.Anything).Return(nil)
+				mock.EXPECT().GetCurrentBranchName(testify.Anything, testify.Anything).Return("main", nil)
 				return func(config gitproviderv2.Config) gitproviderv2.Git {
-					mock := v2mocks.NewMockGit(t)
-
-					mock.On("CheckPermissions", testify.Anything, testify.Anything).
-						Return(nil).
-						On("Clone", testify.Anything, testify.Anything, testify.Anything, testify.Anything).
-						Return(nil)
-
 					return mock
 				}
 			},
-			wantErr: func(t require.TestingT, err error, i ...interface{}) {
-				require.Error(t, err)
-				assert.Contains(t, err.Error(), "failed to set default branch")
+			gerritClient: func(t *testing.T) gerrit.Client {
+				mock := gerritMocks.NewMockClient(t)
+				mock.EXPECT().CheckProjectExist(int32(29418), "fake-ssh-key", "gerrit.example.com", "ci", "test-app", testify.Anything).
+					Return(false, nil)
+				mock.EXPECT().CreateProject(int32(29418), "fake-ssh-key", "gerrit.example.com", "ci", "test-app", testify.Anything).
+					Return(errors.New("permission denied"))
+				return mock
 			},
-			wantStatus: func(t *testing.T, status *codebaseApi.CodebaseStatus) {
-				assert.Equal(t, util.StatusFailed, status.Status)
+			wantErr: require.Error,
+			wantCodebaseErrorStatus: func(t *testing.T, codebase *codebaseApi.Codebase) {
+				require.Equal(t, util.StatusFailed, codebase.Status.Status)
+				require.Contains(t, codebase.Status.DetailedMessage, "failed to create gerrit project")
 			},
 		},
 		{
-			name: "should skip import strategy",
+			name: "failed to push to Gerrit",
 			codebase: &codebaseApi.Codebase{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "go app",
+					Name:      "test-app",
 					Namespace: defaultNs,
 				},
 				Spec: codebaseApi.CodebaseSpec{
-					Strategy: codebaseApi.Import,
+					Strategy:      codebaseApi.Create,
+					GitServer:     gerritGitServer.Name,
+					GitUrlPath:    "/test-app",
+					DefaultBranch: "main",
+					EmptyProject:  true,
 				},
 			},
+			objects: []client.Object{gerritGitServer, gerritGitServerSecret},
 			gitProviderFactory: func(t *testing.T) gitproviderv2.GitProviderFactory {
-				return nil
+				mock := gitmocks.NewMockGit(t)
+				mock.EXPECT().Init(testify.Anything, testify.Anything).Return(nil)
+				mock.EXPECT().Commit(testify.Anything, testify.Anything, "Initial commit", testify.Anything).Return(nil)
+				mock.EXPECT().GetCurrentBranchName(testify.Anything, testify.Anything).Return("main", nil)
+				mock.EXPECT().AddRemoteLink(testify.Anything, testify.Anything, testify.Anything).Return(nil)
+				mock.EXPECT().Push(testify.Anything, testify.Anything, testify.Anything, testify.Anything).
+					Return(errors.New("push rejected"))
+				return func(config gitproviderv2.Config) gitproviderv2.Git {
+					return mock
+				}
 			},
 			gerritClient: func(t *testing.T) gerrit.Client {
-				return nil
+				mock := gerritMocks.NewMockClient(t)
+				mock.EXPECT().CheckProjectExist(int32(29418), "fake-ssh-key", "gerrit.example.com", "ci", "test-app", testify.Anything).
+					Return(false, nil)
+				mock.EXPECT().CreateProject(int32(29418), "fake-ssh-key", "gerrit.example.com", "ci", "test-app", testify.Anything).
+					Return(nil)
+				return mock
 			},
-			gitProvider: func(t *testing.T) func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
-				return nil
-			},
-			createGitProviderWithConfig: func(t *testing.T) func(config gitproviderv2.Config) gitproviderv2.Git {
-				return nil
-			},
-			wantErr: require.NoError,
-			wantStatus: func(t *testing.T, status *codebaseApi.CodebaseStatus) {
-				assert.Equal(t, "", status.Git)
+			wantErr: require.Error,
+			wantCodebaseErrorStatus: func(t *testing.T, codebase *codebaseApi.Codebase) {
+				require.Equal(t, util.StatusFailed, codebase.Status.Status)
+				require.Contains(t, codebase.Status.DetailedMessage, "failed to push changes and tags into git")
 			},
 		},
 		{
-			name: "should skip if status is already pushed",
+			name: "failed to set HEAD to branch in Gerrit",
 			codebase: &codebaseApi.Codebase{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "go app",
+					Name:      "test-app",
 					Namespace: defaultNs,
 				},
 				Spec: codebaseApi.CodebaseSpec{
-					Strategy: codebaseApi.Create,
-				},
-				Status: codebaseApi.CodebaseStatus{
-					Git: util.ProjectPushedStatus,
+					Strategy:      codebaseApi.Create,
+					GitServer:     gerritGitServer.Name,
+					GitUrlPath:    "/test-app",
+					DefaultBranch: "main",
+					EmptyProject:  true,
 				},
 			},
+			objects: []client.Object{gerritGitServer, gerritGitServerSecret},
 			gitProviderFactory: func(t *testing.T) gitproviderv2.GitProviderFactory {
-				return nil
+				mock := gitmocks.NewMockGit(t)
+				mock.EXPECT().Init(testify.Anything, testify.Anything).Return(nil)
+				mock.EXPECT().Commit(testify.Anything, testify.Anything, "Initial commit", testify.Anything).Return(nil)
+				mock.EXPECT().GetCurrentBranchName(testify.Anything, testify.Anything).Return("main", nil)
+				mock.EXPECT().AddRemoteLink(testify.Anything, testify.Anything, testify.Anything).Return(nil)
+				mock.EXPECT().Push(testify.Anything, testify.Anything, testify.Anything, testify.Anything).Return(nil)
+				return func(config gitproviderv2.Config) gitproviderv2.Git {
+					return mock
+				}
 			},
 			gerritClient: func(t *testing.T) gerrit.Client {
-				return nil
+				mock := gerritMocks.NewMockClient(t)
+				mock.EXPECT().CheckProjectExist(int32(29418), "fake-ssh-key", "gerrit.example.com", "ci", "test-app", testify.Anything).
+					Return(false, nil)
+				mock.EXPECT().CreateProject(int32(29418), "fake-ssh-key", "gerrit.example.com", "ci", "test-app", testify.Anything).
+					Return(nil)
+				mock.EXPECT().SetHeadToBranch(int32(29418), "fake-ssh-key", "gerrit.example.com", "ci", "test-app", "main", testify.Anything).
+					Return(errors.New("branch does not exist"))
+				return mock
 			},
-			gitProvider: func(t *testing.T) func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
-				return nil
-			},
-			createGitProviderWithConfig: func(t *testing.T) func(config gitproviderv2.Config) gitproviderv2.Git {
-				return nil
-			},
-			wantErr: require.NoError,
-			wantStatus: func(t *testing.T, status *codebaseApi.CodebaseStatus) {
-				assert.Equal(t, util.ProjectPushedStatus, status.Git)
+			wantErr: require.Error,
+			wantCodebaseErrorStatus: func(t *testing.T, codebase *codebaseApi.Codebase) {
+				require.Equal(t, util.StatusFailed, codebase.Status.Status)
+				require.Contains(t, codebase.Status.DetailedMessage, "set remote HEAD for codebase test-app to default branch main has been failed")
 			},
 		},
 		{
-			name: "should skip if status is template already pushed",
+			name: "failed to clone template repository for non-empty project",
 			codebase: &codebaseApi.Codebase{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "go app",
+					Name:      "test-app",
 					Namespace: defaultNs,
 				},
 				Spec: codebaseApi.CodebaseSpec{
-					Strategy: codebaseApi.Create,
-				},
-				Status: codebaseApi.CodebaseStatus{
-					Git: util.ProjectTemplatesPushedStatus,
+					Strategy:      codebaseApi.Create,
+					GitServer:     gerritGitServer.Name,
+					GitUrlPath:    "/test-app",
+					DefaultBranch: "main",
+					EmptyProject:  false,
+					Lang:          "go",
+					BuildTool:     "go",
+					Framework:     "beego",
 				},
 			},
+			objects: []client.Object{gerritGitServer, gerritGitServerSecret},
 			gitProviderFactory: func(t *testing.T) gitproviderv2.GitProviderFactory {
-				return nil
+				mock := gitmocks.NewMockGit(t)
+				mock.EXPECT().Clone(testify.Anything, "https://github.com/epmd-edp/go-go-beego.git", testify.Anything).
+					Return(errors.New("repository not found"))
+				return func(config gitproviderv2.Config) gitproviderv2.Git {
+					return mock
+				}
 			},
 			gerritClient: func(t *testing.T) gerrit.Client {
-				return nil
+				return gerritMocks.NewMockClient(t)
 			},
-			gitProvider: func(t *testing.T) func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
-				return nil
+			wantErr: require.Error,
+			wantCodebaseErrorStatus: func(t *testing.T, codebase *codebaseApi.Codebase) {
+				require.Equal(t, util.StatusFailed, codebase.Status.Status)
+				require.Contains(t, codebase.Status.DetailedMessage, "failed to clone template project")
 			},
-			createGitProviderWithConfig: func(t *testing.T) func(config gitproviderv2.Config) gitproviderv2.Git {
-				return nil
+		},
+		{
+			name: "failed to init empty repository",
+			codebase: &codebaseApi.Codebase{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-app",
+					Namespace: defaultNs,
+				},
+				Spec: codebaseApi.CodebaseSpec{
+					Strategy:      codebaseApi.Create,
+					GitServer:     gerritGitServer.Name,
+					GitUrlPath:    "/test-app",
+					DefaultBranch: "main",
+					EmptyProject:  true,
+				},
 			},
-			wantErr: require.NoError,
-			wantStatus: func(t *testing.T, status *codebaseApi.CodebaseStatus) {
-				assert.Equal(t, util.ProjectTemplatesPushedStatus, status.Git)
+			objects: []client.Object{gerritGitServer, gerritGitServerSecret},
+			gitProviderFactory: func(t *testing.T) gitproviderv2.GitProviderFactory {
+				mock := gitmocks.NewMockGit(t)
+				mock.EXPECT().Init(testify.Anything, testify.Anything).Return(errors.New("failed to initialize git repository"))
+				return func(config gitproviderv2.Config) gitproviderv2.Git {
+					return mock
+				}
+			},
+			gerritClient: func(t *testing.T) gerrit.Client {
+				return gerritMocks.NewMockClient(t)
+			},
+			wantErr: require.Error,
+			wantCodebaseErrorStatus: func(t *testing.T, codebase *codebaseApi.Codebase) {
+				require.Equal(t, util.StatusFailed, codebase.Status.Status)
+				require.Contains(t, codebase.Status.DetailedMessage, "failed to create empty git repository")
 			},
 		},
 	}
@@ -1530,7 +1249,9 @@ func TestPutProject_ServeRequest(t *testing.T) {
 			h := NewPutProject(
 				k8sClient,
 				tt.gerritClient(t),
-				tt.gitProvider(t),
+				func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
+					return mocks.NewMockGitProjectProvider(t), nil
+				},
 				tt.gitProviderFactory(t),
 			)
 
@@ -1538,24 +1259,26 @@ func TestPutProject_ServeRequest(t *testing.T) {
 
 			tt.wantErr(t, err)
 
-			if err != nil {
-				tt.wantStatus(t, &tt.codebase.Status)
-				return
+			if tt.wantCodebaseErrorStatus != nil {
+				tt.wantCodebaseErrorStatus(t, tt.codebase)
 			}
 
 			processedCodebase := &codebaseApi.Codebase{}
-			if err = k8sClient.Get(
-				context.Background(),
-				types.NamespacedName{
-					Name:      tt.codebase.Name,
-					Namespace: tt.codebase.Namespace,
-				},
-				processedCodebase,
-			); err != nil {
-				require.NoError(t, err)
-			}
 
-			tt.wantStatus(t, &processedCodebase.Status)
+			require.NoError(t,
+				k8sClient.Get(
+					context.Background(),
+					types.NamespacedName{
+						Name:      tt.codebase.Name,
+						Namespace: tt.codebase.Namespace,
+					},
+					processedCodebase,
+				),
+			)
+
+			if tt.wantStatus != nil {
+				tt.wantStatus(t, processedCodebase.Status)
+			}
 		})
 	}
 }
