@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
@@ -39,7 +40,7 @@ func TestReconcileCodebaseImageStream_Reconcile_ShouldPassNotFound(t *testing.T)
 	res, err := r.Reconcile(context.TODO(), req)
 
 	assert.NoError(t, err)
-	assert.False(t, res.Requeue)
+	assert.Equal(t, time.Duration(0), res.RequeueAfter)
 }
 
 func TestReconcileCodebaseImageStream_Reconcile_ShouldFailNotFound(t *testing.T) {
@@ -67,7 +68,7 @@ func TestReconcileCodebaseImageStream_Reconcile_ShouldFailNotFound(t *testing.T)
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
 
-	assert.False(t, res.Requeue)
+	assert.Equal(t, time.Duration(0), res.RequeueAfter)
 }
 
 func TestReconcileCodebaseImageStream_Reconcile_ShouldPass(t *testing.T) {
@@ -98,7 +99,7 @@ func TestReconcileCodebaseImageStream_Reconcile_ShouldPass(t *testing.T) {
 	res, err := r.Reconcile(context.TODO(), req)
 
 	assert.NoError(t, err)
-	assert.False(t, res.Requeue)
+	assert.Equal(t, time.Duration(0), res.RequeueAfter)
 }
 
 func TestReconcileCodebaseImageStream_Reconcile_ShouldFail(t *testing.T) {
@@ -132,7 +133,7 @@ func TestReconcileCodebaseImageStream_Reconcile_ShouldFail(t *testing.T) {
 	res, err := r.Reconcile(context.TODO(), req)
 
 	assert.Error(t, err)
-	assert.False(t, res.Requeue)
+	assert.Equal(t, time.Duration(0), res.RequeueAfter)
 
 	if !strings.Contains(err.Error(), "failed to handle NewCIS codebase image stream") {
 		t.Fatalf("wrong error returned: %s", err.Error())

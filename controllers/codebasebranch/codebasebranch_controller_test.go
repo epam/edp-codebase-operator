@@ -47,7 +47,7 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldPassNotFoundCR(t *testing.T) {
 	res, err := r.Reconcile(context.TODO(), req)
 
 	assert.NoError(t, err)
-	assert.False(t, res.Requeue)
+	assert.Equal(t, time.Duration(0), res.RequeueAfter)
 }
 
 func TestReconcileCodebaseBranch_Reconcile_ShouldFailNotFound(t *testing.T) {
@@ -76,7 +76,7 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldFailNotFound(t *testing.T) {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
 
-	assert.False(t, res.Requeue)
+	assert.Equal(t, time.Duration(0), res.RequeueAfter)
 }
 
 func TestReconcileCodebaseBranch_Reconcile_ShouldFailGetCodebase(t *testing.T) {
@@ -116,7 +116,7 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldFailGetCodebase(t *testing.T) {
 	res, err := r.Reconcile(context.TODO(), req)
 
 	require.Error(t, err)
-	assert.False(t, res.Requeue)
+	assert.Equal(t, time.Duration(0), res.RequeueAfter)
 	assert.Contains(t, err.Error(), "failed to get Codebase")
 }
 
@@ -174,7 +174,7 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldPassDeleteCodebasebranch(t *tes
 	res, err := r.Reconcile(context.Background(), req)
 
 	assert.NoError(t, err)
-	assert.False(t, res.Requeue)
+	assert.Equal(t, time.Duration(0), res.RequeueAfter)
 }
 
 func TestReconcileCodebaseBranch_Reconcile_ShouldPassWithCreatingCIS(t *testing.T) {
@@ -254,7 +254,7 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldPassWithCreatingCIS(t *testing.
 	res, err := r.Reconcile(context.TODO(), req)
 
 	assert.NoError(t, err)
-	assert.False(t, res.Requeue)
+	assert.Equal(t, time.Duration(0), res.RequeueAfter)
 
 	cisTocehck, err := codebaseimagestream.GetCodebaseImageStreamByCodebaseBaseBranchName(context.Background(), fakeCl, cb.Name, cb.Namespace)
 	require.NoError(t, err)
@@ -331,8 +331,7 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldRequeueWithCodebaseNotReady(t *
 	res, err := r.Reconcile(context.TODO(), req)
 
 	assert.NoError(t, err)
-	assert.False(t, res.Requeue)
-	assert.Equal(t, res.RequeueAfter, 5*time.Second)
+	assert.Equal(t, 5*time.Second, res.RequeueAfter)
 
 	gotCodebaseBranch := &codebaseApi.CodebaseBranch{}
 
@@ -357,6 +356,7 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldInitBuildForEDPVersioning(t *te
 	t.Parallel()
 
 	namespace := "test-namespace"
+	version := "1.0.0"
 	cb := &codebaseApi.CodebaseBranch{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "NewCodebaseBranch",
@@ -364,10 +364,15 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldInitBuildForEDPVersioning(t *te
 		},
 		Spec: codebaseApi.CodebaseBranchSpec{
 			CodebaseName: "NewCodebase",
+			BranchName:   "master",
+			Version:      &version,
 			Pipelines: map[string]string{
 				"review": "review-pipeline",
 				"build":  "build-pipeline",
 			},
+		},
+		Status: codebaseApi.CodebaseBranchStatus{
+			Git: codebaseApi.CodebaseBranchGitStatusBranchCreated,
 		},
 	}
 	c := &codebaseApi.Codebase{
@@ -380,13 +385,27 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldInitBuildForEDPVersioning(t *te
 				Type: codebaseApi.VersioningTypeSemver,
 			},
 		},
+		Status: codebaseApi.CodebaseStatus{
+			Available: true,
+		},
+	}
+	config := &coreV1.ConfigMap{
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      platform.KrciConfigMap,
+			Namespace: namespace,
+		},
+		Data: map[string]string{
+			platform.KrciConfigContainerRegistryHost:  "stub-url",
+			platform.KrciConfigContainerRegistrySpace: "stub-space",
+		},
 	}
 
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(codebaseApi.GroupVersion, c, cb)
+	require.NoError(t, codebaseApi.AddToScheme(scheme))
+	require.NoError(t, coreV1.AddToScheme(scheme))
 	fakeCl := fake.NewClientBuilder().
 		WithScheme(scheme).
-		WithRuntimeObjects(c, cb).
+		WithObjects(c, cb, config).
 		WithStatusSubresource(cb).
 		Build()
 
@@ -407,7 +426,7 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldInitBuildForEDPVersioning(t *te
 	res, err := r.Reconcile(context.Background(), req)
 
 	require.NoError(t, err)
-	assert.False(t, res.Requeue)
+	assert.Equal(t, time.Duration(0), res.RequeueAfter)
 
 	gotCodebaseBranch := codebaseApi.CodebaseBranch{}
 	err = fakeCl.Get(context.Background(), types.NamespacedName{
@@ -473,7 +492,7 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldHaveFailStatus(t *testing.T) {
 	res, err := r.Reconcile(context.Background(), req)
 
 	assert.Error(t, err)
-	assert.False(t, res.Requeue)
+	assert.Equal(t, 10*time.Second, res.RequeueAfter)
 
 	br := &codebaseApi.CodebaseBranch{}
 
@@ -543,7 +562,7 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldSetPipelines(t *testing.T) {
 	res, err := controller.Reconcile(context.Background(), req)
 
 	require.NoError(t, err)
-	assert.False(t, res.Requeue)
+	assert.Equal(t, time.Duration(0), res.RequeueAfter)
 
 	updatedCb := &codebaseApi.CodebaseBranch{}
 	err = fakeCl.Get(

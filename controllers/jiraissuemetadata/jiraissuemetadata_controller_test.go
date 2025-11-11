@@ -44,7 +44,7 @@ func TestReconcileJiraIssueMetadata_Reconcile_ShouldPassNotFound(t *testing.T) {
 	res, err := r.Reconcile(context.TODO(), req)
 
 	assert.NoError(t, err)
-	assert.False(t, res.Requeue)
+	assert.Equal(t, time.Duration(0), res.RequeueAfter)
 }
 
 func TestReconcileJiraIssueMetadata_Reconcile_ShouldFailNotFound(t *testing.T) {
@@ -72,7 +72,7 @@ func TestReconcileJiraIssueMetadata_Reconcile_ShouldFailNotFound(t *testing.T) {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
 
-	assert.False(t, res.Requeue)
+	assert.Equal(t, time.Duration(0), res.RequeueAfter)
 }
 
 func TestReconcileJiraIssueMetadata_Reconcile_ShouldFailToSetOwnerReference(t *testing.T) {
@@ -108,7 +108,7 @@ func TestReconcileJiraIssueMetadata_Reconcile_ShouldFailToSetOwnerReference(t *t
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
 
-	assert.False(t, res.Requeue)
+	assert.Equal(t, time.Duration(0), res.RequeueAfter)
 }
 
 func TestReconcileJiraIssueMetadata_Reconcile_ShouldFailJiraISDisabled(t *testing.T) {
@@ -158,7 +158,7 @@ func TestReconcileJiraIssueMetadata_Reconcile_ShouldFailJiraISDisabled(t *testin
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
 
-	assert.False(t, res.Requeue)
+	assert.Equal(t, time.Duration(0), res.RequeueAfter)
 }
 
 func TestReconcileJiraIssueMetadata_Reconcile_ShouldFailGetJira(t *testing.T) {
@@ -211,7 +211,7 @@ func TestReconcileJiraIssueMetadata_Reconcile_ShouldFailGetJira(t *testing.T) {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
 
-	assert.False(t, res.Requeue)
+	assert.Equal(t, time.Duration(0), res.RequeueAfter)
 }
 
 func TestReconcileJiraIssueMetadata_Reconcile_ShouldPassJiraFoundButUnavailable(t *testing.T) {
@@ -324,7 +324,7 @@ func TestReconcileJiraIssueMetadata_Reconcile_ShouldFailInitJiraClient(t *testin
 	res, err := r.Reconcile(context.TODO(), req)
 
 	assert.Error(t, err)
-	assert.False(t, res.Requeue)
+	assert.Equal(t, time.Duration(0), res.RequeueAfter)
 
 	if !strings.Contains(err.Error(), "failed to get secret jira-sercret") {
 		t.Fatalf("wrong error returned: %s", err.Error())
@@ -397,7 +397,7 @@ func TestReconcileJiraIssueMetadata_Reconcile_ShouldFailToCreateChain(t *testing
 	res, err := r.Reconcile(context.TODO(), req)
 
 	assert.Error(t, err)
-	assert.False(t, res.Requeue)
+	assert.Equal(t, time.Duration(0), res.RequeueAfter)
 
 	if !strings.Contains(err.Error(), "unexpected end of JSON input") {
 		t.Fatalf("wrong error returned: %s", err.Error())
@@ -588,7 +588,6 @@ func TestReconcileJiraIssueMetadata_Reconcile_ShouldPass(t *testing.T) {
 
 	rec, err := r.Reconcile(context.TODO(), req)
 	assert.NoError(t, err)
-	assert.False(t, rec.Requeue)
 
 	duration, err := time.ParseDuration(defaultReconcilePeriod + "m")
 	if err != nil {

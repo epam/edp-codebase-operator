@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/andygrunwald/go-jira"
 	"github.com/go-logr/logr"
@@ -44,7 +45,7 @@ func TestReconcileJiraServer_Reconcile_ShouldPassNotFound(t *testing.T) {
 	res, err := r.Reconcile(context.TODO(), req)
 
 	assert.NoError(t, err)
-	assert.False(t, res.Requeue)
+	assert.Equal(t, time.Duration(0), res.RequeueAfter)
 }
 
 func TestReconcileJiraServer_Reconcile_ShouldFailNotFound(t *testing.T) {
@@ -73,7 +74,7 @@ func TestReconcileJiraServer_Reconcile_ShouldFailNotFound(t *testing.T) {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
 
-	assert.False(t, res.Requeue)
+	assert.Equal(t, time.Duration(0), res.RequeueAfter)
 }
 
 func TestReconcileJiraServer_Reconcile_ShouldFailInitJiraClientWithSecretNotFound(t *testing.T) {
@@ -108,7 +109,7 @@ func TestReconcileJiraServer_Reconcile_ShouldFailInitJiraClientWithSecretNotFoun
 	res, err := r.Reconcile(context.TODO(), req)
 
 	assert.Error(t, err)
-	assert.False(t, res.Requeue)
+	assert.Equal(t, time.Duration(0), res.RequeueAfter)
 
 	if !strings.Contains(err.Error(), "failed to get secret jira-secret") {
 		t.Fatalf("wrong error returned: %s", err.Error())
@@ -159,7 +160,7 @@ func TestReconcileJiraServer_Reconcile_ShouldFailToCreateNewJiraClient(t *testin
 	res, err := r.Reconcile(context.TODO(), req)
 
 	assert.Error(t, err)
-	assert.False(t, res.Requeue)
+	assert.Equal(t, time.Duration(0), res.RequeueAfter)
 
 	if !strings.Contains(err.Error(), "failed to create Jira client") {
 		t.Fatalf("wrong error returned: %s", err.Error())
@@ -221,7 +222,7 @@ func TestReconcileJiraServer_Reconcile_ShouldPass(t *testing.T) {
 	res, err := r.Reconcile(context.TODO(), req)
 
 	require.NoError(t, err)
-	require.False(t, res.Requeue)
+	require.Equal(t, time.Duration(0), res.RequeueAfter)
 
 	jiraServer := &codebaseApi.JiraServer{}
 	err = fakeCl.Get(context.Background(), types.NamespacedName{

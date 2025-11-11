@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
@@ -43,7 +44,7 @@ func TestReconcileGitServer_Reconcile_ShouldPassNotFound(t *testing.T) {
 	res, err := r.Reconcile(ctrl.LoggerInto(context.Background(), logr.Discard()), req)
 
 	assert.NoError(t, err)
-	assert.False(t, res.Requeue)
+	assert.Equal(t, time.Duration(0), res.RequeueAfter)
 }
 
 func TestReconcileGitServer_Reconcile_ShouldFailNotFound(t *testing.T) {
@@ -69,7 +70,7 @@ func TestReconcileGitServer_Reconcile_ShouldFailNotFound(t *testing.T) {
 		t.Fatalf("wrong error returned: %s", err.Error())
 	}
 
-	assert.False(t, res.Requeue)
+	assert.Equal(t, time.Duration(0), res.RequeueAfter)
 }
 
 func TestReconcileGitServer_Reconcile_ShouldFailToGetSecret(t *testing.T) {
