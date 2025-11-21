@@ -1,8 +1,33 @@
 <a name="unreleased"></a>
 ## [Unreleased]
 
+
+<a name="v2.29.0"></a>
+## [v2.29.0] - 2025-11-21
+### Features
+
+- Add validation for gitUrlPath to ensure it does not end with a space ([#236](https://github.com/epam/edp-codebase-operator/issues/236))
+- Add CloneRepositoryCredentials to Codebase spec ([#234](https://github.com/epam/edp-codebase-operator/issues/234))
+- Add support onboarding git projects with access token ([#231](https://github.com/epam/edp-codebase-operator/issues/231))
+- Add support for gitlabci ([#225](https://github.com/epam/edp-codebase-operator/issues/225))
+
+### Bug Fixes
+
+- Raise pod memory to prevent clone OOM ([#240](https://github.com/epam/edp-codebase-operator/issues/240))
+- Branch repository provisioning with gitprovider v2 ([#231](https://github.com/epam/edp-codebase-operator/issues/231))
+
+### Code Refactoring
+
+- Project onboarding workflow ([#231](https://github.com/epam/edp-codebase-operator/issues/231))
+- Extract common git repository preparation logic ([#229](https://github.com/epam/edp-codebase-operator/issues/229))
+- Use Status().Patch() for git status updates in chain handlers ([#227](https://github.com/epam/edp-codebase-operator/issues/227))
+- Move gitlab configuration to the separate chain handler ([#225](https://github.com/epam/edp-codebase-operator/issues/225))
+
 ### Routine
 
+- Update Kuberocketai to the latest stable version
+- Update KubeRocketAI ([#220](https://github.com/epam/edp-codebase-operator/issues/220))
+- Setup KubeRocketAI ([#220](https://github.com/epam/edp-codebase-operator/issues/220))
 - Update current development version ([#217](https://github.com/epam/edp-codebase-operator/issues/217))
 
 
@@ -553,7 +578,8 @@ removed required fields from the GitServer status. CRD should be updated.
 - [EPMDEDP-868] Add functionality generates correct ssh URL for replication config for Gerrit
 
 
-[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.28.0...HEAD
+[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.29.0...HEAD
+[v2.29.0]: https://github.com/epam/edp-codebase-operator/compare/v2.28.0...v2.29.0
 [v2.28.0]: https://github.com/epam/edp-codebase-operator/compare/v2.27.2...v2.28.0
 [v2.27.2]: https://github.com/epam/edp-codebase-operator/compare/v2.27.1...v2.27.2
 [v2.27.1]: https://github.com/epam/edp-codebase-operator/compare/v2.27.0...v2.27.1
