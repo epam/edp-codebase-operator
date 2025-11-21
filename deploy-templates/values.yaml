@@ -28,10 +28,10 @@ imagePullSecrets: []
 
 resources:
   limits:
-    memory: 192Mi
+    memory: 1Gi
   requests:
     cpu: 50m
-    memory: 64Mi
+    memory: 256Mi
 
 # -- Pod Security Context
 # Ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
