@@ -66,3 +66,12 @@ jira:
 # Read more about EDP telemetry here: https://epam.github.io/edp-install/developer-guide/telemetry/
 # -- Flag to enable/disable telemetry
 telemetryEnabled: true
+
+# -- Custom resource configuration
+crds:
+  # -- Install and upgrade CRDs
+  install: true
+  # -- Keep CRDs on chart uninstall
+  keep: true
+  # -- Annotations to be added to all CRDs
+  annotations: {}

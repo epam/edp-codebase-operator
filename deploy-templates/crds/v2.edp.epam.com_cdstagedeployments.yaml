@@ -1,10 +1,17 @@
+{{- if .Values.crds.install }}
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
+  name: cdstagedeployments.v2.edp.epam.com
   annotations:
     controller-gen.kubebuilder.io/version: v0.16.5
-  name: cdstagedeployments.v2.edp.epam.com
+    {{- if .Values.crds.keep }}
+    "helm.sh/resource-policy": keep
+    {{- end }}
+    {{- with .Values.crds.annotations }}
+      {{- toYaml . | nindent 4 }}
+    {{- end }}
 spec:
   group: v2.edp.epam.com
   names:
@@ -119,3 +126,4 @@ spec:
     storage: true
     subresources:
       status: {}
+{{- end }}
