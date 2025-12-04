@@ -5,14 +5,18 @@ global:
 # -- component name
 name: codebase-operator
 annotations: {}
+# -- Labels to be added to the pod
+podLabels: {}
 nodeSelector: {}
 tolerations: []
 affinity: {}
 image:
-  # -- EDP codebase-operator Docker image name. The released image can be found on [Dockerhub](https://hub.docker.com/r/epamedp/codebase-operator)
+  # -- KubeRocketCI codebase-operator Docker image registry.
+  registry: ""
+  # -- KubeRocketCI codebase-operator Docker image name. The released image can be found on [Dockerhub](https://hub.docker.com/r/epamedp/codebase-operator)
   repository: epamedp/codebase-operator
   # if not defined then .Chart.AppVersion is used
-  # -- EDP codebase-operator Docker image tag. The released image can be found on [Dockerhub](https://hub.docker.com/r/epamedp/codebase-operator/tags)
+  # -- KubeRocketCI codebase-operator Docker image tag. The released image can be found on [Dockerhub](https://hub.docker.com/r/epamedp/codebase-operator/tags)
   tag:
 envs:
   - name: RECONCILATION_PERIOD
@@ -63,6 +67,6 @@ jira:
 # the continual collection of anonymized statistics, essential for informed decision-making and strategic
 # platform enhancements. This feature respects user preferences, offering the choice to participate in shaping
 # the platform's improvement initiatives while ensuring anonymity and data privacy.
-# Read more about EDP telemetry here: https://epam.github.io/edp-install/developer-guide/telemetry/
+# Read more about KubeRocketCI telemetry here: https://docs.kuberocketci.io/docs/developer-guide/telemetry
 # -- Flag to enable/disable telemetry
 telemetryEnabled: true

@@ -27,8 +27,9 @@ A Helm chart for KubeRocketCI Codebase Operator
 | envs[0].value | string | `"360"` |  |
 | envs[1] | object | `{"name":"CODEBASE_BRANCH_MAX_CONCURRENT_RECONCILES","value":"3"}` | Maximum number of parallel reconciliation codebasebranches |
 | global.platform | string | `"kubernetes"` | platform type that can be "kubernetes" or "openshift" |
-| image.repository | string | `"epamedp/codebase-operator"` | EDP codebase-operator Docker image name. The released image can be found on [Dockerhub](https://hub.docker.com/r/epamedp/codebase-operator) |
-| image.tag | string | `nil` | EDP codebase-operator Docker image tag. The released image can be found on [Dockerhub](https://hub.docker.com/r/epamedp/codebase-operator/tags) |
+| image.registry | string | `""` | KubeRocketCI codebase-operator Docker image registry. |
+| image.repository | string | `"epamedp/codebase-operator"` | KubeRocketCI codebase-operator Docker image name. The released image can be found on [Dockerhub](https://hub.docker.com/r/epamedp/codebase-operator) |
+| image.tag | string | `nil` | KubeRocketCI codebase-operator Docker image tag. The released image can be found on [Dockerhub](https://hub.docker.com/r/epamedp/codebase-operator/tags) |
 | imagePullPolicy | string | `"IfNotPresent"` |  |
 | imagePullSecrets | list | `[]` | Optional array of imagePullSecrets containing private registry credentials # Ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry |
 | jira.apiUrl | string | `"https://jiraeu-api.example.com"` | API URL for development |
@@ -39,6 +40,7 @@ A Helm chart for KubeRocketCI Codebase Operator
 | jira.rootUrl | string | `"https://jiraeu.example.com"` | URL to Jira server |
 | name | string | `"codebase-operator"` | component name |
 | nodeSelector | object | `{}` |  |
+| podLabels | object | `{}` | Labels to be added to the pod |
 | podSecurityContext | object | `{"runAsNonRoot":true}` | Pod Security Context Ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/ |
 | resources.limits.memory | string | `"1Gi"` |  |
 | resources.requests.cpu | string | `"50m"` |  |
