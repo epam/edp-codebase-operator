@@ -2,10 +2,11 @@
 ## [Unreleased]
 
 
-<a name="v2.29.0"></a>
-## v2.29.0 - 2025-11-21
+<a name="v2.29.1"></a>
+## v2.29.1 - 2025-12-04
 ### Features
 
+- Add Docker registry and podLabels to helm chart ([#246](https://github.com/epam/edp-codebase-operator/issues/246))
 - Add validation for gitUrlPath to ensure it does not end with a space ([#236](https://github.com/epam/edp-codebase-operator/issues/236))
 - Add CloneRepositoryCredentials to Codebase spec ([#234](https://github.com/epam/edp-codebase-operator/issues/234))
 - Add support onboarding git projects with access token ([#231](https://github.com/epam/edp-codebase-operator/issues/231))
@@ -193,4 +194,4 @@
 removed required fields from the GitServer status. CRD should be updated.
 
 
-[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.29.0...HEAD
+[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.29.1...HEAD
