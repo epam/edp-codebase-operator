@@ -1,6 +1,21 @@
 <a name="unreleased"></a>
 ## [Unreleased]
 
+### Features
+
+- Add Docker registry and podLabels to helm chart ([#246](https://github.com/epam/edp-codebase-operator/issues/246))
+
+### Routine
+
+- Update current development version ([#244](https://github.com/epam/edp-codebase-operator/issues/244))
+
+
+<a name="v2.29.1"></a>
+## [v2.29.1] - 2025-12-05
+### Features
+
+- Add Docker registry and podLabels to helm chart ([#246](https://github.com/epam/edp-codebase-operator/issues/246))
+
 
 <a name="v2.29.0"></a>
 ## [v2.29.0] - 2025-11-21
@@ -578,7 +593,8 @@ removed required fields from the GitServer status. CRD should be updated.
 - [EPMDEDP-868] Add functionality generates correct ssh URL for replication config for Gerrit
 
 
-[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.29.0...HEAD
+[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.29.1...HEAD
+[v2.29.1]: https://github.com/epam/edp-codebase-operator/compare/v2.29.0...v2.29.1
 [v2.29.0]: https://github.com/epam/edp-codebase-operator/compare/v2.28.0...v2.29.0
 [v2.28.0]: https://github.com/epam/edp-codebase-operator/compare/v2.27.2...v2.28.0
 [v2.27.2]: https://github.com/epam/edp-codebase-operator/compare/v2.27.1...v2.27.2
