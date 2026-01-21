@@ -35,7 +35,7 @@ type CodebaseBranchSpec struct {
 	// Pipelines is a map of pipelines related to the branch.
 	// +nullable
 	// +optional
-	// +kubebuilder:example:={"review": "review-pipeline", "build": "build-pipeline"}
+	// +kubebuilder:example:={"review": "review-pipeline", "build": "build-pipeline", "security": "security-pipeline"}
 	Pipelines map[string]string `json:"pipelines,omitempty"`
 }
 
