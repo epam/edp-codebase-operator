@@ -15,7 +15,11 @@ import (
 
 const issuesLinks = "issuesLinks"
 
-func CreateChain(metadataPayload string, jiraClient jira.Client, c client.Client) (handler.JiraIssueMetadataHandler, error) {
+func CreateChain(
+	metadataPayload string,
+	jiraClient jira.Client,
+	c client.Client,
+) (handler.JiraIssueMetadataHandler, error) {
 	payload, err := util.GetFieldsMap(metadataPayload, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse fields map from payload: %w", err)
@@ -52,7 +56,11 @@ func createWithoutApplyingTagsChain(jiraClient jira.Client, c client.Client) han
 	}
 }
 
-func nextServeOrNil(ctx context.Context, next handler.JiraIssueMetadataHandler, metadata *codebaseApi.JiraIssueMetadata) error {
+func nextServeOrNil(
+	ctx context.Context,
+	next handler.JiraIssueMetadataHandler,
+	metadata *codebaseApi.JiraIssueMetadata,
+) error {
 	log := ctrl.LoggerFrom(ctx)
 
 	if next == nil {

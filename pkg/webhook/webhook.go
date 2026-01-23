@@ -17,7 +17,10 @@ func RegisterValidationWebHook(ctx context.Context, mgr ctrl.Manager, namespace 
 		return fmt.Errorf("failed to populate certificates: %w", err)
 	}
 
-	if err := NewCodebaseValidationWebhook(mgr.GetClient(), ctrl.Log.WithName("codebase-webhook")).SetupWebhookWithManager(mgr); err != nil {
+	if err := NewCodebaseValidationWebhook(
+		mgr.GetClient(),
+		ctrl.Log.WithName("codebase-webhook"),
+	).SetupWebhookWithManager(mgr); err != nil {
 		return err
 	}
 

@@ -18,7 +18,12 @@ var ErrLasTagNotFound = fmt.Errorf("last tag not found")
 
 type Manager interface {
 	GetAppPayloadForAllLatestStrategy(ctx context.Context, pipeline *pipelineAPi.CDPipeline) (json.RawMessage, error)
-	GetAppPayloadForCurrentWithStableStrategy(ctx context.Context, current codebaseApi.CodebaseTag, pipeline *pipelineAPi.CDPipeline, stage *pipelineAPi.Stage) (json.RawMessage, error)
+	GetAppPayloadForCurrentWithStableStrategy(
+		ctx context.Context,
+		current codebaseApi.CodebaseTag,
+		pipeline *pipelineAPi.CDPipeline,
+		stage *pipelineAPi.Stage,
+	) (json.RawMessage, error)
 }
 
 var _ Manager = &StrategyManager{}
@@ -35,7 +40,10 @@ func NewStrategyManager(k8sClient client.Client) *StrategyManager {
 	return &StrategyManager{k8sClient: k8sClient}
 }
 
-func (h *StrategyManager) GetAppPayloadForAllLatestStrategy(ctx context.Context, pipeline *pipelineAPi.CDPipeline) (json.RawMessage, error) {
+func (h *StrategyManager) GetAppPayloadForAllLatestStrategy(
+	ctx context.Context,
+	pipeline *pipelineAPi.CDPipeline,
+) (json.RawMessage, error) {
 	appPayload := make(map[string]ApplicationPayload, len(pipeline.Spec.InputDockerStreams))
 
 	for _, stream := range pipeline.Spec.InputDockerStreams {
@@ -119,7 +127,10 @@ func (h *StrategyManager) GetAppPayloadForCurrentWithStableStrategy(
 	return rawAppPayload, nil
 }
 
-func (*StrategyManager) getLatestTag(ctx context.Context, imageStream *codebaseApi.CodebaseImageStream) (codebase, tag string, e error) {
+func (*StrategyManager) getLatestTag(
+	ctx context.Context,
+	imageStream *codebaseApi.CodebaseImageStream,
+) (codebase, tag string, e error) {
 	t, err := codebaseimagestream.GetLastTag(imageStream.Spec.Tags, ctrl.LoggerFrom(ctx))
 	if err != nil {
 		return "", "", ErrLasTagNotFound

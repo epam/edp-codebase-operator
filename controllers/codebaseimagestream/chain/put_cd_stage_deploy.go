@@ -46,10 +46,13 @@ func (h PutCDStageDeploy) ServeRequest(ctx context.Context, imageStream *codebas
 	return nil
 }
 
-func (h PutCDStageDeploy) handleCodebaseImageStreamEnvLabels(ctx context.Context, imageStream *codebaseApi.CodebaseImageStream) error {
+func (h PutCDStageDeploy) handleCodebaseImageStreamEnvLabels(
+	ctx context.Context,
+	imageStream *codebaseApi.CodebaseImageStream,
+) error {
 	l := ctrl.LoggerFrom(ctx)
 
-	if len(imageStream.ObjectMeta.Labels) == 0 {
+	if len(imageStream.Labels) == 0 {
 		l.Info("CodebaseImageStream does not contain env labels. Skip CDStageDeploy creating.")
 		return nil
 	}
@@ -60,7 +63,7 @@ func (h PutCDStageDeploy) handleCodebaseImageStreamEnvLabels(ctx context.Context
 
 	labelValueRegexp := regexp.MustCompile("^[-A-Za-z0-9_.]+/[-A-Za-z0-9_.]+$")
 
-	for envLabel, val := range imageStream.ObjectMeta.Labels {
+	for envLabel, val := range imageStream.Labels {
 		// pipeline lable should be in format cdpipeline/stage-name: ""
 		if labelValueRegexp.MatchString(envLabel) && val == "" {
 			if err := h.putCDStageDeploy(ctx, envLabel, imageStream.Namespace, imageStream.Spec); err != nil {
@@ -90,7 +93,12 @@ func validateCbis(imageStream *codebaseApi.CodebaseImageStream) []string {
 	return errs
 }
 
-func (h PutCDStageDeploy) putCDStageDeploy(ctx context.Context, envLabel, namespace string, spec codebaseApi.CodebaseImageStreamSpec) error {
+func (h PutCDStageDeploy) putCDStageDeploy(
+	ctx context.Context,
+	envLabel,
+	namespace string,
+	spec codebaseApi.CodebaseImageStreamSpec,
+) error {
 	l := ctrl.LoggerFrom(ctx)
 	// use name for CDStageDeploy, it is converted from envLabel and cdpipeline/stage now is cdpipeline-stage
 	name := strings.ReplaceAll(envLabel, "/", "-")
@@ -122,7 +130,16 @@ func (h PutCDStageDeploy) putCDStageDeploy(ctx context.Context, envLabel, namesp
 		return nil
 	}
 
-	cdsd, err := getCreateCommand(ctx, pipeline, stage, name, namespace, spec.Codebase, stageCr.Spec.TriggerType, spec.Tags)
+	cdsd, err := getCreateCommand(
+		ctx,
+		pipeline,
+		stage,
+		name,
+		namespace,
+		spec.Codebase,
+		stageCr.Spec.TriggerType,
+		spec.Tags,
+	)
 	if err != nil {
 		return fmt.Errorf("failed to construct command to create %v cd stage deploy: %w", name, err)
 	}
@@ -134,7 +151,12 @@ func (h PutCDStageDeploy) putCDStageDeploy(ctx context.Context, envLabel, namesp
 	return nil
 }
 
-func (h PutCDStageDeploy) skipCDStageDeployCreation(ctx context.Context, pipeline, namespace string, stage *pipelineApi.Stage) (bool, error) {
+func (h PutCDStageDeploy) skipCDStageDeployCreation(
+	ctx context.Context,
+	pipeline,
+	namespace string,
+	stage *pipelineApi.Stage,
+) (bool, error) {
 	l := ctrl.LoggerFrom(ctx)
 
 	if !stage.IsAutoDeployTriggerType() {

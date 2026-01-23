@@ -70,7 +70,10 @@ func (r *ReconcileIntegrationSecret) SetupWithManager(mgr ctrl.Manager) error {
 // +kubebuilder:rbac:groups="",namespace=placeholder,resources=secrets,verbs=get;list;watch;update;patch
 
 // Reconcile reads secrets with integration-secret label and set connection status to the annotation.
-func (r *ReconcileIntegrationSecret) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+func (r *ReconcileIntegrationSecret) Reconcile(
+	ctx context.Context,
+	request reconcile.Request,
+) (reconcile.Result, error) {
 	secret := &corev1.Secret{}
 	if err := r.client.Get(ctx, request.NamespacedName, secret); err != nil {
 		if k8sErrors.IsNotFound(err) {
@@ -109,7 +112,12 @@ func (r *ReconcileIntegrationSecret) Reconcile(ctx context.Context, request reco
 	}, nil
 }
 
-func (r *ReconcileIntegrationSecret) updateConnectionAnnotation(ctx context.Context, secret *corev1.Secret, reachable bool, errMess string) error {
+func (r *ReconcileIntegrationSecret) updateConnectionAnnotation(
+	ctx context.Context,
+	secret *corev1.Secret,
+	reachable bool,
+	errMess string,
+) error {
 	log := ctrl.LoggerFrom(ctx)
 
 	if secret.GetAnnotations()[integrationSecretConnectionAnnotation] != strconv.FormatBool(reachable) ||
@@ -239,7 +247,8 @@ func checkRegistry(ctx context.Context, secret *corev1.Secret) error {
 		log := ctrl.LoggerFrom(ctx).WithValues(logKeyUrl, url+"/v2/")
 		log.Info("Making request")
 
-		// docker registry specification endpoint https://github.com/opencontainers/distribution-spec/blob/v1.0.1/spec.md#endpoints
+		// docker registry specification endpoint
+		// https://github.com/opencontainers/distribution-spec/blob/v1.0.1/spec.md#endpoints
 		resp, err := newRequest(ctx, url).SetBasicAuth(auth.Username, auth.Password).Get("/v2/")
 		if err != nil {
 			return fmt.Errorf("%w", err)
@@ -266,7 +275,6 @@ func checkDockerHub(ctx context.Context, username, password string) error {
 			"password": password,
 		}).
 		Post("/v2/users/login")
-
 	if err != nil {
 		return fmt.Errorf("%w", err)
 	}
@@ -286,7 +294,6 @@ func checkGitHubRegistry(ctx context.Context, auth registryAuth, url string) err
 		SetHeader("Content-Type", "application/json").
 		SetAuthToken(base64.StdEncoding.EncodeToString([]byte(auth.Password))).
 		Get("/v2/_catalog")
-
 	if err != nil {
 		return fmt.Errorf("failed to connect to GitHub registry %w", err)
 	}
@@ -315,7 +322,6 @@ func checkCodemie(ctx context.Context, secret *corev1.Secret) error {
 		ForceContentType("application/json").
 		SetResult(&res).
 		Get("/v1/user")
-
 	if err != nil {
 		log.Error(err, "Failed to connect to Codemie")
 

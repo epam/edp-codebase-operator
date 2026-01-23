@@ -61,7 +61,13 @@ func (h *PutGitLabCIConfig) ServeRequest(ctx context.Context, codebase *codebase
 	log.Info("End pushing GitLab CI config")
 
 	// Set status to mark this stage complete
-	if err := updateGitStatusWithPatch(ctx, h.client, codebase, codebaseApi.RepositoryProvisioning, util.ProjectGitLabCIPushedStatus); err != nil {
+	if err := updateGitStatusWithPatch(
+		ctx,
+		h.client,
+		codebase,
+		codebaseApi.RepositoryProvisioning,
+		util.ProjectGitLabCIPushedStatus,
+	); err != nil {
 		return err
 	}
 

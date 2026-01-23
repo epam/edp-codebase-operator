@@ -30,8 +30,12 @@ type PutProject struct {
 }
 
 var (
-	skipPutProjectStatuses = []string{util.ProjectPushedStatus, util.ProjectGitLabCIPushedStatus, util.ProjectTemplatesPushedStatus}
-	putProjectStrategies   = []codebaseApi.Strategy{codebaseApi.Clone, codebaseApi.Create}
+	skipPutProjectStatuses = []string{
+		util.ProjectPushedStatus,
+		util.ProjectGitLabCIPushedStatus,
+		util.ProjectTemplatesPushedStatus,
+	}
+	putProjectStrategies = []codebaseApi.Strategy{codebaseApi.Clone, codebaseApi.Create}
 )
 
 func NewPutProject(
@@ -72,7 +76,11 @@ func (h *PutProject) ServeRequest(ctx context.Context, codebase *codebaseApi.Cod
 
 	err = h.initialProjectProvisioning(ctx, codebase, repoContext)
 	if err != nil {
-		return h.handleError(codebase, err, fmt.Sprintf("failed to perform initial provisioning of codebase %s", codebase.Name))
+		return h.handleError(
+			codebase,
+			err,
+			fmt.Sprintf("failed to perform initial provisioning of codebase %s", codebase.Name),
+		)
 	}
 
 	if err = h.checkoutBranch(ctrl.LoggerInto(ctx, log), codebase, repoContext); err != nil {
@@ -84,7 +92,13 @@ func (h *PutProject) ServeRequest(ctx context.Context, codebase *codebaseApi.Cod
 		return h.handleError(codebase, err, "failed to create project")
 	}
 
-	if err = updateGitStatusWithPatch(ctx, h.k8sClient, codebase, codebaseApi.RepositoryProvisioning, util.ProjectPushedStatus); err != nil {
+	if err = updateGitStatusWithPatch(
+		ctx,
+		h.k8sClient,
+		codebase,
+		codebaseApi.RepositoryProvisioning,
+		util.ProjectPushedStatus,
+	); err != nil {
 		return err
 	}
 
@@ -144,7 +158,13 @@ func (h *PutProject) createProject(
 	return nil
 }
 
-func (h *PutProject) replaceDefaultBranch(ctx context.Context, g gitproviderv2.Git, directory, defaultBranchName, newBranchName string) error {
+func (h *PutProject) replaceDefaultBranch(
+	ctx context.Context,
+	g gitproviderv2.Git,
+	directory,
+	defaultBranchName,
+	newBranchName string,
+) error {
 	log := ctrl.LoggerFrom(ctx).
 		WithValues("defaultBranch", defaultBranchName, "newBranch", newBranchName)
 
@@ -172,7 +192,12 @@ func (h *PutProject) pushProject(ctx context.Context, projectName string, repoCo
 	log.Info("Start pushing project")
 	log.Info("Start adding remote link")
 
-	gitProvider := h.gitProviderFactory(gitproviderv2.NewConfigFromGitServerAndSecret(repoContext.GitServer, repoContext.GitServerSecret))
+	gitProvider := h.gitProviderFactory(
+		gitproviderv2.NewConfigFromGitServerAndSecret(
+			repoContext.GitServer,
+			repoContext.GitServerSecret,
+		),
+	)
 
 	if err := gitProvider.AddRemoteLink(
 		ctx,
@@ -184,7 +209,12 @@ func (h *PutProject) pushProject(ctx context.Context, projectName string, repoCo
 
 	log.Info("Start pushing changes and tags into git")
 
-	if err := gitProvider.Push(ctx, repoContext.WorkDir, gitproviderv2.RefSpecPushAllBranches, gitproviderv2.RefSpecPushAllTags); err != nil {
+	if err := gitProvider.Push(
+		ctx,
+		repoContext.WorkDir,
+		gitproviderv2.RefSpecPushAllBranches,
+		gitproviderv2.RefSpecPushAllTags,
+	); err != nil {
 		return fmt.Errorf("failed to push changes and tags into git: %w", err)
 	}
 
@@ -193,12 +223,24 @@ func (h *PutProject) pushProject(ctx context.Context, projectName string, repoCo
 	return nil
 }
 
-func (h *PutProject) createGerritProject(ctx context.Context, gitServer *codebaseApi.GitServer, privateSSHKey, projectName string) error {
+func (h *PutProject) createGerritProject(
+	ctx context.Context,
+	gitServer *codebaseApi.GitServer,
+	privateSSHKey,
+	projectName string,
+) error {
 	log := ctrl.LoggerFrom(ctx)
 
 	log.Info("Start creating project in Gerrit")
 
-	projectExist, err := h.gerritClient.CheckProjectExist(gitServer.Spec.SshPort, privateSSHKey, gitServer.Spec.GitHost, gitServer.Spec.GitUser, projectName, log)
+	projectExist, err := h.gerritClient.CheckProjectExist(
+		gitServer.Spec.SshPort,
+		privateSSHKey,
+		gitServer.Spec.GitHost,
+		gitServer.Spec.GitUser,
+		projectName,
+		log,
+	)
 	if err != nil {
 		return fmt.Errorf("failed to check if project exist in Gerrit: %w", err)
 	}
@@ -208,7 +250,14 @@ func (h *PutProject) createGerritProject(ctx context.Context, gitServer *codebas
 		return nil
 	}
 
-	err = h.gerritClient.CreateProject(gitServer.Spec.SshPort, privateSSHKey, gitServer.Spec.GitHost, gitServer.Spec.GitUser, projectName, log)
+	err = h.gerritClient.CreateProject(
+		gitServer.Spec.SshPort,
+		privateSSHKey,
+		gitServer.Spec.GitHost,
+		gitServer.Spec.GitUser,
+		projectName,
+		log,
+	)
 	if err != nil {
 		return fmt.Errorf("failed to create gerrit project: %w", err)
 	}
@@ -218,7 +267,11 @@ func (h *PutProject) createGerritProject(ctx context.Context, gitServer *codebas
 	return nil
 }
 
-func (h *PutProject) checkoutBranch(ctx context.Context, codebase *codebaseApi.Codebase, repoContext *GitRepositoryContext) error {
+func (h *PutProject) checkoutBranch(
+	ctx context.Context,
+	codebase *codebaseApi.Codebase,
+	repoContext *GitRepositoryContext,
+) error {
 	log := ctrl.LoggerFrom(ctx).WithValues(
 		"defaultBranch",
 		codebase.Spec.DefaultBranch,
@@ -226,19 +279,43 @@ func (h *PutProject) checkoutBranch(ctx context.Context, codebase *codebaseApi.C
 		codebase.Spec.BranchToCopyInDefaultBranch,
 	)
 
-	gitprovider := h.gitProviderFactory(gitproviderv2.NewConfigFromGitServerAndSecret(repoContext.GitServer, repoContext.GitServerSecret))
+	gitProvider := h.gitProviderFactory(
+		gitproviderv2.NewConfigFromGitServerAndSecret(
+			repoContext.GitServer,
+			repoContext.GitServerSecret,
+		),
+	)
 
-	if codebase.Spec.BranchToCopyInDefaultBranch != "" && codebase.Spec.DefaultBranch != codebase.Spec.BranchToCopyInDefaultBranch {
+	if codebase.Spec.BranchToCopyInDefaultBranch != "" &&
+		codebase.Spec.DefaultBranch != codebase.Spec.BranchToCopyInDefaultBranch {
 		log.Info("Start checkout branch to copy")
 
-		if err := CheckoutBranch(ctx, codebase.Spec.BranchToCopyInDefaultBranch, repoContext, codebase, h.k8sClient, h.gitProviderFactory); err != nil {
+		if err := CheckoutBranch(
+			ctx,
+			codebase.Spec.BranchToCopyInDefaultBranch,
+			repoContext,
+			codebase,
+			h.k8sClient,
+			h.gitProviderFactory,
+		); err != nil {
 			return fmt.Errorf("failed to checkout branch to copy %s: %w", codebase.Spec.BranchToCopyInDefaultBranch, err)
 		}
 
 		log.Info("Start replace default branch")
 
-		if err := h.replaceDefaultBranch(ctx, gitprovider, repoContext.WorkDir, codebase.Spec.DefaultBranch, codebase.Spec.BranchToCopyInDefaultBranch); err != nil {
-			return fmt.Errorf("failed to replace default branch %s with %s: %w", codebase.Spec.DefaultBranch, codebase.Spec.BranchToCopyInDefaultBranch, err)
+		if err := h.replaceDefaultBranch(
+			ctx,
+			gitProvider,
+			repoContext.WorkDir,
+			codebase.Spec.DefaultBranch,
+			codebase.Spec.BranchToCopyInDefaultBranch,
+		); err != nil {
+			return fmt.Errorf(
+				"failed to replace default branch %s with %s: %w",
+				codebase.Spec.DefaultBranch,
+				codebase.Spec.BranchToCopyInDefaultBranch,
+				err,
+			)
 		}
 
 		return nil
@@ -246,7 +323,14 @@ func (h *PutProject) checkoutBranch(ctx context.Context, codebase *codebaseApi.C
 
 	log.Info("Start checkout branch")
 
-	if err := CheckoutBranch(ctx, codebase.Spec.DefaultBranch, repoContext, codebase, h.k8sClient, h.gitProviderFactory); err != nil {
+	if err := CheckoutBranch(
+		ctx,
+		codebase.Spec.DefaultBranch,
+		repoContext,
+		codebase,
+		h.k8sClient,
+		h.gitProviderFactory,
+	); err != nil {
 		return fmt.Errorf("failed to checkout default branch %s: %w", codebase.Spec.DefaultBranch, err)
 	}
 
@@ -428,7 +512,11 @@ func (h *PutProject) squashCommits(ctx context.Context, workDir string, strategy
 	return nil
 }
 
-func (h *PutProject) initialProjectProvisioning(ctx context.Context, codebase *codebaseApi.Codebase, repoContext *GitRepositoryContext) error {
+func (h *PutProject) initialProjectProvisioning(
+	ctx context.Context,
+	codebase *codebaseApi.Codebase,
+	repoContext *GitRepositoryContext,
+) error {
 	if err := util.CreateDirectory(repoContext.WorkDir); err != nil {
 		return h.handleError(codebase, err, fmt.Sprintf("failed to create dir %q", repoContext.WorkDir))
 	}
@@ -440,7 +528,10 @@ func (h *PutProject) initialProjectProvisioning(ctx context.Context, codebase *c
 	return h.notEmptyProjectProvisioning(ctx, codebase, repoContext)
 }
 
-func (h *PutProject) emptyProjectProvisioning(ctx context.Context, repoContext *GitRepositoryContext) error {
+func (h *PutProject) emptyProjectProvisioning(
+	ctx context.Context,
+	repoContext *GitRepositoryContext,
+) error {
 	log := ctrl.LoggerFrom(ctx)
 
 	log.Info("Initialing empty git repository")
@@ -451,14 +542,23 @@ func (h *PutProject) emptyProjectProvisioning(ctx context.Context, repoContext *
 
 	log.Info("Making initial commit")
 
-	if err := h.gitProviderNoAuth.Commit(ctx, repoContext.WorkDir, "Initial commit", gitproviderv2.CommitAllowEmpty()); err != nil {
+	if err := h.gitProviderNoAuth.Commit(
+		ctx,
+		repoContext.WorkDir,
+		"Initial commit",
+		gitproviderv2.CommitAllowEmpty(),
+	); err != nil {
 		return fmt.Errorf("failed to create Initial commit: %w", err)
 	}
 
 	return nil
 }
 
-func (h *PutProject) notEmptyProjectProvisioning(ctx context.Context, codebase *codebaseApi.Codebase, repoContext *GitRepositoryContext) error {
+func (h *PutProject) notEmptyProjectProvisioning(
+	ctx context.Context,
+	codebase *codebaseApi.Codebase,
+	repoContext *GitRepositoryContext,
+) error {
 	log := ctrl.LoggerFrom(ctx)
 
 	log.Info("Start initial provisioning for non-empty project")

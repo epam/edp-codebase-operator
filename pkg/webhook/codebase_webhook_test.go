@@ -22,6 +22,60 @@ func TestCodebaseWebhook_ValidateCreate(t *testing.T) {
 	scheme := runtime.NewScheme()
 	require.NoError(t, codebaseApi.AddToScheme(scheme))
 
+	makeGitUrlPathExistsTestCase := func(name, gitUrlPath string) struct {
+		name    string
+		client  client.Client
+		ctx     context.Context
+		obj     runtime.Object
+		wantErr require.ErrorAssertionFunc
+	} {
+		return struct {
+			name    string
+			client  client.Client
+			ctx     context.Context
+			obj     runtime.Object
+			wantErr require.ErrorAssertionFunc
+		}{
+			name: name,
+			client: fake.NewClientBuilder().WithScheme(scheme).WithObjects(&codebaseApi.Codebase{
+				ObjectMeta: metaV1.ObjectMeta{
+					Name:      "codebase2",
+					Namespace: "default",
+				},
+				Spec: codebaseApi.CodebaseSpec{
+					GitUrlPath: "user/repo",
+					Strategy:   codebaseApi.Import,
+					Lang:       "java",
+				},
+			}).Build(),
+			ctx: admission.NewContextWithRequest(context.Background(), admission.Request{
+				AdmissionRequest: v1.AdmissionRequest{
+					Name:      "codebase",
+					Namespace: "default",
+				},
+			}),
+			obj: &codebaseApi.Codebase{
+				ObjectMeta: metaV1.ObjectMeta{
+					Name:      "codebase",
+					Namespace: "default",
+				},
+				Spec: codebaseApi.CodebaseSpec{
+					GitUrlPath: gitUrlPath,
+					Strategy:   codebaseApi.Import,
+					Lang:       "java",
+					Versioning: codebaseApi.Versioning{
+						Type: codebaseApi.VersioningTypDefault,
+					},
+				},
+			},
+			wantErr: func(t require.TestingT, err error, _ ...any) {
+				require.Error(t, err)
+
+				require.Contains(t, err.Error(), "codebase codebase2 with GitUrlPath user/repo already exists")
+			},
+		}
+	}
+
 	tests := []struct {
 		name    string
 		client  client.Client
@@ -29,84 +83,11 @@ func TestCodebaseWebhook_ValidateCreate(t *testing.T) {
 		obj     runtime.Object
 		wantErr require.ErrorAssertionFunc
 	}{
-		{
-			name: "should return error if GitUrlPath already exists",
-			client: fake.NewClientBuilder().WithScheme(scheme).WithObjects(&codebaseApi.Codebase{
-				ObjectMeta: metaV1.ObjectMeta{
-					Name:      "codebase2",
-					Namespace: "default",
-				},
-				Spec: codebaseApi.CodebaseSpec{
-					GitUrlPath: "user/repo",
-					Strategy:   codebaseApi.Import,
-					Lang:       "java",
-				},
-			}).Build(),
-			ctx: admission.NewContextWithRequest(context.Background(), admission.Request{
-				AdmissionRequest: v1.AdmissionRequest{
-					Name:      "codebase",
-					Namespace: "default",
-				},
-			}),
-			obj: &codebaseApi.Codebase{
-				ObjectMeta: metaV1.ObjectMeta{
-					Name:      "codebase",
-					Namespace: "default",
-				},
-				Spec: codebaseApi.CodebaseSpec{
-					GitUrlPath: "user/repo",
-					Strategy:   codebaseApi.Import,
-					Lang:       "java",
-					Versioning: codebaseApi.Versioning{
-						Type: codebaseApi.VersioningTypDefault,
-					},
-				},
-			},
-			wantErr: func(t require.TestingT, err error, _ ...any) {
-				require.Error(t, err)
-
-				require.Contains(t, err.Error(), "codebase codebase2 with GitUrlPath user/repo already exists")
-			},
-		},
-		{
-			name: "should return error if GitUrlPath already exists with, check .git suffix",
-			client: fake.NewClientBuilder().WithScheme(scheme).WithObjects(&codebaseApi.Codebase{
-				ObjectMeta: metaV1.ObjectMeta{
-					Name:      "codebase2",
-					Namespace: "default",
-				},
-				Spec: codebaseApi.CodebaseSpec{
-					GitUrlPath: "user/repo",
-					Strategy:   codebaseApi.Import,
-					Lang:       "java",
-				},
-			}).Build(),
-			ctx: admission.NewContextWithRequest(context.Background(), admission.Request{
-				AdmissionRequest: v1.AdmissionRequest{
-					Name:      "codebase",
-					Namespace: "default",
-				},
-			}),
-			obj: &codebaseApi.Codebase{
-				ObjectMeta: metaV1.ObjectMeta{
-					Name:      "codebase",
-					Namespace: "default",
-				},
-				Spec: codebaseApi.CodebaseSpec{
-					GitUrlPath: "user/repo.git",
-					Strategy:   codebaseApi.Import,
-					Lang:       "java",
-					Versioning: codebaseApi.Versioning{
-						Type: codebaseApi.VersioningTypDefault,
-					},
-				},
-			},
-			wantErr: func(t require.TestingT, err error, _ ...any) {
-				require.Error(t, err)
-
-				require.Contains(t, err.Error(), "codebase codebase2 with GitUrlPath user/repo already exists")
-			},
-		},
+		makeGitUrlPathExistsTestCase("should return error if GitUrlPath already exists", "user/repo"),
+		makeGitUrlPathExistsTestCase(
+			"should return error if GitUrlPath already exists with, check .git suffix",
+			"user/repo.git",
+		),
 		{
 			name: "should skip codebase with same GitUrlPath in the another namespace",
 			client: fake.NewClientBuilder().WithScheme(scheme).WithObjects(&codebaseApi.Codebase{

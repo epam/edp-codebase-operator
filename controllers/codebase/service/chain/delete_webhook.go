@@ -46,7 +46,11 @@ func (s *DeleteWebHook) ServeRequest(ctx context.Context, codebase *codebaseApi.
 	}
 
 	gitServer := &codebaseApi.GitServer{}
-	if err := s.client.Get(ctx, client.ObjectKey{Name: codebase.Spec.GitServer, Namespace: codebase.Namespace}, gitServer); err != nil {
+	if err := s.client.Get(
+		ctx,
+		client.ObjectKey{Name: codebase.Spec.GitServer, Namespace: codebase.Namespace},
+		gitServer,
+	); err != nil {
 		log.Error(err, "Failed to delete webhook: unable to get GitServer", "gitServer", codebase.Spec.GitServer)
 
 		return nil
@@ -59,7 +63,11 @@ func (s *DeleteWebHook) ServeRequest(ctx context.Context, codebase *codebaseApi.
 		return nil
 	}
 
-	gitProvider, err := gitprovider.NewProvider(gitServer, s.restyClient, string(secret.Data[util.GitServerSecretTokenField]))
+	gitProvider, err := gitprovider.NewProvider(
+		gitServer,
+		s.restyClient,
+		string(secret.Data[util.GitServerSecretTokenField]),
+	)
 	if err != nil {
 		log.Error(err, "Failed to delete webhook: unable to create git provider")
 

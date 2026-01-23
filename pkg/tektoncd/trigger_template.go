@@ -17,9 +17,31 @@ import (
 var ErrEmptyTriggerTemplateResources = fmt.Errorf("trigger template resources is empty")
 
 type TriggerTemplateManager interface {
-	GetRawResourceFromTriggerTemplate(ctx context.Context, triggerTemplateName, ns string) ([]byte, error)
-	CreatePipelineRun(ctx context.Context, ns, cdStageDeployName string, rawPipeRun, appPayload, stage, pipeline, clusterSecret []byte) error
-	CreatePendingPipelineRun(ctx context.Context, ns, cdStageDeployName string, rawPipeRun, appPayload, stage, pipeline, clusterSecret []byte) error
+	GetRawResourceFromTriggerTemplate(
+		ctx context.Context,
+		triggerTemplateName,
+		ns string,
+	) ([]byte, error)
+	CreatePipelineRun(
+		ctx context.Context,
+		ns,
+		cdStageDeployName string,
+		rawPipeRun,
+		appPayload,
+		stage,
+		pipeline,
+		clusterSecret []byte,
+	) error
+	CreatePendingPipelineRun(
+		ctx context.Context,
+		ns,
+		cdStageDeployName string,
+		rawPipeRun,
+		appPayload,
+		stage,
+		pipeline,
+		clusterSecret []byte,
+	) error
 }
 
 var _ TriggerTemplateManager = &TektonTriggerTemplateManager{}
@@ -32,7 +54,11 @@ func NewTektonTriggerTemplateManager(k8sClient client.Client) *TektonTriggerTemp
 	return &TektonTriggerTemplateManager{k8sClient: k8sClient}
 }
 
-func (h *TektonTriggerTemplateManager) GetRawResourceFromTriggerTemplate(ctx context.Context, triggerTemplateName, ns string) ([]byte, error) {
+func (h *TektonTriggerTemplateManager) GetRawResourceFromTriggerTemplate(
+	ctx context.Context,
+	triggerTemplateName,
+	ns string,
+) ([]byte, error) {
 	template := &tektonTriggersApi.TriggerTemplate{}
 	if err := h.k8sClient.Get(ctx, client.ObjectKey{
 		Namespace: ns,
@@ -45,8 +71,8 @@ func (h *TektonTriggerTemplateManager) GetRawResourceFromTriggerTemplate(ctx con
 		return nil, ErrEmptyTriggerTemplateResources
 	}
 
-	rawPipeRun := make([]byte, len(template.Spec.ResourceTemplates[0].RawExtension.Raw))
-	copy(rawPipeRun, template.Spec.ResourceTemplates[0].RawExtension.Raw)
+	rawPipeRun := make([]byte, len(template.Spec.ResourceTemplates[0].Raw))
+	copy(rawPipeRun, template.Spec.ResourceTemplates[0].Raw)
 
 	return rawPipeRun, nil
 }
@@ -111,7 +137,11 @@ func makeUnstructuredPipelineRun(
 	pipeline []byte,
 	clusterSecret []byte,
 ) (*unstructured.Unstructured, error) {
-	rawPipeRun = bytes.ReplaceAll(rawPipeRun, []byte("$(tt.params.APPLICATIONS_PAYLOAD)"), bytes.ReplaceAll(appPayload, []byte(`"`), []byte(`\"`)))
+	rawPipeRun = bytes.ReplaceAll(
+		rawPipeRun,
+		[]byte("$(tt.params.APPLICATIONS_PAYLOAD)"),
+		bytes.ReplaceAll(appPayload, []byte(`"`), []byte(`\"`)),
+	)
 	rawPipeRun = bytes.ReplaceAll(rawPipeRun, []byte("$(tt.params.CDSTAGE)"), stage)
 	rawPipeRun = bytes.ReplaceAll(rawPipeRun, []byte("$(tt.params.CDPIPELINE)"), pipeline)
 	rawPipeRun = bytes.ReplaceAll(rawPipeRun, []byte("$(tt.params.KUBECONFIG_SECRET_NAME)"), clusterSecret)

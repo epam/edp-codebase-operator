@@ -25,11 +25,16 @@ func NewPutDefaultCodeBaseBranch(c client.Client) *PutDefaultCodeBaseBranch {
 
 // ServeRequest gets the default branch from CodeBase CR and creates CodeBaseBranch CR with this branch.
 func (s *PutDefaultCodeBaseBranch) ServeRequest(ctx context.Context, codebase *codebaseApi.Codebase) error {
-	codeBaseBranchName := fmt.Sprintf("%s-%s", codebase.Name, processNameToKubernetesConvention(codebase.Spec.DefaultBranch))
+	codeBaseBranchName := fmt.Sprintf(
+		"%s-%s",
+		codebase.Name,
+		processNameToKubernetesConvention(codebase.Spec.DefaultBranch),
+	)
 
 	log := ctrl.LoggerFrom(ctx).WithValues("codeBaseBranchName", codeBaseBranchName)
 
 	branch := &codebaseApi.CodebaseBranch{}
+
 	err := s.client.Get(
 		ctx,
 		client.ObjectKey{
@@ -38,7 +43,6 @@ func (s *PutDefaultCodeBaseBranch) ServeRequest(ctx context.Context, codebase *c
 		},
 		branch,
 	)
-
 	if err == nil {
 		log.Info("Codebase branch already exists")
 

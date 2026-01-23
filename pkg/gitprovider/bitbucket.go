@@ -54,7 +54,11 @@ func NewBitbucketClient(token string, opts ...BitbucketClientOptsSetter) (*Bitbu
 	}, nil
 }
 
-func (b *BitbucketClient) CreateWebHook(ctx context.Context, _, _, projectID, webHookSecret, webHookURL string, skipTLS bool) (*WebHook, error) {
+func (b *BitbucketClient) CreateWebHook(
+	ctx context.Context,
+	_, _, projectID, webHookSecret, webHookURL string,
+	skipTLS bool,
+) (*WebHook, error) {
 	owner, repo, err := parseProjectID(projectID)
 	if err != nil {
 		return nil, err
@@ -91,7 +95,6 @@ func (b *BitbucketClient) CreateWebHook(ctx context.Context, _, _, projectID, we
 			return nil
 		},
 	)
-
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Bitbucket web hook: %w", err)
 	}
@@ -110,7 +113,11 @@ func (b *BitbucketClient) CreateWebHook(ctx context.Context, _, _, projectID, we
 	}, nil
 }
 
-func (b *BitbucketClient) CreateWebHookIfNotExists(ctx context.Context, _, _, projectID, webHookSecret, webHookURL string, skipTLS bool) (*WebHook, error) {
+func (b *BitbucketClient) CreateWebHookIfNotExists(
+	ctx context.Context,
+	_, _, projectID, webHookSecret, webHookURL string,
+	skipTLS bool,
+) (*WebHook, error) {
 	webHooks, err := b.GetWebHooks(ctx, "", "", projectID)
 	if err != nil {
 		return nil, err
@@ -207,7 +214,11 @@ func (b *BitbucketClient) DeleteWebHook(ctx context.Context, _, _, projectID, we
 	return nil
 }
 
-func (b *BitbucketClient) CreateProject(ctx context.Context, _, _, projectID string, settings RepositorySettings) error {
+func (b *BitbucketClient) CreateProject(
+	ctx context.Context,
+	_, _, projectID string,
+	settings RepositorySettings,
+) error {
 	owner, repo, err := parseProjectID(projectID)
 	if err != nil {
 		return err

@@ -45,12 +45,18 @@ func (r *ProtectedLabelValidationWebhook) SetupWebhookWithManager(mgr ctrl.Manag
 }
 
 // ValidateCreate is a webhook for validating the creation of the ProtectedLabel CR.
-func (*ProtectedLabelValidationWebhook) ValidateCreate(_ context.Context, _ runtime.Object) (warnings admission.Warnings, err error) {
+func (*ProtectedLabelValidationWebhook) ValidateCreate(
+	_ context.Context,
+	_ runtime.Object,
+) (warnings admission.Warnings, err error) {
 	return nil, nil
 }
 
 // ValidateUpdate is a webhook for validating the updating of the ProtectedLabel CR.
-func (*ProtectedLabelValidationWebhook) ValidateUpdate(_ context.Context, oldObj, newObj runtime.Object) (warnings admission.Warnings, err error) {
+func (*ProtectedLabelValidationWebhook) ValidateUpdate(
+	_ context.Context,
+	oldObj, newObj runtime.Object,
+) (warnings admission.Warnings, err error) {
 	if err = checkResourceProtectionFromModificationOnUpdate(oldObj, newObj); err != nil {
 		return nil, err
 	}
@@ -59,7 +65,10 @@ func (*ProtectedLabelValidationWebhook) ValidateUpdate(_ context.Context, oldObj
 }
 
 // ValidateDelete is a webhook for validating the deleting of the ProtectedLabel CR.
-func (*ProtectedLabelValidationWebhook) ValidateDelete(_ context.Context, obj runtime.Object) (warnings admission.Warnings, err error) {
+func (*ProtectedLabelValidationWebhook) ValidateDelete(
+	_ context.Context,
+	obj runtime.Object,
+) (warnings admission.Warnings, err error) {
 	if err = checkResourceProtectionFromModificationOnDelete(obj); err != nil {
 		return nil, err
 	}

@@ -1,3 +1,4 @@
+// nolint:dupl // Duplicate test setup is acceptable in tests for readability
 package chain
 
 import (

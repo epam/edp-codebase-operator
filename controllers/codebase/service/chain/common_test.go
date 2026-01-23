@@ -312,6 +312,7 @@ func TestPrepareGitRepository(t *testing.T) {
 				m := gitMocks.NewMockGit(t)
 				m.On("Clone", testify.Anything, testify.Anything, testify.Anything).Return(nil)
 				m.On("GetCurrentBranchName", testify.Anything, testify.Anything).Return("main", nil)
+
 				return m
 			},
 			wantErr: require.NoError,
@@ -388,6 +389,7 @@ func TestPrepareGitRepository(t *testing.T) {
 				m := gitMocks.NewMockGit(t)
 				m.On("Clone", testify.Anything, testify.Anything, testify.Anything).
 					Return(assert.AnError)
+
 				return m
 			},
 			wantErr: func(t require.TestingT, err error, i ...interface{}) {
@@ -432,6 +434,7 @@ func TestPrepareGitRepository(t *testing.T) {
 				m.On("Clone", testify.Anything, testify.Anything, testify.Anything).Return(nil)
 				m.On("GetCurrentBranchName", testify.Anything, testify.Anything).
 					Return("", errors.New("failed to get current branch"))
+
 				return m
 			},
 			wantErr: func(t require.TestingT, err error, i ...interface{}) {

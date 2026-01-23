@@ -315,7 +315,7 @@ func TestGoJiraAdapter_GetIssue(t *testing.T) {
 					ID: "123",
 				})
 
-				w.Write(jsonResp)
+				_, _ = w.Write(jsonResp)
 			},
 			wantErr: require.NoError,
 			want: &jira.Issue{
@@ -376,7 +376,7 @@ func TestGoJiraAdapter_GetIssueTypeMeta(t *testing.T) {
 					}},
 				})
 
-				w.Write(jsonResp)
+				_, _ = w.Write(jsonResp)
 			},
 			wantErr: require.NoError,
 			want: map[string]IssueTypeMeta{

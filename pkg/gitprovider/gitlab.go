@@ -232,6 +232,7 @@ func (c *GitLabClient) CreateProject(
 	}
 
 	c.restyClient.HostURL = gitlabURL
+
 	resp, err := c.restyClient.
 		R().
 		SetContext(ctx).
@@ -242,7 +243,6 @@ func (c *GitLabClient) CreateProject(
 			"visibility":   settings.Visibility(),
 		}).
 		Post("/api/v4/projects")
-
 	if err != nil {
 		return fmt.Errorf("failed to create GitLab project: %w", err)
 	}
@@ -262,6 +262,7 @@ func (c *GitLabClient) ProjectExists(
 	projectID string,
 ) (bool, error) {
 	c.restyClient.HostURL = gitlabURL
+
 	resp, err := c.restyClient.
 		R().
 		SetContext(ctx).
@@ -270,7 +271,6 @@ func (c *GitLabClient) ProjectExists(
 			"projectID": projectID,
 		}).
 		Get("/api/v4/projects/{projectID}")
-
 	if err != nil {
 		return false, fmt.Errorf("failed to check if GitLab project exists: %w", err)
 	}
@@ -294,6 +294,7 @@ func (c *GitLabClient) SetDefaultBranch(
 	branch string,
 ) error {
 	c.restyClient.HostURL = gitlabURL
+
 	resp, err := c.restyClient.
 		R().
 		SetContext(ctx).
@@ -305,7 +306,6 @@ func (c *GitLabClient) SetDefaultBranch(
 			"default_branch": branch,
 		}).
 		Put("/api/v4/projects/{projectID}")
-
 	if err != nil {
 		return fmt.Errorf("failed to set GitLab default branch: %w", err)
 	}
@@ -335,7 +335,6 @@ func (c *GitLabClient) getNamespace(
 		}).
 		SetResult(ns).
 		Get("/api/v4/namespaces/{gitlabNamespace}")
-
 	if err != nil {
 		return nil, fmt.Errorf("failed to get GitLab namespace: %w", err)
 	}

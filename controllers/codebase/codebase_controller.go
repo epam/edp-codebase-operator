@@ -194,6 +194,7 @@ func (r *ReconcileCodebase) updateFinishStatus(ctx context.Context, c *codebaseA
 // setFailureCount increments failure count and returns delay for next reconciliation.
 func (r *ReconcileCodebase) setFailureCount(ctx context.Context, codebase *codebaseApi.Codebase) time.Duration {
 	const defaultTimeout = 10 * time.Second
+
 	timeout := util.GetTimeout(codebase.Status.FailureCount, defaultTimeout)
 
 	codebase.Status.FailureCount++
@@ -205,7 +206,10 @@ func (r *ReconcileCodebase) setFailureCount(ctx context.Context, codebase *codeb
 	return timeout
 }
 
-func (r *ReconcileCodebase) getChain(ctx context.Context, codebase *codebaseApi.Codebase) (cHand.CodebaseHandler, error) {
+func (r *ReconcileCodebase) getChain(
+	ctx context.Context,
+	codebase *codebaseApi.Codebase,
+) (cHand.CodebaseHandler, error) {
 	if r.chainGetter == nil {
 		r.chainGetter = func(cr *codebaseApi.Codebase) (cHand.CodebaseHandler, error) {
 			return chain.MakeChain(ctx, r.client), nil
@@ -215,7 +219,10 @@ func (r *ReconcileCodebase) getChain(ctx context.Context, codebase *codebaseApi.
 	return r.chainGetter(codebase)
 }
 
-func (r *ReconcileCodebase) tryToDeleteCodebase(ctx context.Context, codebase *codebaseApi.Codebase) (*reconcile.Result, error) {
+func (r *ReconcileCodebase) tryToDeleteCodebase(
+	ctx context.Context,
+	codebase *codebaseApi.Codebase,
+) (*reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
 
 	if codebase.GetDeletionTimestamp().IsZero() {

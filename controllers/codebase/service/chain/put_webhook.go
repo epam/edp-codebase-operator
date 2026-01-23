@@ -46,7 +46,11 @@ func (s *PutWebHook) ServeRequest(ctx context.Context, codebase *codebaseApi.Cod
 	log.Info("Start putting webhook")
 
 	gitServer := &codebaseApi.GitServer{}
-	if err := s.client.Get(ctx, client.ObjectKey{Name: codebase.Spec.GitServer, Namespace: codebase.Namespace}, gitServer); err != nil {
+	if err := s.client.Get(
+		ctx,
+		client.ObjectKey{Name: codebase.Spec.GitServer, Namespace: codebase.Namespace},
+		gitServer,
+	); err != nil {
 		return s.processCodebaseError(
 			codebase,
 			fmt.Errorf("failed to get git server %s: %w", codebase.Spec.GitServer, err),
@@ -65,7 +69,11 @@ func (s *PutWebHook) ServeRequest(ctx context.Context, codebase *codebaseApi.Cod
 		return s.processCodebaseError(codebase, err)
 	}
 
-	gitProvider, err := gitprovider.NewProvider(gitServer, s.restyClient, string(secret.Data[util.GitServerSecretTokenField]))
+	gitProvider, err := gitprovider.NewProvider(
+		gitServer,
+		s.restyClient,
+		string(secret.Data[util.GitServerSecretTokenField]),
+	)
 	if err != nil {
 		return s.processCodebaseError(codebase, fmt.Errorf("failed to create git provider: %w", err))
 	}
@@ -81,7 +89,6 @@ func (s *PutWebHook) ServeRequest(ctx context.Context, codebase *codebaseApi.Cod
 			projectID,
 			codebase.Status.GetWebHookRef(),
 		)
-
 		if err == nil {
 			log.Info("Webhook already exists. Skip putting webhook")
 

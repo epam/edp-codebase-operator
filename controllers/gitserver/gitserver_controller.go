@@ -143,7 +143,11 @@ func (r *ReconcileGitServer) checkConnectionToGitServer(ctx context.Context, git
 	return nil
 }
 
-func (r *ReconcileGitServer) updateGitServerStatus(ctx context.Context, gitServer *codebaseApi.GitServer, oldStatus codebaseApi.GitServerStatus) error {
+func (r *ReconcileGitServer) updateGitServerStatus(
+	ctx context.Context,
+	gitServer *codebaseApi.GitServer,
+	oldStatus codebaseApi.GitServerStatus,
+) error {
 	if gitServer.Status == oldStatus {
 		return nil
 	}

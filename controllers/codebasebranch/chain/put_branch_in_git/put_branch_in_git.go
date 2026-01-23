@@ -144,7 +144,10 @@ func (h PutBranchInGit) ServeRequest(ctx context.Context, branch *codebaseApi.Co
 	return nil
 }
 
-func (h PutBranchInGit) setIntermediateSuccessFields(cb *codebaseApi.CodebaseBranch, action codebaseApi.ActionType) error {
+func (h PutBranchInGit) setIntermediateSuccessFields(
+	cb *codebaseApi.CodebaseBranch,
+	action codebaseApi.ActionType,
+) error {
 	ctx := context.Background()
 	cb.Status = codebaseApi.CodebaseBranchStatus{
 		Status:              model.StatusInit,

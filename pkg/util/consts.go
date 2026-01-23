@@ -22,7 +22,8 @@ const (
 	PrivateSShKeyName = "id_rsa"
 	// GitServerSecretTokenField is a field in secret created for the git server that stores GitLab/GitHub token.
 	GitServerSecretTokenField = "token"
-	// GitServerSecretWebhookSecretField is a field in secret created for the git server that stores secret token for webhook.
+	// GitServerSecretWebhookSecretField is a field in secret created for the git server that stores
+	// secret token for webhook.
 	GitServerSecretWebhookSecretField = "secretString"
 	// GitServerSecretUserNameField is a field in secret created for the git server that stores username.
 	GitServerSecretUserNameField = "username"

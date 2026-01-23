@@ -50,7 +50,15 @@ func TestPutIssueWebLink_ServeRequest_ShouldFail(t *testing.T) {
 			Namespace: "fake-namespace",
 		},
 		Spec: codebaseApi.JiraIssueMetadataSpec{
-			Payload: "{\n        \"components\": \"control-plane-gerrit\",\n        \"issuesLinks\": [\n            {\n                \"ticket\": \"DEV-0000\",\n                \"title\": \"[DEV-0000] updated components versions [alpha-zeta][build/1.5.0-SNAPSHOT.377]\",\n                \"url\": \"https://example.com/job/alpha-zeta/job/MASTER-Build-alpha-zeta/890/console\"\n            }\n        ],\n        \"fixVersions\": \"alpha-zeta-1.5.0\"\n    }",
+			Payload: "{\n        \"components\": \"control-plane-gerrit\",\n        \"issuesLinks\": [\n" +
+				"            {\n" +
+				"                \"ticket\": \"DEV-0000\",\n" +
+				"                \"title\": \"[DEV-0000] updated components versions [alpha-zeta][build/1.5.0-SNAPSHOT.377]\",\n" +
+				"                \"url\": \"https://example.com/job/alpha-zeta/job/MASTER-Build-alpha-zeta/890/console\"\n" +
+				"            }\n" +
+				"        ],\n" +
+				"        \"fixVersions\": \"alpha-zeta-1.5.0\"\n" +
+				"    }",
 		},
 	}
 

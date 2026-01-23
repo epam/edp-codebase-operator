@@ -1,3 +1,4 @@
+// nolint:dupl // Duplicate test setup is acceptable in tests for readability
 package gitprovider
 
 import (
@@ -381,29 +382,55 @@ func TestGitHubClient_CreateWebHookIfNotExists(t *testing.T) {
 		},
 	}
 
+	runCreateWebHookIfNotExistsTest := func(
+		t *testing.T,
+		client *GitHubClient,
+		tt struct {
+			name           string
+			projectID      string
+			webHookURL     string
+			GETRespStatus  int
+			GETResBody     interface{}
+			POSTRespStatus int
+			POSTResBody    interface{}
+			want           *WebHook
+			wantErr        require.ErrorAssertionFunc
+			errContains    string
+		},
+	) {
+		httpmock.Reset()
+
+		GETResponder, err := httpmock.NewJsonResponder(tt.GETRespStatus, tt.GETResBody)
+		require.NoError(t, err)
+		httpmock.RegisterRegexpResponder(http.MethodGet, fakeUrlRegexp, GETResponder)
+
+		POSTResponder, err := httpmock.NewJsonResponder(tt.POSTRespStatus, tt.POSTResBody)
+		require.NoError(t, err)
+		httpmock.RegisterRegexpResponder(http.MethodPost, fakeUrlRegexp, POSTResponder)
+
+		got, err := client.CreateWebHookIfNotExists(
+			context.Background(),
+			"url",
+			"token",
+			tt.projectID,
+			"secret",
+			tt.webHookURL,
+			false,
+		)
+
+		tt.wantErr(t, err)
+
+		if tt.errContains != "" {
+			assert.Contains(t, err.Error(), tt.errContains)
+		}
+
+		assert.Equal(t, tt.want, got)
+	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			httpmock.Reset()
-
-			GETResponder, err := httpmock.NewJsonResponder(tt.GETRespStatus, tt.GETResBody)
-			require.NoError(t, err)
-			httpmock.RegisterRegexpResponder(http.MethodGet, fakeUrlRegexp, GETResponder)
-
-			POSTResponder, err := httpmock.NewJsonResponder(tt.POSTRespStatus, tt.POSTResBody)
-			require.NoError(t, err)
-			httpmock.RegisterRegexpResponder(http.MethodPost, fakeUrlRegexp, POSTResponder)
-
 			c := NewGitHubClient(restyClient)
-
-			got, err := c.CreateWebHookIfNotExists(context.Background(), "url", "token", tt.projectID, "secret", tt.webHookURL, false)
-
-			tt.wantErr(t, err)
-
-			if tt.errContains != "" {
-				assert.Contains(t, err.Error(), tt.errContains)
-			}
-
-			assert.Equal(t, tt.want, got)
+			runCreateWebHookIfNotExistsTest(t, c, tt)
 		})
 	}
 }

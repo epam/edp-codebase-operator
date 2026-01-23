@@ -21,7 +21,12 @@ func CheckoutBranch(
 	gitProviderFactory func(config gitproviderv2.Config) gitproviderv2.Git,
 ) error {
 	log := ctrl.LoggerFrom(ctx)
-	gitProvider := gitProviderFactory(gitproviderv2.NewConfigFromGitServerAndSecret(repoContext.GitServer, repoContext.GitServerSecret))
+	gitProvider := gitProviderFactory(
+		gitproviderv2.NewConfigFromGitServerAndSecret(
+			repoContext.GitServer,
+			repoContext.GitServerSecret,
+		),
+	)
 
 	currentBranchName, err := gitProvider.GetCurrentBranchName(ctx, repoContext.WorkDir)
 	if err != nil {

@@ -192,6 +192,7 @@ func TestTektonTriggerTemplateManager_CreatePipelineRun(t *testing.T) {
 				run := l.Items[0]
 
 				require.Len(t, run.Spec.Params, 4)
+
 				for _, p := range run.Spec.Params {
 					switch p.Name {
 					case "APPLICATIONS_PAYLOAD":
@@ -279,6 +280,7 @@ func TestTektonTriggerTemplateManager_CreatePendingPipelineRun(t *testing.T) {
 
 				require.Equal(t, tektonpipelineApi.PipelineRunSpecStatusPending, string(run.Spec.Status))
 				require.Len(t, run.Spec.Params, 4)
+
 				for _, p := range run.Spec.Params {
 					switch p.Name {
 					case "APPLICATIONS_PAYLOAD":

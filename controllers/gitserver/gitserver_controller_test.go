@@ -235,9 +235,11 @@ func TestReconcileGitServer_ServerUnavailable(t *testing.T) {
 	err := corev1.AddToScheme(scheme)
 	assert.NoError(t, err)
 
-	secret := corev1.Secret{ObjectMeta: metaV1.ObjectMeta{Name: "ssh-secret", Namespace: gs.Namespace}, Data: map[string][]byte{
-		util.PrivateSShKeyName: []byte(testKey),
-	}}
+	secret := corev1.Secret{
+		ObjectMeta: metaV1.ObjectMeta{Name: "ssh-secret", Namespace: gs.Namespace},
+		Data: map[string][]byte{
+			util.PrivateSShKeyName: []byte(testKey),
+		}}
 
 	fakeCl := fake.NewClientBuilder().
 		WithScheme(scheme).
