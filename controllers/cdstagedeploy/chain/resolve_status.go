@@ -90,7 +90,10 @@ func (r *ResolveStatus) ServeRequest(ctx context.Context, stageDeploy *codebaseA
 	return nil
 }
 
-func (r *ResolveStatus) getRunningPipelines(ctx context.Context, stageDeploy *codebaseApi.CDStageDeploy) (*tektonpipelineApi.PipelineRunList, error) {
+func (r *ResolveStatus) getRunningPipelines(
+	ctx context.Context,
+	stageDeploy *codebaseApi.CDStageDeploy,
+) (*tektonpipelineApi.PipelineRunList, error) {
 	log := ctrl.LoggerFrom(ctx)
 
 	pipelineRun := &tektonpipelineApi.PipelineRunList{}

@@ -30,7 +30,11 @@ func (s *PutGitWebRepoUrl) ServeRequest(ctx context.Context, codebase *codebaseA
 	log.Info("Start putting urlRepoPath to codebase status")
 
 	gitServer := &codebaseApi.GitServer{}
-	if err := s.client.Get(ctx, client.ObjectKey{Name: codebase.Spec.GitServer, Namespace: codebase.Namespace}, gitServer); err != nil {
+	if err := s.client.Get(
+		ctx,
+		client.ObjectKey{Name: codebase.Spec.GitServer, Namespace: codebase.Namespace},
+		gitServer,
+	); err != nil {
 		return s.processCodebaseError(
 			codebase,
 			fmt.Errorf("failed to get git server %s: %w", codebase.Spec.GitServer, err),
@@ -56,7 +60,11 @@ func (s *PutGitWebRepoUrl) ServeRequest(ctx context.Context, codebase *codebaseA
 // getGitWebURL returns Git Web URL.
 // For GitHub and GitLab we return link to the repository in format: https://<git_host>/<git_org>/<git_repo>
 // For Gerrit we return link to the repository in format: https://<gerrit_host>/gitweb?p=<codebase>.git
-func (s *PutGitWebRepoUrl) getGitWebURL(ctx context.Context, gitServer *codebaseApi.GitServer, codebase *codebaseApi.Codebase) (string, error) {
+func (s *PutGitWebRepoUrl) getGitWebURL(
+	ctx context.Context,
+	gitServer *codebaseApi.GitServer,
+	codebase *codebaseApi.Codebase,
+) (string, error) {
 	switch gitServer.Spec.GitProvider {
 	case codebaseApi.GitProviderGitlab, codebaseApi.GitProviderGithub, codebaseApi.GitProviderBitbucket:
 		urlLink := util.GetHostWithProtocol(gitServer.Spec.GitHost)
@@ -66,7 +74,11 @@ func (s *PutGitWebRepoUrl) getGitWebURL(ctx context.Context, gitServer *codebase
 
 	case codebaseApi.GitProviderGerrit:
 		link := &codebaseApi.QuickLink{}
-		if err := s.client.Get(ctx, client.ObjectKey{Name: gerritQuickLinkName, Namespace: gitServer.Namespace}, link); err != nil {
+		if err := s.client.Get(
+			ctx,
+			client.ObjectKey{Name: gerritQuickLinkName, Namespace: gitServer.Namespace},
+			link,
+		); err != nil {
 			return "", fmt.Errorf("failed to get QuickLink %s: %w", gerritQuickLinkName, err)
 		}
 		// QuickLink has https:// prefix in the URL.

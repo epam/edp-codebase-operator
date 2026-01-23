@@ -44,7 +44,10 @@ func (r *CodebaseBranchValidationWebhook) SetupWebhookWithManager(mgr ctrl.Manag
 var _ webhook.CustomValidator = &CodebaseBranchValidationWebhook{}
 
 // ValidateCreate is a webhook for validating the creation of the CodebaseBranch CR.
-func (r *CodebaseBranchValidationWebhook) ValidateCreate(ctx context.Context, obj runtime.Object) (warnings admission.Warnings, err error) {
+func (r *CodebaseBranchValidationWebhook) ValidateCreate(
+	ctx context.Context,
+	obj runtime.Object,
+) (warnings admission.Warnings, err error) {
 	createdCodebaseBranch, ok := obj.(*v1.CodebaseBranch)
 	if !ok {
 		r.log.Info("The wrong object given, skipping validation")
@@ -73,7 +76,10 @@ func (r *CodebaseBranchValidationWebhook) ValidateCreate(ctx context.Context, ob
 }
 
 // ValidateUpdate is a webhook for validating the updating of the CodebaseBranch CR.
-func (r *CodebaseBranchValidationWebhook) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (warnings admission.Warnings, err error) {
+func (r *CodebaseBranchValidationWebhook) ValidateUpdate(
+	ctx context.Context,
+	oldObj, newObj runtime.Object,
+) (warnings admission.Warnings, err error) {
 	if err = checkResourceProtectionFromModificationOnUpdate(oldObj, newObj); err != nil {
 		return nil, err
 	}
@@ -82,7 +88,10 @@ func (r *CodebaseBranchValidationWebhook) ValidateUpdate(ctx context.Context, ol
 }
 
 // ValidateDelete is a webhook for validating the deleting of the CodebaseBranch CR.
-func (r *CodebaseBranchValidationWebhook) ValidateDelete(ctx context.Context, obj runtime.Object) (warnings admission.Warnings, err error) {
+func (r *CodebaseBranchValidationWebhook) ValidateDelete(
+	ctx context.Context,
+	obj runtime.Object,
+) (warnings admission.Warnings, err error) {
 	if err = checkResourceProtectionFromModificationOnDelete(obj); err != nil {
 		return nil, err
 	}

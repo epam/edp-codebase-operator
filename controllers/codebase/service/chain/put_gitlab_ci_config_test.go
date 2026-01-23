@@ -138,7 +138,8 @@ func TestPutGitLabCIConfig_ServeRequest(t *testing.T) {
 						Namespace: defaultNs,
 					},
 					Data: map[string]string{
-						".gitlab-ci.yml": "variables:\n  CODEBASE_NAME: \"{{.CodebaseName}}\"\ninclude:\n  - component: $CI_SERVER_FQDN/kuberocketci/ci-java17-mvn/build@0.1.1",
+						".gitlab-ci.yml": "variables:\n  CODEBASE_NAME: \"{{.CodebaseName}}\"\ninclude:\n  " +
+							"- component: $CI_SERVER_FQDN/kuberocketci/ci-java17-mvn/build@0.1.1",
 					},
 				},
 			},
@@ -287,6 +288,7 @@ func TestPutGitLabCIConfig_ServeRequest(t *testing.T) {
 				mock := gitmocks.NewMockGit(t)
 				mock.On("Clone", testify.Anything, testify.Anything, testify.Anything).
 					Return(errors.New("failed to clone git repository"))
+
 				return mock
 			},
 			wantErr: func(t require.TestingT, err error, i ...interface{}) {
@@ -320,6 +322,7 @@ func TestPutGitLabCIConfig_ServeRequest(t *testing.T) {
 					Return(nil)
 				mock.On("GetCurrentBranchName", testify.Anything, testify.Anything).
 					Return("", errors.New("failed to get current branch"))
+
 				return mock
 			},
 			setup: func(t *testing.T, wd string) {
@@ -358,6 +361,7 @@ func TestPutGitLabCIConfig_ServeRequest(t *testing.T) {
 					Return(nil)
 				mock.On("GetCurrentBranchName", testify.Anything, testify.Anything).
 					Return("master", nil)
+
 				return mock
 			},
 			setup: func(t *testing.T, wd string) {
@@ -398,7 +402,8 @@ func TestPutGitLabCIConfig_ServeRequest(t *testing.T) {
 						Namespace: defaultNs,
 					},
 					Data: map[string]string{
-						".gitlab-ci.yml": "variables:\n  CODEBASE_NAME: \"{{.CodebaseName}}\"\ninclude:\n  - component: $CI_SERVER_FQDN/kuberocketci/ci-java17-mvn/build@0.1.1",
+						".gitlab-ci.yml": "variables:\n  CODEBASE_NAME: \"{{.CodebaseName}}\"\ninclude:\n  " +
+							"- component: $CI_SERVER_FQDN/kuberocketci/ci-java17-mvn/build@0.1.1",
 					},
 				},
 			},
@@ -410,6 +415,7 @@ func TestPutGitLabCIConfig_ServeRequest(t *testing.T) {
 					Return("master", nil)
 				mock.On("Commit", testify.Anything, testify.Anything, "Add GitLab CI configuration").
 					Return(errors.New("failed to commit changes"))
+
 				return mock
 			},
 			setup: func(t *testing.T, wd string) {
@@ -450,7 +456,8 @@ func TestPutGitLabCIConfig_ServeRequest(t *testing.T) {
 						Namespace: defaultNs,
 					},
 					Data: map[string]string{
-						".gitlab-ci.yml": "variables:\n  CODEBASE_NAME: \"{{.CodebaseName}}\"\ninclude:\n  - component: $CI_SERVER_FQDN/kuberocketci/ci-java17-mvn/build@0.1.1",
+						".gitlab-ci.yml": "variables:\n  CODEBASE_NAME: \"{{.CodebaseName}}\"\ninclude:\n  " +
+							"- component: $CI_SERVER_FQDN/kuberocketci/ci-java17-mvn/build@0.1.1",
 					},
 				},
 			},
@@ -464,6 +471,7 @@ func TestPutGitLabCIConfig_ServeRequest(t *testing.T) {
 					Return(nil)
 				mock.On("Push", testify.Anything, testify.Anything, gitproviderv2.RefSpecPushAllBranches).
 					Return(errors.New("failed to push changes"))
+
 				return mock
 			},
 			setup: func(t *testing.T, wd string) {

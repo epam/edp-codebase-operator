@@ -1,3 +1,4 @@
+// nolint:lll,dupl // Long lines and duplicate test setup are acceptable in tests for readability
 package chain
 
 import (
@@ -34,11 +35,13 @@ func TestPutProject_ServeRequest(t *testing.T) {
 	const defaultNs = "default"
 
 	tests := []struct {
-		name                    string
-		codebase                *codebaseApi.Codebase
-		objects                 []client.Object
-		gitProviderFactory      func(t *testing.T) gitproviderv2.GitProviderFactory
-		gitProvider             func(t *testing.T) func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error)
+		name               string
+		codebase           *codebaseApi.Codebase
+		objects            []client.Object
+		gitProviderFactory func(t *testing.T) gitproviderv2.GitProviderFactory
+		gitProvider        func(
+			t *testing.T,
+		) func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error)
 		wantErr                 require.ErrorAssertionFunc
 		wantStatus              func(t *testing.T, status codebaseApi.CodebaseStatus)
 		wantCodebaseErrorStatus func(t *testing.T, codebase *codebaseApi.Codebase)
@@ -59,7 +62,9 @@ func TestPutProject_ServeRequest(t *testing.T) {
 					return nil
 				}
 			},
-			gitProvider: func(t *testing.T) func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
+			gitProvider: func(
+				t *testing.T,
+			) func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
 				return nil
 			},
 			wantErr: require.NoError,
@@ -86,7 +91,9 @@ func TestPutProject_ServeRequest(t *testing.T) {
 					return nil
 				}
 			},
-			gitProvider: func(t *testing.T) func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
+			gitProvider: func(
+				t *testing.T,
+			) func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
 				return nil
 			},
 			wantErr: require.NoError,
@@ -113,7 +120,9 @@ func TestPutProject_ServeRequest(t *testing.T) {
 					return nil
 				}
 			},
-			gitProvider: func(t *testing.T) func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
+			gitProvider: func(
+				t *testing.T,
+			) func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
 				return nil
 			},
 			wantErr: require.NoError,
@@ -140,7 +149,9 @@ func TestPutProject_ServeRequest(t *testing.T) {
 					return nil
 				}
 			},
-			gitProvider: func(t *testing.T) func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
+			gitProvider: func(
+				t *testing.T,
+			) func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
 				return nil
 			},
 			wantErr: require.NoError,
@@ -193,11 +204,14 @@ func TestPutProject_ServeRequest(t *testing.T) {
 				mock.EXPECT().GetCurrentBranchName(testify.Anything, testify.Anything).Return("main", nil)
 				mock.EXPECT().AddRemoteLink(testify.Anything, testify.Anything, testify.Anything).Return(nil)
 				mock.EXPECT().Push(testify.Anything, testify.Anything, testify.Anything, testify.Anything).Return(nil)
+
 				return func(config gitproviderv2.Config) gitproviderv2.Git {
 					return mock
 				}
 			},
-			gitProvider: func(t *testing.T) func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
+			gitProvider: func(
+				t *testing.T,
+			) func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
 				mock := mocks.NewMockGitProjectProvider(t)
 				mock.EXPECT().ProjectExists(testify.Anything, testify.Anything, testify.Anything, "test-app").
 					Return(false, nil)
@@ -205,6 +219,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 					Return(nil)
 				mock.EXPECT().SetDefaultBranch(testify.Anything, testify.Anything, testify.Anything, "test-app", "main").
 					Return(nil)
+
 				return func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
 					return mock, nil
 				}
@@ -259,16 +274,20 @@ func TestPutProject_ServeRequest(t *testing.T) {
 				mock.EXPECT().GetCurrentBranchName(testify.Anything, testify.Anything).Return("main", nil)
 				mock.EXPECT().AddRemoteLink(testify.Anything, testify.Anything, testify.Anything).Return(nil)
 				mock.EXPECT().Push(testify.Anything, testify.Anything, testify.Anything, testify.Anything).Return(nil)
+
 				return func(config gitproviderv2.Config) gitproviderv2.Git {
 					return mock
 				}
 			},
-			gitProvider: func(t *testing.T) func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
+			gitProvider: func(
+				t *testing.T,
+			) func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
 				mock := mocks.NewMockGitProjectProvider(t)
 				mock.EXPECT().ProjectExists(testify.Anything, testify.Anything, testify.Anything, "test-app").
 					Return(true, nil)
 				mock.EXPECT().SetDefaultBranch(testify.Anything, testify.Anything, testify.Anything, "test-app", "main").
 					Return(nil)
+
 				return func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
 					return mock, nil
 				}
@@ -327,11 +346,14 @@ func TestPutProject_ServeRequest(t *testing.T) {
 				mock.EXPECT().GetCurrentBranchName(testify.Anything, testify.Anything).Return("main", nil)
 				mock.EXPECT().AddRemoteLink(testify.Anything, testify.Anything, testify.Anything).Return(nil)
 				mock.EXPECT().Push(testify.Anything, testify.Anything, testify.Anything, testify.Anything).Return(nil)
+
 				return func(config gitproviderv2.Config) gitproviderv2.Git {
 					return mock
 				}
 			},
-			gitProvider: func(t *testing.T) func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
+			gitProvider: func(
+				t *testing.T,
+			) func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
 				mock := mocks.NewMockGitProjectProvider(t)
 				mock.EXPECT().ProjectExists(testify.Anything, testify.Anything, testify.Anything, "test-app").
 					Return(false, nil)
@@ -339,6 +361,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 					Return(nil)
 				mock.EXPECT().SetDefaultBranch(testify.Anything, testify.Anything, testify.Anything, "test-app", "main").
 					Return(nil)
+
 				return func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
 					return mock, nil
 				}
@@ -391,14 +414,18 @@ func TestPutProject_ServeRequest(t *testing.T) {
 				mock.EXPECT().Init(testify.Anything, testify.Anything).Return(nil)
 				mock.EXPECT().Commit(testify.Anything, testify.Anything, "Initial commit", testify.Anything).Return(nil)
 				mock.EXPECT().GetCurrentBranchName(testify.Anything, testify.Anything).Return("main", nil)
+
 				return func(config gitproviderv2.Config) gitproviderv2.Git {
 					return mock
 				}
 			},
-			gitProvider: func(t *testing.T) func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
+			gitProvider: func(
+				t *testing.T,
+			) func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
 				mock := mocks.NewMockGitProjectProvider(t)
 				mock.EXPECT().ProjectExists(testify.Anything, testify.Anything, testify.Anything, "test-app").
 					Return(false, errors.New("API connection failed"))
+
 				return func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
 					return mock, nil
 				}
@@ -452,16 +479,20 @@ func TestPutProject_ServeRequest(t *testing.T) {
 				mock.EXPECT().Init(testify.Anything, testify.Anything).Return(nil)
 				mock.EXPECT().Commit(testify.Anything, testify.Anything, "Initial commit", testify.Anything).Return(nil)
 				mock.EXPECT().GetCurrentBranchName(testify.Anything, testify.Anything).Return("main", nil)
+
 				return func(config gitproviderv2.Config) gitproviderv2.Git {
 					return mock
 				}
 			},
-			gitProvider: func(t *testing.T) func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
+			gitProvider: func(
+				t *testing.T,
+			) func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
 				mock := mocks.NewMockGitProjectProvider(t)
 				mock.EXPECT().ProjectExists(testify.Anything, testify.Anything, testify.Anything, "test-app").
 					Return(false, nil)
 				mock.EXPECT().CreateProject(testify.Anything, testify.Anything, testify.Anything, "test-app", testify.Anything).
 					Return(errors.New("permission denied"))
+
 				return func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
 					return mock, nil
 				}
@@ -518,16 +549,20 @@ func TestPutProject_ServeRequest(t *testing.T) {
 				mock.EXPECT().AddRemoteLink(testify.Anything, testify.Anything, testify.Anything).Return(nil)
 				mock.EXPECT().Push(testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(errors.New("push rejected"))
+
 				return func(config gitproviderv2.Config) gitproviderv2.Git {
 					return mock
 				}
 			},
-			gitProvider: func(t *testing.T) func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
+			gitProvider: func(
+				t *testing.T,
+			) func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
 				mock := mocks.NewMockGitProjectProvider(t)
 				mock.EXPECT().ProjectExists(testify.Anything, testify.Anything, testify.Anything, "test-app").
 					Return(false, nil)
 				mock.EXPECT().CreateProject(testify.Anything, testify.Anything, testify.Anything, "test-app", testify.Anything).
 					Return(nil)
+
 				return func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
 					return mock, nil
 				}
@@ -583,11 +618,14 @@ func TestPutProject_ServeRequest(t *testing.T) {
 				mock.EXPECT().GetCurrentBranchName(testify.Anything, testify.Anything).Return("main", nil)
 				mock.EXPECT().AddRemoteLink(testify.Anything, testify.Anything, testify.Anything).Return(nil)
 				mock.EXPECT().Push(testify.Anything, testify.Anything, testify.Anything, testify.Anything).Return(nil)
+
 				return func(config gitproviderv2.Config) gitproviderv2.Git {
 					return mock
 				}
 			},
-			gitProvider: func(t *testing.T) func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
+			gitProvider: func(
+				t *testing.T,
+			) func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
 				mock := mocks.NewMockGitProjectProvider(t)
 				mock.EXPECT().ProjectExists(testify.Anything, testify.Anything, testify.Anything, "test-app").
 					Return(false, nil)
@@ -595,6 +633,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 					Return(nil)
 				mock.EXPECT().SetDefaultBranch(testify.Anything, testify.Anything, testify.Anything, "test-app", "main").
 					Return(errors.New("branch does not exist"))
+
 				return func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
 					return mock, nil
 				}
@@ -650,11 +689,14 @@ func TestPutProject_ServeRequest(t *testing.T) {
 				mock.EXPECT().GetCurrentBranchName(testify.Anything, testify.Anything).Return("main", nil)
 				mock.EXPECT().AddRemoteLink(testify.Anything, testify.Anything, testify.Anything).Return(nil)
 				mock.EXPECT().Push(testify.Anything, testify.Anything, testify.Anything, testify.Anything).Return(nil)
+
 				return func(config gitproviderv2.Config) gitproviderv2.Git {
 					return mock
 				}
 			},
-			gitProvider: func(t *testing.T) func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
+			gitProvider: func(
+				t *testing.T,
+			) func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
 				mock := mocks.NewMockGitProjectProvider(t)
 				mock.EXPECT().ProjectExists(testify.Anything, testify.Anything, testify.Anything, "test-app").
 					Return(false, nil)
@@ -662,6 +704,7 @@ func TestPutProject_ServeRequest(t *testing.T) {
 					Return(nil)
 				mock.EXPECT().SetDefaultBranch(testify.Anything, testify.Anything, testify.Anything, "test-app", "main").
 					Return(gitprovider.ErrApiNotSupported)
+
 				return func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
 					return mock, nil
 				}
@@ -716,11 +759,14 @@ func TestPutProject_ServeRequest(t *testing.T) {
 				mock := gitmocks.NewMockGit(t)
 				mock.EXPECT().Clone(testify.Anything, "https://github.com/epmd-edp/go-go-beego.git", testify.Anything).
 					Return(errors.New("repository not found"))
+
 				return func(config gitproviderv2.Config) gitproviderv2.Git {
 					return mock
 				}
 			},
-			gitProvider: func(t *testing.T) func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
+			gitProvider: func(
+				t *testing.T,
+			) func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
 				return func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
 					return mocks.NewMockGitProjectProvider(t), nil
 				}
@@ -772,11 +818,14 @@ func TestPutProject_ServeRequest(t *testing.T) {
 			gitProviderFactory: func(t *testing.T) gitproviderv2.GitProviderFactory {
 				mock := gitmocks.NewMockGit(t)
 				mock.EXPECT().Init(testify.Anything, testify.Anything).Return(errors.New("failed to initialize git repository"))
+
 				return func(config gitproviderv2.Config) gitproviderv2.Git {
 					return mock
 				}
 			},
-			gitProvider: func(t *testing.T) func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
+			gitProvider: func(
+				t *testing.T,
+			) func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
 				return func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
 					return mocks.NewMockGitProjectProvider(t), nil
 				}
@@ -898,6 +947,7 @@ func TestPutProject_ServeRequest_Gerrit(t *testing.T) {
 				mock.EXPECT().AddRemoteLink(testify.Anything, testify.Anything, testify.Anything).Return(nil)
 				mock.EXPECT().Push(testify.Anything, testify.Anything, testify.Anything, testify.Anything).Return(nil)
 				mock.EXPECT().GetCurrentBranchName(testify.Anything, testify.Anything).Return("main", nil)
+
 				return func(config gitproviderv2.Config) gitproviderv2.Git {
 					return mock
 				}
@@ -910,6 +960,7 @@ func TestPutProject_ServeRequest_Gerrit(t *testing.T) {
 					Return(nil)
 				mock.EXPECT().SetHeadToBranch(int32(29418), "fake-ssh-key", "gerrit.example.com", "ci", "test-app", "main", testify.Anything).
 					Return(nil)
+
 				return mock
 			},
 			wantErr: require.NoError,
@@ -940,6 +991,7 @@ func TestPutProject_ServeRequest_Gerrit(t *testing.T) {
 				mock.EXPECT().AddRemoteLink(testify.Anything, testify.Anything, testify.Anything).Return(nil)
 				mock.EXPECT().Push(testify.Anything, testify.Anything, testify.Anything, testify.Anything).Return(nil)
 				mock.EXPECT().GetCurrentBranchName(testify.Anything, testify.Anything).Return("main", nil)
+
 				return func(config gitproviderv2.Config) gitproviderv2.Git {
 					return mock
 				}
@@ -950,6 +1002,7 @@ func TestPutProject_ServeRequest_Gerrit(t *testing.T) {
 					Return(true, nil)
 				mock.EXPECT().SetHeadToBranch(int32(29418), "fake-ssh-key", "gerrit.example.com", "ci", "test-app", "main", testify.Anything).
 					Return(nil)
+
 				return mock
 			},
 			wantErr: require.NoError,
@@ -984,6 +1037,7 @@ func TestPutProject_ServeRequest_Gerrit(t *testing.T) {
 				mock.EXPECT().GetCurrentBranchName(testify.Anything, testify.Anything).Return("main", nil)
 				mock.EXPECT().AddRemoteLink(testify.Anything, testify.Anything, testify.Anything).Return(nil)
 				mock.EXPECT().Push(testify.Anything, testify.Anything, testify.Anything, testify.Anything).Return(nil)
+
 				return func(config gitproviderv2.Config) gitproviderv2.Git {
 					return mock
 				}
@@ -996,6 +1050,7 @@ func TestPutProject_ServeRequest_Gerrit(t *testing.T) {
 					Return(nil)
 				mock.EXPECT().SetHeadToBranch(int32(29418), "fake-ssh-key", "gerrit.example.com", "ci", "test-app", "main", testify.Anything).
 					Return(nil)
+
 				return mock
 			},
 			wantErr: require.NoError,
@@ -1024,6 +1079,7 @@ func TestPutProject_ServeRequest_Gerrit(t *testing.T) {
 				mock.EXPECT().Init(testify.Anything, testify.Anything).Return(nil)
 				mock.EXPECT().Commit(testify.Anything, testify.Anything, "Initial commit", testify.Anything).Return(nil)
 				mock.EXPECT().GetCurrentBranchName(testify.Anything, testify.Anything).Return("main", nil)
+
 				return func(config gitproviderv2.Config) gitproviderv2.Git {
 					return mock
 				}
@@ -1032,6 +1088,7 @@ func TestPutProject_ServeRequest_Gerrit(t *testing.T) {
 				mock := gerritMocks.NewMockClient(t)
 				mock.EXPECT().CheckProjectExist(int32(29418), "fake-ssh-key", "gerrit.example.com", "ci", "test-app", testify.Anything).
 					Return(false, errors.New("SSH connection failed"))
+
 				return mock
 			},
 			wantErr: require.Error,
@@ -1061,6 +1118,7 @@ func TestPutProject_ServeRequest_Gerrit(t *testing.T) {
 				mock.EXPECT().Init(testify.Anything, testify.Anything).Return(nil)
 				mock.EXPECT().Commit(testify.Anything, testify.Anything, "Initial commit", testify.Anything).Return(nil)
 				mock.EXPECT().GetCurrentBranchName(testify.Anything, testify.Anything).Return("main", nil)
+
 				return func(config gitproviderv2.Config) gitproviderv2.Git {
 					return mock
 				}
@@ -1071,6 +1129,7 @@ func TestPutProject_ServeRequest_Gerrit(t *testing.T) {
 					Return(false, nil)
 				mock.EXPECT().CreateProject(int32(29418), "fake-ssh-key", "gerrit.example.com", "ci", "test-app", testify.Anything).
 					Return(errors.New("permission denied"))
+
 				return mock
 			},
 			wantErr: require.Error,
@@ -1103,6 +1162,7 @@ func TestPutProject_ServeRequest_Gerrit(t *testing.T) {
 				mock.EXPECT().AddRemoteLink(testify.Anything, testify.Anything, testify.Anything).Return(nil)
 				mock.EXPECT().Push(testify.Anything, testify.Anything, testify.Anything, testify.Anything).
 					Return(errors.New("push rejected"))
+
 				return func(config gitproviderv2.Config) gitproviderv2.Git {
 					return mock
 				}
@@ -1113,6 +1173,7 @@ func TestPutProject_ServeRequest_Gerrit(t *testing.T) {
 					Return(false, nil)
 				mock.EXPECT().CreateProject(int32(29418), "fake-ssh-key", "gerrit.example.com", "ci", "test-app", testify.Anything).
 					Return(nil)
+
 				return mock
 			},
 			wantErr: require.Error,
@@ -1144,6 +1205,7 @@ func TestPutProject_ServeRequest_Gerrit(t *testing.T) {
 				mock.EXPECT().GetCurrentBranchName(testify.Anything, testify.Anything).Return("main", nil)
 				mock.EXPECT().AddRemoteLink(testify.Anything, testify.Anything, testify.Anything).Return(nil)
 				mock.EXPECT().Push(testify.Anything, testify.Anything, testify.Anything, testify.Anything).Return(nil)
+
 				return func(config gitproviderv2.Config) gitproviderv2.Git {
 					return mock
 				}
@@ -1156,6 +1218,7 @@ func TestPutProject_ServeRequest_Gerrit(t *testing.T) {
 					Return(nil)
 				mock.EXPECT().SetHeadToBranch(int32(29418), "fake-ssh-key", "gerrit.example.com", "ci", "test-app", "main", testify.Anything).
 					Return(errors.New("branch does not exist"))
+
 				return mock
 			},
 			wantErr: require.Error,
@@ -1187,6 +1250,7 @@ func TestPutProject_ServeRequest_Gerrit(t *testing.T) {
 				mock := gitmocks.NewMockGit(t)
 				mock.EXPECT().Clone(testify.Anything, "https://github.com/epmd-edp/go-go-beego.git", testify.Anything).
 					Return(errors.New("repository not found"))
+
 				return func(config gitproviderv2.Config) gitproviderv2.Git {
 					return mock
 				}
@@ -1219,6 +1283,7 @@ func TestPutProject_ServeRequest_Gerrit(t *testing.T) {
 			gitProviderFactory: func(t *testing.T) gitproviderv2.GitProviderFactory {
 				mock := gitmocks.NewMockGit(t)
 				mock.EXPECT().Init(testify.Anything, testify.Anything).Return(errors.New("failed to initialize git repository"))
+
 				return func(config gitproviderv2.Config) gitproviderv2.Git {
 					return mock
 				}

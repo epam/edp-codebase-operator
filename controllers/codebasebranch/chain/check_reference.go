@@ -45,7 +45,10 @@ func (c CheckReferenceExists) ServeRequest(ctx context.Context, codebaseBranch *
 		},
 		codebase,
 	); err != nil {
-		return c.processErr(codebaseBranch, fmt.Errorf("failed to get codebase %s: %w", codebaseBranch.Spec.CodebaseName, err))
+		return c.processErr(
+			codebaseBranch,
+			fmt.Errorf("failed to get codebase %s: %w", codebaseBranch.Spec.CodebaseName, err),
+		)
 	}
 
 	gitServer := &codebaseApi.GitServer{}

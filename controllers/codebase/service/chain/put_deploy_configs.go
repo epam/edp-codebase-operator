@@ -109,7 +109,13 @@ func (h *PutDeployConfigs) tryToPushConfigs(ctx context.Context, codebase *codeb
 	log.Info("Changes have been pushed")
 
 	// Update status
-	if err = updateGitStatusWithPatch(ctx, h.client, codebase, codebaseApi.SetupDeploymentTemplates, util.ProjectTemplatesPushedStatus); err != nil {
+	if err = updateGitStatusWithPatch(
+		ctx,
+		h.client,
+		codebase,
+		codebaseApi.SetupDeploymentTemplates,
+		util.ProjectTemplatesPushedStatus,
+	); err != nil {
 		return err
 	}
 

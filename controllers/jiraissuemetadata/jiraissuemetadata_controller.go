@@ -35,7 +35,11 @@ const (
 	errorStatus            = "error"
 )
 
-func NewReconcileJiraIssueMetadata(c client.Client, scheme *runtime.Scheme, log logr.Logger) *ReconcileJiraIssueMetadata {
+func NewReconcileJiraIssueMetadata(
+	c client.Client,
+	scheme *runtime.Scheme,
+	log logr.Logger,
+) *ReconcileJiraIssueMetadata {
 	return &ReconcileJiraIssueMetadata{
 		client: c,
 		scheme: scheme,
@@ -87,7 +91,10 @@ func (r *ReconcileJiraIssueMetadata) SetupWithManager(mgr ctrl.Manager) error {
 // +kubebuilder:rbac:groups=v2.edp.epam.com,resources=jiraissuemetadatas/finalizers,verbs=update
 
 // Reconcile reads that state of the cluster for a JiraIssueMetadata object and makes changes based on the state.
-func (r *ReconcileJiraIssueMetadata) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+func (r *ReconcileJiraIssueMetadata) Reconcile(
+	ctx context.Context,
+	request reconcile.Request,
+) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
 	log.Info("Reconciling JiraIssueMetadata")
 
@@ -97,7 +104,11 @@ func (r *ReconcileJiraIssueMetadata) Reconcile(ctx context.Context, request reco
 			return reconcile.Result{}, nil
 		}
 
-		return reconcile.Result{}, fmt.Errorf("failed to fetch JiraIssueMetadata resource %q: %w", request.NamespacedName, err)
+		return reconcile.Result{}, fmt.Errorf(
+			"failed to fetch JiraIssueMetadata resource %q: %w",
+			request.NamespacedName,
+			err,
+		)
 	}
 
 	defer r.updateStatus(ctx, i)
@@ -158,6 +169,7 @@ func lookup() string {
 // setFailureCount increments failure count and returns delay for next reconciliation.
 func (r *ReconcileJiraIssueMetadata) setFailureCount(metadata *codebaseApi.JiraIssueMetadata) time.Duration {
 	const timeoutDurationStep = 500 * time.Millisecond
+
 	timeout := util.GetTimeout(metadata.Status.FailureCount, timeoutDurationStep)
 
 	r.log.V(2).Info("wait for next reconciliation", "next reconciliation in", timeout)
@@ -216,7 +228,10 @@ func (r *ReconcileJiraIssueMetadata) initJiraClient(js *codebaseApi.JiraServer) 
 	return c, nil
 }
 
-func (r *ReconcileJiraIssueMetadata) getJiraServer(ctx context.Context, metadata *codebaseApi.JiraIssueMetadata) (*codebaseApi.JiraServer, error) {
+func (r *ReconcileJiraIssueMetadata) getJiraServer(
+	ctx context.Context,
+	metadata *codebaseApi.JiraIssueMetadata,
+) (*codebaseApi.JiraServer, error) {
 	ref, err := util.GetOwnerReference(codebaseKind, metadata.GetOwnerReferences())
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch OwnerReference: %w", err)

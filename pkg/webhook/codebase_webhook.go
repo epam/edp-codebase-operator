@@ -47,7 +47,10 @@ func (r *CodebaseValidationWebhook) SetupWebhookWithManager(mgr ctrl.Manager) er
 var _ webhook.CustomValidator = &CodebaseValidationWebhook{}
 
 // ValidateCreate is a webhook for validating the creation of the Codebase CR.
-func (r *CodebaseValidationWebhook) ValidateCreate(ctx context.Context, obj runtime.Object) (warnings admission.Warnings, err error) {
+func (r *CodebaseValidationWebhook) ValidateCreate(
+	ctx context.Context,
+	obj runtime.Object,
+) (warnings admission.Warnings, err error) {
 	req, err := admission.RequestFromContext(ctx)
 	if err != nil {
 		return nil, apierrors.NewBadRequest(fmt.Errorf("expected admission.Request in ctx: %w", err).Error())
@@ -96,7 +99,10 @@ func (r *CodebaseValidationWebhook) ValidateCreate(ctx context.Context, obj runt
 }
 
 // ValidateUpdate is a webhook for validating the updating of the Codebase CR.
-func (r *CodebaseValidationWebhook) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (warnings admission.Warnings, err error) {
+func (r *CodebaseValidationWebhook) ValidateUpdate(
+	ctx context.Context,
+	oldObj, newObj runtime.Object,
+) (warnings admission.Warnings, err error) {
 	req, err := admission.RequestFromContext(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("expected admission.Request in ctx: %w", err)
@@ -123,7 +129,10 @@ func (r *CodebaseValidationWebhook) ValidateUpdate(ctx context.Context, oldObj, 
 }
 
 // ValidateDelete is a webhook for validating the deleting of the Codebase CR.
-func (r *CodebaseValidationWebhook) ValidateDelete(ctx context.Context, obj runtime.Object) (warnings admission.Warnings, err error) {
+func (r *CodebaseValidationWebhook) ValidateDelete(
+	ctx context.Context,
+	obj runtime.Object,
+) (warnings admission.Warnings, err error) {
 	req, err := admission.RequestFromContext(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("expected admission.Request in ctx: %w", err)

@@ -75,18 +75,18 @@ type GitProvider struct {
 }
 
 // NewGitProvider creates a new GitProvider with the given configuration.
-func NewGitProvider(config Config) *GitProvider {
+func NewGitProvider(cfg Config) *GitProvider {
 	// Set defaults
-	if config.SSHUser == "" {
-		config.SSHUser = defaultSSHUser
+	if cfg.SSHUser == "" {
+		cfg.SSHUser = defaultSSHUser
 	}
 
-	if config.SSHPort == 0 {
-		config.SSHPort = defaultSSHPort
+	if cfg.SSHPort == 0 {
+		cfg.SSHPort = defaultSSHPort
 	}
 
 	return &GitProvider{
-		config: config,
+		config: cfg,
 	}
 }
 

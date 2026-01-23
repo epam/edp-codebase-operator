@@ -44,7 +44,11 @@ func (h ProcessNewVersion) ServeRequest(ctx context.Context, codebaseBranch *cod
 	return nil
 }
 
-func (h ProcessNewVersion) processNewVersion(ctx context.Context, codebaseBranch *codebaseApi.CodebaseBranch, codebase *codebaseApi.Codebase) error {
+func (h ProcessNewVersion) processNewVersion(
+	ctx context.Context,
+	codebaseBranch *codebaseApi.CodebaseBranch,
+	codebase *codebaseApi.Codebase,
+) error {
 	log := ctrl.LoggerFrom(ctx)
 
 	if !codebase.Spec.IsVersionTypeSemver() {

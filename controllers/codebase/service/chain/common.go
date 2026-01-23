@@ -28,7 +28,12 @@ type GitRepositoryContext struct {
 	WorkDir         string
 }
 
-func setIntermediateSuccessFields(ctx context.Context, c client.Client, cb *codebaseApi.Codebase, action codebaseApi.ActionType) error {
+func setIntermediateSuccessFields(
+	ctx context.Context,
+	c client.Client,
+	cb *codebaseApi.Codebase,
+	action codebaseApi.ActionType,
+) error {
 	// Set WebHookRef from WebHookID for backward compatibility.
 	webHookRef := cb.Status.WebHookRef
 	if webHookRef == "" && cb.Status.WebHookID != 0 {
@@ -81,6 +86,7 @@ func updateGitStatusWithPatch(
 	// Apply patch to status subresource
 	if err := c.Status().Patch(ctx, codebase, patch); err != nil {
 		setFailedFields(codebase, action, err.Error())
+
 		return fmt.Errorf("failed to patch git status to %s for codebase %s: %w",
 			gitStatus, codebase.Name, err)
 	}
@@ -113,7 +119,12 @@ func PrepareGitRepository(
 		return nil, err
 	}
 
-	gitProvider := gitProviderFactory(gitproviderv2.NewConfigFromGitServerAndSecret(gitRepoCtx.GitServer, gitRepoCtx.GitServerSecret))
+	gitProvider := gitProviderFactory(
+		gitproviderv2.NewConfigFromGitServerAndSecret(
+			gitRepoCtx.GitServer,
+			gitRepoCtx.GitServerSecret,
+		),
+	)
 
 	if !util.DoesDirectoryExist(gitRepoCtx.WorkDir) || util.IsDirectoryEmpty(gitRepoCtx.WorkDir) {
 		log.Info("Start cloning repository", "url", gitRepoCtx.RepoGitUrl)

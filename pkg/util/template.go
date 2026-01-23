@@ -162,7 +162,12 @@ func CopyHelmChartTemplates(deploymentScript, templatesDest, assetsDir string, c
 	return nil
 }
 
-func CopyRpmPackageTemplates(ctx context.Context, templatesDest, assetsDir string, config *model.ConfigGoTemplating) error {
+func CopyRpmPackageTemplates(
+	ctx context.Context,
+	templatesDest,
+	assetsDir string,
+	config *model.ConfigGoTemplating,
+) error {
 	l := ctrl.LoggerFrom(ctx)
 	l.Info("Start handling RPM Package templates")
 
@@ -171,7 +176,10 @@ func CopyRpmPackageTemplates(ctx context.Context, templatesDest, assetsDir strin
 	rpmlintTemplatePath := path.Join(assetsDir, "templates/applications/rpm-package/.rpmlintrc.toml")
 
 	specTemplatePath := path.Join(assetsDir, fmt.Sprintf("templates/applications/rpm-package/%s/spec.tmpl", config.Lang))
-	serviceTemplatePath := path.Join(assetsDir, fmt.Sprintf("templates/applications/rpm-package/%s/service.tmpl", config.Lang))
+	serviceTemplatePath := path.Join(
+		assetsDir,
+		fmt.Sprintf("templates/applications/rpm-package/%s/service.tmpl", config.Lang),
+	)
 
 	if _, err := os.Stat(specTemplatePath); os.IsNotExist(err) {
 		specTemplatePath = path.Join(assetsDir, "templates/applications/rpm-package/default/spec.tmpl")
@@ -227,7 +235,13 @@ func createAndRenderTemplate(destPath, templatePath, templateName string, config
 	return renderTemplate(destFile, templatePath, templateName, config)
 }
 
-func CopyTemplate(ctx context.Context, deploymentScript, workDir, assetsDir string, cf *model.ConfigGoTemplating) error {
+func CopyTemplate(
+	ctx context.Context,
+	deploymentScript,
+	workDir,
+	assetsDir string,
+	cf *model.ConfigGoTemplating,
+) error {
 	switch deploymentScript {
 	case HelmChartDeploymentScriptType:
 		templatesDest := path.Join(workDir, "deploy-templates")

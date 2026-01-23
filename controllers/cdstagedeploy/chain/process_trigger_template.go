@@ -35,7 +35,14 @@ func NewProcessTriggerTemplate(
 }
 
 func (h *ProcessTriggerTemplate) ServeRequest(ctx context.Context, stageDeploy *codebaseApi.CDStageDeploy) error {
-	log := ctrl.LoggerFrom(ctx).WithValues("stage", stageDeploy.Spec.Stage, "pipeline", stageDeploy.Spec.Pipeline, "status", stageDeploy.Status.Status)
+	log := ctrl.LoggerFrom(ctx).WithValues(
+		"stage",
+		stageDeploy.Spec.Stage,
+		"pipeline",
+		stageDeploy.Spec.Pipeline,
+		"status",
+		stageDeploy.Status.Status,
+	)
 
 	if skipPipelineRunCreation(stageDeploy) {
 		log.Info("Skip processing TriggerTemplate for auto-deploy.")
@@ -45,10 +52,19 @@ func (h *ProcessTriggerTemplate) ServeRequest(ctx context.Context, stageDeploy *
 
 	log.Info("Start processing TriggerTemplate for auto-deploy.")
 
-	pipeline, stage, rawResource, err := getResourcesForPipelineRun(ctx, stageDeploy, h.k8sClient, h.triggerTemplateManager)
+	pipeline, stage, rawResource, err := getResourcesForPipelineRun(
+		ctx,
+		stageDeploy,
+		h.k8sClient,
+		h.triggerTemplateManager,
+	)
 	if err != nil {
 		if errors.Is(err, tektoncd.ErrEmptyTriggerTemplateResources) {
-			log.Info("No resource templates found in the trigger template. Skip processing.", "triggertemplate", stage.Spec.TriggerTemplate)
+			log.Info(
+				"No resource templates found in the trigger template. Skip processing.",
+				"triggertemplate",
+				stage.Spec.TriggerTemplate,
+			)
 
 			stageDeploy.Status.Status = codebaseApi.CDStageDeployStatusCompleted
 
@@ -150,7 +166,11 @@ func getResourcesForPipelineRun(
 		return pipeline, nil, nil, fmt.Errorf("failed to get Stage: %w", err)
 	}
 
-	rawResource, err := triggerTemplateManager.GetRawResourceFromTriggerTemplate(ctx, stage.Spec.TriggerTemplate, stageDeploy.Namespace)
+	rawResource, err := triggerTemplateManager.GetRawResourceFromTriggerTemplate(
+		ctx,
+		stage.Spec.TriggerTemplate,
+		stageDeploy.Namespace,
+	)
 	if err != nil {
 		return pipeline, stage, nil, fmt.Errorf("failed to get raw resource from TriggerTemplate: %w", err)
 	}

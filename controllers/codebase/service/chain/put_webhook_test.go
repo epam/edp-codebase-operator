@@ -1,3 +1,4 @@
+// nolint:dupl // Duplicate test setup is acceptable in tests for readability
 package chain
 
 import (
@@ -356,11 +357,17 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 				fakeIngress(gitserver.GenerateIngressName("test-git-server"), "fake.gitlab.com"),
 			},
 			responder: func(t *testing.T) {
-				getHookResponder, err := httpmock.NewJsonResponder(http.StatusNotFound, map[string]string{"message": "404 Not Found"})
+				getHookResponder, err := httpmock.NewJsonResponder(
+					http.StatusNotFound,
+					map[string]string{"message": "404 Not Found"},
+				)
 				require.NoError(t, err)
 				httpmock.RegisterRegexpResponder(http.MethodGet, regexp.MustCompile(`.*999$`), getHookResponder)
 
-				getHooksResponder, err := httpmock.NewJsonResponder(http.StatusOK, []map[string]interface{}{{"id": 1, "url": "https://fake.gitlab.com"}})
+				getHooksResponder, err := httpmock.NewJsonResponder(
+					http.StatusOK,
+					[]map[string]interface{}{{"id": 1, "url": "https://fake.gitlab.com"}},
+				)
 				require.NoError(t, err)
 				httpmock.RegisterRegexpResponder(http.MethodGet, regexp.MustCompile(`.*hooks$`), getHooksResponder)
 			},
@@ -529,7 +536,10 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 				fakeIngress(gitserver.GenerateIngressName("test-git-server"), "fake.gitlab.com"),
 			},
 			responder: func(t *testing.T) {
-				getHookResponder, err := httpmock.NewJsonResponder(http.StatusNotFound, map[string]string{"message": "404 Not Found"})
+				getHookResponder, err := httpmock.NewJsonResponder(
+					http.StatusNotFound,
+					map[string]string{"message": "404 Not Found"},
+				)
 				require.NoError(t, err)
 				httpmock.RegisterRegexpResponder(http.MethodGet, regexp.MustCompile(`.*999$`), getHookResponder)
 
@@ -622,7 +632,10 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 				},
 			},
 			responder: func(t *testing.T) {
-				getResponder, err := httpmock.NewJsonResponder(http.StatusBadRequest, map[string]string{"message": "400 Bad Request"})
+				getResponder, err := httpmock.NewJsonResponder(
+					http.StatusBadRequest,
+					map[string]string{"message": "400 Bad Request"},
+				)
 				require.NoError(t, err)
 				httpmock.RegisterRegexpResponder(http.MethodGet, fakeUrlRegexp, getResponder)
 			},

@@ -15,9 +15,15 @@ const (
 	LabelCodebaseName = "app.edp.epam.com/codebaseName"
 )
 
-func AddCodebaseLabel(ctx context.Context, k8sClient client.Client, codebaseBranch *codebaseApi.CodebaseBranch, codebaseName string) error {
+func AddCodebaseLabel(
+	ctx context.Context,
+	k8sClient client.Client,
+	codebaseBranch *codebaseApi.CodebaseBranch,
+	codebaseName string,
+) error {
 	labelsToSet := map[string]string{
-		LabelCodebaseName:           codebaseName, // Set it for backward compatibility. TODO: remove and use only codebaseApi.CodebaseLabel.
+		// Set it for backward compatibility. TODO: remove and use only codebaseApi.CodebaseLabel.
+		LabelCodebaseName:           codebaseName,
 		codebaseApi.CodebaseLabel:   codebaseName,
 		codebaseApi.BranchHashLabel: MakeGitBranchHash(codebaseBranch.Spec.BranchName),
 	}

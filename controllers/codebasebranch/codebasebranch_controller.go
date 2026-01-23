@@ -194,7 +194,11 @@ func (r *ReconcileCodebaseBranch) Reconcile(ctx context.Context, request reconci
 	return reconcile.Result{}, nil
 }
 
-func (r *ReconcileCodebaseBranch) setSuccessStatus(ctx context.Context, cb *codebaseApi.CodebaseBranch, action codebaseApi.ActionType) error {
+func (r *ReconcileCodebaseBranch) setSuccessStatus(
+	ctx context.Context,
+	cb *codebaseApi.CodebaseBranch,
+	action codebaseApi.ActionType,
+) error {
 	cb.Status = codebaseApi.CodebaseBranchStatus{
 		LastTimeUpdated:     metaV1.Now(),
 		Username:            "system",
@@ -298,6 +302,7 @@ func removeDirectoryIfExists(codebaseName, branchName, namespace string) error {
 // setFailureCount increments failure count and returns delay for next reconciliation.
 func (r *ReconcileCodebaseBranch) setFailureCount(c *codebaseApi.CodebaseBranch) time.Duration {
 	const defaultDuration = 10 * time.Second
+
 	timeout := util.GetTimeout(c.Status.FailureCount, defaultDuration)
 
 	r.log.V(2).Info("wait for next reconciliation", "next reconciliation in", timeout)

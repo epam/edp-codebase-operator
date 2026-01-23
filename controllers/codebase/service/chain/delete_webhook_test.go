@@ -39,6 +39,66 @@ func TestDeleteWebHook_ServeRequest(t *testing.T) {
 	gitURL := "test-owner/test-repo"
 	fakeUrlRegexp := regexp.MustCompile(`.*`)
 
+	makeSuccessTestCase := func(name string, provider string) struct {
+		name       string
+		codebase   *codebaseApi.Codebase
+		k8sObjects []client.Object
+		responder  func(t *testing.T)
+		hasError   bool
+	} {
+		return struct {
+			name       string
+			codebase   *codebaseApi.Codebase
+			k8sObjects []client.Object
+			responder  func(t *testing.T)
+			hasError   bool
+		}{
+			name: name,
+			codebase: &codebaseApi.Codebase{
+				ObjectMeta: metaV1.ObjectMeta{
+					Namespace: namespace,
+					Name:      "test-codebase",
+				},
+				Spec: codebaseApi.CodebaseSpec{
+					GitServer:  "test-git-server",
+					GitUrlPath: gitURL,
+					CiTool:     util.CITekton,
+				},
+				Status: codebaseApi.CodebaseStatus{
+					WebHookID: 1,
+				},
+			},
+			k8sObjects: []client.Object{
+				&codebaseApi.GitServer{
+					ObjectMeta: metaV1.ObjectMeta{
+						Namespace: namespace,
+						Name:      "test-git-server",
+					},
+					Spec: codebaseApi.GitServerSpec{
+						GitHost:          "fake.gitlab.com",
+						GitUser:          "git",
+						HttpsPort:        443,
+						NameSshKeySecret: "test-secret",
+						GitProvider:      provider,
+					},
+				},
+				&coreV1.Secret{
+					ObjectMeta: metaV1.ObjectMeta{
+						Namespace: namespace,
+						Name:      "test-secret",
+					},
+					Data: map[string][]byte{
+						util.GitServerSecretTokenField: []byte("test-token"),
+					},
+				},
+			},
+			responder: func(t *testing.T) {
+				responder := httpmock.NewStringResponder(http.StatusOK, "")
+				httpmock.RegisterRegexpResponder(http.MethodDelete, fakeUrlRegexp, responder)
+			},
+		}
+	}
+
 	tests := []struct {
 		name       string
 		codebase   *codebaseApi.Codebase
@@ -46,96 +106,8 @@ func TestDeleteWebHook_ServeRequest(t *testing.T) {
 		responder  func(t *testing.T)
 		hasError   bool
 	}{
-		{
-			name: "success gitlab",
-			codebase: &codebaseApi.Codebase{
-				ObjectMeta: metaV1.ObjectMeta{
-					Namespace: namespace,
-					Name:      "test-codebase",
-				},
-				Spec: codebaseApi.CodebaseSpec{
-					GitServer:  "test-git-server",
-					GitUrlPath: gitURL,
-					CiTool:     util.CITekton,
-				},
-				Status: codebaseApi.CodebaseStatus{
-					WebHookID: 1,
-				},
-			},
-			k8sObjects: []client.Object{
-				&codebaseApi.GitServer{
-					ObjectMeta: metaV1.ObjectMeta{
-						Namespace: namespace,
-						Name:      "test-git-server",
-					},
-					Spec: codebaseApi.GitServerSpec{
-						GitHost:          "fake.gitlab.com",
-						GitUser:          "git",
-						HttpsPort:        443,
-						NameSshKeySecret: "test-secret",
-						GitProvider:      codebaseApi.GitProviderGitlab,
-					},
-				},
-				&coreV1.Secret{
-					ObjectMeta: metaV1.ObjectMeta{
-						Namespace: namespace,
-						Name:      "test-secret",
-					},
-					Data: map[string][]byte{
-						util.GitServerSecretTokenField: []byte("test-token"),
-					},
-				},
-			},
-			responder: func(t *testing.T) {
-				responder := httpmock.NewStringResponder(http.StatusOK, "")
-				httpmock.RegisterRegexpResponder(http.MethodDelete, fakeUrlRegexp, responder)
-			},
-		},
-		{
-			name: "success github",
-			codebase: &codebaseApi.Codebase{
-				ObjectMeta: metaV1.ObjectMeta{
-					Namespace: namespace,
-					Name:      "test-codebase",
-				},
-				Spec: codebaseApi.CodebaseSpec{
-					GitServer:  "test-git-server",
-					GitUrlPath: gitURL,
-					CiTool:     util.CITekton,
-				},
-				Status: codebaseApi.CodebaseStatus{
-					WebHookID: 1,
-				},
-			},
-			k8sObjects: []client.Object{
-				&codebaseApi.GitServer{
-					ObjectMeta: metaV1.ObjectMeta{
-						Namespace: namespace,
-						Name:      "test-git-server",
-					},
-					Spec: codebaseApi.GitServerSpec{
-						GitHost:          "fake.gitlab.com",
-						GitUser:          "git",
-						HttpsPort:        443,
-						NameSshKeySecret: "test-secret",
-						GitProvider:      codebaseApi.GitProviderGithub,
-					},
-				},
-				&coreV1.Secret{
-					ObjectMeta: metaV1.ObjectMeta{
-						Namespace: namespace,
-						Name:      "test-secret",
-					},
-					Data: map[string][]byte{
-						util.GitServerSecretTokenField: []byte("test-token"),
-					},
-				},
-			},
-			responder: func(t *testing.T) {
-				responder := httpmock.NewStringResponder(http.StatusOK, "")
-				httpmock.RegisterRegexpResponder(http.MethodDelete, fakeUrlRegexp, responder)
-			},
-		},
+		makeSuccessTestCase("success gitlab", codebaseApi.GitProviderGitlab),
+		makeSuccessTestCase("success github", codebaseApi.GitProviderGithub),
 		{
 			name: "success with empty webhook id",
 			codebase: &codebaseApi.Codebase{
@@ -412,7 +384,14 @@ func TestDeleteWebHook_ServeRequest(t *testing.T) {
 			s := NewDeleteWebHook(k8sClient, restyClient, logger)
 
 			assert.NoError(t, s.ServeRequest(ctrl.LoggerInto(context.Background(), logger), tt.codebase))
-			assert.Equalf(t, tt.hasError, loggerSink.LastError() != nil, "expected error: %v, got: %v", tt.hasError, loggerSink.LastError())
+			assert.Equalf(
+				t,
+				tt.hasError,
+				loggerSink.LastError() != nil,
+				"expected error: %v, got: %v",
+				tt.hasError,
+				loggerSink.LastError(),
+			)
 		})
 	}
 }

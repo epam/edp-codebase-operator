@@ -60,7 +60,12 @@ func TestPutCodebaseImageStream_ServeRequest(t *testing.T) {
 			},
 			wantErr: require.NoError,
 			want: func(t *testing.T, k8sCl client.Client) {
-				cis, err := codebaseimagestream.GetCodebaseImageStreamByCodebaseBaseBranchName(context.Background(), k8sCl, "test-branch", "default")
+				cis, err := codebaseimagestream.GetCodebaseImageStreamByCodebaseBaseBranchName(
+					context.Background(),
+					k8sCl,
+					"test-branch",
+					"default",
+				)
 				require.NoError(t, err)
 
 				require.NotNil(t, metav1.GetControllerOf(cis))
@@ -148,7 +153,12 @@ func TestPutCodebaseImageStream_ServeRequest(t *testing.T) {
 			},
 			wantErr: require.NoError,
 			want: func(t *testing.T, k8sCl client.Client) {
-				cis, err := codebaseimagestream.GetCodebaseImageStreamByCodebaseBaseBranchName(context.Background(), k8sCl, "test-branch", "default")
+				cis, err := codebaseimagestream.GetCodebaseImageStreamByCodebaseBaseBranchName(
+					context.Background(),
+					k8sCl,
+					"test-branch",
+					"default",
+				)
 				require.NoError(t, err)
 
 				require.Contains(t, cis.Labels, codebaseApi.CodebaseBranchLabel)

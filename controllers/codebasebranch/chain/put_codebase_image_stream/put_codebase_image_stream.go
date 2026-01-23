@@ -77,11 +77,19 @@ func (h PutCodebaseImageStream) getDockerRegistryUrl(ctx context.Context, namesp
 	}
 
 	if config.KrciConfigContainerRegistryHost == "" {
-		return "", fmt.Errorf("%s is not set in %s config map", platform.KrciConfigContainerRegistryHost, platform.KrciConfigMap)
+		return "", fmt.Errorf(
+			"%s is not set in %s config map",
+			platform.KrciConfigContainerRegistryHost,
+			platform.KrciConfigMap,
+		)
 	}
 
 	if config.KrciConfigContainerRegistrySpace == "" {
-		return "", fmt.Errorf("%s is not set in %s config map", platform.KrciConfigContainerRegistrySpace, platform.KrciConfigMap)
+		return "", fmt.Errorf(
+			"%s is not set in %s config map",
+			platform.KrciConfigContainerRegistrySpace,
+			platform.KrciConfigMap,
+		)
 	}
 
 	return fmt.Sprintf("%s/%s", config.KrciConfigContainerRegistryHost, config.KrciConfigContainerRegistrySpace), nil
@@ -175,11 +183,15 @@ func (h PutCodebaseImageStream) getCodebaseImageStream(
 	// Get CodebaseImageStream by name old version for backward compatibility.
 	// TODO: remove this in the next releases.
 	cis = &codebaseApi.CodebaseImageStream{}
+
 	err = h.Client.Get(ctx, types.NamespacedName{
 		Namespace: codebaseBranch.Namespace,
-		Name:      fmt.Sprintf("%v-%v", codebaseBranch.Spec.CodebaseName, ProcessNameToK8sConvention(codebaseBranch.Spec.BranchName)),
+		Name: fmt.Sprintf(
+			"%v-%v",
+			codebaseBranch.Spec.CodebaseName,
+			ProcessNameToK8sConvention(codebaseBranch.Spec.BranchName),
+		),
 	}, cis)
-
 	if err != nil {
 		return nil, fmt.Errorf("failed to get CodebaseImageStream: %w", err)
 	}
@@ -202,7 +214,10 @@ func setFailedFields(cb *codebaseApi.CodebaseBranch, a codebaseApi.ActionType, m
 	}
 }
 
-func (h PutCodebaseImageStream) setIntermediateSuccessFields(cb *codebaseApi.CodebaseBranch, action codebaseApi.ActionType) error {
+func (h PutCodebaseImageStream) setIntermediateSuccessFields(
+	cb *codebaseApi.CodebaseBranch,
+	action codebaseApi.ActionType,
+) error {
 	ctx := context.Background()
 	cb.Status = codebaseApi.CodebaseBranchStatus{
 		Status:              model.StatusInit,

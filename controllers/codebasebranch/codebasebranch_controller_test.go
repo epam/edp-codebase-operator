@@ -256,7 +256,12 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldPassWithCreatingCIS(t *testing.
 	assert.NoError(t, err)
 	assert.Equal(t, time.Duration(0), res.RequeueAfter)
 
-	cisTocehck, err := codebaseimagestream.GetCodebaseImageStreamByCodebaseBaseBranchName(context.Background(), fakeCl, cb.Name, cb.Namespace)
+	cisTocehck, err := codebaseimagestream.GetCodebaseImageStreamByCodebaseBaseBranchName(
+		context.Background(),
+		fakeCl,
+		cb.Name,
+		cb.Namespace,
+	)
 	require.NoError(t, err)
 	assert.Equal(t, "stub-url/stub-space/NewCodebase", cisTocehck.Spec.ImageName)
 

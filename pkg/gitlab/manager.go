@@ -30,8 +30,8 @@ type manager struct {
 }
 
 // NewManager creates a new GitLab CI manager.
-func NewManager(client client.Client) Manager {
-	return &manager{client: client}
+func NewManager(k8sClient client.Client) Manager {
+	return &manager{client: k8sClient}
 }
 
 // InjectGitLabCIConfig creates a .gitlab-ci.yml file from ConfigMap template if it doesn't exist.
@@ -63,8 +63,8 @@ func (m *manager) getGitLabCITemplate(ctx context.Context, codebase *codebaseApi
 
 	// Try specific language-buildtool combination first
 	configMapName := fmt.Sprintf("gitlab-ci-%s-%s", lang, buildTool)
-	template, err := m.getTemplateFromConfigMap(ctx, configMapName, codebase.Namespace)
 
+	template, err := m.getTemplateFromConfigMap(ctx, configMapName, codebase.Namespace)
 	if err == nil {
 		return template, nil
 	}
@@ -81,11 +81,11 @@ func (m *manager) getGitLabCITemplate(ctx context.Context, codebase *codebaseApi
 // getTemplateFromConfigMap retrieves template content from a specific ConfigMap.
 func (m *manager) getTemplateFromConfigMap(ctx context.Context, configMapName, namespace string) (string, error) {
 	configMap := &corev1.ConfigMap{}
+
 	err := m.client.Get(ctx, client.ObjectKey{
 		Name:      configMapName,
 		Namespace: namespace,
 	}, configMap)
-
 	if err != nil {
 		return "", err
 	}

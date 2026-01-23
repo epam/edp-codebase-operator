@@ -51,7 +51,7 @@ func (r *ReconcileCodebaseImageStream) SetupWithManager(mgr ctrl.Manager) error 
 				return true
 			}
 
-			if !reflect.DeepEqual(oo.Spec.Tags, on.Spec.Tags) && on.ObjectMeta.Labels != nil {
+			if !reflect.DeepEqual(oo.Spec.Tags, on.Spec.Tags) && on.Labels != nil {
 				return true
 			}
 
@@ -76,9 +76,18 @@ func (r *ReconcileCodebaseImageStream) SetupWithManager(mgr ctrl.Manager) error 
 // +kubebuilder:rbac:groups=v2.edp.epam.com,namespace=placeholder,resources=codebaseimagestreams/finalizers,verbs=update
 
 // Reconcile reads that state of the cluster for a CodebaseImageStream object and makes changes based on the state.
-func (r *ReconcileCodebaseImageStream) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	log := r.log.WithValues("type", "CodebaseImageStream", "Request.Namespace", request.Namespace,
-		"Request.Name", request.Name)
+func (r *ReconcileCodebaseImageStream) Reconcile(
+	ctx context.Context,
+	request reconcile.Request,
+) (reconcile.Result, error) {
+	log := r.log.WithValues(
+		"type",
+		"CodebaseImageStream",
+		"Request.Namespace",
+		request.Namespace,
+		"Request.Name",
+		request.Name,
+	)
 	log.Info("Reconciling has been started.")
 
 	i := &codebaseApi.CodebaseImageStream{}

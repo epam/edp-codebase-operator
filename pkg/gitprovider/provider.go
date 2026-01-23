@@ -119,7 +119,8 @@ func GetGitProviderAPIURL(gitServer *codebaseApi.GitServer) string {
 
 	if gitServer.Spec.GitProvider == codebaseApi.GitProviderGithub {
 		// GitHub API url is different for enterprise and other versions
-		// see: https://docs.github.com/en/get-started/learning-about-github/about-versions-of-github-docs#github-enterprise-server
+		// see:
+		// https://docs.github.com/en/get-started/learning-about-github/about-versions-of-github-docs#github-enterprise-server
 		if url == "https://github.com" {
 			return "https://api.github.com"
 		}

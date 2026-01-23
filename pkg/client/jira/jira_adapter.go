@@ -161,7 +161,12 @@ func (a *GoJiraAdapter) CreateIssueLink(issueId, title, link string) error {
 		},
 	}
 
-	req, err := a.client.NewRequestWithContext(ctx, "POST", fmt.Sprintf("rest/api/2/issue/%v/remotelink", issueId), remoteLink)
+	req, err := a.client.NewRequestWithContext(
+		ctx,
+		"POST",
+		fmt.Sprintf("rest/api/2/issue/%v/remotelink", issueId),
+		remoteLink,
+	)
 	if err != nil {
 		return fmt.Errorf("failed to create HTTP request to jira: %w", err)
 	}
@@ -179,7 +184,11 @@ func (a *GoJiraAdapter) CreateIssueLink(issueId, title, link string) error {
 // GetIssueTypeMeta returns issue type meta for given project and issue type.
 // Map key is issue type meta fieldId, value is IssueTypeMeta.
 // API doc: https://docs.atlassian.com/software/jira/docs/api/REST/9.4.5/#api/2/issue-getCreateIssueMetaFields.
-func (a *GoJiraAdapter) GetIssueTypeMeta(ctx context.Context, projectID, issueTypeID string) (map[string]IssueTypeMeta, error) {
+func (a *GoJiraAdapter) GetIssueTypeMeta(
+	ctx context.Context,
+	projectID,
+	issueTypeID string,
+) (map[string]IssueTypeMeta, error) {
 	u := url.URL{
 		Path: fmt.Sprintf("rest/api/2/issue/createmeta/%s/issuetypes/%s", projectID, issueTypeID),
 	}

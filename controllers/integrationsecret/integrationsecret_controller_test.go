@@ -199,7 +199,8 @@ func TestReconcileIntegrationSecret_Reconcile(t *testing.T) {
 						},
 						Type: corev1.SecretTypeDockerConfigJson,
 						Data: map[string][]byte{
-							".dockerconfigjson": []byte(`{"auths":{"` + server.URL + `/success":{"username":"user1", "password":"password1"}}}`),
+							".dockerconfigjson": []byte(`{"auths":{"` + server.URL +
+								`/success":{"username":"user1", "password":"password1"}}}`),
 						},
 					},
 				).Build()
@@ -225,7 +226,8 @@ func TestReconcileIntegrationSecret_Reconcile(t *testing.T) {
 						},
 						Type: corev1.SecretTypeDockerConfigJson,
 						Data: map[string][]byte{
-							".dockerconfigjson": []byte(`{"auths":{"` + server.URL + `/fail":{"username":"user1", "password":"password1"}}}`),
+							".dockerconfigjson": []byte(`{"auths":{"` + server.URL +
+								`/fail":{"username":"user1", "password":"password1"}}}`),
 						},
 					},
 				).Build()
@@ -277,7 +279,9 @@ func TestReconcileIntegrationSecret_Reconcile(t *testing.T) {
 						},
 						Type: corev1.SecretTypeDockerConfigJson,
 						Data: map[string][]byte{
-							".dockerconfigjson": []byte(`{"auths":{"https://index.docker.io/v1/":{"username":"user1", "password":"password1"}}}`),
+							".dockerconfigjson": []byte(
+								`{"auths":{"https://index.docker.io/v1/":{"username":"user1", "password":"password1"}}}`,
+							),
 						},
 					},
 				).Build()

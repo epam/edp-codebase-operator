@@ -31,7 +31,12 @@ func TestPutTagValue_ServeRequest(t *testing.T) {
 			metadata: &codebaseApi.JiraIssueMetadata{
 				Spec: codebaseApi.JiraIssueMetadataSpec{
 					Tickets: []string{"TEST-1"},
-					Payload: "{\"components\":\"java11-mvn-create\",\"fixVersions\":\"0.0.1-snapshot-java11\",\"labels\":\"java11\",\"issuesLinks\":[{\"ticket\":\"EPMDEDPSUP-5510\",\"title\":\"[EPMDEDPSUP-5510]: test\",\"url\": \"https://test.com\"}]}",
+					Payload: "{\"components\":\"java11-mvn-create\"," +
+						"\"fixVersions\":\"0.0.1-snapshot-java11\"," +
+						"\"labels\":\"java11\"," +
+						"\"issuesLinks\":[{\"ticket\":\"EPMDEDPSUP-5510\"," +
+						"\"title\":\"[EPMDEDPSUP-5510]: test\"," +
+						"\"url\": \"https://test.com\"}]}",
 				},
 			},
 			client: func(t *testing.T) jira.Client {
@@ -78,7 +83,12 @@ func TestPutTagValue_ServeRequest(t *testing.T) {
 			metadata: &codebaseApi.JiraIssueMetadata{
 				Spec: codebaseApi.JiraIssueMetadataSpec{
 					Tickets: []string{"TEST-1"},
-					Payload: "{\"components\":\"java11-mvn-create\",\"fixVersions\":\"0.0.1-snapshot-java11\",\"labels\":\"java11\",\"issuesLinks\":[{\"ticket\":\"EPMDEDPSUP-5510\",\"title\":\"[EPMDEDPSUP-5510]: test\",\"url\": \"https://test.com\"}]}",
+					Payload: "{\"components\":\"java11-mvn-create\"," +
+						"\"fixVersions\":\"0.0.1-snapshot-java11\"," +
+						"\"labels\":\"java11\"," +
+						"\"issuesLinks\":[{\"ticket\":\"EPMDEDPSUP-5510\"," +
+						"\"title\":\"[EPMDEDPSUP-5510]: test\"," +
+						"\"url\": \"https://test.com\"}]}",
 				},
 			},
 			client: func(t *testing.T) jira.Client {
@@ -121,7 +131,12 @@ func TestPutTagValue_ServeRequest(t *testing.T) {
 			metadata: &codebaseApi.JiraIssueMetadata{
 				Spec: codebaseApi.JiraIssueMetadataSpec{
 					Tickets: []string{"TEST-1"},
-					Payload: "{\"components\":\"java11-mvn-create\",\"fixVersions\":\"0.0.1-snapshot-java11\",\"labels\":\"java11\",\"issuesLinks\":[{\"ticket\":\"EPMDEDPSUP-5510\",\"title\":\"[EPMDEDPSUP-5510]: test\",\"url\": \"https://test.com\"}]}",
+					Payload: "{\"components\":\"java11-mvn-create\"," +
+						"\"fixVersions\":\"0.0.1-snapshot-java11\"," +
+						"\"labels\":\"java11\"," +
+						"\"issuesLinks\":[{\"ticket\":\"EPMDEDPSUP-5510\"," +
+						"\"title\":\"[EPMDEDPSUP-5510]: test\"," +
+						"\"url\": \"https://test.com\"}]}",
 				},
 			},
 			client: func(t *testing.T) jira.Client {
@@ -160,7 +175,12 @@ func TestPutTagValue_ServeRequest(t *testing.T) {
 			metadata: &codebaseApi.JiraIssueMetadata{
 				Spec: codebaseApi.JiraIssueMetadataSpec{
 					Tickets: []string{"TEST-1"},
-					Payload: "{\"components\":\"java11-mvn-create\",\"fixVersions\":\"0.0.1-snapshot-java11\",\"labels\":\"java11\",\"issuesLinks\":[{\"ticket\":\"EPMDEDPSUP-5510\",\"title\":\"[EPMDEDPSUP-5510]: test\",\"url\": \"https://test.com\"}]}",
+					Payload: "{\"components\":\"java11-mvn-create\"," +
+						"\"fixVersions\":\"0.0.1-snapshot-java11\"," +
+						"\"labels\":\"java11\"," +
+						"\"issuesLinks\":[{\"ticket\":\"EPMDEDPSUP-5510\"," +
+						"\"title\":\"[EPMDEDPSUP-5510]: test\"," +
+						"\"url\": \"https://test.com\"}]}",
 				},
 			},
 			client: func(t *testing.T) jira.Client {
@@ -210,7 +230,12 @@ func TestPutTagValue_ServeRequest(t *testing.T) {
 			metadata: &codebaseApi.JiraIssueMetadata{
 				Spec: codebaseApi.JiraIssueMetadataSpec{
 					Tickets: []string{"TEST-1"},
-					Payload: "{\"components\":\"java11-mvn-create\",\"fixVersions\":\"0.0.1-snapshot-java11\",\"labels\":\"java11\",\"issuesLinks\":[{\"ticket\":\"EPMDEDPSUP-5510\",\"title\":\"[EPMDEDPSUP-5510]: test\",\"url\": \"https://test.com\"}]}",
+					Payload: "{\"components\":\"java11-mvn-create\"," +
+						"\"fixVersions\":\"0.0.1-snapshot-java11\"," +
+						"\"labels\":\"java11\"," +
+						"\"issuesLinks\":[{\"ticket\":\"EPMDEDPSUP-5510\"," +
+						"\"title\":\"[EPMDEDPSUP-5510]: test\"," +
+						"\"url\": \"https://test.com\"}]}",
 				},
 			},
 			client: func(t *testing.T) jira.Client {
@@ -256,7 +281,12 @@ func TestPutTagValue_ServeRequest(t *testing.T) {
 			metadata: &codebaseApi.JiraIssueMetadata{
 				Spec: codebaseApi.JiraIssueMetadataSpec{
 					Tickets: []string{"TEST-1"},
-					Payload: "{\"components\":\"java11-mvn-create\",\"fixVersions\":{\"data\":\"0.0.1-snapshot-java11\"},\"labels\":\"java11\",\"issuesLinks\":[{\"ticket\":\"EPMDEDPSUP-5510\",\"title\":\"[EPMDEDPSUP-5510]: test\",\"url\": \"https://test.com\"}]}",
+					Payload: "{\"components\":\"java11-mvn-create\"," +
+						"\"fixVersions\":{\"data\":\"0.0.1-snapshot-java11\"}," +
+						"\"labels\":\"java11\"," +
+						"\"issuesLinks\":[{\"ticket\":\"EPMDEDPSUP-5510\"," +
+						"\"title\":\"[EPMDEDPSUP-5510]: test\"," +
+						"\"url\": \"https://test.com\"}]}",
 				},
 			},
 			client: func(t *testing.T) jira.Client {
@@ -305,7 +335,12 @@ func TestPutTagValue_ServeRequest(t *testing.T) {
 			metadata: &codebaseApi.JiraIssueMetadata{
 				Spec: codebaseApi.JiraIssueMetadataSpec{
 					Tickets: []string{"TEST-1"},
-					Payload: "{\"components\":\"java11-mvn-create\",\"fixVersions\":\"0.0.1-snapshot-java11\",\"labels\":\"java11\",\"issuesLinks\":[{\"ticket\":\"EPMDEDPSUP-5510\",\"title\":\"[EPMDEDPSUP-5510]: test\",\"url\": \"https://test.com\"}]}",
+					Payload: "{\"components\":\"java11-mvn-create\"," +
+						"\"fixVersions\":\"0.0.1-snapshot-java11\"," +
+						"\"labels\":\"java11\"," +
+						"\"issuesLinks\":[{\"ticket\":\"EPMDEDPSUP-5510\"," +
+						"\"title\":\"[EPMDEDPSUP-5510]: test\"," +
+						"\"url\": \"https://test.com\"}]}",
 				},
 			},
 			client: func(t *testing.T) jira.Client {
@@ -338,7 +373,12 @@ func TestPutTagValue_ServeRequest(t *testing.T) {
 			metadata: &codebaseApi.JiraIssueMetadata{
 				Spec: codebaseApi.JiraIssueMetadataSpec{
 					Tickets: []string{"TEST-1"},
-					Payload: "{\"components\":\"java11-mvn-create\",\"fixVersions\":\"0.0.1-snapshot-java11\",\"labels\":\"java11\",\"issuesLinks\":[{\"ticket\":\"EPMDEDPSUP-5510\",\"title\":\"[EPMDEDPSUP-5510]: test\",\"url\": \"https://test.com\"}]}",
+					Payload: "{\"components\":\"java11-mvn-create\"," +
+						"\"fixVersions\":\"0.0.1-snapshot-java11\"," +
+						"\"labels\":\"java11\"," +
+						"\"issuesLinks\":[{\"ticket\":\"EPMDEDPSUP-5510\"," +
+						"\"title\":\"[EPMDEDPSUP-5510]: test\"," +
+						"\"url\": \"https://test.com\"}]}",
 				},
 			},
 			client: func(t *testing.T) jira.Client {
@@ -362,7 +402,12 @@ func TestPutTagValue_ServeRequest(t *testing.T) {
 			metadata: &codebaseApi.JiraIssueMetadata{
 				Spec: codebaseApi.JiraIssueMetadataSpec{
 					Tickets: []string{"TEST-1"},
-					Payload: "{\"components\":\"java11-mvn-create\",\"fixVersions\":\"0.0.1-snapshot-java11\",\"labels\":\"java11\",\"issuesLinks\":[{\"ticket\":\"EPMDEDPSUP-5510\",\"title\":\"[EPMDEDPSUP-5510]: test\",\"url\": \"https://test.com\"}]}",
+					Payload: "{\"components\":\"java11-mvn-create\"," +
+						"\"fixVersions\":\"0.0.1-snapshot-java11\"," +
+						"\"labels\":\"java11\"," +
+						"\"issuesLinks\":[{\"ticket\":\"EPMDEDPSUP-5510\"," +
+						"\"title\":\"[EPMDEDPSUP-5510]: test\"," +
+						"\"url\": \"https://test.com\"}]}",
 				},
 			},
 			client: func(t *testing.T) jira.Client {
@@ -382,7 +427,12 @@ func TestPutTagValue_ServeRequest(t *testing.T) {
 			metadata: &codebaseApi.JiraIssueMetadata{
 				Spec: codebaseApi.JiraIssueMetadataSpec{
 					Tickets: []string{"TEST-1"},
-					Payload: "{\"components\":\"java11-mvn-create\",\"fixVersions\":\"0.0.1-snapshot-java11\",\"labels\":\"java11\",\"issuesLinks\":[{\"ticket\":\"EPMDEDPSUP-5510\",\"title\":\"[EPMDEDPSUP-5510]: test\",\"url\": \"https://test.com\"}]}",
+					Payload: "{\"components\":\"java11-mvn-create\"," +
+						"\"fixVersions\":\"0.0.1-snapshot-java11\"," +
+						"\"labels\":\"java11\"," +
+						"\"issuesLinks\":[{\"ticket\":\"EPMDEDPSUP-5510\"," +
+						"\"title\":\"[EPMDEDPSUP-5510]: test\"," +
+						"\"url\": \"https://test.com\"}]}",
 				},
 			},
 			client: func(t *testing.T) jira.Client {
@@ -418,7 +468,12 @@ func TestPutTagValue_ServeRequest(t *testing.T) {
 			metadata: &codebaseApi.JiraIssueMetadata{
 				Spec: codebaseApi.JiraIssueMetadataSpec{
 					Tickets: []string{},
-					Payload: "{\"components\":\"java11-mvn-create\",\"fixVersions\":\"0.0.1-snapshot-java11\",\"labels\":\"java11\",\"issuesLinks\":[{\"ticket\":\"EPMDEDPSUP-5510\",\"title\":\"[EPMDEDPSUP-5510]: test\",\"url\": \"https://test.com\"}]}",
+					Payload: "{\"components\":\"java11-mvn-create\"," +
+						"\"fixVersions\":\"0.0.1-snapshot-java11\"," +
+						"\"labels\":\"java11\"," +
+						"\"issuesLinks\":[{\"ticket\":\"EPMDEDPSUP-5510\"," +
+						"\"title\":\"[EPMDEDPSUP-5510]: test\"," +
+						"\"url\": \"https://test.com\"}]}",
 				},
 			},
 			client: func(t *testing.T) jira.Client {

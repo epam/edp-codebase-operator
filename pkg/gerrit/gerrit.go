@@ -104,7 +104,14 @@ func SshInit(port int32, sshPrivateKey, host, user string, logger logr.Logger) (
 	return &cl, nil
 }
 
-func (*SSHGerritClient) CheckProjectExist(port int32, sshPrivateKey, host, user, appName string, logger logr.Logger) (bool, error) {
+func (*SSHGerritClient) CheckProjectExist(
+	port int32,
+	sshPrivateKey,
+	host,
+	user,
+	appName string,
+	logger logr.Logger,
+) (bool, error) {
 	var raw map[string]interface{}
 
 	command := "gerrit ls-projects --format json"
@@ -162,7 +169,15 @@ func (*SSHGerritClient) CreateProject(port int32, sshPrivateKey, host, user, app
 }
 
 // SetHeadToBranch sets remote git HEAD to specific branch using ssh Gerrit command.
-func (*SSHGerritClient) SetHeadToBranch(port int32, sshPrivateKey, host, user, appName, branchName string, logger logr.Logger) error {
+func (*SSHGerritClient) SetHeadToBranch(
+	port int32,
+	sshPrivateKey,
+	host,
+	user,
+	appName,
+	branchName string,
+	logger logr.Logger,
+) error {
 	command := fmt.Sprintf("gerrit set-head %v --new-head %v", appName, branchName)
 	cmd := &SSHCommand{
 		Path:   command,

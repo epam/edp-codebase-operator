@@ -106,11 +106,11 @@ func (h *CreateEventListener) createEventListener(ctx context.Context, gitServer
 	}
 
 	elCheck := tektoncd.NewEventListenerUnstructured()
+
 	err := h.k8sClient.Get(ctx, client.ObjectKey{
 		Namespace: gitServer.Namespace,
 		Name:      elName,
 	}, elCheck)
-
 	if err == nil {
 		log.Info("EventListener already exists", "EventListener", el.GetName())
 		return nil
@@ -141,7 +141,6 @@ func (h *CreateEventListener) createIngress(ctx context.Context, gitServer *code
 		Namespace: gitServer.Namespace,
 		Name:      name,
 	}, &networkingv1.Ingress{})
-
 	if err == nil {
 		log.Info("Ingress already exists", "Ingress", name)
 
@@ -225,7 +224,6 @@ func (h *CreateEventListener) createRoute(ctx context.Context, gitServer *codeba
 		Namespace: gitServer.Namespace,
 		Name:      name,
 	}, &routeApi.Route{})
-
 	if err == nil {
 		log.Info("Route already exists", "Route", name)
 

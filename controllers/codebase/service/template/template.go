@@ -50,7 +50,11 @@ func PrepareTemplates(ctx context.Context, c client.Client, cb *codebaseApi.Code
 	return nil
 }
 
-func buildTemplateConfig(ctx context.Context, c client.Client, cb *codebaseApi.Codebase) (*model.ConfigGoTemplating, error) {
+func buildTemplateConfig(
+	ctx context.Context,
+	c client.Client,
+	cb *codebaseApi.Codebase,
+) (*model.ConfigGoTemplating, error) {
 	log := ctrl.LoggerFrom(ctx)
 
 	log.Info("Start creating template config")

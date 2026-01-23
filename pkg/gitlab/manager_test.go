@@ -45,7 +45,8 @@ func TestManager_InjectGitLabCIConfig(t *testing.T) {
 						Namespace: "test-namespace",
 					},
 					Data: map[string]string{
-						".gitlab-ci.yml": "variables:\n  CODEBASE_NAME: \"{{.CodebaseName}}\"\ninclude:\n  - component: $CI_SERVER_FQDN/kuberocketci/ci-java17-mvn/build@0.1.1",
+						".gitlab-ci.yml": "variables:\n  CODEBASE_NAME: \"{{.CodebaseName}}\"\ninclude:\n" +
+							"  - component: $CI_SERVER_FQDN/kuberocketci/ci-java17-mvn/build@0.1.1",
 					},
 				},
 			},
@@ -70,7 +71,8 @@ func TestManager_InjectGitLabCIConfig(t *testing.T) {
 						Namespace: "test-namespace",
 					},
 					Data: map[string]string{
-						".gitlab-ci.yml": "variables:\n  CODEBASE_NAME: \"{{.CodebaseName}}\"\ninclude:\n  - component: $CI_SERVER_FQDN/kuberocketci/ci-golang/build@0.1.1",
+						".gitlab-ci.yml": "variables:\n  CODEBASE_NAME: \"{{.CodebaseName}}\"\ninclude:\n" +
+							"  - component: $CI_SERVER_FQDN/kuberocketci/ci-golang/build@0.1.1",
 					},
 				},
 			},
@@ -85,7 +87,8 @@ func TestManager_InjectGitLabCIConfig(t *testing.T) {
 			// Create temporary directory
 			tmpDir, err := os.MkdirTemp("", "gitlab-ci-test")
 			require.NoError(t, err)
-			defer os.RemoveAll(tmpDir)
+
+			defer func() { _ = os.RemoveAll(tmpDir) }()
 
 			// Create fake Kubernetes client with ConfigMaps
 			scheme := runtime.NewScheme()
@@ -117,7 +120,8 @@ func TestManager_InjectGitLabCIConfig_SkipsIfExists(t *testing.T) {
 	// Create temporary directory
 	tmpDir, err := os.MkdirTemp("", "gitlab-ci-test")
 	require.NoError(t, err)
-	defer os.RemoveAll(tmpDir)
+
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 
 	// Create existing .gitlab-ci.yml
 	gitlabCIPath := filepath.Join(tmpDir, GitLabCIFileName)
@@ -189,7 +193,8 @@ func TestManager_ConfigMapFallbackHierarchy(t *testing.T) {
 	// Create temporary directory
 	tmpDir, err := os.MkdirTemp("", "gitlab-ci-fallback-test")
 	require.NoError(t, err)
-	defer os.RemoveAll(tmpDir)
+
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 
 	manager := NewManager(fakeClient)
 	ctx := context.Background()
