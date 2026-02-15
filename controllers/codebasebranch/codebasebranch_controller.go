@@ -331,6 +331,12 @@ func (r *ReconcileCodebaseBranch) setDefaultValues(
 		return false, nil
 	}
 
+	// GitLab CI codebases use .gitlab-ci.yml for pipeline configuration,
+	// so there is no need to generate Tekton pipeline names.
+	if codebase.Spec.CiTool == util.CIGitLab {
+		return false, nil
+	}
+
 	gitServer := &codebaseApi.GitServer{}
 	if err := r.client.Get(ctx, types.NamespacedName{
 		Name:      codebase.Spec.GitServer,

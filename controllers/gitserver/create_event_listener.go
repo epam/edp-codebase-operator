@@ -30,6 +30,11 @@ func NewCreateEventListener(k8sClient client.Client) *CreateEventListener {
 func (h *CreateEventListener) ServeRequest(ctx context.Context, gitServer *codebaseApi.GitServer) error {
 	log := ctrl.LoggerFrom(ctx)
 
+	if gitServer.Spec.TektonDisabled {
+		log.Info("Skip creating EventListener because Tekton is disabled")
+		return nil
+	}
+
 	if gitServer.Spec.WebhookUrl != "" {
 		log.Info("Skip creating EventListener because webhook URL is set")
 		return nil
@@ -53,7 +58,7 @@ func (h *CreateEventListener) createEventListener(ctx context.Context, gitServer
 
 	// Use Unstructured to avoid direct dependency on "knative.dev/pkg/apis/duck/v1" because EventListener relies on it.
 	// This dependency can conflict with the operator's dependencies.
-	// https://github.com/tektoncd/triggers/blob/v0.27.0/pkg/apis/triggers/v1beta1/event_listener_types.go#L86
+	// https://github.com/tektoncd/triggers/blob/v0.34.0/pkg/apis/triggers/v1beta1/event_listener_types.go#L86
 	el := tektoncd.NewEventListenerUnstructured()
 	elName := generateEventListenerName(gitServer.Name)
 

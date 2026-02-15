@@ -105,6 +105,7 @@ type CodebaseSpec struct {
 
 	// A name of tool which should be used as CI.
 	// +optional
+	// +kubebuilder:validation:Enum=tekton;gitlab
 	// +kubebuilder:default:=tekton
 	CiTool string `json:"ciTool"`
 

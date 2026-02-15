@@ -51,6 +51,13 @@ type GitServerSpec struct {
 	// +optional
 	// +kubebuilder:example:=`https://webhook-url.com`
 	WebhookUrl string `json:"webhookUrl,omitempty"`
+
+	// TektonDisabled disables creation of Tekton EventListener and associated
+	// Ingress/Route resources for this GitServer.
+	// Use this when the git provider's native CI (e.g. GitLab CI, GitHub Actions)
+	// is used instead of Tekton, or when webhook endpoints are managed externally.
+	// +optional
+	TektonDisabled bool `json:"tektonDisabled,omitempty"`
 }
 
 // GitServerStatus defines the observed state of GitServer.

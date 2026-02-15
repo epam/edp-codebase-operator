@@ -534,6 +534,7 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldSetPipelines(t *testing.T) {
 			BuildTool: "go",
 			Type:      "application",
 			GitServer: "test-gs",
+			CiTool:    util.CITekton,
 			Versioning: codebaseApi.Versioning{
 				Type: codebaseApi.VersioningTypDefault,
 			},
@@ -609,6 +610,7 @@ func TestReconcileCodebaseBranch_Reconcile_FailedToSetPipelines_GitServerNotFoun
 			BuildTool: "go",
 			Type:      "application",
 			GitServer: "test-gs",
+			CiTool:    util.CITekton,
 			Versioning: codebaseApi.Versioning{
 				Type: codebaseApi.VersioningTypDefault,
 			},
@@ -633,4 +635,109 @@ func TestReconcileCodebaseBranch_Reconcile_FailedToSetPipelines_GitServerNotFoun
 
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "failed to get GitServer")
+}
+
+func TestReconcileCodebaseBranch_Reconcile_ShouldSkipPipelinesForGitLab(t *testing.T) {
+	cb := &codebaseApi.CodebaseBranch{
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      "test-branch",
+			Namespace: "default",
+		},
+		Spec: codebaseApi.CodebaseBranchSpec{
+			CodebaseName: "test-codebase",
+			BranchName:   "test-branch",
+		},
+	}
+	c := &codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      "test-codebase",
+			Namespace: "default",
+		},
+		Spec: codebaseApi.CodebaseSpec{
+			Lang:      "go",
+			Framework: "gin",
+			BuildTool: "go",
+			Type:      "application",
+			GitServer: "test-gs",
+			CiTool:    util.CIGitLab,
+			Versioning: codebaseApi.Versioning{
+				Type: codebaseApi.VersioningTypDefault,
+			},
+		},
+	}
+	gs := &codebaseApi.GitServer{
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      "test-gs",
+			Namespace: "default",
+		},
+		Spec: codebaseApi.GitServerSpec{
+			GitProvider: codebaseApi.GitProviderGithub,
+		},
+	}
+
+	scheme := runtime.NewScheme()
+	require.NoError(t, codebaseApi.AddToScheme(scheme))
+
+	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithObjects(c, cb, gs).WithStatusSubresource(cb).Build()
+
+	req := reconcile.Request{
+		NamespacedName: types.NamespacedName{
+			Name:      "test-branch",
+			Namespace: "default",
+		},
+	}
+
+	controller := NewReconcileCodebaseBranch(fakeCl, scheme, logr.Discard())
+
+	_, err := controller.Reconcile(context.Background(), req)
+
+	require.NoError(t, err)
+
+	updatedCb := &codebaseApi.CodebaseBranch{}
+	err = fakeCl.Get(
+		context.Background(),
+		types.NamespacedName{
+			Name:      "test-branch",
+			Namespace: "default",
+		},
+		updatedCb,
+	)
+
+	require.NoError(t, err)
+	assert.Nil(t, updatedCb.Spec.Pipelines)
+}
+
+func TestSetDefaultValues_ShouldSkipForGitLab(t *testing.T) {
+	cb := &codebaseApi.CodebaseBranch{
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      "test-branch",
+			Namespace: "default",
+		},
+		Spec: codebaseApi.CodebaseBranchSpec{
+			CodebaseName: "test-codebase",
+			BranchName:   "test-branch",
+		},
+	}
+	c := &codebaseApi.Codebase{
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      "test-codebase",
+			Namespace: "default",
+		},
+		Spec: codebaseApi.CodebaseSpec{
+			CiTool: util.CIGitLab,
+		},
+	}
+
+	scheme := runtime.NewScheme()
+	require.NoError(t, codebaseApi.AddToScheme(scheme))
+
+	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithObjects(c, cb).Build()
+
+	r := NewReconcileCodebaseBranch(fakeCl, scheme, logr.Discard())
+
+	changed, err := r.setDefaultValues(context.Background(), cb, c)
+
+	require.NoError(t, err)
+	assert.False(t, changed)
+	assert.Nil(t, cb.Spec.Pipelines)
 }
