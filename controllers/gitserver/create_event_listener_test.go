@@ -38,6 +38,65 @@ func TestCreateEventListener_ServeRequest(t *testing.T) {
 		want      func(t *testing.T, k8sClient client.Client)
 	}{
 		{
+			name: "skip creating event listener because tekton is disabled",
+			gitServer: &codebaseApi.GitServer{
+				ObjectMeta: controllerruntime.ObjectMeta{
+					Name:      "test-git-server",
+					Namespace: "default",
+				},
+				Spec: codebaseApi.GitServerSpec{
+					TektonDisabled: true,
+				},
+			},
+			k8sClient: func(t *testing.T) client.Client {
+				return fake.NewClientBuilder().WithScheme(scheme).Build()
+			},
+			wantErr: require.NoError,
+			want: func(t *testing.T, k8sClient client.Client) {
+				el := tektoncd.NewEventListenerUnstructured()
+				err := k8sClient.Get(context.Background(), client.ObjectKey{
+					Namespace: "default",
+					Name:      generateEventListenerName("test-git-server"),
+				}, el)
+				require.Error(t, err)
+				require.True(t, k8sErrors.IsNotFound(err))
+
+				i := &networkingv1.Ingress{}
+				err = k8sClient.Get(context.Background(), client.ObjectKey{
+					Namespace: "default",
+					Name:      GenerateIngressName("test-git-server"),
+				}, i)
+				require.Error(t, err)
+				require.True(t, k8sErrors.IsNotFound(err))
+			},
+		},
+		{
+			name: "skip creating event listener because tekton is disabled even with webhook URL set",
+			gitServer: &codebaseApi.GitServer{
+				ObjectMeta: controllerruntime.ObjectMeta{
+					Name:      "test-git-server",
+					Namespace: "default",
+				},
+				Spec: codebaseApi.GitServerSpec{
+					TektonDisabled: true,
+					WebhookUrl:     "https://external-webhook",
+				},
+			},
+			k8sClient: func(t *testing.T) client.Client {
+				return fake.NewClientBuilder().WithScheme(scheme).Build()
+			},
+			wantErr: require.NoError,
+			want: func(t *testing.T, k8sClient client.Client) {
+				el := tektoncd.NewEventListenerUnstructured()
+				err := k8sClient.Get(context.Background(), client.ObjectKey{
+					Namespace: "default",
+					Name:      generateEventListenerName("test-git-server"),
+				}, el)
+				require.Error(t, err)
+				require.True(t, k8sErrors.IsNotFound(err))
+			},
+		},
+		{
 			name: "skip creating event listener because webhook URL is set",
 			gitServer: &codebaseApi.GitServer{
 				Spec: codebaseApi.GitServerSpec{

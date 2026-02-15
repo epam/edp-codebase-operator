@@ -796,10 +796,11 @@ Selected branch will become a default branch for a new codebase (e.g. master, ma
         <td>false</td>
       </tr><tr>
         <td><b>ciTool</b></td>
-        <td>string</td>
+        <td>enum</td>
         <td>
           A name of tool which should be used as CI.<br/>
           <br/>
+            <i>Enum</i>: tekton, gitlab<br/>
             <i>Default</i>: tekton<br/>
         </td>
         <td>false</td>
@@ -1274,6 +1275,16 @@ For Gerrit provider, only id_rsa key is required and used.<br/>
         <td>boolean</td>
         <td>
           SkipWebhookSSLVerification is a flag to skip webhook tls verification.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>tektonDisabled</b></td>
+        <td>boolean</td>
+        <td>
+          TektonDisabled disables creation of Tekton EventListener and associated
+Ingress/Route resources for this GitServer.
+Use this when the git provider's native CI (e.g. GitLab CI, GitHub Actions)
+is used instead of Tekton, or when webhook endpoints are managed externally.<br/>
         </td>
         <td>false</td>
       </tr><tr>

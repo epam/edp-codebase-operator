@@ -7,7 +7,7 @@ import (
 
 const (
 	triggersGroup      = "triggers.tekton.dev"
-	triggersAPIVersion = "v1alpha1"
+	triggersAPIVersion = "v1beta1"
 	triggersKind       = "EventListener"
 )
 
