@@ -24,6 +24,9 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
+const testGitLabCIConfigData = "variables:\n  CODEBASE_NAME: \"{{.CodebaseName}}\"\ninclude:\n  " +
+	"- component: $CI_SERVER_FQDN/kuberocketci/ci-java17-mvn/build@0.1.1"
+
 func TestPutGitLabCIConfig_ServeRequest(t *testing.T) {
 	const defaultNs = "default"
 
@@ -134,12 +137,70 @@ func TestPutGitLabCIConfig_ServeRequest(t *testing.T) {
 				gitlabGitServerSecret,
 				&corev1.ConfigMap{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "gitlab-ci-java-maven",
+						Name:      gitlabci.GitLabCIDefaultTemplate,
 						Namespace: defaultNs,
 					},
 					Data: map[string]string{
-						".gitlab-ci.yml": "variables:\n  CODEBASE_NAME: \"{{.CodebaseName}}\"\ninclude:\n  " +
-							"- component: $CI_SERVER_FQDN/kuberocketci/ci-java17-mvn/build@0.1.1",
+						".gitlab-ci.yml": testGitLabCIConfigData,
+					},
+				},
+			},
+			gitClient: func(t *testing.T) gitproviderv2.Git {
+				mock := gitmocks.NewMockGit(t)
+
+				mock.On("Clone", testify.Anything, testify.Anything, testify.Anything).
+					Return(nil)
+				mock.On("GetCurrentBranchName", testify.Anything, testify.Anything).
+					Return("master", nil)
+				mock.On("Commit", testify.Anything, testify.Anything, "Add GitLab CI configuration").
+					Return(nil)
+				mock.On("Push", testify.Anything, testify.Anything, gitproviderv2.RefSpecPushAllBranches).
+					Return(nil)
+
+				return mock
+			},
+			setup: func(t *testing.T, wd string) {
+				require.NoError(t, os.MkdirAll(wd, 0755))
+			},
+			wantErr: require.NoError,
+			wantStatus: func(t *testing.T, codebase *codebaseApi.Codebase) {
+				require.Equal(t, util.ProjectGitLabCIPushedStatus, codebase.Status.Git)
+			},
+		},
+		{
+			name: "successfully inject GitLab CI config with annotation",
+			codebase: &codebaseApi.Codebase{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "java-app",
+					Namespace: defaultNs,
+					Annotations: map[string]string{
+						codebaseApi.GitLabCITemplateAnnotation: "my-custom-template",
+					},
+				},
+				Spec: codebaseApi.CodebaseSpec{
+					Strategy:      codebaseApi.Clone,
+					CiTool:        util.CIGitLab,
+					GitServer:     gitlabGitServer.Name,
+					GitUrlPath:    "/owner/java-repo",
+					Repository:    &codebaseApi.Repository{Url: "https://gitlab.com/owner/java-repo.git"},
+					DefaultBranch: "master",
+					Lang:          "java",
+					BuildTool:     "maven",
+				},
+				Status: codebaseApi.CodebaseStatus{
+					Git: util.ProjectPushedStatus,
+				},
+			},
+			objects: []client.Object{
+				gitlabGitServer,
+				gitlabGitServerSecret,
+				&corev1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "my-custom-template",
+						Namespace: defaultNs,
+					},
+					Data: map[string]string{
+						".gitlab-ci.yml": "custom: {{.CodebaseName}}",
 					},
 				},
 			},
@@ -398,12 +459,11 @@ func TestPutGitLabCIConfig_ServeRequest(t *testing.T) {
 				gitlabGitServerSecret,
 				&corev1.ConfigMap{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "gitlab-ci-java-maven",
+						Name:      gitlabci.GitLabCIDefaultTemplate,
 						Namespace: defaultNs,
 					},
 					Data: map[string]string{
-						".gitlab-ci.yml": "variables:\n  CODEBASE_NAME: \"{{.CodebaseName}}\"\ninclude:\n  " +
-							"- component: $CI_SERVER_FQDN/kuberocketci/ci-java17-mvn/build@0.1.1",
+						".gitlab-ci.yml": testGitLabCIConfigData,
 					},
 				},
 			},
@@ -452,12 +512,11 @@ func TestPutGitLabCIConfig_ServeRequest(t *testing.T) {
 				gitlabGitServerSecret,
 				&corev1.ConfigMap{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "gitlab-ci-java-maven",
+						Name:      gitlabci.GitLabCIDefaultTemplate,
 						Namespace: defaultNs,
 					},
 					Data: map[string]string{
-						".gitlab-ci.yml": "variables:\n  CODEBASE_NAME: \"{{.CodebaseName}}\"\ninclude:\n  " +
-							"- component: $CI_SERVER_FQDN/kuberocketci/ci-java17-mvn/build@0.1.1",
+						".gitlab-ci.yml": testGitLabCIConfigData,
 					},
 				},
 			},

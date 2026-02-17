@@ -49,30 +49,30 @@ func (m *manager) InjectGitLabCIConfig(ctx context.Context, codebase *codebaseAp
 		return fmt.Errorf("failed to get GitLab CI template: %w", err)
 	}
 
-	// Simple variable substitution - only codebase name
+	// Variable substitution — only CodebaseName is replaced; other placeholders stay literal.
 	content := strings.ReplaceAll(template, "{{.CodebaseName}}", codebase.Name)
 
 	// Write file
-	return os.WriteFile(gitlabCIPath, []byte(content), 0644)
-}
-
-// getGitLabCITemplate retrieves GitLab CI template with fallback hierarchy.
-func (m *manager) getGitLabCITemplate(ctx context.Context, codebase *codebaseApi.Codebase) (string, error) {
-	lang := strings.ToLower(codebase.Spec.Lang)
-	buildTool := strings.ToLower(codebase.Spec.BuildTool)
-
-	// Try specific language-buildtool combination first
-	configMapName := fmt.Sprintf("gitlab-ci-%s-%s", lang, buildTool)
-
-	template, err := m.getTemplateFromConfigMap(ctx, configMapName, codebase.Namespace)
-	if err == nil {
-		return template, nil
+	if err := os.WriteFile(gitlabCIPath, []byte(content), 0o644); err != nil {
+		return fmt.Errorf("failed to write %s: %w", GitLabCIFileName, err)
 	}
 
-	// Final fallback to default template
-	template, err = m.getTemplateFromConfigMap(ctx, GitLabCIDefaultTemplate, codebase.Namespace)
+	return nil
+}
+
+// getGitLabCITemplate retrieves the GitLab CI template ConfigMap.
+// If the Codebase has the GitLabCITemplateAnnotation, that ConfigMap is used (hard error if missing).
+// Otherwise falls back to the "gitlab-ci-default" ConfigMap.
+func (m *manager) getGitLabCITemplate(ctx context.Context, codebase *codebaseApi.Codebase) (string, error) {
+	configMapName := GitLabCIDefaultTemplate
+
+	if ann := codebase.GetAnnotations()[codebaseApi.GitLabCITemplateAnnotation]; ann != "" {
+		configMapName = ann
+	}
+
+	template, err := m.getTemplateFromConfigMap(ctx, configMapName, codebase.Namespace)
 	if err != nil {
-		return "", fmt.Errorf("no GitLab CI template found for %s-%s, lang-only, or default", lang, buildTool)
+		return "", fmt.Errorf("failed to get GitLab CI template from ConfigMap %q: %w", configMapName, err)
 	}
 
 	return template, nil
