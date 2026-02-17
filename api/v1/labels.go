@@ -20,4 +20,9 @@ const (
 	// We can't use the branch name directly as a label value because it can contain special characters.
 	// XXH64 is used to generate the hash.
 	BranchHashLabel = "app.edp.epam.com/branch-hash"
+
+	// CITemplateLabel is a label on ConfigMaps that marks them as CI templates.
+	// The portal uses this label to discover available templates for a dropdown.
+	// Values: "gitlab" (extensible to other CI systems in the future).
+	CITemplateLabel = "app.edp.epam.com/ci-template"
 )

@@ -21,16 +21,96 @@ func TestManager_InjectGitLabCIConfig(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name           string
-		codebase       *codebaseApi.Codebase
-		configMaps     []client.Object
-		expectedInFile string
+		name             string
+		codebase         *codebaseApi.Codebase
+		configMaps       []client.Object
+		expectedContains []string
+		wantErr          require.ErrorAssertionFunc
 	}{
 		{
-			name: "java maven project with specific ConfigMap",
+			name: "annotation selects custom ConfigMap",
 			codebase: &codebaseApi.Codebase{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-java-app",
+					Name:      "my-go-app",
+					Namespace: "test-namespace",
+					Annotations: map[string]string{
+						codebaseApi.GitLabCITemplateAnnotation: "my-go-template",
+					},
+				},
+				Spec: codebaseApi.CodebaseSpec{
+					Lang:      "Go",
+					BuildTool: "Go",
+				},
+			},
+			configMaps: []client.Object{
+				&corev1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "my-go-template",
+						Namespace: "test-namespace",
+					},
+					Data: map[string]string{
+						".gitlab-ci.yml": "custom: {{.CodebaseName}}",
+					},
+				},
+			},
+			expectedContains: []string{
+				"custom: my-go-app",
+			},
+			wantErr: require.NoError,
+		},
+		{
+			name: "no annotation falls back to default",
+			codebase: &codebaseApi.Codebase{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-app",
+					Namespace: "test-namespace",
+				},
+				Spec: codebaseApi.CodebaseSpec{
+					Lang:      "python",
+					BuildTool: "pip",
+				},
+			},
+			configMaps: []client.Object{
+				&corev1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      GitLabCIDefaultTemplate,
+						Namespace: "test-namespace",
+					},
+					Data: map[string]string{
+						".gitlab-ci.yml": "default: {{.CodebaseName}}",
+					},
+				},
+			},
+			expectedContains: []string{
+				"default: test-app",
+			},
+			wantErr: require.NoError,
+		},
+		{
+			name: "annotation pointing to missing ConfigMap returns error",
+			codebase: &codebaseApi.Codebase{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-app",
+					Namespace: "test-namespace",
+					Annotations: map[string]string{
+						codebaseApi.GitLabCITemplateAnnotation: "nonexistent",
+					},
+				},
+				Spec: codebaseApi.CodebaseSpec{
+					Lang:      "java",
+					BuildTool: "maven",
+				},
+			},
+			wantErr: func(t require.TestingT, err error, _ ...interface{}) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), `ConfigMap "nonexistent"`)
+			},
+		},
+		{
+			name: "ConfigMap exists but .gitlab-ci.yml key is absent",
+			codebase: &codebaseApi.Codebase{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-app",
 					Namespace: "test-namespace",
 				},
 				Spec: codebaseApi.CodebaseSpec{
@@ -41,22 +121,24 @@ func TestManager_InjectGitLabCIConfig(t *testing.T) {
 			configMaps: []client.Object{
 				&corev1.ConfigMap{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "gitlab-ci-java-maven",
+						Name:      GitLabCIDefaultTemplate,
 						Namespace: "test-namespace",
 					},
 					Data: map[string]string{
-						".gitlab-ci.yml": "variables:\n  CODEBASE_NAME: \"{{.CodebaseName}}\"\ninclude:\n" +
-							"  - component: $CI_SERVER_FQDN/kuberocketci/ci-java17-mvn/build@0.1.1",
+						"some-other-key": "irrelevant",
 					},
 				},
 			},
-			expectedInFile: "CODEBASE_NAME: \"test-java-app\"",
+			wantErr: func(t require.TestingT, err error, _ ...interface{}) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "no .gitlab-ci.yml template found in ConfigMap")
+			},
 		},
 		{
-			name: "go project with specific template",
+			name: "ConfigMap exists but .gitlab-ci.yml value is empty",
 			codebase: &codebaseApi.Codebase{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-go-app",
+					Name:      "test-app",
 					Namespace: "test-namespace",
 				},
 				Spec: codebaseApi.CodebaseSpec{
@@ -67,16 +149,136 @@ func TestManager_InjectGitLabCIConfig(t *testing.T) {
 			configMaps: []client.Object{
 				&corev1.ConfigMap{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "gitlab-ci-go-go",
+						Name:      GitLabCIDefaultTemplate,
 						Namespace: "test-namespace",
 					},
 					Data: map[string]string{
-						".gitlab-ci.yml": "variables:\n  CODEBASE_NAME: \"{{.CodebaseName}}\"\ninclude:\n" +
-							"  - component: $CI_SERVER_FQDN/kuberocketci/ci-golang/build@0.1.1",
+						".gitlab-ci.yml": "",
 					},
 				},
 			},
-			expectedInFile: "CODEBASE_NAME: \"test-go-app\"",
+			wantErr: func(t require.TestingT, err error, _ ...interface{}) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "no .gitlab-ci.yml template found in ConfigMap")
+			},
+		},
+		{
+			name: "empty annotation value falls back to default",
+			codebase: &codebaseApi.Codebase{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-app",
+					Namespace: "test-namespace",
+					Annotations: map[string]string{
+						codebaseApi.GitLabCITemplateAnnotation: "",
+					},
+				},
+				Spec: codebaseApi.CodebaseSpec{
+					Lang:      "python",
+					BuildTool: "pip",
+				},
+			},
+			configMaps: []client.Object{
+				&corev1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      GitLabCIDefaultTemplate,
+						Namespace: "test-namespace",
+					},
+					Data: map[string]string{
+						".gitlab-ci.yml": "fallback: {{.CodebaseName}}",
+					},
+				},
+			},
+			expectedContains: []string{
+				"fallback: test-app",
+			},
+			wantErr: require.NoError,
+		},
+		{
+			name: "nil annotations map falls back to default",
+			codebase: &codebaseApi.Codebase{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:        "test-app",
+					Namespace:   "test-namespace",
+					Annotations: nil,
+				},
+				Spec: codebaseApi.CodebaseSpec{
+					Lang:      "java",
+					BuildTool: "gradle",
+				},
+			},
+			configMaps: []client.Object{
+				&corev1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      GitLabCIDefaultTemplate,
+						Namespace: "test-namespace",
+					},
+					Data: map[string]string{
+						".gitlab-ci.yml": "nil-ann: {{.CodebaseName}}",
+					},
+				},
+			},
+			expectedContains: []string{
+				"nil-ann: test-app",
+			},
+			wantErr: require.NoError,
+		},
+		{
+			name: "static template with no placeholders",
+			codebase: &codebaseApi.Codebase{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-app",
+					Namespace: "test-namespace",
+				},
+				Spec: codebaseApi.CodebaseSpec{
+					Lang:      "go",
+					BuildTool: "go",
+				},
+			},
+			configMaps: []client.Object{
+				&corev1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      GitLabCIDefaultTemplate,
+						Namespace: "test-namespace",
+					},
+					Data: map[string]string{
+						".gitlab-ci.yml": "stages: [build, test]",
+					},
+				},
+			},
+			expectedContains: []string{
+				"stages: [build, test]",
+			},
+			wantErr: require.NoError,
+		},
+		{
+			name: "only CodebaseName is substituted",
+			codebase: &codebaseApi.Codebase{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "my-app",
+					Namespace: "test-namespace",
+				},
+				Spec: codebaseApi.CodebaseSpec{
+					Lang:      "Java",
+					BuildTool: "Maven",
+				},
+			},
+			configMaps: []client.Object{
+				&corev1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      GitLabCIDefaultTemplate,
+						Namespace: "test-namespace",
+					},
+					Data: map[string]string{
+						".gitlab-ci.yml": "name: {{.CodebaseName}} lang: {{.Lang}} build: {{.BuildTool}}",
+					},
+				},
+			},
+			expectedContains: []string{
+				"name: my-app",
+				"lang: {{.Lang}}",
+				"build: {{.BuildTool}}",
+			},
+			wantErr: require.NoError,
 		},
 	}
 
@@ -84,32 +286,27 @@ func TestManager_InjectGitLabCIConfig(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			// Create temporary directory
-			tmpDir, err := os.MkdirTemp("", "gitlab-ci-test")
-			require.NoError(t, err)
+			tmpDir := t.TempDir()
 
-			defer func() { _ = os.RemoveAll(tmpDir) }()
-
-			// Create fake Kubernetes client with ConfigMaps
 			scheme := runtime.NewScheme()
 			require.NoError(t, corev1.AddToScheme(scheme))
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(tt.configMaps...).Build()
 
-			manager := NewManager(fakeClient)
-			ctx := context.Background()
+			mgr := NewManager(fakeClient)
 
-			// Test injection
-			err = manager.InjectGitLabCIConfig(ctx, tt.codebase, tmpDir)
+			err := mgr.InjectGitLabCIConfig(context.Background(), tt.codebase, tmpDir)
+			tt.wantErr(t, err)
+
+			if err != nil {
+				return
+			}
+
+			content, err := os.ReadFile(filepath.Join(tmpDir, GitLabCIFileName))
 			require.NoError(t, err)
 
-			// Verify file was created
-			gitlabCIPath := filepath.Join(tmpDir, GitLabCIFileName)
-			content, err := os.ReadFile(gitlabCIPath)
-			require.NoError(t, err)
-
-			// Verify content contains expected substitutions
-			contentStr := string(content)
-			assert.Contains(t, contentStr, tt.expectedInFile)
+			for _, expected := range tt.expectedContains {
+				assert.Contains(t, string(content), expected)
+			}
 		})
 	}
 }
@@ -117,17 +314,12 @@ func TestManager_InjectGitLabCIConfig(t *testing.T) {
 func TestManager_InjectGitLabCIConfig_SkipsIfExists(t *testing.T) {
 	t.Parallel()
 
-	// Create temporary directory
-	tmpDir, err := os.MkdirTemp("", "gitlab-ci-test")
-	require.NoError(t, err)
-
-	defer func() { _ = os.RemoveAll(tmpDir) }()
+	tmpDir := t.TempDir()
 
 	// Create existing .gitlab-ci.yml
 	gitlabCIPath := filepath.Join(tmpDir, GitLabCIFileName)
 	existingContent := "existing content"
-	err = os.WriteFile(gitlabCIPath, []byte(existingContent), 0644)
-	require.NoError(t, err)
+	require.NoError(t, os.WriteFile(gitlabCIPath, []byte(existingContent), 0644))
 
 	codebase := &codebaseApi.Codebase{
 		ObjectMeta: metav1.ObjectMeta{
@@ -140,74 +332,16 @@ func TestManager_InjectGitLabCIConfig_SkipsIfExists(t *testing.T) {
 		},
 	}
 
-	// Create fake client (ConfigMaps not needed for this test)
 	scheme := runtime.NewScheme()
 	require.NoError(t, corev1.AddToScheme(scheme))
 	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
 
-	manager := NewManager(fakeClient)
-	ctx := context.Background()
+	mgr := NewManager(fakeClient)
 
-	// Test injection
-	err = manager.InjectGitLabCIConfig(ctx, codebase, tmpDir)
+	err := mgr.InjectGitLabCIConfig(context.Background(), codebase, tmpDir)
 	require.NoError(t, err)
 
-	// Verify file was not overwritten
 	content, err := os.ReadFile(gitlabCIPath)
 	require.NoError(t, err)
 	assert.Equal(t, existingContent, string(content))
-}
-
-func TestManager_ConfigMapFallbackHierarchy(t *testing.T) {
-	t.Parallel()
-
-	codebase := &codebaseApi.Codebase{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-app",
-			Namespace: "test-namespace",
-		},
-		Spec: codebaseApi.CodebaseSpec{
-			Lang:      "python",
-			BuildTool: "pip",
-		},
-	}
-
-	// Create ConfigMaps: only default (no specific template)
-	configMaps := []client.Object{
-		&corev1.ConfigMap{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "gitlab-ci-default",
-				Namespace: "test-namespace",
-			},
-			Data: map[string]string{
-				".gitlab-ci.yml": "default-fallback: {{.CodebaseName}}",
-			},
-		},
-	}
-
-	// Create fake client
-	scheme := runtime.NewScheme()
-	require.NoError(t, corev1.AddToScheme(scheme))
-	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(configMaps...).Build()
-
-	// Create temporary directory
-	tmpDir, err := os.MkdirTemp("", "gitlab-ci-fallback-test")
-	require.NoError(t, err)
-
-	defer func() { _ = os.RemoveAll(tmpDir) }()
-
-	manager := NewManager(fakeClient)
-	ctx := context.Background()
-
-	// Test injection - should use default fallback since no specific template exists
-	err = manager.InjectGitLabCIConfig(ctx, codebase, tmpDir)
-	require.NoError(t, err)
-
-	// Verify file was created with default fallback content
-	gitlabCIPath := filepath.Join(tmpDir, GitLabCIFileName)
-	content, err := os.ReadFile(gitlabCIPath)
-	require.NoError(t, err)
-
-	contentStr := string(content)
-	assert.Contains(t, contentStr, "default-fallback: test-app")
 }

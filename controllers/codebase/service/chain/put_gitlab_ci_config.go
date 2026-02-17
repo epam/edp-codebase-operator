@@ -76,6 +76,11 @@ func (h *PutGitLabCIConfig) ServeRequest(ctx context.Context, codebase *codebase
 	return nil
 }
 
+// gitlabCIAlreadyExists is a fast-path optimization that checks whether
+// .gitlab-ci.yml already exists in the local working directory, avoiding the
+// expensive clone+checkout round-trip when the file was written by a prior
+// reconciliation run. The manager's InjectGitLabCIConfig has its own os.Stat
+// guard as a safety invariant, so this check is purely an optimization.
 func (h *PutGitLabCIConfig) gitlabCIAlreadyExists(codebase *codebaseApi.Codebase) bool {
 	wd := util.GetWorkDir(codebase.Name, codebase.Namespace)
 	gitlabCIPath := filepath.Join(wd, gitlabci.GitLabCIFileName)
