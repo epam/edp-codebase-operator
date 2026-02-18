@@ -3,8 +3,8 @@ kind: ConfigMap
 metadata:
   name: gitlab-ci-default
   labels:
-      app.edp.epam.com/ci-template: gitlab
-      {{- include "codebase-operator.labels" . | nindent 4 }}
+    app.edp.epam.com/ci-template: gitlab
+    {{- include "codebase-operator.labels" . | nindent 4 }}
 data:
   # Read by krci-portal for template selection UI; not consumed by the operator.
   description: |
