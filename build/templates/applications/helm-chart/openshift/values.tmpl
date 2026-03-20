@@ -9,6 +9,8 @@ image:
   pullPolicy: IfNotPresent
   # -- Overrides the image tag whose default is the chart appVersion.
   tag: ""
+  # -- Image digest for immutable reference (e.g., sha256:abc123...). If set, deployed as :tag@digest.
+  digest: ""
 
 imagePullSecrets:
 # Define secret to pull images. Secret can be provisioned by edp-install or manually.
