@@ -21,6 +21,7 @@ type CodebaseImageStreamSpec struct {
 type Tag struct {
 	Name    string `json:"name"`
 	Created string `json:"created"`
+	Digest  string `json:"digest,omitempty"`
 }
 
 // CodebaseImageStreamStatus defines the observed state of CodebaseImageStream.

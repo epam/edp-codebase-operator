@@ -603,6 +603,13 @@ CodebaseImageStreamSpec defines the desired state of CodebaseImageStream.
           <br/>
         </td>
         <td>true</td>
+      </tr><tr>
+        <td><b>digest</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
       </tr></tbody>
 </table>
 
