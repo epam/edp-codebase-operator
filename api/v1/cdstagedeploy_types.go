@@ -39,6 +39,7 @@ type CDStageDeploySpec struct {
 type CodebaseTag struct {
 	Codebase string `json:"codebase"`
 	Tag      string `json:"tag"`
+	Digest   string `json:"digest,omitempty"`
 }
 
 // CDStageDeployStatus defines the observed state of CDStageDeploy.

@@ -33,7 +33,8 @@ type StrategyManager struct {
 }
 
 type ApplicationPayload struct {
-	ImageTag string `json:"imageTag"`
+	ImageTag    string `json:"imageTag"`
+	ImageDigest string `json:"imageDigest,omitempty"`
 }
 
 func NewStrategyManager(k8sClient client.Client) *StrategyManager {
@@ -63,7 +64,8 @@ func (h *StrategyManager) GetAppPayloadForAllLatestStrategy(
 		}
 
 		appPayload[codebase] = ApplicationPayload{
-			ImageTag: tag,
+			ImageTag:    tag.Name,
+			ImageDigest: tag.Digest,
 		}
 	}
 
@@ -83,6 +85,7 @@ func (h *StrategyManager) GetAppPayloadForCurrentWithStableStrategy(
 ) (json.RawMessage, error) {
 	appPayload := make(map[string]ApplicationPayload, len(pipeline.Spec.InputDockerStreams))
 
+	// Stable apps: tag from annotation (digest will be backfilled in step 3).
 	for _, app := range pipeline.Spec.Applications {
 		t, ok := stage.GetAnnotations()[fmt.Sprintf("app.edp.epam.com/%s", app)]
 		if ok {
@@ -92,10 +95,13 @@ func (h *StrategyManager) GetAppPayloadForCurrentWithStableStrategy(
 		}
 	}
 
+	// Current triggered app: tag and digest from CDStageDeploy.
 	appPayload[current.Codebase] = ApplicationPayload{
-		ImageTag: current.Tag,
+		ImageTag:    current.Tag,
+		ImageDigest: current.Digest,
 	}
 
+	// Remaining apps + backfill digest for stable apps from step 1.
 	for _, stream := range pipeline.Spec.InputDockerStreams {
 		imageStream, err := codebaseimagestream.GetCodebaseImageStreamByCodebaseBaseBranchName(
 			ctx,
@@ -112,10 +118,15 @@ func (h *StrategyManager) GetAppPayloadForCurrentWithStableStrategy(
 			return nil, err
 		}
 
-		if _, ok := appPayload[codebase]; !ok {
+		existing, exists := appPayload[codebase]
+		if !exists {
 			appPayload[codebase] = ApplicationPayload{
-				ImageTag: tag,
+				ImageTag:    tag.Name,
+				ImageDigest: tag.Digest,
 			}
+		} else if existing.ImageDigest == "" {
+			existing.ImageDigest = findDigestByTagName(imageStream, existing.ImageTag)
+			appPayload[codebase] = existing
 		}
 	}
 
@@ -130,11 +141,27 @@ func (h *StrategyManager) GetAppPayloadForCurrentWithStableStrategy(
 func (*StrategyManager) getLatestTag(
 	ctx context.Context,
 	imageStream *codebaseApi.CodebaseImageStream,
-) (codebase, tag string, e error) {
+) (string, codebaseApi.Tag, error) {
 	t, err := codebaseimagestream.GetLastTag(imageStream.Spec.Tags, ctrl.LoggerFrom(ctx))
 	if err != nil {
-		return "", "", ErrLasTagNotFound
+		return "", codebaseApi.Tag{}, ErrLasTagNotFound
 	}
 
-	return imageStream.Spec.Codebase, t.Name, nil
+	return imageStream.Spec.Codebase, t, nil
+}
+
+// findDigestByTagName looks up a digest for a given tag name in a CodebaseImageStream.
+// Returns an empty string if the CBIS is nil, the tag is not found, or the tag has no digest.
+func findDigestByTagName(cbis *codebaseApi.CodebaseImageStream, tagName string) string {
+	if cbis == nil {
+		return ""
+	}
+
+	for _, tag := range cbis.Spec.Tags {
+		if tag.Name == tagName {
+			return tag.Digest
+		}
+	}
+
+	return ""
 }
