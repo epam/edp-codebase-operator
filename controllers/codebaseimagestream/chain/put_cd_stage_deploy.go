@@ -211,6 +211,7 @@ func getCreateCommand(
 		Tag: codebaseApi.CodebaseTag{
 			Codebase: codebase,
 			Tag:      lastTag.Name,
+			Digest:   lastTag.Digest,
 		},
 	}, nil
 }
