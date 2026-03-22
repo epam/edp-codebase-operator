@@ -26,6 +26,7 @@ A Helm chart for Kubernetes
 | autoscaling.minReplicas | int | `1` |  |
 | autoscaling.targetCPUUtilizationPercentage | int | `80` |  |
 | fullnameOverride | string | `""` |  |
+| image.digest | string | `""` | Image digest for immutable reference (e.g., sha256:abc123...). If set, deployed as :tag@digest. |
 | image.pullPolicy | string | `"IfNotPresent"` |  |
 | image.repository | string | `"{{.Name}}"` |  |
 | image.tag | string | `""` | Overrides the image tag whose default is the chart appVersion. |
