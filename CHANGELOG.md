@@ -1,12 +1,27 @@
 <a name="unreleased"></a>
 ## [Unreleased]
 
+
+<a name="v2.30.0"></a>
+## [v2.30.0] - 2026-03-27
 ### Features
 
+- simplify GitLab CI template selection via annotation-based ConfigMap lookup
+- add tektonDisabled field and ciTool enum validation for multi-CI support
 - Add Docker registry and podLabels to helm chart ([#246](https://github.com/epam/edp-codebase-operator/issues/246))
+
+### Bug Fixes
+
+- add Helm chart validation to CI pipeline and fix label indentation
+- update CodebaseBranch pipelines example with security field ([#254](https://github.com/epam/edp-codebase-operator/issues/254))
 
 ### Routine
 
+- Upgrade golangci-lint from v1.64.7 to v2.8.0 ([#257](https://github.com/epam/edp-codebase-operator/issues/257))
+- add security pipeline field to CodebaseBranch CRD ([#254](https://github.com/epam/edp-codebase-operator/issues/254))
+- Update Operator SDK from v1.39.2 to v1.42.0 ([#252](https://github.com/epam/edp-codebase-operator/issues/252))
+- Update CI pipelines ([#249](https://github.com/epam/edp-codebase-operator/issues/249))
+- Update current development version ([#249](https://github.com/epam/edp-codebase-operator/issues/249))
 - Update current development version ([#244](https://github.com/epam/edp-codebase-operator/issues/244))
 
 
@@ -593,7 +608,8 @@ removed required fields from the GitServer status. CRD should be updated.
 - [EPMDEDP-868] Add functionality generates correct ssh URL for replication config for Gerrit
 
 
-[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.29.1...HEAD
+[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.30.0...HEAD
+[v2.30.0]: https://github.com/epam/edp-codebase-operator/compare/v2.29.1...v2.30.0
 [v2.29.1]: https://github.com/epam/edp-codebase-operator/compare/v2.29.0...v2.29.1
 [v2.29.0]: https://github.com/epam/edp-codebase-operator/compare/v2.28.0...v2.29.0
 [v2.28.0]: https://github.com/epam/edp-codebase-operator/compare/v2.27.2...v2.28.0
