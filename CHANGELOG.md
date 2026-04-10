@@ -1,25 +1,38 @@
 <a name="unreleased"></a>
 ## [Unreleased]
 
+### Routine
+
+- Update current development version
+
 
 <a name="v2.31.0"></a>
 ## [v2.31.0] - 2026-04-04
+### Routine
+
+- Update current development version ([#272](https://github.com/epam/edp-codebase-operator/issues/272))
+
 
 <a name="v2.30.0"></a>
 ## [v2.30.0] - 2026-03-27
 ### Features
 
+- populate image digest in APPLICATIONS_PAYLOAD
+- add image digest field to CodebaseImageStream CRD and Helm scaffolding
 - simplify GitLab CI template selection via annotation-based ConfigMap lookup
 - add tektonDisabled field and ciTool enum validation for multi-CI support
 - Add Docker registry and podLabels to helm chart ([#246](https://github.com/epam/edp-codebase-operator/issues/246))
 
 ### Bug Fixes
 
+- add image.digest to Helm scaffolding README templates
 - add Helm chart validation to CI pipeline and fix label indentation
 - update CodebaseBranch pipelines example with security field ([#254](https://github.com/epam/edp-codebase-operator/issues/254))
 
 ### Routine
 
+- remove CodeMie integration
+- bump dependencies to address vulnerabilities
 - Upgrade golangci-lint from v1.64.7 to v2.8.0 ([#257](https://github.com/epam/edp-codebase-operator/issues/257))
 - add security pipeline field to CodebaseBranch CRD ([#254](https://github.com/epam/edp-codebase-operator/issues/254))
 - Update Operator SDK from v1.39.2 to v1.42.0 ([#252](https://github.com/epam/edp-codebase-operator/issues/252))
