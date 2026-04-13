@@ -1,8 +1,12 @@
 <a name="unreleased"></a>
 ## [Unreleased]
 
+
+<a name="v2.32.0"></a>
+## [v2.32.0] - 2026-04-13
 ### Routine
 
+- Update commit message pattern validation and CHANGELOG
 - Update current development version
 
 
@@ -624,7 +628,8 @@ removed required fields from the GitServer status. CRD should be updated.
 - [EPMDEDP-868] Add functionality generates correct ssh URL for replication config for Gerrit
 
 
-[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.31.0...HEAD
+[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.32.0...HEAD
+[v2.32.0]: https://github.com/epam/edp-codebase-operator/compare/v2.31.0...v2.32.0
 [v2.31.0]: https://github.com/epam/edp-codebase-operator/compare/v2.30.0...v2.31.0
 [v2.30.0]: https://github.com/epam/edp-codebase-operator/compare/v2.29.1...v2.30.0
 [v2.29.1]: https://github.com/epam/edp-codebase-operator/compare/v2.29.0...v2.29.1
