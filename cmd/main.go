@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"crypto/tls"
 	"flag"
 	"os"
@@ -100,8 +99,6 @@ func main() {
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
 	v := buildInfo.Get()
-
-	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
 	// if the enable-http2 flag is false (the default), http/2 should be disabled
 	// due to its vulnerabilities. More specifically, disabling http/2 will
@@ -287,7 +284,7 @@ func main() {
 	}
 
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err = webhook.RegisterValidationWebHook(context.Background(), mgr, ns); err != nil {
+		if err = webhook.RegisterValidationWebHook(mgr); err != nil {
 			setupLog.Error(err, "failed to create webhook", "webhook", "Codebase")
 			os.Exit(1)
 		}

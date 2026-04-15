@@ -70,3 +70,7 @@ jira:
 # Read more about KubeRocketCI telemetry here: https://docs.kuberocketci.io/docs/developer-guide/telemetry
 # -- Flag to enable/disable telemetry
 telemetryEnabled: true
+
+# -- Enable webhook and cert-manager certificate resources.
+# Webhooks require cert-manager to be installed in the cluster.
+enableWebhooks: true

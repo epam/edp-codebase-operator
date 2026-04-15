@@ -34,6 +34,9 @@ spec:
       containers:
         - name: {{ .Values.name }}
           image: {{ if .Values.image.registry }}{{ .Values.image.registry }}/{{ end }}{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}
+          {{- if .Values.enableWebhooks }}
+          args:
+            - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
           ports:
             - containerPort: 9443
               name: webhook-server
@@ -42,6 +45,7 @@ spec:
             - mountPath: /tmp/k8s-webhook-server/serving-certs
               name: cert
               readOnly: true
+          {{- end }}
           imagePullPolicy: "{{ .Values.imagePullPolicy }}"
           {{- if .Values.securityContext }}
           securityContext: {{ toYaml .Values.securityContext | nindent 12 }}
@@ -61,6 +65,8 @@ spec:
               value: "{{ .Values.global.platform }}"
             - name: TELEMETRY_ENABLED
               value: "{{ .Values.telemetryEnabled }}"
+            - name: ENABLE_WEBHOOKS
+              value: {{ .Values.enableWebhooks | quote }}
 {{ toYaml .Values.envs | indent 12 }}
           resources:
 {{ toYaml .Values.resources | indent 12 }}
@@ -76,8 +82,10 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      {{- if .Values.enableWebhooks }}
       volumes:
         - name: cert
           secret:
             defaultMode: 420
-            secretName: edp-codebase-operator-webhook-certs
+            secretName: {{ .Values.name }}-webhook-certs
+      {{- end }}

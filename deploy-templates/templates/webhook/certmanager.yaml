@@ -1,0 +1,25 @@
+{{- if .Values.enableWebhooks }}
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  labels:
+    {{- include "codebase-operator.labels" . | nindent 4 }}
+  name: {{ .Values.name }}-selfsigned-issuer
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  labels:
+    {{- include "codebase-operator.labels" . | nindent 4 }}
+  name: {{ .Values.name }}-serving-cert
+spec:
+  dnsNames:
+  - edp-{{ .Values.name }}-webhook-service.{{ .Release.Namespace }}.svc
+  - edp-{{ .Values.name }}-webhook-service.{{ .Release.Namespace }}.svc.cluster.local
+  issuerRef:
+    kind: Issuer
+    name: {{ .Values.name }}-selfsigned-issuer
+  secretName: {{ .Values.name }}-webhook-certs
+{{- end }}
