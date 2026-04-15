@@ -1,8 +1,11 @@
+{{- if .Values.enableWebhooks }}
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   labels:
     {{- include "codebase-operator.labels" . | nindent 4 }}
+  annotations:
+    cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/{{ .Values.name }}-serving-cert
   name: edp-codebase-operator-validating-webhook-configuration-{{ .Release.Namespace }}
 webhooks:
   - admissionReviewVersions:
@@ -115,3 +118,4 @@ webhooks:
           - codebases
         scope: Namespaced
     sideEffects: None
+{{- end }}

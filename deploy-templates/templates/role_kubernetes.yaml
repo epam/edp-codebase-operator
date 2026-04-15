@@ -87,7 +87,6 @@ rules:
     - list
     - patch
     - update
-    - create
   resources:
     - secrets
 - apiGroups:

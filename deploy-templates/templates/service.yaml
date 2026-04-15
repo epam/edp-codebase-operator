@@ -1,3 +1,4 @@
+{{- if .Values.enableWebhooks }}
 apiVersion: v1
 kind: Service
 metadata:
@@ -11,3 +12,4 @@ spec:
       targetPort: 9443
   selector:
     name: {{ .Values.name }}
+{{- end }}
