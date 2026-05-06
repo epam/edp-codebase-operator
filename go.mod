@@ -11,19 +11,19 @@ require (
 	github.com/epam/edp-common v0.0.0-20230710145648-344bbce4120e
 	github.com/go-git/go-git/v5 v5.18.0
 	github.com/go-logr/logr v1.4.3
-	github.com/go-resty/resty/v2 v2.17.1
+	github.com/go-resty/resty/v2 v2.17.2
 	github.com/jarcoal/httpmock v1.4.1
 	github.com/oapi-codegen/runtime v1.1.2
 	github.com/onsi/ginkgo/v2 v2.23.4
 	github.com/onsi/gomega v1.37.0
 	github.com/openshift/api v3.9.0+incompatible
 	github.com/stretchr/testify v1.11.1
-	github.com/tektoncd/pipeline v1.6.1
+	github.com/tektoncd/pipeline v1.6.2
 	github.com/tektoncd/triggers v0.34.0
 	golang.org/x/crypto v0.49.0
-	k8s.io/api v0.33.7
-	k8s.io/apimachinery v0.33.7
-	k8s.io/client-go v0.33.7
+	k8s.io/api v0.33.11
+	k8s.io/apimachinery v0.33.11
+	k8s.io/client-go v0.33.11
 	k8s.io/utils v0.0.0-20241210054802-24370beab758
 	sigs.k8s.io/controller-runtime v0.21.0
 )
