@@ -2,6 +2,18 @@
 ## [Unreleased]
 
 
+<a name="v2.33.0"></a>
+## [v2.33.0] - 2026-05-21
+### Features
+
+- replace self-signed cert generation with cert-manager
+
+### Routine
+
+- bump k8s.io and other dependencies
+- Update current development version
+
+
 <a name="v2.32.0"></a>
 ## [v2.32.0] - 2026-04-13
 ### Routine
@@ -628,7 +640,8 @@ removed required fields from the GitServer status. CRD should be updated.
 - [EPMDEDP-868] Add functionality generates correct ssh URL for replication config for Gerrit
 
 
-[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.32.0...HEAD
+[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.33.0...HEAD
+[v2.33.0]: https://github.com/epam/edp-codebase-operator/compare/v2.32.0...v2.33.0
 [v2.32.0]: https://github.com/epam/edp-codebase-operator/compare/v2.31.0...v2.32.0
 [v2.31.0]: https://github.com/epam/edp-codebase-operator/compare/v2.30.0...v2.31.0
 [v2.30.0]: https://github.com/epam/edp-codebase-operator/compare/v2.29.1...v2.30.0
