@@ -7,10 +7,12 @@ import (
 
 	coreV1 "k8s.io/api/core/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
@@ -49,7 +51,7 @@ func (r *ReconcileGitServer) SetupWithManager(mgr ctrl.Manager) error {
 // +kubebuilder:rbac:groups=v2.edp.epam.com,namespace=placeholder,resources=gitservers,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=v2.edp.epam.com,namespace=placeholder,resources=gitservers/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=v2.edp.epam.com,namespace=placeholder,resources=gitservers/finalizers,verbs=update
-// +kubebuilder:rbac:groups="",namespace=placeholder,resources=secrets,verbs=get;list;watch
+// +kubebuilder:rbac:groups="",namespace=placeholder,resources=secrets,verbs=get;list;watch;update;patch
 // +kubebuilder:rbac:groups="networking.k8s.io",namespace=placeholder,resources=ingresses,verbs=get;list;watch;create
 // +kubebuilder:rbac:groups="route.openshift.io",namespace=placeholder,resources=routes,verbs=get;list;watch;create
 
@@ -69,6 +71,19 @@ func (r *ReconcileGitServer) Reconcile(ctx context.Context, request reconcile.Re
 
 	oldStatus := instance.Status
 	gitServer := model.ConvertToGitServer(instance)
+
+	if err := r.ensureSecretOwnership(ctx, instance); err != nil {
+		instance.Status.SetFailed(err.Error())
+		instance.Status.Connected = false
+
+		if statusErr := r.updateGitServerStatus(ctx, instance, oldStatus); statusErr != nil {
+			return reconcile.Result{}, statusErr
+		}
+
+		log.Error(err, "Failed to set owner reference on Git Server secret")
+
+		return reconcile.Result{RequeueAfter: defaultRequeueTime}, nil
+	}
 
 	if err := r.checkConnectionToGitServer(ctx, gitServer); err != nil {
 		instance.Status.SetFailed(err.Error())
@@ -108,6 +123,55 @@ func (r *ReconcileGitServer) Reconcile(ctx context.Context, request reconcile.Re
 	return reconcile.Result{
 		RequeueAfter: successRequeueTime,
 	}, nil
+}
+
+// ensureSecretOwnership makes the GitServer the controller owner of its credentials Secret so
+// that Kubernetes garbage-collects the Secret when the GitServer is deleted, regardless of the
+// deletion path (portal UI, kubectl, CLI).
+func (r *ReconcileGitServer) ensureSecretOwnership(ctx context.Context, gitServer *codebaseApi.GitServer) error {
+	secret := &coreV1.Secret{}
+
+	if err := r.client.Get(ctx, types.NamespacedName{
+		Namespace: gitServer.Namespace,
+		Name:      gitServer.Spec.NameSshKeySecret,
+	}, secret); err != nil {
+		if k8sErrors.IsNotFound(err) {
+			// The secret hasn't been provisioned yet; a later reconcile will set ownership.
+			return nil
+		}
+
+		return fmt.Errorf("failed to get secret %s: %w", gitServer.Spec.NameSshKeySecret, err)
+	}
+
+	// Leave the secret untouched if it already has a controller owner: either this GitServer
+	// (idempotent re-reconcile) or another resource such as an ExternalSecret.
+	if controllerRef := metaV1.GetControllerOf(secret); controllerRef != nil {
+		return nil
+	}
+
+	// Don't take exclusive ownership of a secret referenced by several GitServers, otherwise
+	// deleting one of them would garbage-collect credentials still in use by the others.
+	gitServers := &codebaseApi.GitServerList{}
+	if err := r.client.List(ctx, gitServers, client.InNamespace(gitServer.Namespace)); err != nil {
+		return fmt.Errorf("failed to list GitServers in namespace %s: %w", gitServer.Namespace, err)
+	}
+
+	for i := range gitServers.Items {
+		if gitServers.Items[i].Name != gitServer.Name &&
+			gitServers.Items[i].Spec.NameSshKeySecret == gitServer.Spec.NameSshKeySecret {
+			return nil
+		}
+	}
+
+	if err := controllerutil.SetControllerReference(gitServer, secret, r.client.Scheme()); err != nil {
+		return fmt.Errorf("failed to set owner reference on secret %s: %w", secret.Name, err)
+	}
+
+	if err := r.client.Update(ctx, secret); err != nil {
+		return fmt.Errorf("failed to update secret %s with owner reference: %w", secret.Name, err)
+	}
+
+	return nil
 }
 
 func (r *ReconcileGitServer) checkConnectionToGitServer(ctx context.Context, gitServer *model.GitServer) error {
