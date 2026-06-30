@@ -2,6 +2,7 @@ package gitserver
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"testing"
 	"time"
@@ -16,6 +17,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
@@ -231,9 +233,8 @@ func TestReconcileGitServer_ServerUnavailable(t *testing.T) {
 		},
 	}
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(codebaseApi.GroupVersion, gs)
-	err := corev1.AddToScheme(scheme)
-	assert.NoError(t, err)
+	require.NoError(t, codebaseApi.AddToScheme(scheme))
+	require.NoError(t, corev1.AddToScheme(scheme))
 
 	secret := corev1.Secret{
 		ObjectMeta: metaV1.ObjectMeta{Name: "ssh-secret", Namespace: gs.Namespace},
@@ -391,6 +392,217 @@ func TestReconcileGitServer_EmptySSHKey(t *testing.T) {
 	require.NoError(t, err)
 	assert.True(t, gotGitServer.Status.Connected)
 	assert.True(t, gotGitServer.Status.IsSuccess())
+}
+
+func TestReconcileGitServer_EnsureSecretOwnership(t *testing.T) {
+	t.Parallel()
+
+	const (
+		ns         = "namespace"
+		targetName = "git-server"
+	)
+
+	gitServer := func(name, secretName string) *codebaseApi.GitServer {
+		return &codebaseApi.GitServer{
+			ObjectMeta: metaV1.ObjectMeta{Name: name, Namespace: ns, UID: types.UID(name + "-uid")},
+			Spec:       codebaseApi.GitServerSpec{GitHost: "g-host", NameSshKeySecret: secretName},
+		}
+	}
+	secret := func(name string, owners ...metaV1.OwnerReference) *corev1.Secret {
+		return &corev1.Secret{ObjectMeta: metaV1.ObjectMeta{Name: name, Namespace: ns, OwnerReferences: owners}}
+	}
+	gsOwner := func(name string) metaV1.OwnerReference {
+		controller := true
+		return metaV1.OwnerReference{
+			APIVersion: codebaseApi.GroupVersion.String(),
+			Kind:       "GitServer",
+			Name:       name,
+			UID:        types.UID(name + "-uid"),
+			Controller: &controller,
+		}
+	}
+	extOwner := func() metaV1.OwnerReference {
+		controller := true
+		return metaV1.OwnerReference{
+			APIVersion: "external-secrets.io/v1beta1",
+			Kind:       "ExternalSecret",
+			Name:       "ssh-secret",
+			UID:        "external-secret-uid",
+			Controller: &controller,
+		}
+	}
+
+	tests := []struct {
+		name      string
+		secretRef string
+		// objects returns the fresh fixtures for the subtest, including the target GitServer.
+		objects     func() []client.Object
+		interceptor interceptor.Funcs
+		wantErr     bool
+		verify      func(t *testing.T, secret *corev1.Secret, getErr error)
+	}{
+		{
+			name:      "adopts an unowned secret",
+			secretRef: "ssh-secret",
+			objects:   func() []client.Object { return []client.Object{gitServer(targetName, "ssh-secret"), secret("ssh-secret")} },
+			verify: func(t *testing.T, s *corev1.Secret, getErr error) {
+				require.NoError(t, getErr)
+				require.Len(t, s.OwnerReferences, 1)
+				assert.Equal(t, "GitServer", s.OwnerReferences[0].Kind)
+				assert.Equal(t, targetName, s.OwnerReferences[0].Name)
+				require.NotNil(t, s.OwnerReferences[0].Controller)
+				assert.True(t, *s.OwnerReferences[0].Controller)
+			},
+		},
+		{
+			name:      "leaves a secret controlled by another resource untouched",
+			secretRef: "ssh-secret",
+			objects:   func() []client.Object { return []client.Object{gitServer(targetName, "ssh-secret"), secret("ssh-secret", extOwner())} },
+			verify: func(t *testing.T, s *corev1.Secret, getErr error) {
+				require.NoError(t, getErr)
+				require.Len(t, s.OwnerReferences, 1)
+				assert.Equal(t, "ExternalSecret", s.OwnerReferences[0].Kind)
+			},
+		},
+		{
+			name:      "is idempotent when already owned by this GitServer",
+			secretRef: "ssh-secret",
+			objects:   func() []client.Object { return []client.Object{gitServer(targetName, "ssh-secret"), secret("ssh-secret", gsOwner(targetName))} },
+			verify: func(t *testing.T, s *corev1.Secret, getErr error) {
+				require.NoError(t, getErr)
+				require.Len(t, s.OwnerReferences, 1)
+				assert.Equal(t, targetName, s.OwnerReferences[0].Name)
+			},
+		},
+		{
+			name:      "treats a not-yet-provisioned secret as a no-op",
+			secretRef: "missing-secret",
+			objects:   func() []client.Object { return []client.Object{gitServer(targetName, "missing-secret")} },
+			verify: func(t *testing.T, _ *corev1.Secret, getErr error) {
+				require.Error(t, getErr) // the secret was never created
+			},
+		},
+		{
+			name:      "does not exclusively own a secret shared by multiple GitServers",
+			secretRef: "ssh-secret",
+			objects: func() []client.Object {
+				return []client.Object{gitServer(targetName, "ssh-secret"), gitServer("other-git-server", "ssh-secret"), secret("ssh-secret")}
+			},
+			verify: func(t *testing.T, s *corev1.Secret, getErr error) {
+				require.NoError(t, getErr)
+				assert.Empty(t, s.OwnerReferences)
+			},
+		},
+		{
+			name:      "returns an error when reading the secret fails",
+			secretRef: "ssh-secret",
+			objects:   func() []client.Object { return []client.Object{gitServer(targetName, "ssh-secret"), secret("ssh-secret")} },
+			interceptor: interceptor.Funcs{
+				Get: func(_ context.Context, _ client.WithWatch, _ client.ObjectKey, obj client.Object, _ ...client.GetOption) error {
+					if _, ok := obj.(*corev1.Secret); ok {
+						return errors.New("get failed")
+					}
+					return nil
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name:      "returns an error when listing GitServers fails",
+			secretRef: "ssh-secret",
+			objects:   func() []client.Object { return []client.Object{gitServer(targetName, "ssh-secret"), secret("ssh-secret")} },
+			interceptor: interceptor.Funcs{
+				List: func(_ context.Context, _ client.WithWatch, _ client.ObjectList, _ ...client.ListOption) error {
+					return errors.New("list failed")
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name:      "returns an error when updating the secret fails",
+			secretRef: "ssh-secret",
+			objects:   func() []client.Object { return []client.Object{gitServer(targetName, "ssh-secret"), secret("ssh-secret")} },
+			interceptor: interceptor.Funcs{
+				Update: func(_ context.Context, _ client.WithWatch, _ client.Object, _ ...client.UpdateOption) error {
+					return errors.New("update failed")
+				},
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			scheme := runtime.NewScheme()
+			require.NoError(t, corev1.AddToScheme(scheme))
+			require.NoError(t, codebaseApi.AddToScheme(scheme))
+
+			objects := tt.objects()
+			target := objects[0].(*codebaseApi.GitServer)
+
+			fakeCl := fake.NewClientBuilder().
+				WithScheme(scheme).
+				WithObjects(objects...).
+				WithInterceptorFuncs(tt.interceptor).
+				Build()
+			r := ReconcileGitServer{client: fakeCl}
+
+			err := r.ensureSecretOwnership(context.Background(), target)
+
+			if tt.wantErr {
+				require.Error(t, err)
+				return
+			}
+
+			require.NoError(t, err)
+
+			gotSecret := &corev1.Secret{}
+			getErr := fakeCl.Get(context.Background(), types.NamespacedName{Name: tt.secretRef, Namespace: ns}, gotSecret)
+			tt.verify(t, gotSecret, getErr)
+		})
+	}
+}
+
+func TestReconcileGitServer_Reconcile_SecretOwnershipFailureSetsFailedStatus(t *testing.T) {
+	t.Parallel()
+
+	scheme := runtime.NewScheme()
+	require.NoError(t, corev1.AddToScheme(scheme))
+	require.NoError(t, codebaseApi.AddToScheme(scheme))
+
+	gs := &codebaseApi.GitServer{
+		ObjectMeta: metaV1.ObjectMeta{Name: "git-server", Namespace: "namespace"},
+		Spec:       codebaseApi.GitServerSpec{GitHost: "g-host", NameSshKeySecret: "ssh-secret"},
+		Status:     codebaseApi.GitServerStatus{Connected: true},
+	}
+	secret := &corev1.Secret{ObjectMeta: metaV1.ObjectMeta{Name: "ssh-secret", Namespace: gs.Namespace}}
+
+	fakeCl := fake.NewClientBuilder().
+		WithScheme(scheme).
+		WithObjects(gs, secret).
+		WithStatusSubresource(gs).
+		WithInterceptorFuncs(interceptor.Funcs{
+			List: func(_ context.Context, _ client.WithWatch, _ client.ObjectList, _ ...client.ListOption) error {
+				return errors.New("list failed")
+			},
+		}).
+		Build()
+
+	r := ReconcileGitServer{client: fakeCl}
+
+	res, err := r.Reconcile(ctrl.LoggerInto(context.Background(), logr.Discard()), reconcile.Request{
+		NamespacedName: types.NamespacedName{Name: gs.Name, Namespace: gs.Namespace},
+	})
+
+	require.NoError(t, err)
+	assert.Equal(t, defaultRequeueTime, res.RequeueAfter)
+
+	gotGitServer := &codebaseApi.GitServer{}
+	require.NoError(t, fakeCl.Get(context.Background(), types.NamespacedName{Name: gs.Name, Namespace: gs.Namespace}, gotGitServer))
+	assert.Equal(t, "failed", gotGitServer.Status.Status)
+	assert.False(t, gotGitServer.Status.Connected)
 }
 
 func TestNewReconcileGitServer(t *testing.T) {
