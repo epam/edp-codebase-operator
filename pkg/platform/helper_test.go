@@ -31,3 +31,31 @@ func TestGetPlatformType_Openshift(t *testing.T) {
 		t.Error("Should fail")
 	}
 }
+
+func TestIsEnvoyGateway_True(t *testing.T) {
+	t.Setenv(GatewayTypeEnv, GatewayTypeEnvoy)
+
+	if !IsEnvoyGateway() {
+		t.Error("Should be envoy gateway")
+	}
+}
+
+func TestIsEnvoyGateway_False(t *testing.T) {
+	if IsEnvoyGateway() {
+		t.Error("Should not be envoy gateway by default")
+	}
+}
+
+func TestIsIngressGateway_True(t *testing.T) {
+	if !IsIngressGateway() {
+		t.Error("Should be ingress gateway by default")
+	}
+}
+
+func TestIsIngressGateway_False(t *testing.T) {
+	t.Setenv(GatewayTypeEnv, GatewayTypeEnvoy)
+
+	if IsIngressGateway() {
+		t.Error("Should not be ingress gateway when envoy is set")
+	}
+}

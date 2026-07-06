@@ -19,6 +19,7 @@ import (
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/certwatcher"
@@ -209,6 +210,7 @@ func main() {
 	utilruntime.Must(routeApi.AddToScheme(scheme))
 	utilruntime.Must(tektonTriggersApi.AddToScheme(scheme))
 	utilruntime.Must(tektonpipelineApi.AddToScheme(scheme))
+	utilruntime.Must(gatewayv1.Install(scheme))
 
 	ns, err := util.GetWatchNamespace()
 	if err != nil {

@@ -1,6 +1,12 @@
 global:
   # -- platform type that can be "kubernetes" or "openshift"
   platform: "kubernetes"
+  # -- gateway type that can be "ingress" or "envoy"
+  gateway: "ingress"
+  # -- name of the Gateway resource to attach HTTPRoutes to (used when gateway: "envoy")
+  gatewayName: "main-gateway"
+  # -- namespace of the Gateway resource (leave empty if Gateway is in the same namespace)
+  gatewayNamespace: "envoy-gateway-system"
 
 # -- component name
 name: codebase-operator

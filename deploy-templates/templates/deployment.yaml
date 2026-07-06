@@ -63,6 +63,12 @@ spec:
               value: {{ .Values.name }}
             - name: PLATFORM_TYPE
               value: "{{ .Values.global.platform }}"
+            - name: GATEWAY_TYPE
+              value: "{{ .Values.global.gateway }}"
+            - name: GATEWAY_NAME
+              value: "{{ .Values.global.gatewayName }}"
+            - name: GATEWAY_NAMESPACE
+              value: "{{ .Values.global.gatewayNamespace }}"
             - name: TELEMETRY_ENABLED
               value: "{{ .Values.telemetryEnabled }}"
             - name: ENABLE_WEBHOOKS
