@@ -53,6 +53,7 @@ func (r *ReconcileGitServer) SetupWithManager(mgr ctrl.Manager) error {
 // +kubebuilder:rbac:groups=v2.edp.epam.com,namespace=placeholder,resources=gitservers/finalizers,verbs=update
 // +kubebuilder:rbac:groups="",namespace=placeholder,resources=secrets,verbs=get;list;watch;update;patch
 // +kubebuilder:rbac:groups="networking.k8s.io",namespace=placeholder,resources=ingresses,verbs=get;list;watch;create
+// +kubebuilder:rbac:groups="gateway.networking.k8s.io",namespace=placeholder,resources=httproutes,verbs=get;list;watch;create
 // +kubebuilder:rbac:groups="route.openshift.io",namespace=placeholder,resources=routes,verbs=get;list;watch;create
 
 // Reconcile reads that state of the cluster for a GitServer object and makes changes based on the state.

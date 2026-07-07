@@ -1,6 +1,15 @@
 global:
   # -- platform type that can be "kubernetes" or "openshift"
   platform: "kubernetes"
+  # -- Gateway API parent Gateway that EventListener HTTPRoutes attach to (used when ingressController=envoy)
+  gatewayApi:
+    # -- Name of the parent Gateway resource
+    gatewayName: "main-gateway"
+    # -- Namespace of the parent Gateway resource
+    gatewayNamespace: "envoy-gateway-system"
+
+# -- Ingress controller for the GitServer EventListener webhook: "nginx" (Ingress) or "envoy" (Gateway API HTTPRoute)
+ingressController: "nginx"
 
 # -- component name
 name: codebase-operator

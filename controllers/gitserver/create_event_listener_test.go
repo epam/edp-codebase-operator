@@ -15,6 +15,7 @@ import (
 	controllerruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/platform"
@@ -28,6 +29,7 @@ func TestCreateEventListener_ServeRequest(t *testing.T) {
 	require.NoError(t, networkingv1.AddToScheme(scheme))
 	require.NoError(t, routeApi.AddToScheme(scheme))
 	require.NoError(t, corev1.AddToScheme(scheme))
+	require.NoError(t, gatewayv1.Install(scheme))
 
 	tests := []struct {
 		name      string
@@ -331,6 +333,144 @@ func TestCreateEventListener_ServeRequest(t *testing.T) {
 					Namespace: "default",
 					Name:      GenerateIngressName("test-git-server"),
 				}, i))
+			},
+		},
+		{
+			name: "create event listener success envoy",
+			gitServer: &codebaseApi.GitServer{
+				ObjectMeta: controllerruntime.ObjectMeta{
+					Name:      "test-git-server",
+					Namespace: "default",
+				},
+			},
+			k8sClient: func(t *testing.T) client.Client {
+				return fake.NewClientBuilder().
+					WithScheme(scheme).
+					WithObjects(&corev1.ConfigMap{
+						ObjectMeta: controllerruntime.ObjectMeta{
+							Namespace: "default",
+							Name:      platform.KrciConfigMap,
+						},
+					}).
+					Build()
+			},
+			prepare: func(t *testing.T) {
+				t.Setenv(platform.TypeEnv, platform.K8S)
+				t.Setenv(platform.IngressControllerEnv, platform.IngressControllerEnvoy)
+				t.Setenv(platform.GatewayNameEnv, "main-gateway")
+				t.Setenv(platform.GatewayNamespaceEnv, "envoy-gateway-system")
+			},
+			wantErr: require.NoError,
+			want: func(t *testing.T, k8sClient client.Client) {
+				el := tektoncd.NewEventListenerUnstructured()
+				require.NoError(t, k8sClient.Get(context.Background(), client.ObjectKey{
+					Namespace: "default",
+					Name:      generateEventListenerName("test-git-server"),
+				}, el))
+
+				hr := &gatewayv1.HTTPRoute{}
+				require.NoError(t, k8sClient.Get(context.Background(), client.ObjectKey{
+					Namespace: "default",
+					Name:      GenerateIngressName("test-git-server"),
+				}, hr))
+
+				require.Len(t, hr.Spec.ParentRefs, 1)
+				require.Equal(t, gatewayv1.ObjectName("main-gateway"), hr.Spec.ParentRefs[0].Name)
+				require.NotNil(t, hr.Spec.ParentRefs[0].Namespace)
+				require.Equal(t, gatewayv1.Namespace("envoy-gateway-system"), *hr.Spec.ParentRefs[0].Namespace)
+
+				require.Len(t, hr.Spec.Hostnames, 1)
+				require.Equal(t, gatewayv1.Hostname("el-test-git-server-default."), hr.Spec.Hostnames[0])
+
+				require.Len(t, hr.Spec.Rules, 1)
+				require.Len(t, hr.Spec.Rules[0].BackendRefs, 1)
+				require.Equal(t, gatewayv1.ObjectName(generateServiceName("test-git-server")), hr.Spec.Rules[0].BackendRefs[0].Name)
+			},
+		},
+		{
+			name: "http route already exists",
+			gitServer: &codebaseApi.GitServer{
+				ObjectMeta: controllerruntime.ObjectMeta{
+					Name:      "test-git-server",
+					Namespace: "default",
+				},
+			},
+			k8sClient: func(t *testing.T) client.Client {
+				return fake.NewClientBuilder().
+					WithScheme(scheme).
+					WithObjects(
+						&corev1.ConfigMap{
+							ObjectMeta: controllerruntime.ObjectMeta{
+								Namespace: "default",
+								Name:      platform.KrciConfigMap,
+							},
+						},
+						&gatewayv1.HTTPRoute{
+							ObjectMeta: controllerruntime.ObjectMeta{
+								Namespace: "default",
+								Name:      GenerateIngressName("test-git-server"),
+							},
+						},
+					).
+					Build()
+			},
+			prepare: func(t *testing.T) {
+				t.Setenv(platform.TypeEnv, platform.K8S)
+				t.Setenv(platform.IngressControllerEnv, platform.IngressControllerEnvoy)
+				t.Setenv(platform.GatewayNameEnv, "main-gateway")
+				t.Setenv(platform.GatewayNamespaceEnv, "envoy-gateway-system")
+			},
+			wantErr: require.NoError,
+			want: func(t *testing.T, k8sClient client.Client) {
+				el := tektoncd.NewEventListenerUnstructured()
+				require.NoError(t, k8sClient.Get(context.Background(), client.ObjectKey{
+					Namespace: "default",
+					Name:      generateEventListenerName("test-git-server"),
+				}, el))
+
+				hr := &gatewayv1.HTTPRoute{}
+				require.NoError(t, k8sClient.Get(context.Background(), client.ObjectKey{
+					Namespace: "default",
+					Name:      GenerateIngressName("test-git-server"),
+				}, hr))
+			},
+		},
+		{
+			name: "envoy selected but gateway name is empty",
+			gitServer: &codebaseApi.GitServer{
+				ObjectMeta: controllerruntime.ObjectMeta{
+					Name:      "test-git-server",
+					Namespace: "default",
+				},
+			},
+			k8sClient: func(t *testing.T) client.Client {
+				return fake.NewClientBuilder().
+					WithScheme(scheme).
+					WithObjects(&corev1.ConfigMap{
+						ObjectMeta: controllerruntime.ObjectMeta{
+							Namespace: "default",
+							Name:      platform.KrciConfigMap,
+						},
+					}).
+					Build()
+			},
+			prepare: func(t *testing.T) {
+				t.Setenv(platform.TypeEnv, platform.K8S)
+				t.Setenv(platform.IngressControllerEnv, platform.IngressControllerEnvoy)
+				t.Setenv(platform.GatewayNamespaceEnv, "envoy-gateway-system")
+			},
+			wantErr: func(t require.TestingT, err error, i ...interface{}) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "GATEWAY_NAME/GATEWAY_NAMESPACE must be set")
+			},
+			want: func(t *testing.T, k8sClient client.Client) {
+				hr := &gatewayv1.HTTPRoute{}
+				err := k8sClient.Get(context.Background(), client.ObjectKey{
+					Namespace: "default",
+					Name:      GenerateIngressName("test-git-server"),
+				}, hr)
+				require.Error(t, err)
+				require.True(t, k8sErrors.IsNotFound(err))
 			},
 		},
 		{

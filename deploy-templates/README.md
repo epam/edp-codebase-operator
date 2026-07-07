@@ -27,12 +27,16 @@ A Helm chart for KubeRocketCI Codebase Operator
 | envs[0].name | string | `"RECONCILATION_PERIOD"` |  |
 | envs[0].value | string | `"360"` |  |
 | envs[1] | object | `{"name":"CODEBASE_BRANCH_MAX_CONCURRENT_RECONCILES","value":"3"}` | Maximum number of parallel reconciliation codebasebranches |
+| global.gatewayApi | object | `{"gatewayName":"main-gateway","gatewayNamespace":"envoy-gateway-system"}` | Gateway API parent Gateway that EventListener HTTPRoutes attach to (used when ingressController=envoy) |
+| global.gatewayApi.gatewayName | string | `"main-gateway"` | Name of the parent Gateway resource |
+| global.gatewayApi.gatewayNamespace | string | `"envoy-gateway-system"` | Namespace of the parent Gateway resource |
 | global.platform | string | `"kubernetes"` | platform type that can be "kubernetes" or "openshift" |
 | image.registry | string | `""` | KubeRocketCI codebase-operator Docker image registry. |
 | image.repository | string | `"epamedp/codebase-operator"` | KubeRocketCI codebase-operator Docker image name. The released image can be found on [Dockerhub](https://hub.docker.com/r/epamedp/codebase-operator) |
 | image.tag | string | `nil` | KubeRocketCI codebase-operator Docker image tag. The released image can be found on [Dockerhub](https://hub.docker.com/r/epamedp/codebase-operator/tags) |
 | imagePullPolicy | string | `"IfNotPresent"` |  |
 | imagePullSecrets | list | `[]` | Optional array of imagePullSecrets containing private registry credentials # Ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry |
+| ingressController | string | `"nginx"` | Ingress controller for the GitServer EventListener webhook: "nginx" (Ingress) or "envoy" (Gateway API HTTPRoute) |
 | jira.apiUrl | string | `"https://jiraeu-api.example.com"` | API URL for development |
 | jira.credentialName | string | `"ci-jira"` | Name of secret with credentials to Jira server |
 | jira.integration | bool | `false` | Flag to enable/disable Jira integration |
