@@ -19,6 +19,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	"github.com/epam/edp-codebase-operator/v2/controllers/gitserver"
@@ -42,6 +43,7 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 	require.NoError(t, coreV1.AddToScheme(schema))
 	require.NoError(t, networkingV1.AddToScheme(schema))
 	require.NoError(t, routeApi.AddToScheme(schema))
+	require.NoError(t, gatewayv1.Install(schema))
 
 	gitURL := "test-owner/test-repo"
 	fakeUrlRegexp := regexp.MustCompile(`.*`)
@@ -237,6 +239,66 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 						},
 					},
 				},
+			},
+			responder: func(t *testing.T) {
+				POSTResponder := httpmock.NewStringResponder(http.StatusOK, "")
+				httpmock.RegisterRegexpResponder(http.MethodPost, fakeUrlRegexp, POSTResponder)
+
+				GETResponder := httpmock.NewStringResponder(http.StatusOK, "")
+				httpmock.RegisterRegexpResponder(http.MethodGet, fakeUrlRegexp, GETResponder)
+			},
+			wantErr: require.NoError,
+		},
+		{
+			name: "success gitlab with envoy httproute",
+			codebase: &codebaseApi.Codebase{
+				ObjectMeta: metaV1.ObjectMeta{
+					Namespace:       namespace,
+					Name:            "test-codebase",
+					ResourceVersion: "1",
+				},
+				Spec: codebaseApi.CodebaseSpec{
+					GitServer:  "test-git-server",
+					GitUrlPath: gitURL,
+					CiTool:     util.CITekton,
+				},
+			},
+			prepare: func(t *testing.T) {
+				t.Setenv(platform.TypeEnv, platform.K8S)
+				t.Setenv(platform.IngressControllerEnv, platform.IngressControllerEnvoy)
+			},
+			k8sObjects: []client.Object{
+				&codebaseApi.Codebase{
+					ObjectMeta: metaV1.ObjectMeta{
+						Namespace:       namespace,
+						Name:            "test-codebase",
+						ResourceVersion: "1",
+					},
+				},
+				&codebaseApi.GitServer{
+					ObjectMeta: metaV1.ObjectMeta{
+						Namespace: namespace,
+						Name:      "test-git-server",
+					},
+					Spec: codebaseApi.GitServerSpec{
+						GitHost:          "fake.gitlab.com",
+						GitUser:          "git",
+						HttpsPort:        443,
+						NameSshKeySecret: "test-secret",
+						GitProvider:      codebaseApi.GitProviderGitlab,
+					},
+				},
+				&coreV1.Secret{
+					ObjectMeta: metaV1.ObjectMeta{
+						Namespace: namespace,
+						Name:      "test-secret",
+					},
+					Data: map[string][]byte{
+						util.GitServerSecretTokenField:         []byte("test-token"),
+						util.GitServerSecretWebhookSecretField: []byte("test-webhook-secret"),
+					},
+				},
+				fakeHTTPRoute(gitserver.GenerateIngressName("test-git-server"), "fake.gitlab.com"),
 			},
 			responder: func(t *testing.T) {
 				POSTResponder := httpmock.NewStringResponder(http.StatusOK, "")
@@ -788,6 +850,105 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 			errContains: "failed to get webhook ingress",
 		},
 		{
+			name: "failed to get getWebHookUrl - no hostnames on httproute",
+			codebase: &codebaseApi.Codebase{
+				ObjectMeta: metaV1.ObjectMeta{
+					Namespace: namespace,
+					Name:      "test-codebase",
+				},
+				Spec: codebaseApi.CodebaseSpec{
+					GitServer:  "test-git-server",
+					GitUrlPath: gitURL,
+					CiTool:     util.CITekton,
+				},
+			},
+			prepare: func(t *testing.T) {
+				t.Setenv(platform.TypeEnv, platform.K8S)
+				t.Setenv(platform.IngressControllerEnv, platform.IngressControllerEnvoy)
+			},
+			k8sObjects: []client.Object{
+				&codebaseApi.GitServer{
+					ObjectMeta: metaV1.ObjectMeta{
+						Namespace: namespace,
+						Name:      "test-git-server",
+					},
+					Spec: codebaseApi.GitServerSpec{
+						GitHost:          "fake.gitlab.com",
+						GitUser:          "git",
+						HttpsPort:        443,
+						NameSshKeySecret: "test-secret",
+						GitProvider:      codebaseApi.GitProviderGitlab,
+					},
+				},
+				&coreV1.Secret{
+					ObjectMeta: metaV1.ObjectMeta{
+						Namespace: namespace,
+						Name:      "test-secret",
+					},
+					Data: map[string][]byte{
+						util.GitServerSecretTokenField: []byte("test-token"),
+					},
+				},
+				&gatewayv1.HTTPRoute{
+					ObjectMeta: metaV1.ObjectMeta{
+						Namespace: namespace,
+						Name:      gitserver.GenerateIngressName("test-git-server"),
+						Labels: map[string]string{
+							"app.edp.epam.com/gitServer": "test-git-server",
+						},
+					},
+				},
+			},
+			responder:   func(t *testing.T) {},
+			wantErr:     require.Error,
+			errContains: "doesn't have hostnames",
+		},
+		{
+			name: "failed to get getWebHookUrl - no httproute",
+			codebase: &codebaseApi.Codebase{
+				ObjectMeta: metaV1.ObjectMeta{
+					Namespace: namespace,
+					Name:      "test-codebase",
+				},
+				Spec: codebaseApi.CodebaseSpec{
+					GitServer:  "test-git-server",
+					GitUrlPath: gitURL,
+					CiTool:     util.CITekton,
+				},
+			},
+			prepare: func(t *testing.T) {
+				t.Setenv(platform.TypeEnv, platform.K8S)
+				t.Setenv(platform.IngressControllerEnv, platform.IngressControllerEnvoy)
+			},
+			k8sObjects: []client.Object{
+				&codebaseApi.GitServer{
+					ObjectMeta: metaV1.ObjectMeta{
+						Namespace: namespace,
+						Name:      "test-git-server",
+					},
+					Spec: codebaseApi.GitServerSpec{
+						GitHost:          "fake.gitlab.com",
+						GitUser:          "git",
+						HttpsPort:        443,
+						NameSshKeySecret: "test-secret",
+						GitProvider:      codebaseApi.GitProviderGitlab,
+					},
+				},
+				&coreV1.Secret{
+					ObjectMeta: metaV1.ObjectMeta{
+						Namespace: namespace,
+						Name:      "test-secret",
+					},
+					Data: map[string][]byte{
+						util.GitServerSecretTokenField: []byte("test-token"),
+					},
+				},
+			},
+			responder:   func(t *testing.T) {},
+			wantErr:     require.Error,
+			errContains: "failed to get webhook HTTPRoute",
+		},
+		{
 			name: "failed to get secret - no required field",
 			codebase: &codebaseApi.Codebase{
 				ObjectMeta: metaV1.ObjectMeta{
@@ -905,6 +1066,39 @@ func TestPutWebHook_ServeRequest(t *testing.T) {
 				assert.Contains(t, gotErr.Error(), tt.errContains)
 			}
 		})
+	}
+}
+
+func TestPutWebHook_getWebhookHTTPRouteUrl(t *testing.T) {
+	schema := runtime.NewScheme()
+	require.NoError(t, gatewayv1.Install(schema))
+
+	host := "el-test-git-server-test-ns.example.com"
+
+	k8sClient := fake.NewClientBuilder().
+		WithScheme(schema).
+		WithObjects(fakeHTTPRoute(gitserver.GenerateIngressName("test-git-server"), host)).
+		Build()
+
+	s := NewPutWebHook(k8sClient, resty.New())
+
+	got, err := s.getWebhookHTTPRouteUrl(context.Background(), "test-git-server", namespace)
+	require.NoError(t, err)
+	assert.Equal(t, util.GetHostWithProtocol(host), got)
+}
+
+func fakeHTTPRoute(name, host string) *gatewayv1.HTTPRoute {
+	return &gatewayv1.HTTPRoute{
+		ObjectMeta: metaV1.ObjectMeta{
+			Namespace: namespace,
+			Name:      name,
+			Labels: map[string]string{
+				"app.edp.epam.com/gitServer": "test-git-server",
+			},
+		},
+		Spec: gatewayv1.HTTPRouteSpec{
+			Hostnames: []gatewayv1.Hostname{gatewayv1.Hostname(host)},
+		},
 	}
 }
 

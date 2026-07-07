@@ -63,6 +63,12 @@ spec:
               value: {{ .Values.name }}
             - name: PLATFORM_TYPE
               value: "{{ .Values.global.platform }}"
+            - name: INGRESS_CONTROLLER_TYPE
+              value: "{{ .Values.ingressController }}"
+            - name: GATEWAY_NAME
+              value: "{{ .Values.global.gatewayApi.gatewayName }}"
+            - name: GATEWAY_NAMESPACE
+              value: "{{ .Values.global.gatewayApi.gatewayNamespace }}"
             - name: TELEMETRY_ENABLED
               value: "{{ .Values.telemetryEnabled }}"
             - name: ENABLE_WEBHOOKS

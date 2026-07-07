@@ -19,6 +19,28 @@ import (
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 )
 
+func newCBIS(name, codebase, tag, digest string) *codebaseApi.CodebaseImageStream {
+	return &codebaseApi.CodebaseImageStream{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: "default",
+			Labels: map[string]string{
+				codebaseApi.CodebaseBranchLabel: name,
+			},
+		},
+		Spec: codebaseApi.CodebaseImageStreamSpec{
+			Codebase: codebase,
+			Tags: []codebaseApi.Tag{
+				{
+					Name:    tag,
+					Created: time.Now().Format(time.RFC3339),
+					Digest:  digest,
+				},
+			},
+		},
+	}
+}
+
 func TestStrategyManager_GetAppPayloadForAllLatestStrategy(t *testing.T) {
 	t.Parallel()
 
@@ -620,7 +642,8 @@ func TestStrategyManager_GetAppPayloadForCurrentWithStableStrategy(t *testing.T)
 					},
 				).Build()
 			},
-			want:    `{"app1":{"imageTag":"1.0","imageDigest":"sha256:app1digest"},"app2":{"imageTag":"3.0","imageDigest":"sha256:app2digest"}}`,
+			want: `{"app1":{"imageTag":"1.0","imageDigest":"sha256:app1digest"},` +
+				`"app2":{"imageTag":"3.0","imageDigest":"sha256:app2digest"}}`,
 			wantErr: require.NoError,
 		},
 		{
@@ -648,44 +671,8 @@ func TestStrategyManager_GetAppPayloadForCurrentWithStableStrategy(t *testing.T)
 			},
 			k8sClient: func(t *testing.T) client.Client {
 				return fake.NewClientBuilder().WithScheme(scheme).WithObjects(
-					&codebaseApi.CodebaseImageStream{
-						ObjectMeta: metav1.ObjectMeta{
-							Name:      "app1-main",
-							Namespace: "default",
-							Labels: map[string]string{
-								codebaseApi.CodebaseBranchLabel: "app1-main",
-							},
-						},
-						Spec: codebaseApi.CodebaseImageStreamSpec{
-							Codebase: "app1",
-							Tags: []codebaseApi.Tag{
-								{
-									Name:    "1.0",
-									Created: time.Now().Format(time.RFC3339),
-									Digest:  "sha256:app1digest",
-								},
-							},
-						},
-					},
-					&codebaseApi.CodebaseImageStream{
-						ObjectMeta: metav1.ObjectMeta{
-							Name:      "app2-main",
-							Namespace: "default",
-							Labels: map[string]string{
-								codebaseApi.CodebaseBranchLabel: "app2-main",
-							},
-						},
-						Spec: codebaseApi.CodebaseImageStreamSpec{
-							Codebase: "app2",
-							Tags: []codebaseApi.Tag{
-								{
-									Name:    "3.0",
-									Created: time.Now().Format(time.RFC3339),
-									Digest:  "sha256:app2digest",
-								},
-							},
-						},
-					},
+					newCBIS("app1-main", "app1", "1.0", "sha256:app1digest"),
+					newCBIS("app2-main", "app2", "3.0", "sha256:app2digest"),
 				).Build()
 			},
 			want:    `{"app1":{"imageTag":"1.0","imageDigest":"sha256:app1digest"},"app2":{"imageTag":"old-tag"}}`,
@@ -710,47 +697,12 @@ func TestStrategyManager_GetAppPayloadForCurrentWithStableStrategy(t *testing.T)
 			stage: &pipelineAPi.Stage{},
 			k8sClient: func(t *testing.T) client.Client {
 				return fake.NewClientBuilder().WithScheme(scheme).WithObjects(
-					&codebaseApi.CodebaseImageStream{
-						ObjectMeta: metav1.ObjectMeta{
-							Name:      "app1-main",
-							Namespace: "default",
-							Labels: map[string]string{
-								codebaseApi.CodebaseBranchLabel: "app1-main",
-							},
-						},
-						Spec: codebaseApi.CodebaseImageStreamSpec{
-							Codebase: "app1",
-							Tags: []codebaseApi.Tag{
-								{
-									Name:    "1.0",
-									Created: time.Now().Format(time.RFC3339),
-									Digest:  "sha256:app1digest",
-								},
-							},
-						},
-					},
-					&codebaseApi.CodebaseImageStream{
-						ObjectMeta: metav1.ObjectMeta{
-							Name:      "app2-main",
-							Namespace: "default",
-							Labels: map[string]string{
-								codebaseApi.CodebaseBranchLabel: "app2-main",
-							},
-						},
-						Spec: codebaseApi.CodebaseImageStreamSpec{
-							Codebase: "app2",
-							Tags: []codebaseApi.Tag{
-								{
-									Name:    "5.0",
-									Created: time.Now().Format(time.RFC3339),
-									Digest:  "sha256:app2latest",
-								},
-							},
-						},
-					},
+					newCBIS("app1-main", "app1", "1.0", "sha256:app1digest"),
+					newCBIS("app2-main", "app2", "5.0", "sha256:app2latest"),
 				).Build()
 			},
-			want:    `{"app1":{"imageTag":"1.0","imageDigest":"sha256:app1digest"},"app2":{"imageTag":"5.0","imageDigest":"sha256:app2latest"}}`,
+			want: `{"app1":{"imageTag":"1.0","imageDigest":"sha256:app1digest"},` +
+				`"app2":{"imageTag":"5.0","imageDigest":"sha256:app2latest"}}`,
 			wantErr: require.NoError,
 		},
 		{
@@ -837,7 +789,9 @@ func TestStrategyManager_GetAppPayloadForCurrentWithStableStrategy(t *testing.T)
 					},
 				).Build()
 			},
-			want:    `{"app1":{"imageTag":"1.0","imageDigest":"sha256:currentdigest"},"app2":{"imageTag":"2.0"},"app3":{"imageTag":"7.0","imageDigest":"sha256:latestdigest"}}`,
+			want: `{"app1":{"imageTag":"1.0","imageDigest":"sha256:currentdigest"},` +
+				`"app2":{"imageTag":"2.0"},` +
+				`"app3":{"imageTag":"7.0","imageDigest":"sha256:latestdigest"}}`,
 			wantErr: require.NoError,
 		},
 	}

@@ -11,6 +11,7 @@ import (
 	networkingV1 "k8s.io/api/networking/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	"github.com/epam/edp-codebase-operator/v2/controllers/gitserver"
@@ -160,11 +161,15 @@ func (s *PutWebHook) getWebHookUrl(ctx context.Context, gitServer *codebaseApi.G
 		return gitServer.Spec.WebhookUrl, nil
 	}
 
-	if platform.IsK8S() {
-		return s.getWebhookIngressUrl(ctx, gitServer.Name, gitServer.Namespace)
+	if !platform.IsK8S() {
+		return s.getWebhookRouteUrl(ctx, gitServer.Name, gitServer.Namespace)
 	}
 
-	return s.getWebhookRouteUrl(ctx, gitServer.Name, gitServer.Namespace)
+	if platform.IsEnvoy() {
+		return s.getWebhookHTTPRouteUrl(ctx, gitServer.Name, gitServer.Namespace)
+	}
+
+	return s.getWebhookIngressUrl(ctx, gitServer.Name, gitServer.Namespace)
 }
 
 func (*PutWebHook) processCodebaseError(codebase *codebaseApi.Codebase, err error) error {
@@ -191,6 +196,26 @@ func (s *PutWebHook) getWebhookIngressUrl(ctx context.Context, gitServerName, na
 	}
 
 	return util.GetHostWithProtocol(ingress.Spec.Rules[0].Host), nil
+}
+
+func (s *PutWebHook) getWebhookHTTPRouteUrl(ctx context.Context, gitServerName, namespace string) (string, error) {
+	route := &gatewayv1.HTTPRoute{}
+	if err := s.client.Get(
+		ctx,
+		client.ObjectKey{
+			Name:      gitserver.GenerateIngressName(gitServerName),
+			Namespace: namespace,
+		},
+		route,
+	); err != nil {
+		return "", fmt.Errorf("failed to get webhook HTTPRoute: %w", err)
+	}
+
+	if len(route.Spec.Hostnames) == 0 {
+		return "", fmt.Errorf("HTTPRoute %s doesn't have hostnames", route.Name)
+	}
+
+	return util.GetHostWithProtocol(string(route.Spec.Hostnames[0])), nil
 }
 
 func (s *PutWebHook) getWebhookRouteUrl(ctx context.Context, gitServerName, namespace string) (string, error) {

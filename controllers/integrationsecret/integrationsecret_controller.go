@@ -308,4 +308,3 @@ func hasIntegrationSecretLabelLabel(object client.Object) bool {
 
 	return label == "true"
 }
-

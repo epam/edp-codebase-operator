@@ -13,6 +13,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/platform"
@@ -46,6 +47,10 @@ func (h *CreateEventListener) ServeRequest(ctx context.Context, gitServer *codeb
 
 	if platform.IsOpenshift() {
 		return h.createRoute(ctx, gitServer)
+	}
+
+	if platform.IsEnvoy() {
+		return h.createHTTPRoute(ctx, gitServer)
 	}
 
 	return h.createIngress(ctx, gitServer)
@@ -214,6 +219,106 @@ func (h *CreateEventListener) createIngress(ctx context.Context, gitServer *code
 	}
 
 	log.Info("Ingress has been created", "Ingress", ingress.Name)
+
+	return nil
+}
+
+func (h *CreateEventListener) createHTTPRoute(ctx context.Context, gitServer *codebaseApi.GitServer) error {
+	log := ctrl.LoggerFrom(ctx)
+
+	log.Info("Creating HTTPRoute for EventListener")
+
+	gatewayName := platform.GatewayName()
+	gatewayNamespace := platform.GatewayNamespace()
+
+	if gatewayName == "" || gatewayNamespace == "" {
+		return fmt.Errorf("GATEWAY_NAME/GATEWAY_NAMESPACE must be set when INGRESS_CONTROLLER_TYPE=envoy")
+	}
+
+	name := GenerateIngressName(gitServer.Name)
+
+	err := h.k8sClient.Get(ctx, client.ObjectKey{
+		Namespace: gitServer.Namespace,
+		Name:      name,
+	}, &gatewayv1.HTTPRoute{})
+	if err == nil {
+		log.Info("HTTPRoute already exists", "HTTPRoute", name)
+
+		return nil
+	}
+
+	if client.IgnoreNotFound(err) != nil {
+		return fmt.Errorf("failed to get HTTPRoute: %w", err)
+	}
+
+	config, err := platform.GetKrciConfig(ctx, h.k8sClient, gitServer.Namespace)
+	if err != nil {
+		return fmt.Errorf("failed to get dnsWildcard: %w", err)
+	}
+
+	// This port is hardcoded in Tekton Triggers.
+	// https://github.com/tektoncd/triggers/blob/v0.31.0/pkg/reconciler/eventlistener/resources/service.go#L37
+	const elServicePort = 8080
+
+	httpRoute := &gatewayv1.HTTPRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: gitServer.Namespace,
+			Labels: map[string]string{
+				"app.edp.epam.com/gitServer": gitServer.Name,
+			},
+		},
+		Spec: gatewayv1.HTTPRouteSpec{
+			CommonRouteSpec: gatewayv1.CommonRouteSpec{
+				ParentRefs: []gatewayv1.ParentReference{
+					{
+						Name:      gatewayv1.ObjectName(gatewayName),
+						Namespace: ptr.To(gatewayv1.Namespace(gatewayNamespace)),
+					},
+				},
+			},
+			Hostnames: []gatewayv1.Hostname{
+				gatewayv1.Hostname(fmt.Sprintf(
+					"el-%s-%s.%s",
+					gitServer.Name,
+					gitServer.Namespace,
+					config.DnsWildcard,
+				)),
+			},
+			Rules: []gatewayv1.HTTPRouteRule{
+				{
+					Matches: []gatewayv1.HTTPRouteMatch{
+						{
+							Path: &gatewayv1.HTTPPathMatch{
+								Type:  ptr.To(gatewayv1.PathMatchPathPrefix),
+								Value: ptr.To("/"),
+							},
+						},
+					},
+					BackendRefs: []gatewayv1.HTTPBackendRef{
+						{
+							BackendRef: gatewayv1.BackendRef{
+								BackendObjectReference: gatewayv1.BackendObjectReference{
+									Name: gatewayv1.ObjectName(generateServiceName(gitServer.Name)),
+									Port: ptr.To(gatewayv1.PortNumber(elServicePort)),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	if err = controllerutil.SetControllerReference(gitServer, httpRoute, h.k8sClient.Scheme()); err != nil {
+		return fmt.Errorf("failed to set controller reference for HTTPRoute: %w", err)
+	}
+
+	if err = h.k8sClient.Create(ctx, httpRoute); err != nil {
+		return fmt.Errorf("failed to create HTTPRoute: %w", err)
+	}
+
+	log.Info("HTTPRoute has been created", "HTTPRoute", httpRoute.Name)
 
 	return nil
 }

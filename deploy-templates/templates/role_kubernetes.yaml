@@ -73,6 +73,15 @@ rules:
     - watch
     - create
 - apiGroups:
+    - gateway.networking.k8s.io
+  resources:
+    - httproutes
+  verbs:
+    - get
+    - list
+    - watch
+    - create
+- apiGroups:
     - ""
   resources:
     - events

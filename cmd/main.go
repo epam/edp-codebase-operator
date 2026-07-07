@@ -27,6 +27,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/metrics/filters"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	ctrlwebhook "sigs.k8s.io/controller-runtime/pkg/webhook"
+	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
 	buildInfo "github.com/epam/edp-common/pkg/config"
@@ -207,6 +208,7 @@ func main() {
 	utilruntime.Must(cdPipeApi.AddToScheme(scheme))
 	utilruntime.Must(networkingV1.AddToScheme(scheme))
 	utilruntime.Must(routeApi.AddToScheme(scheme))
+	utilruntime.Must(gatewayv1.Install(scheme))
 	utilruntime.Must(tektonTriggersApi.AddToScheme(scheme))
 	utilruntime.Must(tektonpipelineApi.AddToScheme(scheme))
 
