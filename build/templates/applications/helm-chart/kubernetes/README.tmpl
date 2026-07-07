@@ -31,6 +31,16 @@ A Helm chart for Kubernetes
 | image.repository | string | `"{{.Name}}"` |  |
 | image.tag | string | `""` | Overrides the image tag whose default is the chart appVersion. |
 | imagePullSecrets[0].name | string | `"regcred"` |  |
+{{- if eq .IngressController "envoy" }}
+| httproute.annotations | object | `{}` |  |
+| httproute.dnsWildcard | string | `"{{.DnsWildcard}}"` |  |
+| httproute.enabled | bool | `false` |  |
+| httproute.gateway.name | string | `"{{.GatewayName}}"` |  |
+| httproute.gateway.namespace | string | `"{{.GatewayNamespace}}"` |  |
+| httproute.hosts[0].host | string | `"edpDefault"` |  |
+| httproute.hosts[0].paths[0].path | string | `"/"` |  |
+| httproute.hosts[0].paths[0].pathType | string | `"PathPrefix"` |  |
+{{- else }}
 | ingress.annotations | object | `{}` |  |
 | ingress.className | string | `""` |  |
 | ingress.dnsWildcard | string | `"{{.DnsWildcard}}"` |  |
@@ -39,6 +49,7 @@ A Helm chart for Kubernetes
 | ingress.hosts[0].paths[0].path | string | `"/"` |  |
 | ingress.hosts[0].paths[0].pathType | string | `"ImplementationSpecific"` |  |
 | ingress.tls | list | `[]` |  |
+{{- end }}
 | livenessProbe.tcpSocket.port | string | `"http"` |  |
 | nameOverride | string | `""` |  |
 | nodeSelector | object | `{}` | https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector |

@@ -51,6 +51,88 @@ func TestCopyTemplate_HelmTemplates_ShouldPass(t *testing.T) {
 	assert.Contains(t, string(b), "home: https://example.com")
 }
 
+// TestCopyTemplate_HelmTemplates_ExposureByController checks that the gateway selection
+// configures the matching exposure in values.yaml, while both exposure templates are always
+// shipped (each gated by its own values block, so the unselected one stays inert).
+func TestCopyTemplate_HelmTemplates_ExposureByController(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name         string
+		cf           *model.ConfigGoTemplating
+		wantValues   []string
+		absentValues []string
+	}{
+		{
+			name: "nginx renders ingress block",
+			cf: &model.ConfigGoTemplating{
+				Name:              "c-name",
+				PlatformType:      "kubernetes",
+				Lang:              "go",
+				DnsWildcard:       "mydomain.example.com",
+				GitURL:            "https://example.com",
+				IngressController: "nginx",
+			},
+			wantValues:   []string{"ingress:", "dnsWildcard: mydomain.example.com"},
+			absentValues: []string{"httproute:"},
+		},
+		{
+			name: "envoy renders httproute block wired to the gateway",
+			cf: &model.ConfigGoTemplating{
+				Name:              "c-name",
+				PlatformType:      "kubernetes",
+				Lang:              "go",
+				DnsWildcard:       "mydomain.example.com",
+				GitURL:            "https://example.com",
+				IngressController: "envoy",
+				GatewayName:       "main-gateway",
+				GatewayNamespace:  "envoy-gateway-system",
+			},
+			wantValues: []string{
+				"httproute:",
+				"name: main-gateway",
+				"namespace: envoy-gateway-system",
+				"dnsWildcard: mydomain.example.com",
+			},
+			absentValues: []string{"\ningress:"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			testDir := t.TempDir()
+
+			err := CopyTemplate(
+				ctrl.LoggerInto(context.Background(), logr.Discard()),
+				HelmChartDeploymentScriptType,
+				testDir,
+				"../../build",
+				tt.cf,
+			)
+			require.NoError(t, err)
+
+			values, err := os.ReadFile(fmt.Sprintf("%v/deploy-templates/values.yaml", testDir))
+			require.NoError(t, err)
+
+			for _, want := range tt.wantValues {
+				assert.Contains(t, string(values), want)
+			}
+
+			for _, absent := range tt.absentValues {
+				assert.NotContains(t, string(values), absent)
+			}
+
+			// Both exposure templates always ship; each is gated by its own values block.
+			for _, f := range []string{"ingress.yaml", "httproute.yaml"} {
+				_, err = os.Stat(fmt.Sprintf("%v/deploy-templates/templates/%s", testDir, f))
+				require.NoError(t, err, "%s should always be shipped", f)
+			}
+		})
+	}
+}
+
 func TestCopyTemplate_HelmTemplates_DirectoryExists(t *testing.T) {
 	t.Parallel()
 

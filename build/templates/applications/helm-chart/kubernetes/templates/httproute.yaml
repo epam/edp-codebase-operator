@@ -1,0 +1,45 @@
+{{- if and (hasKey .Values "httproute") .Values.httproute.enabled -}}
+{{- $fullName := include "REPLACE_IT.fullname" . -}}
+{{- $svcPort := .Values.service.port -}}
+{{- $top := . -}}
+{{- range $i, $host := .Values.httproute.hosts }}
+{{- if $i }}
+---
+{{- end }}
+# Gateway API rules cannot carry a hostname, so each host gets its own HTTPRoute
+# to keep path matches scoped to that host (mirrors the per-host rules of an Ingress).
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: {{ $fullName }}{{ if $i }}-{{ $i }}{{ end }}
+  labels:
+    {{- include "REPLACE_IT.labels" $top | nindent 4 }}
+  {{- with $top.Values.httproute.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  parentRefs:
+    - name: {{ $top.Values.httproute.gateway.name }}
+      namespace: {{ $top.Values.httproute.gateway.namespace }}
+      {{- with $top.Values.httproute.gateway.sectionName }}
+      sectionName: {{ . }}
+      {{- end }}
+  hostnames:
+    {{- if eq $host.host "edpDefault" }}
+    - {{ $fullName }}-{{ $top.Release.Namespace }}.{{ $top.Values.httproute.dnsWildcard }}
+    {{- else }}
+    - {{ $host.host | quote }}
+    {{- end }}
+  rules:
+    - matches:
+        {{- range $host.paths }}
+        - path:
+            type: {{ .pathType | default "PathPrefix" }}
+            value: {{ .path }}
+        {{- end }}
+      backendRefs:
+        - name: {{ $fullName }}
+          port: {{ $svcPort }}
+{{- end }}
+{{- end }}
