@@ -65,11 +65,14 @@ func buildTemplateConfig(
 	}
 
 	cf := model.ConfigGoTemplating{
-		Name:         cb.Name,
-		PlatformType: platform.GetPlatformType(),
-		Lang:         cb.Spec.Lang,
-		DnsWildcard:  conf.DnsWildcard,
-		Framework:    cb.Spec.Framework,
+		Name:              cb.Name,
+		PlatformType:      platform.GetPlatformType(),
+		Lang:              cb.Spec.Lang,
+		DnsWildcard:       conf.DnsWildcard,
+		Framework:         cb.Spec.Framework,
+		IngressController: platform.GetIngressControllerType(),
+		GatewayName:       platform.GatewayName(),
+		GatewayNamespace:  platform.GatewayNamespace(),
 	}
 
 	cf.GitURL, err = getProjectUrl(c, &cb.Spec, cb.Namespace)

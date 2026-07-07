@@ -68,6 +68,20 @@ func TestIsEnvoy_DefaultFalse(t *testing.T) {
 	}
 }
 
+func TestGetIngressControllerType_Envoy(t *testing.T) {
+	t.Setenv(IngressControllerEnv, IngressControllerEnvoy)
+
+	if GetIngressControllerType() != IngressControllerEnvoy {
+		t.Error("envoy should be reported when INGRESS_CONTROLLER_TYPE is envoy")
+	}
+}
+
+func TestGetIngressControllerType_DefaultNginx(t *testing.T) {
+	if GetIngressControllerType() != IngressControllerNginx {
+		t.Error("nginx should be the default ingress controller when INGRESS_CONTROLLER_TYPE is unset")
+	}
+}
+
 func TestGatewayName(t *testing.T) {
 	t.Setenv(GatewayNameEnv, "main-gateway")
 

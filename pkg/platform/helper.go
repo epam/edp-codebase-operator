@@ -42,6 +42,15 @@ func IsEnvoy() bool {
 	return os.Getenv(IngressControllerEnv) == IngressControllerEnvoy
 }
 
+// GetIngressControllerType returns the ingress controller type, defaulting to nginx for backward compatibility.
+func GetIngressControllerType() string {
+	if IsEnvoy() {
+		return IngressControllerEnvoy
+	}
+
+	return IngressControllerNginx
+}
+
 // GatewayName returns the name of the parent Gateway API Gateway resource.
 func GatewayName() string {
 	return os.Getenv(GatewayNameEnv)

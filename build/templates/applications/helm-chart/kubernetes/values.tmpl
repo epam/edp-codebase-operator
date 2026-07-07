@@ -46,6 +46,38 @@ service:
   type: ClusterIP
   port: 8080
 
+{{- if eq .IngressController "envoy" }}
+# Expose the application via a Gateway API HTTPRoute on the shared Envoy Gateway.
+httproute:
+  enabled: false
+  dnsWildcard: {{.DnsWildcard}}
+  # -- Parent Gateway the HTTPRoute attaches to. Defaults to the platform gateway.
+  gateway:
+    name: {{.GatewayName}}
+    namespace: {{.GatewayNamespace}}
+    # -- Optional Gateway listener to bind to (e.g. an HTTPS listener that terminates TLS).
+    # sectionName: ""
+  # Each entry below is rendered as its own HTTPRoute, so paths stay scoped to their host.
+  # 'edpDefault' expands to <CODEBASE_NAME>-<CODEBASE_NAMESPACE>.<CLUSTER_DNS_WILDCARD>; set a literal host to override.
+  hosts:
+    - host: edpDefault
+      paths:
+        - path: /
+          pathType: PathPrefix
+  # Example — expose two custom hosts, each with its own paths (renders two HTTPRoutes):
+  # hosts:
+  #   - host: api.example.com
+  #     paths:
+  #       - path: /v1
+  #         pathType: PathPrefix
+  #       - path: /v2
+  #         pathType: PathPrefix
+  #   - host: web.example.com
+  #     paths:
+  #       - path: /
+  #         pathType: PathPrefix
+  annotations: {}
+{{- else }}
 ingress:
   enabled: false
   dnsWildcard: {{.DnsWildcard}}
@@ -63,6 +95,7 @@ ingress:
   #  - secretName: chart-example-tls
   #    hosts:
   #      - chart-example.local
+{{- end }}
 
 resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious
