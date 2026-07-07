@@ -20,8 +20,14 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/pkg/tektoncd"
 )
 
+const errGetDNSWildcard = "failed to get dnsWildcard: %w"
+
 type CreateEventListener struct {
 	k8sClient client.Client
+}
+
+func generateEventListenerHost(gitServer *codebaseApi.GitServer, dnsWildcard string) string {
+	return fmt.Sprintf("el-%s-%s.%s", gitServer.Name, gitServer.Namespace, dnsWildcard)
 }
 
 func NewCreateEventListener(k8sClient client.Client) *CreateEventListener {
@@ -70,7 +76,7 @@ func (h *CreateEventListener) createEventListener(ctx context.Context, gitServer
 	el.SetName(elName)
 	el.SetNamespace(gitServer.Namespace)
 	el.SetLabels(map[string]string{
-		"app.edp.epam.com/gitServer": gitServer.Name,
+		codebaseApi.GitServerLabel: gitServer.Name,
 	})
 
 	el.Object["spec"] = map[string]interface{}{
@@ -163,7 +169,7 @@ func (h *CreateEventListener) createIngress(ctx context.Context, gitServer *code
 
 	config, err := platform.GetKrciConfig(ctx, h.k8sClient, gitServer.Namespace)
 	if err != nil {
-		return fmt.Errorf("failed to get dnsWildcard: %w", err)
+		return fmt.Errorf(errGetDNSWildcard, err)
 	}
 
 	// This port is hardcoded in Tekton Triggers.
@@ -175,18 +181,13 @@ func (h *CreateEventListener) createIngress(ctx context.Context, gitServer *code
 			Name:      name,
 			Namespace: gitServer.Namespace,
 			Labels: map[string]string{
-				"app.edp.epam.com/gitServer": gitServer.Name,
+				codebaseApi.GitServerLabel: gitServer.Name,
 			},
 		},
 		Spec: networkingv1.IngressSpec{
 			Rules: []networkingv1.IngressRule{
 				{
-					Host: fmt.Sprintf(
-						"el-%s-%s.%s",
-						gitServer.Name,
-						gitServer.Namespace,
-						config.DnsWildcard,
-					),
+					Host: generateEventListenerHost(gitServer, config.DnsWildcard),
 					IngressRuleValue: networkingv1.IngressRuleValue{
 						HTTP: &networkingv1.HTTPIngressRuleValue{
 							Paths: []networkingv1.HTTPIngressPath{
@@ -253,7 +254,7 @@ func (h *CreateEventListener) createHTTPRoute(ctx context.Context, gitServer *co
 
 	config, err := platform.GetKrciConfig(ctx, h.k8sClient, gitServer.Namespace)
 	if err != nil {
-		return fmt.Errorf("failed to get dnsWildcard: %w", err)
+		return fmt.Errorf(errGetDNSWildcard, err)
 	}
 
 	// This port is hardcoded in Tekton Triggers.
@@ -265,7 +266,7 @@ func (h *CreateEventListener) createHTTPRoute(ctx context.Context, gitServer *co
 			Name:      name,
 			Namespace: gitServer.Namespace,
 			Labels: map[string]string{
-				"app.edp.epam.com/gitServer": gitServer.Name,
+				codebaseApi.GitServerLabel: gitServer.Name,
 			},
 		},
 		Spec: gatewayv1.HTTPRouteSpec{
@@ -278,12 +279,7 @@ func (h *CreateEventListener) createHTTPRoute(ctx context.Context, gitServer *co
 				},
 			},
 			Hostnames: []gatewayv1.Hostname{
-				gatewayv1.Hostname(fmt.Sprintf(
-					"el-%s-%s.%s",
-					gitServer.Name,
-					gitServer.Namespace,
-					config.DnsWildcard,
-				)),
+				gatewayv1.Hostname(generateEventListenerHost(gitServer, config.DnsWildcard)),
 			},
 			Rules: []gatewayv1.HTTPRouteRule{
 				{
@@ -346,7 +342,7 @@ func (h *CreateEventListener) createRoute(ctx context.Context, gitServer *codeba
 
 	config, err := platform.GetKrciConfig(ctx, h.k8sClient, gitServer.Namespace)
 	if err != nil {
-		return fmt.Errorf("failed to get dnsWildcard: %w", err)
+		return fmt.Errorf(errGetDNSWildcard, err)
 	}
 
 	const routeWeight = int32(100)
@@ -357,12 +353,7 @@ func (h *CreateEventListener) createRoute(ctx context.Context, gitServer *codeba
 			Namespace: gitServer.Namespace,
 		},
 		Spec: routeApi.RouteSpec{
-			Host: fmt.Sprintf(
-				"el-%s-%s.%s",
-				gitServer.Name,
-				gitServer.Namespace,
-				config.DnsWildcard,
-			),
+			Host: generateEventListenerHost(gitServer, config.DnsWildcard),
 			TLS: &routeApi.TLSConfig{
 				InsecureEdgeTerminationPolicy: routeApi.InsecureEdgeTerminationPolicyRedirect,
 				Termination:                   routeApi.TLSTerminationEdge,
