@@ -66,9 +66,9 @@ spec:
             - name: INGRESS_CONTROLLER_TYPE
               value: "{{ .Values.ingressController }}"
             - name: GATEWAY_NAME
-              value: "{{ .Values.global.gatewayApi.gatewayName }}"
+              value: "{{ (.Values.global.gatewayApi | default dict).gatewayName | default "main-gateway" }}"
             - name: GATEWAY_NAMESPACE
-              value: "{{ .Values.global.gatewayApi.gatewayNamespace }}"
+              value: "{{ (.Values.global.gatewayApi | default dict).gatewayNamespace | default "envoy-gateway-system" }}"
             - name: TELEMETRY_ENABLED
               value: "{{ .Values.telemetryEnabled }}"
             - name: ENABLE_WEBHOOKS
