@@ -25,4 +25,7 @@ const (
 	// The portal uses this label to discover available templates for a dropdown.
 	// Values: "gitlab" (extensible to other CI systems in the future).
 	CITemplateLabel = "app.edp.epam.com/ci-template"
+
+	// GitServerLabel is a label used to store the name of the GitServer in related resources.
+	GitServerLabel = "app.edp.epam.com/gitServer"
 )
