@@ -20,7 +20,7 @@ require (
 	github.com/stretchr/testify v1.11.1
 	github.com/tektoncd/pipeline v1.6.2
 	github.com/tektoncd/triggers v0.34.0
-	golang.org/x/crypto v0.51.0
+	golang.org/x/crypto v0.52.0
 	k8s.io/api v0.33.11
 	k8s.io/apimachinery v0.33.11
 	k8s.io/client-go v0.33.11
