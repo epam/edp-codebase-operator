@@ -23,6 +23,7 @@ A Helm chart for KubeRocketCI Codebase Operator
 |-----|------|---------|-------------|
 | affinity | object | `{}` |  |
 | annotations | object | `{}` |  |
+| branchStaleCheckInterval | string | `"24h"` | How often the operator verifies that codebase branches still exist in git, marking missing ones with the Stale condition and the app.edp.epam.com/stale label. Accepts Go duration strings (e.g. 24h, 30m); "0" disables the check. |
 | enableWebhooks | bool | `true` | Enable webhook and cert-manager certificate resources. Webhooks require cert-manager to be installed in the cluster. |
 | envs[0].name | string | `"RECONCILATION_PERIOD"` |  |
 | envs[0].value | string | `"360"` |  |

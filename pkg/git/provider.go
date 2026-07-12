@@ -431,6 +431,52 @@ func (p *GitProvider) GetCurrentBranchName(ctx context.Context, directory string
 	return branchName, nil
 }
 
+// ListRemoteBranches lists branch names that exist in the remote repository
+// without cloning it (equivalent to git ls-remote --heads).
+func (p *GitProvider) ListRemoteBranches(ctx context.Context, repoURL string) ([]string, error) {
+	log := ctrl.LoggerFrom(ctx).WithValues("repository", repoURL)
+	log.Info("Listing remote branches")
+
+	auth, err := p.getAuth()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get authentication: %w", err)
+	}
+
+	repo, _ := git.Init(memory.NewStorage(), nil)
+
+	remote, err := repo.CreateRemote(&config.RemoteConfig{
+		Name: "origin",
+		URLs: []string{repoURL},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create remote: %w", err)
+	}
+
+	refs, err := remote.ListContext(ctx, &git.ListOptions{
+		Auth: auth,
+	})
+	if err != nil {
+		if errors.Is(err, transport.ErrEmptyRemoteRepository) {
+			log.Info("Repository is empty, no branches found")
+			return nil, nil
+		}
+
+		return nil, fmt.Errorf("failed to list remote references: %w", err)
+	}
+
+	branches := make([]string, 0, len(refs))
+
+	for _, ref := range refs {
+		if ref.Name().IsBranch() {
+			branches = append(branches, ref.Name().Short())
+		}
+	}
+
+	log.Info("Remote branches listed successfully", "count", len(branches))
+
+	return branches, nil
+}
+
 // CheckPermissions checks if the repository is accessible with current credentials.
 func (p *GitProvider) CheckPermissions(ctx context.Context, repoURL string) error {
 	log := ctrl.LoggerFrom(ctx).WithValues("repository", repoURL)

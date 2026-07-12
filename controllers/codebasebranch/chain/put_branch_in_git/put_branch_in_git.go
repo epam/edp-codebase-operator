@@ -161,6 +161,7 @@ func (h PutBranchInGit) setIntermediateSuccessFields(
 		Build:               cb.Status.Build,
 		FailureCount:        cb.Status.FailureCount,
 		Git:                 cb.Status.Git,
+		Conditions:          cb.Status.Conditions,
 	}
 
 	err := h.Client.Status().Update(ctx, cb)
@@ -185,6 +186,7 @@ func putGitBranchSetFailedFields(cb *codebaseApi.CodebaseBranch, message string)
 		Build:               cb.Status.Build,
 		FailureCount:        cb.Status.FailureCount,
 		Git:                 cb.Status.Git,
+		Conditions:          cb.Status.Conditions,
 	}
 }
 

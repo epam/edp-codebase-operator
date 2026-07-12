@@ -37,11 +37,13 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/controllers/cdstagedeploy/chain"
 	"github.com/epam/edp-codebase-operator/v2/controllers/codebase"
 	"github.com/epam/edp-codebase-operator/v2/controllers/codebasebranch"
+	"github.com/epam/edp-codebase-operator/v2/controllers/codebasebranch/stalecheck"
 	"github.com/epam/edp-codebase-operator/v2/controllers/codebaseimagestream"
 	"github.com/epam/edp-codebase-operator/v2/controllers/gitserver"
 	"github.com/epam/edp-codebase-operator/v2/controllers/integrationsecret"
 	"github.com/epam/edp-codebase-operator/v2/controllers/jiraissuemetadata"
 	"github.com/epam/edp-codebase-operator/v2/controllers/jiraserver"
+	gitproviderv2 "github.com/epam/edp-codebase-operator/v2/pkg/git"
 	"github.com/epam/edp-codebase-operator/v2/pkg/telemetry"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	"github.com/epam/edp-codebase-operator/v2/pkg/webhook"
@@ -59,6 +61,8 @@ const (
 	telemetryDefaultDelay                    = time.Hour
 	telemetrySendEvery                       = time.Hour * 24
 	telemetryUrl                             = "https://telemetry.kuberocketci.io"
+	branchStaleCheckIntervalEnv              = "BRANCH_STALE_CHECK_INTERVAL"
+	branchStaleCheckDefaultInterval          = time.Hour * 24
 )
 
 func main() {
@@ -322,6 +326,27 @@ func main() {
 		os.Exit(1)
 	}
 
+	if interval := getBranchStaleCheckInterval(); interval > 0 {
+		staleRecorder := mgr.GetEventRecorderFor("stale-branch-checker")
+
+		markAction := stalecheck.NewMarkAction(mgr.GetClient(), staleRecorder)
+
+		checker := stalecheck.NewChecker(
+			mgr.GetClient(),
+			ns,
+			interval,
+			gitproviderv2.DefaultGitProviderFactory,
+			markAction,
+			stalecheck.NewCleanupAction(mgr.GetClient(), staleRecorder, markAction),
+		)
+		if err := mgr.Add(checker); err != nil {
+			setupLog.Error(err, "failed to add stale branch checker to manager")
+			os.Exit(1)
+		}
+	} else {
+		setupLog.Info("Stale branch checker is disabled", "env", branchStaleCheckIntervalEnv)
+	}
+
 	setupLog.Info("starting manager")
 
 	ctx := ctrl.SetupSignalHandler()
@@ -349,6 +374,25 @@ func getMaxConcurrentReconciles(envVar string) int {
 	}
 
 	return int(n)
+}
+
+// getBranchStaleCheckInterval accepts Go duration strings (e.g. "24h", "30m");
+// a zero or negative duration disables the check.
+func getBranchStaleCheckInterval() time.Duration {
+	val, exists := os.LookupEnv(branchStaleCheckIntervalEnv)
+	if !exists {
+		return branchStaleCheckDefaultInterval
+	}
+
+	d, err := time.ParseDuration(val)
+	if err != nil {
+		setupLog.Error(err, "Invalid stale branch check interval, using default",
+			"env", branchStaleCheckIntervalEnv, "value", val, "default", branchStaleCheckDefaultInterval)
+
+		return branchStaleCheckDefaultInterval
+	}
+
+	return d
 }
 
 func getTelemetryDelay() time.Duration {

@@ -28,4 +28,10 @@ const (
 
 	// GitServerLabel is a label used to store the name of the GitServer in related resources.
 	GitServerLabel = "app.edp.epam.com/gitServer"
+
+	// StaleLabel marks a CodebaseBranch whose branch no longer exists in the git repository.
+	// It mirrors the Stale status condition so that resources can be filtered with a label
+	// selector; the condition remains the source of truth and the label is re-asserted by
+	// the operator on every staleness check.
+	StaleLabel = "app.edp.epam.com/stale"
 )
