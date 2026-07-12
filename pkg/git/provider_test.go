@@ -74,6 +74,53 @@ func TestGitProvider_CheckPermissions_NoRefs(t *testing.T) {
 	require.NoError(t, err, "v2 considers empty repos accessible")
 }
 
+func TestGitProvider_ListRemoteBranches(t *testing.T) {
+	config := Config{
+		Username: "user",
+		Token:    "pass",
+	}
+	gp := NewGitProvider(config)
+
+	// Same canned smart-HTTP ref advertisement as TestGitProvider_CheckPermissions:
+	// refs/heads/branch, refs/heads/master plus pull-request refs that must be filtered out.
+	bts, err := base64.StdEncoding.DecodeString(`MDAxZSMgc2VydmljZT1naXQtdXBsb2FkLXBhY2sKMDAwMDAxNTY2ZWNmMGVmMmMyZGZmYjc5NjAzM2U1YTAyMjE5YWY4NmVjNjU4NGU1IEhFQUQAbXVsdGlfYWNrIHRoaW4tcGFjayBzaWRlLWJhbmQgc2lkZS1iYW5kLTY0ayBvZnMtZGVsdGEgc2hhbGxvdyBkZWVwZW4tc2luY2UgZGVlcGVuLW5vdCBkZWVwZW4tcmVsYXRpdmUgbm8tcHJvZ3Jlc3MgaW5jbHVkZS10YWcgbXVsdGlfYWNrX2RldGFpbGVkIGFsbG93LXRpcC1zaGExLWluLXdhbnQgYWxsb3ctcmVhY2hhYmxlLXNoYTEtaW4td2FudCBuby1kb25lIHN5bXJlZj1IRUFEOnJlZnMvaGVhZHMvbWFzdGVyIGZpbHRlciBvYmplY3QtZm9ybWF0PXNoYTEgYWdlbnQ9Z2l0L2dpdGh1Yi1nNzhiNDUyNDEzZThiCjAwM2ZlOGQzZmZhYjU1Mjg5NWMxOWI5ZmNmN2FhMjY0ZDI3N2NkZTMzODgxIHJlZnMvaGVhZHMvYnJhbmNoCjAwM2Y2ZWNmMGVmMmMyZGZmYjc5NjAzM2U1YTAyMjE5YWY4NmVjNjU4NGU1IHJlZnMvaGVhZHMvbWFzdGVyCjAwM2ViOGU0NzFmNThiY2JjYTYzYjA3YmRhMjBlNDI4MTkwNDA5YzJkYjQ3IHJlZnMvcHVsbC8xL2hlYWQKMDAzZTk2MzJmMDI4MzNiMmY5NjEzYWZiNWU3NTY4MjEzMmIwYjIyZTRhMzEgcmVmcy9wdWxsLzIvaGVhZAowMDNmYzM3ZjU4YTEzMGNhNTU1ZTQyZmY5NmEwNzFjYjljY2IzZjQzNzUwNCByZWZzL3B1bGwvMi9tZXJnZQowMDAw`) // nolint:lll
+	require.NoError(t, err)
+
+	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, err = w.Write(bts)
+		assert.NoError(t, err, "failed to write response")
+	}))
+	defer s.Close()
+
+	branches, err := gp.ListRemoteBranches(context.Background(), s.URL)
+	require.NoError(t, err)
+	assert.ElementsMatch(t, []string{"branch", "master"}, branches)
+}
+
+func TestGitProvider_ListRemoteBranches_EmptyRepo(t *testing.T) {
+	config := Config{
+		Username: "user",
+		Token:    "pass",
+	}
+	gp := NewGitProvider(config)
+
+	// Same empty-repo advertisement as TestGitProvider_CheckPermissions_NoRefs.
+	bts, err := base64.StdEncoding.DecodeString(`MDAxZSMgc2VydmljZT1naXQtdXBsb2FkLXBhY2sKMDAwMDAwZGUwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwIGNhcGFiaWxpdGllc157fQAgaW5jbHVkZS10YWcgbXVsdGlfYWNrX2RldGFpbGVkIG11bHRpX2FjayBvZnMtZGVsdGEgc2lkZS1iYW5kIHNpZGUtYmFuZC02NGsgdGhpbi1wYWNrIG5vLXByb2dyZXNzIHNoYWxsb3cgbm8tZG9uZSBhZ2VudD1KR2l0L3Y1LjkuMC4yMDIwMDkwODA1MDEtci00MS1nNWQ5MjVlY2JiCjAwMDA=`) // nolint:lll
+	require.NoError(t, err)
+
+	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, err = w.Write(bts)
+		assert.NoError(t, err, "failed to write response")
+	}))
+	defer s.Close()
+
+	branches, err := gp.ListRemoteBranches(context.Background(), s.URL)
+	require.NoError(t, err)
+	assert.Empty(t, branches)
+}
+
 func TestGitProvider_CreateChildBranch(t *testing.T) {
 	tests := []struct {
 		name     string

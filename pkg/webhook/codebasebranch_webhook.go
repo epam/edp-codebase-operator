@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -94,6 +95,43 @@ func (r *CodebaseBranchValidationWebhook) ValidateDelete(
 ) (warnings admission.Warnings, err error) {
 	if err = checkResourceProtectionFromModificationOnDelete(obj); err != nil {
 		return nil, err
+	}
+
+	deletedCodebaseBranch, ok := obj.(*v1.CodebaseBranch)
+	if !ok {
+		r.log.Info("The wrong object given, skipping validation")
+
+		return nil, nil
+	}
+
+	// When the owning Codebase is gone or terminating, the branch is being removed as part
+	// of a cascade delete; blocking it would leave garbage-collected branches stuck forever.
+	codebase := &v1.Codebase{}
+	if err = r.client.Get(
+		ctx,
+		client.ObjectKey{Namespace: deletedCodebaseBranch.Namespace, Name: deletedCodebaseBranch.Spec.CodebaseName},
+		codebase,
+	); err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil, nil
+		}
+
+		return nil, fmt.Errorf("failed to get codebase %s: %w", deletedCodebaseBranch.Spec.CodebaseName, err)
+	}
+
+	if codebase.DeletionTimestamp != nil {
+		return nil, nil
+	}
+
+	usage, err := codebasebranch.FindBranchUsage(ctx, r.client, deletedCodebaseBranch)
+	if err != nil {
+		return nil, fmt.Errorf("failed to check CodebaseBranch usage: %w", err)
+	}
+
+	if usage != "" {
+		return nil, fmt.Errorf(
+			"CodebaseBranch %s cannot be deleted because it is used by %s; remove it from the deployment first",
+			deletedCodebaseBranch.Name, usage)
 	}
 
 	return nil, nil

@@ -134,5 +134,6 @@ func (CheckReferenceExists) setFailedFields(
 		Build:               codebaseBranch.Status.Build,
 		FailureCount:        codebaseBranch.Status.FailureCount,
 		Git:                 codebaseBranch.Status.Git,
+		Conditions:          codebaseBranch.Status.Conditions,
 	}
 }

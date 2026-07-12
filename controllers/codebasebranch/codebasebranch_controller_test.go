@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	coreV1 "k8s.io/api/core/v1"
+	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -77,6 +78,46 @@ func TestReconcileCodebaseBranch_Reconcile_ShouldFailNotFound(t *testing.T) {
 	}
 
 	assert.Equal(t, time.Duration(0), res.RequeueAfter)
+}
+
+func TestReconcileCodebaseBranch_Reconcile_ShouldReleaseFinalizerWhenCodebaseGone(t *testing.T) {
+	t.Setenv("WORKING_DIR", "/tmp/1")
+
+	now := metaV1.Now()
+	cb := &codebaseApi.CodebaseBranch{
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:              "app-main",
+			Namespace:         "namespace",
+			DeletionTimestamp: &now,
+			Finalizers:        []string{codebaseBranchOperatorFinalizerName},
+		},
+		Spec: codebaseApi.CodebaseBranchSpec{
+			CodebaseName: "app",
+			BranchName:   "main",
+		},
+	}
+
+	scheme := runtime.NewScheme()
+	require.NoError(t, codebaseApi.AddToScheme(scheme))
+	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(cb).Build()
+
+	r := ReconcileCodebaseBranch{
+		client: fakeCl,
+		log:    logr.Discard(),
+		scheme: scheme,
+	}
+
+	res, err := r.Reconcile(context.TODO(), reconcile.Request{
+		NamespacedName: types.NamespacedName{Name: "app-main", Namespace: "namespace"},
+	})
+
+	require.NoError(t, err)
+	assert.Equal(t, time.Duration(0), res.RequeueAfter)
+
+	// With the finalizer released, the fake client removes the terminating object entirely.
+	err = fakeCl.Get(context.TODO(),
+		types.NamespacedName{Name: "app-main", Namespace: "namespace"}, &codebaseApi.CodebaseBranch{})
+	assert.True(t, k8sErrors.IsNotFound(err), "branch must be gone after finalizer release")
 }
 
 func TestReconcileCodebaseBranch_Reconcile_ShouldFailGetCodebase(t *testing.T) {
@@ -740,4 +781,52 @@ func TestSetDefaultValues_ShouldSkipForGitLab(t *testing.T) {
 	require.NoError(t, err)
 	assert.False(t, changed)
 	assert.Nil(t, cb.Spec.Pipelines)
+}
+
+func TestReconcileCodebaseBranch_setSuccessStatus_PreservesStaleCondition(t *testing.T) {
+	cb := &codebaseApi.CodebaseBranch{
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      "app-main",
+			Namespace: "namespace",
+		},
+		Spec: codebaseApi.CodebaseBranchSpec{
+			CodebaseName: "app",
+			BranchName:   "main",
+		},
+		Status: codebaseApi.CodebaseBranchStatus{
+			Conditions: []metaV1.Condition{{
+				Type:               codebaseApi.ConditionStale,
+				Status:             metaV1.ConditionTrue,
+				Reason:             codebaseApi.ReasonBranchNotFoundInGit,
+				Message:            "Branch was not found in the git repository",
+				LastTransitionTime: metaV1.Now(),
+			}},
+		},
+	}
+
+	scheme := runtime.NewScheme()
+	require.NoError(t, codebaseApi.AddToScheme(scheme))
+
+	fakeCl := fake.NewClientBuilder().
+		WithScheme(scheme).
+		WithRuntimeObjects(cb).
+		WithStatusSubresource(cb).
+		Build()
+
+	r := ReconcileCodebaseBranch{
+		client: fakeCl,
+		log:    logr.Discard(),
+		scheme: scheme,
+	}
+
+	require.NoError(t, r.setSuccessStatus(context.TODO(), cb.DeepCopy(), codebaseApi.CIConfiguration))
+
+	updated := &codebaseApi.CodebaseBranch{}
+	require.NoError(t, fakeCl.Get(context.TODO(),
+		types.NamespacedName{Name: "app-main", Namespace: "namespace"}, updated))
+
+	require.Len(t, updated.Status.Conditions, 1,
+		"the Stale condition must survive the success-status rewrite")
+	assert.Equal(t, codebaseApi.ConditionStale, updated.Status.Conditions[0].Type)
+	assert.Equal(t, metaV1.ConditionTrue, updated.Status.Conditions[0].Status)
 }

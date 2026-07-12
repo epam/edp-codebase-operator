@@ -73,6 +73,8 @@ spec:
               value: "{{ .Values.telemetryEnabled }}"
             - name: ENABLE_WEBHOOKS
               value: {{ .Values.enableWebhooks | quote }}
+            - name: BRANCH_STALE_CHECK_INTERVAL
+              value: {{ .Values.branchStaleCheckInterval | quote }}
 {{ toYaml .Values.envs | indent 12 }}
           resources:
 {{ toYaml .Values.resources | indent 12 }}

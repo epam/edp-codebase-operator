@@ -6,6 +6,13 @@ import (
 
 const (
 	CodebaseBranchGitStatusBranchCreated = "branch-created"
+
+	// ConditionStale is a condition type indicating whether the branch
+	// no longer exists in the git repository ("True" means the branch is missing).
+	ConditionStale = "Stale"
+
+	ReasonBranchNotFoundInGit = "BranchNotFoundInGit"
+	ReasonBranchFoundInGit    = "BranchFoundInGit"
 )
 
 // CodebaseBranchSpec defines the desired state of CodebaseBranch.
@@ -83,6 +90,17 @@ type CodebaseBranchStatus struct {
 
 	// Specifies a status of action for git.
 	Git string `json:"git,omitempty"`
+
+	// Conditions represent the latest available observations of an object's state.
+	// Each condition type is an independent observation (e.g. Stale); new types can be
+	// added over time without schema changes.
+	// +optional
+	// +nullable
+	// +listType=map
+	// +listMapKey=type
+	// +patchStrategy=merge
+	// +patchMergeKey=type
+	Conditions []metaV1.Condition `json:"conditions,omitempty" patchStrategy:"merge" patchMergeKey:"type"`
 }
 
 // +kubebuilder:object:root=true
@@ -94,6 +112,7 @@ type CodebaseBranchStatus struct {
 // +kubebuilder:printcolumn:name="Codebase Name",type="string",JSONPath=".spec.codebaseName",description="Owner of object"
 // +kubebuilder:printcolumn:name="Release",type="boolean",JSONPath=".spec.release",description="Is a release branch"
 // +kubebuilder:printcolumn:name="Branch",type="string",JSONPath=".spec.branchName",description="Name of branch"
+// +kubebuilder:printcolumn:name="Stale",type="string",JSONPath=`.status.conditions[?(@.type=="Stale")].status`,description="Branch is missing in git"
 
 // CodebaseBranch is the Schema for the CodebaseBranches API.
 type CodebaseBranch struct {

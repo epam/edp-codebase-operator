@@ -29,6 +29,10 @@ type Git interface {
 	// CheckPermissions checks if the repository is accessible with current credentials.
 	CheckPermissions(ctx context.Context, repoURL string) error
 
+	// ListRemoteBranches lists branch names that exist in the remote repository
+	// without cloning it (equivalent to git ls-remote --heads).
+	ListRemoteBranches(ctx context.Context, repoURL string) ([]string, error)
+
 	// CheckReference checks if a reference (branch or commit) exists in the repository.
 	CheckReference(ctx context.Context, directory, refName string) error
 

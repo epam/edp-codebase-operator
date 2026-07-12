@@ -52,5 +52,6 @@ func setFailedFields(cb *codebaseApi.CodebaseBranch, a codebaseApi.ActionType, m
 		Git:             cb.Status.Git,
 		VersionHistory:  cb.Status.VersionHistory,
 		Build:           cb.Status.Build,
+		Conditions:      cb.Status.Conditions,
 	}
 }

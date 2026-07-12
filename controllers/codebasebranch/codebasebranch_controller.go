@@ -117,6 +117,22 @@ func (r *ReconcileCodebaseBranch) Reconcile(ctx context.Context, request reconci
 
 	c := &codebaseApi.Codebase{}
 	if err := r.client.Get(ctx, types.NamespacedName{Name: cb.Spec.CodebaseName, Namespace: cb.Namespace}, c); err != nil {
+		// When the owning Codebase is already gone the branch is being garbage-collected
+		// as part of a cascade deletion; the only work left is to run the deletion flow
+		// and release the finalizer, otherwise the branch stays terminating forever.
+		if k8sErrors.IsNotFound(err) && cb.DeletionTimestamp != nil {
+			result, delErr := r.tryToDeleteCodebaseBranch(ctx, cb, factory.GetDeletionChain())
+			if delErr != nil {
+				return reconcile.Result{}, fmt.Errorf("failed to remove codebasebranch %v: %w", cb.Name, delErr)
+			}
+
+			if result != nil {
+				return *result, nil
+			}
+
+			return reconcile.Result{}, nil
+		}
+
 		return reconcile.Result{}, fmt.Errorf("failed to get Codebase: %w", err)
 	}
 
@@ -210,6 +226,7 @@ func (r *ReconcileCodebaseBranch) setSuccessStatus(
 		LastSuccessfulBuild: cb.Status.LastSuccessfulBuild,
 		Build:               cb.Status.Build,
 		Git:                 cb.Status.Git,
+		Conditions:          cb.Status.Conditions,
 	}
 
 	return r.updateStatus(ctx, cb)
@@ -223,7 +240,11 @@ func (r *ReconcileCodebaseBranch) updateStatus(ctx context.Context, cb *codebase
 		return fmt.Errorf("failed to get CodebaseBranch: %w", err)
 	}
 
+	// Conditions are owned by the stale branch checker, which may have patched them
+	// after cb was read; the freshly fetched value is always the authoritative one.
+	conditions := cbbranch.Status.Conditions
 	cbbranch.Status = cb.Status
+	cbbranch.Status.Conditions = conditions
 
 	if err := r.client.Status().Update(ctx, cbbranch); err != nil {
 		return fmt.Errorf("failed to update CodebaseBranch status: %w", err)
