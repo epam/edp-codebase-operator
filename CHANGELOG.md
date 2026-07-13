@@ -1,6 +1,37 @@
 <a name="unreleased"></a>
 ## [Unreleased]
 
+### Routine
+
+- Update current development version
+
+
+<a name="v2.34.0"></a>
+## [v2.34.0] - 2026-07-13
+### Features
+
+- Add stale branch detection and cleanup for codebase branches
+- add HTTPRoute exposure to application Helm chart scaffold
+- add Envoy Gateway HTTPRoute support for GitServer webhook
+
+### Bug Fixes
+
+- Enable leader election in the operator deployment
+- default gatewayApi values to prevent nil-pointer render
+- garbage-collect GitServer credentials Secret on deletion
+
+### Code Refactoring
+
+- extract duplicated literals and hostname formatting in EventListener creation
+
+### Routine
+
+- Update current development version
+
+### Documentation
+
+- add CLAUDE.md with repository guidance
+
 
 <a name="v2.33.0"></a>
 ## [v2.33.0] - 2026-05-21
@@ -640,7 +671,8 @@ removed required fields from the GitServer status. CRD should be updated.
 - [EPMDEDP-868] Add functionality generates correct ssh URL for replication config for Gerrit
 
 
-[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.33.0...HEAD
+[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.34.0...HEAD
+[v2.34.0]: https://github.com/epam/edp-codebase-operator/compare/v2.33.0...v2.34.0
 [v2.33.0]: https://github.com/epam/edp-codebase-operator/compare/v2.32.0...v2.33.0
 [v2.32.0]: https://github.com/epam/edp-codebase-operator/compare/v2.31.0...v2.32.0
 [v2.31.0]: https://github.com/epam/edp-codebase-operator/compare/v2.30.0...v2.31.0
