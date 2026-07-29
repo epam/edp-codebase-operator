@@ -26,21 +26,23 @@ A Helm chart for Kubernetes
 | autoscaling.minReplicas | int | `1` |  |
 | autoscaling.targetCPUUtilizationPercentage | int | `80` |  |
 | fullnameOverride | string | `""` |  |
+{{- if eq .IngressController "envoy" }}
+| httproute.annotations | object | `{}` |  |
+| httproute.dnsWildcard | string | `"{{.DnsWildcard}}"` |  |
+| httproute.enabled | bool | `false` |  |
+| httproute.gateway.name | string | `"{{.GatewayName}}"` | Name of the parent Gateway. |
+| httproute.gateway.namespace | string | `"{{.GatewayNamespace}}"` | Namespace of the parent Gateway. |
+| httproute.gateway.sectionName | string | `""` | Gateway listener to bind to, e.g. an HTTPS listener that terminates TLS. Empty attaches to every listener that accepts the route. |
+| httproute.hosts[0].host | string | `"edpDefault"` |  |
+| httproute.hosts[0].paths[0].path | string | `"/"` |  |
+| httproute.hosts[0].paths[0].pathType | string | `"PathPrefix"` |  |
+{{- end }}
 | image.digest | string | `""` | Image digest for immutable reference (e.g., sha256:abc123...). If set, deployed as :tag@digest. |
 | image.pullPolicy | string | `"IfNotPresent"` |  |
 | image.repository | string | `"{{.Name}}"` |  |
 | image.tag | string | `""` | Overrides the image tag whose default is the chart appVersion. |
 | imagePullSecrets[0].name | string | `"regcred"` |  |
-{{- if eq .IngressController "envoy" }}
-| httproute.annotations | object | `{}` |  |
-| httproute.dnsWildcard | string | `"{{.DnsWildcard}}"` |  |
-| httproute.enabled | bool | `false` |  |
-| httproute.gateway.name | string | `"{{.GatewayName}}"` |  |
-| httproute.gateway.namespace | string | `"{{.GatewayNamespace}}"` |  |
-| httproute.hosts[0].host | string | `"edpDefault"` |  |
-| httproute.hosts[0].paths[0].path | string | `"/"` |  |
-| httproute.hosts[0].paths[0].pathType | string | `"PathPrefix"` |  |
-{{- else }}
+{{- if ne .IngressController "envoy" }}
 | ingress.annotations | object | `{}` |  |
 | ingress.className | string | `""` |  |
 | ingress.dnsWildcard | string | `"{{.DnsWildcard}}"` |  |

@@ -80,9 +80,17 @@ generate: controller-gen api-docs ## Generate code containing DeepCopy, DeepCopy
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 
 .PHONY: validate-docs
-validate-docs: api-docs helm-docs  ## Validate helm and api docs
+validate-docs: api-docs helm-docs validate-scaffold-docs  ## Validate helm and api docs
 	@git diff -s --exit-code deploy-templates/README.md || (echo "Run 'make helm-docs' to address the issue." && git diff && exit 1)
 	@git diff -s --exit-code docs/api.md || (echo " Run 'make api-docs' to address the issue." && git diff && exit 1)
+
+.PHONY: scaffold-docs
+scaffold-docs: helmdocs  ## Generate the README.tmpl of the application Helm chart scaffold
+	go run ./hack/scaffolddocs --helm-docs $(HELMDOCS)
+
+.PHONY: validate-scaffold-docs
+validate-scaffold-docs: scaffold-docs  ## Validate the scaffold docs are up to date with its values
+	@git diff -s --exit-code build/templates || (echo "Run 'make scaffold-docs' to address the issue." && git diff build/templates && exit 1)
 
 # Run tests
 test: fmt vet setup-envtest
@@ -148,6 +156,9 @@ ENVTEST_VERSION ?= $(shell go list -m -f "{{ .Version }}" sigs.k8s.io/controller
 ENVTEST_K8S_VERSION ?= $(shell go list -m -f "{{ .Version }}" k8s.io/api | awk -F'[v.]' '{printf "1.%d", $$3}')
 GOLANGCI_LINT_VERSION ?= v2.8.0
 MOCKERY_VERSION ?= v3.6.2
+# Also generates the application chart scaffold docs (scaffold-docs). Those are re-validated by
+# the helm-docs task of edp-tekton's review pipelines, so this has to keep producing the same
+# output as the helm_docs_image pinned there - bump the two together.
 HELMDOCS_VERSION ?= v1.14.2
 GITCHGLOG_VERSION ?= v0.15.4
 CRDOC_VERSION ?= v0.6.4

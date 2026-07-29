@@ -55,6 +55,25 @@ jobs:
     - name: "run tests"
       run: make build && make test
 
+  scaffold-docs:
+    name: Validate scaffold docs
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v6
+
+    - name: Set up Go
+      uses: actions/setup-go@v6
+      with:
+        go-version: "1.25"
+
+    # Regenerates the README.tmpl of the application chart scaffold and fails when it differs
+    # from the committed one. A stale template fails the helm-docs task in the review pipeline
+    # of every codebase scaffolded from it.
+    - name: Validate scaffold docs
+      run: make validate-scaffold-docs
+
   helm-lint:
     name: Validate Helm chart
     runs-on: ubuntu-latest

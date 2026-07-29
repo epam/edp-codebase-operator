@@ -51,12 +51,14 @@ service:
 httproute:
   enabled: false
   dnsWildcard: {{.DnsWildcard}}
-  # -- Parent Gateway the HTTPRoute attaches to. Defaults to the platform gateway.
+  # Parent Gateway the HTTPRoute attaches to. Defaults to the platform gateway.
   gateway:
+    # -- Name of the parent Gateway.
     name: {{.GatewayName}}
+    # -- Namespace of the parent Gateway.
     namespace: {{.GatewayNamespace}}
-    # -- Optional Gateway listener to bind to (e.g. an HTTPS listener that terminates TLS).
-    # sectionName: ""
+    # -- Gateway listener to bind to, e.g. an HTTPS listener that terminates TLS. Empty attaches to every listener that accepts the route.
+    sectionName: ""
   # Each entry below is rendered as its own HTTPRoute, so paths stay scoped to their host.
   # 'edpDefault' expands to <CODEBASE_NAME>-<CODEBASE_NAMESPACE>.<CLUSTER_DNS_WILDCARD>; set a literal host to override.
   hosts:

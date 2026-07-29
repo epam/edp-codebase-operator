@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/go-logr/logr"
@@ -128,6 +129,131 @@ func TestCopyTemplate_HelmTemplates_ExposureByController(t *testing.T) {
 			for _, f := range []string{"ingress.yaml", "httproute.yaml"} {
 				_, err = os.Stat(fmt.Sprintf("%v/deploy-templates/templates/%s", testDir, f))
 				require.NoError(t, err, "%s should always be shipped", f)
+			}
+		})
+	}
+}
+
+// valueRowKeys returns the value paths documented by a chart README, in the order they appear.
+func valueRowKeys(t *testing.T, readme string) []string {
+	t.Helper()
+
+	lines := strings.Split(readme, "\n")
+
+	// The values table is the only one helm-docs writes without spaces around its separator,
+	// which keeps this from matching the maintainers table above it.
+	separator := -1
+
+	for i, line := range lines {
+		if strings.HasPrefix(line, "|--") {
+			separator = i
+			break
+		}
+	}
+
+	require.GreaterOrEqual(t, separator, 0, "values table not found in README")
+
+	keys := make([]string, 0, len(lines)-separator)
+
+	for _, line := range lines[separator+1:] {
+		if !strings.HasPrefix(line, "|") {
+			break
+		}
+
+		keys = append(keys, strings.TrimSpace(strings.SplitN(line, "|", 3)[1]))
+	}
+
+	require.NotEmpty(t, keys, "values table has no rows")
+
+	return keys
+}
+
+// TestCopyTemplate_HelmTemplates_ReadmeDocumentsValues guards the contract the review pipeline
+// of every scaffolded project checks: the README has to be what helm-docs generates from the
+// values next to it. helm-docs sorts the table alphanumerically and documents the exposure the
+// platform selected, so a README ordered differently, or describing the other exposure, fails
+// that pipeline for every codebase created from this scaffold.
+func TestCopyTemplate_HelmTemplates_ReadmeDocumentsValues(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name              string
+		platformType      string
+		ingressController string
+		wantKeys          []string
+		absentKeys        []string
+	}{
+		{
+			name:              "kubernetes with envoy documents the httproute",
+			platformType:      "kubernetes",
+			ingressController: "envoy",
+			wantKeys: []string{
+				"httproute.enabled",
+				"httproute.gateway.name",
+				"httproute.gateway.namespace",
+				"httproute.gateway.sectionName",
+			},
+			absentKeys: []string{"ingress.enabled", "ingress.className"},
+		},
+		{
+			name:              "kubernetes with nginx documents the ingress",
+			platformType:      "kubernetes",
+			ingressController: "nginx",
+			wantKeys:          []string{"ingress.enabled", "ingress.className", "ingress.tls"},
+			absentKeys:        []string{"httproute.enabled", "httproute.gateway.name"},
+		},
+		{
+			// OpenShift exposes applications through a Route and has no exposure variants, so
+			// the ingress-controller selection must not reach its documentation.
+			name:              "openshift documents its route and never the httproute",
+			platformType:      "openshift",
+			ingressController: "envoy",
+			wantKeys:          []string{"ingress.enabled", "ingress.path", "ingress.pathType"},
+			absentKeys:        []string{"httproute.enabled", "httproute.gateway.name"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			testDir := t.TempDir()
+
+			err := CopyTemplate(
+				ctrl.LoggerInto(context.Background(), logr.Discard()),
+				HelmChartDeploymentScriptType,
+				testDir,
+				"../../build",
+				&model.ConfigGoTemplating{
+					Name:              "c-name",
+					PlatformType:      tt.platformType,
+					Lang:              "go",
+					Framework:         "beego",
+					DnsWildcard:       "mydomain.example.com",
+					GitURL:            "https://example.com",
+					IngressController: tt.ingressController,
+					GatewayName:       "main-gateway",
+					GatewayNamespace:  "envoy-gateway-system",
+				},
+			)
+			require.NoError(t, err)
+
+			readme, err := os.ReadFile(fmt.Sprintf("%v/deploy-templates/README.md", testDir))
+			require.NoError(t, err)
+
+			keys := valueRowKeys(t, string(readme))
+
+			for i := 1; i < len(keys); i++ {
+				require.Less(t, keys[i-1], keys[i],
+					"README rows must keep the alphanumeric order helm-docs sorts by")
+			}
+
+			for _, want := range tt.wantKeys {
+				assert.Contains(t, keys, want)
+			}
+
+			for _, absent := range tt.absentKeys {
+				assert.NotContains(t, keys, absent)
 			}
 		})
 	}

@@ -40,6 +40,8 @@ func CopyHelmChartTemplates(deploymentScript, templatesDest, assetsDir string, c
 		return fmt.Errorf("failed to create Values file %q: %w", valuesFileName, err)
 	}
 
+	defer CloseWithLogOnErr(log, valuesFile, "failed to close Values file")
+
 	log.Info("file is created", fileLogKey, valuesFileName)
 
 	chartFileName := path.Join(templatesDest, "Chart.yaml")
@@ -49,6 +51,8 @@ func CopyHelmChartTemplates(deploymentScript, templatesDest, assetsDir string, c
 		return fmt.Errorf("failed to create chart file %q: %w", chartFileName, err)
 	}
 
+	defer CloseWithLogOnErr(log, chartFile, "failed to close chart file")
+
 	log.Info("file is created", fileLogKey, chartFileName)
 
 	readmeFileName := path.Join(templatesDest, "README.md")
@@ -57,6 +61,8 @@ func CopyHelmChartTemplates(deploymentScript, templatesDest, assetsDir string, c
 	if err != nil {
 		return fmt.Errorf("failed to create chart file %q: %w", readmeFileName, err)
 	}
+
+	defer CloseWithLogOnErr(log, readmeFile, "failed to close README file")
 
 	log.Info("file is created", fileLogKey, readmeFileName)
 
