@@ -8,6 +8,7 @@ import (
 	"github.com/tektoncd/triggers/pkg/reconciler/eventlistener"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -67,11 +68,28 @@ func (h *CreateEventListener) createEventListener(ctx context.Context, gitServer
 
 	log.Info("Creating EventListener")
 
+	elName := generateEventListenerName(gitServer.Name)
+
+	elCheck := tektoncd.NewEventListenerUnstructured()
+
+	err := h.k8sClient.Get(ctx, client.ObjectKey{
+		Namespace: gitServer.Namespace,
+		Name:      elName,
+	}, elCheck)
+	if err == nil {
+		log.Info("EventListener already exists", "EventListener", elName)
+
+		return h.reconcileEventListenerLabelSelector(ctx, gitServer, elCheck)
+	}
+
+	if client.IgnoreNotFound(err) != nil {
+		return fmt.Errorf("failed to get EventListener: %w", err)
+	}
+
 	// Use Unstructured to avoid direct dependency on "knative.dev/pkg/apis/duck/v1" because EventListener relies on it.
 	// This dependency can conflict with the operator's dependencies.
 	// https://github.com/tektoncd/triggers/blob/v0.34.0/pkg/apis/triggers/v1beta1/event_listener_types.go#L86
 	el := tektoncd.NewEventListenerUnstructured()
-	elName := generateEventListenerName(gitServer.Name)
 
 	el.SetName(elName)
 	el.SetNamespace(gitServer.Namespace)
@@ -81,6 +99,7 @@ func (h *CreateEventListener) createEventListener(ctx context.Context, gitServer
 
 	el.Object["spec"] = map[string]interface{}{
 		"serviceAccountName": "default",
+		"labelSelector":      desiredEventListenerLabelSelector(gitServer),
 		"triggers": []interface{}{
 			map[string]interface{}{
 				"triggerRef": fmt.Sprintf("%s-build", gitServer.Spec.GitProvider),
@@ -121,28 +140,64 @@ func (h *CreateEventListener) createEventListener(ctx context.Context, gitServer
 		return fmt.Errorf("failed to set controller reference for EventListener: %w", err)
 	}
 
-	elCheck := tektoncd.NewEventListenerUnstructured()
-
-	err := h.k8sClient.Get(ctx, client.ObjectKey{
-		Namespace: gitServer.Namespace,
-		Name:      elName,
-	}, elCheck)
-	if err == nil {
-		log.Info("EventListener already exists", "EventListener", el.GetName())
-		return nil
-	}
-
-	if client.IgnoreNotFound(err) != nil {
-		return fmt.Errorf("failed to get EventListener: %w", err)
-	}
-
-	if err = h.k8sClient.Create(ctx, el); err != nil {
+	if err := h.k8sClient.Create(ctx, el); err != nil {
 		return fmt.Errorf("failed to create EventListener: %w", err)
 	}
 
 	log.Info("EventListener has been created", "EventListener", el.GetName())
 
 	return nil
+}
+
+// reconcileEventListenerLabelSelector enforces only the GitServer entry in
+// spec.labelSelector.matchLabels: the rest of the selector and spec.triggers
+// are user-managed and must never be modified on an existing EventListener.
+func (h *CreateEventListener) reconcileEventListenerLabelSelector(
+	ctx context.Context,
+	gitServer *codebaseApi.GitServer,
+	el *unstructured.Unstructured,
+) error {
+	log := ctrl.LoggerFrom(ctx)
+
+	current, _, err := unstructured.NestedString(
+		el.Object,
+		"spec", "labelSelector", "matchLabels", codebaseApi.GitServerLabel,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to read EventListener labelSelector: %w", err)
+	}
+
+	if current == gitServer.Name {
+		return nil
+	}
+
+	original := el.DeepCopy()
+
+	if err = unstructured.SetNestedField(
+		el.Object,
+		gitServer.Name,
+		"spec", "labelSelector", "matchLabels", codebaseApi.GitServerLabel,
+	); err != nil {
+		return fmt.Errorf("failed to set EventListener labelSelector: %w", err)
+	}
+
+	if err = h.k8sClient.Patch(ctx, el, client.MergeFrom(original)); err != nil {
+		return fmt.Errorf("failed to patch EventListener labelSelector: %w", err)
+	}
+
+	log.Info("EventListener labelSelector has been reconciled", "EventListener", el.GetName())
+
+	return nil
+}
+
+// desiredEventListenerLabelSelector makes the EventListener serve any Trigger in the
+// namespace labeled with the GitServer name, in addition to the explicit spec.triggers list.
+func desiredEventListenerLabelSelector(gitServer *codebaseApi.GitServer) map[string]interface{} {
+	return map[string]interface{}{
+		"matchLabels": map[string]interface{}{
+			codebaseApi.GitServerLabel: gitServer.Name,
+		},
+	}
 }
 
 func (h *CreateEventListener) createIngress(ctx context.Context, gitServer *codebaseApi.GitServer) error {

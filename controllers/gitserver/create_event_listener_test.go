@@ -11,16 +11,36 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	controllerruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	"github.com/epam/edp-codebase-operator/v2/pkg/platform"
 	"github.com/epam/edp-codebase-operator/v2/pkg/tektoncd"
 )
+
+func assertEventListenerLabelSelector(t *testing.T, el *unstructured.Unstructured, want map[string]string) {
+	t.Helper()
+
+	matchLabels, found, err := unstructured.NestedStringMap(el.Object, "spec", "labelSelector", "matchLabels")
+	require.NoError(t, err)
+	require.True(t, found)
+	require.Equal(t, want, matchLabels)
+}
+
+func assertEventListenerTriggers(t *testing.T, el *unstructured.Unstructured, want []interface{}) {
+	t.Helper()
+
+	triggers, found, err := unstructured.NestedSlice(el.Object, "spec", "triggers")
+	require.NoError(t, err)
+	require.True(t, found)
+	require.Equal(t, want, triggers)
+}
 
 func TestCreateEventListener_ServeRequest(t *testing.T) {
 	scheme := runtime.NewScheme()
@@ -157,11 +177,190 @@ func TestCreateEventListener_ServeRequest(t *testing.T) {
 					Name:      generateEventListenerName("test-git-server"),
 				}, el))
 
+				assertEventListenerLabelSelector(t, el, map[string]string{codebaseApi.GitServerLabel: "test-git-server"})
+
+				triggers, found, err := unstructured.NestedSlice(el.Object, "spec", "triggers")
+				require.NoError(t, err)
+				require.True(t, found)
+				require.Len(t, triggers, 2)
+
 				i := &networkingv1.Ingress{}
 				require.NoError(t, k8sClient.Get(context.Background(), client.ObjectKey{
 					Namespace: "default",
 					Name:      GenerateIngressName("test-git-server"),
 				}, i))
+			},
+		},
+		{
+			name: "event listener exists without labelSelector - heals labelSelector and preserves triggers",
+			gitServer: &codebaseApi.GitServer{
+				ObjectMeta: controllerruntime.ObjectMeta{
+					Name:      "test-git-server",
+					Namespace: "default",
+				},
+			},
+			k8sClient: func(t *testing.T) client.Client {
+				el := tektoncd.NewEventListenerUnstructured()
+				el.SetName(generateEventListenerName("test-git-server"))
+				el.SetNamespace("default")
+				el.Object["spec"] = map[string]interface{}{
+					"serviceAccountName": "default",
+					"triggers": []interface{}{
+						map[string]interface{}{"triggerRef": "gitlab-build"},
+						map[string]interface{}{"triggerRef": "gitlab-review"},
+						map[string]interface{}{"triggerRef": "gitlab-sanity"},
+					},
+				}
+
+				return fake.NewClientBuilder().
+					WithScheme(scheme).
+					WithObjects(
+						&corev1.ConfigMap{
+							ObjectMeta: controllerruntime.ObjectMeta{
+								Namespace: "default",
+								Name:      platform.KrciConfigMap,
+							},
+						},
+						el,
+					).
+					Build()
+			},
+			prepare: func(t *testing.T) {
+				t.Setenv(platform.TypeEnv, platform.K8S)
+			},
+			wantErr: require.NoError,
+			want: func(t *testing.T, k8sClient client.Client) {
+				el := tektoncd.NewEventListenerUnstructured()
+				require.NoError(t, k8sClient.Get(context.Background(), client.ObjectKey{
+					Namespace: "default",
+					Name:      generateEventListenerName("test-git-server"),
+				}, el))
+
+				assertEventListenerLabelSelector(t, el, map[string]string{codebaseApi.GitServerLabel: "test-git-server"})
+				assertEventListenerTriggers(t, el, []interface{}{
+					map[string]interface{}{"triggerRef": "gitlab-build"},
+					map[string]interface{}{"triggerRef": "gitlab-review"},
+					map[string]interface{}{"triggerRef": "gitlab-sanity"},
+				})
+			},
+		},
+		{
+			name: "event listener with stale labelSelector value - heals own key and preserves user additions",
+			gitServer: &codebaseApi.GitServer{
+				ObjectMeta: controllerruntime.ObjectMeta{
+					Name:      "test-git-server",
+					Namespace: "default",
+				},
+			},
+			k8sClient: func(t *testing.T) client.Client {
+				el := tektoncd.NewEventListenerUnstructured()
+				el.SetName(generateEventListenerName("test-git-server"))
+				el.SetNamespace("default")
+				el.Object["spec"] = map[string]interface{}{
+					"labelSelector": map[string]interface{}{
+						"matchLabels": map[string]interface{}{
+							codebaseApi.GitServerLabel: "old-git-server",
+							"user-label":               "user-value",
+						},
+					},
+					"triggers": []interface{}{
+						map[string]interface{}{"triggerRef": "gitlab-build"},
+					},
+				}
+
+				return fake.NewClientBuilder().
+					WithScheme(scheme).
+					WithObjects(
+						&corev1.ConfigMap{
+							ObjectMeta: controllerruntime.ObjectMeta{
+								Namespace: "default",
+								Name:      platform.KrciConfigMap,
+							},
+						},
+						el,
+					).
+					Build()
+			},
+			prepare: func(t *testing.T) {
+				t.Setenv(platform.TypeEnv, platform.K8S)
+			},
+			wantErr: require.NoError,
+			want: func(t *testing.T, k8sClient client.Client) {
+				el := tektoncd.NewEventListenerUnstructured()
+				require.NoError(t, k8sClient.Get(context.Background(), client.ObjectKey{
+					Namespace: "default",
+					Name:      generateEventListenerName("test-git-server"),
+				}, el))
+
+				assertEventListenerLabelSelector(t, el, map[string]string{
+					codebaseApi.GitServerLabel: "test-git-server",
+					"user-label":               "user-value",
+				})
+				assertEventListenerTriggers(t, el, []interface{}{
+					map[string]interface{}{"triggerRef": "gitlab-build"},
+				})
+			},
+		},
+		{
+			name: "event listener with correct labelSelector - no patch issued",
+			gitServer: &codebaseApi.GitServer{
+				ObjectMeta: controllerruntime.ObjectMeta{
+					Name:      "test-git-server",
+					Namespace: "default",
+				},
+			},
+			k8sClient: func(t *testing.T) client.Client {
+				el := tektoncd.NewEventListenerUnstructured()
+				el.SetName(generateEventListenerName("test-git-server"))
+				el.SetNamespace("default")
+				el.Object["spec"] = map[string]interface{}{
+					"labelSelector": map[string]interface{}{
+						"matchLabels": map[string]interface{}{
+							codebaseApi.GitServerLabel: "test-git-server",
+						},
+					},
+					"triggers": []interface{}{
+						map[string]interface{}{"triggerRef": "gitlab-build"},
+						map[string]interface{}{"triggerRef": "gitlab-review"},
+					},
+				}
+
+				return fake.NewClientBuilder().
+					WithScheme(scheme).
+					WithObjects(
+						&corev1.ConfigMap{
+							ObjectMeta: controllerruntime.ObjectMeta{
+								Namespace: "default",
+								Name:      platform.KrciConfigMap,
+							},
+						},
+						el,
+					).
+					WithInterceptorFuncs(interceptor.Funcs{
+						Patch: func(
+							ctx context.Context,
+							cl client.WithWatch,
+							obj client.Object,
+							patch client.Patch,
+							opts ...client.PatchOption,
+						) error {
+							t.Errorf("unexpected patch of %s %s", obj.GetObjectKind().GroupVersionKind().Kind, obj.GetName())
+
+							return cl.Patch(ctx, obj, patch, opts...)
+						},
+					}).
+					Build()
+			},
+			prepare: func(t *testing.T) {
+				t.Setenv(platform.TypeEnv, platform.K8S)
+			},
+			wantErr: require.NoError,
+			want: func(t *testing.T, k8sClient client.Client) {
+				el := tektoncd.NewEventListenerUnstructured()
+				require.NoError(t, k8sClient.Get(context.Background(), client.ObjectKey{
+					Namespace: "default",
+					Name:      generateEventListenerName("test-git-server"),
+				}, el))
 			},
 		},
 		{
