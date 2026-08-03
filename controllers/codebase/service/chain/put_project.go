@@ -9,6 +9,7 @@ import (
 	"slices"
 	"strconv"
 
+	"github.com/go-git/go-git/v5/plumbing"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -332,6 +333,19 @@ func (h *PutProject) checkoutBranch(
 		h.gitProviderFactory,
 	); err != nil {
 		return fmt.Errorf("failed to checkout default branch %s: %w", codebase.Spec.DefaultBranch, err)
+	}
+
+	// Repositories whose history the operator authored (create strategy squashes
+	// history, emptyProject inits from scratch) carry go-git's hardcoded init
+	// branch alongside the default branch just checked out. Drop it before the
+	// refs/heads/* push, or the remote receives a stray branch. Cloned histories
+	// are never touched: their branch of the same name belongs to the source repo.
+	initBranch := plumbing.Master.Short()
+	if (codebase.Spec.Strategy == codebaseApi.Create || codebase.Spec.EmptyProject) &&
+		codebase.Spec.DefaultBranch != initBranch {
+		if err := gitProvider.RemoveBranch(ctx, repoContext.WorkDir, initBranch); err != nil {
+			return fmt.Errorf("failed to remove init branch %s: %w", initBranch, err)
+		}
 	}
 
 	log.Info("Checkout branch finished")
