@@ -315,7 +315,6 @@ func (p *GitProvider) Checkout(ctx context.Context, directory, branchName string
 	createBranch := true
 
 	if remote {
-		// Fetch from remote first
 		auth, err := p.getAuth()
 		if err != nil {
 			return fmt.Errorf("failed to get authentication: %w", err)
@@ -325,6 +324,10 @@ func (p *GitProvider) Checkout(ctx context.Context, directory, branchName string
 			RefSpecs: []config.RefSpec{"refs/*:refs/*"},
 			Auth:     auth,
 			Progress: os.Stdout,
+			// The refspec has no force prefix, so without this a rebased or
+			// force-pushed upstream branch fails the fetch with ErrForceNeeded
+			// against a cached workdir.
+			Force: true,
 		}
 
 		err = repo.FetchContext(ctx, fetchOptions)
@@ -332,12 +335,12 @@ func (p *GitProvider) Checkout(ctx context.Context, directory, branchName string
 			return fmt.Errorf("failed to fetch: %w", err)
 		}
 
-		// Check if branch exists remotely
-		remoteBranchRef := plumbing.NewRemoteReferenceName("origin", branchName)
-
-		_, err = repo.Reference(remoteBranchRef, false)
+		// The refspec above maps remote branches straight into local
+		// refs/heads, so that is the namespace that proves existence here.
+		// Checking refs/remotes/origin instead would miss any branch the
+		// fetch just materialized and collide on Create below.
+		_, err = repo.Reference(plumbing.NewBranchReferenceName(branchName), false)
 		if err == nil {
-			// Branch exists remotely, don't create locally
 			createBranch = false
 		}
 	}
