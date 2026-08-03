@@ -41,6 +41,12 @@ const (
 	ProjectPushedStatus          = "pushed"
 	ProjectGitLabCIPushedStatus  = "gitlab_ci_pushed"
 	ProjectTemplatesPushedStatus = "templates_pushed"
+	// ProjectPushInProgressStatus marks that the operator verified the remote
+	// default branch was absent and is about to push the initial history. On
+	// retry, this status plus a now-present remote default branch proves the
+	// push landed and provisioning must adopt it: pushing regenerated history
+	// would silently replace the remote branch.
+	ProjectPushInProgressStatus = "push_in_progress"
 
 	GithubDomain = "https://github.com/epmd-edp"
 

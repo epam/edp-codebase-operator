@@ -410,6 +410,17 @@ func TestResolveAdvertisedRef(t *testing.T) {
 	}
 }
 
+// An empty repository must resolve to "not found", not a transport failure:
+// provisioning probes freshly created projects before the first push.
+func TestGitProvider_ResolveRemoteReference_EmptyRepo(t *testing.T) {
+	s := emptyUploadPackServer(t)
+	gp := NewGitProvider(Config{Username: "user", Token: "pass"})
+
+	_, err := gp.ResolveRemoteReference(context.Background(), s.URL, "main")
+
+	require.ErrorIs(t, err, ErrReferenceNotFound)
+}
+
 func TestResolveAdvertisedRef_NoHead(t *testing.T) {
 	_, err := resolveAdvertisedRef(packp.NewAdvRefs(), "")
 
