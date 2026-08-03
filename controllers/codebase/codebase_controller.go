@@ -25,6 +25,7 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/pkg/objectmodifier"
 	codebasepredicate "github.com/epam/edp-codebase-operator/v2/pkg/predicate"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
+	"github.com/epam/edp-codebase-operator/v2/pkg/util/gitpathlabel"
 )
 
 const codebaseOperatorFinalizerName = "codebase.operator.finalizer.name"
@@ -304,8 +305,6 @@ func removeDirectoryIfExists(ctx context.Context, codebase *codebaseApi.Codebase
 func (r *ReconcileCodebase) initLabels(ctx context.Context, c *codebaseApi.Codebase) error {
 	log := ctrl.LoggerFrom(ctx)
 
-	log.Info("Trying to update labels for codebase")
-
 	const codebaseTypeLabelName = "app.edp.epam.com/codebaseType"
 
 	originalCodeBase := c.DeepCopy()
@@ -315,12 +314,25 @@ func (r *ReconcileCodebase) initLabels(ctx context.Context, c *codebaseApi.Codeb
 		labels = make(map[string]string)
 	}
 
-	if _, ok := labels[codebaseTypeLabelName]; ok {
-		log.Info("Codebase already has label", "label", codebaseTypeLabelName)
+	var changedLabels []string
+
+	if _, ok := labels[codebaseTypeLabelName]; !ok {
+		labels[codebaseTypeLabelName] = c.Spec.Type
+		changedLabels = append(changedLabels, codebaseTypeLabelName)
+	}
+
+	// Unlike codebaseType, the hash label converges on every reconcile:
+	// spec.gitUrlPath is mutable and consumers select Codebases by this value.
+	if hash := gitpathlabel.Hash(c.Spec.GitUrlPath); labels[codebaseApi.GitUrlPathHashLabel] != hash {
+		labels[codebaseApi.GitUrlPathHashLabel] = hash
+		changedLabels = append(changedLabels, codebaseApi.GitUrlPathHashLabel)
+	}
+
+	if len(changedLabels) == 0 {
 		return nil
 	}
 
-	labels[codebaseTypeLabelName] = c.Spec.Type
+	log.Info("Updating labels for codebase", "labels", changedLabels)
 
 	c.SetLabels(labels)
 

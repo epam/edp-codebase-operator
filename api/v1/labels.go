@@ -29,6 +29,13 @@ const (
 	// GitServerLabel is a label used to store the name of the GitServer in related resources.
 	GitServerLabel = "app.edp.epam.com/gitServer"
 
+	// GitUrlPathHashLabel is a label used to store the hash of the Codebase spec.gitUrlPath,
+	// so that consumers (e.g. the edp-tekton interceptor) can select the Codebase owning a
+	// repository without listing the whole namespace. We can't use gitUrlPath directly as a
+	// label value because it contains slashes and matching is case-insensitive.
+	// The value is computed by pkg/util/gitpathlabel.Hash (first 128 bits of SHA-256, hex).
+	GitUrlPathHashLabel = "app.edp.epam.com/gitUrlPathHash"
+
 	// StaleLabel marks a CodebaseBranch whose branch no longer exists in the git repository.
 	// It mirrors the Stale status condition so that resources can be filtered with a label
 	// selector; the condition remains the source of truth and the label is re-asserted by
