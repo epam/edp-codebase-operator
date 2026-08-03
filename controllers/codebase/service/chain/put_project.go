@@ -54,7 +54,6 @@ func NewPutProject(
 	}
 }
 
-// ServeRequest is a method to put project into git repository.
 // TODO: Refactor this method to smaller methods. Currently it is too big and complex.
 func (h *PutProject) ServeRequest(ctx context.Context, codebase *codebaseApi.Codebase) error {
 	log := ctrl.LoggerFrom(ctx).WithValues("projectID", codebase.Spec.GetProjectID())
@@ -73,6 +72,17 @@ func (h *PutProject) ServeRequest(ctx context.Context, codebase *codebaseApi.Cod
 	repoContext, err := GetGitRepositoryContext(ctx, h.k8sClient, codebase)
 	if err != nil {
 		return h.handleError(codebase, err, "failed to get git repository context")
+	}
+
+	adopted, err := h.adoptPushedProject(ctx, codebase, repoContext)
+	if err != nil {
+		return h.handleError(codebase, err, "failed to adopt already pushed project")
+	}
+
+	if adopted {
+		log.Info("Finish putting project (adopted previously pushed state)")
+
+		return nil
 	}
 
 	err = h.initialProjectProvisioning(ctx, codebase, repoContext)
@@ -124,7 +134,6 @@ func (*PutProject) skip(ctx context.Context, codebase *codebaseApi.Codebase) boo
 	return false
 }
 
-// handleError sets failed fields on codebase and returns formatted error.
 func (*PutProject) handleError(codebase *codebaseApi.Codebase, err error, message string) error {
 	setFailedFields(codebase, codebaseApi.RepositoryProvisioning, err.Error())
 	return fmt.Errorf("%s: %w", message, err)
@@ -146,7 +155,40 @@ func (h *PutProject) createProject(
 		}
 	}
 
-	err := h.pushProject(ctx, codebase.Spec.GetProjectID(), repoContext)
+	// The remote branch, not local state, is the durable record of a push: a
+	// retry after any later failure (default-branch call, status patch,
+	// operator crash) regenerates history, and pushing it would silently
+	// replace the remote branch. Record intent only when the remote default
+	// branch is verified absent, so that on retry "in progress + branch
+	// present" can only mean our own push landed.
+	remoteBranchAbsent, err := h.remoteDefaultBranchAbsent(ctx, codebase, repoContext)
+	if err != nil {
+		return err
+	}
+
+	if !remoteBranchAbsent {
+		// go-git cannot verify fast-forward when the remote's current commit
+		// is absent from the freshly regenerated local history, so this push
+		// would silently replace the remote branch. Refuse instead of
+		// destroying history that this codebase provably did not just push.
+		return fmt.Errorf(
+			"remote repository already contains default branch %s with history not pushed by this provisioning; "+
+				"refusing to overwrite it - remove the remote branch or onboard the repository with the import strategy",
+			codebase.Spec.DefaultBranch,
+		)
+	}
+
+	if err = updateGitStatusWithPatch(
+		ctx,
+		h.k8sClient,
+		codebase,
+		codebaseApi.RepositoryProvisioning,
+		util.ProjectPushInProgressStatus,
+	); err != nil {
+		return err
+	}
+
+	err = h.pushProject(ctx, codebase.Spec.GetProjectID(), repoContext)
 	if err != nil {
 		return err
 	}
@@ -157,6 +199,91 @@ func (h *PutProject) createProject(
 	}
 
 	return nil
+}
+
+// remoteDefaultBranchAbsent reports whether the codebase default branch does
+// not exist on the remote project (an empty or missing repository counts as
+// absent). Transport failures propagate as errors: guessing "absent" on a
+// network blip would regenerate history against a remote that may already
+// hold the previous push.
+func (h *PutProject) remoteDefaultBranchAbsent(
+	ctx context.Context,
+	codebase *codebaseApi.Codebase,
+	repoContext *GitRepositoryContext,
+) (bool, error) {
+	gitProvider := h.gitProviderFactory(
+		gitproviderv2.NewConfigFromGitServerAndSecret(
+			repoContext.GitServer,
+			repoContext.GitServerSecret,
+		),
+	)
+
+	repoURL := util.GetProjectGitUrl(repoContext.GitServer, repoContext.GitServerSecret, codebase.Spec.GetProjectID())
+
+	_, err := gitProvider.ResolveRemoteReference(ctx, repoURL, codebase.Spec.DefaultBranch)
+	if err == nil {
+		return false, nil
+	}
+
+	if errors.Is(err, gitproviderv2.ErrReferenceNotFound) {
+		return true, nil
+	}
+
+	return false, fmt.Errorf("failed to check remote default branch: %w", err)
+}
+
+// adoptPushedProject resumes provisioning wedged between a successful push and
+// the final status patch. ProjectPushInProgressStatus is set only after the
+// remote default branch was verified absent, so finding it present now proves
+// the interrupted push landed: skip regeneration and re-run only the
+// idempotent default-branch setup. A still-absent branch means the push never
+// completed and full provisioning must run again.
+func (h *PutProject) adoptPushedProject(
+	ctx context.Context,
+	codebase *codebaseApi.Codebase,
+	repoContext *GitRepositoryContext,
+) (bool, error) {
+	if codebase.Status.Git != util.ProjectPushInProgressStatus {
+		return false, nil
+	}
+
+	log := ctrl.LoggerFrom(ctx)
+	log.Info("Push was in progress, checking whether it landed on the remote")
+
+	absent, err := h.remoteDefaultBranchAbsent(ctx, codebase, repoContext)
+	if err != nil {
+		return false, err
+	}
+
+	if absent {
+		log.Info("Interrupted push never landed, re-running full provisioning")
+
+		return false, nil
+	}
+
+	log.Info("Interrupted push landed on the remote, adopting it")
+
+	if err = h.setDefaultBranch(
+		ctx,
+		repoContext.GitServer,
+		codebase,
+		repoContext.Token,
+		repoContext.PrivateSSHKey,
+	); err != nil {
+		return false, err
+	}
+
+	if err = updateGitStatusWithPatch(
+		ctx,
+		h.k8sClient,
+		codebase,
+		codebaseApi.RepositoryProvisioning,
+		util.ProjectPushedStatus,
+	); err != nil {
+		return false, err
+	}
+
+	return true, nil
 }
 
 func (h *PutProject) replaceDefaultBranch(
@@ -549,6 +676,13 @@ func (h *PutProject) emptyProjectProvisioning(
 	log := ctrl.LoggerFrom(ctx)
 
 	log.Info("Initialing empty git repository")
+
+	// A workdir surviving a partial earlier attempt would make Init fail with
+	// "repository already exists"; regenerating is safe because this path only
+	// runs when nothing reached the remote yet.
+	if err := os.RemoveAll(filepath.Join(repoContext.WorkDir, ".git")); err != nil {
+		return fmt.Errorf("failed to remove stale .git folder: %w", err)
+	}
 
 	if err := h.gitProviderNoAuth.Init(ctx, repoContext.WorkDir); err != nil {
 		return fmt.Errorf("failed to create empty git repository: %w", err)

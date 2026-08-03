@@ -169,6 +169,12 @@ func (p *GitProvider) advertisedReferences(ctx context.Context, repoURL string) 
 	if err != nil {
 		_ = session.Close()
 
+		// An empty or absent repository cannot resolve any reference; callers
+		// distinguishing "not found" from transport failures rely on this.
+		if errors.Is(err, transport.ErrEmptyRemoteRepository) || errors.Is(err, transport.ErrRepositoryNotFound) {
+			return nil, nil, fmt.Errorf("remote repository is empty or missing: %w", ErrReferenceNotFound)
+		}
+
 		return nil, nil, fmt.Errorf("failed to get advertised references: %w", err)
 	}
 

@@ -202,6 +202,8 @@ func TestPutProject_ServeRequest(t *testing.T) {
 				mock.EXPECT().Init(testify.Anything, testify.Anything).Return(nil)
 				mock.EXPECT().Commit(testify.Anything, testify.Anything, "Initial commit", testify.Anything).Return(nil)
 				mock.EXPECT().GetCurrentBranchName(testify.Anything, testify.Anything).Return("main", nil)
+				mock.EXPECT().ResolveRemoteReference(testify.Anything, testify.Anything, testify.Anything).
+					Return("", gitproviderv2.ErrReferenceNotFound).Maybe()
 				mock.EXPECT().RemoveBranch(testify.Anything, testify.Anything, "master").Return(nil).Maybe()
 				mock.EXPECT().AddRemoteLink(testify.Anything, testify.Anything, testify.Anything).Return(nil)
 				mock.EXPECT().Push(testify.Anything, testify.Anything, testify.Anything, testify.Anything).Return(nil)
@@ -273,6 +275,8 @@ func TestPutProject_ServeRequest(t *testing.T) {
 				mock.EXPECT().Init(testify.Anything, testify.Anything).Return(nil)
 				mock.EXPECT().Commit(testify.Anything, testify.Anything, "Initial commit", testify.Anything).Return(nil)
 				mock.EXPECT().GetCurrentBranchName(testify.Anything, testify.Anything).Return("main", nil)
+				mock.EXPECT().ResolveRemoteReference(testify.Anything, testify.Anything, testify.Anything).
+					Return("", gitproviderv2.ErrReferenceNotFound).Maybe()
 				mock.EXPECT().RemoveBranch(testify.Anything, testify.Anything, "master").Return(nil).Maybe()
 				mock.EXPECT().AddRemoteLink(testify.Anything, testify.Anything, testify.Anything).Return(nil)
 				mock.EXPECT().Push(testify.Anything, testify.Anything, testify.Anything, testify.Anything).Return(nil)
@@ -346,6 +350,8 @@ func TestPutProject_ServeRequest(t *testing.T) {
 				mock.EXPECT().Init(testify.Anything, testify.Anything).Return(nil)
 				mock.EXPECT().Commit(testify.Anything, testify.Anything, "Initial commit", testify.Anything).Return(nil)
 				mock.EXPECT().GetCurrentBranchName(testify.Anything, testify.Anything).Return("main", nil)
+				mock.EXPECT().ResolveRemoteReference(testify.Anything, testify.Anything, testify.Anything).
+					Return("", gitproviderv2.ErrReferenceNotFound).Maybe()
 				mock.EXPECT().RemoveBranch(testify.Anything, testify.Anything, "master").Return(nil).Maybe()
 				mock.EXPECT().AddRemoteLink(testify.Anything, testify.Anything, testify.Anything).Return(nil)
 				mock.EXPECT().Push(testify.Anything, testify.Anything, testify.Anything, testify.Anything).Return(nil)
@@ -417,6 +423,8 @@ func TestPutProject_ServeRequest(t *testing.T) {
 				mock.EXPECT().Init(testify.Anything, testify.Anything).Return(nil)
 				mock.EXPECT().Commit(testify.Anything, testify.Anything, "Initial commit", testify.Anything).Return(nil)
 				mock.EXPECT().GetCurrentBranchName(testify.Anything, testify.Anything).Return("main", nil)
+				mock.EXPECT().ResolveRemoteReference(testify.Anything, testify.Anything, testify.Anything).
+					Return("", gitproviderv2.ErrReferenceNotFound).Maybe()
 				mock.EXPECT().RemoveBranch(testify.Anything, testify.Anything, "master").Return(nil).Maybe()
 
 				return func(config gitproviderv2.Config) gitproviderv2.Git {
@@ -483,6 +491,8 @@ func TestPutProject_ServeRequest(t *testing.T) {
 				mock.EXPECT().Init(testify.Anything, testify.Anything).Return(nil)
 				mock.EXPECT().Commit(testify.Anything, testify.Anything, "Initial commit", testify.Anything).Return(nil)
 				mock.EXPECT().GetCurrentBranchName(testify.Anything, testify.Anything).Return("main", nil)
+				mock.EXPECT().ResolveRemoteReference(testify.Anything, testify.Anything, testify.Anything).
+					Return("", gitproviderv2.ErrReferenceNotFound).Maybe()
 				mock.EXPECT().RemoveBranch(testify.Anything, testify.Anything, "master").Return(nil).Maybe()
 
 				return func(config gitproviderv2.Config) gitproviderv2.Git {
@@ -551,6 +561,8 @@ func TestPutProject_ServeRequest(t *testing.T) {
 				mock.EXPECT().Init(testify.Anything, testify.Anything).Return(nil)
 				mock.EXPECT().Commit(testify.Anything, testify.Anything, "Initial commit", testify.Anything).Return(nil)
 				mock.EXPECT().GetCurrentBranchName(testify.Anything, testify.Anything).Return("main", nil)
+				mock.EXPECT().ResolveRemoteReference(testify.Anything, testify.Anything, testify.Anything).
+					Return("", gitproviderv2.ErrReferenceNotFound).Maybe()
 				mock.EXPECT().RemoveBranch(testify.Anything, testify.Anything, "master").Return(nil).Maybe()
 				mock.EXPECT().AddRemoteLink(testify.Anything, testify.Anything, testify.Anything).Return(nil)
 				mock.EXPECT().Push(testify.Anything, testify.Anything, testify.Anything, testify.Anything).
@@ -622,6 +634,8 @@ func TestPutProject_ServeRequest(t *testing.T) {
 				mock.EXPECT().Init(testify.Anything, testify.Anything).Return(nil)
 				mock.EXPECT().Commit(testify.Anything, testify.Anything, "Initial commit", testify.Anything).Return(nil)
 				mock.EXPECT().GetCurrentBranchName(testify.Anything, testify.Anything).Return("main", nil)
+				mock.EXPECT().ResolveRemoteReference(testify.Anything, testify.Anything, testify.Anything).
+					Return("", gitproviderv2.ErrReferenceNotFound).Maybe()
 				mock.EXPECT().RemoveBranch(testify.Anything, testify.Anything, "master").Return(nil).Maybe()
 				mock.EXPECT().AddRemoteLink(testify.Anything, testify.Anything, testify.Anything).Return(nil)
 				mock.EXPECT().Push(testify.Anything, testify.Anything, testify.Anything, testify.Anything).Return(nil)
@@ -694,6 +708,8 @@ func TestPutProject_ServeRequest(t *testing.T) {
 				mock.EXPECT().Init(testify.Anything, testify.Anything).Return(nil)
 				mock.EXPECT().Commit(testify.Anything, testify.Anything, "Initial commit", testify.Anything).Return(nil)
 				mock.EXPECT().GetCurrentBranchName(testify.Anything, testify.Anything).Return("main", nil)
+				mock.EXPECT().ResolveRemoteReference(testify.Anything, testify.Anything, testify.Anything).
+					Return("", gitproviderv2.ErrReferenceNotFound).Maybe()
 				mock.EXPECT().RemoveBranch(testify.Anything, testify.Anything, "master").Return(nil).Maybe()
 				mock.EXPECT().AddRemoteLink(testify.Anything, testify.Anything, testify.Anything).Return(nil)
 				mock.EXPECT().Push(testify.Anything, testify.Anything, testify.Anything, testify.Anything).Return(nil)
@@ -887,6 +903,8 @@ func TestPutProject_ServeRequest(t *testing.T) {
 				mock.EXPECT().Init(testify.Anything, testify.Anything).Return(nil)
 				mock.EXPECT().Commit(testify.Anything, testify.Anything, "Initial commit", testify.Anything).Return(nil)
 				mock.EXPECT().GetCurrentBranchName(testify.Anything, testify.Anything).Return("main", nil)
+				mock.EXPECT().ResolveRemoteReference(testify.Anything, testify.Anything, testify.Anything).
+					Return("", gitproviderv2.ErrReferenceNotFound).Maybe()
 				// Strict expectation: the stray init branch must be removed exactly once.
 				mock.EXPECT().RemoveBranch(testify.Anything, testify.Anything, "master").Return(nil).Once()
 				mock.EXPECT().AddRemoteLink(testify.Anything, testify.Anything, testify.Anything).Return(nil)
@@ -960,6 +978,8 @@ func TestPutProject_ServeRequest(t *testing.T) {
 				mock.EXPECT().Init(testify.Anything, testify.Anything).Return(nil)
 				mock.EXPECT().Commit(testify.Anything, testify.Anything, "Initial commit", testify.Anything).Return(nil)
 				mock.EXPECT().GetCurrentBranchName(testify.Anything, testify.Anything).Return("master", nil)
+				mock.EXPECT().ResolveRemoteReference(testify.Anything, testify.Anything, testify.Anything).
+					Return("", gitproviderv2.ErrReferenceNotFound).Maybe()
 				mock.EXPECT().AddRemoteLink(testify.Anything, testify.Anything, testify.Anything).Return(nil)
 				mock.EXPECT().Push(testify.Anything, testify.Anything, testify.Anything, testify.Anything).Return(nil)
 
@@ -985,6 +1005,225 @@ func TestPutProject_ServeRequest(t *testing.T) {
 			wantErr: require.NoError,
 			wantStatus: func(t *testing.T, status codebaseApi.CodebaseStatus) {
 				require.Equal(t, util.ProjectPushedStatus, status.Git)
+			},
+		},
+		{
+			name: "adopts already pushed project when push was in progress",
+			codebase: &codebaseApi.Codebase{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-app",
+					Namespace: defaultNs,
+				},
+				Spec: codebaseApi.CodebaseSpec{
+					Strategy:      codebaseApi.Create,
+					GitServer:     "gitlab",
+					GitUrlPath:    "/test-app",
+					DefaultBranch: "main",
+					EmptyProject:  true,
+				},
+				Status: codebaseApi.CodebaseStatus{
+					Git: util.ProjectPushInProgressStatus,
+				},
+			},
+			objects: []client.Object{
+				&codebaseApi.GitServer{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "gitlab",
+						Namespace: defaultNs,
+					},
+					Spec: codebaseApi.GitServerSpec{
+						GitProvider:      codebaseApi.GitProviderGitlab,
+						GitHost:          "gitlab.example.com",
+						GitUser:          "edp-ci",
+						NameSshKeySecret: "gitlab-access-token",
+					},
+				},
+				&corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "gitlab-access-token",
+						Namespace: defaultNs,
+					},
+					Data: map[string][]byte{
+						"token": []byte("fake-token"),
+					},
+				},
+			},
+			gitProviderFactory: func(t *testing.T) gitproviderv2.GitProviderFactory {
+				// Only the remote probe may run: any Init/Commit/Push call on
+				// this strict mock means history was regenerated and fails the test.
+				mock := gitmocks.NewMockGit(t)
+				mock.EXPECT().ResolveRemoteReference(testify.Anything, testify.Anything, "main").
+					Return("91eb10daf05eff87f611d4d71d25e42c5abfd711", nil).Once()
+
+				return func(config gitproviderv2.Config) gitproviderv2.Git {
+					return mock
+				}
+			},
+			gitProvider: func(
+				t *testing.T,
+			) func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
+				mock := mocks.NewMockGitProjectProvider(t)
+				mock.EXPECT().SetDefaultBranch(testify.Anything, testify.Anything, testify.Anything, "test-app", "main").
+					Return(nil).Once()
+
+				return func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
+					return mock, nil
+				}
+			},
+			wantErr: require.NoError,
+			wantStatus: func(t *testing.T, status codebaseApi.CodebaseStatus) {
+				require.Equal(t, util.ProjectPushedStatus, status.Git)
+			},
+		},
+		{
+			name: "re-provisions in full when the in-progress push never landed",
+			codebase: &codebaseApi.Codebase{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-app",
+					Namespace: defaultNs,
+				},
+				Spec: codebaseApi.CodebaseSpec{
+					Strategy:      codebaseApi.Create,
+					GitServer:     "gitlab",
+					GitUrlPath:    "/test-app",
+					DefaultBranch: "main",
+					EmptyProject:  true,
+				},
+				Status: codebaseApi.CodebaseStatus{
+					Git: util.ProjectPushInProgressStatus,
+				},
+			},
+			objects: []client.Object{
+				&codebaseApi.GitServer{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "gitlab",
+						Namespace: defaultNs,
+					},
+					Spec: codebaseApi.GitServerSpec{
+						GitProvider:      codebaseApi.GitProviderGitlab,
+						GitHost:          "gitlab.example.com",
+						GitUser:          "edp-ci",
+						NameSshKeySecret: "gitlab-access-token",
+					},
+				},
+				&corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "gitlab-access-token",
+						Namespace: defaultNs,
+					},
+					Data: map[string][]byte{
+						"token": []byte("fake-token"),
+					},
+				},
+			},
+			gitProviderFactory: func(t *testing.T) gitproviderv2.GitProviderFactory {
+				mock := gitmocks.NewMockGit(t)
+				// Probed twice: the adopt check and the pre-push check.
+				mock.EXPECT().ResolveRemoteReference(testify.Anything, testify.Anything, "main").
+					Return("", gitproviderv2.ErrReferenceNotFound).Twice()
+				mock.EXPECT().Init(testify.Anything, testify.Anything).Return(nil)
+				mock.EXPECT().Commit(testify.Anything, testify.Anything, "Initial commit", testify.Anything).Return(nil)
+				mock.EXPECT().GetCurrentBranchName(testify.Anything, testify.Anything).Return("main", nil)
+				mock.EXPECT().RemoveBranch(testify.Anything, testify.Anything, "master").Return(nil).Once()
+				mock.EXPECT().AddRemoteLink(testify.Anything, testify.Anything, testify.Anything).Return(nil)
+				mock.EXPECT().Push(testify.Anything, testify.Anything, testify.Anything, testify.Anything).Return(nil)
+
+				return func(config gitproviderv2.Config) gitproviderv2.Git {
+					return mock
+				}
+			},
+			gitProvider: func(
+				t *testing.T,
+			) func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
+				mock := mocks.NewMockGitProjectProvider(t)
+				mock.EXPECT().ProjectExists(testify.Anything, testify.Anything, testify.Anything, "test-app").
+					Return(false, nil)
+				mock.EXPECT().CreateProject(testify.Anything, testify.Anything, testify.Anything, "test-app", testify.Anything).
+					Return(nil)
+				mock.EXPECT().SetDefaultBranch(testify.Anything, testify.Anything, testify.Anything, "test-app", "main").
+					Return(nil)
+
+				return func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
+					return mock, nil
+				}
+			},
+			wantErr: require.NoError,
+			wantStatus: func(t *testing.T, status codebaseApi.CodebaseStatus) {
+				require.Equal(t, util.ProjectPushedStatus, status.Git)
+			},
+		},
+		{
+			name: "does not checkpoint or adopt a pre-existing foreign default branch",
+			codebase: &codebaseApi.Codebase{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-app",
+					Namespace: defaultNs,
+				},
+				Spec: codebaseApi.CodebaseSpec{
+					Strategy:      codebaseApi.Create,
+					GitServer:     "gitlab",
+					GitUrlPath:    "/test-app",
+					DefaultBranch: "main",
+					EmptyProject:  true,
+				},
+			},
+			objects: []client.Object{
+				&codebaseApi.GitServer{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "gitlab",
+						Namespace: defaultNs,
+					},
+					Spec: codebaseApi.GitServerSpec{
+						GitProvider:      codebaseApi.GitProviderGitlab,
+						GitHost:          "gitlab.example.com",
+						GitUser:          "edp-ci",
+						NameSshKeySecret: "gitlab-access-token",
+					},
+				},
+				&corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "gitlab-access-token",
+						Namespace: defaultNs,
+					},
+					Data: map[string][]byte{
+						"token": []byte("fake-token"),
+					},
+				},
+			},
+			gitProviderFactory: func(t *testing.T) gitproviderv2.GitProviderFactory {
+				mock := gitmocks.NewMockGit(t)
+				mock.EXPECT().Init(testify.Anything, testify.Anything).Return(nil)
+				mock.EXPECT().Commit(testify.Anything, testify.Anything, "Initial commit", testify.Anything).Return(nil)
+				mock.EXPECT().GetCurrentBranchName(testify.Anything, testify.Anything).Return("main", nil)
+				mock.EXPECT().RemoveBranch(testify.Anything, testify.Anything, "master").Return(nil).Once()
+				// The remote already has a foreign default branch: no checkpoint
+				// may be written and no push may run - the strict mock fails the
+				// test on any AddRemoteLink/Push call.
+				mock.EXPECT().ResolveRemoteReference(testify.Anything, testify.Anything, "main").
+					Return("f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0", nil).Once()
+
+				return func(config gitproviderv2.Config) gitproviderv2.Git {
+					return mock
+				}
+			},
+			gitProvider: func(
+				t *testing.T,
+			) func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
+				mock := mocks.NewMockGitProjectProvider(t)
+				mock.EXPECT().ProjectExists(testify.Anything, testify.Anything, testify.Anything, "test-app").
+					Return(true, nil)
+
+				return func(gitServer *codebaseApi.GitServer, token string) (gitprovider.GitProjectProvider, error) {
+					return mock, nil
+				}
+			},
+			wantErr: func(t require.TestingT, err error, _ ...any) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "refusing to overwrite")
+			},
+			wantStatus: func(t *testing.T, status codebaseApi.CodebaseStatus) {
+				require.NotEqual(t, util.ProjectPushInProgressStatus, status.Git,
+					"a foreign branch must never arm the adopt checkpoint")
 			},
 		},
 	}
@@ -1098,6 +1337,8 @@ func TestPutProject_ServeRequest_Gerrit(t *testing.T) {
 				mock.EXPECT().AddRemoteLink(testify.Anything, testify.Anything, testify.Anything).Return(nil)
 				mock.EXPECT().Push(testify.Anything, testify.Anything, testify.Anything, testify.Anything).Return(nil)
 				mock.EXPECT().GetCurrentBranchName(testify.Anything, testify.Anything).Return("main", nil)
+				mock.EXPECT().ResolveRemoteReference(testify.Anything, testify.Anything, testify.Anything).
+					Return("", gitproviderv2.ErrReferenceNotFound).Maybe()
 				mock.EXPECT().RemoveBranch(testify.Anything, testify.Anything, "master").Return(nil).Maybe()
 
 				return func(config gitproviderv2.Config) gitproviderv2.Git {
@@ -1143,6 +1384,8 @@ func TestPutProject_ServeRequest_Gerrit(t *testing.T) {
 				mock.EXPECT().AddRemoteLink(testify.Anything, testify.Anything, testify.Anything).Return(nil)
 				mock.EXPECT().Push(testify.Anything, testify.Anything, testify.Anything, testify.Anything).Return(nil)
 				mock.EXPECT().GetCurrentBranchName(testify.Anything, testify.Anything).Return("main", nil)
+				mock.EXPECT().ResolveRemoteReference(testify.Anything, testify.Anything, testify.Anything).
+					Return("", gitproviderv2.ErrReferenceNotFound).Maybe()
 				mock.EXPECT().RemoveBranch(testify.Anything, testify.Anything, "master").Return(nil).Maybe()
 
 				return func(config gitproviderv2.Config) gitproviderv2.Git {
@@ -1188,6 +1431,8 @@ func TestPutProject_ServeRequest_Gerrit(t *testing.T) {
 				mock.EXPECT().Init(testify.Anything, testify.Anything).Return(nil)
 				mock.EXPECT().Commit(testify.Anything, testify.Anything, "Initial commit", testify.Anything).Return(nil)
 				mock.EXPECT().GetCurrentBranchName(testify.Anything, testify.Anything).Return("main", nil)
+				mock.EXPECT().ResolveRemoteReference(testify.Anything, testify.Anything, testify.Anything).
+					Return("", gitproviderv2.ErrReferenceNotFound).Maybe()
 				mock.EXPECT().RemoveBranch(testify.Anything, testify.Anything, "master").Return(nil).Maybe()
 				mock.EXPECT().AddRemoteLink(testify.Anything, testify.Anything, testify.Anything).Return(nil)
 				mock.EXPECT().Push(testify.Anything, testify.Anything, testify.Anything, testify.Anything).Return(nil)
@@ -1233,6 +1478,8 @@ func TestPutProject_ServeRequest_Gerrit(t *testing.T) {
 				mock.EXPECT().Init(testify.Anything, testify.Anything).Return(nil)
 				mock.EXPECT().Commit(testify.Anything, testify.Anything, "Initial commit", testify.Anything).Return(nil)
 				mock.EXPECT().GetCurrentBranchName(testify.Anything, testify.Anything).Return("main", nil)
+				mock.EXPECT().ResolveRemoteReference(testify.Anything, testify.Anything, testify.Anything).
+					Return("", gitproviderv2.ErrReferenceNotFound).Maybe()
 				mock.EXPECT().RemoveBranch(testify.Anything, testify.Anything, "master").Return(nil).Maybe()
 
 				return func(config gitproviderv2.Config) gitproviderv2.Git {
@@ -1273,6 +1520,8 @@ func TestPutProject_ServeRequest_Gerrit(t *testing.T) {
 				mock.EXPECT().Init(testify.Anything, testify.Anything).Return(nil)
 				mock.EXPECT().Commit(testify.Anything, testify.Anything, "Initial commit", testify.Anything).Return(nil)
 				mock.EXPECT().GetCurrentBranchName(testify.Anything, testify.Anything).Return("main", nil)
+				mock.EXPECT().ResolveRemoteReference(testify.Anything, testify.Anything, testify.Anything).
+					Return("", gitproviderv2.ErrReferenceNotFound).Maybe()
 				mock.EXPECT().RemoveBranch(testify.Anything, testify.Anything, "master").Return(nil).Maybe()
 
 				return func(config gitproviderv2.Config) gitproviderv2.Git {
@@ -1315,6 +1564,8 @@ func TestPutProject_ServeRequest_Gerrit(t *testing.T) {
 				mock.EXPECT().Init(testify.Anything, testify.Anything).Return(nil)
 				mock.EXPECT().Commit(testify.Anything, testify.Anything, "Initial commit", testify.Anything).Return(nil)
 				mock.EXPECT().GetCurrentBranchName(testify.Anything, testify.Anything).Return("main", nil)
+				mock.EXPECT().ResolveRemoteReference(testify.Anything, testify.Anything, testify.Anything).
+					Return("", gitproviderv2.ErrReferenceNotFound).Maybe()
 				mock.EXPECT().RemoveBranch(testify.Anything, testify.Anything, "master").Return(nil).Maybe()
 				mock.EXPECT().AddRemoteLink(testify.Anything, testify.Anything, testify.Anything).Return(nil)
 				mock.EXPECT().Push(testify.Anything, testify.Anything, testify.Anything, testify.Anything).
@@ -1360,6 +1611,8 @@ func TestPutProject_ServeRequest_Gerrit(t *testing.T) {
 				mock.EXPECT().Init(testify.Anything, testify.Anything).Return(nil)
 				mock.EXPECT().Commit(testify.Anything, testify.Anything, "Initial commit", testify.Anything).Return(nil)
 				mock.EXPECT().GetCurrentBranchName(testify.Anything, testify.Anything).Return("main", nil)
+				mock.EXPECT().ResolveRemoteReference(testify.Anything, testify.Anything, testify.Anything).
+					Return("", gitproviderv2.ErrReferenceNotFound).Maybe()
 				mock.EXPECT().RemoveBranch(testify.Anything, testify.Anything, "master").Return(nil).Maybe()
 				mock.EXPECT().AddRemoteLink(testify.Anything, testify.Anything, testify.Anything).Return(nil)
 				mock.EXPECT().Push(testify.Anything, testify.Anything, testify.Anything, testify.Anything).Return(nil)
