@@ -10,7 +10,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
-	"github.com/epam/edp-codebase-operator/v2/controllers/codebasebranch/chain"
 	"github.com/epam/edp-codebase-operator/v2/controllers/codebasebranch/chain/handler"
 	"github.com/epam/edp-codebase-operator/v2/controllers/codebasebranch/service"
 	gitproviderv2 "github.com/epam/edp-codebase-operator/v2/pkg/git"
@@ -88,40 +87,19 @@ func (h PutBranchInGit) ServeRequest(ctx context.Context, branch *codebaseApi.Co
 		return err
 	}
 
-	// Create git provider using factory
 	gitProvider := h.GitProviderFactory(gitproviderv2.NewConfigFromGitServerAndSecret(gitServer, secret))
 
-	wd := chain.GetCodebaseBranchWorkingDirectory(branch)
-	if !checkDirectory(wd) {
-		repoGitUrl := util.GetProjectGitUrl(gitServer, secret, codebase.Spec.GetProjectID())
+	repoGitUrl := util.GetProjectGitUrl(gitServer, secret, codebase.Spec.GetProjectID())
 
-		if err := gitProvider.Clone(ctx, repoGitUrl, wd); err != nil {
-			putGitBranchSetFailedFields(branch, err.Error())
-
-			return fmt.Errorf("failed to clone repository: %w", err)
-		}
+	// An empty FromCommit means the branch starts from the tip of the default branch.
+	fromRef := branch.Spec.FromCommit
+	if fromRef == "" {
+		fromRef = codebase.Spec.DefaultBranch
 	}
 
-	currentBranchName, err := gitProvider.GetCurrentBranchName(ctx, wd)
-	if err != nil {
-		return fmt.Errorf("failed to get current branch name: %w", err)
-	}
-
-	if currentBranchName != codebase.Spec.DefaultBranch {
-		if err = gitProvider.CheckoutRemoteBranch(ctx, wd, codebase.Spec.DefaultBranch); err != nil {
-			return fmt.Errorf("failed to checkout to default branch %s: %w", codebase.Spec.DefaultBranch, err)
-		}
-	}
-
-	err = gitProvider.CreateRemoteBranch(ctx, wd, branch.Spec.BranchName, branch.Spec.FromCommit)
+	err := gitProvider.CreateRemoteBranchViaRefUpdate(ctx, repoGitUrl, branch.Spec.BranchName, fromRef)
 	if err != nil {
 		putGitBranchSetFailedFields(branch, err.Error())
-
-		// We need to remove work directory if branch creation failed(push error).
-		// Otherwise, the next time the branch creation will be skipped because local branch already exists.
-		if err = util.RemoveDirectory(wd); err != nil {
-			log.Error(err, "failed to remove directory", "path", wd)
-		}
 
 		return fmt.Errorf("failed to create remote branch: %w", err)
 	}
@@ -188,8 +166,4 @@ func putGitBranchSetFailedFields(cb *codebaseApi.CodebaseBranch, message string)
 		Git:                 cb.Status.Git,
 		Conditions:          cb.Status.Conditions,
 	}
-}
-
-func checkDirectory(path string) bool {
-	return util.DoesDirectoryExist(path) && !util.IsDirectoryEmpty(path)
 }

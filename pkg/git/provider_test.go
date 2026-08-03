@@ -3,9 +3,6 @@ package v2
 
 import (
 	"context"
-	"encoding/base64"
-	"net/http"
-	"net/http/httptest"
 	"os"
 	"path"
 	"testing"
@@ -32,17 +29,9 @@ func TestGitProvider_CheckPermissions(t *testing.T) {
 	}
 	gp := NewGitProvider(config)
 
-	bts, err := base64.StdEncoding.DecodeString(`MDAxZSMgc2VydmljZT1naXQtdXBsb2FkLXBhY2sKMDAwMDAxNTY2ZWNmMGVmMmMyZGZmYjc5NjAzM2U1YTAyMjE5YWY4NmVjNjU4NGU1IEhFQUQAbXVsdGlfYWNrIHRoaW4tcGFjayBzaWRlLWJhbmQgc2lkZS1iYW5kLTY0ayBvZnMtZGVsdGEgc2hhbGxvdyBkZWVwZW4tc2luY2UgZGVlcGVuLW5vdCBkZWVwZW4tcmVsYXRpdmUgbm8tcHJvZ3Jlc3MgaW5jbHVkZS10YWcgbXVsdGlfYWNrX2RldGFpbGVkIGFsbG93LXRpcC1zaGExLWluLXdhbnQgYWxsb3ctcmVhY2hhYmxlLXNoYTEtaW4td2FudCBuby1kb25lIHN5bXJlZj1IRUFEOnJlZnMvaGVhZHMvbWFzdGVyIGZpbHRlciBvYmplY3QtZm9ybWF0PXNoYTEgYWdlbnQ9Z2l0L2dpdGh1Yi1nNzhiNDUyNDEzZThiCjAwM2ZlOGQzZmZhYjU1Mjg5NWMxOWI5ZmNmN2FhMjY0ZDI3N2NkZTMzODgxIHJlZnMvaGVhZHMvYnJhbmNoCjAwM2Y2ZWNmMGVmMmMyZGZmYjc5NjAzM2U1YTAyMjE5YWY4NmVjNjU4NGU1IHJlZnMvaGVhZHMvbWFzdGVyCjAwM2ViOGU0NzFmNThiY2JjYTYzYjA3YmRhMjBlNDI4MTkwNDA5YzJkYjQ3IHJlZnMvcHVsbC8xL2hlYWQKMDAzZTk2MzJmMDI4MzNiMmY5NjEzYWZiNWU3NTY4MjEzMmIwYjIyZTRhMzEgcmVmcy9wdWxsLzIvaGVhZAowMDNmYzM3ZjU4YTEzMGNhNTU1ZTQyZmY5NmEwNzFjYjljY2IzZjQzNzUwNCByZWZzL3B1bGwvMi9tZXJnZQowMDAw`) // nolint:lll
-	require.NoError(t, err)
+	s := uploadPackServer(t)
 
-	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		_, err = w.Write(bts)
-		assert.NoError(t, err, "failed to write response")
-	}))
-	defer s.Close()
-
-	err = gp.CheckPermissions(context.Background(), s.URL)
+	err := gp.CheckPermissions(context.Background(), s.URL)
 	require.NoError(t, err, "repo must be accessible")
 }
 
@@ -56,21 +45,13 @@ func TestGitProvider_CheckPermissions_NoRefs(t *testing.T) {
 	}
 	gp := NewGitProvider(config)
 
-	bts, err := base64.StdEncoding.DecodeString(`MDAxZSMgc2VydmljZT1naXQtdXBsb2FkLXBhY2sKMDAwMDAwZGUwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwIGNhcGFiaWxpdGllc157fQAgaW5jbHVkZS10YWcgbXVsdGlfYWNrX2RldGFpbGVkIG11bHRpX2FjayBvZnMtZGVsdGEgc2lkZS1iYW5kIHNpZGUtYmFuZC02NGsgdGhpbi1wYWNrIG5vLXByb2dyZXNzIHNoYWxsb3cgbm8tZG9uZSBhZ2VudD1KR2l0L3Y1LjkuMC4yMDIwMDkwODA1MDEtci00MS1nNWQ5MjVlY2JiCjAwMDA=`) // nolint:lll
-	require.NoError(t, err)
-
-	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		_, err = w.Write(bts)
-		assert.NoError(t, err, "failed to write response")
-	}))
-	defer s.Close()
+	s := emptyUploadPackServer(t)
 
 	mockLogger := platform.NewLoggerMock()
 
 	// v2 implementation returns nil for empty repos (they are technically accessible, just empty)
 	// This is different from v1 which logged an error
-	err = gp.CheckPermissions(ctrl.LoggerInto(context.Background(), mockLogger), s.URL)
+	err := gp.CheckPermissions(ctrl.LoggerInto(context.Background(), mockLogger), s.URL)
 	require.NoError(t, err, "v2 considers empty repos accessible")
 }
 
@@ -81,17 +62,9 @@ func TestGitProvider_ListRemoteBranches(t *testing.T) {
 	}
 	gp := NewGitProvider(config)
 
-	// Same canned smart-HTTP ref advertisement as TestGitProvider_CheckPermissions:
-	// refs/heads/branch, refs/heads/master plus pull-request refs that must be filtered out.
-	bts, err := base64.StdEncoding.DecodeString(`MDAxZSMgc2VydmljZT1naXQtdXBsb2FkLXBhY2sKMDAwMDAxNTY2ZWNmMGVmMmMyZGZmYjc5NjAzM2U1YTAyMjE5YWY4NmVjNjU4NGU1IEhFQUQAbXVsdGlfYWNrIHRoaW4tcGFjayBzaWRlLWJhbmQgc2lkZS1iYW5kLTY0ayBvZnMtZGVsdGEgc2hhbGxvdyBkZWVwZW4tc2luY2UgZGVlcGVuLW5vdCBkZWVwZW4tcmVsYXRpdmUgbm8tcHJvZ3Jlc3MgaW5jbHVkZS10YWcgbXVsdGlfYWNrX2RldGFpbGVkIGFsbG93LXRpcC1zaGExLWluLXdhbnQgYWxsb3ctcmVhY2hhYmxlLXNoYTEtaW4td2FudCBuby1kb25lIHN5bXJlZj1IRUFEOnJlZnMvaGVhZHMvbWFzdGVyIGZpbHRlciBvYmplY3QtZm9ybWF0PXNoYTEgYWdlbnQ9Z2l0L2dpdGh1Yi1nNzhiNDUyNDEzZThiCjAwM2ZlOGQzZmZhYjU1Mjg5NWMxOWI5ZmNmN2FhMjY0ZDI3N2NkZTMzODgxIHJlZnMvaGVhZHMvYnJhbmNoCjAwM2Y2ZWNmMGVmMmMyZGZmYjc5NjAzM2U1YTAyMjE5YWY4NmVjNjU4NGU1IHJlZnMvaGVhZHMvbWFzdGVyCjAwM2ViOGU0NzFmNThiY2JjYTYzYjA3YmRhMjBlNDI4MTkwNDA5YzJkYjQ3IHJlZnMvcHVsbC8xL2hlYWQKMDAzZTk2MzJmMDI4MzNiMmY5NjEzYWZiNWU3NTY4MjEzMmIwYjIyZTRhMzEgcmVmcy9wdWxsLzIvaGVhZAowMDNmYzM3ZjU4YTEzMGNhNTU1ZTQyZmY5NmEwNzFjYjljY2IzZjQzNzUwNCByZWZzL3B1bGwvMi9tZXJnZQowMDAw`) // nolint:lll
-	require.NoError(t, err)
-
-	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		_, err = w.Write(bts)
-		assert.NoError(t, err, "failed to write response")
-	}))
-	defer s.Close()
+	// Advertisement contains refs/heads/branch, refs/heads/master plus
+	// pull-request refs that must be filtered out.
+	s := uploadPackServer(t)
 
 	branches, err := gp.ListRemoteBranches(context.Background(), s.URL)
 	require.NoError(t, err)
@@ -105,16 +78,7 @@ func TestGitProvider_ListRemoteBranches_EmptyRepo(t *testing.T) {
 	}
 	gp := NewGitProvider(config)
 
-	// Same empty-repo advertisement as TestGitProvider_CheckPermissions_NoRefs.
-	bts, err := base64.StdEncoding.DecodeString(`MDAxZSMgc2VydmljZT1naXQtdXBsb2FkLXBhY2sKMDAwMDAwZGUwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwIGNhcGFiaWxpdGllc157fQAgaW5jbHVkZS10YWcgbXVsdGlfYWNrX2RldGFpbGVkIG11bHRpX2FjayBvZnMtZGVsdGEgc2lkZS1iYW5kIHNpZGUtYmFuZC02NGsgdGhpbi1wYWNrIG5vLXByb2dyZXNzIHNoYWxsb3cgbm8tZG9uZSBhZ2VudD1KR2l0L3Y1LjkuMC4yMDIwMDkwODA1MDEtci00MS1nNWQ5MjVlY2JiCjAwMDA=`) // nolint:lll
-	require.NoError(t, err)
-
-	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		_, err = w.Write(bts)
-		assert.NoError(t, err, "failed to write response")
-	}))
-	defer s.Close()
+	s := emptyUploadPackServer(t)
 
 	branches, err := gp.ListRemoteBranches(context.Background(), s.URL)
 	require.NoError(t, err)
@@ -412,140 +376,6 @@ func TestGitProvider_AddRemoteLink(t *testing.T) {
 			err := gp.AddRemoteLink(context.Background(), dir, tt.remoteUrl)
 			tt.wantErr(t, err)
 			tt.checkRepo(t, dir)
-		})
-	}
-}
-
-func TestGitProvider_CheckReference(t *testing.T) {
-	tests := []struct {
-		name     string
-		initRepo func(t *testing.T) string
-		from     string
-		wantErr  require.ErrorAssertionFunc
-	}{
-		{
-			name: "should return nil for empty reference",
-			initRepo: func(t *testing.T) string {
-				dir := t.TempDir()
-				_, err := gogit.PlainInit(dir, false)
-				require.NoError(t, err)
-
-				return dir
-			},
-			from:    "",
-			wantErr: require.NoError,
-		},
-		{
-			name: "should find existing branch reference",
-			initRepo: func(t *testing.T) string {
-				dir := t.TempDir()
-				r, err := gogit.PlainInit(dir, false)
-				require.NoError(t, err)
-
-				// Create initial commit
-				w, err := r.Worktree()
-				require.NoError(t, err)
-
-				f, err := os.Create(path.Join(dir, "test.txt"))
-				require.NoError(t, err)
-				_, err = f.WriteString("test content")
-				require.NoError(t, err)
-				require.NoError(t, f.Close())
-
-				_, err = w.Add("test.txt")
-				require.NoError(t, err)
-
-				_, err = w.Commit("initial commit", &gogit.CommitOptions{
-					Author: &object.Signature{
-						Name:  "test",
-						Email: "test@example.com",
-						When:  time.Now(),
-					},
-				})
-				require.NoError(t, err)
-
-				// Create and checkout a new branch
-				err = w.Checkout(&gogit.CheckoutOptions{
-					Branch: plumbing.NewBranchReferenceName("test-branch"),
-					Create: true,
-				})
-				require.NoError(t, err)
-
-				return dir
-			},
-			from:    "test-branch",
-			wantErr: require.NoError,
-		},
-		{
-			name: "should find existing commit reference",
-			initRepo: func(t *testing.T) string {
-				dir := t.TempDir()
-				r, err := gogit.PlainInit(dir, false)
-				require.NoError(t, err)
-
-				// Create initial commit
-				w, err := r.Worktree()
-				require.NoError(t, err)
-
-				f, err := os.Create(path.Join(dir, "test.txt"))
-				require.NoError(t, err)
-				_, err = f.WriteString("test content")
-				require.NoError(t, err)
-				require.NoError(t, f.Close())
-
-				_, err = w.Add("test.txt")
-				require.NoError(t, err)
-
-				commit, err := w.Commit("initial commit", &gogit.CommitOptions{
-					Author: &object.Signature{
-						Name:  "test",
-						Email: "test@example.com",
-						When:  time.Now(),
-					},
-				})
-				require.NoError(t, err)
-
-				// Store the commit hash for the test
-				t.Logf("Created commit with hash: %s", commit.String())
-
-				return dir
-			},
-			from:    "", // Will be set dynamically
-			wantErr: require.NoError,
-		},
-		{
-			name: "should return error for non-existent reference",
-			initRepo: func(t *testing.T) string {
-				dir := t.TempDir()
-				_, err := gogit.PlainInit(dir, false)
-				require.NoError(t, err)
-
-				return dir
-			},
-			from:    "non-existent",
-			wantErr: require.Error,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			gp := NewGitProvider(Config{})
-			dir := tt.initRepo(t)
-
-			// For the commit reference test, we need to get the actual commit hash
-			if tt.name == "should find existing commit reference" {
-				r, err := gogit.PlainOpen(dir)
-				require.NoError(t, err)
-
-				ref, err := r.Head()
-				require.NoError(t, err)
-
-				tt.from = ref.Hash().String()
-				t.Logf("Using commit hash: %s", tt.from)
-			}
-
-			err := gp.CheckReference(context.Background(), dir, tt.from)
-			tt.wantErr(t, err)
 		})
 	}
 }
@@ -1021,278 +851,6 @@ func TestGitProvider_CommitExists(t *testing.T) {
 	}
 }
 
-func TestBranchExists(t *testing.T) {
-	tests := []struct {
-		name       string
-		initRepo   func(t *testing.T) string
-		branchName string
-		wantExists bool
-		wantErr    bool
-	}{
-		{
-			name: "branch exists",
-			initRepo: func(t *testing.T) string {
-				dir := t.TempDir()
-				r, err := gogit.PlainInit(dir, false)
-				require.NoError(t, err)
-
-				w, err := r.Worktree()
-				require.NoError(t, err)
-
-				f, err := os.Create(path.Join(dir, "test.txt"))
-				require.NoError(t, err)
-				_, err = f.WriteString("test")
-				require.NoError(t, err)
-				require.NoError(t, f.Close())
-
-				_, err = w.Add("test.txt")
-				require.NoError(t, err)
-
-				_, err = w.Commit("initial", &gogit.CommitOptions{
-					Author: &object.Signature{
-						Name:  "test",
-						Email: "test@example.com",
-						When:  time.Now(),
-					},
-				})
-				require.NoError(t, err)
-
-				// Create test-branch
-				err = w.Checkout(&gogit.CheckoutOptions{
-					Branch: plumbing.NewBranchReferenceName("test-branch"),
-					Create: true,
-				})
-				require.NoError(t, err)
-
-				return dir
-			},
-			branchName: "test-branch",
-			wantExists: true,
-			wantErr:    false,
-		},
-		{
-			name: "branch does not exist",
-			initRepo: func(t *testing.T) string {
-				dir := t.TempDir()
-				r, err := gogit.PlainInit(dir, false)
-				require.NoError(t, err)
-
-				w, err := r.Worktree()
-				require.NoError(t, err)
-
-				f, err := os.Create(path.Join(dir, "test.txt"))
-				require.NoError(t, err)
-				_, err = f.WriteString("test")
-				require.NoError(t, err)
-				require.NoError(t, f.Close())
-
-				_, err = w.Add("test.txt")
-				require.NoError(t, err)
-
-				_, err = w.Commit("initial", &gogit.CommitOptions{
-					Author: &object.Signature{
-						Name:  "test",
-						Email: "test@example.com",
-						When:  time.Now(),
-					},
-				})
-				require.NoError(t, err)
-
-				return dir
-			},
-			branchName: "non-existent-branch",
-			wantExists: false,
-			wantErr:    false,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			dir := tt.initRepo(t)
-			r, err := gogit.PlainOpen(dir)
-			require.NoError(t, err)
-
-			branches, err := r.Branches()
-			require.NoError(t, err)
-
-			exists, err := branchExists(tt.branchName, branches)
-
-			if tt.wantErr {
-				require.Error(t, err)
-				return
-			}
-
-			require.NoError(t, err)
-			assert.Equal(t, tt.wantExists, exists)
-		})
-	}
-}
-
-func TestResolveReference(t *testing.T) {
-	tests := []struct {
-		name     string
-		initRepo func(t *testing.T) (string, string)
-		ref      string
-		wantErr  bool
-	}{
-		{
-			name: "empty ref uses HEAD",
-			initRepo: func(t *testing.T) (string, string) {
-				dir := t.TempDir()
-				r, err := gogit.PlainInit(dir, false)
-				require.NoError(t, err)
-
-				w, err := r.Worktree()
-				require.NoError(t, err)
-
-				f, err := os.Create(path.Join(dir, "test.txt"))
-				require.NoError(t, err)
-				_, err = f.WriteString("test")
-				require.NoError(t, err)
-				require.NoError(t, f.Close())
-
-				_, err = w.Add("test.txt")
-				require.NoError(t, err)
-
-				_, err = w.Commit("initial", &gogit.CommitOptions{
-					Author: &object.Signature{
-						Name:  "test",
-						Email: "test@example.com",
-						When:  time.Now(),
-					},
-				})
-				require.NoError(t, err)
-
-				return dir, ""
-			},
-			ref:     "",
-			wantErr: false,
-		},
-		{
-			name: "branch reference resolution",
-			initRepo: func(t *testing.T) (string, string) {
-				dir := t.TempDir()
-				r, err := gogit.PlainInit(dir, false)
-				require.NoError(t, err)
-
-				w, err := r.Worktree()
-				require.NoError(t, err)
-
-				f, err := os.Create(path.Join(dir, "test.txt"))
-				require.NoError(t, err)
-				_, err = f.WriteString("test")
-				require.NoError(t, err)
-				require.NoError(t, f.Close())
-
-				_, err = w.Add("test.txt")
-				require.NoError(t, err)
-
-				_, err = w.Commit("initial", &gogit.CommitOptions{
-					Author: &object.Signature{
-						Name:  "test",
-						Email: "test@example.com",
-						When:  time.Now(),
-					},
-				})
-				require.NoError(t, err)
-
-				return dir, "master"
-			},
-			ref:     "master",
-			wantErr: false,
-		},
-		{
-			name: "commit hash resolution",
-			initRepo: func(t *testing.T) (string, string) {
-				dir := t.TempDir()
-				r, err := gogit.PlainInit(dir, false)
-				require.NoError(t, err)
-
-				w, err := r.Worktree()
-				require.NoError(t, err)
-
-				f, err := os.Create(path.Join(dir, "test.txt"))
-				require.NoError(t, err)
-				_, err = f.WriteString("test")
-				require.NoError(t, err)
-				require.NoError(t, f.Close())
-
-				_, err = w.Add("test.txt")
-				require.NoError(t, err)
-
-				hash, err := w.Commit("initial", &gogit.CommitOptions{
-					Author: &object.Signature{
-						Name:  "test",
-						Email: "test@example.com",
-						When:  time.Now(),
-					},
-				})
-				require.NoError(t, err)
-
-				return dir, hash.String()
-			},
-			wantErr: false,
-		},
-		{
-			name: "invalid reference",
-			initRepo: func(t *testing.T) (string, string) {
-				dir := t.TempDir()
-				r, err := gogit.PlainInit(dir, false)
-				require.NoError(t, err)
-
-				w, err := r.Worktree()
-				require.NoError(t, err)
-
-				f, err := os.Create(path.Join(dir, "test.txt"))
-				require.NoError(t, err)
-				_, err = f.WriteString("test")
-				require.NoError(t, err)
-				require.NoError(t, f.Close())
-
-				_, err = w.Add("test.txt")
-				require.NoError(t, err)
-
-				_, err = w.Commit("initial", &gogit.CommitOptions{
-					Author: &object.Signature{
-						Name:  "test",
-						Email: "test@example.com",
-						When:  time.Now(),
-					},
-				})
-				require.NoError(t, err)
-
-				return dir, "invalid-ref-12345"
-			},
-			ref:     "invalid-ref-12345",
-			wantErr: true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			dir, ref := tt.initRepo(t)
-			r, err := gogit.PlainOpen(dir)
-			require.NoError(t, err)
-
-			// Use the ref from initRepo if one was provided
-			testRef := tt.ref
-			if testRef == "" && ref != "" {
-				testRef = ref
-			}
-
-			hash, err := resolveReference(r, testRef)
-
-			if tt.wantErr {
-				require.Error(t, err)
-				return
-			}
-
-			require.NoError(t, err)
-			assert.NotNil(t, hash)
-		})
-	}
-}
-
 func TestGitProvider_Checkout_LocalMode(t *testing.T) {
 	tests := []struct {
 		name       string
@@ -1369,76 +927,6 @@ func TestGitProvider_Checkout_LocalMode(t *testing.T) {
 			require.NoError(t, err)
 
 			assert.Equal(t, tt.branchName, head.Name().Short())
-		})
-	}
-}
-
-func TestGitProvider_CreateRemoteBranch_Errors(t *testing.T) {
-	tests := []struct {
-		name       string
-		initRepo   func(t *testing.T) string
-		branchName string
-		fromRef    string
-		wantErr    bool
-	}{
-		{
-			name: "repository not found",
-			initRepo: func(t *testing.T) string {
-				return t.TempDir()
-			},
-			branchName: "new-branch",
-			fromRef:    "master",
-			wantErr:    true,
-		},
-		{
-			name: "invalid fromRef",
-			initRepo: func(t *testing.T) string {
-				dir := t.TempDir()
-				r, err := gogit.PlainInit(dir, false)
-				require.NoError(t, err)
-
-				w, err := r.Worktree()
-				require.NoError(t, err)
-
-				f, err := os.Create(path.Join(dir, "test.txt"))
-				require.NoError(t, err)
-				_, err = f.WriteString("test")
-				require.NoError(t, err)
-				require.NoError(t, f.Close())
-
-				_, err = w.Add("test.txt")
-				require.NoError(t, err)
-
-				_, err = w.Commit("initial", &gogit.CommitOptions{
-					Author: &object.Signature{
-						Name:  "test",
-						Email: "test@example.com",
-						When:  time.Now(),
-					},
-				})
-				require.NoError(t, err)
-
-				return dir
-			},
-			branchName: "new-branch",
-			fromRef:    "non-existent-ref",
-			wantErr:    true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			gp := NewGitProvider(Config{})
-			dir := tt.initRepo(t)
-
-			err := gp.CreateRemoteBranch(context.Background(), dir, tt.branchName, tt.fromRef)
-
-			if tt.wantErr {
-				require.Error(t, err)
-				return
-			}
-
-			require.NoError(t, err)
 		})
 	}
 }

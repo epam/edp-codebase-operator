@@ -77,18 +77,11 @@ func TestCheckReferenceExists_ServeRequest(t *testing.T) {
 			gitClient: func() gitproviderv2.Git {
 				mGit := gitServerMocks.NewMockGit(t)
 				mGit.On(
-					"Clone",
+					"ResolveRemoteReference",
 					testifymock.Anything,
 					testifymock.Anything,
 					testifymock.Anything,
-					testifymock.Anything,
-				).Return(nil)
-				mGit.On(
-					"CheckReference",
-					testifymock.Anything,
-					testifymock.Anything,
-					testifymock.Anything,
-				).Return(nil)
+				).Return("bfba920bd3bdebc9ae1c4475d70391152645b2a4", nil)
 
 				return mGit
 			},
@@ -136,18 +129,11 @@ func TestCheckReferenceExists_ServeRequest(t *testing.T) {
 			gitClient: func() gitproviderv2.Git {
 				mGit := gitServerMocks.NewMockGit(t)
 				mGit.On(
-					"Clone",
+					"ResolveRemoteReference",
 					testifymock.Anything,
 					testifymock.Anything,
 					testifymock.Anything,
-					testifymock.Anything,
-				).Return(nil)
-				mGit.On(
-					"CheckReference",
-					testifymock.Anything,
-					testifymock.Anything,
-					testifymock.Anything,
-				).Return(nil)
+				).Return("bfba920bd3bdebc9ae1c4475d70391152645b2a4", nil)
 
 				return mGit
 			},
@@ -195,18 +181,11 @@ func TestCheckReferenceExists_ServeRequest(t *testing.T) {
 			gitClient: func() gitproviderv2.Git {
 				mGit := gitServerMocks.NewMockGit(t)
 				mGit.On(
-					"Clone",
+					"ResolveRemoteReference",
 					testifymock.Anything,
 					testifymock.Anything,
 					testifymock.Anything,
-					testifymock.Anything,
-				).Return(nil)
-				mGit.On(
-					"CheckReference",
-					testifymock.Anything,
-					testifymock.Anything,
-					testifymock.Anything,
-				).Return(errors.New("reference not found"))
+				).Return("", errors.New("reference not found"))
 
 				return mGit
 			},

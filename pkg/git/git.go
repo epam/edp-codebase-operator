@@ -19,10 +19,6 @@ type Git interface {
 	// If remote is true, fetches from remote first and only creates local branch if it doesn't exist remotely.
 	Checkout(ctx context.Context, directory, branchName string, remote bool) error
 
-	// CreateRemoteBranch creates a new branch from a reference and pushes it to remote.
-	// fromRef: branch name or commit hash to create from (empty string means HEAD).
-	CreateRemoteBranch(ctx context.Context, directory, branchName, fromRef string) error
-
 	// GetCurrentBranchName returns the name of the current branch.
 	GetCurrentBranchName(ctx context.Context, directory string) (string, error)
 
@@ -33,8 +29,15 @@ type Git interface {
 	// without cloning it (equivalent to git ls-remote --heads).
 	ListRemoteBranches(ctx context.Context, repoURL string) ([]string, error)
 
-	// CheckReference checks if a reference (branch or commit) exists in the repository.
-	CheckReference(ctx context.Context, directory, refName string) error
+	// ResolveRemoteReference resolves a reference (branch, tag, commit hash, or empty for HEAD)
+	// against the remote repository using only the reference advertisement, without cloning.
+	// Returns the resolved commit hash or ErrReferenceNotFound.
+	ResolveRemoteReference(ctx context.Context, repoURL, ref string) (string, error)
+
+	// CreateRemoteBranchViaRefUpdate creates a branch on the remote pointing at fromRef
+	// (branch, tag, or commit hash; must not be empty) without cloning, by sending a
+	// reference update with an empty packfile. Skips creation if the branch already exists.
+	CreateRemoteBranchViaRefUpdate(ctx context.Context, repoURL, branchName, fromRef string) error
 
 	// RemoveBranch removes a local branch.
 	RemoveBranch(ctx context.Context, directory, branchName string) error
