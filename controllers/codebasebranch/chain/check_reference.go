@@ -75,27 +75,17 @@ func (c CheckReferenceExists) ServeRequest(ctx context.Context, codebaseBranch *
 		return c.processErr(codebaseBranch, fmt.Errorf("failed to get secret %s: %w", gitServer.Spec.NameSshKeySecret, err))
 	}
 
-	// Create git provider using factory
 	g := c.GitProviderFactory(gitproviderv2.NewConfigFromGitServerAndSecret(gitServer, secret))
 
-	workDir := GetCodebaseBranchWorkingDirectory(codebaseBranch)
-	if !DirectoryExistsNotEmpty(workDir) {
-		repoGitUrl := util.GetProjectGitUrl(gitServer, secret, codebase.Spec.GetProjectID())
+	repoGitUrl := util.GetProjectGitUrl(gitServer, secret, codebase.Spec.GetProjectID())
 
-		if err := g.Clone(ctx, repoGitUrl, workDir); err != nil {
-			return c.processErr(codebaseBranch, fmt.Errorf("failed to clone repository: %w", err))
-		}
-	}
-
-	err := g.CheckReference(ctx, workDir, codebaseBranch.Spec.FromCommit)
-	if err != nil {
+	if _, err := g.ResolveRemoteReference(ctx, repoGitUrl, codebaseBranch.Spec.FromCommit); err != nil {
 		return c.processErr(codebaseBranch, fmt.Errorf("reference %s doesn't exist: %w", codebaseBranch.Spec.FromCommit, err))
 	}
 
 	return c.next(ctx, codebaseBranch)
 }
 
-// next is a method for serving next chain element.
 func (c CheckReferenceExists) next(ctx context.Context, codebaseBranch *codebaseApi.CodebaseBranch) error {
 	err := handler.NextServeOrNil(ctx, c.Next, codebaseBranch)
 	if err != nil {
@@ -105,7 +95,6 @@ func (c CheckReferenceExists) next(ctx context.Context, codebaseBranch *codebase
 	return nil
 }
 
-// processErr is a method for processing error in chain.
 func (c CheckReferenceExists) processErr(codebaseBranch *codebaseApi.CodebaseBranch, err error) error {
 	if err == nil {
 		return nil

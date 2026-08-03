@@ -11,7 +11,6 @@ import (
 	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
-	"github.com/go-git/go-git/v5/plumbing/storer"
 	"github.com/go-git/go-git/v5/plumbing/transport"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/go-git/go-git/v5/plumbing/transport/ssh"
@@ -359,57 +358,6 @@ func (p *GitProvider) Checkout(ctx context.Context, directory, branchName string
 	return nil
 }
 
-// CreateRemoteBranch creates a new branch from a reference and pushes it to remote.
-func (p *GitProvider) CreateRemoteBranch(ctx context.Context, directory, branchName, fromRef string) error {
-	log := ctrl.LoggerFrom(ctx).WithValues("directory", directory, "branch", branchName, "from", fromRef)
-	log.Info("Creating remote branch")
-
-	repo, err := git.PlainOpen(directory)
-	if err != nil {
-		return fmt.Errorf("failed to open repository at %q: %w", directory, err)
-	}
-
-	branches, err := repo.Branches()
-	if err != nil {
-		return fmt.Errorf("failed to get branches iterator: %w", err)
-	}
-
-	exists, err := branchExists(branchName, branches)
-	if err != nil {
-		return err
-	}
-
-	if exists {
-		log.Info("Branch already exists. Skip creating")
-		return nil
-	}
-
-	targetHash, err := resolveReference(repo, fromRef)
-	if err != nil {
-		return err
-	}
-
-	newRef := plumbing.NewHashReference(
-		plumbing.NewBranchReferenceName(branchName),
-		targetHash,
-	)
-
-	err = repo.Storer.SetReference(newRef)
-	if err != nil {
-		return fmt.Errorf("failed to set reference: %w", err)
-	}
-
-	// Push all branches
-	err = p.Push(ctx, directory, RefSpecPushAllBranches)
-	if err != nil {
-		return err
-	}
-
-	log.Info("Remote branch created successfully")
-
-	return nil
-}
-
 // GetCurrentBranchName returns the name of the current branch.
 func (p *GitProvider) GetCurrentBranchName(ctx context.Context, directory string) (string, error) {
 	log := ctrl.LoggerFrom(ctx).WithValues("directory", directory)
@@ -520,25 +468,6 @@ func (p *GitProvider) CheckPermissions(ctx context.Context, repoURL string) erro
 	log.Info("Repository is accessible")
 
 	return nil
-}
-
-// CheckReference checks if a reference (branch or commit) exists in the repository.
-func (p *GitProvider) CheckReference(ctx context.Context, directory, refName string) error {
-	log := ctrl.LoggerFrom(ctx).WithValues("directory", directory, "reference", refName)
-	log.Info("Checking reference")
-
-	if refName == "" {
-		return nil
-	}
-
-	r, err := git.PlainOpen(directory)
-	if err != nil {
-		return fmt.Errorf("failed to open git repository: %w", err)
-	}
-
-	_, err = resolveReference(r, refName)
-
-	return err
 }
 
 // RemoveBranch removes a local branch.
@@ -814,53 +743,4 @@ func (p *GitProvider) CreateRemoteTag(ctx context.Context, directory, branchName
 	log.Info("Remote tag created successfully")
 
 	return nil
-}
-
-func branchExists(branchName string, branches storer.ReferenceIter) (bool, error) {
-	exist := false
-
-	if err := branches.ForEach(func(ref *plumbing.Reference) error {
-		if ref.Name().Short() == branchName {
-			exist = true
-			return storer.ErrStop
-		}
-
-		return nil
-	}); err != nil {
-		return false, fmt.Errorf("failed to iterate branches: %w", err)
-	}
-
-	return exist, nil
-}
-
-// resolveReference resolves a reference (branch or commit) to a hash.
-func resolveReference(r *git.Repository, ref string) (plumbing.Hash, error) {
-	if ref == "" {
-		// If no reference specified, use HEAD
-		ref, err := r.Head()
-		if err != nil {
-			return plumbing.ZeroHash, fmt.Errorf("failed to get git HEAD reference: %w", err)
-		}
-
-		return ref.Hash(), nil
-	}
-
-	// Try to resolve as a branch first
-	branchRef, err := r.Reference(plumbing.NewBranchReferenceName(ref), false)
-	if err == nil {
-		return branchRef.Hash(), nil
-	}
-
-	// If not a branch, try to resolve as a commit
-	commitHash := plumbing.NewHash(ref)
-	if commitHash.IsZero() {
-		return plumbing.ZeroHash, fmt.Errorf("invalid reference or commit hash: %s", ref)
-	}
-
-	_, err = r.CommitObject(commitHash)
-	if err != nil {
-		return plumbing.ZeroHash, fmt.Errorf("failed to get commit %s: %w", ref, err)
-	}
-
-	return commitHash, nil
 }

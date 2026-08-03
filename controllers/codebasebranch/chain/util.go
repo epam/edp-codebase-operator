@@ -18,11 +18,6 @@ func HasNewVersion(codebaseBranch *codebaseApi.CodebaseBranch) (bool, error) {
 	return !slices.Contains(codebaseBranch.Status.VersionHistory, *codebaseBranch.Spec.Version), nil
 }
 
-// DirectoryExistsNotEmpty checks if directory exists and not empty.
-func DirectoryExistsNotEmpty(dirPath string) bool {
-	return util.DoesDirectoryExist(dirPath) && !util.IsDirectoryEmpty(dirPath)
-}
-
 func GetCodebaseBranchWorkingDirectory(codebaseBranch *codebaseApi.CodebaseBranch) string {
 	return path.Join(
 		util.GetWorkDir(codebaseBranch.Spec.CodebaseName, codebaseBranch.Namespace),
