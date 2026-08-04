@@ -89,7 +89,7 @@ func (p *GitProvider) CreateRemoteBranchViaRefUpdate(ctx context.Context, repoUR
 
 	session, err := c.NewReceivePackSession(ep, auth)
 	if err != nil {
-		return fmt.Errorf("failed to open receive-pack session: %w", err)
+		return fmt.Errorf("failed to open receive-pack session: %w", remoteErr(err, repoURL))
 	}
 
 	defer func() {
@@ -98,7 +98,7 @@ func (p *GitProvider) CreateRemoteBranchViaRefUpdate(ctx context.Context, repoUR
 
 	advRefs, err := session.AdvertisedReferencesContext(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to get advertised references: %w", err)
+		return fmt.Errorf("failed to get advertised references: %w", remoteErr(err, repoURL))
 	}
 
 	branchRef := plumbing.NewBranchReferenceName(branchName)
@@ -162,7 +162,7 @@ func (p *GitProvider) advertisedReferences(ctx context.Context, repoURL string) 
 
 	session, err := c.NewUploadPackSession(ep, auth)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to open upload-pack session: %w", err)
+		return nil, nil, fmt.Errorf("failed to open upload-pack session: %w", remoteErr(err, repoURL))
 	}
 
 	advRefs, err := session.AdvertisedReferencesContext(ctx)
@@ -175,7 +175,7 @@ func (p *GitProvider) advertisedReferences(ctx context.Context, repoURL string) 
 			return nil, nil, fmt.Errorf("remote repository is empty or missing: %w", ErrReferenceNotFound)
 		}
 
-		return nil, nil, fmt.Errorf("failed to get advertised references: %w", err)
+		return nil, nil, fmt.Errorf("failed to get advertised references: %w", remoteErr(err, repoURL))
 	}
 
 	return advRefs, func() { _ = session.Close() }, nil

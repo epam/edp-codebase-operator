@@ -9,6 +9,7 @@ import (
 
 	"github.com/epam/edp-codebase-operator/v2/pkg/gerrit"
 	"github.com/epam/edp-codebase-operator/v2/pkg/model"
+	"github.com/epam/edp-codebase-operator/v2/pkg/sshhostkey"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
@@ -33,6 +34,8 @@ func checkGitServerConnection(data gitSshData, log logr.Logger) error {
 		c *ssh.Client
 	)
 
+	// NewSession already enriches host key failures; enriching again here would
+	// repeat the whole remediation sentence inside GitServer .status.error.
 	if s, c, err = sshClient.NewSession(); err != nil {
 		return fmt.Errorf("failed to create ssh session: %w", err)
 	}
@@ -61,12 +64,18 @@ func sshInitFromSecret(data gitSshData, logger logr.Logger) (*gerrit.SSHClient, 
 		return nil, err
 	}
 
+	hostKeyCallback, hostKeyAlgorithms, err := sshhostkey.ClientConfig(data.Host, data.Port)
+	if err != nil {
+		return nil, err
+	}
+
 	sshConfig := &ssh.ClientConfig{
 		User: data.User,
 		Auth: []ssh.AuthMethod{
 			sshAuth,
 		},
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		HostKeyCallback:   hostKeyCallback,
+		HostKeyAlgorithms: hostKeyAlgorithms,
 	}
 
 	cl := &gerrit.SSHClient{

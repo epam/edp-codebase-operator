@@ -44,6 +44,8 @@ A Helm chart for KubeRocketCI Codebase Operator
 | jira.name | string | `"jira"` | JiraServer CR name |
 | jira.quickLink | object | `{"enabled":true}` | Enable creation of QuickLink for Jira |
 | jira.rootUrl | string | `"https://jiraeu.example.com"` | URL to Jira server |
+| knownHosts.entries | string | `""` (no self-hosted servers pinned) | Host keys for self-hosted git servers, in known_hosts format, one per line. Obtain them with `ssh-keyscan -t rsa,ecdsa,ed25519 -p <port> <host>` and verify the fingerprints out-of-band before trusting them. Servers on a port other than 22 must use the bracket form, e.g. `[git.example.com]:2222 ssh-ed25519 AAAA...`. |
+| knownHosts.includeDefaultProviders | bool | `true` | Include the shipped host keys for github.com, gitlab.com and bitbucket.org. Disable only if you pin these hosts yourself through `entries`. |
 | name | string | `"codebase-operator"` | component name |
 | nodeSelector | object | `{}` |  |
 | podLabels | object | `{}` | Labels to be added to the pod |

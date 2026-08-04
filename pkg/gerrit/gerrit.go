@@ -4,11 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"net"
 	"os"
 
 	"github.com/go-logr/logr"
 	"golang.org/x/crypto/ssh"
+
+	"github.com/epam/edp-codebase-operator/v2/pkg/sshhostkey"
 )
 
 // Client is an interface for Gerrit client.
@@ -65,14 +66,16 @@ func (s *SSHClient) RunCommand(cmd *SSHCommand) ([]byte, error) {
 }
 
 func (s *SSHClient) NewSession() (*ssh.Session, *ssh.Client, error) {
-	connection, err := ssh.Dial("tcp", fmt.Sprintf("%s:%d", s.Host, s.Port), s.Config)
+	hostPort := sshhostkey.HostPort(s.Host, int(s.Port))
+
+	connection, err := ssh.Dial("tcp", hostPort, s.Config)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to dial: %s", err)
+		return nil, nil, fmt.Errorf("failed to dial: %w", sshhostkey.Enrich(err, hostPort))
 	}
 
 	session, err := connection.NewSession()
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to create session: %s", err)
+		return nil, nil, fmt.Errorf("failed to create session: %w", err)
 	}
 
 	return session, connection, nil
@@ -84,14 +87,18 @@ func SshInit(port int32, sshPrivateKey, host, user string, logger logr.Logger) (
 		return nil, fmt.Errorf("failed to get Public Key from Private one: %w", err)
 	}
 
+	hostKeyCallback, hostKeyAlgorithms, err := sshhostkey.ClientConfig(host, port)
+	if err != nil {
+		return nil, err
+	}
+
 	sshConfig := &ssh.ClientConfig{
 		User: user,
 		Auth: []ssh.AuthMethod{
 			ssh.PublicKeys(pubkey),
 		},
-		HostKeyCallback: ssh.HostKeyCallback(func(hostname string, remote net.Addr, key ssh.PublicKey) error {
-			return nil
-		}),
+		HostKeyCallback:   hostKeyCallback,
+		HostKeyAlgorithms: hostKeyAlgorithms,
 	}
 	cl := SSHClient{
 		Config: sshConfig,

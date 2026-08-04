@@ -88,3 +88,17 @@ enableWebhooks: true
 # marking missing ones with the Stale condition and the app.edp.epam.com/stale label.
 # Accepts Go duration strings (e.g. 24h, 30m); "0" disables the check.
 branchStaleCheckInterval: 24h
+
+# SSH host key verification. Every SSH connection the operator makes is verified
+# against these entries; there is no way to disable verification. GitServers that
+# authenticate with a token over HTTPS are unaffected.
+knownHosts:
+  # -- Include the shipped host keys for github.com, gitlab.com and bitbucket.org.
+  # Disable only if you pin these hosts yourself through `entries`.
+  includeDefaultProviders: true
+  # -- Host keys for self-hosted git servers, in known_hosts format, one per line.
+  # Obtain them with `ssh-keyscan -t rsa,ecdsa,ed25519 -p <port> <host>` and verify
+  # the fingerprints out-of-band before trusting them. Servers on a port other than
+  # 22 must use the bracket form, e.g. `[git.example.com]:2222 ssh-ed25519 AAAA...`.
+  # @default -- `""` (no self-hosted servers pinned)
+  entries: ""
