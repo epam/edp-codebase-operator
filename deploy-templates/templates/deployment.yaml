@@ -42,11 +42,19 @@ spec:
             - containerPort: 9443
               name: webhook-server
               protocol: TCP
+          {{- end }}
           volumeMounts:
+            {{- if .Values.enableWebhooks }}
             - mountPath: /tmp/k8s-webhook-server/serving-certs
               name: cert
               readOnly: true
-          {{- end }}
+            {{- end }}
+            # A directory mount, not subPath: the kubelet only refreshes in-place
+            # directory mounts, so host keys added to the ConfigMap take effect
+            # without restarting the operator.
+            - mountPath: /etc/codebase-operator/ssh
+              name: ssh-known-hosts
+              readOnly: true
           imagePullPolicy: "{{ .Values.imagePullPolicy }}"
           {{- if .Values.securityContext }}
           securityContext: {{ toYaml .Values.securityContext | nindent 12 }}
@@ -76,6 +84,8 @@ spec:
               value: {{ .Values.enableWebhooks | quote }}
             - name: BRANCH_STALE_CHECK_INTERVAL
               value: {{ .Values.branchStaleCheckInterval | quote }}
+            - name: SSH_KNOWN_HOSTS
+              value: /etc/codebase-operator/ssh/ssh_known_hosts
 {{ toYaml .Values.envs | indent 12 }}
           resources:
 {{ toYaml .Values.resources | indent 12 }}
@@ -91,10 +101,13 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- if .Values.enableWebhooks }}
       volumes:
+        {{- if .Values.enableWebhooks }}
         - name: cert
           secret:
             defaultMode: 420
             secretName: {{ .Values.name }}-webhook-certs
-      {{- end }}
+        {{- end }}
+        - name: ssh-known-hosts
+          configMap:
+            name: {{ .Values.name }}-ssh-known-hosts

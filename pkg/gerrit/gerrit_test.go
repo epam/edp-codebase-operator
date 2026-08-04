@@ -6,6 +6,8 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"log"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/go-logr/logr"
@@ -14,6 +16,16 @@ import (
 
 func setupSuite(tb testing.TB) (func(tb testing.TB), string) {
 	log.Println("setup suite")
+
+	// Pin known_hosts to an empty file inside the test's temp dir. Without this
+	// the SSH client falls back to the developer's ~/.ssh/known_hosts and the
+	// tests pass locally while failing on a clean CI runner that has none.
+	knownHosts := filepath.Join(tb.TempDir(), "ssh_known_hosts")
+	if err := os.WriteFile(knownHosts, nil, 0o600); err != nil {
+		tb.Fatalf("failed to write test known_hosts: %v", err)
+	}
+
+	tb.Setenv("SSH_KNOWN_HOSTS", knownHosts)
 
 	pk, err := rsa.GenerateKey(rand.Reader, 1024)
 	if err != nil {

@@ -1203,3 +1203,35 @@ func TestGitProvider_CheckoutRemoteBranch_NoRemote(t *testing.T) {
 		})
 	}
 }
+
+// Host key lookups are keyed on the port actually dialled, which the repository
+// URL determines: ssh:// carries a port, the scp-style form cannot.
+func TestSshTarget(t *testing.T) {
+	tests := []struct {
+		name    string
+		repoURL string
+		want    string
+	}{
+		{
+			name:    "ssh url carries its port",
+			repoURL: "ssh://gerrit.example.com:29418/my-project",
+			want:    "gerrit.example.com:29418",
+		},
+		{
+			name:    "scp-style url has no port and defaults to 22",
+			repoURL: "git@github.com:owner/repo.git",
+			want:    "github.com:22",
+		},
+		{
+			name:    "ssh url with a non-standard port",
+			repoURL: "ssh://git@git.example.com:2222/owner/repo.git",
+			want:    "git.example.com:2222",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.want, sshTarget(tt.repoURL))
+		})
+	}
+}

@@ -19,6 +19,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
+	"github.com/epam/edp-codebase-operator/v2/pkg/sshhostkey"
 )
 
 const (
@@ -99,12 +100,14 @@ func (p *GitProvider) getAuth() (transport.AuthMethod, error) {
 			return nil, fmt.Errorf("failed to parse SSH private key: %w", err)
 		}
 
+		// When AuthMethod carries no HostKeyCallback, go-git loads known_hosts itself
+		// and derives HostKeyAlgorithms from it. Setting a callback here suppresses
+		// that derivation, so a server whose key type is absent from known_hosts
+		// fails as a key mismatch instead of a missing entry.
+		// See go-git plumbing/transport/ssh.command.connect.
 		auth := &ssh.PublicKeys{
 			User:   p.config.SSHUser,
 			Signer: signer,
-			HostKeyCallbackHelper: ssh.HostKeyCallbackHelper{
-				HostKeyCallback: ssh2.InsecureIgnoreHostKey(),
-			},
 		}
 
 		return auth, nil
@@ -117,6 +120,31 @@ func (p *GitProvider) getAuth() (transport.AuthMethod, error) {
 
 	// No authentication configured
 	return nil, nil
+}
+
+// remoteErr passes non-host-key errors through untouched, so it is safe to wrap
+// every error returned by a remote operation.
+func remoteErr(err error, repoURL string) error {
+	return sshhostkey.Enrich(err, sshTarget(repoURL))
+}
+
+func sshTarget(repoURL string) string {
+	ep, err := transport.NewEndpoint(repoURL)
+	if err != nil {
+		return repoURL
+	}
+
+	return sshhostkey.HostPort(ep.Host, ep.Port)
+}
+
+// originURL lets directory-based operations name the host they failed to verify.
+func originURL(repo *git.Repository) string {
+	remote, err := repo.Remote("origin")
+	if err != nil || len(remote.Config().URLs) == 0 {
+		return ""
+	}
+
+	return remote.Config().URLs[0]
 }
 
 // getTokenAuth formats token authentication based on the git provider type.
@@ -168,7 +196,7 @@ func (p *GitProvider) Clone(ctx context.Context, repoURL, destination string) er
 
 	repo, err := git.PlainCloneContext(ctx, destination, false, cloneOptions)
 	if err != nil {
-		return fmt.Errorf("failed to clone repository: %w", err)
+		return fmt.Errorf("failed to clone repository: %w", remoteErr(err, repoURL))
 	}
 
 	log.Info("Repository cloned successfully, now fetching all branches and tags")
@@ -186,7 +214,7 @@ func (p *GitProvider) Clone(ctx context.Context, repoURL, destination string) er
 
 	err = repo.FetchContext(ctx, fetchOptions)
 	if err != nil && !errors.Is(err, git.NoErrAlreadyUpToDate) {
-		return fmt.Errorf("failed to fetch all branches and tags: %w", err)
+		return fmt.Errorf("failed to fetch all branches and tags: %w", remoteErr(err, repoURL))
 	}
 
 	log.Info("All branches and tags fetched successfully")
@@ -287,7 +315,7 @@ func (p *GitProvider) Push(ctx context.Context, directory string, refspecs ...st
 
 	err = repo.PushContext(ctx, pushOptions)
 	if err != nil && !errors.Is(err, git.NoErrAlreadyUpToDate) {
-		return fmt.Errorf("failed to push: %w", err)
+		return fmt.Errorf("failed to push: %w", remoteErr(err, originURL(repo)))
 	}
 
 	log.Info("Changes pushed successfully")
@@ -332,7 +360,7 @@ func (p *GitProvider) Checkout(ctx context.Context, directory, branchName string
 
 		err = repo.FetchContext(ctx, fetchOptions)
 		if err != nil && !errors.Is(err, git.NoErrAlreadyUpToDate) {
-			return fmt.Errorf("failed to fetch: %w", err)
+			return fmt.Errorf("failed to fetch: %w", remoteErr(err, originURL(repo)))
 		}
 
 		// The refspec above maps remote branches straight into local
@@ -412,7 +440,7 @@ func (p *GitProvider) ListRemoteBranches(ctx context.Context, repoURL string) ([
 			return nil, nil
 		}
 
-		return nil, fmt.Errorf("failed to list remote references: %w", err)
+		return nil, fmt.Errorf("failed to list remote references: %w", remoteErr(err, repoURL))
 	}
 
 	branches := make([]string, 0, len(refs))
@@ -463,6 +491,12 @@ func (p *GitProvider) CheckPermissions(ctx context.Context, repoURL string) erro
 		if errors.Is(err, transport.ErrEmptyRemoteRepository) {
 			log.Info("Repository is empty but accessible")
 			return nil
+		}
+
+		// A host key failure is neither a permission nor a lookup problem, so it
+		// must not be reported as one.
+		if sshhostkey.IsVerificationError(err) {
+			return remoteErr(err, repoURL)
 		}
 
 		return fmt.Errorf("permission denied or repository not found: %w", err)

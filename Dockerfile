@@ -5,7 +5,7 @@ ARG TARGETARCH
 ENV ASSETS_DIR=/usr/local/bin \
     HOME=/home/codebase-operator \
     OPERATOR=/usr/local/bin/codebase-operator \
-    SSH_KNOWN_HOSTS=/home/codebase-operator/.ssh/known_hosts \
+    SSH_KNOWN_HOSTS=/etc/codebase-operator/ssh/ssh_known_hosts \
     USER_NAME=codebase-operator \
     USER_UID=1001
 
