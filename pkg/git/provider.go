@@ -546,42 +546,6 @@ func (p *GitProvider) Init(ctx context.Context, directory string) error {
 	return nil
 }
 
-// Fetch fetches changes from the remote repository.
-func (p *GitProvider) Fetch(ctx context.Context, directory, branchName string) error {
-	log := ctrl.LoggerFrom(ctx).WithValues("directory", directory, "branch", branchName)
-	log.Info("Fetching changes")
-
-	repo, err := git.PlainOpen(directory)
-	if err != nil {
-		return fmt.Errorf("failed to open repository at %q: %w", directory, err)
-	}
-
-	auth, err := p.getAuth()
-	if err != nil {
-		return fmt.Errorf("failed to get authentication: %w", err)
-	}
-
-	fetchOptions := &git.FetchOptions{
-		RemoteName: "origin",
-		Auth:       auth,
-		Progress:   os.Stdout,
-	}
-
-	if branchName != "" {
-		refSpec := fmt.Sprintf("refs/heads/%s:refs/heads/%s", branchName, branchName)
-		fetchOptions.RefSpecs = []config.RefSpec{config.RefSpec(refSpec)}
-	}
-
-	err = repo.FetchContext(ctx, fetchOptions)
-	if err != nil && !errors.Is(err, git.NoErrAlreadyUpToDate) {
-		return fmt.Errorf("failed to fetch: %w", err)
-	}
-
-	log.Info("Changes fetched successfully")
-
-	return nil
-}
-
 // AddRemoteLink adds or updates the remote origin URL.
 func (p *GitProvider) AddRemoteLink(ctx context.Context, directory, remoteURL string) error {
 	log := ctrl.LoggerFrom(ctx).WithValues("directory", directory, "remoteURL", remoteURL)
@@ -610,32 +574,6 @@ func (p *GitProvider) AddRemoteLink(ctx context.Context, directory, remoteURL st
 	log.Info("Remote link added successfully")
 
 	return nil
-}
-
-// CommitExists checks if a commit with the given hash exists in the repository.
-func (p *GitProvider) CommitExists(ctx context.Context, directory, hash string) (bool, error) {
-	log := ctrl.LoggerFrom(ctx).WithValues("directory", directory, "hash", hash)
-	log.Info("Checking if commit exists")
-
-	repo, err := git.PlainOpen(directory)
-	if err != nil {
-		return false, fmt.Errorf("failed to open repository at %q: %w", directory, err)
-	}
-
-	commitHash := plumbing.NewHash(hash)
-
-	_, err = repo.CommitObject(commitHash)
-	if err != nil {
-		if errors.Is(err, plumbing.ErrObjectNotFound) {
-			return false, nil
-		}
-
-		return false, fmt.Errorf("failed to get commit: %w", err)
-	}
-
-	log.Info("Commit exists")
-
-	return true, nil
 }
 
 // CheckoutRemoteBranch fetches from remote and checks out the specified branch.
@@ -685,65 +623,6 @@ func (p *GitProvider) CheckoutRemoteBranch(ctx context.Context, directory, branc
 	}
 
 	log.Info("Remote branch checked out successfully")
-
-	return nil
-}
-
-// CreateRemoteTag creates a tag from a branch and pushes it to the remote repository.
-func (p *GitProvider) CreateRemoteTag(ctx context.Context, directory, branchName, tagName string) error {
-	log := ctrl.LoggerFrom(ctx).WithValues("directory", directory, "branch", branchName, "tag", tagName)
-	log.Info("Creating remote tag")
-
-	repo, err := git.PlainOpen(directory)
-	if err != nil {
-		return fmt.Errorf("failed to open repository at %q: %w", directory, err)
-	}
-
-	// Check if tag already exists
-	tags, err := repo.Tags()
-	if err != nil {
-		return fmt.Errorf("failed to get tags: %w", err)
-	}
-
-	exists := false
-
-	err = tags.ForEach(func(ref *plumbing.Reference) error {
-		if ref.Name().Short() == tagName {
-			exists = true
-		}
-
-		return nil
-	})
-	if err != nil {
-		return fmt.Errorf("failed to iterate tags: %w", err)
-	}
-
-	if exists {
-		log.Info("Tag already exists, skipping creation")
-		return nil
-	}
-
-	// Get the branch reference
-	branchRef, err := repo.Reference(plumbing.NewBranchReferenceName(branchName), false)
-	if err != nil {
-		return fmt.Errorf("failed to get branch reference: %w", err)
-	}
-
-	// Create the tag reference
-	tagRef := plumbing.NewHashReference(plumbing.NewTagReferenceName(tagName), branchRef.Hash())
-
-	err = repo.Storer.SetReference(tagRef)
-	if err != nil {
-		return fmt.Errorf("failed to create tag reference: %w", err)
-	}
-
-	// Push the tag
-	err = p.Push(ctx, directory, RefSpecPushAllTags)
-	if err != nil {
-		return fmt.Errorf("failed to push tag: %w", err)
-	}
-
-	log.Info("Remote tag created successfully")
 
 	return nil
 }

@@ -282,10 +282,6 @@ func (r *ReconcileCodebaseBranch) tryToDeleteCodebaseBranch(ctx context.Context,
 		}
 	}
 
-	if err := removeDirectoryIfExists(cb.Spec.CodebaseName, cb.Name, cb.Namespace); err != nil {
-		return &reconcile.Result{}, fmt.Errorf("failed to remove codebase branch directory: %w", err)
-	}
-
 	err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		// Fetch the resource here; we need to refetch it on every try, since
 		// if we got a conflict on the last update attempt then we need to get
@@ -309,15 +305,6 @@ func (r *ReconcileCodebaseBranch) tryToDeleteCodebaseBranch(ctx context.Context,
 	}
 
 	return &reconcile.Result{}, nil
-}
-
-func removeDirectoryIfExists(codebaseName, branchName, namespace string) error {
-	wd := util.GetWorkDir(codebaseName, fmt.Sprintf("%v-%v", namespace, branchName))
-	if err := util.RemoveDirectory(wd); err != nil {
-		return fmt.Errorf("failed to remove directory %q: %w", wd, err)
-	}
-
-	return nil
 }
 
 // setFailureCount increments failure count and returns delay for next reconciliation.

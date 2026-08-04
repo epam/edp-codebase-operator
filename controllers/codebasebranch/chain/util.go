@@ -2,11 +2,9 @@ package chain
 
 import (
 	"fmt"
-	"path"
 	"slices"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
-	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
 // HasNewVersion checks if codebase branch has new version.
@@ -16,12 +14,4 @@ func HasNewVersion(codebaseBranch *codebaseApi.CodebaseBranch) (bool, error) {
 	}
 
 	return !slices.Contains(codebaseBranch.Status.VersionHistory, *codebaseBranch.Spec.Version), nil
-}
-
-func GetCodebaseBranchWorkingDirectory(codebaseBranch *codebaseApi.CodebaseBranch) string {
-	return path.Join(
-		util.GetWorkDir(codebaseBranch.Spec.CodebaseName, codebaseBranch.Namespace),
-		"codebase-branches",
-		codebaseBranch.Name,
-	)
 }

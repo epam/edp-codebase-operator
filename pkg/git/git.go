@@ -48,19 +48,9 @@ type Git interface {
 	// Init initializes a new git repository.
 	Init(ctx context.Context, directory string) error
 
-	// Fetch fetches changes from the remote repository.
-	// branchName: specific branch to fetch (empty string fetches all).
-	Fetch(ctx context.Context, directory, branchName string) error
-
 	// AddRemoteLink adds or updates the remote origin URL.
 	AddRemoteLink(ctx context.Context, directory, remoteURL string) error
 
-	// CommitExists checks if a commit with the given hash exists in the repository.
-	CommitExists(ctx context.Context, directory, hash string) (bool, error)
-
 	// CheckoutRemoteBranch fetches from remote and checks out the specified branch.
 	CheckoutRemoteBranch(ctx context.Context, directory, branchName string) error
-
-	// CreateRemoteTag creates a tag from a branch and pushes it to the remote repository.
-	CreateRemoteTag(ctx context.Context, directory, branchName, tagName string) error
 }
