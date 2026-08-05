@@ -2,6 +2,8 @@ package integrationsecret
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -35,6 +37,11 @@ func TestReconcileIntegrationSecret_Reconcile(t *testing.T) {
 
 	defer server.Close()
 
+	serverCAPool := x509.NewCertPool()
+	serverCAPool.AddCert(server.Certificate())
+
+	serverTLSConfig := &tls.Config{RootCAs: serverCAPool}
+
 	s := runtime.NewScheme()
 	require.NoError(t, corev1.AddToScheme(s))
 
@@ -42,11 +49,40 @@ func TestReconcileIntegrationSecret_Reconcile(t *testing.T) {
 		name                 string
 		secretName           string
 		client               func(t *testing.T) client.Client
+		systemTrust          bool
 		wantRes              reconcile.Result
 		wantErr              require.ErrorAssertionFunc
 		wantConAnnotation    string
 		wantConErrAnnotation string
 	}{
+		{
+			name:       "untrusted certificate is rejected",
+			secretName: "sonar",
+			client: func(t *testing.T) client.Client {
+				return fake.NewClientBuilder().WithScheme(s).WithObjects(
+					&corev1.Secret{
+						ObjectMeta: metav1.ObjectMeta{
+							Namespace: ns,
+							Name:      "sonar",
+							Labels: map[string]string{
+								integrationSecretTypeLabel: "sonar",
+							},
+						},
+						Data: map[string][]byte{
+							"url":   []byte(server.URL + "/success"),
+							"token": []byte("token"),
+						},
+					},
+				).Build()
+			},
+			systemTrust: true,
+			wantRes: reconcile.Result{
+				RequeueAfter: failConnectionRequeueTime,
+			},
+			wantErr:              require.NoError,
+			wantConAnnotation:    "false",
+			wantConErrAnnotation: "certificate",
+		},
 		{
 			name:       "success sonar",
 			secretName: "sonar",
@@ -253,6 +289,7 @@ func TestReconcileIntegrationSecret_Reconcile(t *testing.T) {
 					},
 				).Build()
 			},
+			systemTrust: true,
 			wantRes: reconcile.Result{
 				RequeueAfter: failConnectionRequeueTime,
 			},
@@ -281,6 +318,7 @@ func TestReconcileIntegrationSecret_Reconcile(t *testing.T) {
 					},
 				).Build()
 			},
+			systemTrust: true,
 			wantRes: reconcile.Result{
 				RequeueAfter: failConnectionRequeueTime,
 			},
@@ -405,6 +443,11 @@ func TestReconcileIntegrationSecret_Reconcile(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			cl := tt.client(t)
 			r := NewReconcileIntegrationSecret(cl)
+
+			if !tt.systemTrust {
+				r.tlsConfig = serverTLSConfig
+			}
+
 			got, err := r.Reconcile(
 				ctrl.LoggerInto(context.Background(), logr.Discard()),
 				reconcile.Request{

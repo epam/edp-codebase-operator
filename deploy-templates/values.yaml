@@ -102,3 +102,18 @@ knownHosts:
   # 22 must use the bracket form, e.g. `[git.example.com]:2222 ssh-ed25519 AAAA...`.
   # @default -- `""` (no self-hosted servers pinned)
   entries: ""
+
+# TLS trust for the operator's HTTPS connections (integration secret connection
+# checks, git provider APIs). Certificates are trusted in addition to the system
+# bundle; there is no way to disable verification. Note: Go loads trust roots
+# once at startup, so replacing a certificate in the secret requires a pod
+# restart to take effect.
+caCerts:
+  # -- Mount additional CA certificates from an existing secret, e.g. for
+  # integrations behind a self-signed or private CA.
+  enabled: false
+  # -- Name of an existing secret with CA certificates. Each key must hold a
+  # PEM-encoded certificate (a key may also hold a bundle of concatenated
+  # certificates); key names are arbitrary. Example:
+  # `kubectl create secret generic custom-ca-certificates --from-file=ca.crt=my-root-ca.pem`
+  secret: custom-ca-certificates

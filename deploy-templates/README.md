@@ -24,6 +24,8 @@ A Helm chart for KubeRocketCI Codebase Operator
 | affinity | object | `{}` |  |
 | annotations | object | `{}` |  |
 | branchStaleCheckInterval | string | `"24h"` | How often the operator verifies that codebase branches still exist in git, marking missing ones with the Stale condition and the app.edp.epam.com/stale label. Accepts Go duration strings (e.g. 24h, 30m); "0" disables the check. |
+| caCerts.enabled | bool | `false` | Mount additional CA certificates from an existing secret, e.g. for integrations behind a self-signed or private CA. |
+| caCerts.secret | string | `"custom-ca-certificates"` | Name of an existing secret with CA certificates. Each key must hold a PEM-encoded certificate (a key may also hold a bundle of concatenated certificates); key names are arbitrary. Example: `kubectl create secret generic custom-ca-certificates --from-file=ca.crt=my-root-ca.pem` |
 | enableWebhooks | bool | `true` | Enable webhook and cert-manager certificate resources. Webhooks require cert-manager to be installed in the cluster. |
 | envs[0].name | string | `"RECONCILATION_PERIOD"` |  |
 | envs[0].value | string | `"360"` |  |
