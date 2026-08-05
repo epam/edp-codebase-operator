@@ -35,6 +35,9 @@ const (
 
 type ReconcileIntegrationSecret struct {
 	client client.Client
+	// Nil means verification against the system trust store, which includes
+	// CAs mounted through the chart's caCerts value. Only tests set it.
+	tlsConfig *tls.Config
 }
 
 func NewReconcileIntegrationSecret(k8sClient client.Client) *ReconcileIntegrationSecret {
@@ -87,7 +90,7 @@ func (r *ReconcileIntegrationSecret) Reconcile(
 
 	log.Info("Start checking connection")
 
-	err := checkConnection(ctx, secret)
+	err := r.checkConnection(ctx, secret)
 	reachable := err == nil
 	errMess := ""
 
@@ -143,7 +146,7 @@ func (r *ReconcileIntegrationSecret) updateConnectionAnnotation(
 	return nil
 }
 
-func checkConnection(ctx context.Context, secret *corev1.Secret) error {
+func (r *ReconcileIntegrationSecret) checkConnection(ctx context.Context, secret *corev1.Secret) error {
 	var (
 		path string
 		req  *resty.Request
@@ -152,24 +155,26 @@ func checkConnection(ctx context.Context, secret *corev1.Secret) error {
 	switch secret.GetLabels()[integrationSecretTypeLabel] {
 	case "sonar":
 		path = "/api/system/ping"
-		req = newRequest(ctx, string(secret.Data["url"])).SetBasicAuth(string(secret.Data["token"]), "")
+		req = r.newRequest(ctx, string(secret.Data["url"])).SetBasicAuth(string(secret.Data["token"]), "")
 	case "nexus":
 		path = "/service/rest/v1/status"
-		req = newRequestWithAuth(ctx, secret)
+		req = r.newRequestWithAuth(ctx, secret)
 	case "dependency-track":
 		path = "/api/v1/team/self"
-		req = newRequest(ctx, string(secret.Data["url"])).SetHeader("X-Api-Key", string(secret.Data["token"]))
+		req = r.newRequest(ctx, string(secret.Data["url"])).SetHeader("X-Api-Key", string(secret.Data["token"]))
 	case "defectdojo":
 		path = "/api/v2/user_profile"
-		req = newRequest(ctx, string(secret.Data["url"])).SetHeader("Authorization", "Token "+string(secret.Data["token"]))
+		req = r.newRequest(ctx, string(secret.Data["url"])).
+			SetHeader("Authorization", "Token "+string(secret.Data["token"]))
 	case "registry":
-		return checkRegistry(ctx, secret)
+		return r.checkRegistry(ctx, secret)
 	case "argocd":
 		path = "/api/v1/projects"
-		req = newRequest(ctx, string(secret.Data["url"])).SetHeader("Authorization", "Bearer "+string(secret.Data["token"]))
+		req = r.newRequest(ctx, string(secret.Data["url"])).
+			SetHeader("Authorization", "Bearer "+string(secret.Data["token"]))
 	default:
 		path = "/"
-		req = newRequest(ctx, string(secret.Data["url"]))
+		req = r.newRequest(ctx, string(secret.Data["url"]))
 	}
 
 	log := ctrl.LoggerFrom(ctx).WithValues(logKeyUrl, req.URL+path)
@@ -187,23 +192,26 @@ func checkConnection(ctx context.Context, secret *corev1.Secret) error {
 	return nil
 }
 
-func newRequestWithAuth(ctx context.Context, secret *corev1.Secret) *resty.Request {
-	r := newRequest(ctx, string(secret.Data["url"]))
+func (r *ReconcileIntegrationSecret) newRequestWithAuth(ctx context.Context, secret *corev1.Secret) *resty.Request {
+	req := r.newRequest(ctx, string(secret.Data["url"]))
 
 	if _, ok := secret.Data["username"]; ok {
-		return r.SetBasicAuth(string(secret.Data["username"]), string(secret.Data["password"]))
+		return req.SetBasicAuth(string(secret.Data["username"]), string(secret.Data["password"]))
 	}
 
-	return r.SetAuthToken(string(secret.Data["token"]))
+	return req.SetAuthToken(string(secret.Data["token"]))
 }
 
-func newRequest(ctx context.Context, url string) *resty.Request {
-	return resty.New().
-		SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true}).
+func (r *ReconcileIntegrationSecret) newRequest(ctx context.Context, url string) *resty.Request {
+	c := resty.New().
 		SetBaseURL(url).
-		SetTimeout(time.Second * 5).
-		R().
-		SetContext(ctx)
+		SetTimeout(time.Second * 5)
+
+	if r.tlsConfig != nil {
+		c.SetTLSClientConfig(r.tlsConfig)
+	}
+
+	return c.R().SetContext(ctx)
 }
 
 type registryAuth struct {
@@ -215,7 +223,7 @@ type registryConfig struct {
 	Auths map[string]registryAuth `json:"auths"`
 }
 
-func checkRegistry(ctx context.Context, secret *corev1.Secret) error {
+func (r *ReconcileIntegrationSecret) checkRegistry(ctx context.Context, secret *corev1.Secret) error {
 	rawConf := secret.Data[".dockerconfigjson"]
 
 	if len(rawConf) == 0 {
@@ -231,7 +239,7 @@ func checkRegistry(ctx context.Context, secret *corev1.Secret) error {
 		// for docker hub we need to use custom endpoint
 		// see https://github.com/GoogleContainerTools/kaniko/blob/v1.19.0/README.md?plain=1#L540
 		if url == "https://index.docker.io/v1/" {
-			return checkDockerHub(ctx, auth.Username, auth.Password)
+			return r.checkDockerHub(ctx, auth.Username, auth.Password)
 		}
 
 		if !strings.HasPrefix(url, "https://") {
@@ -239,7 +247,7 @@ func checkRegistry(ctx context.Context, secret *corev1.Secret) error {
 		}
 
 		if strings.HasPrefix(url, "https://ghcr.io") {
-			return checkGitHubRegistry(ctx, auth, url)
+			return r.checkGitHubRegistry(ctx, auth, url)
 		}
 
 		log := ctrl.LoggerFrom(ctx).WithValues(logKeyUrl, url+"/v2/")
@@ -247,7 +255,7 @@ func checkRegistry(ctx context.Context, secret *corev1.Secret) error {
 
 		// docker registry specification endpoint
 		// https://github.com/opencontainers/distribution-spec/blob/v1.0.1/spec.md#endpoints
-		resp, err := newRequest(ctx, url).SetBasicAuth(auth.Username, auth.Password).Get("/v2/")
+		resp, err := r.newRequest(ctx, url).SetBasicAuth(auth.Username, auth.Password).Get("/v2/")
 		if err != nil {
 			return fmt.Errorf("%w", err)
 		}
@@ -262,11 +270,11 @@ func checkRegistry(ctx context.Context, secret *corev1.Secret) error {
 	return errors.New("no auths in .dockerconfigjson")
 }
 
-func checkDockerHub(ctx context.Context, username, password string) error {
+func (r *ReconcileIntegrationSecret) checkDockerHub(ctx context.Context, username, password string) error {
 	log := ctrl.LoggerFrom(ctx).WithValues(logKeyUrl, "https://hub.docker.com/v2")
 	log.Info("Making request")
 
-	resp, err := newRequest(ctx, "https://hub.docker.com").
+	resp, err := r.newRequest(ctx, "https://hub.docker.com").
 		SetHeader("Content-Type", "application/json").
 		SetBody(map[string]string{
 			"username": username,
@@ -284,11 +292,11 @@ func checkDockerHub(ctx context.Context, username, password string) error {
 	return nil
 }
 
-func checkGitHubRegistry(ctx context.Context, auth registryAuth, url string) error {
+func (r *ReconcileIntegrationSecret) checkGitHubRegistry(ctx context.Context, auth registryAuth, url string) error {
 	log := ctrl.LoggerFrom(ctx).WithValues(logKeyUrl, url)
 	log.Info("Making request to GitHub registry")
 
-	resp, err := newRequest(ctx, url).
+	resp, err := r.newRequest(ctx, url).
 		SetHeader("Content-Type", "application/json").
 		SetAuthToken(base64.StdEncoding.EncodeToString([]byte(auth.Password))).
 		Get("/v2/_catalog")

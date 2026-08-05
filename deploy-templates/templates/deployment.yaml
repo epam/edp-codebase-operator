@@ -55,6 +55,11 @@ spec:
             - mountPath: /etc/codebase-operator/ssh
               name: ssh-known-hosts
               readOnly: true
+            {{- if .Values.caCerts.enabled }}
+            - mountPath: /etc/ssl/custom-certs
+              name: ca-certs
+              readOnly: true
+            {{- end }}
           imagePullPolicy: "{{ .Values.imagePullPolicy }}"
           {{- if .Values.securityContext }}
           securityContext: {{ toYaml .Values.securityContext | nindent 12 }}
@@ -86,6 +91,12 @@ spec:
               value: {{ .Values.branchStaleCheckInterval | quote }}
             - name: SSH_KNOWN_HOSTS
               value: /etc/codebase-operator/ssh/ssh_known_hosts
+            {{- if .Values.caCerts.enabled }}
+            # SSL_CERT_DIR replaces Go's default scan directories, so the system
+            # bundle location must stay on the list next to the mounted CAs.
+            - name: SSL_CERT_DIR
+              value: /etc/ssl/certs:/etc/ssl/custom-certs
+            {{- end }}
 {{ toYaml .Values.envs | indent 12 }}
           resources:
 {{ toYaml .Values.resources | indent 12 }}
@@ -111,3 +122,8 @@ spec:
         - name: ssh-known-hosts
           configMap:
             name: {{ .Values.name }}-ssh-known-hosts
+        {{- if .Values.caCerts.enabled }}
+        - name: ca-certs
+          secret:
+            secretName: {{ .Values.caCerts.secret }}
+        {{- end }}
