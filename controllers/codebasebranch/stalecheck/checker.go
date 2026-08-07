@@ -10,6 +10,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
+	"github.com/epam/edp-codebase-operator/v2/pkg/codebasebranch"
+	"github.com/epam/edp-codebase-operator/v2/pkg/deploymentusage"
 	gitproviderv2 "github.com/epam/edp-codebase-operator/v2/pkg/git"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
@@ -88,6 +90,16 @@ func (c *Checker) sweep(ctx context.Context) {
 		return
 	}
 
+	// One snapshot for the whole sweep: the deployment resources are the same for every
+	// branch. Going out of date mid-sweep is safe, because the snapshot only decides
+	// between deleting and marking, and the delete is re-validated against live data by
+	// the admission webhook.
+	usage, err := codebasebranch.NewBranchUsageIndex(ctx, c.client, c.namespace)
+	if err != nil {
+		log.Error(err, "Failed to index deployment usage, skipping staleness check")
+		return
+	}
+
 	branchesByCodebase := make(map[string][]*codebaseApi.CodebaseBranch)
 
 	for i := range branches.Items {
@@ -96,7 +108,7 @@ func (c *Checker) sweep(ctx context.Context) {
 	}
 
 	for codebaseName, codebaseBranches := range branchesByCodebase {
-		if err := c.checkCodebaseBranches(ctx, codebaseName, codebaseBranches); err != nil {
+		if err := c.checkCodebaseBranches(ctx, codebaseName, codebaseBranches, usage); err != nil {
 			log.Error(err, "Failed to check branches staleness", "codebase", codebaseName)
 		}
 	}
@@ -108,6 +120,7 @@ func (c *Checker) checkCodebaseBranches(
 	ctx context.Context,
 	codebaseName string,
 	branches []*codebaseApi.CodebaseBranch,
+	usage *codebasebranch.BranchUsageIndex,
 ) error {
 	log := ctrl.LoggerFrom(ctx).WithValues("codebase", codebaseName)
 
@@ -130,8 +143,11 @@ func (c *Checker) checkCodebaseBranches(
 		return fmt.Errorf("failed to get secret %s: %w", gitServer.Spec.NameSshKeySecret, err)
 	}
 
+	autoCleanup := codebase.Annotations[codebaseApi.BranchCleanupStrategyAnnotation] ==
+		codebaseApi.BranchCleanupStrategyAuto
+
 	action := c.markAction
-	if codebase.Annotations[codebaseApi.BranchCleanupStrategyAnnotation] == codebaseApi.BranchCleanupStrategyAuto {
+	if autoCleanup {
 		action = c.cleanupAction
 	}
 
@@ -156,7 +172,15 @@ func (c *Checker) checkCodebaseBranches(
 
 		_, exists := existsInGit[branch.Spec.BranchName]
 
-		if err := action.Apply(ctx, branch, Verdict{ExistsInGit: exists}); err != nil {
+		verdict := Verdict{ExistsInGit: exists}
+
+		// Only the cleanup strategy acts on RetainedBy, and a branch that is merely marked
+		// emits a different event when it is set.
+		if autoCleanup && !exists {
+			verdict.RetainedBy = deploymentusage.Join(usage.Find(branch))
+		}
+
+		if err := action.Apply(ctx, branch, verdict); err != nil {
 			log.Error(err, "Failed to apply staleness verdict", "branch", branch.Name)
 		}
 	}

@@ -10,7 +10,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
-	"github.com/epam/edp-codebase-operator/v2/pkg/codebasebranch"
 )
 
 // CleanupAction implements the "auto" cleanup strategy: stale branches that do not
@@ -28,19 +27,11 @@ func NewCleanupAction(k8sClient client.Client, recorder record.EventRecorder, ma
 	return &CleanupAction{client: k8sClient, recorder: recorder, mark: mark}
 }
 
+// Apply deletes the branch only when it is stale and unretained. Which deployment
+// resources retain it is decided by the Checker, which resolves RetainedBy from the
+// snapshot shared by every branch of the sweep.
 func (a *CleanupAction) Apply(ctx context.Context, branch *codebaseApi.CodebaseBranch, verdict Verdict) error {
-	if verdict.ExistsInGit {
-		return a.mark.Apply(ctx, branch, verdict)
-	}
-
-	usage, err := codebasebranch.FindBranchUsage(ctx, a.client, branch)
-	if err != nil {
-		return fmt.Errorf("failed to check CodebaseBranch %s usage: %w", branch.Name, err)
-	}
-
-	if usage != "" {
-		verdict.RetainedBy = usage
-
+	if verdict.ExistsInGit || verdict.RetainedBy != "" {
 		return a.mark.Apply(ctx, branch, verdict)
 	}
 

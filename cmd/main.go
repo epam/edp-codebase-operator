@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"crypto/tls"
 	"flag"
 	"os"
@@ -43,6 +44,7 @@ import (
 	"github.com/epam/edp-codebase-operator/v2/controllers/integrationsecret"
 	"github.com/epam/edp-codebase-operator/v2/controllers/jiraissuemetadata"
 	"github.com/epam/edp-codebase-operator/v2/controllers/jiraserver"
+	codebasePkg "github.com/epam/edp-codebase-operator/v2/pkg/codebase"
 	gitproviderv2 "github.com/epam/edp-codebase-operator/v2/pkg/git"
 	"github.com/epam/edp-codebase-operator/v2/pkg/telemetry"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
@@ -237,6 +239,13 @@ func main() {
 	})
 	if err != nil {
 		setupLog.Error(err, "failed to start manager")
+		os.Exit(1)
+	}
+
+	// Indexes have to be registered before the cache starts, and unconditionally: the
+	// deletion webhooks fail closed when an index they select on is missing.
+	if err = codebasePkg.RegisterFieldIndexes(context.Background(), mgr.GetFieldIndexer()); err != nil {
+		setupLog.Error(err, "failed to register field indexes")
 		os.Exit(1)
 	}
 

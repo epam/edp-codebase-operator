@@ -123,15 +123,18 @@ func (r *CodebaseBranchValidationWebhook) ValidateDelete(
 		return nil, nil
 	}
 
-	usage, err := codebasebranch.FindBranchUsage(ctx, r.client, deletedCodebaseBranch)
+	refs, err := codebasebranch.FindBranchUsage(ctx, r.client, deletedCodebaseBranch)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check CodebaseBranch usage: %w", err)
 	}
 
-	if usage != "" {
-		return nil, fmt.Errorf(
-			"CodebaseBranch %s cannot be deleted because it is used by %s; remove it from the deployment first",
-			deletedCodebaseBranch.Name, usage)
+	if len(refs) > 0 {
+		return nil, newBlockedByUsageError(
+			v1.GroupVersion.WithResource("codebasebranches").GroupResource(),
+			codebaseBranchKind,
+			deletedCodebaseBranch.Name,
+			refs,
+		)
 	}
 
 	return nil, nil

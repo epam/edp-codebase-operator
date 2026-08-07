@@ -2,18 +2,24 @@ package stalecheck
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
+
+	pipelineApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	gitproviderv2 "github.com/epam/edp-codebase-operator/v2/pkg/git"
@@ -253,4 +259,164 @@ func TestMarkAction_IdempotentWhenAlreadyStale(t *testing.T) {
 		t.Fatalf("expected no events for already-stale branch, got %s", event)
 	default:
 	}
+}
+
+// autoCleanupCodebase opts the codebase into the "auto" strategy, which is the only
+// strategy that acts on the deployment usage snapshot.
+func autoCleanupCodebase() *codebaseApi.Codebase {
+	codebase := newCodebase()
+	codebase.Annotations = map[string]string{
+		codebaseApi.BranchCleanupStrategyAnnotation: codebaseApi.BranchCleanupStrategyAuto,
+	}
+
+	return codebase
+}
+
+// The sweep resolves the retaining resource from a single namespace-wide snapshot, so a
+// branch a CDPipeline consumes must survive the sweep and be marked rather than deleted.
+func TestChecker_RetainsStaleBranchUsedByCDPipeline(t *testing.T) {
+	codebase := autoCleanupCodebase()
+	featureBranch := newBranch("app-feature", "feature", codebaseApi.CodebaseBranchGitStatusBranchCreated)
+	gitServer, secret := newGitServerWithSecret()
+
+	pipeline := &pipelineApi.CDPipeline{}
+	pipeline.Name = "demo"
+	pipeline.Namespace = testNamespace
+	pipeline.Spec.InputDockerStreams = []string{"app-feature"}
+	pipeline.Spec.DeploymentType = "container"
+
+	scheme := newScheme(t)
+	require.NoError(t, pipelineApi.AddToScheme(scheme))
+
+	k8sClient := fake.NewClientBuilder().
+		WithScheme(scheme).
+		WithObjects(codebase, featureBranch, gitServer, secret, pipeline).
+		WithStatusSubresource(featureBranch).
+		Build()
+
+	gitClient := gitmocks.NewMockGit(t)
+	gitClient.On("ListRemoteBranches", mock.Anything, mock.Anything).Return([]string{"main"}, nil)
+
+	recorder := record.NewFakeRecorder(10)
+
+	newChecker(t, k8sClient, gitClient, recorder).sweep(context.Background())
+
+	retained := getBranch(t, k8sClient, "app-feature")
+	assert.True(t, meta.IsStatusConditionTrue(retained.Status.Conditions, codebaseApi.ConditionStale))
+
+	condition := meta.FindStatusCondition(retained.Status.Conditions, codebaseApi.ConditionStale)
+	require.NotNil(t, condition)
+	assert.Contains(t, condition.Message, "retained because it is used by CDPipeline demo")
+
+	select {
+	case event := <-recorder.Events:
+		assert.Contains(t, event, EventReasonStaleBranchRetained)
+	default:
+		t.Fatal("expected StaleBranchRetained event")
+	}
+}
+
+func TestChecker_DeletesUnusedStaleBranchUnderAutoStrategy(t *testing.T) {
+	codebase := autoCleanupCodebase()
+	featureBranch := newBranch("app-feature", "feature", codebaseApi.CodebaseBranchGitStatusBranchCreated)
+	gitServer, secret := newGitServerWithSecret()
+
+	scheme := newScheme(t)
+	require.NoError(t, pipelineApi.AddToScheme(scheme))
+
+	k8sClient := fake.NewClientBuilder().
+		WithScheme(scheme).
+		WithObjects(codebase, featureBranch, gitServer, secret).
+		WithStatusSubresource(featureBranch).
+		Build()
+
+	gitClient := gitmocks.NewMockGit(t)
+	gitClient.On("ListRemoteBranches", mock.Anything, mock.Anything).Return([]string{"main"}, nil)
+
+	newChecker(t, k8sClient, gitClient, record.NewFakeRecorder(10)).sweep(context.Background())
+
+	err := k8sClient.Get(context.Background(),
+		client.ObjectKey{Namespace: testNamespace, Name: "app-feature"}, &codebaseApi.CodebaseBranch{})
+	assert.True(t, apierrors.IsNotFound(err), "unused stale branch must be deleted")
+}
+
+// The snapshot must not leak between strategies: a branch of a codebase that only marks
+// keeps the plain stale message even when a CDPipeline consumes it.
+func TestChecker_MarkStrategyIgnoresDeploymentUsage(t *testing.T) {
+	codebase := newCodebase()
+	featureBranch := newBranch("app-feature", "feature", codebaseApi.CodebaseBranchGitStatusBranchCreated)
+	gitServer, secret := newGitServerWithSecret()
+
+	pipeline := &pipelineApi.CDPipeline{}
+	pipeline.Name = "demo"
+	pipeline.Namespace = testNamespace
+	pipeline.Spec.InputDockerStreams = []string{"app-feature"}
+	pipeline.Spec.DeploymentType = "container"
+
+	scheme := newScheme(t)
+	require.NoError(t, pipelineApi.AddToScheme(scheme))
+
+	k8sClient := fake.NewClientBuilder().
+		WithScheme(scheme).
+		WithObjects(codebase, featureBranch, gitServer, secret, pipeline).
+		WithStatusSubresource(featureBranch).
+		Build()
+
+	gitClient := gitmocks.NewMockGit(t)
+	gitClient.On("ListRemoteBranches", mock.Anything, mock.Anything).Return([]string{"main"}, nil)
+
+	recorder := record.NewFakeRecorder(10)
+
+	newChecker(t, k8sClient, gitClient, recorder).sweep(context.Background())
+
+	marked := getBranch(t, k8sClient, "app-feature")
+	condition := meta.FindStatusCondition(marked.Status.Conditions, codebaseApi.ConditionStale)
+	require.NotNil(t, condition)
+	assert.Equal(t, "Branch was not found in the git repository", condition.Message)
+
+	select {
+	case event := <-recorder.Events:
+		assert.Contains(t, event, EventReasonBranchStale)
+	default:
+		t.Fatal("expected BranchStale event")
+	}
+}
+
+// If deployment usage cannot be resolved the sweep must stop: acting on an unknown usage
+// set could delete a branch a CDPipeline still consumes.
+func TestChecker_SkipsSweepWhenUsageCannotBeResolved(t *testing.T) {
+	codebase := autoCleanupCodebase()
+	featureBranch := newBranch("app-feature", "feature", codebaseApi.CodebaseBranchGitStatusBranchCreated)
+	gitServer, secret := newGitServerWithSecret()
+
+	scheme := newScheme(t)
+	require.NoError(t, pipelineApi.AddToScheme(scheme))
+
+	k8sClient := fake.NewClientBuilder().
+		WithScheme(scheme).
+		WithObjects(codebase, featureBranch, gitServer, secret).
+		WithStatusSubresource(featureBranch).
+		WithInterceptorFuncs(interceptor.Funcs{
+			List: func(
+				ctx context.Context, c client.WithWatch, list client.ObjectList, opts ...client.ListOption,
+			) error {
+				if _, ok := list.(*pipelineApi.CDPipelineList); ok {
+					return apierrors.NewForbidden(
+						schema.GroupResource{Group: "v2.edp.epam.com", Resource: "cdpipelines"},
+						"", errors.New("no access"))
+				}
+
+				return c.List(ctx, list, opts...)
+			},
+		}).
+		Build()
+
+	gitClient := gitmocks.NewMockGit(t)
+
+	newChecker(t, k8sClient, gitClient, record.NewFakeRecorder(10)).sweep(context.Background())
+
+	// Neither deleted nor marked: the sweep returned before applying any verdict.
+	untouched := getBranch(t, k8sClient, "app-feature")
+	assert.Empty(t, untouched.Status.Conditions)
+	assert.NotContains(t, untouched.Labels, codebaseApi.StaleLabel)
 }
