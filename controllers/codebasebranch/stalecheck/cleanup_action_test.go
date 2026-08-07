@@ -46,28 +46,25 @@ func TestCleanupAction_DeletesUnusedStaleBranch(t *testing.T) {
 	}
 }
 
+// The retaining resource is resolved by the Checker and arrives in the Verdict, so the
+// action honours it without looking anything up.
 func TestCleanupAction_RetainsBranchUsedByCDPipeline(t *testing.T) {
 	branch := newBranch("app-feature", "feature", codebaseApi.CodebaseBranchGitStatusBranchCreated)
-
-	pipeline := &pipelineApi.CDPipeline{}
-	pipeline.Name = "demo"
-	pipeline.Namespace = testNamespace
-	pipeline.Spec.InputDockerStreams = []string{"app-feature"}
-	pipeline.Spec.DeploymentType = "container"
 
 	scheme := newScheme(t)
 	require.NoError(t, pipelineApi.AddToScheme(scheme))
 
 	k8sClient := fake.NewClientBuilder().
 		WithScheme(scheme).
-		WithObjects(branch, pipeline).
+		WithObjects(branch).
 		WithStatusSubresource(branch).
 		Build()
 
 	recorder := record.NewFakeRecorder(10)
 	action := NewCleanupAction(k8sClient, recorder, NewMarkAction(k8sClient, recorder))
 
-	require.NoError(t, action.Apply(context.Background(), branch, Verdict{ExistsInGit: false}))
+	verdict := Verdict{ExistsInGit: false, RetainedBy: "CDPipeline demo (inputDockerStreams)"}
+	require.NoError(t, action.Apply(context.Background(), branch, verdict))
 
 	retained := getBranch(t, k8sClient, "app-feature")
 	assert.True(t, meta.IsStatusConditionTrue(retained.Status.Conditions, codebaseApi.ConditionStale))

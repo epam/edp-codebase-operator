@@ -2,10 +2,13 @@ package webhook
 
 import (
 	"context"
+	"errors"
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/ptr"
@@ -117,4 +120,88 @@ func TestCodebaseBranchValidationWebhook_ValidateDelete_BranchInUse(t *testing.T
 			require.NoError(t, err)
 		})
 	}
+}
+
+func TestCodebaseBranchValidationWebhook_ValidateDelete_StatusError(t *testing.T) {
+	t.Run("single reference: message wording is preserved and causes are populated", func(t *testing.T) {
+		objects := []runtime.Object{
+			&codebaseApi.Codebase{
+				ObjectMeta: metav1.ObjectMeta{Name: "app", Namespace: "default"},
+			},
+			&pipelineApi.CDPipeline{
+				ObjectMeta: metav1.ObjectMeta{Name: "demo", Namespace: "default"},
+				Spec:       pipelineApi.CDPipelineSpec{InputDockerStreams: []string{"app-feature"}},
+			},
+		}
+
+		k8sClient := fake.NewClientBuilder().
+			WithScheme(deleteWebhookScheme(t)).
+			WithRuntimeObjects(objects...).
+			Build()
+
+		w := NewCodebaseBranchValidationWebhook(k8sClient, ctrl.Log)
+
+		_, err := w.ValidateDelete(context.Background(), deleteWebhookBranch())
+		require.Error(t, err)
+
+		var statusErr *apierrors.StatusError
+		require.True(t, errors.As(err, &statusErr))
+
+		status := statusErr.Status()
+		assert.Equal(t, int32(http.StatusForbidden), status.Code)
+		assert.Equal(t, metav1.StatusReasonForbidden, status.Reason)
+		assert.Equal(t,
+			"CodebaseBranch app-feature cannot be deleted because it is used by "+
+				"CDPipeline demo (inputDockerStreams); remove it from the deployment first",
+			status.Message,
+		)
+		require.NotNil(t, status.Details)
+		require.Len(t, status.Details.Causes, 1)
+		assert.Equal(t, metav1.CauseTypeForbidden, status.Details.Causes[0].Type)
+		assert.Equal(t, "CDPipeline demo (inputDockerStreams)", status.Details.Causes[0].Message)
+	})
+
+	t.Run("multiple references: all are reported as separate causes", func(t *testing.T) {
+		objects := []runtime.Object{
+			&codebaseApi.Codebase{
+				ObjectMeta: metav1.ObjectMeta{Name: "app", Namespace: "default"},
+			},
+			&pipelineApi.CDPipeline{
+				ObjectMeta: metav1.ObjectMeta{Name: "demo", Namespace: "default"},
+				Spec:       pipelineApi.CDPipelineSpec{InputDockerStreams: []string{"app-feature"}},
+			},
+			&pipelineApi.Stage{
+				ObjectMeta: metav1.ObjectMeta{Name: "demo-dev", Namespace: "default"},
+				Spec: pipelineApi.StageSpec{
+					CdPipeline: "demo",
+					QualityGates: []pipelineApi.QualityGate{{
+						QualityGateType: "autotests",
+						AutotestName:    ptr.To("app"),
+						BranchName:      ptr.To("feature"),
+					}},
+				},
+			},
+		}
+
+		k8sClient := fake.NewClientBuilder().
+			WithScheme(deleteWebhookScheme(t)).
+			WithRuntimeObjects(objects...).
+			Build()
+
+		w := NewCodebaseBranchValidationWebhook(k8sClient, ctrl.Log)
+
+		_, err := w.ValidateDelete(context.Background(), deleteWebhookBranch())
+		require.Error(t, err)
+
+		var statusErr *apierrors.StatusError
+		require.True(t, errors.As(err, &statusErr))
+
+		status := statusErr.Status()
+		require.NotNil(t, status.Details)
+		require.Len(t, status.Details.Causes, 2)
+
+		messages := []string{status.Details.Causes[0].Message, status.Details.Causes[1].Message}
+		assert.Contains(t, messages, "CDPipeline demo (inputDockerStreams)")
+		assert.Contains(t, messages, "Stage demo-dev of CDPipeline demo (autotest quality gate)")
+	})
 }

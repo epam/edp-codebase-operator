@@ -13,6 +13,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	v1 "github.com/epam/edp-codebase-operator/v2/api/v1"
+	"github.com/epam/edp-codebase-operator/v2/pkg/codebase"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
@@ -142,6 +143,27 @@ func (r *CodebaseValidationWebhook) ValidateDelete(
 
 	if err = checkResourceProtectionFromModificationOnDelete(obj); err != nil {
 		return nil, err
+	}
+
+	deletedCodebase, ok := obj.(*v1.Codebase)
+	if !ok {
+		r.log.Info("the wrong object given, skipping validation")
+
+		return nil, nil
+	}
+
+	refs, err := codebase.FindCodebaseUsage(ctx, r.client, deletedCodebase)
+	if err != nil {
+		return nil, fmt.Errorf("failed to check Codebase usage: %w", err)
+	}
+
+	if len(refs) > 0 {
+		return nil, newBlockedByUsageError(
+			v1.GroupVersion.WithResource("codebases").GroupResource(),
+			codebaseKind,
+			deletedCodebase.Name,
+			refs,
+		)
 	}
 
 	return nil, nil
