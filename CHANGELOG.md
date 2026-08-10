@@ -1,9 +1,41 @@
 <a name="unreleased"></a>
 ## [Unreleased]
 
+
+<a name="v2.35.0"></a>
+## [v2.35.0] - 2026-08-10
+### Features
+
+- validate Codebase deletion against deployment usage and return structured errors
+- label Codebases with a normalized gitUrlPath hash
+- Reconcile EventListener labelSelector for declarative trigger registration
+
+### Bug Fixes
+
+- Verify TLS certificates in integration secret connection checks
+- Verify SSH host keys for all git, GitServer and Gerrit connections
+- Make create-strategy provisioning idempotent and refuse destructive pushes
+- Check the fetched ref namespace and force-fetch in remote checkout
+- Remove stray init master branch before pushing operator-authored repositories
+- Replace clone-based CodebaseBranch git operations with packless transport
+- align scaffolded helm chart README with helm-docs
+
+### Code Refactoring
+
+- Remove dead git methods and vestigial CodebaseBranch workdir cleanup
+
 ### Routine
 
 - Update current development version
+
+### BREAKING CHANGE:
+
+
+integrations with untrusted certificates report connected=false until their CA is
+mounted through caCerts.
+
+GitServers authenticating over SSH to a host outside the seeded providers must have their host
+keys added to knownHosts.entries before upgrading. GitServers using token authentication are unaffected.
 
 
 <a name="v2.34.0"></a>
@@ -671,7 +703,8 @@ removed required fields from the GitServer status. CRD should be updated.
 - [EPMDEDP-868] Add functionality generates correct ssh URL for replication config for Gerrit
 
 
-[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.34.0...HEAD
+[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.35.0...HEAD
+[v2.35.0]: https://github.com/epam/edp-codebase-operator/compare/v2.34.0...v2.35.0
 [v2.34.0]: https://github.com/epam/edp-codebase-operator/compare/v2.33.0...v2.34.0
 [v2.33.0]: https://github.com/epam/edp-codebase-operator/compare/v2.32.0...v2.33.0
 [v2.32.0]: https://github.com/epam/edp-codebase-operator/compare/v2.31.0...v2.32.0
