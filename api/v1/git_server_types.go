@@ -39,7 +39,7 @@ type GitServerSpec struct {
 	// +required
 	NameSshKeySecret string `json:"nameSshKeySecret"`
 
-	// GitProvider is a git provider type. It can be gerrit, github or gitlab. Default value is gerrit.
+	// GitProvider is a git provider type. It can be gerrit, gitlab, github or bitbucket. Default value is github.
 	// +kubebuilder:validation:Enum=gerrit;gitlab;github;bitbucket
 	// +kubebuilder:default:=github
 	// +optional
