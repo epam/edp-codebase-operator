@@ -1365,7 +1365,7 @@ github.com, gitlab.com and bitbucket.org must be added there first.<br/>
         <td><b>gitProvider</b></td>
         <td>enum</td>
         <td>
-          GitProvider is a git provider type. It can be gerrit, github or gitlab. Default value is gerrit.<br/>
+          GitProvider is a git provider type. It can be gerrit, gitlab, github or bitbucket. Default value is github.<br/>
           <br/>
             <i>Enum</i>: gerrit, gitlab, github, bitbucket<br/>
             <i>Default</i>: github<br/>
