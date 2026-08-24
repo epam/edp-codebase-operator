@@ -91,7 +91,13 @@ func (r *ReconcileCodebase) SetupWithManager(mgr ctrl.Manager) error {
 // +kubebuilder:rbac:groups=v2.edp.epam.com,namespace=placeholder,resources=codebases,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=v2.edp.epam.com,namespace=placeholder,resources=codebases/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=v2.edp.epam.com,namespace=placeholder,resources=codebases/finalizers,verbs=update
-// +kubebuilder:rbac:groups=route.openshift.io,namespace=placeholder,resources=routes,verbs=get;list;watch
+// +kubebuilder:rbac:groups=route.openshift.io,namespace=placeholder,resources=routes,verbs=get
+// +kubebuilder:rbac:groups=v2.edp.epam.com,namespace=placeholder,resources=quicklinks,verbs=get
+// +kubebuilder:rbac:groups="",namespace=placeholder,resources=configmaps,verbs=get
+// update: webhook secret written into the GitServer Secret.
+// delete: clone credentials, when Codebase.spec.cloneRepositoryCredentials
+// .clearSecretAfterUse is set.
+// +kubebuilder:rbac:groups="",namespace=placeholder,resources=secrets,verbs=get;update;delete
 
 // Reconcile reads that state of the cluster for a Codebase object and makes changes based on the state.
 func (r *ReconcileCodebase) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
