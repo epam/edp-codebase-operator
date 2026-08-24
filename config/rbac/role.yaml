@@ -1,40 +1,5 @@
 ---
 apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: manager-role
-rules:
-- apiGroups:
-  - v2.edp.epam.com
-  resources:
-  - jiraissuemetadatas
-  - jiraservers
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - v2.edp.epam.com
-  resources:
-  - jiraissuemetadatas/finalizers
-  - jiraservers/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - v2.edp.epam.com
-  resources:
-  - jiraissuemetadatas/status
-  - jiraservers/status
-  verbs:
-  - get
-  - patch
-  - update
----
-apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: manager-role
@@ -43,13 +8,34 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - secrets
+  - configmaps
   verbs:
   - get
-  - list
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
   - patch
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - delete
+  - get
+  - list
   - update
   - watch
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - create
+  - get
+  - update
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
@@ -57,8 +43,6 @@ rules:
   verbs:
   - create
   - get
-  - list
-  - watch
 - apiGroups:
   - networking.k8s.io
   resources:
@@ -66,8 +50,6 @@ rules:
   verbs:
   - create
   - get
-  - list
-  - watch
 - apiGroups:
   - route.openshift.io
   resources:
@@ -75,27 +57,36 @@ rules:
   verbs:
   - create
   - get
-  - list
-  - watch
 - apiGroups:
   - tekton.dev
   resources:
   - pipelineruns
   verbs:
   - create
-  - get
   - list
-  - patch
-  - update
   - watch
+- apiGroups:
+  - triggers.tekton.dev
+  resources:
+  - eventlisteners
+  verbs:
+  - create
+  - get
+  - patch
 - apiGroups:
   - triggers.tekton.dev
   resources:
   - triggertemplates
   verbs:
   - get
+- apiGroups:
+  - v2.edp.epam.com
+  resources:
+  - cdpipelines
+  - stages
+  verbs:
+  - get
   - list
-  - watch
 - apiGroups:
   - v2.edp.epam.com
   resources:
@@ -104,6 +95,8 @@ rules:
   - codebaseimagestreams
   - codebases
   - gitservers
+  - jiraissuemetadatas
+  - jiraservers
   verbs:
   - create
   - delete
@@ -120,6 +113,8 @@ rules:
   - codebaseimagestreams/finalizers
   - codebases/finalizers
   - gitservers/finalizers
+  - jiraissuemetadatas/finalizers
+  - jiraservers/finalizers
   verbs:
   - update
 - apiGroups:
@@ -130,7 +125,15 @@ rules:
   - codebaseimagestreams/status
   - codebases/status
   - gitservers/status
+  - jiraissuemetadatas/status
+  - jiraservers/status
   verbs:
   - get
   - patch
   - update
+- apiGroups:
+  - v2.edp.epam.com
+  resources:
+  - quicklinks
+  verbs:
+  - get

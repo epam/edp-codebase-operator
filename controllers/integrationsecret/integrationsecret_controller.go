@@ -14,6 +14,7 @@ import (
 	"github.com/go-resty/resty/v2"
 	corev1 "k8s.io/api/core/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/labels"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -70,7 +71,9 @@ func (r *ReconcileIntegrationSecret) SetupWithManager(mgr ctrl.Manager) error {
 	return nil
 }
 
-// +kubebuilder:rbac:groups="",namespace=placeholder,resources=secrets,verbs=get;list;watch;update;patch
+// list/watch cannot be narrowed to CacheSelector: label selectors scope the informer,
+// not authorization. update writes the connection-status annotation.
+// +kubebuilder:rbac:groups="",namespace=placeholder,resources=secrets,verbs=get;list;watch;update
 
 // Reconcile reads secrets with integration-secret label and set connection status to the annotation.
 func (r *ReconcileIntegrationSecret) Reconcile(
@@ -312,7 +315,12 @@ func (r *ReconcileIntegrationSecret) checkGitHubRegistry(ctx context.Context, au
 }
 
 func hasIntegrationSecretLabelLabel(object client.Object) bool {
-	label := object.GetLabels()[integrationSecretLabel]
+	return cacheSelector.Matches(labels.Set(object.GetLabels()))
+}
 
-	return label == "true"
+var cacheSelector = labels.SelectorFromSet(labels.Set{integrationSecretLabel: "true"})
+
+// CacheSelector scopes the manager cache to the same Secrets as the event predicate.
+func CacheSelector() labels.Selector {
+	return cacheSelector
 }

@@ -16,6 +16,7 @@ import (
 	routeApi "github.com/openshift/api/route/v1"
 	tektonpipelineApi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	tektonTriggersApi "github.com/tektoncd/triggers/pkg/apis/triggers/v1beta1"
+	corev1 "k8s.io/api/core/v1"
 	networkingV1 "k8s.io/api/networking/v1"
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -23,6 +24,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/certwatcher"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/filters"
@@ -66,6 +68,26 @@ const (
 	branchStaleCheckIntervalEnv              = "BRANCH_STALE_CHECK_INTERVAL"
 	branchStaleCheckDefaultInterval          = time.Hour * 24
 )
+
+// No list/watch in the Role for these types. Secret is dual-listed: watched via the
+// cache ByObject below, read live here.
+//
+// client.MatchingFields is served by the cache only. Never field-index a type listed
+// here (pkg/codebase/index.go), and never list an indexed type here.
+var uncachedTypes = []client.Object{
+	&corev1.Secret{},
+	&corev1.ConfigMap{},
+	&codebaseApiV1.QuickLink{},
+	&cdPipeApi.CDPipeline{},
+	&cdPipeApi.Stage{},
+	&tektonTriggersApi.TriggerTemplate{},
+	&networkingV1.Ingress{},
+	&gatewayv1.HTTPRoute{},
+	&routeApi.Route{},
+}
+
+// Verbs track resourcelock.LeasesLock; revisit if LeaderElectionResourceLock changes.
+// +kubebuilder:rbac:groups=coordination.k8s.io,namespace=placeholder,resources=leases,verbs=get;create;update
 
 func main() {
 	var (
@@ -224,6 +246,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	secretCacheSelector := integrationsecret.CacheSelector()
+
+	setupLog.Info("Restricting the cache",
+		"namespace", ns,
+		"secretLabelSelector", secretCacheSelector.String(),
+	)
+
 	cfg := ctrl.GetConfigOrDie()
 
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
@@ -235,6 +264,14 @@ func main() {
 		LeaderElectionID:       codebaseOperatorLock,
 		Cache: cache.Options{
 			DefaultNamespaces: map[string]cache.Config{ns: {}},
+			DefaultTransform:  cache.TransformStripManagedFields(),
+			ByObject: map[client.Object]cache.ByObject{
+				// Widen this if a second controller starts watching Secrets.
+				&corev1.Secret{}: {Label: secretCacheSelector},
+			},
+		},
+		Client: client.Options{
+			Cache: &client.CacheOptions{DisableFor: uncachedTypes},
 		},
 	})
 	if err != nil {
