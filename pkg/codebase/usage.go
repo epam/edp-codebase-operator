@@ -23,7 +23,10 @@ import (
 //   - Stage.Spec.QualityGates references a Codebase name via AutotestName
 //     (autotest components).
 //
-// Resources that are being deleted are not counted as usage.
+// A CDPipeline counts as usage while it exists, terminating included: its Stage
+// finalizers read the codebase's CodebaseImageStreams until it is gone.
+// Terminating Stages do not count for autotest gates: stage teardown never
+// reads the autotest codebase.
 func FindCodebaseUsage(
 	ctx context.Context,
 	c client.Client,
@@ -31,7 +34,7 @@ func FindCodebaseUsage(
 ) ([]deploymentusage.Reference, error) {
 	var refs []deploymentusage.Reference
 
-	pipelines, err := deploymentusage.ListActiveCDPipelines(ctx, c, codebase.Namespace)
+	pipelines, err := deploymentusage.ListCDPipelines(ctx, c, codebase.Namespace)
 	if err != nil {
 		return nil, err
 	}
@@ -50,10 +53,11 @@ func FindCodebaseUsage(
 		}
 
 		refs = append(refs, deploymentusage.Reference{
-			Kind:   deploymentusage.KindCDPipeline,
-			Name:   pipeline.Name,
-			Field:  field,
-			Reason: reason,
+			Kind:     deploymentusage.KindCDPipeline,
+			Name:     pipeline.Name,
+			Field:    field,
+			Reason:   reason,
+			Deleting: pipeline.DeletionTimestamp != nil,
 		})
 	}
 

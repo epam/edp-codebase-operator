@@ -113,7 +113,8 @@ func TestCodebaseValidationWebhook_ValidateDelete_CodebaseInUse(t *testing.T) {
 			},
 		},
 		{
-			name: "allows deletion when referencing CDPipeline is terminating",
+			// A terminating pipeline still blocks deletion; the advice switches to "wait".
+			name: "rejects deletion while referencing CDPipeline is terminating",
 			objects: []runtime.Object{
 				&pipelineApi.CDPipeline{
 					ObjectMeta: metav1.ObjectMeta{
@@ -125,6 +126,7 @@ func TestCodebaseValidationWebhook_ValidateDelete_CodebaseInUse(t *testing.T) {
 					Spec: pipelineApi.CDPipelineSpec{Applications: []string{"app"}},
 				},
 			},
+			wantErr: "used by CDPipeline demo (applications, being deleted); wait for the deletion to finish",
 		},
 		{
 			name:    "allows deletion when CD pipeline CRDs are not installed",

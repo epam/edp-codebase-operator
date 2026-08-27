@@ -46,15 +46,23 @@ type Reference struct {
 	Reason string
 	// ParentCDPipeline is set only when Kind is KindStage.
 	ParentCDPipeline string
+	// Deleting is set when the referencing resource is terminating. It still
+	// blocks deletion; the denial advice switches from "remove" to "wait".
+	Deleting bool
 }
 
 // String renders the reference as it appears in the denial message shown to users.
 func (r Reference) String() string {
-	if r.Kind == KindStage {
-		return fmt.Sprintf("%s %s of %s %s (%s)", KindStage, r.Name, KindCDPipeline, r.ParentCDPipeline, r.Reason)
+	reason := r.Reason
+	if r.Deleting {
+		reason += ", being deleted"
 	}
 
-	return fmt.Sprintf("%s %s (%s)", r.Kind, r.Name, r.Reason)
+	if r.Kind == KindStage {
+		return fmt.Sprintf("%s %s of %s %s (%s)", KindStage, r.Name, KindCDPipeline, r.ParentCDPipeline, reason)
+	}
+
+	return fmt.Sprintf("%s %s (%s)", r.Kind, r.Name, reason)
 }
 
 // Join renders references as a single description, in the form used by both the
@@ -69,10 +77,11 @@ func Join(refs []Reference) string {
 	return strings.Join(descriptions, "; ")
 }
 
-// ListActiveCDPipelines returns the CDPipelines in the given namespace that
-// are not being deleted. When the CD pipeline CRDs are not installed in the
-// cluster, it returns an empty, non-error result.
-func ListActiveCDPipelines(ctx context.Context, c client.Client, namespace string) ([]pipelineApi.CDPipeline, error) {
+// ListCDPipelines returns every CDPipeline in the given namespace, terminating
+// included: Stage finalizers read the CodebaseImageStreams until the pipeline
+// is gone. When the CD pipeline CRDs are not installed in the cluster, it
+// returns an empty, non-error result.
+func ListCDPipelines(ctx context.Context, c client.Client, namespace string) ([]pipelineApi.CDPipeline, error) {
 	pipelines := &pipelineApi.CDPipelineList{}
 	if err := c.List(ctx, pipelines, client.InNamespace(namespace)); err != nil {
 		if IsKindUnavailable(err) {
@@ -82,17 +91,7 @@ func ListActiveCDPipelines(ctx context.Context, c client.Client, namespace strin
 		return nil, fmt.Errorf("failed to list CDPipelines: %w", err)
 	}
 
-	active := make([]pipelineApi.CDPipeline, 0, len(pipelines.Items))
-
-	for i := range pipelines.Items {
-		if pipelines.Items[i].DeletionTimestamp != nil {
-			continue
-		}
-
-		active = append(active, pipelines.Items[i])
-	}
-
-	return active, nil
+	return pipelines.Items, nil
 }
 
 // AutotestGate is a Stage quality gate that runs an autotest, together with the Reference

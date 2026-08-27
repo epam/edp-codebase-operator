@@ -30,7 +30,9 @@ type BranchUsageIndex struct {
 }
 
 // NewBranchUsageIndex reads the deployment resources of the namespace once and indexes
-// the references they hold. Resources that are being deleted are not counted as usage.
+// the references they hold. A CDPipeline counts while it exists, terminating
+// included: its Stage finalizers read the CodebaseImageStreams until it is gone.
+// Terminating Stages do not count for autotest gates.
 //
 // The snapshot is never refreshed, so callers that must not act on stale data build one
 // per request.
@@ -40,7 +42,7 @@ func NewBranchUsageIndex(ctx context.Context, c client.Client, namespace string)
 		byAutotest:   make(map[autotestGate][]deploymentusage.Reference),
 	}
 
-	pipelines, err := deploymentusage.ListActiveCDPipelines(ctx, c, namespace)
+	pipelines, err := deploymentusage.ListCDPipelines(ctx, c, namespace)
 	if err != nil {
 		return nil, err
 	}
@@ -74,10 +76,11 @@ func (i *BranchUsageIndex) addPipeline(pipeline *pipelineApi.CDPipeline) {
 		seen[stream] = struct{}{}
 
 		i.byStreamName[stream] = append(i.byStreamName[stream], deploymentusage.Reference{
-			Kind:   deploymentusage.KindCDPipeline,
-			Name:   pipeline.Name,
-			Field:  deploymentusage.FieldInputDockerStreams,
-			Reason: "inputDockerStreams",
+			Kind:     deploymentusage.KindCDPipeline,
+			Name:     pipeline.Name,
+			Field:    deploymentusage.FieldInputDockerStreams,
+			Reason:   "inputDockerStreams",
+			Deleting: pipeline.DeletionTimestamp != nil,
 		})
 	}
 }
