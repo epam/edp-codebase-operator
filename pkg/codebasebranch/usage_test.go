@@ -129,7 +129,8 @@ func TestFindBranchUsage_MultipleReferences(t *testing.T) {
 	assert.Contains(t, descriptions, "Stage demo-dev of CDPipeline demo (autotest quality gate)")
 }
 
-func TestFindBranchUsage_TerminatingPipelineIgnored(t *testing.T) {
+// A terminating pipeline still counts as usage.
+func TestFindBranchUsage_TerminatingPipelineStillCounts(t *testing.T) {
 	pipeline := &pipelineApi.CDPipeline{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:              "demo",
@@ -146,7 +147,8 @@ func TestFindBranchUsage_TerminatingPipelineIgnored(t *testing.T) {
 
 	refs, err := FindBranchUsage(context.Background(), k8sClient, usageBranch())
 	require.NoError(t, err)
-	assert.Empty(t, refs)
+	require.Len(t, refs, 1)
+	assert.Equal(t, "CDPipeline demo (inputDockerStreams, being deleted)", refs[0].String())
 }
 
 func TestFindBranchUsage_Unused(t *testing.T) {

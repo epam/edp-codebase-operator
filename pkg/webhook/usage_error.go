@@ -16,6 +16,16 @@ const (
 	codebaseBranchKind = "CodebaseBranch"
 )
 
+func allDeleting(refs []deploymentusage.Reference) bool {
+	for _, ref := range refs {
+		if !ref.Deleting {
+			return false
+		}
+	}
+
+	return len(refs) > 0
+}
+
 // newBlockedByUsageError builds a StatusError that denies deletion of a
 // resource still referenced by deployment resources.
 //
@@ -43,9 +53,16 @@ func newBlockedByUsageError(
 		})
 	}
 
+	// All blockers terminating: nothing left to remove; advise waiting.
+	advice := "remove it from the deployment first"
+
+	if allDeleting(refs) {
+		advice = "wait for the deletion to finish"
+	}
+
 	message := fmt.Sprintf(
-		"%s %s cannot be deleted because it is used by %s; remove it from the deployment first",
-		kind, name, deploymentusage.Join(refs),
+		"%s %s cannot be deleted because it is used by %s; %s",
+		kind, name, deploymentusage.Join(refs), advice,
 	)
 
 	return &apierrors.StatusError{

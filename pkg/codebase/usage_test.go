@@ -267,7 +267,8 @@ func TestFindCodebaseUsage_MultipleReferences(t *testing.T) {
 	assert.Contains(t, descriptions, "Stage demo-dev of CDPipeline demo (autotest quality gate)")
 }
 
-func TestFindCodebaseUsage_TerminatingPipelineIgnored(t *testing.T) {
+// A terminating pipeline still counts as usage.
+func TestFindCodebaseUsage_TerminatingPipelineStillCounts(t *testing.T) {
 	pipeline := &pipelineApi.CDPipeline{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:              "demo",
@@ -284,7 +285,8 @@ func TestFindCodebaseUsage_TerminatingPipelineIgnored(t *testing.T) {
 
 	refs, err := FindCodebaseUsage(context.Background(), k8sClient, usageCodebase())
 	require.NoError(t, err)
-	assert.Empty(t, refs)
+	require.Len(t, refs, 1)
+	assert.Equal(t, "CDPipeline demo (applications, being deleted)", refs[0].String())
 }
 
 func TestFindCodebaseUsage_Unused(t *testing.T) {
