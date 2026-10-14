@@ -1,6 +1,6 @@
 module github.com/epam/edp-codebase-operator/v2
 
-go 1.25.8
+go 1.26.9
 
 replace github.com/openshift/api => github.com/openshift/api v0.0.0-20260107143020-50517c6f4bfd
 
