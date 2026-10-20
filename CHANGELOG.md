@@ -2,6 +2,23 @@
 ## [Unreleased]
 
 
+<a name="v2.36.0"></a>
+## [v2.36.0] - 2026-10-20
+### Bug Fixes
+
+- Count terminating CDPipelines as usage in the deletion webhooks
+- Reduce the operator's RBAC to the permissions it uses
+
+### Routine
+
+- Bump Go to 1.26.9
+- Update current development version
+
+### Documentation
+
+- Correct the GitProvider description in the GitServer CRD
+
+
 <a name="v2.35.0"></a>
 ## [v2.35.0] - 2026-08-10
 ### Features
@@ -703,7 +720,8 @@ removed required fields from the GitServer status. CRD should be updated.
 - [EPMDEDP-868] Add functionality generates correct ssh URL for replication config for Gerrit
 
 
-[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.35.0...HEAD
+[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.36.0...HEAD
+[v2.36.0]: https://github.com/epam/edp-codebase-operator/compare/v2.35.0...v2.36.0
 [v2.35.0]: https://github.com/epam/edp-codebase-operator/compare/v2.34.0...v2.35.0
 [v2.34.0]: https://github.com/epam/edp-codebase-operator/compare/v2.33.0...v2.34.0
 [v2.33.0]: https://github.com/epam/edp-codebase-operator/compare/v2.32.0...v2.33.0
