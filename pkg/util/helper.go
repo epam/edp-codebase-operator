@@ -3,6 +3,7 @@ package util
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -14,13 +15,15 @@ func GetStringP(val string) *string {
 	return &val
 }
 
+// GetWorkDir returns the clone directory of a codebase under WORKING_DIR, or under the OS temp dir when WORKING_DIR
+// is unset or empty. The operator image keeps /tmp writable for any UID, including the arbitrary UID OpenShift assigns.
 func GetWorkDir(codebaseName, namespace string) string {
-	value, ok := os.LookupEnv(WorkDirEnv)
-	if !ok {
-		return fmt.Sprintf("/home/codebase-operator/edp/%v/%v/%v/%v", namespace, codebaseName, "templates", codebaseName)
+	base := os.Getenv(WorkDirEnv)
+	if base == "" {
+		base = os.TempDir()
 	}
 
-	return fmt.Sprintf("%v/codebase-operator/edp/%v/%v/%v/%v", value, namespace, codebaseName, "templates", codebaseName)
+	return filepath.Join(base, "codebase-operator", "edp", namespace, codebaseName, "templates", codebaseName)
 }
 
 func GetAssetsDir() (string, error) {

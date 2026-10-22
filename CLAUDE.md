@@ -101,6 +101,7 @@ Deletion runs a shorter chain: `DeleteWebHook` → `Cleaner`.
 - `CODEBASE_BRANCH_MAX_CONCURRENT_RECONCILES` — concurrency for CodebaseBranch reconciler (default 1)
 - `ENABLE_WEBHOOKS` — set to `false` to disable admission webhooks
 - `TELEMETRY_ENABLED` / `TELEMETRY_DELAY` — opt-in usage telemetry
+- `WORKING_DIR` — base directory for codebase clones (default: the OS temp dir, which must be writable)
 
 ### Adding a new chain handler
 
