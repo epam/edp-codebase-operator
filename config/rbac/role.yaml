@@ -115,6 +115,7 @@ rules:
   - gitservers/finalizers
   - jiraissuemetadatas/finalizers
   - jiraservers/finalizers
+  - stages/finalizers
   verbs:
   - update
 - apiGroups:

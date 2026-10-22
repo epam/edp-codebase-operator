@@ -5,8 +5,9 @@ metadata:
   labels:
     {{- include "codebase-operator.labels" . | nindent 4 }}
   name: edp-{{ .Values.name }}
-# Hand-maintained. Mirrors config/rbac/role.yaml (`make manifests`).
-# Not enforced: copy marker changes across by hand.
+# Hand-maintained. Mirrors config/rbac/role.yaml (`make manifests`); copy marker
+# changes across by hand. controllers/rbac_test.go checks the owner-reference
+# grants in this file under OwnerReferencesPermissionEnforcement.
 rules:
 - apiGroups:
     - ""
@@ -97,6 +98,7 @@ rules:
     - gitservers/finalizers
     - jiraissuemetadatas/finalizers
     - jiraservers/finalizers
+    - stages/finalizers
   verbs:
     - update
 - apiGroups:
