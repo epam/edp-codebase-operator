@@ -1,6 +1,8 @@
 package util
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -75,72 +77,41 @@ func TestGetOwnerReference(t *testing.T) {
 }
 
 func TestGetWorkDir(t *testing.T) {
-	type args struct {
-		codebaseName string
-		namespace    string
-	}
+	t.Setenv("TMPDIR", "/stub-tmp")
+
+	tempWorkDir := filepath.Join(os.TempDir(), "codebase-operator", "edp", "stub-namespace", "test", "templates", "test")
 
 	tests := []struct {
-		name string
-		args args
-		want string
+		name    string
+		workDir string
+		unset   bool
+		want    string
 	}{
 		{
-			name: "1",
-			args: args{codebaseName: "test", namespace: "stub-namespace"},
-			want: "/home/codebase-operator/edp/stub-namespace/test/templates/test",
+			name:  "defaults to the temp dir when WORKING_DIR is unset",
+			unset: true,
+			want:  tempWorkDir,
 		},
 		{
-			name: "2",
-			args: args{codebaseName: "cb-name", namespace: "stub-namespace"},
-			want: "/home/codebase-operator/edp/stub-namespace/cb-name/templates/cb-name",
+			name: "defaults to the temp dir when WORKING_DIR is empty",
+			want: tempWorkDir,
 		},
 		{
-			name: "3",
-			args: args{codebaseName: "demo", namespace: "stub-namespace"},
-			want: "/home/codebase-operator/edp/stub-namespace/demo/templates/demo",
+			name:    "uses WORKING_DIR",
+			workDir: "/CUSTOM_PATH",
+			want:    filepath.Join("/CUSTOM_PATH", "codebase-operator", "edp", "stub-namespace", "test", "templates", "test"),
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := GetWorkDir(tt.args.codebaseName, tt.args.namespace)
+			t.Setenv(WorkDirEnv, tt.workDir)
 
-			assert.Equal(t, tt.want, got)
-		})
-	}
-}
+			if tt.unset {
+				require.NoError(t, os.Unsetenv(WorkDirEnv))
+			}
 
-func TestGetWorkDir_WithCustomPathShouldWork(t *testing.T) {
-	t.Setenv("WORKING_DIR", "/CUSTOM_PATH")
-
-	type args struct {
-		codebaseName string
-		namespace    string
-	}
-
-	tests := []struct {
-		name string
-		args args
-		want string
-	}{
-		{
-			name: "1",
-			args: args{codebaseName: "test", namespace: "fake-ns"},
-			want: "/CUSTOM_PATH/codebase-operator/edp/fake-ns/test/templates/test",
-		},
-		{
-			name: "2",
-			args: args{codebaseName: "cb-name", namespace: "fake-ns"},
-			want: "/CUSTOM_PATH/codebase-operator/edp/fake-ns/cb-name/templates/cb-name",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := GetWorkDir(tt.args.codebaseName, tt.args.namespace)
-
-			assert.Equal(t, tt.want, got)
+			assert.Equal(t, tt.want, GetWorkDir("test", "stub-namespace"))
 		})
 	}
 }

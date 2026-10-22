@@ -1,31 +1,17 @@
-FROM alpine:3.18.12
+# Use distroless as minimal base image to package the manager binary
+# Refer to https://github.com/GoogleContainerTools/distroless for more details
+FROM gcr.io/distroless/static:nonroot
+WORKDIR /
 
 ARG TARGETARCH
 
 ENV ASSETS_DIR=/usr/local/bin \
-    HOME=/home/codebase-operator \
-    OPERATOR=/usr/local/bin/codebase-operator \
-    SSH_KNOWN_HOSTS=/etc/codebase-operator/ssh/ssh_known_hosts \
-    USER_NAME=codebase-operator \
-    USER_UID=1001
+    SSH_KNOWN_HOSTS=/etc/codebase-operator/ssh/ssh_known_hosts
 
-RUN apk add --no-cache ca-certificates=20241121-r1 \
-                       openssh-client==9.3_p2-r3  \
-                       git==2.40.4-r0
+COPY --chmod=0755 build/templates ${ASSETS_DIR}/templates
+COPY --chmod=0755 build/configs ${ASSETS_DIR}/configs
+COPY ./dist/manager-${TARGETARCH} /manager
 
-RUN adduser -h ${HOME} -s /bin/ash -D -u ${USER_UID} codebase-operator
+USER 65532:65532
 
-COPY build/bin ${ASSETS_DIR}
-COPY --chmod=0775 build/templates ${ASSETS_DIR}/templates
-COPY build/configs ${ASSETS_DIR}/configs
-
-RUN  chmod u+x ${ASSETS_DIR}/user_setup && \
-     chmod ugo+x ${ASSETS_DIR}/entrypoint && \
-     ${ASSETS_DIR}/user_setup
-
-# install operator binary
-COPY ./dist/manager-${TARGETARCH} ${OPERATOR}
-
-ENTRYPOINT ["/usr/local/bin/entrypoint"]
-
-USER ${USER_UID}
+ENTRYPOINT ["/manager"]
