@@ -75,6 +75,9 @@ func (r *ReconcileCodebaseImageStream) SetupWithManager(mgr ctrl.Manager) error 
 // +kubebuilder:rbac:groups=v2.edp.epam.com,namespace=placeholder,resources=codebaseimagestreams/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=v2.edp.epam.com,namespace=placeholder,resources=codebaseimagestreams/finalizers,verbs=update
 // +kubebuilder:rbac:groups=v2.edp.epam.com,namespace=placeholder,resources=cdpipelines;stages,verbs=get;list
+// The CDStageDeploy created for a Stage carries a controller reference to it with blockOwnerDeletion;
+// OwnerReferencesPermissionEnforcement admits that only with update on the owner's finalizers.
+// +kubebuilder:rbac:groups=v2.edp.epam.com,namespace=placeholder,resources=stages/finalizers,verbs=update
 
 // Reconcile reads that state of the cluster for a CodebaseImageStream object and makes changes based on the state.
 func (r *ReconcileCodebaseImageStream) Reconcile(

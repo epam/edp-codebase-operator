@@ -52,7 +52,8 @@ func (r *ReconcileGitServer) SetupWithManager(mgr ctrl.Manager) error {
 // +kubebuilder:rbac:groups=v2.edp.epam.com,namespace=placeholder,resources=gitservers/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=v2.edp.epam.com,namespace=placeholder,resources=gitservers/finalizers,verbs=update
 // update sets the GitServer ownerReference on its credential Secret.
-// +kubebuilder:rbac:groups="",namespace=placeholder,resources=secrets,verbs=get;update
+// delete: OwnerReferencesPermissionEnforcement admits that ownerReference change only with delete on the Secret.
+// +kubebuilder:rbac:groups="",namespace=placeholder,resources=secrets,verbs=get;update;delete
 // +kubebuilder:rbac:groups="networking.k8s.io",namespace=placeholder,resources=ingresses,verbs=get;create
 // +kubebuilder:rbac:groups="gateway.networking.k8s.io",namespace=placeholder,resources=httproutes,verbs=get;create
 // +kubebuilder:rbac:groups="route.openshift.io",namespace=placeholder,resources=routes,verbs=get;create
