@@ -2,7 +2,7 @@ package v2
 
 import "context"
 
-// Git interface provides methods for working with git using v2 GitProvider.
+// Git interface provides methods for working with git, implemented by GitProvider and CLIProvider.
 // This interface uses context-aware methods and handles authentication via Config.
 type Git interface {
 	// Clone clones a repository to the specified destination with full history.

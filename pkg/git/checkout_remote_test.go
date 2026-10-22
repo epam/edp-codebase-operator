@@ -74,7 +74,7 @@ func workdirHead(t *testing.T, workDir string) *plumbing.Reference {
 }
 
 // A branch pushed to origin after the workdir was cloned is fetched into
-// refs/heads by Checkout's refs/*:refs/* refspec; the existence check must look
+// refs/heads by Checkout's refs/heads/* refspec; the existence check must look
 // there, or the checkout collides on Create with the ref the fetch just wrote.
 func TestCheckout_RemoteBranchCreatedAfterClone(t *testing.T) {
 	originDir, workDir := buildOriginWithClone(t)
@@ -121,6 +121,45 @@ func TestCheckout_BranchAbsentEverywhere(t *testing.T) {
 	gp := NewGitProvider(Config{})
 	require.NoError(t, gp.Checkout(context.Background(), workDir, "brand-new", true))
 	require.Equal(t, "brand-new", workdirHead(t, workDir).Name().Short())
+}
+
+// The checkout fetches take branches and tags only: a pull request ref, which
+// refs/* would match, stays on the remote.
+func TestCheckout_FetchesOnlyBranchesAndTags(t *testing.T) {
+	tests := []struct {
+		name     string
+		checkout func(ctx context.Context, gp *GitProvider, workDir string) error
+	}{
+		{
+			name: "Checkout with remote",
+			checkout: func(ctx context.Context, gp *GitProvider, workDir string) error {
+				return gp.Checkout(ctx, workDir, "late-branch", true)
+			},
+		},
+		{
+			name: "CheckoutRemoteBranch",
+			checkout: func(ctx context.Context, gp *GitProvider, workDir string) error {
+				return gp.CheckoutRemoteBranch(ctx, workDir, "late-branch")
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			originDir, workDir := buildOriginWithClone(t)
+			seedCommit(t, originDir, "pull-request", "+refs/heads/master:refs/pull/1/head")
+			seedCommit(t, originDir, "late", "+refs/heads/master:refs/heads/late-branch")
+
+			require.NoError(t, tt.checkout(t.Context(), NewGitProvider(Config{}), workDir))
+			require.Equal(t, "late-branch", workdirHead(t, workDir).Name().Short())
+
+			repo, err := gogit.PlainOpen(workDir)
+			require.NoError(t, err)
+
+			_, err = repo.Reference("refs/pull/1/head", false)
+			require.ErrorIs(t, err, plumbing.ErrReferenceNotFound)
+		})
+	}
 }
 
 // TestCheckout_ForcePushedRemoteBranch: a rewritten upstream branch must not

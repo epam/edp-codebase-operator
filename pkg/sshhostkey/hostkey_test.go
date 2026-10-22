@@ -131,15 +131,13 @@ func TestEnrich(t *testing.T) {
 	tests := []struct {
 		name        string
 		err         error
-		wantNil     bool
 		wantSame    bool
 		wantContain []string
 		wantAbsent  []string
 	}{
 		{
-			name:    "nil passes through",
-			err:     nil,
-			wantNil: true,
+			name:     "nil passes through",
+			wantSame: true,
 		},
 		{
 			name:     "unrelated error is untouched",
@@ -173,27 +171,108 @@ func TestEnrich(t *testing.T) {
 
 			got := Enrich(tt.err, HostPort(testHost, testPort))
 
-			if tt.wantNil {
-				assert.NoError(t, got)
+			if tt.wantSame {
+				assert.Equal(t, tt.err, got)
 				return
 			}
 
-			require.Error(t, got)
+			assertEnriched(t, got, tt.err, tt.wantContain, tt.wantAbsent)
+		})
+	}
+}
+
+// assertEnriched checks a message from Enrich or EnrichOutput.
+func assertEnriched(t *testing.T, got, orig error, contain, absent []string) {
+	t.Helper()
+
+	require.Error(t, got)
+
+	for _, want := range contain {
+		assert.Contains(t, got.Error(), want)
+	}
+
+	for _, s := range absent {
+		assert.NotContains(t, got.Error(), s)
+	}
+
+	assert.ErrorIs(t, got, orig, "the original error must stay in the chain")
+}
+
+func TestOpenSSHOptions(t *testing.T) {
+	want := []string{
+		"-o", "StrictHostKeyChecking=yes", "-o", "UpdateHostKeys=no",
+		"-o", "UserKnownHostsFile=/etc/a /etc/b", "-o", "GlobalKnownHostsFile=/dev/null",
+	}
+
+	t.Setenv(knownHostsEnvVar, "")
+	assert.Equal(t, want[:4], OpenSSHOptions(), "without SSH_KNOWN_HOSTS ssh keeps its default files")
+
+	t.Setenv(knownHostsEnvVar, "/etc/a"+string(filepath.ListSeparator)+"/etc/b")
+	assert.Equal(t, want, OpenSSHOptions())
+}
+
+func TestEnrichOutput(t *testing.T) {
+	t.Parallel()
+
+	gitErr := errors.New("exit status 128")
+
+	tests := []struct {
+		name        string
+		err         error
+		output      string
+		wantSame    bool
+		wantContain []string
+		wantAbsent  []string
+	}{
+		{
+			name:     "nil passes through",
+			output:   "Host key verification failed.",
+			wantSame: true,
+		},
+		{
+			name:     "other failure is untouched",
+			err:      gitErr,
+			output:   "git@git.example.com: Permission denied (publickey).",
+			wantSame: true,
+		},
+		{
+			name: "unknown host suggests ssh-keyscan",
+			err:  gitErr,
+			output: "No ED25519 host key is known for [git.example.com]:2222 and you have requested strict checking.\n" +
+				"Host key verification failed.",
+			wantContain: []string{"not present in known_hosts", "ssh-keyscan -p 2222 git.example.com"},
+		},
+		{
+			name: "changed key warns about interception",
+			err:  gitErr,
+			output: "@    WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!     @\n" +
+				"Host key for [git.example.com]:2222 has changed and you have requested strict checking.\n" +
+				"Host key verification failed.",
+			wantContain: []string{"mismatch", "intercepted", "out-of-band"},
+			wantAbsent:  []string{"ssh-keyscan"},
+		},
+		{
+			name: "revoked key is refused",
+			err:  gitErr,
+			output: "@       WARNING: REVOKED HOST KEY DETECTED!               @\n" +
+				"Host key verification failed.",
+			wantContain: []string{"revoked"},
+			wantAbsent:  []string{"ssh-keyscan"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			got := EnrichOutput(tt.err, tt.output, HostPort(testHost, testPort))
 
 			if tt.wantSame {
 				assert.Equal(t, tt.err, got)
 				return
 			}
 
-			for _, want := range tt.wantContain {
-				assert.Contains(t, got.Error(), want)
-			}
-
-			for _, absent := range tt.wantAbsent {
-				assert.NotContains(t, got.Error(), absent)
-			}
-
-			assert.ErrorIs(t, got, tt.err, "the original error must stay in the chain")
+			assertEnriched(t, got, tt.err, tt.wantContain, tt.wantAbsent)
 		})
 	}
 }

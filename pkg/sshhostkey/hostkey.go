@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -20,8 +21,8 @@ import (
 )
 
 // knownHostsEnvVar is go-git's own lookup variable, reused so that the go-git
-// code paths and the raw golang.org/x/crypto/ssh code paths always agree on
-// which file is authoritative.
+// code paths, the raw golang.org/x/crypto/ssh code paths and the ssh binary
+// (OpenSSHOptions) always agree on which files are authoritative.
 const knownHostsEnvVar = "SSH_KNOWN_HOSTS"
 
 // ClientConfig returns the host key callback and the host key algorithms to set
@@ -51,13 +52,29 @@ func HostPort(host string, port int) string {
 	return net.JoinHostPort(host, strconv.Itoa(port))
 }
 
-// Source is for error messages only; the file itself is opened by go-git.
+// Source is for error messages only; the file itself is opened by go-git or ssh.
 func Source() string {
 	if path := os.Getenv(knownHostsEnvVar); path != "" {
 		return path
 	}
 
 	return "~/.ssh/known_hosts, /etc/ssh/ssh_known_hosts"
+}
+
+// OpenSSHOptions returns the ssh(1) options that verify host keys as go-git
+// does: a host missing from known_hosts is refused, no key is ever added, and
+// the files in SSH_KNOWN_HOSTS, when it is set, are the only source.
+func OpenSSHOptions() []string {
+	opts := []string{"-o", "StrictHostKeyChecking=yes", "-o", "UpdateHostKeys=no"}
+
+	if files := filepath.SplitList(os.Getenv(knownHostsEnvVar)); len(files) > 0 {
+		opts = append(opts,
+			"-o", "UserKnownHostsFile="+strings.Join(files, " "),
+			"-o", "GlobalKnownHostsFile=/dev/null",
+		)
+	}
+
+	return opts
 }
 
 // Enrich turns a host key verification failure into an actionable message.
@@ -70,10 +87,7 @@ func Enrich(err error, hostPort string) error {
 
 	var revokedErr *knownhosts.RevokedError
 	if errors.As(err, &revokedErr) {
-		return fmt.Errorf(
-			"SSH host key for %s is marked as revoked in known_hosts (%s), refusing to connect: %w",
-			hostPort, Source(), err,
-		)
+		return revoked(err, hostPort)
 	}
 
 	var keyErr *knownhosts.KeyError
@@ -85,14 +99,44 @@ func Enrich(err error, hostPort string) error {
 	// different key: either the server was rekeyed, or the connection is being
 	// intercepted. Never suggest "just add the key" for this case.
 	if len(keyErr.Want) > 0 {
-		return fmt.Errorf(
-			"SSH host key mismatch for %s: the server presented a key that does not match known_hosts (%s). "+
-				"This means either the git server's host key was rotated, or the connection is being intercepted. "+
-				"Verify the new key out-of-band before replacing the entry: %w",
-			hostPort, Source(), err,
-		)
+		return mismatch(err, hostPort)
 	}
 
+	return missing(err, hostPort)
+}
+
+// EnrichOutput is Enrich for the OpenSSH client, which reports a failed host
+// key check only as text; output is what ssh printed.
+func EnrichOutput(err error, output, hostPort string) error {
+	switch {
+	case err == nil || !strings.Contains(output, "Host key verification failed"):
+		return err
+	case strings.Contains(output, "REVOKED HOST KEY"):
+		return revoked(err, hostPort)
+	case strings.Contains(output, "REMOTE HOST IDENTIFICATION HAS CHANGED"):
+		return mismatch(err, hostPort)
+	default:
+		return missing(err, hostPort)
+	}
+}
+
+func revoked(err error, hostPort string) error {
+	return fmt.Errorf(
+		"SSH host key for %s is marked as revoked in known_hosts (%s), refusing to connect: %w",
+		hostPort, Source(), err,
+	)
+}
+
+func mismatch(err error, hostPort string) error {
+	return fmt.Errorf(
+		"SSH host key mismatch for %s: the server presented a key that does not match known_hosts (%s). "+
+			"This means either the git server's host key was rotated, or the connection is being intercepted. "+
+			"Verify the new key out-of-band before replacing the entry: %w",
+		hostPort, Source(), err,
+	)
+}
+
+func missing(err error, hostPort string) error {
 	return fmt.Errorf(
 		"SSH host key for %s is not present in known_hosts (%s). "+
 			"Add it to the operator's ssh-known-hosts ConfigMap, for example: ssh-keyscan -p %s %s: %w",

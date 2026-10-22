@@ -30,6 +30,7 @@ A Helm chart for KubeRocketCI Codebase Operator
 | envs[0].name | string | `"RECONCILATION_PERIOD"` |  |
 | envs[0].value | string | `"360"` |  |
 | envs[1] | object | `{"name":"CODEBASE_BRANCH_MAX_CONCURRENT_RECONCILES","value":"3"}` | Maximum number of parallel reconciliation codebasebranches |
+| gitCliEnabled | bool | `true` | Clone and push repositories with the git binary. Over SSH the pod's UID needs a passwd entry, which the image adds for any UID in group 0, as OpenShift assigns. Set to false to use go-git, which clones and pushes inside the operator's process: onboarding a large repository can then exceed the memory limit. |
 | global.gatewayApi | object | `{"gatewayName":"main-gateway","gatewayNamespace":"envoy-gateway-system"}` | Gateway API parent Gateway that EventListener HTTPRoutes attach to (used when ingressController=envoy) |
 | global.gatewayApi.gatewayName | string | `"main-gateway"` | Name of the parent Gateway resource |
 | global.gatewayApi.gatewayNamespace | string | `"envoy-gateway-system"` | Namespace of the parent Gateway resource |

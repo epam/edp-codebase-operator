@@ -35,6 +35,12 @@ const (
 	// RefSpecPushAllTags is the refspec for pushing all tags.
 	// Equivalent to git push --tags
 	RefSpecPushAllTags = "refs/tags/*:refs/tags/*"
+
+	// Fetch refspecs: every remote branch and tag becomes a local ref. The + lets a force-pushed
+	// branch or a moved tag overwrite its local copy. Do not widen to refs/*: it also downloads
+	// every pull and merge request ref into memory.
+	refSpecFetchAllBranches = "+refs/heads/*:refs/heads/*"
+	refSpecFetchAllTags     = "+refs/tags/*:refs/tags/*"
 )
 
 // commitOps holds options for commit operations.
@@ -148,7 +154,7 @@ func originURL(repo *git.Repository) string {
 }
 
 // getTokenAuth formats token authentication based on the git provider type.
-func (p *GitProvider) getTokenAuth() transport.AuthMethod {
+func (p *GitProvider) getTokenAuth() *http.BasicAuth {
 	switch p.config.GitProvider {
 	case codebaseApi.GitProviderGithub:
 		// GitHub: username=token, password=""
@@ -179,47 +185,81 @@ func (p *GitProvider) getTokenAuth() transport.AuthMethod {
 
 // Clone clones a repository to the specified destination.
 func (p *GitProvider) Clone(ctx context.Context, repoURL, destination string) error {
-	log := ctrl.LoggerFrom(ctx).WithValues("repository", repoURL, "destination", destination)
-	log.Info("Cloning repository")
-
 	auth, err := p.getAuth()
 	if err != nil {
 		return fmt.Errorf("failed to get authentication: %w", err)
 	}
 
-	// Clone the repository (gets default branch)
-	cloneOptions := &git.CloneOptions{
-		URL:      repoURL,
-		Progress: os.Stdout,
-		Auth:     auth,
+	var repo *git.Repository
+
+	clone := func() error {
+		repo, err = git.PlainCloneContext(ctx, destination, false, &git.CloneOptions{
+			URL:        repoURL,
+			Progress:   os.Stdout,
+			Auth:       auth,
+			NoCheckout: true,
+		})
+
+		return remoteErr(err, repoURL)
 	}
 
-	repo, err := git.PlainCloneContext(ctx, destination, false, cloneOptions)
-	if err != nil {
-		return fmt.Errorf("failed to clone repository: %w", remoteErr(err, repoURL))
+	fetchAndCheckout := func() error {
+		err := repo.FetchContext(ctx, fetchAllOptions(auth))
+		if err != nil && !errors.Is(err, git.NoErrAlreadyUpToDate) {
+			return fmt.Errorf("failed to fetch all branches and tags: %w", remoteErr(err, repoURL))
+		}
+
+		worktree, err := repo.Worktree()
+		if err != nil {
+			return fmt.Errorf("failed to get worktree: %w", err)
+		}
+
+		if err := worktree.Reset(&git.ResetOptions{Mode: git.HardReset}); err != nil {
+			return fmt.Errorf("failed to check out the default branch: %w", err)
+		}
+
+		return nil
+	}
+
+	return cloneThenFetch(ctx, repoURL, destination, clone, fetchAndCheckout)
+}
+
+// cloneThenFetch is Clone for both engines: clone runs without a checkout, then
+// fetchAndCheckout makes every remote branch and tag a local ref and checks out
+// HEAD, which the fetch can move. A failure in either step removes the destination:
+// callers skip a destination that is not empty and would take a partial clone, such
+// as the .git a killed git leaves behind, for a complete one.
+func cloneThenFetch(ctx context.Context, repoURL, destination string, clone, fetchAndCheckout func() error) error {
+	log := ctrl.LoggerFrom(ctx).WithValues("repository", repoURL, "destination", destination)
+	log.Info("Cloning repository")
+
+	if err := clone(); err != nil {
+		_ = os.RemoveAll(destination)
+
+		return fmt.Errorf("failed to clone repository: %w", err)
 	}
 
 	log.Info("Repository cloned successfully, now fetching all branches and tags")
 
-	// Fetch all refs (branches, tags, etc.) to get everything similar to --mirror
-	fetchOptions := &git.FetchOptions{
-		RemoteName: "origin",
-		Auth:       auth,
-		Progress:   os.Stdout,
-		RefSpecs: []config.RefSpec{
-			config.RefSpec("+refs/heads/*:refs/heads/*"),
-			config.RefSpec("+refs/tags/*:refs/tags/*"),
-		},
-	}
+	if err := fetchAndCheckout(); err != nil {
+		_ = os.RemoveAll(destination)
 
-	err = repo.FetchContext(ctx, fetchOptions)
-	if err != nil && !errors.Is(err, git.NoErrAlreadyUpToDate) {
-		return fmt.Errorf("failed to fetch all branches and tags: %w", remoteErr(err, repoURL))
+		return err
 	}
 
 	log.Info("All branches and tags fetched successfully")
 
 	return nil
+}
+
+// fetchAllOptions returns the options that make every branch and tag of origin a local ref.
+func fetchAllOptions(auth transport.AuthMethod) *git.FetchOptions {
+	return &git.FetchOptions{
+		RemoteName: "origin",
+		RefSpecs:   []config.RefSpec{refSpecFetchAllBranches, refSpecFetchAllTags},
+		Auth:       auth,
+		Progress:   os.Stdout,
+	}
 }
 
 // Commit commits changes in the working directory.
@@ -348,17 +388,7 @@ func (p *GitProvider) Checkout(ctx context.Context, directory, branchName string
 			return fmt.Errorf("failed to get authentication: %w", err)
 		}
 
-		fetchOptions := &git.FetchOptions{
-			RefSpecs: []config.RefSpec{"refs/*:refs/*"},
-			Auth:     auth,
-			Progress: os.Stdout,
-			// The refspec has no force prefix, so without this a rebased or
-			// force-pushed upstream branch fails the fetch with ErrForceNeeded
-			// against a cached workdir.
-			Force: true,
-		}
-
-		err = repo.FetchContext(ctx, fetchOptions)
+		err = repo.FetchContext(ctx, fetchAllOptions(auth))
 		if err != nil && !errors.Is(err, git.NoErrAlreadyUpToDate) {
 			return fmt.Errorf("failed to fetch: %w", remoteErr(err, originURL(repo)))
 		}
@@ -627,17 +657,9 @@ func (p *GitProvider) CheckoutRemoteBranch(ctx context.Context, directory, branc
 		return fmt.Errorf("failed to get authentication: %w", err)
 	}
 
-	fetchOptions := &git.FetchOptions{
-		RemoteName: "origin",
-		RefSpecs:   []config.RefSpec{"refs/*:refs/*"},
-		Auth:       auth,
-		Progress:   os.Stdout,
-		Force:      true, // Equivalent to --update-head-ok
-	}
-
-	err = repo.FetchContext(ctx, fetchOptions)
+	err = repo.FetchContext(ctx, fetchAllOptions(auth))
 	if err != nil && !errors.Is(err, git.NoErrAlreadyUpToDate) {
-		return fmt.Errorf("failed to fetch: %w", err)
+		return fmt.Errorf("failed to fetch: %w", remoteErr(err, originURL(repo)))
 	}
 
 	// Checkout the branch (expects it exists remotely)

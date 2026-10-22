@@ -5,6 +5,8 @@ import (
 	"crypto/tls"
 	"flag"
 	"os"
+	"os/exec"
+	"os/user"
 	"path/filepath"
 	"strconv"
 	"time"
@@ -393,6 +395,8 @@ func main() {
 		setupLog.Info("Stale branch checker is disabled", "env", branchStaleCheckIntervalEnv)
 	}
 
+	checkGitEngine()
+
 	setupLog.Info("starting manager")
 
 	ctx := ctrl.SetupSignalHandler()
@@ -406,6 +410,38 @@ func main() {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
+}
+
+// checkGitEngine logs what clones and pushes repositories and exits when it is the git binary and git is missing.
+func checkGitEngine() {
+	if value, ok := os.LookupEnv(gitproviderv2.CLIEnabledEnv); ok {
+		if _, err := strconv.ParseBool(value); err != nil {
+			setupLog.Error(err, "Invalid value, clone and push keep the git binary", "env", gitproviderv2.CLIEnabledEnv)
+		}
+	}
+
+	if !gitproviderv2.CLIEnabled() {
+		setupLog.Info("Clone and push run go-git", "env", gitproviderv2.CLIEnabledEnv)
+		return
+	}
+
+	if _, err := exec.LookPath("git"); err != nil {
+		setupLog.Error(err, "Clone and push need the git binary; set env to false to use go-git",
+			"env", gitproviderv2.CLIEnabledEnv)
+		os.Exit(1)
+	}
+
+	if _, err := exec.LookPath("ssh"); err != nil {
+		setupLog.Error(err, "Clone and push over SSH need the ssh binary", "env", gitproviderv2.CLIEnabledEnv)
+	}
+
+	// ssh exits when its UID has no passwd entry; the image's entrypoint adds one for a process in group 0.
+	if _, err := user.LookupId(strconv.Itoa(os.Getuid())); err != nil {
+		setupLog.Error(err, "Clone and push over SSH will fail: run the pod with group 0, or set env to false",
+			"env", gitproviderv2.CLIEnabledEnv)
+	}
+
+	setupLog.Info("Clone and push run the git binary", "env", gitproviderv2.CLIEnabledEnv)
 }
 
 func getMaxConcurrentReconciles(envVar string) int {

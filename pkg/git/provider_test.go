@@ -11,7 +11,6 @@ import (
 	gogit "github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
-	githttp "github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -497,12 +496,8 @@ func TestGitProvider_getTokenAuth(t *testing.T) {
 
 			auth := gp.getTokenAuth()
 			require.NotNil(t, auth)
-
-			// Type assert to *githttp.BasicAuth to access Username and Password
-			basicAuth, ok := auth.(*githttp.BasicAuth)
-			require.True(t, ok, "auth should be *githttp.BasicAuth")
-			assert.Equal(t, tt.wantUsername, basicAuth.Username)
-			assert.Equal(t, tt.wantPassword, basicAuth.Password)
+			assert.Equal(t, tt.wantUsername, auth.Username)
+			assert.Equal(t, tt.wantPassword, auth.Password)
 		})
 	}
 }
