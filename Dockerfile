@@ -1,4 +1,4 @@
-FROM alpine:3.18.12
+FROM alpine:3.22.7
 
 ARG TARGETARCH
 
@@ -9,15 +9,15 @@ ENV ASSETS_DIR=/usr/local/bin \
     USER_NAME=codebase-operator \
     USER_UID=1001
 
-RUN apk add --no-cache ca-certificates=20241121-r1 \
-                       openssh-client==9.3_p2-r3  \
-                       git==2.40.4-r0
+RUN apk add --no-cache ca-certificates=20261020-r0 \
+                       openssh-client==10.0_p1-r10 \
+                       git==2.49.1-r0
 
 RUN adduser -h ${HOME} -s /bin/ash -D -u ${USER_UID} codebase-operator
 
 COPY build/bin ${ASSETS_DIR}
-COPY --chmod=0775 build/templates ${ASSETS_DIR}/templates
-COPY build/configs ${ASSETS_DIR}/configs
+COPY --chmod=0755 build/templates ${ASSETS_DIR}/templates
+COPY --chmod=0755 build/configs ${ASSETS_DIR}/configs
 
 RUN  chmod u+x ${ASSETS_DIR}/user_setup && \
      chmod ugo+x ${ASSETS_DIR}/entrypoint && \

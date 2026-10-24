@@ -13,11 +13,11 @@ type GitProviderFactory func(cfg Config) Git
 
 // DefaultGitProviderFactory is the default factory implementation for creating GitProvider instances.
 func DefaultGitProviderFactory(gitServer *codebaseApi.GitServer, secret *corev1.Secret) Git {
-	return NewGitProvider(NewConfigFromGitServerAndSecret(gitServer, secret))
+	return NewCLIGitProvider(NewConfigFromGitServerAndSecret(gitServer, secret))
 }
 
 func NewGitProviderFactory(cfg Config) Git {
-	return NewGitProvider(cfg)
+	return NewCLIGitProvider(cfg)
 }
 
 func NewConfigFromGitServerAndSecret(gitServer *codebaseApi.GitServer, secret *corev1.Secret) Config {

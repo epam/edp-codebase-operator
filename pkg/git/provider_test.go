@@ -4,7 +4,9 @@ package v2
 import (
 	"context"
 	"os"
+	"os/exec"
 	"path"
+	"strings"
 	"testing"
 	"time"
 
@@ -18,6 +20,28 @@ import (
 
 	"github.com/epam/edp-codebase-operator/v2/pkg/platform"
 )
+
+func gitOutput(t *testing.T, dir string, args ...string) string {
+	t.Helper()
+
+	out, err := exec.Command("git", append([]string{"-C", dir}, args...)...).CombinedOutput()
+	require.NoError(t, err, string(out))
+
+	return strings.TrimSpace(string(out))
+}
+
+func commitCount(t *testing.T, dir string) string {
+	t.Helper()
+
+	return gitOutput(t, dir, "rev-list", "--all", "--count")
+}
+
+func assertHeadCommitIdentity(t *testing.T, dir string) {
+	t.Helper()
+
+	assert.Equal(t, defaultCommitName+" "+defaultCommitEmail+" "+defaultCommitName+" "+defaultCommitEmail,
+		gitOutput(t, dir, "log", "-1", "--format=%an %ae %cn %ce"))
+}
 
 func TestGitProvider_CheckPermissions(t *testing.T) {
 	user := "user"
@@ -85,7 +109,7 @@ func TestGitProvider_ListRemoteBranches_EmptyRepo(t *testing.T) {
 	assert.Empty(t, branches)
 }
 
-func TestGitProvider_CreateChildBranch(t *testing.T) {
+func TestCLIGitProvider_CreateChildBranch(t *testing.T) {
 	tests := []struct {
 		name     string
 		initRepo func(t *testing.T) string
@@ -139,7 +163,7 @@ func TestGitProvider_CreateChildBranch(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gp := NewGitProvider(Config{})
+			gp := NewCLIGitProvider(Config{})
 			dir := tt.initRepo(t)
 
 			err := gp.CreateChildBranch(context.Background(), dir, tt.parent, tt.child)
@@ -215,7 +239,7 @@ func TestGitProvider_RemoveBranch(t *testing.T) {
 	}
 }
 
-func TestGitProvider_CommitChanges(t *testing.T) {
+func TestCLIGitProvider_CommitChanges(t *testing.T) {
 	tests := []struct {
 		name      string
 		ops       []CommitOps
@@ -237,20 +261,8 @@ func TestGitProvider_CommitChanges(t *testing.T) {
 			},
 			wantErr: require.NoError,
 			checkRepo: func(t *testing.T, dir string) {
-				r, err := gogit.PlainOpen(dir)
-				require.NoError(t, err)
-
-				commits, err := r.CommitObjects()
-				require.NoError(t, err)
-
-				count := 0
-				_ = commits.ForEach(func(*object.Commit) error {
-					count++
-
-					return nil
-				})
-
-				require.Equalf(t, 1, count, "expected 1 commits, got %d", count)
+				assert.Equal(t, "1", commitCount(t, dir))
+				assertHeadCommitIdentity(t, dir)
 			},
 		},
 		{
@@ -264,20 +276,7 @@ func TestGitProvider_CommitChanges(t *testing.T) {
 			},
 			wantErr: require.NoError,
 			checkRepo: func(t *testing.T, dir string) {
-				r, err := gogit.PlainOpen(dir)
-				require.NoError(t, err)
-
-				commits, err := r.CommitObjects()
-				require.NoError(t, err)
-
-				count := 0
-				_ = commits.ForEach(func(*object.Commit) error {
-					count++
-
-					return nil
-				})
-
-				require.Equalf(t, 0, count, "expected 0 commits, got %d", count)
+				assert.Equal(t, "0", commitCount(t, dir))
 			},
 		},
 		{
@@ -294,27 +293,35 @@ func TestGitProvider_CommitChanges(t *testing.T) {
 			},
 			wantErr: require.NoError,
 			checkRepo: func(t *testing.T, dir string) {
-				r, err := gogit.PlainOpen(dir)
+				assert.Equal(t, "1", commitCount(t, dir))
+				assertHeadCommitIdentity(t, dir)
+			},
+		},
+		{
+			name: "should stage deletions",
+			initRepo: func(t *testing.T) string {
+				dir := t.TempDir()
+				_, err := gogit.PlainInit(dir, false)
 				require.NoError(t, err)
 
-				commits, err := r.CommitObjects()
-				require.NoError(t, err)
+				require.NoError(t, os.WriteFile(path.Join(dir, "old.txt"), []byte("old"), 0o600))
+				require.NoError(t, NewCLIGitProvider(Config{}).Commit(context.Background(), dir, "seed"))
+				require.NoError(t, os.Remove(path.Join(dir, "old.txt")))
 
-				count := 0
-				_ = commits.ForEach(func(*object.Commit) error {
-					count++
-
-					return nil
-				})
-
-				require.Equalf(t, 1, count, "expected 1 commits, got %d", count)
+				return dir
+			},
+			wantErr: require.NoError,
+			checkRepo: func(t *testing.T, dir string) {
+				assert.Equal(t, "2", commitCount(t, dir))
+				assert.Empty(t, gitOutput(t, dir, "ls-tree", "-r", "--name-only", "HEAD"))
+				assert.Empty(t, gitOutput(t, dir, "status", "--porcelain"))
 			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gp := NewGitProvider(Config{})
+			gp := NewCLIGitProvider(Config{})
 			dir := tt.initRepo(t)
 
 			err := gp.Commit(context.Background(), dir, "test commit message", tt.ops...)
@@ -733,7 +740,7 @@ func TestGitProvider_GetCurrentBranchName(t *testing.T) {
 	}
 }
 
-func TestGitProvider_Checkout_LocalMode(t *testing.T) {
+func TestCLIGitProvider_Checkout_LocalMode(t *testing.T) {
 	tests := []struct {
 		name       string
 		initRepo   func(t *testing.T) string
@@ -789,13 +796,13 @@ func TestGitProvider_Checkout_LocalMode(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gp := NewGitProvider(Config{})
+			gp := NewCLIGitProvider(Config{})
 			dir := tt.initRepo(t)
 
 			err := gp.Checkout(context.Background(), dir, tt.branchName, tt.remote)
 
 			if tt.wantErr {
-				require.Error(t, err)
+				require.ErrorContains(t, err, "failed to checkout branch")
 				return
 			}
 
@@ -813,7 +820,7 @@ func TestGitProvider_Checkout_LocalMode(t *testing.T) {
 	}
 }
 
-func TestGitProvider_Clone_Errors(t *testing.T) {
+func TestCLIGitProvider_Clone_Errors(t *testing.T) {
 	tests := []struct {
 		name    string
 		repoURL string
@@ -828,13 +835,13 @@ func TestGitProvider_Clone_Errors(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gp := NewGitProvider(Config{})
+			gp := NewCLIGitProvider(Config{})
 			destination := t.TempDir()
 
 			err := gp.Clone(context.Background(), tt.repoURL, destination)
 
 			if tt.wantErr {
-				require.Error(t, err)
+				require.ErrorContains(t, err, "failed to clone repository")
 				return
 			}
 
@@ -843,7 +850,7 @@ func TestGitProvider_Clone_Errors(t *testing.T) {
 	}
 }
 
-func TestGitProvider_Commit_ErrorCases(t *testing.T) {
+func TestCLIGitProvider_Commit_ErrorCases(t *testing.T) {
 	tests := []struct {
 		name     string
 		initRepo func(t *testing.T) string
@@ -862,13 +869,13 @@ func TestGitProvider_Commit_ErrorCases(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gp := NewGitProvider(Config{})
+			gp := NewCLIGitProvider(Config{})
 			dir := tt.initRepo(t)
 
 			err := gp.Commit(context.Background(), dir, tt.message)
 
 			if tt.wantErr {
-				require.Error(t, err)
+				require.ErrorContains(t, err, "failed to add files to index")
 				return
 			}
 
@@ -877,7 +884,7 @@ func TestGitProvider_Commit_ErrorCases(t *testing.T) {
 	}
 }
 
-func TestGitProvider_Push_ErrorCases(t *testing.T) {
+func TestCLIGitProvider_Push_ErrorCases(t *testing.T) {
 	tests := []struct {
 		name     string
 		initRepo func(t *testing.T) string
@@ -896,13 +903,13 @@ func TestGitProvider_Push_ErrorCases(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gp := NewGitProvider(Config{})
+			gp := NewCLIGitProvider(Config{})
 			dir := tt.initRepo(t)
 
 			err := gp.Push(context.Background(), dir, tt.refspec)
 
 			if tt.wantErr {
-				require.Error(t, err)
+				require.ErrorContains(t, err, "failed to push")
 				return
 			}
 
@@ -911,7 +918,7 @@ func TestGitProvider_Push_ErrorCases(t *testing.T) {
 	}
 }
 
-func TestGitProvider_CheckoutRemoteBranch_Errors(t *testing.T) {
+func TestCLIGitProvider_CheckoutRemoteBranch_Errors(t *testing.T) {
 	tests := []struct {
 		name       string
 		initRepo   func(t *testing.T) string
@@ -930,13 +937,13 @@ func TestGitProvider_CheckoutRemoteBranch_Errors(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gp := NewGitProvider(Config{})
+			gp := NewCLIGitProvider(Config{})
 			dir := tt.initRepo(t)
 
 			err := gp.CheckoutRemoteBranch(context.Background(), dir, tt.branchName)
 
 			if tt.wantErr {
-				require.Error(t, err)
+				require.ErrorContains(t, err, "failed to fetch")
 				return
 			}
 
@@ -945,7 +952,7 @@ func TestGitProvider_CheckoutRemoteBranch_Errors(t *testing.T) {
 	}
 }
 
-func TestGitProvider_CreateChildBranch_Errors(t *testing.T) {
+func TestCLIGitProvider_CreateChildBranch_Errors(t *testing.T) {
 	tests := []struct {
 		name       string
 		initRepo   func(t *testing.T) string
@@ -1000,13 +1007,13 @@ func TestGitProvider_CreateChildBranch_Errors(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gp := NewGitProvider(Config{})
+			gp := NewCLIGitProvider(Config{})
 			dir := tt.initRepo(t)
 
 			err := gp.CreateChildBranch(context.Background(), dir, tt.parentName, tt.childName)
 
 			if tt.wantErr {
-				require.Error(t, err)
+				require.ErrorContains(t, err, "failed to checkout parent branch")
 				return
 			}
 
@@ -1049,7 +1056,7 @@ func TestGitProvider_RemoveBranch_Errors(t *testing.T) {
 	}
 }
 
-func TestGitProvider_Clone_Basic(t *testing.T) {
+func TestCLIGitProvider_Clone_Basic(t *testing.T) {
 	tests := []struct {
 		name     string
 		setupEnv func(t *testing.T) (string, string)
@@ -1067,13 +1074,13 @@ func TestGitProvider_Clone_Basic(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gp := NewGitProvider(Config{})
+			gp := NewCLIGitProvider(Config{})
 			targetDir, repoURL := tt.setupEnv(t)
 
 			err := gp.Clone(context.Background(), repoURL, targetDir)
 
 			if tt.wantErr {
-				require.Error(t, err)
+				require.ErrorContains(t, err, "failed to clone repository")
 				return
 			}
 
@@ -1086,7 +1093,7 @@ func TestGitProvider_Clone_Basic(t *testing.T) {
 	}
 }
 
-func TestGitProvider_Push_NoRemote(t *testing.T) {
+func TestCLIGitProvider_Push_NoRemote(t *testing.T) {
 	tests := []struct {
 		name     string
 		initRepo func(t *testing.T) string
@@ -1130,13 +1137,13 @@ func TestGitProvider_Push_NoRemote(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gp := NewGitProvider(Config{})
+			gp := NewCLIGitProvider(Config{})
 			dir := tt.initRepo(t)
 
 			err := gp.Push(context.Background(), dir, tt.refspec)
 
 			if tt.wantErr {
-				require.Error(t, err)
+				require.ErrorContains(t, err, "failed to push")
 				return
 			}
 
@@ -1145,7 +1152,7 @@ func TestGitProvider_Push_NoRemote(t *testing.T) {
 	}
 }
 
-func TestGitProvider_CheckoutRemoteBranch_NoRemote(t *testing.T) {
+func TestCLIGitProvider_CheckoutRemoteBranch_NoRemote(t *testing.T) {
 	tests := []struct {
 		name       string
 		initRepo   func(t *testing.T) string
@@ -1189,13 +1196,13 @@ func TestGitProvider_CheckoutRemoteBranch_NoRemote(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gp := NewGitProvider(Config{})
+			gp := NewCLIGitProvider(Config{})
 			dir := tt.initRepo(t)
 
 			err := gp.CheckoutRemoteBranch(context.Background(), dir, tt.branchName)
 
 			if tt.wantErr {
-				require.Error(t, err)
+				require.ErrorContains(t, err, "failed to fetch")
 				return
 			}
 
@@ -1234,4 +1241,35 @@ func TestSshTarget(t *testing.T) {
 			assert.Equal(t, tt.want, sshTarget(tt.repoURL))
 		})
 	}
+}
+
+func TestCLIGitProvider_Commit_RunsNoHooks(t *testing.T) {
+	dir := t.TempDir()
+	_, err := gogit.PlainInit(dir, false)
+	require.NoError(t, err)
+
+	require.NoError(t, os.WriteFile(path.Join(dir, "a.txt"), []byte("a"), 0o600))
+
+	for _, hook := range []string{"pre-commit", "commit-msg"} {
+		hookPath := path.Join(dir, ".git", "hooks", hook)
+		require.NoError(t, os.MkdirAll(path.Dir(hookPath), 0o700))
+		//nolint:gosec // the hook must be executable to prove it is not run
+		require.NoError(t, os.WriteFile(hookPath, []byte("#!/bin/sh\nexit 1\n"), 0o700))
+	}
+
+	require.NoError(t, NewCLIGitProvider(Config{}).Commit(context.Background(), dir, "msg"))
+	assert.Equal(t, "1", commitCount(t, dir))
+}
+
+func TestCLIGitProvider_Checkout_ExistingBranchWithoutRemote(t *testing.T) {
+	dir := t.TempDir()
+	_, err := gogit.PlainInit(dir, false)
+	require.NoError(t, err)
+
+	gp := NewCLIGitProvider(Config{})
+	require.NoError(t, gp.Commit(context.Background(), dir, "seed", CommitAllowEmpty()))
+	require.NoError(t, gp.Checkout(context.Background(), dir, "feature", false))
+
+	err = gp.Checkout(context.Background(), dir, "feature", false)
+	require.ErrorContains(t, err, "failed to checkout branch")
 }
