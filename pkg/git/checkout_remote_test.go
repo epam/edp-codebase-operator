@@ -55,7 +55,7 @@ func buildOriginWithClone(t *testing.T) (string, string) {
 	seedCommit(t, originDir, "base", "+refs/heads/master:refs/heads/master")
 
 	workDir := path.Join(t.TempDir(), "clone")
-	gp := NewGitProvider(Config{})
+	gp := NewCLIGitProvider(Config{})
 	require.NoError(t, gp.Clone(context.Background(), originDir, workDir))
 
 	return originDir, workDir
@@ -74,7 +74,7 @@ func workdirHead(t *testing.T, workDir string) *plumbing.Reference {
 }
 
 // A branch pushed to origin after the workdir was cloned is fetched into
-// refs/heads by Checkout's refs/*:refs/* refspec; the existence check must look
+// refs/heads by Checkout's branch refspec; the existence check must look
 // there, or the checkout collides on Create with the ref the fetch just wrote.
 func TestCheckout_RemoteBranchCreatedAfterClone(t *testing.T) {
 	originDir, workDir := buildOriginWithClone(t)
@@ -88,7 +88,7 @@ func TestCheckout_RemoteBranchCreatedAfterClone(t *testing.T) {
 		plumbing.NewHashReference(plumbing.NewBranchReferenceName("late-branch"), masterRef.Hash()),
 	))
 
-	gp := NewGitProvider(Config{})
+	gp := NewCLIGitProvider(Config{})
 	err = gp.Checkout(context.Background(), workDir, "late-branch", true)
 	require.NoError(t, err, "checkout of a branch created after clone must succeed")
 
@@ -106,7 +106,7 @@ func TestCheckout_RemoteBranchPresentAtCloneTime(t *testing.T) {
 	seedCommit(t, originDir, "base", "+refs/heads/master:refs/heads/feature")
 
 	workDir := path.Join(t.TempDir(), "clone")
-	gp := NewGitProvider(Config{})
+	gp := NewCLIGitProvider(Config{})
 	require.NoError(t, gp.Clone(context.Background(), originDir, workDir))
 
 	require.NoError(t, gp.Checkout(context.Background(), workDir, "feature", true))
@@ -118,7 +118,7 @@ func TestCheckout_RemoteBranchPresentAtCloneTime(t *testing.T) {
 func TestCheckout_BranchAbsentEverywhere(t *testing.T) {
 	_, workDir := buildOriginWithClone(t)
 
-	gp := NewGitProvider(Config{})
+	gp := NewCLIGitProvider(Config{})
 	require.NoError(t, gp.Checkout(context.Background(), workDir, "brand-new", true))
 	require.Equal(t, "brand-new", workdirHead(t, workDir).Name().Short())
 }
@@ -130,8 +130,48 @@ func TestCheckout_ForcePushedRemoteBranch(t *testing.T) {
 
 	rewritten := seedCommit(t, originDir, "rewritten-history", "+refs/heads/master:refs/heads/master")
 
-	gp := NewGitProvider(Config{})
+	gp := NewCLIGitProvider(Config{})
 	require.NoError(t, gp.Checkout(context.Background(), workDir, "master", true),
 		"force-pushed upstream branch must not fail the checkout fetch")
 	require.Equal(t, rewritten, workdirHead(t, workDir).Hash())
+}
+
+// TestFetch_SkipsNonBranchRefs: refs outside refs/heads and refs/tags, such as
+// pull request heads, are not fetched, so their objects are not downloaded.
+func TestFetch_SkipsNonBranchRefs(t *testing.T) {
+	tests := []struct {
+		name     string
+		checkout func(gp *CLIGitProvider, workDir string) error
+	}{
+		{
+			name: "Checkout remote",
+			checkout: func(gp *CLIGitProvider, workDir string) error {
+				return gp.Checkout(context.Background(), workDir, "master", true)
+			},
+		},
+		{
+			name: "CheckoutRemoteBranch",
+			checkout: func(gp *CLIGitProvider, workDir string) error {
+				return gp.CheckoutRemoteBranch(context.Background(), workDir, "master")
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			originDir, workDir := buildOriginWithClone(t)
+			prHead := seedCommit(t, originDir, "unmerged", "+refs/heads/master:refs/pull/1/head")
+
+			require.NoError(t, tt.checkout(NewCLIGitProvider(Config{}), workDir))
+
+			repo, err := gogit.PlainOpen(workDir)
+			require.NoError(t, err)
+
+			_, err = repo.Reference("refs/pull/1/head", false)
+			require.ErrorIs(t, err, plumbing.ErrReferenceNotFound)
+
+			_, err = repo.CommitObject(prHead)
+			require.ErrorIs(t, err, plumbing.ErrObjectNotFound)
+		})
+	}
 }

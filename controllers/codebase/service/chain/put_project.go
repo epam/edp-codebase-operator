@@ -155,22 +155,19 @@ func (h *PutProject) createProject(
 		}
 	}
 
-	// The remote branch, not local state, is the durable record of a push: a
-	// retry after any later failure (default-branch call, status patch,
-	// operator crash) regenerates history, and pushing it would silently
-	// replace the remote branch. Record intent only when the remote default
-	// branch is verified absent, so that on retry "in progress + branch
-	// present" can only mean our own push landed.
+	// The remote branch, not local state, records a push. A retry after a later
+	// failure (default-branch call, status patch, operator crash) regenerates
+	// local history. Record intent only when the remote default branch is
+	// absent: on retry, "in progress + branch present" then means this
+	// provisioning pushed it.
 	remoteBranchAbsent, err := h.remoteDefaultBranchAbsent(ctx, codebase, repoContext)
 	if err != nil {
 		return err
 	}
 
 	if !remoteBranchAbsent {
-		// go-git cannot verify fast-forward when the remote's current commit
-		// is absent from the freshly regenerated local history, so this push
-		// would silently replace the remote branch. Refuse instead of
-		// destroying history that this codebase provably did not just push.
+		// The remote default branch holds history this provisioning did not push;
+		// the regenerated local history does not contain it. Refuse to push.
 		return fmt.Errorf(
 			"remote repository already contains default branch %s with history not pushed by this provisioning; "+
 				"refusing to overwrite it - remove the remote branch or onboard the repository with the import strategy",

@@ -60,7 +60,7 @@ pkg/gitprovider/           — Per-provider adapters: github.go, gitlab.go, bitb
                              Factory: NewProvider() dispatches on GitServer.Spec.GitProvider
 pkg/client/jira/           — Jira REST client (go-jira wrapper + mockable Client interface)
 pkg/gerrit/                — SSH-based Gerrit client
-pkg/git/                   — go-git wrapper + factory (supports SSH/HTTPS auth)
+pkg/git/                   — Git provider + factory (supports SSH/HTTPS auth): clone, push, fetch, checkout, commit run the git binary; ref, init and packless remote operations use go-git
 pkg/webhook/               — Admission webhooks: Codebase and CodebaseBranch validation
 pkg/objectmodifier/        — Applies default values / label patches before reconcile logic
 pkg/util/                  — Shared helpers (workdir, timeouts, URL utilities, templates)

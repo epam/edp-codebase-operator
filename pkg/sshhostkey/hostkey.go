@@ -19,9 +19,9 @@ import (
 	"golang.org/x/crypto/ssh/knownhosts"
 )
 
-// knownHostsEnvVar is go-git's own lookup variable, reused so that the go-git
-// code paths and the raw golang.org/x/crypto/ssh code paths always agree on
-// which file is authoritative.
+// knownHostsEnvVar is go-git's own lookup variable. go-git, the ssh binary
+// (UserKnownHostsFile) and the raw golang.org/x/crypto/ssh code paths all read
+// the file it names.
 const knownHostsEnvVar = "SSH_KNOWN_HOSTS"
 
 // ClientConfig returns the host key callback and the host key algorithms to set
@@ -51,9 +51,14 @@ func HostPort(host string, port int) string {
 	return net.JoinHostPort(host, strconv.Itoa(port))
 }
 
-// Source is for error messages only; the file itself is opened by go-git.
+// KnownHostsFile returns the path in SSH_KNOWN_HOSTS, or "" when it is unset.
+func KnownHostsFile() string {
+	return os.Getenv(knownHostsEnvVar)
+}
+
+// Source is for error messages only; the file itself is opened by go-git or ssh.
 func Source() string {
-	if path := os.Getenv(knownHostsEnvVar); path != "" {
+	if path := KnownHostsFile(); path != "" {
 		return path
 	}
 

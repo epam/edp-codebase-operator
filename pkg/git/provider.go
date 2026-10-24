@@ -4,13 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
-	"time"
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
-	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/go-git/go-git/v5/plumbing/transport"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/go-git/go-git/v5/plumbing/transport/ssh"
@@ -35,6 +32,11 @@ const (
 	// RefSpecPushAllTags is the refspec for pushing all tags.
 	// Equivalent to git push --tags
 	RefSpecPushAllTags = "refs/tags/*:refs/tags/*"
+
+	// refSpecFetchBranches and refSpecFetchTags are the only namespaces fetched.
+	// refs/pull, refs/merge-requests and refs/changes are excluded.
+	refSpecFetchBranches = "+refs/heads/*:refs/heads/*"
+	refSpecFetchTags     = "+refs/tags/*:refs/tags/*"
 )
 
 // commitOps holds options for commit operations.
@@ -69,7 +71,7 @@ type Config struct {
 	Username string // Username for token auth (required for Bitbucket)
 }
 
-// GitProvider provides git operations using go-git library exclusively.
+// GitProvider runs the go-git operations: local ref operations, init, remote link, packless remote operations.
 type GitProvider struct {
 	config Config
 }
@@ -137,256 +139,20 @@ func sshTarget(repoURL string) string {
 	return sshhostkey.HostPort(ep.Host, ep.Port)
 }
 
-// originURL lets directory-based operations name the host they failed to verify.
-func originURL(repo *git.Repository) string {
-	remote, err := repo.Remote("origin")
-	if err != nil || len(remote.Config().URLs) == 0 {
-		return ""
+// tokenUsername is the basic auth user for token auth: oauth2 for GitLab, Username otherwise.
+func (p *GitProvider) tokenUsername() string {
+	if p.config.GitProvider == codebaseApi.GitProviderGitlab {
+		return "oauth2"
 	}
 
-	return remote.Config().URLs[0]
+	return p.config.Username
 }
 
-// getTokenAuth formats token authentication based on the git provider type.
 func (p *GitProvider) getTokenAuth() transport.AuthMethod {
-	switch p.config.GitProvider {
-	case codebaseApi.GitProviderGithub:
-		// GitHub: username=token, password=""
-		return &http.BasicAuth{
-			Username: p.config.Username,
-			Password: p.config.Token,
-		}
-	case codebaseApi.GitProviderGitlab:
-		// GitLab: username="oauth2", password=token
-		return &http.BasicAuth{
-			Username: "oauth2",
-			Password: p.config.Token,
-		}
-	case codebaseApi.GitProviderBitbucket:
-		// Bitbucket: username=username, password=app_password
-		return &http.BasicAuth{
-			Username: p.config.Username,
-			Password: p.config.Token,
-		}
-	default:
-		// Default to GitHub format
-		return &http.BasicAuth{
-			Username: p.config.Username,
-			Password: p.config.Token,
-		}
+	return &http.BasicAuth{
+		Username: p.tokenUsername(),
+		Password: p.config.Token,
 	}
-}
-
-// Clone clones a repository to the specified destination.
-func (p *GitProvider) Clone(ctx context.Context, repoURL, destination string) error {
-	log := ctrl.LoggerFrom(ctx).WithValues("repository", repoURL, "destination", destination)
-	log.Info("Cloning repository")
-
-	auth, err := p.getAuth()
-	if err != nil {
-		return fmt.Errorf("failed to get authentication: %w", err)
-	}
-
-	// Clone the repository (gets default branch)
-	cloneOptions := &git.CloneOptions{
-		URL:      repoURL,
-		Progress: os.Stdout,
-		Auth:     auth,
-	}
-
-	repo, err := git.PlainCloneContext(ctx, destination, false, cloneOptions)
-	if err != nil {
-		return fmt.Errorf("failed to clone repository: %w", remoteErr(err, repoURL))
-	}
-
-	log.Info("Repository cloned successfully, now fetching all branches and tags")
-
-	// Fetch all refs (branches, tags, etc.) to get everything similar to --mirror
-	fetchOptions := &git.FetchOptions{
-		RemoteName: "origin",
-		Auth:       auth,
-		Progress:   os.Stdout,
-		RefSpecs: []config.RefSpec{
-			config.RefSpec("+refs/heads/*:refs/heads/*"),
-			config.RefSpec("+refs/tags/*:refs/tags/*"),
-		},
-	}
-
-	err = repo.FetchContext(ctx, fetchOptions)
-	if err != nil && !errors.Is(err, git.NoErrAlreadyUpToDate) {
-		return fmt.Errorf("failed to fetch all branches and tags: %w", remoteErr(err, repoURL))
-	}
-
-	log.Info("All branches and tags fetched successfully")
-
-	return nil
-}
-
-// Commit commits changes in the working directory.
-func (p *GitProvider) Commit(ctx context.Context, directory, message string, ops ...CommitOps) error {
-	log := ctrl.LoggerFrom(ctx).WithValues("directory", directory)
-	log.Info("Committing changes")
-
-	// Apply options
-	option := &commitOps{
-		allowEmptyCommit: false,
-	}
-	for _, applyOption := range ops {
-		applyOption(option)
-	}
-
-	repo, err := git.PlainOpen(directory)
-	if err != nil {
-		return fmt.Errorf("failed to open repository at %q: %w", directory, err)
-	}
-
-	worktree, err := repo.Worktree()
-	if err != nil {
-		return fmt.Errorf("failed to get worktree: %w", err)
-	}
-
-	// Add all changes
-	err = worktree.AddWithOptions(&git.AddOptions{
-		All: true,
-	})
-	if err != nil {
-		return fmt.Errorf("failed to add files to index: %w", err)
-	}
-
-	// Check if there are changes to commit
-	if !option.allowEmptyCommit {
-		status, err := worktree.Status()
-		if err != nil {
-			return fmt.Errorf("failed to get status: %w", err)
-		}
-
-		if status.IsClean() {
-			log.Info("Nothing to commit, working tree clean")
-			return nil
-		}
-	}
-
-	// Commit changes
-	_, err = worktree.Commit(message, &git.CommitOptions{
-		Author: &object.Signature{
-			Name:  defaultCommitName,
-			Email: defaultCommitEmail,
-			When:  time.Now(),
-		},
-		AllowEmptyCommits: option.allowEmptyCommit,
-	})
-	if err != nil {
-		return fmt.Errorf("failed to commit: %w", err)
-	}
-
-	log.Info("Changes committed successfully")
-
-	return nil
-}
-
-// Push pushes changes to the remote repository.
-func (p *GitProvider) Push(ctx context.Context, directory string, refspecs ...string) error {
-	log := ctrl.LoggerFrom(ctx).WithValues("directory", directory)
-	log.Info("Pushing changes")
-
-	repo, err := git.PlainOpen(directory)
-	if err != nil {
-		return fmt.Errorf("failed to open repository at %q: %w", directory, err)
-	}
-
-	auth, err := p.getAuth()
-	if err != nil {
-		return fmt.Errorf("failed to get authentication: %w", err)
-	}
-
-	pushOptions := &git.PushOptions{
-		RemoteName: "origin",
-		Auth:       auth,
-		Progress:   os.Stdout,
-	}
-
-	// Convert refspecs if provided
-	if len(refspecs) > 0 {
-		pushOptions.RefSpecs = make([]config.RefSpec, len(refspecs))
-		for i, refspec := range refspecs {
-			pushOptions.RefSpecs[i] = config.RefSpec(refspec)
-		}
-	}
-
-	err = repo.PushContext(ctx, pushOptions)
-	if err != nil && !errors.Is(err, git.NoErrAlreadyUpToDate) {
-		return fmt.Errorf("failed to push: %w", remoteErr(err, originURL(repo)))
-	}
-
-	log.Info("Changes pushed successfully")
-
-	return nil
-}
-
-// Checkout checks out a branch in the repository.
-// If remote is true, fetches from remote first and only creates local branch if it doesn't exist remotely.
-// If remote is false, checks out existing branch without fetching.
-func (p *GitProvider) Checkout(ctx context.Context, directory, branchName string, remote bool) error {
-	log := ctrl.LoggerFrom(ctx).WithValues("directory", directory, "branch", branchName, "remote", remote)
-	log.Info("Checking out branch")
-
-	repo, err := git.PlainOpen(directory)
-	if err != nil {
-		return fmt.Errorf("failed to open repository at %q: %w", directory, err)
-	}
-
-	worktree, err := repo.Worktree()
-	if err != nil {
-		return fmt.Errorf("failed to get worktree: %w", err)
-	}
-
-	createBranch := true
-
-	if remote {
-		auth, err := p.getAuth()
-		if err != nil {
-			return fmt.Errorf("failed to get authentication: %w", err)
-		}
-
-		fetchOptions := &git.FetchOptions{
-			RefSpecs: []config.RefSpec{"refs/*:refs/*"},
-			Auth:     auth,
-			Progress: os.Stdout,
-			// The refspec has no force prefix, so without this a rebased or
-			// force-pushed upstream branch fails the fetch with ErrForceNeeded
-			// against a cached workdir.
-			Force: true,
-		}
-
-		err = repo.FetchContext(ctx, fetchOptions)
-		if err != nil && !errors.Is(err, git.NoErrAlreadyUpToDate) {
-			return fmt.Errorf("failed to fetch: %w", remoteErr(err, originURL(repo)))
-		}
-
-		// The refspec above maps remote branches straight into local
-		// refs/heads, so that is the namespace that proves existence here.
-		// Checking refs/remotes/origin instead would miss any branch the
-		// fetch just materialized and collide on Create below.
-		_, err = repo.Reference(plumbing.NewBranchReferenceName(branchName), false)
-		if err == nil {
-			createBranch = false
-		}
-	}
-
-	checkoutOptions := &git.CheckoutOptions{
-		Branch: plumbing.NewBranchReferenceName(branchName),
-		Force:  true,
-		Create: createBranch,
-	}
-
-	err = worktree.Checkout(checkoutOptions)
-	if err != nil {
-		return fmt.Errorf("failed to checkout branch: %w", err)
-	}
-
-	log.Info("Branch checked out successfully")
-
-	return nil
 }
 
 // GetCurrentBranchName returns the name of the current branch.
@@ -527,44 +293,6 @@ func (p *GitProvider) RemoveBranch(ctx context.Context, directory, branchName st
 	return nil
 }
 
-// CreateChildBranch creates a new branch from an existing branch.
-func (p *GitProvider) CreateChildBranch(ctx context.Context, directory, parentBranch, newBranch string) error {
-	log := ctrl.LoggerFrom(ctx).WithValues("directory", directory, "parent", parentBranch, "newBranch", newBranch)
-	log.Info("Creating child branch")
-
-	repo, err := git.PlainOpen(directory)
-	if err != nil {
-		return fmt.Errorf("failed to open repository at %q: %w", directory, err)
-	}
-
-	worktree, err := repo.Worktree()
-	if err != nil {
-		return fmt.Errorf("failed to get worktree: %w", err)
-	}
-
-	// Checkout parent branch first
-	err = worktree.Checkout(&git.CheckoutOptions{
-		Branch: plumbing.NewBranchReferenceName(parentBranch),
-		Force:  true,
-	})
-	if err != nil {
-		return fmt.Errorf("failed to checkout parent branch: %w", err)
-	}
-
-	// Create and checkout new branch
-	err = worktree.Checkout(&git.CheckoutOptions{
-		Branch: plumbing.NewBranchReferenceName(newBranch),
-		Create: true,
-	})
-	if err != nil {
-		return fmt.Errorf("failed to create child branch: %w", err)
-	}
-
-	log.Info("Child branch created successfully")
-
-	return nil
-}
-
 // Init initializes a new git repository.
 func (p *GitProvider) Init(ctx context.Context, directory string) error {
 	log := ctrl.LoggerFrom(ctx).WithValues("directory", directory)
@@ -606,57 +334,6 @@ func (p *GitProvider) AddRemoteLink(ctx context.Context, directory, remoteURL st
 	}
 
 	log.Info("Remote link added successfully")
-
-	return nil
-}
-
-// CheckoutRemoteBranch fetches from remote and checks out the specified branch.
-// This is a convenience method that fetches and checks out a remote branch.
-func (p *GitProvider) CheckoutRemoteBranch(ctx context.Context, directory, branchName string) error {
-	log := ctrl.LoggerFrom(ctx).WithValues("directory", directory, "branch", branchName)
-	log.Info("Checking out remote branch")
-
-	repo, err := git.PlainOpen(directory)
-	if err != nil {
-		return fmt.Errorf("failed to open repository at %q: %w", directory, err)
-	}
-
-	// Fetch from remote first
-	auth, err := p.getAuth()
-	if err != nil {
-		return fmt.Errorf("failed to get authentication: %w", err)
-	}
-
-	fetchOptions := &git.FetchOptions{
-		RemoteName: "origin",
-		RefSpecs:   []config.RefSpec{"refs/*:refs/*"},
-		Auth:       auth,
-		Progress:   os.Stdout,
-		Force:      true, // Equivalent to --update-head-ok
-	}
-
-	err = repo.FetchContext(ctx, fetchOptions)
-	if err != nil && !errors.Is(err, git.NoErrAlreadyUpToDate) {
-		return fmt.Errorf("failed to fetch: %w", err)
-	}
-
-	// Checkout the branch (expects it exists remotely)
-	worktree, err := repo.Worktree()
-	if err != nil {
-		return fmt.Errorf("failed to get worktree: %w", err)
-	}
-
-	checkoutOptions := &git.CheckoutOptions{
-		Branch: plumbing.NewBranchReferenceName(branchName),
-		Force:  true,
-	}
-
-	err = worktree.Checkout(checkoutOptions)
-	if err != nil {
-		return fmt.Errorf("failed to checkout branch: %w", err)
-	}
-
-	log.Info("Remote branch checked out successfully")
 
 	return nil
 }
