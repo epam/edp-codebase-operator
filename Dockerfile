@@ -1,4 +1,4 @@
-FROM alpine:3.18.12
+FROM alpine:3.24
 
 ARG TARGETARCH
 
@@ -9,9 +9,9 @@ ENV ASSETS_DIR=/usr/local/bin \
     USER_NAME=codebase-operator \
     USER_UID=1001
 
-RUN apk add --no-cache ca-certificates=20241121-r1 \
-                       openssh-client==9.3_p2-r3  \
-                       git==2.40.4-r0
+# pkg/git/cli.go runs git and ssh. The ~= pins match the minors the FROM image ships: bump them with the FROM tag.
+RUN apk upgrade --no-cache && \
+    apk add --no-cache git~=2.54 openssh-client~=10.3
 
 RUN adduser -h ${HOME} -s /bin/ash -D -u ${USER_UID} codebase-operator
 

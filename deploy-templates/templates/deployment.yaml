@@ -89,6 +89,8 @@ spec:
               value: {{ .Values.enableWebhooks | quote }}
             - name: BRANCH_STALE_CHECK_INTERVAL
               value: {{ .Values.branchStaleCheckInterval | quote }}
+            - name: GIT_CLI_ENABLED
+              value: {{ .Values.gitCliEnabled | quote }}
             - name: SSH_KNOWN_HOSTS
               value: /etc/codebase-operator/ssh/ssh_known_hosts
             {{- if .Values.caCerts.enabled }}

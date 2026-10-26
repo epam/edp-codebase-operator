@@ -60,7 +60,7 @@ pkg/gitprovider/           — Per-provider adapters: github.go, gitlab.go, bitb
                              Factory: NewProvider() dispatches on GitServer.Spec.GitProvider
 pkg/client/jira/           — Jira REST client (go-jira wrapper + mockable Client interface)
 pkg/gerrit/                — SSH-based Gerrit client
-pkg/git/                   — go-git wrapper + factory (supports SSH/HTTPS auth)
+pkg/git/                   — go-git wrapper + factory (supports SSH/HTTPS auth); Clone and Push run the git binary (cli.go) unless GIT_CLI_ENABLED=false
 pkg/webhook/               — Admission webhooks: Codebase and CodebaseBranch validation
 pkg/objectmodifier/        — Applies default values / label patches before reconcile logic
 pkg/util/                  — Shared helpers (workdir, timeouts, URL utilities, templates)
@@ -100,6 +100,7 @@ Deletion runs a shorter chain: `DeleteWebHook` → `Cleaner`.
 - `WATCH_NAMESPACE` — namespace the operator watches (required)
 - `CODEBASE_BRANCH_MAX_CONCURRENT_RECONCILES` — concurrency for CodebaseBranch reconciler (default 1)
 - `ENABLE_WEBHOOKS` — set to `false` to disable admission webhooks
+- `GIT_CLI_ENABLED` — set to `false` to clone and push with go-git instead of the git binary
 - `TELEMETRY_ENABLED` / `TELEMETRY_DELAY` — opt-in usage telemetry
 
 ### Adding a new chain handler

@@ -89,6 +89,12 @@ enableWebhooks: true
 # Accepts Go duration strings (e.g. 24h, 30m); "0" disables the check.
 branchStaleCheckInterval: 24h
 
+# -- Clone and push repositories with the git binary. Over SSH the pod's UID needs a passwd
+# entry, which the image adds for any UID in group 0, as OpenShift assigns. Set to false to
+# use go-git, which clones and pushes inside the operator's process: onboarding a large
+# repository can then exceed the memory limit.
+gitCliEnabled: true
+
 # SSH host key verification. Every SSH connection the operator makes is verified
 # against these entries; there is no way to disable verification. GitServers that
 # authenticate with a token over HTTPS are unaffected.
