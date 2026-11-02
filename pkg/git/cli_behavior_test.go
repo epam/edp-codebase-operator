@@ -591,6 +591,51 @@ func TestCLIGitProvider_Push_DefaultsToAllBranches(t *testing.T) {
 	assert.Equal(t, gitRun(t, "-C", dst, "rev-parse", "dev"), gitRun(t, "-C", bare, "rev-parse", "dev"))
 }
 
+func TestCLIGitProvider_Push_Atomic(t *testing.T) {
+	requireBinary(t, "git")
+
+	setCADefaults(t, nil, nil)
+
+	ctx := context.Background()
+	root, bare := newBareRemote(t, "dev")
+	dst := filepath.Join(root, "work")
+	p := NewCLIGitProvider(Config{})
+
+	require.NoError(t, p.Clone(ctx, "file://"+bare, dst))
+
+	// dev is rewritten on the remote, so the push of the local dev is rejected.
+	seedCommit(t, bare, "remote dev", "+refs/heads/master:refs/heads/dev")
+
+	remoteMain := gitRun(t, "-C", bare, "rev-parse", "main")
+
+	require.NoError(t, os.WriteFile(filepath.Join(dst, "b.txt"), []byte("b"), 0o600))
+	require.NoError(t, p.Commit(ctx, dst, "add b"))
+
+	require.ErrorContains(t, p.Push(ctx, dst), "atomic push failed")
+	assert.Equal(t, remoteMain, gitRun(t, "-C", bare, "rev-parse", "main"), "a rejected ref must leave main unchanged")
+}
+
+func TestCLIGitProvider_Push_RemoteWithoutAtomic(t *testing.T) {
+	requireBinary(t, "git")
+
+	setCADefaults(t, nil, nil)
+
+	ctx := context.Background()
+	root, bare := newBareRemote(t)
+	dst := filepath.Join(root, "work")
+	p := NewCLIGitProvider(Config{})
+
+	gitRun(t, "-C", bare, "config", "receive.advertiseAtomic", "false")
+	require.NoError(t, p.Clone(ctx, "file://"+bare, dst))
+	require.NoError(t, os.WriteFile(filepath.Join(dst, "b.txt"), []byte("b"), 0o600))
+	require.NoError(t, p.Commit(ctx, dst, "add b"))
+	gitRun(t, "-C", dst, "tag", "v1")
+	require.NoError(t, p.Push(ctx, dst, RefSpecPushAllBranches, RefSpecPushAllTags))
+
+	assert.Equal(t, gitRun(t, "-C", dst, "rev-parse", "main"), gitRun(t, "-C", bare, "rev-parse", "main"))
+	assert.Equal(t, "v1", gitRun(t, "-C", bare, "tag"))
+}
+
 func TestCLIGitProvider_exec_KillRemovesLocks(t *testing.T) {
 	oldGrace, oldDrain := terminateGrace, pipeDrainGrace
 	terminateGrace, pipeDrainGrace = 300*time.Millisecond, time.Second

@@ -9,9 +9,10 @@ ENV ASSETS_DIR=/usr/local/bin \
     USER_NAME=codebase-operator \
     USER_UID=1001
 
-RUN apk add --no-cache ca-certificates=20261020-r0 \
-                       openssh-client==10.0_p1-r10 \
-                       git==2.49.1-r0
+# Alpine keeps only the latest build of a package per branch: pin minors (~=), not builds, and bump them with the FROM branch.
+# apk upgrade also brings the base image's CA bundle up to date.
+RUN apk upgrade --no-cache && \
+    apk add --no-cache git~=2.49 openssh-client~=10.0
 
 RUN adduser -h ${HOME} -s /bin/ash -D -u ${USER_UID} codebase-operator
 
