@@ -11,7 +11,7 @@ type Git interface {
 	// Commit commits changes in the working directory.
 	Commit(ctx context.Context, directory, message string, ops ...CommitOps) error
 
-	// Push pushes changes to the remote repository.
+	// Push pushes changes to the remote repository, atomically when the remote supports it.
 	// refspecs: optional refspecs (e.g., RefSpecPushAllBranches, RefSpecPushAllTags).
 	Push(ctx context.Context, directory string, refspecs ...string) error
 

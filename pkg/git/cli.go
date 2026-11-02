@@ -36,6 +36,9 @@ const (
 	hostKeyChangedMsg = "REMOTE HOST IDENTIFICATION HAS CHANGED"
 	hostKeyRevokedMsg = "REVOKED HOST KEY DETECTED"
 
+	// git push stderr text for a remote without atomic push, matched by substring. Re-check on git upgrades.
+	atomicUnsupportedMsg = "does not support --atomic"
+
 	// Network stall bounds for remote operations, in seconds.
 	httpStallSeconds = 600
 	sshConnectSecs   = 30
@@ -74,10 +77,14 @@ type gitConfig struct{ key, value string }
 // baseConfig applies to every git invocation.
 //   - gc.auto=0, maintenance.auto=false: no detached repack that outlives the call.
 //   - pack.threads=1: one pack thread.
+//   - pack.windowMemory=100m, core.bigFileThreshold=64m: pack-objects caps the memory of its delta window,
+//     and blobs over the threshold skip the delta search and are streamed.
 var baseConfig = []gitConfig{
 	{"gc.auto", "0"},
 	{"maintenance.auto", "false"},
 	{"pack.threads", "1"},
+	{"pack.windowMemory", "100m"},
+	{"core.bigFileThreshold", "64m"},
 }
 
 // defaultAllowedProtocols is GIT_ALLOW_PROTOCOL for remote operations.
@@ -241,6 +248,8 @@ func emptyDirectory(path string) error {
 }
 
 // Push pushes refspecs to origin without forcing. Without refspecs it pushes all branches.
+// The push is atomic when the remote supports it: a rejected ref then leaves every ref unchanged.
+// Otherwise it is a plain push, which can update some refs while the remote rejects others.
 func (p *CLIGitProvider) Push(ctx context.Context, directory string, refspecs ...string) error {
 	log := ctrl.LoggerFrom(ctx).WithValues("directory", directory)
 	log.Info("Pushing changes with git CLI")
@@ -254,9 +263,20 @@ func (p *CLIGitProvider) Push(ctx context.Context, directory string, refspecs ..
 		return fmt.Errorf("failed to push: %w", err)
 	}
 
-	args := append([]string{"-C", directory, "push", "--", "origin"}, refspecs...)
+	push := func(options ...string) error {
+		args := append(append([]string{"-C", directory, "push"}, options...), "--", "origin")
 
-	if err = p.runRemote(ctx, origin, args...); err != nil {
+		return p.runRemote(ctx, origin, append(args, refspecs...)...)
+	}
+
+	err = push("--atomic")
+	if err != nil && strings.Contains(err.Error(), atomicUnsupportedMsg) {
+		log.Info("Remote does not support atomic push, pushing without it")
+
+		err = push()
+	}
+
+	if err != nil {
 		return fmt.Errorf("failed to push: %w", remoteErr(err, origin))
 	}
 

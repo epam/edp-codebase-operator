@@ -150,9 +150,11 @@ func TestBaseEnv_Config(t *testing.T) {
 	assert.Equal(t, os.DevNull, m["GIT_CONFIG_GLOBAL"])
 	assert.Equal(t, "1", m["GIT_CONFIG_NOSYSTEM"])
 	assert.Equal(t, map[string]string{
-		"gc.auto":          "0",
-		"maintenance.auto": "false",
-		"pack.threads":     "1",
+		"gc.auto":               "0",
+		"maintenance.auto":      "false",
+		"pack.threads":          "1",
+		"pack.windowMemory":     "100m",
+		"core.bigFileThreshold": "64m",
 	}, gitConfigMap(t, gitEnv()))
 }
 
