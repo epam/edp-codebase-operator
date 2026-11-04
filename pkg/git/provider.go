@@ -190,7 +190,7 @@ func (p *GitProvider) ListRemoteBranches(ctx context.Context, repoURL string) ([
 	repo, _ := git.Init(memory.NewStorage(), nil)
 
 	remote, err := repo.CreateRemote(&config.RemoteConfig{
-		Name: "origin",
+		Name: git.DefaultRemoteName,
 		URLs: []string{repoURL},
 	})
 	if err != nil {
@@ -242,7 +242,7 @@ func (p *GitProvider) CheckPermissions(ctx context.Context, repoURL string) erro
 	repo, _ := git.Init(memory.NewStorage(), nil)
 
 	remote, err := repo.CreateRemote(&config.RemoteConfig{
-		Name: "origin",
+		Name: git.DefaultRemoteName,
 		URLs: []string{repoURL},
 	})
 	if err != nil {
@@ -319,14 +319,14 @@ func (p *GitProvider) AddRemoteLink(ctx context.Context, directory, remoteURL st
 	}
 
 	// Try to delete existing origin if it exists
-	err = repo.DeleteRemote("origin")
+	err = repo.DeleteRemote(git.DefaultRemoteName)
 	if err != nil && !errors.Is(err, git.ErrRemoteNotFound) {
 		return fmt.Errorf("failed to delete existing remote: %w", err)
 	}
 
 	// Create new origin
 	_, err = repo.CreateRemote(&config.RemoteConfig{
-		Name: "origin",
+		Name: git.DefaultRemoteName,
 		URLs: []string{remoteURL},
 	})
 	if err != nil {
