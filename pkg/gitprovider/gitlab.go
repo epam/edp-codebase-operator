@@ -59,7 +59,7 @@ func (c *GitLabClient) CreateWebHook(
 		SetContext(ctx).
 		SetHeader(gitLabTokenHeaderName, token).
 		SetBody(map[string]interface{}{
-			"url":                     webHookURL,
+			webHookURLField:           webHookURL,
 			"merge_requests_events":   true,
 			"note_events":             true,
 			"push_events":             false,
@@ -124,7 +124,7 @@ func (c *GitLabClient) GetWebHook(
 		SetHeader(gitLabTokenHeaderName, token).
 		SetPathParams(map[string]string{
 			projectIDPathParam: projectID,
-			"hook-id":          webHookRef,
+			hookIDPathParam:    webHookRef,
 		}).
 		SetResult(webHook).
 		Get("/api/v4/projects/{project-id}/hooks/{hook-id}")
@@ -195,7 +195,7 @@ func (c *GitLabClient) DeleteWebHook(
 		SetHeader(gitLabTokenHeaderName, token).
 		SetPathParams(map[string]string{
 			projectIDPathParam: projectID,
-			"hook-id":          webHookRef,
+			hookIDPathParam:    webHookRef,
 		}).
 		Delete("/api/v4/projects/{project-id}/hooks/{hook-id}")
 	if err != nil {

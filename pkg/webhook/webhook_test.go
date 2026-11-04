@@ -12,6 +12,7 @@ import (
 var _ = Describe("webhooks registration", func() {
 	It("should register validation webhooks", func() {
 		By("creating manager")
+
 		k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{
 			Scheme: k8sClient.Scheme(),
 			Metrics: metricsserver.Options{
@@ -21,6 +22,7 @@ var _ = Describe("webhooks registration", func() {
 		Expect(err).ToNot(HaveOccurred())
 
 		By("registering validation webhooks")
+
 		err = RegisterValidationWebHook(k8sManager)
 		Expect(err).ToNot(HaveOccurred())
 	})
@@ -28,6 +30,7 @@ var _ = Describe("webhooks registration", func() {
 	When("scheme doesn't contain cdpipeline types", func() {
 		It("should return error", func() {
 			By("creating manager")
+
 			k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{
 				Scheme: scheme.Scheme,
 				Metrics: metricsserver.Options{
@@ -37,6 +40,7 @@ var _ = Describe("webhooks registration", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			By("registering validation webhooks")
+
 			err = RegisterValidationWebHook(k8sManager)
 			Expect(err).To(HaveOccurred())
 		})

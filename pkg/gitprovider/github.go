@@ -26,8 +26,10 @@ type GitHubClient struct {
 }
 
 const (
-	repoPathParam  = "repo"
-	ownerPathParam = "owner"
+	repoPathParam   = "repo"
+	ownerPathParam  = "owner"
+	hookIDPathParam = "hook-id"
+	webHookURLField = "url"
 )
 
 // NewGitHubClient creates a new GitHub client.
@@ -74,10 +76,10 @@ func (c *GitHubClient) CreateWebHook(
 			"active": true,
 			"events": []string{"pull_request", "push", "issue_comment"},
 			"config": map[string]string{
-				"url":          webHookURL,
-				"content_type": "json",
-				"insecure_ssl": strconv.Itoa(insecure),
-				"secret":       webHookSecret,
+				webHookURLField: webHookURL,
+				"content_type":  "json",
+				"insecure_ssl":  strconv.Itoa(insecure),
+				"secret":        webHookSecret,
 			},
 		}).
 		SetPathParams(map[string]string{
@@ -143,9 +145,9 @@ func (c *GitHubClient) GetWebHook(
 		SetContext(ctx).
 		SetAuthToken(token).
 		SetPathParams(map[string]string{
-			ownerPathParam: owner,
-			repoPathParam:  repo,
-			"hook-id":      webHookRef,
+			ownerPathParam:  owner,
+			repoPathParam:   repo,
+			hookIDPathParam: webHookRef,
 		}).
 		SetResult(webHook).
 		Get("/repos/{owner}/{repo}/hooks/{hook-id}")
@@ -226,9 +228,9 @@ func (c *GitHubClient) DeleteWebHook(
 		SetContext(ctx).
 		SetAuthToken(token).
 		SetPathParams(map[string]string{
-			ownerPathParam: owner,
-			repoPathParam:  repo,
-			"hook-id":      webHookRef,
+			ownerPathParam:  owner,
+			repoPathParam:   repo,
+			hookIDPathParam: webHookRef,
 		}).
 		Delete("/repos/{owner}/{repo}/hooks/{hook-id}")
 	if err != nil {

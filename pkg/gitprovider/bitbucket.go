@@ -73,7 +73,7 @@ func (b *BitbucketClient) CreateWebHook(
 
 			body, err = json.Marshal(map[string]interface{}{
 				"description":            fmt.Sprintf("Automatically created %s", uuid.NewUUID()),
-				"url":                    webHookURL,
+				webHookURLField:          webHookURL,
 				"active":                 true,
 				"secret":                 webHookSecret,
 				"skip_cert_verification": skipTLS,
