@@ -13,9 +13,11 @@ func TestConvertToGitServer(t *testing.T) {
 
 	gs := ConvertToGitServer(&codebaseApi.GitServer{
 		Spec: codebaseApi.GitServerSpec{
-			GitHost: "github.com",
+			GitHost:     "github.com",
+			GitProvider: codebaseApi.GitProviderGithub,
 		},
 	})
 
-	assert.Equal(t, gs.GitHost, "github.com")
+	assert.Equal(t, "github.com", gs.GitHost)
+	assert.Equal(t, codebaseApi.GitProviderGithub, gs.GitProvider)
 }

@@ -19,9 +19,15 @@ it into the operator at `/etc/codebase-operator/ssh`. The operator reads
 `/etc/codebase-operator/ssh/ssh_known_hosts`, via the `SSH_KNOWN_HOSTS`
 environment variable set by the chart.
 
-The ConfigMap ships with host keys for `github.com`, `gitlab.com` and
-`bitbucket.org`, so SSH GitServers pointing at those providers work with no
-further configuration.
+The ConfigMap ships with host keys for `github.com`, `gitlab.com`,
+`bitbucket.org` and `ssh.bitbucket.org`, so SSH GitServers pointing at those
+providers work with no further configuration.
+
+Bitbucket Cloud moves SSH to `ssh.bitbucket.org`; SSH to `bitbucket.org` is
+refused after 2026-12-10. Keep `gitHost: bitbucket.org` on the GitServer: the
+operator uses `ssh.bitbucket.org` for SSH and `bitbucket.org` for HTTPS and
+links. With `knownHosts.includeDefaultProviders: false`, add the
+`ssh.bitbucket.org` keys to `knownHosts.entries`.
 
 The ConfigMap is mounted as a directory rather than with `subPath`, so the
 kubelet refreshes it in place and the operator re-reads it on the next
@@ -124,7 +130,7 @@ kubectl get gitservers -o json | jq -r '.items[] | select(.spec.gitProvider) |
 ```
 
 For each one whose secret contains an `id_rsa` key and whose host is not
-github.com, gitlab.com or bitbucket.org, add its host keys to
+github.com, gitlab.com, bitbucket.org or ssh.bitbucket.org, add its host keys to
 `knownHosts.entries` as part of the upgrade. GitServers left unpinned will
 report `connected: false` until their keys are added; no data is lost and the
 operator recovers on the next reconcile once the entry is present.

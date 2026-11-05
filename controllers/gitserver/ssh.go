@@ -51,7 +51,7 @@ func checkGitServerConnection(data gitSshData, log logr.Logger) error {
 
 func extractSshData(gitServer *model.GitServer, secret *corev1.Secret) gitSshData {
 	return gitSshData{
-		Host: gitServer.GitHost,
+		Host: util.SSHHost(gitServer.GitProvider, gitServer.GitHost),
 		User: gitServer.GitUser,
 		Key:  string(secret.Data[util.PrivateSShKeyName]),
 		Port: gitServer.SshPort,
