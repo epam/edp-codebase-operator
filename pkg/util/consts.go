@@ -50,6 +50,9 @@ const (
 
 	GithubDomain = "https://github.com/epmd-edp"
 
+	BitbucketCloudHost    = "bitbucket.org"
+	BitbucketCloudSSHHost = "ssh.bitbucket.org"
+
 	CITekton = "tekton"
 	CIGitLab = "gitlab"
 

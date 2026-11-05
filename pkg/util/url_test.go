@@ -277,6 +277,18 @@ func TestGetSSHUrl(t *testing.T) {
 			repoName: "owner/repo",
 			want:     "git@github.com:owner/repo.git",
 		},
+		{
+			name: "should use ssh.bitbucket.org for bitbucket cloud",
+			gitServer: &codebaseApi.GitServer{
+				Spec: codebaseApi.GitServerSpec{
+					GitHost:     "bitbucket.org",
+					GitProvider: codebaseApi.GitProviderBitbucket,
+					SshPort:     22,
+				},
+			},
+			repoName: "workspace/repo",
+			want:     "git@ssh.bitbucket.org:workspace/repo.git",
+		},
 	}
 
 	for _, tt := range tests {
@@ -284,6 +296,56 @@ func TestGetSSHUrl(t *testing.T) {
 			t.Parallel()
 
 			assert.Equal(t, tt.want, GetSSHUrl(tt.gitServer, tt.repoName))
+		})
+	}
+}
+
+func TestSSHHost(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name        string
+		gitProvider string
+		gitHost     string
+		want        string
+	}{
+		{
+			name:        "bitbucket cloud maps to ssh host",
+			gitProvider: codebaseApi.GitProviderBitbucket,
+			gitHost:     "bitbucket.org",
+			want:        "ssh.bitbucket.org",
+		},
+		{
+			name:        "bitbucket cloud host is case-insensitive",
+			gitProvider: codebaseApi.GitProviderBitbucket,
+			gitHost:     "BitBucket.org",
+			want:        "ssh.bitbucket.org",
+		},
+		{
+			name:        "ssh.bitbucket.org is kept",
+			gitProvider: codebaseApi.GitProviderBitbucket,
+			gitHost:     "ssh.bitbucket.org",
+			want:        "ssh.bitbucket.org",
+		},
+		{
+			name:        "self-hosted bitbucket is kept",
+			gitProvider: codebaseApi.GitProviderBitbucket,
+			gitHost:     "bitbucket.example.com",
+			want:        "bitbucket.example.com",
+		},
+		{
+			name:        "other provider with bitbucket.org host is kept",
+			gitProvider: codebaseApi.GitProviderGithub,
+			gitHost:     "bitbucket.org",
+			want:        "bitbucket.org",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			assert.Equal(t, tt.want, SSHHost(tt.gitProvider, tt.gitHost))
 		})
 	}
 }

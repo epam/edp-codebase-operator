@@ -8,6 +8,11 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
+	"github.com/epam/edp-codebase-operator/v2/pkg/model"
+	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 )
 
 func Test_sshInitFromSecret_verifiesHostKeys(t *testing.T) {
@@ -30,6 +35,21 @@ func Test_sshInitFromSecret_verifiesHostKeys(t *testing.T) {
 	// Algorithms must be narrowed to what is on file, otherwise a server offering
 	// an unpinned key type fails as a mismatch rather than as a missing entry.
 	assert.Equal(t, []string{"ssh-ed25519"}, client.Config.HostKeyAlgorithms)
+}
+
+func Test_extractSshData_bitbucketCloudUsesSSHHost(t *testing.T) {
+	t.Parallel()
+
+	data := extractSshData(&model.GitServer{
+		GitHost:     "bitbucket.org",
+		GitProvider: codebaseApi.GitProviderBitbucket,
+		GitUser:     "git",
+		SshPort:     22,
+	}, &corev1.Secret{Data: map[string][]byte{util.PrivateSShKeyName: []byte("key")}})
+
+	assert.Equal(t, "ssh.bitbucket.org", data.Host)
+	assert.Equal(t, int32(22), data.Port)
+	assert.Equal(t, "key", data.Key)
 }
 
 func Test_sshInitFromSecret_failsWithoutKnownHosts(t *testing.T) {

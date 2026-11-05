@@ -1349,7 +1349,7 @@ Optional keys:
 For Gerrit provider, only id_rsa key is required and used.
 When id_rsa is present the operator connects over SSH and verifies the server's
 host key against the operator's ssh-known-hosts ConfigMap; hosts other than
-github.com, gitlab.com and bitbucket.org must be added there first.<br/>
+github.com, gitlab.com, bitbucket.org and ssh.bitbucket.org must be added there first.<br/>
         </td>
         <td>true</td>
       </tr><tr>

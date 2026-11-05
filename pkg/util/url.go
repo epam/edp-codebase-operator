@@ -83,13 +83,25 @@ func GetHostWithProtocol(host string) string {
 	return fmt.Sprintf("https://%v", host)
 }
 
-// GetSSHUrl returns ssh url for git server.
-func GetSSHUrl(gitServer *codebaseApi.GitServer, repoName string) string {
-	if gitServer.Spec.GitProvider == codebaseApi.GitProviderGerrit {
-		return fmt.Sprintf("ssh://%s:%d/%s", gitServer.Spec.GitHost, gitServer.Spec.SshPort, repoName)
+// SSHHost returns the host for SSH connections to a git server.
+// Bitbucket Cloud SSH endpoint: ssh.bitbucket.org. HTTPS and web links stay on gitHost.
+func SSHHost(gitProvider, gitHost string) string {
+	if gitProvider == codebaseApi.GitProviderBitbucket && strings.EqualFold(gitHost, BitbucketCloudHost) {
+		return BitbucketCloudSSHHost
 	}
 
-	return fmt.Sprintf("git@%s:%s.git", gitServer.Spec.GitHost, repoName)
+	return gitHost
+}
+
+// GetSSHUrl returns ssh url for git server.
+func GetSSHUrl(gitServer *codebaseApi.GitServer, repoName string) string {
+	host := SSHHost(gitServer.Spec.GitProvider, gitServer.Spec.GitHost)
+
+	if gitServer.Spec.GitProvider == codebaseApi.GitProviderGerrit {
+		return fmt.Sprintf("ssh://%s:%d/%s", host, gitServer.Spec.SshPort, repoName)
+	}
+
+	return fmt.Sprintf("git@%s:%s.git", host, repoName)
 }
 
 // GetHTTPSUrl returns https url for git server and codebase.

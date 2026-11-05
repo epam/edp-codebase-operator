@@ -93,7 +93,7 @@ branchStaleCheckInterval: 24h
 # against these entries; there is no way to disable verification. GitServers that
 # authenticate with a token over HTTPS are unaffected.
 knownHosts:
-  # -- Include the shipped host keys for github.com, gitlab.com and bitbucket.org.
+  # -- Include the shipped host keys for github.com, gitlab.com, bitbucket.org and ssh.bitbucket.org.
   # Disable only if you pin these hosts yourself through `entries`.
   includeDefaultProviders: true
   # -- Host keys for self-hosted git servers, in known_hosts format, one per line.

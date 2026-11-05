@@ -23,6 +23,7 @@ type ActionLog struct {
 
 type GitServer struct {
 	GitHost          string
+	GitProvider      string
 	GitUser          string
 	HttpsPort        int32
 	SshPort          int32
@@ -47,6 +48,7 @@ func ConvertToGitServer(k8sObj *codebaseApi.GitServer) *GitServer {
 
 	return &GitServer{
 		GitHost:          spec.GitHost,
+		GitProvider:      spec.GitProvider,
 		GitUser:          spec.GitUser,
 		HttpsPort:        spec.HttpsPort,
 		SshPort:          spec.SshPort,
