@@ -3,7 +3,7 @@
 
 
 <a name="v2.37.0"></a>
-## v2.37.0 - 2026-11-05
+## v2.37.0 - 2026-11-07
 ### Features
 
 - Use git CLI for clone, push, checkout and commit
