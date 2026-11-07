@@ -34,7 +34,7 @@ In order to install the Codebase Operator, follow the steps below:
      ```bash
      helm search repo epamedp/codebase-operator -l
      NAME                           CHART VERSION   APP VERSION     DESCRIPTION
-     epamedp/codebase-operator      2.23.0          2.23.0          A Helm chart for KubeRocketCI Codebase Operator
+     epamedp/codebase-operator      2.37.0          2.37.0          A Helm chart for KubeRocketCI Codebase Operator
      ```
 
     _**NOTE:** It is highly recommended to use the latest released version._

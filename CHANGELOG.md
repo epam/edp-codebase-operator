@@ -1,6 +1,27 @@
 <a name="unreleased"></a>
 ## [Unreleased]
 
+### Routine
+
+- Update current development version
+
+
+<a name="v2.37.0"></a>
+## [v2.37.0] - 2026-11-07
+### Features
+
+- Use git CLI for clone, push, checkout and commit
+
+### Bug Fixes
+
+- Use ssh.bitbucket.org for Bitbucket Cloud SSH connections
+- Cap git pack memory, push atomically, pin apk minors
+
+### Routine
+
+- Bump Go to 1.27.3
+- Update current development version
+
 
 <a name="v2.36.0"></a>
 ## [v2.36.0] - 2026-10-20
@@ -720,7 +741,8 @@ removed required fields from the GitServer status. CRD should be updated.
 - [EPMDEDP-868] Add functionality generates correct ssh URL for replication config for Gerrit
 
 
-[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.36.0...HEAD
+[Unreleased]: https://github.com/epam/edp-codebase-operator/compare/v2.37.0...HEAD
+[v2.37.0]: https://github.com/epam/edp-codebase-operator/compare/v2.36.0...v2.37.0
 [v2.36.0]: https://github.com/epam/edp-codebase-operator/compare/v2.35.0...v2.36.0
 [v2.35.0]: https://github.com/epam/edp-codebase-operator/compare/v2.34.0...v2.35.0
 [v2.34.0]: https://github.com/epam/edp-codebase-operator/compare/v2.33.0...v2.34.0
