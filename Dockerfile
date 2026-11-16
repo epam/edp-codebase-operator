@@ -1,4 +1,4 @@
-FROM alpine:3.22.7
+FROM alpine:3.24.4
 
 ARG TARGETARCH
 
@@ -12,7 +12,7 @@ ENV ASSETS_DIR=/usr/local/bin \
 # Alpine keeps only the latest build of a package per branch: pin minors (~=), not builds, and bump them with the FROM branch.
 # apk upgrade also brings the base image's CA bundle up to date.
 RUN apk upgrade --no-cache && \
-    apk add --no-cache git~=2.49 openssh-client~=10.0
+    apk add --no-cache git~=2.54 openssh-client~=10.3
 
 RUN adduser -h ${HOME} -s /bin/ash -D -u ${USER_UID} codebase-operator
 
